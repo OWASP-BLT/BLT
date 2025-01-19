@@ -15,6 +15,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -1348,7 +1349,7 @@ class IssueView(DetailView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
-        context["all_comment"] = self.object.comments.all
+        context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
         context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
         context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
@@ -1359,6 +1360,7 @@ class IssueView(DetailView):
         context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+        context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
         return context
 
@@ -1455,48 +1457,58 @@ def issue_count(request):
 
 
 @login_required(login_url="/accounts/login")
-def delete_comment(request):
-    int_issue_pk = int(request.POST["issue_pk"])
-    issue = get_object_or_404(Issue, pk=int_issue_pk)
+def delete_content_comment(request):
+    content_type = request.POST.get("content_type")
+    content_pk = int(request.POST.get("content_pk"))
+    content_type_obj = ContentType.objects.get(model=content_type)
+    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+
     if request.method == "POST":
         comment = Comment.objects.get(
             pk=int(request.POST["comment_pk"]), author=request.user.username
         )
         comment.delete()
+
     context = {
-        "all_comments": Comment.objects.filter(issue__id=int_issue_pk).order_by("-created_date"),
-        "object": issue,
+        "all_comments": Comment.objects.filter(
+            content_type=content_type_obj, object_id=content_pk
+        ).order_by("-created_date"),
+        "object": content,
     }
     return render(request, "comments2.html", context)
 
 
-def update_comment(request, issue_pk, comment_pk):
-    issue = Issue.objects.filter(pk=issue_pk).first()
+def update_content_comment(request, content_pk, comment_pk):
+    content_type = request.POST.get("content_type")
+    content_type_obj = ContentType.objects.get(model=content_type)
+    content = content_type_obj.get_object_for_this_type(pk=content_pk)
     comment = Comment.objects.filter(pk=comment_pk).first()
+
     if request.method == "POST" and isinstance(request.user, User):
         comment.text = escape(request.POST.get("comment", ""))
         comment.save()
 
     context = {
-        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
-        "object": issue,
+        "all_comment": Comment.objects.filter(
+            content_type=content_type_obj, object_id=content_pk
+        ).order_by("-created_date"),
+        "object": content,
     }
     return render(request, "comments2.html", context)
 
 
-def comment_on_issue(request, issue_pk):
-    try:
-        issue_pk = int(issue_pk)
-    except ValueError:
-        raise Http404("Issue does not exist")
-    issue = Issue.objects.filter(pk=issue_pk).first()
+def comment_on_content(request, content_pk):
+    content_type = request.POST.get("content_type")
+    content_type_obj = ContentType.objects.get(model=content_type)
+    content = content_type_obj.get_object_for_this_type(pk=content_pk)
+    VALID_CONTENT_TYPES = ["issue", "post"]
 
     if request.method == "POST" and isinstance(request.user, User):
         comment = escape(request.POST.get("comment", ""))
         replying_to_input = request.POST.get("replying_to_input", "").split("#")
 
-        if issue is None:
-            Http404("Issue does not exist, cannot comment")
+        if content is None:
+            raise Http404("Content does not exist, cannot comment")
 
         if len(replying_to_input) == 2:
             replying_to_user = replying_to_input[0]
@@ -1504,13 +1516,18 @@ def comment_on_issue(request, issue_pk):
 
             parent_comment = Comment.objects.filter(pk=replying_to_comment_id).first()
 
+            if content_type not in VALID_CONTENT_TYPES:
+                messages.error(request, "Invalid content type.")
+                return redirect("home")
+
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
-                return redirect(f"/issue/{issue_pk}")
+                return redirect("home")
 
             Comment.objects.create(
                 parent=parent_comment,
-                issue=issue,
+                content_type=content_type_obj,
+                object_id=content_pk,
                 author=request.user.username,
                 author_fk=request.user.userprofile,
                 author_url=f"profile/{request.user.username}/",
@@ -1519,7 +1536,8 @@ def comment_on_issue(request, issue_pk):
 
         else:
             Comment.objects.create(
-                issue=issue,
+                content_type=content_type_obj,
+                object_id=content_pk,
                 author=request.user.username,
                 author_fk=request.user.userprofile,
                 author_url=f"profile/{request.user.username}/",
@@ -1527,8 +1545,10 @@ def comment_on_issue(request, issue_pk):
             )
 
     context = {
-        "all_comment": Comment.objects.filter(issue__id=issue_pk).order_by("-created_date"),
-        "object": issue,
+        "all_comment": Comment.objects.filter(
+            content_type=content_type_obj, object_id=content_pk
+        ).order_by("-created_date"),
+        "object": content,
     }
 
     return render(request, "comments2.html", context)

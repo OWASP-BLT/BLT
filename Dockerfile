@@ -33,8 +33,8 @@ RUN ln -s /usr/bin/google-chrome-stable /usr/local/bin/google-chrome
 RUN pip install poetry
 RUN poetry config virtualenvs.create false
 COPY pyproject.toml poetry.lock* ./
-RUN poetry lock --no-update
-RUN poetry install
+RUN poetry lock
+RUN poetry install --no-root
 
 # Install additional Python packages
 RUN pip install opentelemetry-api opentelemetry-instrumentation

@@ -13,7 +13,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -363,6 +363,7 @@ class Issue(models.Model):
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    comments = GenericRelation("comments.Comment")
 
     def __unicode__(self):
         return self.description
@@ -936,17 +937,6 @@ class Project(models.Model):
         return self.name
 
 
-# class ContributorStats(models.Model):
-#     username = models.CharField(max_length=255, unique=True)
-#     commits = models.IntegerField(default=0)
-#     issues_opened = models.IntegerField(default=0)
-#     issues_closed = models.IntegerField(default=0)
-#     prs = models.IntegerField(default=0)
-#     comments = models.IntegerField(default=0)
-#     assigned_issues = models.IntegerField(default=0)
-#     created = models.DateTimeField(auto_now_add=True)
-
-
 class Contribution(models.Model):
     CONTRIBUTION_TYPES = [
         ("commit", "Commit"),
@@ -1216,6 +1206,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(upload_to="blog_posts")
+    comments = GenericRelation("comments.Comment")
 
     class Meta:
         db_table = "blog_post"
@@ -1270,7 +1261,7 @@ class Repo(models.Model):
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
     # rename this to repo_visit_count and make sure the github badge works with this
-    project_visit_count = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)
@@ -1317,3 +1308,32 @@ class Repo(models.Model):
 
     def __str__(self):
         return f"{self.project.name}/{self.name}"
+
+
+class ContributorStats(models.Model):
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="stats")
+    repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="stats")
+
+    # This will represent either a specific day or the first day of a month.
+    date = models.DateField()
+
+    # Store counts
+    commits = models.PositiveIntegerField(default=0)
+    issues_opened = models.PositiveIntegerField(default=0)
+    issues_closed = models.PositiveIntegerField(default=0)
+    pull_requests = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+
+    # "day" for daily entries, "month" for monthly entries
+    granularity = models.CharField(
+        max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day"
+    )
+
+    class Meta:
+        # You can't have two different stats for the same date+granularity
+        unique_together = ("contributor", "repo", "date", "granularity")
+
+    def __str__(self):
+        return (
+            f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        )
