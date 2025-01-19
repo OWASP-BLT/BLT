@@ -1,4 +1,4 @@
-name,id,link
+slack_channel,slack_id,slack_url
 project-zap,C04SX2GAS,https://OWASP.slack.com/archives/C04SX2GAS
 project-xenotix,C04T4HY7U,https://OWASP.slack.com/archives/C04T4HY7U
 project-railsgoat,C04THC44W,https://OWASP.slack.com/archives/C04THC44W
