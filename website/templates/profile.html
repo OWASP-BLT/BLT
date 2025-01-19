@@ -284,6 +284,20 @@
         color: #ff5722;
         font-weight: bold;
     }
+    .shine-effect {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shine 2s infinite;
+    }
+
+    @keyframes shine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -385,6 +399,25 @@
                     <div class="flex items-center justify-between w-full text-[14px] font-medium transition-transform transform hover:scale-105">
                         <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> Last Sizzle Check-in:</span>
                         <span class="font-bold text-red-500">{{ user.userprofile.last_check_in|default:"N/A" }}</span>
+                    </div>
+                    <div class="my-8 p-4 rounded-lg w-full">
+                        <div class="flex items-center justify-between mb-2 font-medium">
+                            <span>Streak Progress</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-trophy text-yellow-500"></i>
+                                <span class="font-bold">{{ base_milestone }}/{{ next_milestone }}</span>
+                            </div>
+                        </div>
+                        <div class="relative w-full bg-gradient-to-r from-gray-100 to-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-700 to-red-600 rounded-full transition-all duration-500 ease-out animate-pulse"
+                                 style="width: {% widthratio base_milestone next_milestone 100 %}%">
+                                <div class="absolute inset-0 bg-white/20 shine-effect"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-md text-gray-500">Current</span>
+                            <span class="text-md text-gray-500">Next Milestone</span>
+                        </div>
                     </div>
                 </div>
             </div>

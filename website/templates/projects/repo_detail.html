@@ -1,0 +1,1025 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% load static %}
+{% block title %}
+    {{ repo.name }} - Repo Details
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl flex items-center gap-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-4 border-red-500 border-t-transparent"></div>
+            <span class="text-gray-700 text-lg">Syncing repository data...</span>
+        </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Repository Header -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-4 mb-4">
+                        {% if repo.logo_url %}
+                            <img src="{{ repo.logo_url }}"
+                                 width="40"
+                                 height="40"
+                                 alt="{{ repo.name }} logo"
+                                 class="w-16 h-16 rounded-lg">
+                        {% endif %}
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">{{ repo.name }}</h1>
+                            <div class="flex items-center gap-3 mt-2">
+                                <!-- the  -->
+                                <a href="{% url 'projects_detail' repo.project.slug %}"
+                                   class="text-red-600 hover:text-red-700 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                                    </svg>
+                                    Back to {{ repo.project.name }}
+                                </a>
+                                {% if repo.project.organization %}
+                                    <span class="text-gray-400">|</span>
+                                    <div class="text-gray-600 hover:text-gray-800">organization : {{ repo.project.organization.name }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 text-lg">{{ repo.description|default:"No description available." }}</p>
+                </div>
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-4">
+                    {% if repo.homepage_url %}
+                        <a href="{{ repo.homepage_url }}"
+                           target="_blank"
+                           class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors">
+                            <svg class="w-5 h-5 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                            </svg>
+                            Visit Homepage
+                        </a>
+                    {% endif %}
+                    <a href="{{ repo.repo_url }}"
+                       target="_blank"
+                       class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                        <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                        </svg>
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
+            <!-- Badge URL Section -->
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Repository View Count Badge</h3>
+                <div class="flex flex-col gap-4">
+                    <!-- HTML Format -->
+                    <div class="space-y-2">
+                        <div class="text-gray-700 font-medium">HTML:</div>
+                        <div class="relative">
+                            <input type="text"
+                                   readonly
+                                   value='&lt;img alt="Views" src="{{ request.scheme }}://{{ request.get_host }}{% url 'repo-badge' repo.slug %}" &gt;'
+                                   class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg pr-24 font-mono text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                   id="badge-url-html">
+                            <button onclick="copyToClipboard('badge-url-html')"
+                                    class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-sm rounded-md transition-colors">
+                                Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Repository Type & Metadata -->
+            <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-6">
+                <div class="flex items-center gap-6">
+                    {% if repo.is_main %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                            </svg>
+                            Main Repository
+                        </span>
+                    {% elif repo.is_wiki %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                            </svg>
+                            Wiki Repository
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                            <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0h8v12H6V4z" clip-rule="evenodd" />
+                            </svg>
+                            Standard Repository
+                        </span>
+                    {% endif %}
+                    <div class="flex items-center gap-2 relative">
+                        <span class="text-gray-500">Tags:</span>
+                        {% for tag in repo.tags.all %}
+                            <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
+                        {% endfor %}
+                        <div class="refresh-container relative inline-flex">
+                            <button class="refresh-btn ml-2"
+                                    data-section="basic"
+                                    onclick="refreshSection(this, 'basic')"
+                                    title="Refresh basic information">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-sm text-gray-500">
+                    <div>Created {{ repo.created|date:"M d, Y" }}</div>
+                    <div data-stat="last-updated">Updated {{ repo.last_updated|naturaltime }}</div>
+                </div>
+            </div>
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6 mt-8">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Stars</span>
+                        <svg class="w-5 h-5 text-yellow-400"
+                             fill="currentColor"
+                             viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold mt-2" data-stat="stars">{{ repo.stars|intcomma }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Forks</span>
+                        <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8.4 17.143c-1.914-.572-3.426-2-4.4-3.715v2.572c0 2.286 3.714 4 8 4s8-1.714 8-4v-2.572c-.974 1.715-2.486 3.143-4.4 3.715-1.143.286-2.857.286-4 .286s-2.857 0-4-.286zM12 3.429c-4.286 0-8 1.714-8 4s3.714 4 8 4 8-1.714 8-4-3.714-4-8-4zM12 13.429c-4.286 0-8-1.714-8-4v2.571c0 2.286 3.714 4 8 4s8-1.714 8-4V9.429c0 2.286-3.714 4-8 4z" />
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold mt-2" data-stat="forks">{{ repo.forks|intcomma }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Watchers</span>
+                        <svg class="w-5 h-5 text-green-400"
+                             fill="currentColor"
+                             viewBox="0 0 20 20">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold mt-2" data-stat="watchers">{{ repo.watchers|intcomma }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Network</span>
+                        <svg class="w-5 h-5 text-purple-400"
+                             fill="currentColor"
+                             viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold mt-2" data-stat="network">{{ repo.network_count|intcomma }}</p>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-600">Subscribers</span>
+                        <svg class="w-5 h-5 text-indigo-400"
+                             fill="currentColor"
+                             viewBox="0 0 20 20">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                        </svg>
+                    </div>
+                    <p class="text-2xl font-bold mt-2" data-stat="subscribers">{{ repo.subscribers_count|intcomma }}</p>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            <!-- Main Content Area -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Activity Metrics -->
+                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                                </svg>
+                                Activity Metrics
+                            </h2>
+                            <div class="refresh-container relative inline-flex">
+                                <button class="refresh-btn ml-2"
+                                        data-section="metrics"
+                                        onclick="refreshSection(this, 'metrics')"
+                                        title="Refresh metrics">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            <!-- Issues Card -->
+                            <div class="relative group">
+                                <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-red-600/20 rounded-lg transform transition-transform group-hover:scale-105 opacity-0 group-hover:opacity-100">
+                                </div>
+                                <div class="relative bg-white rounded-lg border-2 border-gray-200 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900">Issues</h3>
+                                        <span class="p-2 bg-red-100 rounded-full">
+                                            <svg class="w-5 h-5 text-red-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Open</span>
+                                            <span class="font-semibold text-gray-900" data-stat="open_issues">{{ repo.open_issues|intcomma }}</span>
+                                        </div>
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-gray-600">Closed</span>
+                                            <span class="font-semibold text-gray-900" data-stat="closed_issues">{{ repo.closed_issues|intcomma }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 pt-3 border-t border-gray-200">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-medium text-gray-500">Total</span>
+                                            <span class="text-xl font-bold text-gray-900" data-stat="total_issues">{{ repo.total_issues|intcomma }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pull Requests Card -->
+                            <div class="relative group">
+                                <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-blue-600/20 rounded-lg transform transition-transform group-hover:scale-105 opacity-0 group-hover:opacity-100">
+                                </div>
+                                <div class="relative bg-white rounded-lg border-2 border-gray-200 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900">Pull Requests</h3>
+                                        <span class="p-2 bg-blue-100 rounded-full">
+                                            <svg class="w-5 h-5 text-blue-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center justify-center py-4">
+                                        <div class="text-center">
+                                            <div class="text-3xl font-bold text-gray-900"
+                                                 data-stat="open_pull_requests">
+                                                {{ repo.open_pull_requests|intcomma }}
+                                            </div>
+                                            <div class="text-sm text-gray-500 mt-1">Open PRs</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Commits Card -->
+                            <div class="relative group">
+                                <div class="absolute inset-0 bg-gradient-to-r from-green-500/20 to-green-600/20 rounded-lg transform transition-transform group-hover:scale-105 opacity-0 group-hover:opacity-100">
+                                </div>
+                                <div class="relative bg-white rounded-lg border-2 border-gray-200 p-5 transform transition-transform group-hover:translate-x-1 group-hover:-translate-y-1">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-semibold text-gray-900">Commits</h3>
+                                        <span class="p-2 bg-green-100 rounded-full">
+                                            <svg class="w-5 h-5 text-green-600"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </span>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex flex-col">
+                                            <div class="text-3xl font-bold text-gray-900" data-stat="commit_count">{{ repo.commit_count|intcomma }}</div>
+                                            <div class="text-sm text-gray-500">Total Commits</div>
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-600 mt-2">
+                                            <svg class="w-4 h-4 mr-1 text-gray-400"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                            </svg>
+                                            Last:
+                                            <span data-stat="last_commit_date">{{ repo.last_commit_date|date:"M d, Y" }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- Community Section -->
+                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                                </svg>
+                                Community
+                            </h2>
+                            <div class="refresh-container relative inline-flex">
+                                <button class="refresh-btn"
+                                        data-section="community"
+                                        onclick="refreshSection(this, 'community')"
+                                        title="Refresh community data">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <!-- Contributors Summary -->
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-semibold text-gray-900">Top Contributors</h3>
+                                <span class="px-3 py-1 bg-red-50 text-red-600 rounded-full text-sm font-medium"
+                                      data-community="total-count">
+                                    {{ repo.contributor_count|intcomma }} total contributors
+                                </span>
+                            </div>
+                            <!-- Top Contributors Grid -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 contributors-grid">
+                                {% for contributor in top_contributors %}
+                                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                                        <img src="{{ contributor.avatar_url }}"
+                                             width="30"
+                                             height="30"
+                                             alt="{{ contributor.name }}"
+                                             class="w-12 h-12 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+                                        <div class="flex-grow">
+                                            <div class="font-medium text-gray-900">
+                                                {{ contributor.name }}
+                                                {% if contributor.verified %}<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>{% endif %}
+                                            </div>
+                                            <div class="text-sm text-gray-500">{{ contributor.contributions|intcomma }} commits</div>
+                                        </div>
+                                        <a href="{{ contributor.github_url }}"
+                                           target="_blank"
+                                           class="p-2 text-gray-400 hover:text-gray-600">
+                                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <!-- Other Contributors Summary -->
+                            {% if repo.contributor_count > 6 %}
+                                <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex -space-x-2">
+                                            {% for contributor in repo.contributor.all|dictsortreversed:"contributions"|slice:"6:11" %}
+                                                <img src="{{ contributor.avatar_url }}"
+                                                     width="20"
+                                                     height="20"
+                                                     alt="{{ contributor.name }}"
+                                                     class="w-8 h-8 rounded-full border-2 border-white"
+                                                     title="{{ contributor.name }} ({{ contributor.contributions }} contributions)">
+                                            {% endfor %}
+                                            {% if repo.contributor_count > 11 %}
+                                                <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-sm font-medium text-gray-600">
+                                                    +{{ repo.contributor_count|add:"-11" }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <a href="https://github.com/{{ repo.repo_url|cut:'https://github.com/' }}/graphs/contributors"
+                                           target="_blank"
+                                           class="text-red-600 hover:text-red-700 text-sm font-medium flex items-center gap-1">
+                                            View all contributors
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+                <!-- Contributor Statistics Section -->
+                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path d="M5 3a2 2 0 012-2h6a2 2 0 012 2v11a2 2 0 01-2 2H7a2 2 0 01-2-2V3zm0 11V3h10v11H5zm1-9h8v2H6V5zm0 3h8v2H6V8zm0 3h4v2H6v-2z" />
+                                </svg>
+                                Contributor Statistics
+                            </h2>
+                            <div class="flex items-center gap-4">
+                                <!-- Add refresh button container -->
+                                <div class="refresh-container relative inline-flex">
+                                    <button class="refresh-btn"
+                                            data-section="contributor_stats"
+                                            onclick="refreshSection(this, 'contributor_stats')"
+                                            title="Refresh contributor statistics">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <!-- Existing filter dropdown -->
+                                <select id="time-period-select"
+                                        class="form-select rounded-lg border-gray-300 text-sm"
+                                        onchange="updateContributorStats(this.value)">
+                                    {% for value, label in time_period_options %}
+                                        <option value="{{ value }}" {% if time_period == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Statistics Table -->
+                        <div class="overflow-x-auto contributor-stats-table">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr class="bg-gray-50">
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contributor</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Commits</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Issues Opened</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Issues Closed</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pull Requests</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Comments</th>
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Impact</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for stat in contributor_stats %}
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-4 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <img class="h-8 w-8 rounded-full"
+                                                         width="20"
+                                                         height="20"
+                                                         src="{{ stat.contributor.avatar_url }}"
+                                                         alt="{{ stat.contributor.name }}">
+                                                    <div class="ml-3">
+                                                        <div class="text-sm font-medium text-gray-900">{{ stat.contributor.name }}</div>
+                                                        <div class="text-sm text-gray-500">@{{ stat.contributor.github_id }}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center text-emerald-600 font-medium">
+                                                {{ stat.commits|default:0|intcomma }}
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center text-blue-600 font-medium">
+                                                {{ stat.issues_opened|default:0|intcomma }}
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center text-purple-600 font-medium">
+                                                {{ stat.issues_closed|default:0|intcomma }}
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center text-orange-600 font-medium">
+                                                {{ stat.pull_requests|default:0|intcomma }}
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center text-cyan-600 font-medium">
+                                                {{ stat.comments|default:0|intcomma }}
+                                            </td>
+                                            <td class="px-4 py-4 whitespace-nowrap text-center">
+                                                <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ stat.impact_level.class }}">
+                                                    {{ stat.impact_level.text }}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">No contributor statistics available for this period</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% if is_paginated %}
+                                <div class="flex items-center justify-between px-4 py-3 border-t border-gray-200 sm:px-6">
+                                    <div class="flex-1 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm text-gray-700">
+                                                Showing
+                                                <span class="font-medium">{{ page_obj.start_index }}</span>
+                                                to
+                                                <span class="font-medium">{{ page_obj.end_index }}</span>
+                                                of
+                                                <span class="font-medium">{{ paginator.count }}</span>
+                                                contributors
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                                                {% if page_obj.has_previous %}
+                                                    <button type="button"
+                                                            class="pagination-link relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                            data-page="{{ page_obj.previous_page_number }}">
+                                                        Previous
+                                                    </button>
+                                                {% endif %}
+                                                {% for i in page_obj.paginator.page_range %}
+                                                    {% if page_obj.number == i %}
+                                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-red-50 text-sm font-medium text-red-600">
+                                                            {{ i }}
+                                                        </span>
+                                                    {% else %}
+                                                        <button type="button"
+                                                                class="pagination-link relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                                                data-page="{{ i }}">{{ i }}</button>
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {% if page_obj.has_next %}
+                                                    <button type="button"
+                                                            class="pagination-link relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                                            data-page="{{ page_obj.next_page_number }}">Next</button>
+                                                {% endif %}
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+                <!-- Technical Details Section -->
+                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 flex items-center">
+                                <svg class="w-6 h-6 text-red-500 mr-2"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd" />
+                                </svg>
+                                Technical Overview
+                            </h2>
+                            <div class="refresh-container relative inline-flex">
+                                <button class="refresh-btn"
+                                        data-section="technical"
+                                        onclick="refreshSection(this, 'technical')"
+                                        title="Refresh technical data">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Language and Stack -->
+                            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <svg class="w-5 h-5 text-indigo-500 mr-2"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                    </svg>
+                                    Language & Stack
+                                </h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-600 shrink-0">Primary Language:</span>
+                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate"
+                                              data-tech="primary_language">
+                                            {{ repo.primary_language|default:"Not specified" }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-gray-600 shrink-0">Repository Size:</span>
+                                        <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200 truncate"
+                                              data-tech="size">{{ repo.size|filesizeformat }}</span>
+                                    </div>
+                                    <div class="flex items-start gap-2">
+                                        <span class="text-gray-600 shrink-0 mt-1">License:</span>
+                                        <div class="font-medium text-gray-900 px-3 py-1 bg-white rounded-lg shadow-sm border border-gray-200 flex-1 break-words"
+                                             data-tech="license">{{ repo.license|default:"Not specified" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Release Information -->
+                            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                    <svg class="w-5 h-5 text-green-500 mr-2"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    Latest Release
+                                </h3>
+                                {% if repo.release_name or repo.release_datetime %}
+                                    <div class="space-y-3">
+                                        {% if repo.release_name %}
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-gray-600">Version</span>
+                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                      data-tech="release_name">{{ repo.release_name }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if repo.release_datetime %}
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-gray-600">Release Date</span>
+                                                <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                      data-tech="release_date">
+                                                    {{ repo.release_datetime|date:"M d, Y" }}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-gray-600">Last Commit</span>
+                                            <span class="font-medium text-gray-900 px-3 py-1 bg-white rounded-full shadow-sm border border-gray-200"
+                                                  data-tech="last_commit_date">
+                                                {{ repo.last_commit_date|date:"M d, Y" }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="text-gray-500 text-center py-4">No release information available</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <!-- Sidebar -->
+            <div class="space-y-8">
+                <!-- Related Repositories -->
+                <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                            <svg class="w-6 h-6 text-red-500 mr-2"
+                                 fill="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path d="M13 17h8a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2zm0-2V3h8v12h-8z" />
+                                <path d="M3 19h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2zm0-2V7h8v10H3z" />
+                            </svg>
+                            Related Repositories
+                        </h2>
+                        <div class="space-y-4">
+                            {% for related_repo in related_repos %}
+                                <a href="{% url 'repo_detail' related_repo.slug %}" class="group block">
+                                    <div class="p-4 bg-gray-50 rounded-lg border-2 border-transparent hover:border-red-500 transition-all duration-200 hover:shadow-lg relative overflow-hidden">
+                                        <!-- Gradient overlay on hover -->
+                                        <div class="absolute inset-0 bg-gradient-to-r from-red-500/0 to-red-500/5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        </div>
+                                        <!-- Content -->
+                                        <div class="relative">
+                                            <!-- Header -->
+                                            <div class="flex items-center justify-between mb-2">
+                                                <div class="flex items-center gap-3">
+                                                    <h3 class="font-medium text-gray-900 group-hover:text-red-600 transition-colors">{{ related_repo.name }}</h3>
+                                                    {% if related_repo.is_main %}
+                                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">Main</span>
+                                                    {% elif related_repo.is_wiki %}
+                                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Wiki</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="flex items-center text-amber-500">
+                                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                        </svg>
+                                                        <span class="ml-1 text-sm font-medium">{{ related_repo.stars|intcomma }}</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <!-- Description -->
+                                            {% if related_repo.description %}
+                                                <p class="text-sm text-gray-600 line-clamp-2 group-hover:text-gray-900 transition-colors">
+                                                    {{ related_repo.description|truncatechars:120 }}
+                                                </p>
+                                            {% endif %}
+                                            <!-- Metrics -->
+                                            <div class="mt-3 flex items-center gap-4 text-xs text-gray-500">
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                                        <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    {{ related_repo.watchers|intcomma }} watching
+                                                </span>
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    {{ related_repo.forks|intcomma }} forks
+                                                </span>
+                                                <span class="flex items-center gap-1">
+                                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    Updated {{ related_repo.last_updated|naturaltime }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% empty %}
+                                <div class="text-center py-6">
+                                    <p class="text-gray-500">No related repositories found</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    <style>
+.refresh_spinner {
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    animation: spin 1s linear infinite;
+}
+.refresh-container {
+    position: relative;
+}
+.refresh-message {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    z-index: 10;
+}
+    </style>
+{% endblock content %}
+{% block after_js %}
+    <script>
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        
+        // Select the text
+        element.select();
+        element.setSelectionRange(0, 99999); // For mobile devices
+
+        // Copy the text
+        try {
+            navigator.clipboard.writeText(element.value).then(() => {
+                // Get the button
+                const button = element.nextElementSibling;
+                const originalText = button.textContent;
+                
+                // Change button style to show success
+                button.textContent = 'Copied!';
+                button.classList.remove('bg-red-500', 'hover:bg-red-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                    button.classList.add('bg-red-500', 'hover:bg-red-600');
+                }, 2000);
+            });
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    }
+
+    const refreshSection = async (button, section) => {
+    if (button.classList.contains('refresh_spinner')) {
+        return;
+    }
+
+    // Show loading state
+    button.classList.add('refresh_spinner');
+    
+    // Create message container if it doesn't exist
+    const container = button.closest('.refresh-container');
+    let messageContainer = container.querySelector('.refresh-message');
+    if (!messageContainer) {
+        messageContainer = document.createElement('div');
+        messageContainer.className = 'refresh-message';
+        container.appendChild(messageContainer);
+    }
+
+    try {
+        const response = await fetch('', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `section=${section}`
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to refresh data');
+        }
+
+        if (section === 'basic') {
+            // Update stats with new data
+            const updates = {
+                'stars': data.data.stars,
+                'forks': data.data.forks,
+                'watchers': data.data.watchers,
+                'network': data.data.network_count,
+                'subscribers': data.data.subscribers_count,
+                'last-updated': `Updated ${data.data.last_updated.replace('\u00a0', ' ')}`
+            };
+
+            // Update each stat if the element exists
+            for (const [key, value] of Object.entries(updates)) {
+                const element = document.querySelector(`[data-stat="${key}"]`);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'metrics') {
+            // Update metrics with new data
+            const updates = {
+                'open_issues': data.data.open_issues,
+                'closed_issues': data.data.closed_issues,
+                'total_issues': data.data.total_issues,
+                'open_pull_requests': data.data.open_pull_requests,
+                'commit_count': data.data.commit_count,
+                'last_commit_date': data.data.last_commit_date
+            };
+
+            // Update each stat if the element exists
+            for (const [key, value] of Object.entries(updates)) {
+                const element = document.querySelector(`[data-stat="${key}"]`);
+                if (element) {
+                    element.textContent = value.toLocaleString();
+                }
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'technical') {
+            // Update technical details with new data
+            const technicalElements = {
+                'primary_language': data.data.primary_language,
+                'size': `${(data.data.size / 1024).toFixed(2)} MB`,
+                'license': data.data.license,
+                'release_name': data.data.release_name,
+                'release_date': data.data.release_date,
+                'last_commit_date': data.data.last_commit_date
+            };
+
+            // Update each technical element
+            for (const [key, value] of Object.entries(technicalElements)) {
+                const element = document.querySelector(`[data-tech="${key}"]`);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'community') {
+            const contributorsContainer = document.querySelector('.contributors-grid');
+            if (!contributorsContainer) return;
+
+            const communityData = data.data; 
+
+            // Update total count
+            const totalCountEl = document.querySelector('[data-community="total-count"]');
+            if (totalCountEl) {
+                totalCountEl.textContent = `${communityData.total_contributors.toLocaleString()} total contributors`;
+            }
+
+            // Update contributors grid
+            let contributorsHtml = '';
+            communityData.contributors.forEach(contributor => {
+                contributorsHtml += `
+                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
+                        <img src="${contributor.avatar_url}" width="30" height="30" alt="${contributor.name}" class="w-12 h-12 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform">
+                        <div class="flex-grow">
+                            <div class="font-medium text-gray-900">
+                                ${contributor.name}
+                                ${contributor.verified ? '<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>' : ''}
+                            </div>
+                            <div class="text-sm text-gray-500">${contributor.contributions.toLocaleString()} commits</div>
+                        </div>
+                        <a href="${contributor.github_url}" target="_blank" class="p-2 text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                            </svg>
+                        </a>
+                    </div>
+                `;
+            });
+            
+            contributorsContainer.innerHTML = contributorsHtml;
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'contributor_stats') {
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+
+            window.location.reload();
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        messageContainer.className = 'refresh-message text-sm text-red-600';
+        messageContainer.textContent = error.message;
+    } finally {
+        // Remove loading state only after all UI updates are done
+        requestAnimationFrame(() => {
+            button.classList.remove('refresh_spinner');
+        });
+        
+        // Remove message after 5 seconds
+        setTimeout(() => {
+            if (messageContainer && messageContainer.parentElement) {
+                messageContainer.remove();
+            }
+        }, 5000);
+    }
+};
+
+function updateContributorStats(timePeriod, page = 1) {
+    // Show loading state
+    const tableContainer = document.querySelector('.contributor-stats-table');
+    if (!tableContainer) return;  // Guard clause
+    
+    tableContainer.classList.add('opacity-50');
+    
+    // Prepare form data
+    const formData = new FormData();
+    formData.append('time_period', timePeriod);
+    formData.append('page', page);
+    
+    // Get the current URL
+    const currentUrl = new URL(window.location.href);
+    
+    // Update query parameters
+    currentUrl.searchParams.set('time_period', timePeriod);
+    currentUrl.searchParams.set('page', page);
+    
+    // Make AJAX request
+    fetch(window.location.pathname, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text();
+    })
+    .then(html => {
+        tableContainer.innerHTML = html;
+        // Update URL without page reload
+        window.history.pushState({}, '', currentUrl.toString());
+        
+        // Re-attach event listeners to new pagination buttons
+        attachPaginationListeners();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        tableContainer.classList.remove('opacity-50');
+    })
+    .finally(() => {
+        tableContainer.classList.remove('opacity-50');
+    });
+}
+
+// Function to attach pagination event listeners
+function attachPaginationListeners() {
+    document.querySelectorAll('.pagination-link').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = e.target.dataset.page;
+            const timePeriod = document.getElementById('time-period-select').value;
+            updateContributorStats(timePeriod, page);
+        });
+    });
+}
+
+// Initial attachment of listeners
+document.addEventListener('DOMContentLoaded', attachPaginationListeners);
+
+    </script>
+{% endblock after_js %}

@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 import uuid
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -12,7 +13,7 @@ from captcha.fields import CaptchaField
 from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -56,8 +57,8 @@ class Tag(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # make the slug using slugify
-        self.slug = slugify(self.name)
+        if not self.slug:
+            self.slug = slugify(self.name)
         super(Tag, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -76,7 +77,9 @@ class Integration(models.Model):
         blank=True,
     )
     organization = models.ForeignKey(
-        "Organization", on_delete=models.CASCADE, related_name="organization_integrations"
+        "Organization",
+        on_delete=models.CASCADE,
+        related_name="organization_integrations",
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -359,6 +362,7 @@ class Issue(models.Model):
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    comments = GenericRelation("comments.Comment")
 
     def __unicode__(self):
         return self.description
@@ -455,6 +459,7 @@ if is_using_gcs():
                 logger.error(
                     f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
                 )
+
 else:
 
     @receiver(post_delete, sender=Issue)
@@ -488,6 +493,7 @@ if is_using_gcs():
                 logger.error(
                     f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
                 )
+
 else:
 
     @receiver(post_delete, sender=IssueScreenshot)
@@ -605,7 +611,11 @@ class UserProfile(models.Model):
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
     team = models.ForeignKey(
-        Organization, on_delete=models.SET_NULL, related_name="user_profiles", null=True, blank=True
+        Organization,
+        on_delete=models.SET_NULL,
+        related_name="user_profiles",
+        null=True,
+        blank=True,
     )
 
     def check_team_membership(self):
@@ -665,9 +675,9 @@ class UserProfile(models.Model):
                 elif self.current_streak == 30:
                     points_awarded += 50
                     reason = "30-day streak milestone achieved!"
-                elif self.current_streak == 90:
+                elif self.current_streak == 100:
                     points_awarded += 150
-                    reason = "90-day streak milestone achieved!"
+                    reason = "100-day streak milestone achieved!"
                 elif self.current_streak == 180:
                     points_awarded += 300
                     reason = "180-day streak milestone achieved!"
@@ -699,7 +709,7 @@ class UserProfile(models.Model):
             7: "Weekly Streak",
             15: "Half-Month Streak",
             30: "Monthly Streak",
-            90: "Three Month Streak",
+            100: "100 Day Streak",
             180: "Six Month Streak",
             365: "Yearly Streak",
         }
@@ -730,7 +740,7 @@ class IP(models.Model):
     user = models.CharField(max_length=150, null=True, blank=True)
     issuenumber = models.IntegerField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
-    agent = models.CharField(max_length=255, null=True, blank=True)
+    agent = models.TextField(null=True, blank=True)
     count = models.BigIntegerField(default=1)
     path = models.CharField(max_length=255, null=True, blank=True)
     method = models.CharField(max_length=10, null=True, blank=True)
@@ -887,57 +897,43 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        null=True,
+        blank=True,
+        related_name="projects",
+        on_delete=models.CASCADE,
+    )
     name = models.CharField(max_length=255)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
-    github_url = models.URLField()
-    wiki_url = models.URLField(null=True, blank=True)
-    homepage_url = models.URLField(null=True, blank=True)
-    logo_url = models.URLField()
-    stars = models.IntegerField(default=0)
-    forks = models.IntegerField(default=0)
-    contributor_count = models.IntegerField(default=0)
-    release_name = models.CharField(max_length=255, null=True, blank=True)
-    release_datetime = models.DateTimeField(null=True, blank=True)
-    external_links = models.JSONField(default=list, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-    contributors = models.ManyToManyField(Contributor, related_name="projects", blank=True)
-    tags = models.ManyToManyField(Tag, blank=True)
-    last_updated = models.DateTimeField(null=True, blank=True)
-    total_issues = models.IntegerField(default=0)
-    repo_visit_count = models.IntegerField(default=0)
+    url = models.URLField(
+        unique=True, null=True, blank=True
+    )  # Made url nullable in case of no website
     project_visit_count = models.IntegerField(default=0)
-    watchers = models.IntegerField(default=0)
-    open_pull_requests = models.IntegerField(default=0)
-    primary_language = models.CharField(max_length=50, null=True, blank=True)
-    license = models.CharField(max_length=100, null=True, blank=True)
-    last_commit_date = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(null=True, blank=True)
-    network_count = models.IntegerField(default=0)
-    subscribers_count = models.IntegerField(default=0)
-    open_issues = models.IntegerField(default=0)
-    closed_issues = models.IntegerField(default=0)
-    size = models.IntegerField(default=0)
-    commit_count = models.IntegerField(default=0)
+    twitter = models.CharField(max_length=30, null=True, blank=True)
+    facebook = models.URLField(null=True, blank=True)
+    logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)  # Standardized field name
+    modified = models.DateTimeField(auto_now=True)  # Standardized field name
+    # add languages
+    # add tags
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            slug = slugify(self.name)
+            # Replace dots with dashes and limit length
+            slug = slug.replace(".", "-")
+            if len(slug) > 50:
+                slug = slug[:50]
+            # Ensure we have a valid slug
+            if not slug:
+                slug = f"project-{int(time.time())}"
+            self.slug = slug
+        super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
         return self.name
-
-    def get_top_contributors(self, limit=30):
-        return self.contributors.order_by("-contributions")[:limit]
-
-
-# class ContributorStats(models.Model):
-#     username = models.CharField(max_length=255, unique=True)
-#     commits = models.IntegerField(default=0)
-#     issues_opened = models.IntegerField(default=0)
-#     issues_closed = models.IntegerField(default=0)
-#     prs = models.IntegerField(default=0)
-#     comments = models.IntegerField(default=0)
-#     assigned_issues = models.IntegerField(default=0)
-#     created = models.DateTimeField(auto_now_add=True)
 
 
 class Contribution(models.Model):
@@ -1031,7 +1027,11 @@ class TimeLog(models.Model):
     )
     # associate organization with sizzle
     organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="time_logs", null=True, blank=True
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="time_logs",
+        null=True,
+        blank=True,
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
@@ -1184,7 +1184,11 @@ class UserBadge(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE)
     awarded_by = models.ForeignKey(
-        User, null=True, blank=True, related_name="awarded_badges", on_delete=models.SET_NULL
+        User,
+        null=True,
+        blank=True,
+        related_name="awarded_badges",
+        on_delete=models.SET_NULL,
     )
     awarded_at = models.DateTimeField(auto_now_add=True)
     reason = models.TextField(blank=True, null=True)
@@ -1201,6 +1205,7 @@ class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     image = models.ImageField(upload_to="blog_posts")
+    comments = GenericRelation("comments.Comment")
 
     class Meta:
         db_table = "blog_post"
@@ -1237,3 +1242,97 @@ def verify_file_upload(sender, instance, **kwargs):
             raise ValidationError(
                 f"Image '{instance.image.name}' was not uploaded to the storage backend."
             )
+
+
+class Repo(models.Model):
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
+    repo_url = models.URLField(unique=True)
+    homepage_url = models.URLField(null=True, blank=True)
+    is_main = models.BooleanField(default=False)
+    is_wiki = models.BooleanField(default=False)
+    stars = models.IntegerField(default=0)
+    forks = models.IntegerField(default=0)
+    open_issues = models.IntegerField(default=0)
+    tags = models.ManyToManyField("Tag", blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
+    total_issues = models.IntegerField(default=0)
+    # rename this to repo_visit_count and make sure the github badge works with this
+    repo_visit_count = models.IntegerField(default=0)
+    watchers = models.IntegerField(default=0)
+    open_pull_requests = models.IntegerField(default=0)
+    primary_language = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(max_length=100, null=True, blank=True)
+    last_commit_date = models.DateTimeField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    network_count = models.IntegerField(default=0)
+    subscribers_count = models.IntegerField(default=0)
+    closed_issues = models.IntegerField(default=0)
+    size = models.IntegerField(default=0)
+    commit_count = models.IntegerField(default=0)
+    release_name = models.CharField(max_length=255, null=True, blank=True)
+    release_datetime = models.DateTimeField(null=True, blank=True)
+    logo_url = models.URLField(null=True, blank=True)
+    contributor_count = models.IntegerField(default=0)
+    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            # Replace dots with dashes and limit length
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
+            # Ensure we have a valid slug
+            if not base_slug:
+                base_slug = f"repo-{int(time.time())}"
+
+            unique_slug = base_slug
+            counter = 1
+            while Repo.objects.filter(slug=unique_slug).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+
+            self.slug = unique_slug
+        super(Repo, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.project.name}/{self.name}"
+
+
+class ContributorStats(models.Model):
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="stats")
+    repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="stats")
+
+    # This will represent either a specific day or the first day of a month.
+    date = models.DateField()
+
+    # Store counts
+    commits = models.PositiveIntegerField(default=0)
+    issues_opened = models.PositiveIntegerField(default=0)
+    issues_closed = models.PositiveIntegerField(default=0)
+    pull_requests = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+
+    # "day" for daily entries, "month" for monthly entries
+    granularity = models.CharField(
+        max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day"
+    )
+
+    class Meta:
+        # You can't have two different stats for the same date+granularity
+        unique_together = ("contributor", "repo", "date", "granularity")
+
+    def __str__(self):
+        return (
+            f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        )

@@ -1,4 +1,5 @@
 import json
+import smtplib
 import uuid
 from datetime import datetime
 from urllib.parse import urlparse
@@ -461,19 +462,19 @@ class LeaderboardApiViewSet(APIView):
 
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
-        elif leaderboard_type == "companies":
+        elif leaderboard_type == "organizations":
             return self.organization_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
     def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
-        companies = (
+        organizations = (
             Organization.objects.values()
             .annotate(issue_count=Count("domain__issue"))
             .order_by("-issue_count")
         )
-        page = paginator.paginate_queryset(companies, request)
+        page = paginator.paginate_queryset(organizations, request)
 
         return paginator.get_paginated_response(page)
 
@@ -652,45 +653,68 @@ class BugHuntApiViewsetV2(APIView):
 
 
 class InviteFriendApiViewset(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
-        email = request.POST.get("email")
-        already_exists = User.objects.filter(email=email).exists()
+        email = request.data.get("email")
 
-        if already_exists:
-            return Response("USER EXISTS", status=409)
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
 
-        site = get_current_site(self.request)
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "User already exists"}, status=400)
 
-        invite = InviteFriend.objects.create(sender=request.user, recipient=email, sent=False)
+        try:
+            current_site = get_current_site(request)
+            referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+            referral_link = (
+                f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
+            )
 
-        mail_status = send_mail(
-            "Inivtation to {site} from {user}".format(site=site.name, user=request.user.username),
-            "You have been invited by {user} to join {site} community.".format(
-                user=request.user.username, site=site.name
-            ),
-            settings.DEFAULT_FROM_EMAIL,
-            [invite.recipient],
-        )
+            # Prepare email content
+            subject = f"Join me on {current_site.name}!"
+            message = render_to_string(
+                "email/invite_friend.txt",
+                {
+                    "sender": request.user.username,
+                    "referral_link": referral_link,
+                    "site_name": current_site.name,
+                    "site_domain": current_site.domain,
+                },
+            )
 
-        if mail_status:
-            invite.sent = True
-            invite.save()
+            # Send the invitation email
+            email_result = send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
 
-        if (
-            mail_status
-            and InviteFriend.objects.filter(sender=self.request.user, sent=True).count() == 2
-        ):
-            Points.objects.create(user=self.request.user, score=1, reason="Invited friend")
-            InviteFriend.objects.filter(sender=self.request.user).delete()
+            if email_result == 1:
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Invitation sent successfully",
+                        "referral_link": referral_link,
+                        "email_status": "delivered",
+                    }
+                )
+            else:
+                return Response(
+                    {"error": "Email failed to send", "email_status": "failed"}, status=500
+                )
 
-        return Response(
-            {
-                "title": "SUCCESS",
-                "Points": "+1",
-                "message": "An email has been sent to your friend. Keep inviting your friends and get points!",
-            },
-            status=200,
-        )
+        except smtplib.SMTPException as e:
+            return Response(
+                {
+                    "error": "Failed to send invitation email for an unexpected reason",
+                    "email_status": "error",
+                },
+                status=500,
+            )
 
 
 class OrganizationViewSet(viewsets.ModelViewSet):
