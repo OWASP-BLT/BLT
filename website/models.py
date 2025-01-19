@@ -1336,3 +1336,22 @@ class ContributorStats(models.Model):
         return (
             f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
         )
+
+
+class ServiceStatus(models.Model):
+    timestamp = models.DateTimeField(auto_now=True)
+    service_name = models.CharField(max_length=100)
+    is_operational = models.BooleanField(default=False)
+    response_time = models.FloatField(null=True)
+    details = models.JSONField(default=dict)
+    last_error = models.TextField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["service_name", "timestamp"]),
+        ]
+        get_latest_by = "timestamp"
+
+    @classmethod
+    def get_latest_status(cls, service_name):
+        return cls.objects.filter(service_name=service_name).order_by("-timestamp").first()

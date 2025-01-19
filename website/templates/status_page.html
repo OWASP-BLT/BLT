@@ -195,5 +195,24 @@
                 {% endif %}
             </div>
         </div>
+        <div class="status-card">
+            <h3>Slack Integration</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.slack == None %}gray{% elif status.slack %}green{% else %}red{% endif %}"></div>
+                {% if status.slack == None %}
+                    <span>Status Unknown</span>
+                {% elif status.slack %}
+                    <span>Operational</span>
+                    {% if status.slack_last_attempt %}
+                        <p><strong>Last Activity:</strong> {{ status.slack_last_attempt|timesince }} ago</p>
+                    {% endif %}
+                {% else %}
+                    <span>Not Operational</span>
+                    {% if status.slack_last_attempt %}
+                        <p><strong>Last Attempt:</strong> {{ status.slack_last_attempt|timesince }} ago</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
     </div>
 {% endblock content %}

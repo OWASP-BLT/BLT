@@ -3,6 +3,7 @@ import os
 import subprocess
 import tracemalloc
 import urllib
+from datetime import timedelta
 
 import psutil
 import requests
@@ -16,16 +17,16 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import connection
+from django.db import DatabaseError, OperationalError, ProgrammingError, connection
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -38,6 +39,7 @@ from website.models import (
     Domain,
     Issue,
     PRAnalysisReport,
+    ServiceStatus,
     Suggestion,
     SuggestionVotes,
     UserProfile,
@@ -101,168 +103,235 @@ def memory_usage_by_module(limit=1000):
 DAILY_REQUEST_LIMIT = 10
 vector_store = None
 
+# Constants
+REFRESH_INTERVAL = timedelta(hours=24)
+
+# Fetch environment variables once
+ENV_VARS = {
+    "BITCOIN_RPC_USER": os.getenv("BITCOIN_RPC_USER"),
+    "BITCOIN_RPC_PASSWORD": os.getenv("BITCOIN_RPC_PASSWORD"),
+    "BITCOIN_RPC_HOST": os.getenv("BITCOIN_RPC_HOST", "127.0.0.1"),
+    "BITCOIN_RPC_PORT": os.getenv("BITCOIN_RPC_PORT", "8332"),
+    "SENDGRID_API_KEY": os.getenv("SENDGRID_API_KEY"),
+    "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN"),
+    "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+}
+
+
+def needs_refresh(service_name):
+    """Helper function to determine if a status update is needed."""
+    service_status = ServiceStatus.get_latest_status(service_name)
+    return not service_status or service_status.timestamp < timezone.now() - REFRESH_INTERVAL
+
 
 def check_status(request):
-    """
-    Status check function with configurable components.
-    Enable/disable specific checks using the CONFIG constants.
-    """
-    # Configuration flags
-    CHECK_BITCOIN = False
-    CHECK_SENDGRID = False
-    CHECK_GITHUB = False
-    CHECK_OPENAI = False
-    CHECK_MEMORY = True
-    CHECK_DATABASE = False
-    CHECK_REDIS = False
-    CACHE_TIMEOUT = 60
+    """Checks and updates the status of various services."""
 
-    status_data = cache.get("service_status")
+    # Initialize status dictionary
+    status_data = {}
 
-    if not status_data:
-        status_data = {
-            "bitcoin": None if not CHECK_BITCOIN else False,
-            "bitcoin_block": None,
-            "sendgrid": None if not CHECK_SENDGRID else False,
-            "github": None if not CHECK_GITHUB else False,
-            "openai": None if not CHECK_OPENAI else False,
-            "db_connection_count": None if not CHECK_DATABASE else 0,
-            "redis_stats": {} if not CHECK_REDIS else {},
-        }
+    ## ---- MEMORY CHECK ---- ##
+    if needs_refresh("memory"):
+        tracemalloc.start()
 
-        if CHECK_MEMORY:
-            status_data.update(
-                {
-                    "memory_info": psutil.virtual_memory()._asdict(),
-                    "top_memory_consumers": [],
-                    "memory_profiling": {},
-                    "memory_by_module": [],
-                }
+        memory_info = psutil.virtual_memory()._asdict()
+        top_consumers = sorted(
+            [
+                proc.info
+                for proc in psutil.process_iter(["pid", "name", "memory_info"])
+                if proc.info.get("memory_info")
+            ],
+            key=lambda x: x["memory_info"].rss,
+            reverse=True,
+        )[:5]
+
+        current, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        ServiceStatus.objects.update_or_create(
+            service_name="memory",
+            defaults={
+                "is_operational": True,
+                "details": {
+                    "memory_info": memory_info,
+                    "top_consumers": top_consumers,
+                    "current_memory": current,
+                    "peak_memory": peak,
+                },
+            },
+        )
+
+    ## ---- BITCOIN CHECK ---- ##
+    if needs_refresh("bitcoin"):
+        try:
+            response = requests.post(
+                f"http://{ENV_VARS['BITCOIN_RPC_HOST']}:{ENV_VARS['BITCOIN_RPC_PORT']}",
+                json={
+                    "jsonrpc": "1.0",
+                    "id": "curltest",
+                    "method": "getblockchaininfo",
+                    "params": [],
+                },
+                auth=(ENV_VARS["BITCOIN_RPC_USER"], ENV_VARS["BITCOIN_RPC_PASSWORD"]),
+                timeout=5,
+            )
+            ServiceStatus.objects.update_or_create(
+                service_name="bitcoin",
+                defaults={
+                    "is_operational": response.status_code == 200,
+                    "response_time": response.elapsed.total_seconds(),
+                    "details": response.json().get("result", {}),
+                },
+            )
+        except requests.RequestException as e:
+            ServiceStatus.objects.update_or_create(
+                service_name="bitcoin", defaults={"is_operational": False, "last_error": str(e)}
             )
 
-        # Bitcoin RPC check
-        if CHECK_BITCOIN:
-            bitcoin_rpc_user = os.getenv("BITCOIN_RPC_USER")
-            bitcoin_rpc_password = os.getenv("BITCOIN_RPC_PASSWORD")
-            bitcoin_rpc_host = os.getenv("BITCOIN_RPC_HOST", "127.0.0.1")
-            bitcoin_rpc_port = os.getenv("BITCOIN_RPC_PORT", "8332")
-
+    ## ---- SENDGRID CHECK ---- ##
+    if needs_refresh("sendgrid"):
+        if ENV_VARS["SENDGRID_API_KEY"]:
             try:
-                print("Checking Bitcoin RPC...")
-                response = requests.post(
-                    f"http://{bitcoin_rpc_host}:{bitcoin_rpc_port}",
-                    json={
-                        "jsonrpc": "1.0",
-                        "id": "curltest",
-                        "method": "getblockchaininfo",
-                        "params": [],
-                    },
-                    auth=(bitcoin_rpc_user, bitcoin_rpc_password),
+                response = requests.get(
+                    "https://api.sendgrid.com/v3/user/account",
+                    headers={"Authorization": f"Bearer {ENV_VARS['SENDGRID_API_KEY']}"},
                     timeout=5,
                 )
-                if response.status_code == 200:
-                    status_data["bitcoin"] = True
-                    status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
-            except requests.exceptions.RequestException as e:
-                print(f"Bitcoin RPC Error: {e}")
+                ServiceStatus.objects.update_or_create(
+                    service_name="sendgrid",
+                    defaults={
+                        "is_operational": response.status_code == 200,
+                        "response_time": response.elapsed.total_seconds(),
+                    },
+                )
+            except requests.RequestException as e:
+                ServiceStatus.objects.update_or_create(
+                    service_name="sendgrid",
+                    defaults={"is_operational": False, "last_error": str(e)},
+                )
+        else:
+            ServiceStatus.objects.update_or_create(
+                service_name="sendgrid",
+                defaults={"is_operational": False, "last_error": "No API key found"},
+            )
 
-        # SendGrid API check
-        if CHECK_SENDGRID:
-            sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
-            if sendgrid_api_key:
-                try:
-                    print("Checking SendGrid API...")
-                    response = requests.get(
-                        "https://api.sendgrid.com/v3/user/account",
-                        headers={"Authorization": f"Bearer {sendgrid_api_key}"},
-                        timeout=5,
-                    )
-                    status_data["sendgrid"] = response.status_code == 200
-                except requests.exceptions.RequestException as e:
-                    print(f"SendGrid API Error: {e}")
-
-        # GitHub API check
-        if CHECK_GITHUB:
-            github_token = os.getenv("GITHUB_TOKEN")
-            if github_token:
-                try:
-                    print("Checking GitHub API...")
-                    response = requests.get(
-                        "https://api.github.com/user/repos",
-                        headers={"Authorization": f"token {github_token}"},
-                        timeout=5,
-                    )
-                    status_data["github"] = response.status_code == 200
-                except requests.exceptions.RequestException as e:
-                    print(f"GitHub API Error: {e}")
-
-        # OpenAI API check
-        if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY")
-            if openai_api_key:
-                try:
-                    print("Checking OpenAI API...")
-                    response = requests.get(
-                        "https://api.openai.com/v1/models",
-                        headers={"Authorization": f"Bearer {openai_api_key}"},
-                        timeout=5,
-                    )
-                    status_data["openai"] = response.status_code == 200
-                except requests.exceptions.RequestException as e:
-                    print(f"OpenAI API Error: {e}")
-
-        # Memory usage checks
-        if CHECK_MEMORY:
-            print("Getting memory usage information...")
-            tracemalloc.start()
-
-            # Get top memory consumers
-            for proc in psutil.process_iter(["pid", "name", "memory_info"]):
-                try:
-                    proc_info = proc.info
-                    proc_info["memory_info"] = proc_info["memory_info"]._asdict()
-                    status_data["top_memory_consumers"].append(proc_info)
-                except (
-                    psutil.NoSuchProcess,
-                    psutil.AccessDenied,
-                    psutil.ZombieProcess,
-                ):
-                    pass
-
-            status_data["top_memory_consumers"] = sorted(
-                status_data["top_memory_consumers"],
-                key=lambda x: x["memory_info"]["rss"],
-                reverse=True,
-            )[:5]
-
-            # Memory profiling info
-            current, peak = tracemalloc.get_traced_memory()
-            status_data["memory_profiling"]["current"] = current
-            status_data["memory_profiling"]["peak"] = peak
-            tracemalloc.stop()
-
-        # Database connection check
-        if CHECK_DATABASE:
-            print("Getting database connection count...")
-            if (
-                settings.DATABASES.get("default", {}).get("ENGINE")
-                == "django.db.backends.postgresql"
-            ):
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
-                    status_data["db_connection_count"] = cursor.fetchone()[0]
-
-        # Redis stats
-        if CHECK_REDIS:
-            print("Getting Redis stats...")
+    ## ---- GITHUB CHECK ---- ##
+    if needs_refresh("github"):
+        if ENV_VARS["GITHUB_TOKEN"]:
             try:
-                redis_client = get_redis_connection("default")
-                status_data["redis_stats"] = redis_client.info()
-            except Exception as e:
-                print(f"Redis error or not supported: {e}")
+                response = requests.get(
+                    "https://api.github.com/user/repos",
+                    headers={"Authorization": f"token {ENV_VARS['GITHUB_TOKEN']}"},
+                    timeout=5,
+                )
+                ServiceStatus.objects.update_or_create(
+                    service_name="github",
+                    defaults={
+                        "is_operational": response.status_code == 200,
+                        "response_time": response.elapsed.total_seconds(),
+                    },
+                )
+            except requests.RequestException as e:
+                ServiceStatus.objects.update_or_create(
+                    service_name="github", defaults={"is_operational": False, "last_error": str(e)}
+                )
+        else:
+            ServiceStatus.objects.update_or_create(
+                service_name="github",
+                defaults={"is_operational": False, "last_error": "No API key found"},
+            )
 
-        # Cache the results
-        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
+    ## ---- OPENAI CHECK ---- ##
+    if needs_refresh("openai"):
+        if ENV_VARS["OPENAI_API_KEY"]:
+            try:
+                response = requests.get(
+                    "https://api.openai.com/v1/models",
+                    headers={"Authorization": f"Bearer {ENV_VARS['OPENAI_API_KEY']}"},
+                    timeout=5,
+                )
+                ServiceStatus.objects.update_or_create(
+                    service_name="openai",
+                    defaults={
+                        "is_operational": response.status_code == 200,
+                        "response_time": response.elapsed.total_seconds(),
+                    },
+                )
+            except requests.RequestException as e:
+                ServiceStatus.objects.update_or_create(
+                    service_name="openai", defaults={"is_operational": False, "last_error": str(e)}
+                )
+        else:
+            ServiceStatus.objects.update_or_create(
+                service_name="openai",
+                defaults={"is_operational": False, "last_error": "No API key found"},
+            )
+
+    ## ---- DATABASE CHECK ---- ##
+    if needs_refresh("database"):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+                connection_count = cursor.fetchone()[0]
+                ServiceStatus.objects.update_or_create(
+                    service_name="database",
+                    defaults={
+                        "is_operational": True,
+                        "details": {"connection_count": connection_count},
+                    },
+                )
+        except (OperationalError, ProgrammingError, DatabaseError) as e:
+            ServiceStatus.objects.update_or_create(
+                service_name="database", defaults={"is_operational": False, "last_error": str(e)}
+            )
+
+    ## ---- REDIS CHECK ---- ##
+    if needs_refresh("redis"):
+        try:
+            redis_client = get_redis_connection("default")
+            ServiceStatus.objects.update_or_create(
+                service_name="redis",
+                defaults={"is_operational": True, "details": redis_client.info()},
+            )
+        except Exception as e:
+            ServiceStatus.objects.update_or_create(
+                service_name="redis", defaults={"is_operational": False, "last_error": str(e)}
+            )
+
+    ## ---- FETCH LATEST STATUS ---- ##
+    bitcoin_status = ServiceStatus.get_latest_status("bitcoin")
+    sendgrid_status = ServiceStatus.get_latest_status("sendgrid")
+    github_status = ServiceStatus.get_latest_status("github")
+    openai_status = ServiceStatus.get_latest_status("openai")
+    memory_status = ServiceStatus.get_latest_status("memory")
+    database_status = ServiceStatus.get_latest_status("database")
+    redis_status = ServiceStatus.get_latest_status("redis")
+    slack_status = ServiceStatus.get_latest_status("slack")
+
+    if not slack_status:
+        slack_status = ServiceStatus.objects.create(service_name="slack")
+
+    status_data = {
+        "bitcoin": bitcoin_status.is_operational if bitcoin_status else None,
+        "bitcoin_block": bitcoin_status.details if bitcoin_status else {},
+        "sendgrid": sendgrid_status.is_operational if sendgrid_status else None,
+        "github": github_status.is_operational if github_status else None,
+        "openai": openai_status.is_operational if openai_status else None,
+        "memory_info": memory_status.details.get("memory_info", {}) if memory_status else {},
+        "top_memory_consumers": memory_status.details.get("top_consumers", [])
+        if memory_status
+        else [],
+        "memory_profiling": {
+            "current": memory_status.details.get("current_memory", 0) if memory_status else 0,
+            "peak": memory_status.details.get("peak_memory", 0) if memory_status else 0,
+        },
+        "db_connection_count": database_status.details.get("connection_count", 0)
+        if database_status
+        else 0,
+        "redis_stats": redis_status.details if redis_status else {},
+        "slack": slack_status.is_operational if slack_status else None,
+        "slack_last_attempt": slack_status.timestamp if slack_status else None,
+    }
 
     return render(request, "status_page.html", {"status": status_data})
 
