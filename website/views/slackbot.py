@@ -36,7 +36,7 @@ CACHE_DURATION = 3600
 
 
 def get_all_owasp_repos():
-    """Fetch ALL repos from the OWASP org by paginating."""
+    """Fetch All repos from the OWASP org by paginating through the results."""
     current_time = time.time()
     if repo_cache["data"] and (current_time - repo_cache["timestamp"] < CACHE_DURATION):
         logger.debug("Using cached OWASP repositories.")
@@ -55,7 +55,7 @@ def get_all_owasp_repos():
 
         page_data = resp.json()
         if not page_data:
-            break  # no more repos
+            break  # no more repositories
         all_repos.extend(page_data)
         page += 1
 
@@ -270,7 +270,7 @@ if app:
 
     @app.action("pagination_next")
     def handle_pagination_next(ack, body, client):
-        """Handles the 'Next' pagination button."""
+        """Handles the 'Next' pagination button"""
         try:
             ack()
             user_id = body["user"]["id"]
@@ -324,7 +324,7 @@ if app:
             {"type": "actions", "elements": []},
         ]
 
-        # Add Prev button if not on the first page
+        # Add Prev button if not on the first page already
         if current_page > 0:
             blocks[1]["elements"].append(
                 {
@@ -335,7 +335,7 @@ if app:
                 }
             )
 
-        # Next button if not on last page
+        # Next button if not on last page already
         if current_page < (total_pages - 1):
             blocks[1]["elements"].append(
                 {
