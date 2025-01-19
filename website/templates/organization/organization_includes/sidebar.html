@@ -18,6 +18,12 @@
                     <span>Analytics</span>
                 </li>
             </a>
+            <a href="{% url 'organization_team_overview' organization %}">
+                <li id="team-overview" class="side-nav__item">
+                    <i class="fa-sharp fa-solid fa-users fa-lg"></i>
+                    <span>Team Overview</span>
+                </li>
+            </a>
             <a href="{% url 'organization_manage_bugs' organization %}">
                 <li id="bugs" class="side-nav__item">
                     <i class="fa-sharp fa-solid fa-bug fa-lg"></i>
@@ -38,7 +44,7 @@
             </a>
             <a href="{% url 'organization_manage_roles' organization %}">
                 <li id="domains" class="side-nav__item">
-                    <i class="fa-sharp fa-solid fa-users fa-lg"></i>
+                    <i class="fa-solid fa-network-wired fa-lg"></i>
                     <span>Roles</span>
                 </li>
             </a>

@@ -22,6 +22,7 @@ from django.views.generic import View
 from slack_bolt import App
 
 from website.models import (
+    DailyStatusReport,
     Domain,
     Hunt,
     HuntPrize,
@@ -31,6 +32,7 @@ from website.models import (
     IssueScreenshot,
     Organization,
     SlackIntegration,
+    UserProfile,
     Winner,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
@@ -428,6 +430,84 @@ class OrganizationDashboardIntegrations(View):
 
         context = {"organization": id, "slack_integration": slack_integration}
         return render(request, "organization/organization_integrations.html", context=context)
+
+
+class OrganizationDashboardTeamOverviewView(View):
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        sort_field = request.GET.get("sort", "date")
+        sort_direction = request.GET.get("direction", "desc")
+
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+
+        organization_obj = Organization.objects.filter(id=id).first()
+
+        team_members = UserProfile.objects.filter(team=organization_obj)
+        team_member_users = [member.user for member in team_members]
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            filter_type = request.GET.get("filter_type")
+            filter_value = request.GET.get("filter_value")
+
+            reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+
+            if filter_type == "user":
+                reports = reports.filter(user_id=filter_value)
+            elif filter_type == "date":
+                reports = reports.filter(date=filter_value)
+            elif filter_type == "goal":
+                reports = reports.filter(goal_accomplished=filter_value == "true")
+            elif filter_type == "task":
+                reports = reports.filter(previous_work__icontains=filter_value)
+
+            data = []
+            for report in reports:
+                data.append(
+                    {
+                        "username": report.user.username,
+                        "avatar_url": report.user.userprofile.user_avatar.url
+                        if report.user.userprofile.user_avatar
+                        else None,
+                        "date": report.date.strftime("%B %d, %Y"),
+                        "previous_work": report.previous_work,
+                        "next_plan": report.next_plan,
+                        "blockers": report.blockers,
+                        "goal_accomplished": report.goal_accomplished,
+                        "current_mood": report.current_mood,
+                    }
+                )
+            return JsonResponse({"data": data})
+
+        daily_status_reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+
+        sort_prefix = "-" if sort_direction == "desc" else ""
+        sort_mapping = {
+            "date": "date",
+            "username": "user__username",
+            "mood": "current_mood",
+            "goal": "goal_accomplished",
+        }
+
+        if sort_field in sort_mapping:
+            daily_status_reports = daily_status_reports.order_by(
+                f"{sort_prefix}{sort_mapping[sort_field]}"
+            )
+
+        context = {
+            "organization": id,
+            "organizations": organizations,
+            "organization_obj": organization_obj,
+            "team_members": team_members,
+            "daily_status_reports": daily_status_reports,
+            "current_sort": sort_field,
+            "current_direction": sort_direction,
+        }
+
+        return render(request, "organization/organization_team_overview.html", context=context)
 
 
 class OrganizationDashboardManageBugsView(View):

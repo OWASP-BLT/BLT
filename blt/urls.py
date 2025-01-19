@@ -55,6 +55,7 @@ from website.views.company import (
     OrganizationDashboardManageBugsView,
     OrganizationDashboardManageDomainsView,
     OrganizationDashboardManageRolesView,
+    OrganizationDashboardTeamOverviewView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -100,9 +101,9 @@ from website.views.issue import (
     SpecificIssuesView,
     UpdateIssue,
     change_bid_status,
-    comment_on_issue,
+    comment_on_content,
     create_github_issue,
-    delete_comment,
+    delete_content_comment,
     delete_issue,
     dislike_issue,
     fetch_current_bid,
@@ -120,7 +121,7 @@ from website.views.issue import (
     submit_bug,
     submit_pr,
     unsave_issue,
-    update_comment,
+    update_content_comment,
     vote_count,
 )
 from website.views.organization import (
@@ -174,17 +175,18 @@ from website.views.organization import (
     view_hunt,
     weekly_report,
 )
-from website.views.project import (  # ProjectBadgeView,
-    ProjectDetailView,
-    ProjectListView,
+from website.views.project import (
+    ProjectBadgeView,
     ProjectsDetailView,
     ProjectView,
+    RepoBadgeView,
     RepoDetailView,
     blt_tomato,
     create_project,
     distribute_bacon,
     select_contribution,
 )
+from website.views.slack_handlers import slack_events
 from website.views.teams import (
     TeamOverview,
     add_member,
@@ -458,19 +460,20 @@ urlpatterns = [
     ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
+    # comment on content
     path(
-        "issue/<str:issue_pk>/comment/",
-        comment_on_issue,
-        name="comment_on_issue",
+        "content/<str:content_pk>/comment/",
+        comment_on_content,
+        name="comment_on_content",
     ),
-    # UPDATE COMMENT
+    # update comment
     path(
-        "issue/<str:issue_pk>/comment/update/<str:comment_pk>/",
-        update_comment,
-        name="update_comment",
+        "content/<str:content_pk>/comment/update/<str:comment_pk>/",
+        update_content_comment,
+        name="update_content_comment",
     ),
-    # delete_comment
-    path("issue2/comment/delete/", delete_comment, name="delete_comment"),
+    # delete comment
+    path("content/comment/delete/", delete_content_comment, name="delete_content_comment"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
@@ -551,8 +554,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="coming_soon.html"),
         name="googleplayapp",
     ),
-    re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
-    re_path(r"^allprojects/$", ProjectView.as_view(), name="project_view"),
+    re_path(r"^projects/$", ProjectView.as_view(), name="project_view"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -602,10 +604,8 @@ urlpatterns = [
     re_path(r"^api/v1/createwallet/$", create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
-    path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
-    # path(
-    #     "projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"
-    # ),
+    path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    path("repos/<slug:slug>/badge/", RepoBadgeView.as_view(), name="repo-badge"),
     path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
@@ -693,6 +693,11 @@ urlpatterns = [
         "organization/<int:id>/dashboard/bugs/",
         OrganizationDashboardManageBugsView.as_view(),
         name="organization_manage_bugs",
+    ),
+    path(
+        "organization/<int:id>/dashboard/team-overview/",
+        OrganizationDashboardTeamOverviewView.as_view(),
+        name="organization_team_overview",
     ),
     path(
         "organization/<int:id>/dashboard/domains/",
@@ -852,7 +857,8 @@ urlpatterns = [
         name="similarity_scan",
     ),
     path("projects/create/", create_project, name="create_project"),
-    path("projects/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
+    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
+    path("slack/events", slack_events, name="slack_events"),
 ]
 
 if settings.DEBUG:
