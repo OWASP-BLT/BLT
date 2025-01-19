@@ -68,7 +68,13 @@ class Tag(models.Model):
 class IntegrationServices(Enum):
     SLACK = "slack"
 
+class SlackChannel(models.Model):
+    slack_channel = models.CharField(max_length=255)
+    slack_id = models.CharField(max_length=255, unique=True)
+    slack_url = models.URLField()
 
+    def __str__(self):
+        return self.slack_channel
 class Integration(models.Model):
     service_name = models.CharField(
         max_length=20,
@@ -1329,7 +1335,6 @@ class ContributorStats(models.Model):
     granularity = models.CharField(
         max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day"
     )
-
     class Meta:
         # You can't have two different stats for the same date+granularity
         unique_together = ("contributor", "repo", "date", "granularity")
