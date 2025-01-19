@@ -404,6 +404,8 @@
         notifications.forEach(notification => {
             const listItem = document.createElement('li');
             listItem.className = `p-4 hover:bg-gray-100 relative ${notification.is_read ? '' : 'bg-blue-50'}`;
+            console.log("Printing notif link")
+            console.log(notification.link)
 
             notif_icon_src = ""
             if (notification.notification_type == 'reward'){
@@ -416,20 +418,24 @@
 
 
             const content = `
-            <div class="flex items-center space-x-4 w-full notification-item" data-notification-id="${notification.id}">
-                <img src="${notif_icon_src}" class="h-12 w-12 object-cover" alt="Notification Icon">
-                <div class="flex-1">
-                    <div class="flex justify-between items-start">
-                        <p class="text-xl font-medium text-gray-900 mb-1">${notification.message}</p>
-                        ${!notification.is_read ? '<div class="flex items-center justify-center w-2 h-2 bg-red-500 rounded-full" style="min-width: 7px; min-height: 7px;"></div>' : ''}
-                    </div>
-                    <div class="flex items-center space-x-2 mt-1">
-                        <span class="text-sm text-gray-600">${new Date(notification.created_at).toLocaleString()}</span>
-                        ${!notification.is_read ? '<span class="text-sm font-medium text-blue-600">New</span>' : ''}
-                    </div>
+                <div class="flex items-center space-x-4 w-full notification-item" data-notification-id="${notification.id}" style="cursor: ${notification.link ? 'pointer' : 'default'};">
+                    ${notification.link 
+                        ? `<a href="${notification.link}" class="flex items-center space-x-4 w-full" target="_blank" rel="noopener noreferrer">`
+                        : ''}
+                        <img src="${notif_icon_src}" class="h-12 w-12 object-cover" alt="Notification Icon">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <p class="text-xl font-medium text-gray-900 mb-1">${notification.message}</p>
+                                ${!notification.is_read ? '<div class="flex items-center justify-center w-2 h-2 bg-red-500 rounded-full" style="min-width: 7px; min-height: 7px;"></div>' : ''}
+                            </div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="text-sm text-gray-600">${new Date(notification.created_at).toLocaleString()}</span>
+                                ${!notification.is_read ? '<span class="text-sm font-medium text-blue-600">New</span>' : ''}
+                            </div>
+                        </div>
+                    ${notification.link ? '</a>' : ''}
                 </div>
-            </div>
-        `;
+            `;
             listItem.innerHTML = content;
             notificationList.appendChild(listItem);
         });
@@ -475,56 +481,56 @@
 </script>
 <!--Script for Dropdown button-->
 <script>
-    const organizationsBtn = document.getElementById("organizations-btn");
-    const organizationsDropdown = document.getElementById("organizations-dropdown");
-
-    if (organizationsBtn && organizationsDropdown) {
-        organizationsBtn.addEventListener("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const isHidden = organizationsDropdown.classList.toggle('hidden');
-                           
-            if (!isHidden) {
-                const btnRect = organizationsBtn.getBoundingClientRect();
-                Object.assign(organizationsDropdown.style, {
-                    position: 'fixed',
-                    top: `${btnRect.bottom}px`,
-                    left: `${btnRect.left}px`,
-                    minWidth: `${btnRect.width}px`,
-                    display: 'block',
-                });
-            } else {
-                organizationsDropdown.style.display = 'none';
-            }
-        });
+    document.addEventListener("DOMContentLoaded", function () {
         
-        // Close dropdown when clicking outside
-        document.addEventListener("click", function (e) {
-            if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+        const organizationsBtn = document.getElementById("organizations-btn");
+        const organizationsDropdown = document.getElementById("organizations-dropdown");
+
+        if (organizationsBtn && organizationsDropdown) {
+            organizationsBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isHidden = organizationsDropdown.classList.toggle('hidden');
+                               
+                if (!isHidden) {
+                    const btnRect = organizationsBtn.getBoundingClientRect();
+                    Object.assign(organizationsDropdown.style, {
+                        position: 'fixed',
+                        top: `${btnRect.bottom}px`,
+                        left: `${btnRect.left}px`,
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
+                    });
+                } else{
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+                    organizationsDropdown.classList.add('hidden');
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+        } else {
+            console.error('Required elements not found!');
+        }
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                const iconElement = this.querySelector('i');
+                const textContent = this.textContent.trim();
+                
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+
+                selectedIcon.className = iconElement.className + ' mr-2';
+                selectedFilter.textContent = textContent;
+                
                 organizationsDropdown.classList.add('hidden');
                 organizationsDropdown.style.display = 'none';
-            }
-        });
-    } else {
-        console.error('Required elements not found!');
-    }
-
-    // Fix: Remove extra closing parenthesis here
-    document.querySelectorAll('.filter-option').forEach(option => {
-        option.addEventListener('click', function(e) {
-            e.preventDefault();
-            const iconElement = this.querySelector('i');
-            const textContent = this.textContent.trim();
-            
-            const selectedIcon = document.getElementById('selected-icon');
-            const selectedFilter = document.getElementById('selected-filter');
-
-            selectedIcon.className = iconElement.className + ' mr-2';
-            selectedFilter.textContent = textContent;
-            
-            organizationsDropdown.classList.add('hidden');
-            organizationsDropdown.style.display = 'none';
+            });
         });
     });
 </script>

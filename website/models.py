@@ -1344,6 +1344,7 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
     notification_type = models.CharField(max_length=50, default="general")
+    link = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"Notification for {self.user.username} - {self.notification_type}"

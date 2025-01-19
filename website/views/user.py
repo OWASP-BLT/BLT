@@ -802,6 +802,7 @@ def fetch_notifications(request):
             "created_at": notification.created_at,
             "is_read": notification.is_read,
             "notification_type": notification.notification_type,
+            "link": notification.link,
         }
         for notification in notifications
     ]
