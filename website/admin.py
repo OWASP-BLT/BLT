@@ -31,6 +31,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SlackChannel,
     SlackIntegration,
     Subscription,
     Suggestion,
@@ -119,6 +120,11 @@ class PaymentAdmin(admin.ModelAdmin):
 class ImageInline(admin.TabularInline):
     model = IssueScreenshot
     extra = 1
+
+
+class SlackChannelAdmin(admin.ModelAdmin):
+    list_display = ("slack_channel", "slack_id", "slack_url")
+    search_fields = ("slack_channel", "slack_id")
 
 
 class IssueAdmin(admin.ModelAdmin):
@@ -494,3 +500,4 @@ admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
+admin.site.register(SlackChannel, SlackChannelAdmin)

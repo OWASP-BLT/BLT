@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0180_rename_project_visit_count_repo_repo_visit_count"),
         ("website", "0181_alter_project_slack"),

@@ -391,7 +391,6 @@ def create_project(request):
                         status=400,
                     )
 
-
         # Validate repository URLs
         repo_urls = request.POST.getlist("repo_urls[]")
         for url in repo_urls:
