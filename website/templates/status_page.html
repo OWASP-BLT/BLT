@@ -204,12 +204,16 @@
                 {% elif status.slack %}
                     <span>Operational</span>
                     {% if status.slack_last_attempt %}
-                        <p><strong>Last Activity:</strong> {{ status.slack_last_attempt|timesince }} ago</p>
+                        <p>
+                            <strong>Last Activity:</strong> {{ status.slack_last_attempt|timesince }} ago
+                        </p>
                     {% endif %}
                 {% else %}
                     <span>Not Operational</span>
                     {% if status.slack_last_attempt %}
-                        <p><strong>Last Attempt:</strong> {{ status.slack_last_attempt|timesince }} ago</p>
+                        <p>
+                            <strong>Last Attempt:</strong> {{ status.slack_last_attempt|timesince }} ago
+                        </p>
                     {% endif %}
                 {% endif %}
             </div>
