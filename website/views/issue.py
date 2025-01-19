@@ -19,11 +19,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
+from django.core.cache import cache
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.db.transaction import atomic
 from django.dispatch import receiver
@@ -338,12 +340,22 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@transaction.atomic
 def delete_issue(request, id):
+    """Delete an issue and all related objects"""
     tokenauth = False
 
-    # Check for token in POST or GET
-    token_key = request.POST.get("token") or request.GET.get("token")
+    # Check for token in POST
+    token_key = request.POST.get("token")
 
+    # Rate limiting check for 1 minute
+    cache_key = f"delete_issue_{request.user.id if request.user.is_authenticated else 'anon'}"
+    if cache.get(cache_key):
+        messages.error(request, "Please wait before deleting another issue")
+        return redirect("/")
+    cache.set(cache_key, True, 60)
+
+    # Token authentication
     if token_key:
         try:
             token = Token.objects.get(key=token_key)
@@ -360,17 +372,34 @@ def delete_issue(request, id):
 
     if request.user.is_superuser or request.user == issue.user or tokenauth:
         try:
+            with transaction.atomic():
+                Comment.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Issue), object_id=id
+                ).delete()
+                Points.objects.filter(issue=issue).delete()
+                Activity.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Issue), object_id=id
+                ).delete()
+
             screenshots = issue.screenshots.all()
             for screenshot in screenshots:
                 screenshot.delete()
             issue.delete()
-            messages.success(request, "Issue deleted")
+
+            messages.success(request, "Issue deleted successfully")
             if tokenauth:
-                return JsonResponse("Deleted", safe=False)
+                return JsonResponse({"status": "success", "message": "Issue deleted successfully"})
+
         except Exception as e:
             messages.error(request, f"Error deleting issue: {str(e)}")
+            if tokenauth:
+                return JsonResponse(
+                    {"status": "error", "message": f"Error deleting issue: {str(e)}"}, status=500
+                )
     else:
         messages.error(request, "Permission denied")
+        if tokenauth:
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
     return redirect("/")
 
