@@ -36,7 +36,7 @@ CACHE_DURATION = 3600
 
 
 def get_all_owasp_repos():
-    """Fetch All repos from the OWASP org by paginating through the results."""
+    """Fetch ALL repos from the OWASP org by paginating through the results."""
     current_time = time.time()
     if repo_cache["data"] and (current_time - repo_cache["timestamp"] < CACHE_DURATION):
         logger.debug("Using cached OWASP repositories.")
@@ -73,10 +73,10 @@ if app:
         try:
             ack()
 
-            # Extract the search term from the command
+            # Extract the search term from the command text
             search_term = command.get("text", "").strip()
 
-            # If search term exists
+            # If search term exists then search for OWASP projects
             if search_term:
                 repos = get_all_owasp_repos()
                 if not repos:
