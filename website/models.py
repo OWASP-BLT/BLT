@@ -1263,7 +1263,7 @@ class Repo(models.Model):
     last_updated = models.DateTimeField(null=True, blank=True)
     total_issues = models.IntegerField(default=0)
     # rename this to repo_visit_count and make sure the github badge works with this
-    project_visit_count = models.IntegerField(default=0)
+    repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)

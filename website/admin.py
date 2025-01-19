@@ -14,6 +14,7 @@ from website.models import (
     ChatBotLog,
     Contribution,
     Contributor,
+    ContributorStats,
     Domain,
     Hunt,
     HuntPrize,
@@ -424,6 +425,11 @@ class ContributorAdmin(admin.ModelAdmin):
     search_fields = ["name", "github_id"]
 
 
+class ContributorStatsAdmin(admin.ModelAdmin):
+    list_display = ("contributor", "repo", "date", "granularity")
+    search_fields = ["contributor", "repo"]
+
+
 class TagAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "created")
     prepopulated_fields = {"slug": ("name",)}
@@ -456,6 +462,7 @@ class PostAdmin(admin.ModelAdmin):
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
+admin.site.register(ContributorStats, ContributorStatsAdmin)
 admin.site.register(Bid, BidAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(User, UserAdmin)
