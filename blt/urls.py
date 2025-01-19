@@ -55,6 +55,7 @@ from website.views.company import (
     OrganizationDashboardManageBugsView,
     OrganizationDashboardManageDomainsView,
     OrganizationDashboardManageRolesView,
+    OrganizationDashboardTeamOverviewView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -692,6 +693,11 @@ urlpatterns = [
         "organization/<int:id>/dashboard/bugs/",
         OrganizationDashboardManageBugsView.as_view(),
         name="organization_manage_bugs",
+    ),
+    path(
+        "organization/<int:id>/dashboard/team-overview/",
+        OrganizationDashboardTeamOverviewView.as_view(),
+        name="organization_team_overview",
     ),
     path(
         "organization/<int:id>/dashboard/domains/",
