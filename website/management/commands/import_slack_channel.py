@@ -1,13 +1,14 @@
 import requests
 from django.core.management.base import BaseCommand
-from website.models import SlackChannel
+from website.models import Project  # Replace `website` with the actual app name
 from django.conf import settings
+
 SLACK_TOKEN = settings.SLACK_TOKEN
 SLACK_API_URL = "https://slack.com/api/conversations.list"
 HEADERS = {"Authorization": f"Bearer {SLACK_TOKEN}"}
 
 class Command(BaseCommand):
-    help = "Fetch Slack channels and save them to the database"
+    help = "Fetch Slack channels and associate them with projects"
 
     def fetch_channels(self):
         url = SLACK_API_URL
@@ -37,12 +38,21 @@ class Command(BaseCommand):
         channels = self.fetch_channels()
         for channel in channels:
             if channel["name"].startswith("project-"):
-                SlackChannel.objects.update_or_create(
-                    slack_id=channel["id"],
+                project_name = channel["name"].replace("project-", "").capitalize()
+
+                # Update or create project with Slack details
+                project, created = Project.objects.update_or_create(
+                    name=project_name,
                     defaults={
                         "slack_channel": channel["name"],
-                        "slack_url": f"https://OWASP.slack.com/archives/{channel['id']}"
-                    }
+                        "slack_id": channel["id"],
+                        "slack_url": f"https://OWASP.slack.com/archives/{channel['id']}",
+                    },
                 )
 
-        self.stdout.write(f"Imported {len(channels)} Slack channels.")
+                if created:
+                    self.stdout.write(f"Created new project: {project_name}")
+                else:
+                    self.stdout.write(f"Updated existing project: {project_name}")
+
+        self.stdout.write(f"Processed {len(channels)} Slack channels.")
