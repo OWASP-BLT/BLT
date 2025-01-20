@@ -62,6 +62,16 @@
                             Visit Homepage
                         </a>
                     {% endif %}
+                    {% if repo.slack_url %}
+                        <a href="{{ repo.slack_url }}"
+                           target="_blank"
+                           class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h1v4H3v-4zm2 0h1v4H5v-4zm2 0h1v4H7v-4zm2 0h1v4H9v-4zm2 0h1v4h-1v-4zm2 0h1v4h-1v-4zm2 0h1v4h-1v-4zm2 0h1v4h-1v-4zm2 0h1v4h-1v-4zm2 0h1v4h-1v-4z" />
+                            </svg>
+                            Join Slack
+                        </a>
+                    {% endif %}
                     <a href="{{ repo.repo_url }}"
                        target="_blank"
                        class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">

@@ -916,8 +916,7 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    # add languages
-    # add tags
+    slack_url = models.URLField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1280,6 +1279,9 @@ class Repo(models.Model):
     contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created']  # Order by creation date by default
 
     def save(self, *args, **kwargs):
         if not self.slug:
