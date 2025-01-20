@@ -1220,18 +1220,19 @@ hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
 
 [[package]]
 name = "django-simple-captcha"
-version = "0.6.0"
+version = "0.6.1"
 description = "A very simple, yet powerful, Django captcha application"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-simple-captcha-0.6.0.tar.gz", hash = "sha256:d188516d326fadd2d5ad076eb89649d55c02cabafe3fdcc2154ac18e9f6d4b97"},
-    {file = "django_simple_captcha-0.6.0-py2.py3-none-any.whl", hash = "sha256:3ae9a7e650cb0cdbcfd4a75aa91fdf25dcc523ef541a7b1f004bd4357798fc03"},
+    {file = "django_simple_captcha-0.6.1-py2.py3-none-any.whl", hash = "sha256:75c4a89cf54011be54dd96fc4bfc2286f92bed88c46d247b9e504b7fc4c7cfe5"},
+    {file = "django_simple_captcha-0.6.1.tar.gz", hash = "sha256:9df5cf24e38b91af62d601f8e5189b0f6d28dbaa55a363a8b9d727703f9c35de"},
 ]
 
 [package.dependencies]
 Django = ">=4.2"
 django-ranged-response = "0.2.0"
+djangorestframework = ">=3.15.0"
 Pillow = ">=6.2.0"
 
 [package.extras]
@@ -5020,4 +5021,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "780e52e5dabecef51e218b0095e719e55efd253cd2da92ce4c64c9412a66c18e"
+content-hash = "2e10bc9deac62aa184f495199d5e750dfa93a00cfeed1592cbbc72154ee71306"
