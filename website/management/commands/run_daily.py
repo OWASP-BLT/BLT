@@ -1,8 +1,7 @@
 import logging
 
+from django.core import management
 from django.core.management.base import BaseCommand
-
-# from django.core import management
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -16,6 +15,7 @@ class Command(BaseCommand):
             logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
 
             # Add commands to be executed daily
+            management.call_command("checkin_reminder_notification")
             # management.call_command('daily_command1')
             # management.call_command('daily_command2')
         except Exception as e:
