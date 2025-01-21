@@ -2,7 +2,7 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
-from .models import Bid, IpReport, Monitor, UserProfile
+from .models import Bid, CheckIn, IpReport, Monitor, UserProfile
 
 
 class UserProfileForm(forms.ModelForm):
@@ -111,3 +111,15 @@ class GitHubURLForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
     )
+
+
+class CheckInForm(forms.ModelForm):
+    class Meta:
+        model = CheckIn
+        fields = [
+            "previous_work",
+            "next_plan",
+            "blockers",
+            "goal_accomplished",
+            "current_mood",
+        ]

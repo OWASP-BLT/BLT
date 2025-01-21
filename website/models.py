@@ -1,5 +1,6 @@
 import logging
 import os
+import random
 import time
 import uuid
 from datetime import datetime, timedelta
@@ -1336,3 +1337,44 @@ class ContributorStats(models.Model):
         return (
             f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
         )
+
+
+class DailyChallenge(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    reward_description = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+
+def get_daily_challenge():
+    challenges = DailyChallenge.objects.filter(is_active=True)
+    if not challenges.exists():
+        return None
+    return random.choice(challenges)
+
+
+class CompletedChallenge(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    challenge = models.ForeignKey(DailyChallenge, on_delete=models.CASCADE)
+    date_completed = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} completed {self.challenge.title} on {self.date_completed}"
+
+
+class CheckIn(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    daily_challenge = models.ForeignKey(
+        DailyChallenge, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    previous_work = models.TextField(blank=True, null=True)
+    next_plan = models.TextField(blank=True, null=True)
+    blockers = models.TextField(blank=True, null=True)
+    goal_accomplished = models.BooleanField(default=False)
+    current_mood = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

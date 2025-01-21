@@ -15,6 +15,13 @@
         width: 50px;
         background: #EF4444;
     }
+    .challenge-status {
+        border: 2px solid #10B981;
+        background-color: #D1FAE5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
     </style>
     <div class="bg-gray-100 min-h-screen p-6">
         {% include "includes/sidenav.html" %}
@@ -45,6 +52,25 @@
                         <h3 class="font-semibold text-gray-700 mb-3 text-xl">Blockers</h3>
                         <p class="text-gray-700 whitespace-pre-line leading-relaxed">{{ blockers }}</p>
                     </div>
+                    {% if daily_challenge %}
+                        <div class="challenge-status">
+                            <h3 class="font-semibold text-gray-700 mb-3 text-xl">Daily Challenge</h3>
+                            <p class="text-gray-700">
+                                <strong>Title:</strong> {{ daily_challenge.title }}
+                            </p>
+                            <p class="text-gray-700">
+                                <strong>Description:</strong> {{ daily_challenge.description }}
+                            </p>
+                            <p class="text-gray-700">
+                                <strong>Reward:</strong> {{ daily_challenge.reward_description }}
+                            </p>
+                            {% if checkin.challenge_completed %}
+                                <p class="text-green-600 font-bold mt-2">Challenge Completed!</p>
+                            {% else %}
+                                <p class="text-red-600 font-bold mt-2">Challenge Not Completed.</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

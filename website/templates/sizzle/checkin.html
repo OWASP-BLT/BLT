@@ -16,6 +16,13 @@
         background-color: #a1a1aa !important;
         cursor: not-allowed !important;
     }
+    .daily-challenge {
+        border: 2px solid #34D399;
+        background-color: #D1FAE5;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
     </style>
     <div class="container mx-auto p-6">
         {% include "includes/sidenav.html" %}
@@ -38,6 +45,16 @@
                            readonly />
                 </div>
             </div>
+            <!-- Display Daily Challenge -->
+            {% if daily_challenge %}
+                <div class="daily-challenge">
+                    <h2 class="text-2xl font-bold text-gray-700">Today's Challenge: {{ daily_challenge.title }}</h2>
+                    <p class="mt-2 text-gray-600">{{ daily_challenge.description }}</p>
+                    <p class="mt-2 text-gray-500">
+                        <strong>Reward:</strong> {{ daily_challenge.reward_description }}
+                    </p>
+                </div>
+            {% endif %}
             <!-- if there is already data available then show the data -->
             {% if data %}
                 <div id="report-container">

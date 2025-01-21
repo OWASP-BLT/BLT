@@ -30,9 +30,12 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from blt import settings
-from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
+from website.forms import CaptchaForm, CheckInForm, HuntForm, IpReportForm, UserProfileForm
 from website.models import (
     Activity,
+    CheckIn,
+    CompletedChallenge,
+    DailyChallenge,
     DailyStatusReport,
     Domain,
     Hunt,
@@ -47,6 +50,7 @@ from website.models import (
     UserBadge,
     Wallet,
     Winner,
+    get_daily_challenge,
 )
 from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
@@ -1105,6 +1109,82 @@ def sizzle(request):
     return render(
         request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard}
     )
+
+
+def checkin_view(request):
+    daily_challenge = get_daily_challenge()
+    if request.method == "POST":
+        form = CheckInForm(request.POST)
+        if form.is_valid():
+            checkin = form.save(commit=False)
+            checkin.user = request.user
+            checkin.daily_challenge = daily_challenge
+            checkin.save()
+            # Handle daily challenge completion
+            challenge_id = request.POST.get("challenge_id")
+            if challenge_id and daily_challenge:
+                challenge = get_object_or_404(DailyChallenge, id=challenge_id)
+                CompletedChallenge.objects.create(user=request.user, challenge=challenge)
+                messages.success(request, "Check-In submitted and Daily Challenge completed!")
+            else:
+                messages.success(request, "Check-In submitted successfully!")
+            return redirect("checkIN")
+    else:
+        form = CheckInForm()
+    context = {
+        "form": form,
+        "daily_challenge": daily_challenge,
+    }
+    return render(request, "sizzle/checkin.html", context)
+
+
+def add_sizzle_checkin(request):
+    daily_challenge = get_daily_challenge()
+    if request.method == "POST":
+        form = CheckInForm(request.POST)
+        if form.is_valid():
+            checkin = form.save(commit=False)
+            checkin.user = request.user
+            checkin.daily_challenge = daily_challenge
+            checkin.save()
+            # Handle daily challenge completion
+            challenge_id = request.POST.get("challenge_id")
+            if challenge_id and daily_challenge:
+                challenge = get_object_or_404(DailyChallenge, id=challenge_id)
+                CompletedChallenge.objects.create(user=request.user, challenge=challenge)
+                messages.success(request, "Check-In submitted and Daily Challenge completed!")
+            else:
+                messages.success(request, "Check-In submitted successfully!")
+            return redirect("sizzle_daily_log")
+    else:
+        form = CheckInForm()
+    context = {
+        "form": form,
+        "daily_challenge": daily_challenge,
+    }
+    return render(request, "add_sizzle_checkin.html", context)
+
+
+def checkin_detail_view(request, checkin_id):
+    checkin = get_object_or_404(CheckIn, id=checkin_id)
+    # Assume there's a relation to DailyChallenge
+    daily_challenge = checkin.daily_challenge if hasattr(checkin, "daily_challenge") else None
+    context = {
+        "checkin": checkin,
+        "daily_challenge": daily_challenge,
+    }
+    return render(request, "checkin_detail.html", context)
+
+
+def sizzle_daily_status_view(request):
+    reports = CheckIn.objects.filter(user=request.user)
+    # Fetch completed challenges
+    completed_challenges = CompletedChallenge.objects.filter(user=request.user)
+    context = {
+        "reports": reports,
+        "completed_challenges": completed_challenges,
+    }
+    return render(request, "sizzle_daily_status.html", context)
 
 
 def trademark_detailview(request, slug):
