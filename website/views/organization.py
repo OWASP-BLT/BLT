@@ -33,6 +33,7 @@ from blt import settings
 from website.forms import CaptchaForm, CheckInForm, HuntForm, IpReportForm, UserProfileForm
 from website.models import (
     Activity,
+    Badge,
     CheckIn,
     CompletedChallenge,
     DailyChallenge,
@@ -104,10 +105,12 @@ def organization_dashboard(request, template="index_organization.html"):
                 previous_hunt.append(hunt)
             else:
                 ongoing_hunt.append(hunt)
+        daily_challenge = get_daily_challenge()
         context = {
             "upcoming_hunts": upcoming_hunt,
             "ongoing_hunt": ongoing_hunt,
             "previous_hunt": previous_hunt,
+            "daily_challenge": daily_challenge,
         }
         return render(request, template, context)
     except:
@@ -121,7 +124,8 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
         if not user.is_active:
             return HttpResponseRedirect("/")
         organization = Organization.objects.all()
-        context = {"organizations": organization}
+        daily_challenge = get_daily_challenge()
+        context = {"organizations": organization, "daily_challenge": daily_challenge}
         return render(request, template, context)
     else:
         return redirect("/")
@@ -136,7 +140,10 @@ def admin_organization_dashboard_detail(
         if not user.is_active:
             return HttpResponseRedirect("/")
         organization = get_object_or_404(Organization, pk=pk)
-        return render(request, template, {"organization": organization})
+        daily_challenge = get_daily_challenge()
+        return render(
+            request, template, {"organization": organization, "daily_challenge": daily_challenge}
+        )
     else:
         return redirect("/")
 
@@ -196,6 +203,8 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
         )
         if hunt.result_published:
             context["winner"] = Winner.objects.get(hunt=hunt)
+        daily_challenge = get_daily_challenge()
+        context["daily_challenge"] = daily_challenge
         return render(request, template, context)
     else:
         for issue in issues:
@@ -269,11 +278,18 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
             winner.save()
             hunt.result_published = True
             hunt.save()
+            assign_badge(winner.winner, "Issue Closer")
+            assign_badge(winner.runner, "Bug Reporter")
+            assign_badge(winner.second_runner, "Code Optimizer")
             context["winner"] = winner
+            daily_challenge = get_daily_challenge()
+            context["daily_challenge"] = daily_challenge
         context["hunt"] = get_object_or_404(Hunt, pk=pk)
         context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
             Q(is_hidden=True) & ~Q(user_id=request.user.id)
         )
+        daily_challenge = get_daily_challenge()
+        context["daily_challenge"] = daily_challenge
         return render(request, template, context)
 
 
@@ -297,6 +313,8 @@ class DomainListView(ListView):
             domain_paginated = paginator.page(paginator.num_pages)
 
         context["domain"] = domain_paginated
+        daily_challenge = get_daily_challenge()
+        context["daily_challenge"] = daily_challenge
         return context
 
 
@@ -333,7 +351,8 @@ class DomainList(TemplateView):
             domain = self.model.objects.filter(organization=domain_admin.organization)
         else:
             domain = self.model.objects.filter(pk=domain_admin.domain.pk)
-        context = {"domains": domain}
+        daily_challenge = get_daily_challenge()
+        context = {"domains": domain, "daily_challenge": daily_challenge}
         return render(request, self.template_name, context)
 
 
@@ -344,7 +363,8 @@ class Joinorganization(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         wallet, created = Wallet.objects.get_or_create(user=request.user)
-        context = {"wallet": wallet}
+        daily_challenge = get_daily_challenge()
+        context = {"wallet": wallet, "daily_challenge": daily_challenge}
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -379,6 +399,7 @@ class Joinorganization(TemplateView):
             admin.organization = organization
             admin.is_active = True
             admin.save()
+            assign_badge(request.user, "Organization Creator")
             return JsonResponse({"status": "Success"})
             # company.subscription =
         elif paymentType == "card":
@@ -404,6 +425,7 @@ class Joinorganization(TemplateView):
             admin.organization = organization
             admin.is_active = True
             admin.save()
+            assign_badge(request.user, "Organization Creator")
             return JsonResponse({"status": "Success"})
         else:
             return JsonResponse({"status": "There was some error"})
@@ -463,7 +485,12 @@ class ListHunts(TemplateView):
             domain = Domain.objects.filter(id=domain).first()
             hunts = hunts.filter(domain=domain)
 
-        context = {"hunts": hunts, "domains": Domain.objects.values("id", "name").all()}
+        daily_challenge = get_daily_challenge()
+        context = {
+            "hunts": hunts,
+            "domains": Domain.objects.values("id", "name").all(),
+            "daily_challenge": daily_challenge,
+        }
 
         return render(request, self.template_name, context)
 
@@ -492,7 +519,8 @@ class DraftHunts(TemplateView):
                 hunt = self.model.objects.filter(is_published=False)
             else:
                 hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
-            context = {"hunts": hunt}
+            daily_challenge = get_daily_challenge()
+            context = {"hunts": hunt, "daily_challenge": daily_challenge}
             return render(request, self.template_name, context)
         except:
             return HttpResponseRedirect("/")
@@ -518,7 +546,8 @@ class UpcomingHunts(TemplateView):
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     new_hunt.append(hunt)
-            context = {"hunts": new_hunt}
+            daily_challenge = get_daily_challenge()
+            context = {"hunts": new_hunt, "daily_challenge": daily_challenge}
             return render(request, self.template_name, context)
         except:
             return HttpResponseRedirect("/")
@@ -543,7 +572,8 @@ class OngoingHunts(TemplateView):
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
                     new_hunt.append(hunt)
-            context = {"hunts": new_hunt}
+            daily_challenge = get_daily_challenge()
+            context = {"hunts": new_hunt, "daily_challenge": daily_challenge}
             return render(request, self.template_name, context)
         except:
             return HttpResponseRedirect("/")
@@ -572,7 +602,8 @@ class PreviousHunts(TemplateView):
                     new_hunt.append(hunt)
                 else:
                     pass
-            context = {"hunts": new_hunt}
+            daily_challenge = get_daily_challenge()
+            context = {"hunts": new_hunt, "daily_challenge": daily_challenge}
             return render(request, self.template_name, context)
         except:
             return HttpResponseRedirect("/")
@@ -582,7 +613,12 @@ class PreviousHunts(TemplateView):
         form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
+        daily_challenge = get_daily_challenge()
+        context = {
+            "hunts": self.model.objects.filter(is_published=True),
+            "daily_challenge": daily_challenge,
+        }
+        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}), context)
 
 
 class OrganizationSettings(TemplateView):
@@ -606,10 +642,12 @@ class OrganizationSettings(TemplateView):
                 domain_admins = OrganizationAdmin.objects.filter(
                     domain=domain_admin.domain, is_active=True
                 )
+            daily_challenge = get_daily_challenge()
             context = {
                 "admins": domain_admins,
                 "user": domain_admin,
                 "domain_list": domain_list,
+                "daily_challenge": daily_challenge,
             }
             return render(request, self.template_name, context)
         except:
@@ -620,7 +658,14 @@ class OrganizationSettings(TemplateView):
         form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
+        daily_challenge = get_daily_challenge()
+        context = {
+            "admins": OrganizationAdmin.objects.filter(
+                organization=request.user.organization, is_active=True
+            ),
+            "daily_challenge": daily_challenge,
+        }
+        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}), context)
 
 
 class DomainDetailView(ListView):
@@ -712,6 +757,9 @@ class DomainDetailView(ListView):
             ).first()
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
+        daily_challenge = get_daily_challenge()
+        context["daily_challenge"] = daily_challenge
+
         return context
 
 
@@ -750,6 +798,9 @@ class ScoreboardView(ListView):
         context["user"] = self.request.GET.get("user")
         context["sort_by"] = self.request.GET.get("sort_by", "open_issues_count")
         context["sort_order"] = self.request.GET.get("sort_order", "desc")
+
+        daily_challenge = get_daily_challenge()
+        context["daily_challenge"] = daily_challenge
         return context
 
 
@@ -769,6 +820,9 @@ class HuntCreate(CreateView):
         self.object.domain = domain
 
         self.object.save()
+
+        assign_badge(self.request.user, "Hunt Creator")
+
         return super(HuntCreate, self).form_valid(form)
 
 
@@ -884,6 +938,9 @@ class CreateHunt(TemplateView):
                 except:
                     hunt.is_published = False
                 hunt.save()
+
+                assign_badge(request.user, "Hunt Creator")
+
                 return HttpResponse("success")
             else:
                 return HttpResponse("failed")
@@ -937,7 +994,12 @@ def sizzle_daily_log(request):
     try:
         if request.method == "GET":
             reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
-            return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
+            daily_challenge = get_daily_challenge()
+            return render(
+                request,
+                "sizzle/sizzle_daily_status.html",
+                {"reports": reports, "daily_challenge": daily_challenge},
+            )
 
         if request.method == "POST":
             previous_work = request.POST.get("previous_work")
@@ -957,7 +1019,30 @@ def sizzle_daily_log(request):
                 current_mood=current_mood,
             )
 
-            messages.success(request, "Daily status report submitted successfully.")
+            # Check if the user completed a daily challenge
+            daily_challenge = get_daily_challenge()
+            if daily_challenge:
+                challenge_type = daily_challenge.type
+                completed = False
+                if challenge_type == "give_positive_code_review":
+                    completed = True
+                    assign_badge(
+                        request.user, DAILY_CHALLENGE_BADGE_MAP["give_positive_code_review"]
+                    )
+                elif challenge_type == "report_bug" and blockers:
+                    completed = True
+                    assign_badge(request.user, DAILY_CHALLENGE_BADGE_MAP["report_bug"])
+
+                if completed:
+                    CompletedChallenge.objects.create(user=request.user, challenge=daily_challenge)
+                    messages.success(
+                        request, "Daily status report submitted and Daily Challenge completed!"
+                    )
+                else:
+                    messages.success(request, "Daily status report submitted successfully.")
+            else:
+                messages.success(request, "Daily status report submitted successfully.")
+
             return JsonResponse(
                 {"success": "true", "message": "Daily status report submitted successfully."}
             )
@@ -981,6 +1066,8 @@ def TimeLogListView(request):
     organization_url = None
     if active_time_log and active_time_log.organization:
         organization_url = active_time_log.organization.url
+
+    daily_challenge = get_daily_challenge()
     return render(
         request,
         "sizzle/time_logs.html",
@@ -990,6 +1077,7 @@ def TimeLogListView(request):
             "token": token.key,
             "organizations_list": organizations_list,
             "organization_url": organization_url,
+            "daily_challenge": daily_challenge,
         },
     )
 
@@ -1105,10 +1193,39 @@ def sizzle(request):
                 "start_time": start_time,
                 "date": date,
             }
+    daily_challenge = get_daily_challenge()
 
     return render(
-        request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard}
+        request,
+        "sizzle/sizzle.html",
+        {
+            "sizzle_data": sizzle_data,
+            "leaderboard": leaderboard,
+            "daily_challenge": daily_challenge,
+        },
     )
+
+
+DAILY_CHALLENGE_BADGE_MAP = {
+    "give_positive_code_review": "Positive Reviewer",
+    "give_first_code_review": "First Reviewer",
+    "place_bid": "Bidding Master",
+    "report_ip": "IP Reporter",
+    "close_issue": "Issue Closer",
+    "report_bug": "Bug Reporter",
+    "do_code_optimization": "Code Optimizer",
+    "review_pull_request": "Pull Request Reviewer",
+}
+
+
+def assign_badge(user, badge_title):
+    try:
+        badge = Badge.objects.get(title=badge_title)
+    except Badge.DoesNotExist:
+        badge = Badge.objects.create(
+            title=badge_title, description=f"Badge for {badge_title.replace('_', ' ').title()}"
+        )
+    UserBadge.objects.get_or_create(user=user, badge=badge)
 
 
 def checkin_view(request):
@@ -1125,6 +1242,9 @@ def checkin_view(request):
             if challenge_id and daily_challenge:
                 challenge = get_object_or_404(DailyChallenge, id=challenge_id)
                 CompletedChallenge.objects.create(user=request.user, challenge=challenge)
+                assign_badge(
+                    request.user, DAILY_CHALLENGE_BADGE_MAP.get(challenge.type, "Default Badge")
+                )
                 messages.success(request, "Check-In submitted and Daily Challenge completed!")
             else:
                 messages.success(request, "Check-In submitted successfully!")
@@ -1152,6 +1272,9 @@ def add_sizzle_checkin(request):
             if challenge_id and daily_challenge:
                 challenge = get_object_or_404(DailyChallenge, id=challenge_id)
                 CompletedChallenge.objects.create(user=request.user, challenge=challenge)
+                assign_badge(
+                    request.user, DAILY_CHALLENGE_BADGE_MAP.get(challenge.type, "Default Badge")
+                )
                 messages.success(request, "Check-In submitted and Daily Challenge completed!")
             else:
                 messages.success(request, "Check-In submitted successfully!")
@@ -1180,9 +1303,11 @@ def sizzle_daily_status_view(request):
     reports = CheckIn.objects.filter(user=request.user)
     # Fetch completed challenges
     completed_challenges = CompletedChallenge.objects.filter(user=request.user)
+    daily_challenge = get_daily_challenge()
     context = {
         "reports": reports,
         "completed_challenges": completed_challenges,
+        "daily_challenge": daily_challenge,
     }
     return render(request, "sizzle_daily_status.html", context)
 
@@ -1212,6 +1337,9 @@ def trademark_detailview(request, slug):
     else:
         context = {"available": ta_data[0]["available"]}
 
+    daily_challenge = get_daily_challenge()
+    context["daily_challenge"] = daily_challenge
+
     return render(request, "trademark_detailview.html", context)
 
 
@@ -1219,7 +1347,8 @@ def trademark_search(request, **kwargs):
     if request.method == "POST":
         slug = request.POST.get("query")
         return redirect("trademark_detailview", slug=slug)
-    return render(request, "trademark_search.html")
+    daily_challenge = get_daily_challenge()
+    return render(request, "trademark_search.html", {"daily_challenge": daily_challenge})
 
 
 @login_required(login_url="/accounts/login")
@@ -1236,6 +1365,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     else:
         hunt_active = True
         hunt_completed = False
+    daily_challenge = get_daily_challenge()
     return render(
         request,
         template,
@@ -1244,6 +1374,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
             "hunt_completed": hunt_completed,
             "time_remaining": time_remaining,
             "hunt_active": hunt_active,
+            "daily_challenge": daily_challenge,
         },
     )
 
@@ -1264,7 +1395,13 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         else:
             domain = Domain.objects.filter(pk=domain_admin.domain.pk)
         initial = {"content": hunt.description}
-        context = {"hunt": hunt, "domains": domain, "hunt_form": HuntForm(initial)}
+        daily_challenge = get_daily_challenge()
+        context = {
+            "hunt": hunt,
+            "domains": domain,
+            "hunt_form": HuntForm(initial),
+            "daily_challenge": daily_challenge,
+        }
         return render(request, template, context)
     else:
         data = {}
@@ -1314,6 +1451,9 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         except:
             hunt.is_published = False
         hunt.save()
+
+        assign_badge(request.user, "Hunt Editor")
+
         return HttpResponse("success")
 
 
@@ -1322,13 +1462,15 @@ def organization_dashboard_hunt_detail(
     request, pk, template="organization_dashboard_hunt_detail.html"
 ):
     hunt = get_object_or_404(Hunt, pk=pk)
-    return render(request, template, {"hunt": hunt})
+    daily_challenge = get_daily_challenge()
+    return render(request, template, {"hunt": hunt, "daily_challenge": daily_challenge})
 
 
 @login_required(login_url="/accounts/login")
 def hunt_results(request, pk, template="hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
-    return render(request, template, {"hunt": hunt})
+    daily_challenge = get_daily_challenge()
+    return render(request, template, {"hunt": hunt, "daily_challenge": daily_challenge})
 
 
 @login_required(login_url="/accounts/login")
@@ -1342,7 +1484,8 @@ def organization_dashboard_domain_detail(
             if not user.is_active:
                 return HttpResponseRedirect("/")
             domain = get_object_or_404(Domain, pk=pk)
-            return render(request, template, {"domain": domain})
+            daily_challenge = get_daily_challenge()
+            return render(request, template, {"domain": domain, "daily_challenge": daily_challenge})
         else:
             return redirect("/")
     except:
@@ -1367,6 +1510,7 @@ def add_or_update_domain(request):
                 except:
                     pass
                 domain.save()
+                assign_badge(request.user, "Domain Updater")
                 return HttpResponse("Domain Updated")
             except:
                 if count_domain == subscription.number_of_domains:
@@ -1384,6 +1528,7 @@ def add_or_update_domain(request):
                             pass
                         domain.organization = organization_admin.organization
                         domain.save()
+                        assign_badge(request.user, "Domain Adder")
                         return HttpResponse("Domain Created")
                     else:
                         return HttpResponse("failed")
@@ -1406,6 +1551,8 @@ def add_or_update_organization(request):
                     admin = OrganizationAdmin.objects.get(user=user, organization=organization)
                     admin.user = User.objects.get(email=request.POST["admin"])
                     admin.save()
+
+                    assign_badge(request.user, "Admin Transfer")
                 except:
                     admin = OrganizationAdmin()
                     admin.user = User.objects.get(email=request.POST["admin"])
@@ -1413,6 +1560,7 @@ def add_or_update_organization(request):
                     admin.organization = organization
                     admin.is_active = True
                     admin.save()
+                    assign_badge(request.user, "Admin Adder")
             organization.name = request.POST["name"]
             organization.email = request.POST["email"]
             organization.url = request.POST["url"]
@@ -1437,6 +1585,8 @@ def add_or_update_organization(request):
             except:
                 pass
             organization.save()
+            assign_badge(request.user, "Organization Updater")
+
             return HttpResponse("success")
 
         else:
@@ -1459,6 +1609,7 @@ def add_role(request):
                 if admin.organization == domain_admin.organization:
                     admin.is_active = True
                     admin.save()
+                    assign_badge(request.user, "Admin Activator")
                     return HttpResponse("success")
                 else:
                     return HttpResponse("already admin of another domain")
@@ -1470,6 +1621,7 @@ def add_role(request):
                     admin.organization = domain_admin.organization
                     admin.is_active = True
                     admin.save()
+                    assign_badge(request.user, "Admin Adder")
                     return HttpResponse("success")
                 except:
                     return HttpResponse("failed")
@@ -1595,12 +1747,14 @@ class ReportIpView(FormView):
         captcha_form = CaptchaForm(request.POST)
         if not captcha_form.is_valid():
             messages.error(request, "Invalid CAPTCHA. Please try again.")
+            daily_challenge = get_daily_challenge()
             return render(
                 request,
                 self.template_name,
                 {
                     "form": self.get_form(),
                     "captcha_form": captcha_form,
+                    "daily_challenge": daily_challenge,
                 },
             )
 
@@ -1613,59 +1767,89 @@ class ReportIpView(FormView):
 
             if not self.is_valid_ip(ip_address, ip_type):
                 messages.error(request, f"Invalid {ip_type} address format.")
+                daily_challenge = get_daily_challenge()
                 return render(
                     request,
                     self.template_name,
                     {
                         "form": form,
                         "captcha_form": captcha_form,
+                        "daily_challenge": daily_challenge,
                     },
                 )
             if IpReport.objects.filter(ip_address=ip_address, ip_type=ip_type).exists():
                 messages.error(request, "This IP address has already been reported.")
+                daily_challenge = get_daily_challenge()
                 return render(
                     request,
                     self.template_name,
                     {
                         "form": form,
                         "captcha_form": captcha_form,
+                        "daily_challenge": daily_challenge,
+                    },
+                )
+            # Check daily report limit per IP
+            reporter_ip = get_client_ip(request)
+            limit = 50 if request.user.is_authenticated else 30
+            today = now().date()
+            recent_reports_count = IpReport.objects.filter(
+                reporter_ip_address=reporter_ip, created=today
+            ).count()
+
+            if recent_reports_count >= limit:
+                messages.error(request, "You have reached the daily limit for IP reports.")
+                daily_challenge = get_daily_challenge()
+                return render(
+                    request,
+                    self.template_name,
+                    {
+                        "form": form,
+                        "captcha_form": CaptchaForm(),
+                        "daily_challenge": daily_challenge,
                     },
                 )
 
-            return self.form_valid(form)
+            report = form.save(commit=False)
+            report.reporter_ip_address = reporter_ip
+            report.user = request.user if request.user.is_authenticated else None
+            report.save()
+
+            # Check if the user completed a daily challenge
+            daily_challenge = get_daily_challenge()
+            if daily_challenge:
+                challenge_type = daily_challenge.type
+                completed = False
+                if challenge_type == "report_ip":
+                    completed = True
+                    assign_badge(
+                        request.user, DAILY_CHALLENGE_BADGE_MAP.get(challenge_type, "Default Badge")
+                    )
+
+                if completed:
+                    CompletedChallenge.objects.create(user=request.user, challenge=daily_challenge)
+                    messages.success(
+                        request, "IP report successfully submitted and Daily Challenge completed!"
+                    )
+                else:
+                    messages.success(request, "IP report successfully submitted.")
+
+            else:
+                messages.success(request, "IP report successfully submitted.")
+
+            return redirect("reported_ips_list")
         else:
+            daily_challenge = get_daily_challenge()
             return self.form_invalid(form)
 
     def form_valid(self, form):
-        # Check daily report limit per IP
-        reporter_ip = get_client_ip(self.request)
-        limit = 50 if self.request.user.is_authenticated else 30
-        today = now().date()
-        recent_reports_count = IpReport.objects.filter(
-            reporter_ip_address=reporter_ip, created=today
-        ).count()
-
-        if recent_reports_count >= limit:
-            messages.error(self.request, "You have reached the daily limit for IP reports.")
-            return render(
-                self.request,
-                self.template_name,
-                {
-                    "form": self.get_form(),
-                    "captcha_form": CaptchaForm(),
-                },
-            )
-
-        form.instance.reporter_ip_address = reporter_ip
-        form.instance.user = self.request.user if self.request.user.is_authenticated else None
-        form.save()
-        messages.success(self.request, "IP report successfully submitted.")
-
-        return redirect("reported_ips_list")
+        # This method is handled in post()
+        pass
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["captcha_form"] = CaptchaForm()
+        context["daily_challenge"] = get_daily_challenge()
         return context
 
 
@@ -1676,7 +1860,14 @@ class ReportedIpListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        return IpReport.objects.all().order_by("-created")
+        queryset = IpReport.objects.all().order_by("-created")
+        daily_challenge = get_daily_challenge()
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["daily_challenge"] = get_daily_challenge()
+        return context
 
 
 def feed(request):
@@ -1694,6 +1885,8 @@ def feed(request):
     else:
         is_mentor = False
 
+    daily_challenge = get_daily_challenge()
+
     return render(
         request,
         "feed.html",
@@ -1701,6 +1894,7 @@ def feed(request):
             "page_obj": page_obj,
             "is_paginated": is_paginated,  # Pass this flag to the template
             "is_mentor": is_mentor,  # Add is_mentor to the context
+            "daily_challenge": daily_challenge,
         },
     )
 
@@ -1733,6 +1927,9 @@ def like_activity(request, id):
         blue_sky_service = BlueSkyService()
         try:
             activity.post_to_bluesky(blue_sky_service)
+
+            # Assign badge for approving activity
+            assign_badge(user, "Activity Approver")
         except Exception:
             return JsonResponse({"success": False})
 
@@ -1773,6 +1970,9 @@ def dislike_activity(request, id):
         blue_sky_service = BlueSkyService()
         try:
             activity.post_to_bluesky(blue_sky_service)
+
+            # Assign badge for approving activity
+            assign_badge(user, "Activity Approver")
         except Exception:
             return JsonResponse({"success": False})
 
@@ -1803,6 +2003,10 @@ def approve_activity(request, id):
         blue_sky_service = BlueSkyService()
         try:
             activity.post_to_bluesky(blue_sky_service)
+
+            # Assign badge for approving activity
+            assign_badge(user, "Activity Approver")
+
             return JsonResponse({"success": True, "is_approved": activity.is_approved})
         except Exception:
             return JsonResponse({"success": False})
@@ -1820,7 +2024,13 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
-    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
+    daily_challenge = get_daily_challenge()
+
+    return render(
+        request,
+        "sizzle/add_sizzle_checkin.html",
+        {"yesterday_report": yesterday_report, "daily_challenge": daily_challenge},
+    )
 
 
 def checkIN(request):
@@ -1874,9 +2084,27 @@ def checkIN(request):
 
     # Return JSON if AJAX
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        # Assign badge if a daily challenge is completed
+        daily_challenge = get_daily_challenge()
+        if daily_challenge:
+            challenge_type = daily_challenge.type
+            completed = False
+            if challenge_type == "closing_issue" and any(
+                report["goal_accomplished"] for report in data
+            ):
+                completed = True
+                assign_badge(
+                    request.user, DAILY_CHALLENGE_BADGE_MAP.get(challenge_type, "Default Badge")
+                )
+            # Add similar conditions for other challenge types
+
+            if completed:
+                CompletedChallenge.objects.create(user=request.user, challenge=daily_challenge)
+
         return JsonResponse(data, safe=False)
 
     # Render template with initial data if needed
+    daily_challenge = get_daily_challenge()
     return render(
         request,
         "sizzle/checkin.html",
@@ -1884,6 +2112,7 @@ def checkIN(request):
             "data": data,
             "default_start_date": default_start_date.isoformat(),
             "default_end_date": default_end_date.isoformat(),
+            "daily_challenge": daily_challenge,
         },
     )
 
@@ -1897,4 +2126,9 @@ def checkIN_detail(request, report_id):
         "next_plan": report.next_plan,
         "blockers": report.blockers,
     }
+
+    # Add daily challenge to context
+    daily_challenge = get_daily_challenge()
+    context["daily_challenge"] = daily_challenge
+
     return render(request, "sizzle/checkin_detail.html", context)

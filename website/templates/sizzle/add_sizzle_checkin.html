@@ -19,20 +19,18 @@
         .emoji-picker-container.show emoji-picker {
             display: block;
         }
-    </style>
-    <style>
-    .docs_style {
+        .docs_style {
         background-color: #EF4444!important;
         color: white!important;
-    }
-    .docs_style:hover {
+        }
+        .docs_style:hover {
         background-color: #dc2626!important;
-    }
-    .disabled-button {
+        }
+        .disabled-button {
         background-color: #a1a1aa !important;
         cursor: not-allowed !important;
-    }
-    .daily-challenge {
+        }
+        .daily-challenge {
             border: 2px solid #34D399;
             background-color: #D1FAE5;
             padding: 15px;
@@ -58,7 +56,7 @@
             <div class="flex justify-center">
                 <form id="checkInForm"
                       method="post"
-                      action="{% url 'sizzle_daily_log' %}"
+                      action="{% url 'add_sizzle_checkin' %}"
                       class="w-full max-w-5xl bg-white shadow-sm rounded-lg p-6"
                       {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
                     {% csrf_token %}
@@ -122,6 +120,7 @@
                             <emoji-picker id="emoji-picker"></emoji-picker>
                         </div>
                     </div>
+                    {% if daily_challenge %}<input type="hidden" name="challenge_id" value="{{ daily_challenge.id }}">{% endif %}
                     <div class="text-center">
                         <button type="submit"
                                 class="submit-button bg-red-500 text-white font-bold py-2 px-6 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
