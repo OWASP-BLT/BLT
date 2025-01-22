@@ -574,14 +574,13 @@ def set_vote_status(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
-@login_required
 def add_suggestions(request):
     if request.method == "POST":
-        user = request.user
+        user = request.user if request.user.is_authenticated else None
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        if title and description and user:
+        if title and description:
             suggestion = Suggestion(user=user, title=title, description=description)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
@@ -589,6 +588,8 @@ def add_suggestions(request):
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
+    else:
+        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
 
 class GoogleLogin(SocialLoginView):
