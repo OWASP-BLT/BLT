@@ -1220,18 +1220,19 @@ hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
 
 [[package]]
 name = "django-simple-captcha"
-version = "0.6.0"
+version = "0.6.1"
 description = "A very simple, yet powerful, Django captcha application"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-simple-captcha-0.6.0.tar.gz", hash = "sha256:d188516d326fadd2d5ad076eb89649d55c02cabafe3fdcc2154ac18e9f6d4b97"},
-    {file = "django_simple_captcha-0.6.0-py2.py3-none-any.whl", hash = "sha256:3ae9a7e650cb0cdbcfd4a75aa91fdf25dcc523ef541a7b1f004bd4357798fc03"},
+    {file = "django_simple_captcha-0.6.1-py2.py3-none-any.whl", hash = "sha256:75c4a89cf54011be54dd96fc4bfc2286f92bed88c46d247b9e504b7fc4c7cfe5"},
+    {file = "django_simple_captcha-0.6.1.tar.gz", hash = "sha256:9df5cf24e38b91af62d601f8e5189b0f6d28dbaa55a363a8b9d727703f9c35de"},
 ]
 
 [package.dependencies]
 Django = ">=4.2"
 django-ranged-response = "0.2.0"
+djangorestframework = ">=3.15.0"
 Pillow = ">=6.2.0"
 
 [package.extras]
@@ -4110,13 +4111,13 @@ wrapt = ">=1.10,<2.0"
 
 [[package]]
 name = "selenium"
-version = "4.27.1"
+version = "4.28.0"
 description = "Official Python bindings for Selenium WebDriver"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 files = [
-    {file = "selenium-4.27.1-py3-none-any.whl", hash = "sha256:b89b1f62b5cfe8025868556fe82360d6b649d464f75d2655cb966c8f8447ea18"},
-    {file = "selenium-4.27.1.tar.gz", hash = "sha256:5296c425a75ff1b44d0d5199042b36a6d1ef76c04fb775b97b40be739a9caae2"},
+    {file = "selenium-4.28.0-py3-none-any.whl", hash = "sha256:3d6a2e8e1b850a1078884ea19f4e011ecdc12263434d87a0b78769836fb82dd8"},
+    {file = "selenium-4.28.0.tar.gz", hash = "sha256:a9fae6eef48d470a1b0c6e45185d96f0dafb025e8da4b346cc41e4da3ac54fa0"},
 ]
 
 [package.dependencies]
@@ -4508,13 +4509,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.13"
+version = "0.16.14"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.16.13-py3-none-any.whl", hash = "sha256:d578d3ebd78c6bf3ea837a13b7e2942671920f9e7361e8532c5eb00f9cf359e6"},
-    {file = "unstructured-0.16.13.tar.gz", hash = "sha256:6195744a203e65bf6b8460cbfccd9bef67a1f5d44e79229a13e7e37f528abbcd"},
+    {file = "unstructured-0.16.14-py3-none-any.whl", hash = "sha256:7b3c2eb21e65d2f61240de7a5241fd7734d97be2c9cfa5f70934e10470318131"},
+    {file = "unstructured-0.16.14.tar.gz", hash = "sha256:cec819461090226cd478429c1e0fda19a66ba49ab9ade1ea1fd9ec79c279d7ac"},
 ]
 
 [package.dependencies]
@@ -5020,4 +5021,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "780e52e5dabecef51e218b0095e719e55efd253cd2da92ce4c64c9412a66c18e"
+content-hash = "7dcea59c7a5133a3d027748f6fd77ef6d250dbf6ba09ff82535ce7606d2b25f7"
