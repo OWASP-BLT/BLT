@@ -37,9 +37,14 @@ from website.models import (
     Badge,
     Domain,
     Issue,
+    Organization,
     PRAnalysisReport,
+    Project,
+    Repo,
     Suggestion,
     SuggestionVotes,
+    Tag,
+    UserBadge,
     UserProfile,
     Wallet,
 )
@@ -305,7 +310,7 @@ def search(request, template="search.html"):
     if query is None:
         return render(request, template)
     query = query.strip()
-    
+
     if stype == "issues":
         context = {
             "query": query,
@@ -321,12 +326,17 @@ def search(request, template="search.html"):
             "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
         }
     elif stype == "users":
+        users = (
+            UserProfile.objects.filter(Q(user__username__icontains=query))
+            .annotate(total_score=Sum("user__points__score"))
+            .order_by("-total_score")[0:20]
+        )
+        for userprofile in users:
+            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
         context = {
             "query": query,
             "type": stype,
-            "users": UserProfile.objects.filter(Q(user__username__icontains=query))
-            .annotate(total_score=Sum("user__points__score"))
-            .order_by("-total_score")[0:20],
+            "users": users,
         }
     elif stype == "labels":
         context = {
@@ -337,22 +347,60 @@ def search(request, template="search.html"):
             )[0:20],
         }
     elif stype == "organizations":
+        organizations = Organization.objects.filter(name__icontains=query)
+
+        for org in organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
         context = {
-            
+            "query": query,
+            "type": stype,
+            "organizations": Organization.objects.filter(name__icontains=query),
         }
     elif stype == "projects":
         context = {
-
+            "query": query,
+            "type": stype,
+            "projects": Project.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            ),
+        }
+    elif stype == "repos":
+        context = {
+            "query": query,
+            "type": stype,
+            "repos": Repo.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            ),
         }
     elif stype == "tags":
+        tags = Tag.objects.filter(name__icontains=query)
+        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+        matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+        matching_issues = Issue.objects.filter(tags__in=tags).distinct()
+        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+        matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+        for org in matching_organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
         context = {
-
+            "query": query,
+            "type": stype,
+            "tags": tags,
+            "matching_organizations": matching_organizations,
+            "matching_domains": matching_domains,
+            "matching_issues": matching_issues,
+            "matching_user_profiles": matching_user_profiles,
+            "matching_repos": matching_repos,
         }
     elif stype == "languages":
         context = {
-
+            "query": query,
+            "type": stype,
+            "repos": Repo.objects.filter(primary_language__icontains=query),
         }
-
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     return render(request, template, context)
