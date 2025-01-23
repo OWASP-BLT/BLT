@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from slack import WebClient
 from slack_sdk.errors import SlackApiError
 
-from website.models import SlackConfiguration, SlackIntegration
+from website.models import SlackIntegration
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
@@ -91,24 +91,19 @@ def slack_events(request):
 
 def _handle_team_join(user_id, request):
     try:
-        # Get the team ID from the event data instead of bot token's identity
         event_data = json.loads(request.body)
         team_id = event_data["team_id"]
         try:
-            # Get the workspace-specific configuration
             slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
-            slack_config = SlackConfiguration.objects.filter(integration=slack_integration).first()
 
             # If integration exists and has welcome message
-            if slack_config and slack_config.welcome_message:
-                # the welcome text in the config is a rich text message and not need to pass user_id
-                welcome_message = slack_config.welcome_message
+            if slack_integration.welcome_message:
+                welcome_message = slack_integration.welcome_message
                 workspace_client = WebClient(token=slack_integration.bot_access_token)
             else:
                 # If no welcome message but it's OWASP workspace
                 if team_id == "T04T40NHX":
                     workspace_client = WebClient(token=SLACK_TOKEN)
-                    # Use the default OWASP welcome message
                     welcome_message = (
                         f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
                         "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
@@ -132,7 +127,6 @@ def _handle_team_join(user_id, request):
                         "Welcome aboard! :rocket:"
                     )
                 else:
-                    # For other workspaces without configuration
                     workspace_client = WebClient(token=slack_integration.bot_access_token)
                     welcome_message = (
                         f"Welcome <@{user_id}>! 👋\n\n"

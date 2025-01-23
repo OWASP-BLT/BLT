@@ -31,7 +31,6 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Organization,
-    SlackConfiguration,
     SlackIntegration,
     UserProfile,
     Winner,
@@ -862,13 +861,6 @@ class AddSlackIntegrationView(View):
             app = App(token=bot_token)
             channels_list = self.get_channel_names(app)
 
-            # Get slack configuration for welcome message
-            slack_config = SlackConfiguration.objects.filter(integration=slack_integration).first()
-            if slack_config:
-                welcome_message = slack_config.welcome_message
-            else:
-                welcome_message = ""
-
             hours = range(24)
             return render(
                 request,
@@ -878,7 +870,7 @@ class AddSlackIntegrationView(View):
                     "slack_integration": slack_integration,
                     "channels": channels_list,
                     "hours": hours,
-                    "welcome_message": welcome_message,
+                    "welcome_message": slack_integration.welcome_message,
                 },
             )
 
@@ -950,17 +942,9 @@ class AddSlackIntegrationView(View):
                 slack_integration.default_channel_name = slack_data["default_channel"]
             slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
             slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
+            # Add welcome message
+            slack_integration.welcome_message = slack_data["welcome_message"]
             slack_integration.save()
-
-            # Handle welcome message
-            if slack_data["welcome_message"]:
-                slack_config, _ = SlackConfiguration.objects.get_or_create(
-                    integration=slack_integration,
-                    defaults={"welcome_message": slack_data["welcome_message"]},
-                )
-                if slack_config.welcome_message != slack_data["welcome_message"]:
-                    slack_config.welcome_message = slack_data["welcome_message"]
-                    slack_config.save()
 
         return redirect("organization_manage_integrations", id=id)
 
