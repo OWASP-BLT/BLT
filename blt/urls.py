@@ -156,6 +156,7 @@ from website.views.organization import (
     delete_time_entry,
     dislike_activity,
     feed,
+    fetch_related_trademarks,
     get_scoreboard,
     hunt_results,
     like_activity,
@@ -791,6 +792,11 @@ urlpatterns = [
     path("suggestion/", view_suggestions, name="view_suggestions"),
     path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
     path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
+    path(
+        "trademarks/fetch-related-trademarks/<str:name>/",
+        fetch_related_trademarks,
+        name="fetch_related_trademarks",
+    ),
     re_path(
         r"^trademarks/query=(?P<slug>[\w\s\W]+)",
         trademark_detailview,

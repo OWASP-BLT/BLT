@@ -14,6 +14,139 @@
     span.blue a{
         color: #7CB9F0 !important;
     }
+    #trademark-container {
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #fefefe;
+    border-radius: 15px;
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    font-family: 'Arial', sans-serif;
+}
+
+.trademark-header {
+    background-color: #2563eb;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-bottom: 3px solid #1e40af;
+}
+
+.trademark-header h2 {
+    margin: 0;
+}
+
+.trademark-item {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    background-color: #ffffff;
+    border-radius: 10px;
+    margin: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.trademark-item:hover {
+    background-color: #f1f5f9;
+    transform: scale(1.02);
+}
+
+.trademark-scroll {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #f8fafc;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-left: 10px;
+    text-transform: capitalize;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.status-live {
+    background-color: #22c55e;
+    color: white;
+}
+
+.status-dead {
+    background-color: #ef4444;
+    color: white;
+}
+
+.trademark-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+}
+
+.trademark-details div {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 1.2rem;
+}
+
+.owners-list {
+    background-color: #e5e7eb;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 10px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    font-size: 1.2rem;
+}
+
+.owners-list ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.owners-list ul li {
+    margin: 5px 0;
+    line-height: 1.4;
+}
+
+.trademark-header span,
+.trademark-item h3 {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.trademark-header span {
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.trademark-item h2 {
+    font-size: 1.6rem;
+    color: #1e40af;
+}
+
+.trademark-item p {
+    margin: 2px 0;
+    font-size: 1.2rem;
+}
+
+.icon {
+    font-size: 1rem;
+    color: #2563eb;
+}
+
+
     </style>
 {% endblock style %}
 {% block title %}{{ domain.name }} - Domain Dashboard{% endblock %}
@@ -192,6 +325,9 @@
                     </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
+                    <div id="trademark-container" class="p-4">Loading trademarks for {{ name }}...</div>
+                </div>
+                <div class="text-2xl font-bold my-4">
                     Monthly Report
                     <hr>
                 </div>
@@ -288,6 +424,115 @@
   
           var chart = new ApexCharts(document.querySelector("#chart"), options);
           chart.render();
+    </script>
+    <script type="text/javascript">
+    async function fetchTrademarks() {
+        const name = "{{ name }}";
+        const url = `/trademarks/fetch-related-trademarks/${name}`;
+
+        try {
+            const response = await fetch(url);
+            const trademarks = await response.json();
+            renderTrademarks(trademarks);
+        } catch (error) {
+            console.error('Error fetching trademarks:', error);
+            alert('Error fetching trademarks');
+        }
+    }
+
+    function renderTrademarks(trademarks) {
+    const container = document.getElementById('trademark-container');
+    container.innerHTML = '';
+    
+    const header = document.createElement('div');
+    header.className = 'trademark-header';
+    header.innerHTML = `
+        <h2>
+            <i class="fas fa-gavel icon"></i>
+            Trademark Results
+        </h2>
+        <span class="status-badge ${trademarks.length > 0 ? 'status-live' : 'status-dead'}">
+            ${trademarks.length} Matches Found
+        </span>
+    `;
+    container.appendChild(header);
+
+    const scrollContainer = document.createElement('div');
+    scrollContainer.className = 'trademark-scroll';
+
+    trademarks.forEach(trademark => {
+        const item = document.createElement('div');
+        item.className = 'trademark-item';
+
+        const statusClass = trademark.status_label.includes('Live') ? 'status-live' : 
+                            trademark.status_label.includes('Dead') ? 'status-dead' : '';
+
+        item.innerHTML = `
+            <h2>
+                <i class="fas fa-search icon"></i>
+                ${trademark.keyword}
+            </h3>
+            <div class="trademark-details">
+                <div>
+                    <i class="fas fa-id-card icon"></i>
+                    <strong>Reg No.:</strong> ${trademark.registration_number || 'N/A'}
+                </div>
+                <div>
+                    <i class="fas fa-hashtag icon"></i>
+                    <strong>Serial Number:</strong> ${trademark.serial_number}
+                </div>
+                <div>
+                    <i class="fas fa-calendar-alt icon"></i>
+                    <strong>Filing Date:</strong> ${trademark.filing_date || 'N/A'}
+                </div>
+                <div>
+                    <i class="fas fa-calendar-check icon"></i>
+                    <strong>Reg Date:</strong> ${trademark.registration_date || 'N/A'}
+                </div>
+                <div>
+                    <i class="fas fa-history icon"></i>
+                    <strong>Status Date:</strong> ${trademark.status_date || 'N/A'}
+                </div>
+                <div>
+                    <i class="fas fa-tag icon"></i>
+                    <strong>Status:</strong> 
+                    <span class="status-badge ${statusClass}">
+                        ${trademark.status_label}
+                    </span>
+                </div>
+            </div>
+            <p>
+                <i class="fas fa-info-circle icon"></i>
+                <strong>Description:</strong> ${trademark.description}
+            </p>
+        `;
+
+        if (trademark.owners && trademark.owners.length > 0) {
+            const ownersList = document.createElement('div');
+            ownersList.className = 'owners-list';
+            ownersList.innerHTML = `<strong><i class="fas fa-users icon"></i> Owners:</strong>`;
+            
+            const ownerUl = document.createElement('ul');
+            trademark.owners.forEach(owner => {
+                const ownerItem = document.createElement('li');
+                ownerItem.innerText = `${owner.name}, ${owner.city}, ${owner.state}, ${owner.country}`;
+                ownerUl.appendChild(ownerItem);
+            });
+            
+            ownersList.appendChild(ownerUl);
+            item.appendChild(ownersList);
+        }
+        
+        scrollContainer.appendChild(item);
+    });
+
+    container.appendChild(scrollContainer);
+}
+
+
+
+    // Fetch and render trademarks on page load
+    fetchTrademarks();
     </script>
     <script src="https://unpkg.com/@material-tailwind/html@latest/scripts/tabs.js"></script>
 {% endblock content %}

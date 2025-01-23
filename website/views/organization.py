@@ -23,6 +23,7 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
@@ -617,6 +618,28 @@ class OrganizationSettings(TemplateView):
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
+
+
+@csrf_exempt
+def fetch_related_trademarks(request, name):
+    # Fetch trademark data
+    url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
+    initial_payload = {
+        "keywords": f' ["{name}"]',
+        "start_index": "0",
+    }
+    headers = {
+        "x-rapidapi-key": f"{settings.USPTO_API}",
+        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    response = requests.post(url, data=initial_payload, headers=headers).json()
+    # The initial call returns a scroll_id, which is then used to obtain pagination results
+    scroll_id = response.get("scroll_id")
+    pagination_payload = {"keywords": f' ["{name}"]', "start_index": "0", "scroll_id": scroll_id}
+    response = requests.post(url, data=pagination_payload, headers=headers).json()
+    results = response.get("results")
+    return JsonResponse(results, safe=False)
 
 
 class DomainDetailView(ListView):
