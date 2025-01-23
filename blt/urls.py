@@ -187,8 +187,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
-from website.views.slack_handlers import slack_events
-from website.views.slackbot import slack_commands
+from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamOverview,
     add_member,
