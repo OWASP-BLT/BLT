@@ -1336,3 +1336,19 @@ class ContributorStats(models.Model):
         return (
             f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
         )
+
+
+class SlackConfiguration(models.Model):
+    integration = models.OneToOneField(
+        SlackIntegration, on_delete=models.CASCADE, related_name="configuration"
+    )
+    welcome_message = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Custom welcome message for new members. Use {user} for member mention.",
+    )
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Slack Config for {self.integration.integration.organization.name}"
