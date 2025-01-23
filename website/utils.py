@@ -6,17 +6,20 @@ import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
+import markdown
 import numpy as np
-
-# import openai
+import openai
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from openai import OpenAI
 
 from .models import PRAnalysisReport
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
@@ -479,3 +482,31 @@ def git_url_to_zip_url(git_url, branch="master"):
         return zip_url
     else:
         raise ValueError("Invalid .git URL provided")
+
+
+def markdown_to_text(markdown_content):
+    """Convert Markdown to plain text."""
+    html_content = markdown.markdown(markdown_content)
+    text_content = BeautifulSoup(html_content, "html.parser").get_text()
+    return text_content
+
+
+def ai_summary(text):
+    """Generate an AI-driven summary using OpenAI's GPT"""
+    try:
+        prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following readme content: {text}"
+
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=150,
+            temperature=0.5,
+        )
+
+        summary = response.choices[0].message.content.strip()
+        return summary
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"
