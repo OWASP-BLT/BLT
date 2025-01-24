@@ -3,19 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
-from .models import (
-    Activity,
-    Badge,
-    Bid,
-    Hunt,
-    IpReport,
-    Issue,
-    Post,
-    Suggestion,
-    TimeLog,
-    UserBadge,
-    UserProfile,
-)
+from .models import Activity, Badge, Bid, Hunt, IpReport, Issue, Post, Suggestion, TimeLog, UserBadge, UserProfile
 
 
 def get_default_user():
@@ -38,9 +26,7 @@ def create_activity(instance, action_type):
     """Generic function to create an activity for a given model instance."""
     model_name = instance._meta.model_name
     user_field = (
-        getattr(instance, "user", None)
-        or getattr(instance, "author", None)
-        or getattr(instance, "modified_by", None)
+        getattr(instance, "user", None) or getattr(instance, "author", None) or getattr(instance, "modified_by", None)
     )
     user = user_field or get_default_user()
 

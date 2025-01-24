@@ -279,18 +279,15 @@ def slack_commands(request):
                         },
                     },
                     {
-                        "type": "actions",
-                        "elements": [
-                            {
-                                "type": "channels_select",
-                                "placeholder": {
-                                    "type": "plain_text",
-                                    "text": "🔍 Search and Select a Project Channel",
-                                    "emoji": True,
-                                },
-                                "action_id": "select_project_channel",
-                            }
-                        ],
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "To find project channels:\n\n"
+                            + "1️⃣ Use Slack's channel browser (Ctrl/Cmd + K)\n"
+                            + "2️⃣ Type *#project-* to see all project channels\n"
+                            + "3️⃣ Join the channels that interest you\n\n"
+                            + "_All OWASP project channels start with *#project-*_",
+                        },
                     },
                     {
                         "type": "section",

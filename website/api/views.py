@@ -166,15 +166,11 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue.screenshot:
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
-                request.build_absolute_uri(screenshot.image.url)
-                for screenshot in issue.screenshots.all()
+                request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()
             ]
         else:
             # If no image exists in the Issue table, return only the images from IssueScreenshot
-            screenshots = [
-                request.build_absolute_uri(screenshot.image.url)
-                for screenshot in issue.screenshots.all()
-            ]
+            screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
 
         is_upvoted = False
         is_flagged = False
@@ -232,9 +228,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         screenshot_count = len(self.request.FILES.getlist("screenshots"))
         if screenshot_count == 0:
-            return Response(
-                {"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST)
         elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -247,9 +241,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         for screenshot in self.request.FILES.getlist("screenshots"):
             if image_validator(screenshot):
                 filename = screenshot.name
-                screenshot.name = (
-                    f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
-                )
+                screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
                 file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
 
                 # Create the IssueScreenshot object and associate it with the issue
@@ -387,19 +379,11 @@ class LeaderboardApiViewSet(APIView):
             temp["rank"] = rank_user
             temp["id"] = each["id"]
             temp["User"] = each["username"]
-            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(
-                total_score=Sum("score")
-            )
-            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[
-                0
-            ]
-            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[
-                0
-            ]
+            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
+            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
+            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
             temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
-            temp["savedissue"] = list(
-                UserProfile.objects.filter(user=each["id"]).values("issue_saved")
-            )[0]
+            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
             rank_user = rank_user + 1
             users.append(temp)
 
@@ -470,9 +454,7 @@ class LeaderboardApiViewSet(APIView):
     def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
         organizations = (
-            Organization.objects.values()
-            .annotate(issue_count=Count("domain__issue"))
-            .order_by("-issue_count")
+            Organization.objects.values().annotate(issue_count=Count("domain__issue")).order_by("-issue_count")
         )
         page = paginator.paginate_queryset(organizations, request)
 
@@ -486,9 +468,7 @@ class StatsApiViewset(APIView):
         hunt_count = Hunt.objects.all().count()
         domain_count = Domain.objects.all().count()
 
-        return Response(
-            {"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count}
-        )
+        return Response({"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count})
 
 
 class UrlCheckApiViewset(APIView):
@@ -503,9 +483,7 @@ class UrlCheckApiViewset(APIView):
         domain = domain_url.replace("https://", "").replace("http://", "").replace("www.", "")
 
         issues = (
-            Issue.objects.filter(
-                Q(Q(domain__name=domain) | Q(domain__url__icontains=domain)) & Q(is_hidden=False)
-            )
+            Issue.objects.filter(Q(Q(domain__name=domain) | Q(domain__url__icontains=domain)) & Q(is_hidden=False))
             .values(
                 "id",
                 "description",
@@ -533,27 +511,17 @@ class BugHuntApiViewset(APIView):
         return Response(hunts)
 
     def get_previous_hunts(self, request, fields, *args, **kwargs):
-        hunts = (
-            Hunt.objects.values(*fields)
-            .filter(is_published=True, end_on__lte=datetime.now())
-            .order_by("-end_on")
-        )
+        hunts = Hunt.objects.values(*fields).filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(hunts)
 
     def get_upcoming_hunts(self, request, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(*fields)
-            .filter(is_published=True, starts_on__gte=datetime.now())
-            .order_by("starts_on")
+            Hunt.objects.values(*fields).filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         )
         return Response(hunts)
 
     def get_search_by_name(self, request, search_query, fields, *args, **kwargs):
-        hunts = (
-            Hunt.objects.values(*fields)
-            .filter(is_published=True, name__icontains=search_query)
-            .order_by("end_on")
-        )
+        hunts = Hunt.objects.values(*fields).filter(is_published=True, name__icontains=search_query).order_by("end_on")
         return Response(hunts)
 
     def get(self, request, *args, **kwargs):
@@ -608,15 +576,11 @@ class BugHuntApiViewsetV2(APIView):
         return Response(self.serialize_hunts(hunts))
 
     def get_previous_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by(
-            "-end_on"
-        )
+        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(self.serialize_hunts(hunts))
 
     def get_upcoming_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by(
-            "starts_on"
-        )
+        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         return Response(self.serialize_hunts(hunts))
 
     def get(self, request, *args, **kwargs):
@@ -626,23 +590,17 @@ class BugHuntApiViewsetV2(APIView):
         previousHunt = request.query_params.get("previousHunt")
         upcomingHunt = request.query_params.get("upcomingHunt")
         if activeHunt:
-            page = paginator.paginate_queryset(
-                self.get_active_hunts(request, *args, **kwargs), request
-            )
+            page = paginator.paginate_queryset(self.get_active_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
         elif previousHunt:
-            page = paginator.paginate_queryset(
-                self.get_previous_hunts(request, *args, **kwargs), request
-            )
+            page = paginator.paginate_queryset(self.get_previous_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
         elif upcomingHunt:
-            page = paginator.paginate_queryset(
-                self.get_upcoming_hunts(request, *args, **kwargs), request
-            )
+            page = paginator.paginate_queryset(self.get_upcoming_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
@@ -668,9 +626,7 @@ class InviteFriendApiViewset(APIView):
         try:
             current_site = get_current_site(request)
             referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
-            referral_link = (
-                f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
-            )
+            referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
 
             # Prepare email content
             subject = f"Join me on {current_site.name}!"
@@ -703,9 +659,7 @@ class InviteFriendApiViewset(APIView):
                     }
                 )
             else:
-                return Response(
-                    {"error": "Email failed to send", "email_status": "failed"}, status=500
-                )
+                return Response({"error": "Email failed to send", "email_status": "failed"}, status=500)
 
         except smtplib.SMTPException as e:
             return Response(

@@ -32,8 +32,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="project",
             name="contributors",
-            field=models.ManyToManyField(
-                blank=True, null=True, related_name="projects", to="website.contributor"
-            ),
+            field=models.ManyToManyField(blank=True, null=True, related_name="projects", to="website.contributor"),
         ),
     ]
