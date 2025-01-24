@@ -262,7 +262,7 @@ def slack_commands(request):
                         "type": "section",
                         "text": {
                             "type": "mrkdwn",
-                            "text": "    🛠 *GSOC Projects:* View this year's participating GSOC projects .",
+                            "text": "    🛠 *GSOC Projects:* View this year's participating GSOC projects https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas",
                         },
                     },
                     {"type": "divider"},
