@@ -3013,13 +3013,13 @@ type = ["mypy (>=1.11.2)"]
 
 [[package]]
 name = "pre-commit"
-version = "3.8.0"
+version = "4.1.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pre_commit-3.8.0-py2.py3-none-any.whl", hash = "sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f"},
-    {file = "pre_commit-3.8.0.tar.gz", hash = "sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af"},
+    {file = "pre_commit-4.1.0-py2.py3-none-any.whl", hash = "sha256:d29e7cb346295bcc1cc75fc3e92e343495e3ea0196c9ec6ba53f49f10ab6ae7b"},
+    {file = "pre_commit-4.1.0.tar.gz", hash = "sha256:ae3f018575a588e30dfddfab9a05448bfbd6b73d78709617b5a2b853549716d4"},
 ]
 
 [package.dependencies]
@@ -5021,4 +5021,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "9e92c532af81fecec4b0855a320481a779b88c8e456ec7d745c47d4be4790fbb"
+content-hash = "d922091b24e9e979d2e2f85c164476979344a3c20f610c2d88d1b58d2c14600c"
