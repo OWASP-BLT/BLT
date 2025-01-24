@@ -33,16 +33,7 @@ from django_filters.views import FilterView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
-from website.models import (
-    IP,
-    BaconToken,
-    Contribution,
-    Contributor,
-    ContributorStats,
-    Organization,
-    Project,
-    Repo,
-)
+from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
@@ -79,10 +70,7 @@ def select_contribution(request):
 @user_passes_test(admin_required)
 def distribute_bacon(request, contribution_id):
     contribution = Contribution.objects.get(id=contribution_id)
-    if (
-        contribution.status == "closed"
-        and not BaconToken.objects.filter(contribution=contribution).exists()
-    ):
+    if contribution.status == "closed" and not BaconToken.objects.filter(contribution=contribution).exists():
         token = create_bacon_token(contribution.user, contribution)
         if token:
             messages.success(request, "Bacon distributed successfully")
@@ -124,9 +112,7 @@ class ProjectBadgeView(APIView):
         user_ip = self.get_client_ip(request)
 
         # Continue with existing code but use the new user_ip
-        visited_data = IP.objects.filter(
-            address=user_ip, path=request.path, created__date=today
-        ).last()
+        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).last()
 
         if visited_data:
             # If the creation date is today
@@ -483,9 +469,7 @@ def create_project(request):
                 org = Organization.objects.get(id=org_id)
                 if not (request.user == org.admin):
                     return JsonResponse(
-                        {
-                            "error": "You do not have permission to add projects to this organization"
-                        },
+                        {"error": "You do not have permission to add projects to this organization"},
                         status=403,
                     )
                 project_data["organization"] = org
@@ -626,9 +610,7 @@ def create_project(request):
                     contributor_count=len(all_contributors),
                     commit_count=commit_count,
                     release_name=release_name,
-                    release_datetime=(
-                        parse_datetime(release_datetime) if release_datetime else None
-                    ),
+                    release_datetime=(parse_datetime(release_datetime) if release_datetime else None),
                     open_pull_requests=open_pull_requests,
                 )
 
@@ -638,9 +620,7 @@ def create_project(request):
         return JsonResponse({"message": "Project created successfully"}, status=201)
 
     except Organization.DoesNotExist:
-        return JsonResponse(
-            {"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404
-        )
+        return JsonResponse({"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404)
     except PermissionError:
         return JsonResponse(
             {
@@ -662,9 +642,7 @@ class ProjectsDetailView(DetailView):
 
         # Get all repositories associated with the project
         repositories = (
-            Repo.objects.select_related("project")
-            .filter(project=project)
-            .prefetch_related("tags", "contributor")
+            Repo.objects.select_related("project").filter(project=project).prefetch_related("tags", "contributor")
         )
 
         # Calculate aggregate metrics
@@ -748,9 +726,7 @@ class RepoDetailView(DetailView):
 
         # Get other repos from same project
         context["related_repos"] = (
-            Repo.objects.filter(project=repo.project)
-            .exclude(id=repo.id)
-            .select_related("project")[:5]
+            Repo.objects.filter(project=repo.project).exclude(id=repo.id).select_related("project")[:5]
         )
 
         # Get top contributors from GitHub
@@ -759,9 +735,7 @@ class RepoDetailView(DetailView):
         if github_contributors:
             # Match by github_id instead of username
             github_ids = [str(c["id"]) for c in github_contributors]
-            verified_contributors = repo.contributor.filter(
-                github_id__in=github_ids
-            ).select_related()
+            verified_contributors = repo.contributor.filter(github_id__in=github_ids).select_related()
 
             # Create a mapping of github_id to database contributor
             contributor_map = {str(c.github_id): c for c in verified_contributors}
@@ -841,23 +815,17 @@ class RepoDetailView(DetailView):
                     "Authorization": f"token {settings.GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json",
                 }
-                response = requests.get(
-                    f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers
-                )
+                response = requests.get(f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers)
                 if response.status_code == 200:
                     repo_data = response.json()
-                    start_date = datetime.strptime(
-                        repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                    ).date()
+                    start_date = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 else:
                     start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
             except Exception:
                 start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
 
         # Query contributor stats
-        stats_query = ContributorStats.objects.filter(
-            repo=repo, date__gte=start_date, date__lte=end_date
-        )
+        stats_query = ContributorStats.objects.filter(repo=repo, date__gte=start_date, date__lte=end_date)
 
         # Aggregate the stats
         stats_query = (
@@ -968,16 +936,12 @@ class RepoDetailView(DetailView):
                 # Get GitHub API token
                 github_token = getattr(settings, "GITHUB_TOKEN", None)
                 if not github_token:
-                    return JsonResponse(
-                        {"status": "error", "message": "GitHub token not configured"}, status=500
-                    )
+                    return JsonResponse({"status": "error", "message": "GitHub token not configured"}, status=500)
 
                 # Extract owner/repo from GitHub URL
                 match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
                 if not match:
-                    return JsonResponse(
-                        {"status": "error", "message": "Invalid repository URL"}, status=400
-                    )
+                    return JsonResponse({"status": "error", "message": "Invalid repository URL"}, status=400)
 
                 owner, repo_name = match.groups()
                 api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
@@ -1050,15 +1014,11 @@ class RepoDetailView(DetailView):
             try:
                 github_token = getattr(settings, "GITHUB_TOKEN", None)
                 if not github_token:
-                    return JsonResponse(
-                        {"status": "error", "message": "GitHub token not configured"}, status=500
-                    )
+                    return JsonResponse({"status": "error", "message": "GitHub token not configured"}, status=500)
 
                 match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
                 if not match:
-                    return JsonResponse(
-                        {"status": "error", "message": "Invalid repository URL"}, status=400
-                    )
+                    return JsonResponse({"status": "error", "message": "Invalid repository URL"}, status=400)
 
                 # Extract owner and repo from API call
                 owner, repo_name = match.groups()
@@ -1177,15 +1137,11 @@ class RepoDetailView(DetailView):
             try:
                 github_token = getattr(settings, "GITHUB_TOKEN", None)
                 if not github_token:
-                    return JsonResponse(
-                        {"status": "error", "message": "GitHub token not configured"}, status=500
-                    )
+                    return JsonResponse({"status": "error", "message": "GitHub token not configured"}, status=500)
 
                 match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
                 if not match:
-                    return JsonResponse(
-                        {"status": "error", "message": "Invalid repository URL"}, status=400
-                    )
+                    return JsonResponse({"status": "error", "message": "Invalid repository URL"}, status=400)
 
                 owner, repo_name = match.groups()
                 api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
@@ -1246,9 +1202,7 @@ class RepoDetailView(DetailView):
                     status=503,
                 )
             except Exception as e:
-                return JsonResponse(
-                    {"status": "error", "message": "An unexpected error occurred."}, status=500
-                )
+                return JsonResponse({"status": "error", "message": "An unexpected error occurred."}, status=500)
 
         elif section == "community":
             try:
@@ -1350,9 +1304,7 @@ class RepoBadgeView(APIView):
         user_ip = self.get_client_ip(request)
 
         # Continue with existing code but use the new user_ip
-        visited_data = IP.objects.filter(
-            address=user_ip, path=request.path, created__date=today
-        ).last()
+        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).last()
 
         if visited_data:
             # If the creation date is today
