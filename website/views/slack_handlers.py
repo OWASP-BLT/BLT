@@ -4,12 +4,13 @@ import json
 import os
 import time
 
+from django.db.models import Count
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from slack import WebClient
 from slack_sdk.errors import SlackApiError
 
-from website.models import SlackIntegration
+from website.models import Domain, Hunt, Issue, Project, SlackIntegration, User
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
@@ -41,10 +42,7 @@ def verify_slack_signature(request):
         sig_basestring = f"v0:{timestamp}:{request.body.decode()}"
 
         # Calculate our signature
-        my_signature = (
-            "v0="
-            + hmac.new(SIGNING_SECRET.encode(), sig_basestring.encode(), hashlib.sha256).hexdigest()
-        )
+        my_signature = "v0=" + hmac.new(SIGNING_SECRET.encode(), sig_basestring.encode(), hashlib.sha256).hexdigest()
 
         # Compare signatures
         is_valid = hmac.compare_digest(my_signature, signature)
@@ -175,9 +173,7 @@ def _handle_team_join(user_id, request):
 
             dm_channel = dm_response["channel"]["id"]
 
-            welcome_blocks = [
-                {"type": "section", "text": {"type": "mrkdwn", "text": welcome_message}}
-            ]
+            welcome_blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": welcome_message}}]
 
             # Send message using appropriate client
             welcome_response = workspace_client.chat_postMessage(
@@ -206,7 +202,45 @@ def slack_commands(request):
         team_id = request.POST.get("team_id")
         team_domain = request.POST.get("team_domain")  # Get the team domain
 
-        if command == "/contrib":
+        if command == "/stats":
+            # Get project counts by status
+            project_stats = Project.objects.values("status").annotate(count=Count("id"))
+            stats_by_status = {stat["status"]: stat["count"] for stat in project_stats}
+
+            # Get other key metrics
+            total_issues = Issue.objects.count()
+            total_users = User.objects.count()
+            total_domains = Domain.objects.count()
+            total_hunts = Hunt.objects.count()
+
+            # Format stats sections with line breaks for readability
+            stats_sections = [
+                "*Project Statistics:*\n",
+                "• Flagship Projects: " f"{stats_by_status.get('flagship', 0)}",
+                "• Production Projects: " f"{stats_by_status.get('production', 0)}",
+                "• Incubator Projects: " f"{stats_by_status.get('incubator', 0)}",
+                "• Lab Projects: " f"{stats_by_status.get('lab', 0)}",
+                "• New Projects: " f"{stats_by_status.get('new', 0)}",
+                "• Active Projects: " f"{stats_by_status.get('active', 0)}",
+                "• Inactive Projects: " f"{stats_by_status.get('inactive', 0)}",
+                "\n*Overall Platform Statistics:*\n",
+                f"• Total Issues: {total_issues}",
+                f"• Total Users: {total_users}",
+                f"• Total Domains: {total_domains}",
+                f"• Total Hunts: {total_hunts}",
+            ]
+
+            stats_message = "\n".join(stats_sections)
+
+            try:
+                # Post message to Slack
+                client = WebClient(token=workspace_client.bot_token)
+                client.chat_postMessage(channel=request.POST.get("channel_id"), text=stats_message)
+                return JsonResponse({"response_type": "in_channel"})
+            except SlackApiError:
+                return JsonResponse({"error": "Error posting message"}, status=500)
+
+        elif command == "/contrib":
             try:
                 # First try to get custom integration
                 try:

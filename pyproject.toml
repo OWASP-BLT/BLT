@@ -92,11 +92,11 @@ pre-commit = "^3.8.0"
 
 [tool.isort]
 known_first_party = ["blt"]
-line_length = 100
+line_length = 120
 profile = "black"
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]

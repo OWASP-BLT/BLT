@@ -88,16 +88,10 @@ class Integration(models.Model):
 
 
 class SlackIntegration(models.Model):
-    integration = models.OneToOneField(
-        Integration, on_delete=models.CASCADE, related_name="slack_integration"
-    )
-    bot_access_token = models.CharField(
-        max_length=255, null=True, blank=True
-    )  # will be different for each workspace
+    integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
+    bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
-    default_channel_name = models.CharField(
-        max_length=255, null=True, blank=True
-    )  # Default channel ID
+    default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
     default_channel_id = models.CharField(max_length=255, null=True, blank=True)
     daily_updates = models.BooleanField(default=False)
     daily_update_time = models.IntegerField(
@@ -193,12 +187,7 @@ class Domain(models.Model):
 
     @property
     def top_tester(self):
-        return (
-            User.objects.filter(issue__domain=self)
-            .annotate(total=Count("issue"))
-            .order_by("-total")
-            .first()
-        )
+        return User.objects.filter(issue__domain=self).annotate(total=Count("issue")).order_by("-total").first()
 
     @property
     def get_name(self):
@@ -315,9 +304,7 @@ class HuntPrize(models.Model):
     name = models.CharField(max_length=50)
     value = models.PositiveIntegerField(default=0)
     no_of_eligible_projects = models.PositiveIntegerField(default=1)  # no of winner in this prize
-    valid_submissions_eligible = models.BooleanField(
-        default=False
-    )  # all valid submissions are winners in this prize
+    valid_submissions_eligible = models.BooleanField(default=False)  # all valid submissions are winners in this prize
     prize_in_crypto = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -352,12 +339,8 @@ class Issue(models.Model):
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
     user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
-    screenshot = models.ImageField(
-        upload_to="screenshots", null=True, blank=True, validators=[validate_image]
-    )
-    closed_by = models.ForeignKey(
-        User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE
-    )
+    screenshot = models.ImageField(upload_to="screenshots", null=True, blank=True, validators=[validate_image])
+    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -400,9 +383,7 @@ class Issue(models.Model):
             prefix
             + self.domain_title
             + spacer
-            + self.description[
-                : 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))
-            ]
+            + self.description[: 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))]
             + issue_link
         )
         return msg
@@ -462,9 +443,7 @@ if is_using_gcs():
             except NotFound:
                 logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
             except Exception as e:
-                logger.error(
-                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
-                )
+                logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
 
 else:
 
@@ -496,9 +475,7 @@ if is_using_gcs():
             except NotFound:
                 logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
             except Exception as e:
-                logger.error(
-                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}"
-                )
+                logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
 
 else:
 
@@ -530,12 +507,8 @@ TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 
 class Winner(models.Model):
     hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
-    winner = models.ForeignKey(
-        User, related_name="winner", null=True, blank=True, on_delete=models.CASCADE
-    )
-    runner = models.ForeignKey(
-        User, related_name="runner", null=True, blank=True, on_delete=models.CASCADE
-    )
+    winner = models.ForeignKey(User, related_name="winner", null=True, blank=True, on_delete=models.CASCADE)
+    runner = models.ForeignKey(User, related_name="runner", null=True, blank=True, on_delete=models.CASCADE)
     second_runner = models.ForeignKey(
         User,
         related_name="second_runner",
@@ -598,12 +571,8 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
-    subscribed_domains = models.ManyToManyField(
-        Domain, related_name="user_subscribed_domains", blank=True
-    )
-    subscribed_users = models.ManyToManyField(
-        User, related_name="user_subscribed_users", blank=True
-    )
+    subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
+    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
     btc_address = models.CharField(max_length=100, blank=True, null=True)
     bch_address = models.CharField(max_length=100, blank=True, null=True)
     eth_address = models.CharField(max_length=100, blank=True, null=True)
@@ -655,9 +624,7 @@ class UserProfile(models.Model):
         try:
             with transaction.atomic():
                 # Streak logic
-                if not self.last_check_in or check_in_date == self.last_check_in + timedelta(
-                    days=1
-                ):
+                if not self.last_check_in or check_in_date == self.last_check_in + timedelta(days=1):
                     self.current_streak += 1
                     self.longest_streak = max(self.current_streak, self.longest_streak)
                 # If check-in is not consecutive, reset streak
@@ -773,9 +740,7 @@ class Wallet(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def deposit(self, value):
-        self.transaction_set.create(
-            value=value, running_balance=self.current_balance + Decimal(value)
-        )
+        self.transaction_set.create(value=value, running_balance=self.current_balance + Decimal(value))
         self.current_balance += Decimal(value)
         self.save()
 
@@ -783,9 +748,7 @@ class Wallet(models.Model):
         if value > self.current_balance:
             raise Exception("This wallet has insufficient balance.")
 
-        self.transaction_set.create(
-            value=-value, running_balance=self.current_balance - Decimal(value)
-        )
+        self.transaction_set.create(value=-value, running_balance=self.current_balance - Decimal(value))
         self.current_balance -= Decimal(value)
         self.save()
 
@@ -903,6 +866,14 @@ class Contributor(models.Model):
 
 
 class Project(models.Model):
+    STATUS_CHOICES = [
+        ("flagship", "Flagship"),
+        ("production", "Production"),
+        ("incubator", "Incubator"),
+        ("lab", "Lab"),
+        ("inactive", "Inactive"),
+    ]
+
     organization = models.ForeignKey(
         Organization,
         null=True,
@@ -913,9 +884,8 @@ class Project(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
-    url = models.URLField(
-        unique=True, null=True, blank=True
-    )  # Made url nullable in case of no website
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
@@ -956,9 +926,7 @@ class Contribution(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     repository = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
-    contribution_type = models.CharField(
-        max_length=20, choices=CONTRIBUTION_TYPES, default="commit"
-    )
+    contribution_type = models.CharField(max_length=20, choices=CONTRIBUTION_TYPES, default="commit")
     github_username = models.CharField(max_length=255, default="")
     github_id = models.CharField(max_length=100, null=True, blank=True)
     github_url = models.URLField(null=True, blank=True)
@@ -979,9 +947,7 @@ class BaconToken(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
     contribution = models.OneToOneField(Contribution, on_delete=models.CASCADE)
-    token_id = models.CharField(
-        max_length=64, blank=True, null=True
-    )  # Token ID from the Runes protocol
+    token_id = models.CharField(max_length=64, blank=True, null=True)  # Token ID from the Runes protocol
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} BACON"
@@ -1028,9 +994,7 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
 
 
 class TimeLog(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs")
     # associate organization with sizzle
     organization = models.ForeignKey(
         Organization,
@@ -1055,9 +1019,7 @@ class TimeLog(models.Model):
 
 
 class ActivityLog(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs"
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
     window_title = models.CharField(max_length=255)
     url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
     recorded_at = models.DateTimeField(auto_now_add=True)
@@ -1245,9 +1207,7 @@ def verify_file_upload(sender, instance, **kwargs):
         print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
         if not default_storage.exists(instance.image.name):
             print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
-            raise ValidationError(
-                f"Image '{instance.image.name}' was not uploaded to the storage backend."
-            )
+            raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
 class Repo(models.Model):
@@ -1330,15 +1290,11 @@ class ContributorStats(models.Model):
     comments = models.PositiveIntegerField(default=0)
 
     # "day" for daily entries, "month" for monthly entries
-    granularity = models.CharField(
-        max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day"
-    )
+    granularity = models.CharField(max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day")
 
     class Meta:
         # You can't have two different stats for the same date+granularity
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return (
-            f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
-        )
+        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
