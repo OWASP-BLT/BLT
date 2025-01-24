@@ -121,11 +121,6 @@ class ImageInline(admin.TabularInline):
     extra = 1
 
 
-class SlackChannelAdmin(admin.ModelAdmin):
-    list_display = ("slack_channel", "slack_id", "slack_url")
-    search_fields = ("slack_channel", "slack_id")
-
-
 class IssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -499,4 +494,3 @@ admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
-admin.site.register(SlackChannel, SlackChannelAdmin)
