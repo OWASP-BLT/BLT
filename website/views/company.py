@@ -870,12 +870,13 @@ class AddSlackIntegrationView(View):
                     "slack_integration": slack_integration,
                     "channels": channels_list,
                     "hours": hours,
+                    "welcome_message": slack_integration.welcome_message,
                 },
             )
 
         # Redirect to Slack OAuth flow if no integration exists
-        client_id = os.getenv("SLACK_CLIENT_ID")
-        scopes = "channels:read,chat:write,groups:read,channels:join"
+        client_id = os.getenv("SLACK_ID_CLIENT")
+        scopes = "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands"
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
         redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
@@ -921,6 +922,7 @@ class AddSlackIntegrationView(View):
             "default_channel": request.POST.get("target_channel"),
             "daily_sizzle_timelogs_status": request.POST.get("daily_sizzle_timelogs_status"),
             "daily_sizzle_timelogs_hour": request.POST.get("daily_sizzle_timelogs_hour"),
+            "welcome_message": request.POST.get("welcome_message"),  # Add this
         }
         slack_integration = (
             SlackIntegration.objects.filter(
@@ -940,6 +942,8 @@ class AddSlackIntegrationView(View):
                 slack_integration.default_channel_name = slack_data["default_channel"]
             slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
             slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
+            # Add welcome message
+            slack_integration.welcome_message = slack_data["welcome_message"]
             slack_integration.save()
 
         return redirect("organization_manage_integrations", id=id)
@@ -995,8 +999,8 @@ class SlackCallbackView(View):
 
             organization_id = int(organization_id)  # Safely cast to int after validation
 
-            # Exchange code for token
-            access_token = self.exchange_code_for_token(code, request)
+            # Exchange code for token and get team info
+            token_data = self.exchange_code_for_token(code, request)
 
             integration = Integration.objects.create(
                 organization_id=organization_id,
@@ -1004,7 +1008,8 @@ class SlackCallbackView(View):
             )
             SlackIntegration.objects.create(
                 integration=integration,
-                bot_access_token=access_token,
+                bot_access_token=token_data["access_token"],
+                workspace_name=token_data["team"]["id"],
             )
 
             dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
@@ -1016,11 +1021,13 @@ class SlackCallbackView(View):
 
     def exchange_code_for_token(self, code, request):
         """Exchanges OAuth code for Slack access token."""
-        client_id = os.getenv("SLACK_CLIENT_ID")
-        client_secret = os.getenv("SLACK_CLIENT_SECRET")
+        client_id = os.getenv("SLACK_ID_CLIENT")
+        client_secret = os.getenv("SLACK_SECRET_CLIENT")
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
+        redirect_uri = os.environ.get(
+            "OAUTH_REDIRECT_URL", f"{request.scheme}://{request.get_host()}/oauth/slack/callback"
+        )
 
         url = "https://slack.com/api/oauth.v2.access"
         data = {
@@ -1034,7 +1041,7 @@ class SlackCallbackView(View):
         token_data = response.json()
 
         if token_data.get("ok"):
-            return token_data["access_token"]
+            return token_data  # Return the full token data instead of just the access token
         else:
             raise Exception(f"Error exchanging code for token: {token_data.get('error')}")
 
