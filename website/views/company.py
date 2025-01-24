@@ -147,7 +147,9 @@ class RegisterOrganizationView(View):
         organization_url = data.get("organization_url", "")
 
         if user_domain in restricted_domain:
-            messages.error(request, "Login with organization email in order to create the organization.")
+            messages.error(
+                request, "Login with organization email in order to create the organization."
+            )
             return redirect("/")
 
         if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
@@ -163,7 +165,9 @@ class RegisterOrganizationView(View):
             organization_logo_file = organization_logo.name.split(".")[0]
             extension = organization_logo.name.split(".")[-1]
             organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
-            logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
+            logo_path = default_storage.save(
+                f"organization_logos/{organization_logo.name}", organization_logo
+            )
         else:
             logo_path = None
 
@@ -209,16 +213,20 @@ class OrganizationDashboardAnalyticsView(View):
     months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
     def get_general_info(self, organization):
-        total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
+        total_organization_bugs = Issue.objects.filter(
+            domain__organization__id=organization
+        ).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
         # Step 1: Retrieve all hunt IDs associated with the specified organization
-        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list("id", flat=True)
+        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list(
+            "id", flat=True
+        )
 
         # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
-        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(total_money=Sum("rewarded"))[
-            "total_money"
-        ]
+        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(
+            total_money=Sum("rewarded")
+        )["total_money"]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
@@ -230,7 +238,9 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_bug_report_type_piechart_data(self, organization):
         bug_report_type = (
-            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(count=Count("label"))
+            Issue.objects.values("label")
+            .filter(domain__organization__id=organization)
+            .annotate(count=Count("label"))
         )
         bug_report_type_labels = []
         bug_report_type_data = []
@@ -248,7 +258,9 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_reports_on_domain_piechart_data(self, organization):
         report_piechart = (
-            Issue.objects.values("url").filter(domain__organization__id=organization).annotate(count=Count("url"))
+            Issue.objects.values("url")
+            .filter(domain__organization__id=organization)
+            .annotate(count=Count("url"))
         )
 
         report_labels = []
@@ -340,17 +352,23 @@ class OrganizationDashboardAnalyticsView(View):
         if prev_week_issue_count == 0:
             percent_increase = this_week_issue_count * 100
         else:
-            percent_increase = ((this_week_issue_count - prev_week_issue_count) / prev_week_issue_count) * 100
+            percent_increase = (
+                (this_week_issue_count - prev_week_issue_count) / prev_week_issue_count
+            ) * 100
 
         return {
             "percent_increase": percent_increase,
-            "is_increasing": True if (this_week_issue_count - prev_week_issue_count) >= 0 else False,
+            "is_increasing": True
+            if (this_week_issue_count - prev_week_issue_count) >= 0
+            else False,
             "this_week_issue_count": this_week_issue_count,
         }
 
     def get_spent_on_bugtypes(self, organization):
         spent_on_bugtypes = (
-            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(spent=Sum("rewarded"))
+            Issue.objects.values("label")
+            .filter(domain__organization__id=organization)
+            .annotate(spent=Sum("rewarded"))
         )
         labels = list(self.labels.values())
         data = [0 for label in labels]  # make all labels spent 0 / init with 0
@@ -379,9 +397,13 @@ class OrganizationDashboardAnalyticsView(View):
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),
-            "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
+            "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(
+                id
+            ),
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
-            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
+            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(
+                id, True
+            ),
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
         }
         self.get_spent_on_bugtypes(id)
@@ -471,7 +493,9 @@ class OrganizationDashboardTeamOverviewView(View):
         }
 
         if sort_field in sort_mapping:
-            daily_status_reports = daily_status_reports.order_by(f"{sort_prefix}{sort_mapping[sort_field]}")
+            daily_status_reports = daily_status_reports.order_by(
+                f"{sort_prefix}{sort_mapping[sort_field]}"
+            )
 
         context = {
             "organization": id,
@@ -515,7 +539,11 @@ class OrganizationDashboardManageBugsView(View):
 class OrganizationDashboardManageDomainsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        domains = Domain.objects.values("id", "name", "url", "logo").filter(organization__id=id).order_by("modified")
+        domains = (
+            Domain.objects.values("id", "name", "url", "logo")
+            .filter(organization__id=id)
+            .order_by("modified")
+        )
 
         organizations = (
             Organization.objects.values("name", "id")
@@ -602,7 +630,9 @@ class AddDomainView(View):
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)
 
-        domain_exist = Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"])).exists()
+        domain_exist = Domain.objects.filter(
+            Q(name=domain_data["name"]) | Q(url=domain_data["url"])
+        ).exists()
 
         if domain_exist:
             messages.error(request, "Domain name or url already exist.")
@@ -633,7 +663,9 @@ class AddDomainView(View):
         for domain_manager_email in managers_list:
             manager_email_domain = domain_manager_email.split("@")[-1]
             if not domain.endswith(f".{manager_email_domain}") and domain != manager_email_domain:
-                messages.error(request, f"Manager: {domain_manager_email} does not match domain email.")
+                messages.error(
+                    request, f"Manager: {domain_manager_email} does not match domain email."
+                )
                 return redirect("add_domain", id=id)
 
         if request.FILES.get("logo"):
@@ -660,7 +692,10 @@ class AddDomainView(View):
             messages.error(request, "Facebook url should contain facebook.com")
             return redirect("add_domain", id=id)
         if domain_data["twitter"]:
-            if "twitter.com" not in domain_data["twitter"] and "x.com" not in domain_data["twitter"]:
+            if (
+                "twitter.com" not in domain_data["twitter"]
+                and "x.com" not in domain_data["twitter"]
+            ):
                 messages.error(request, "Twitter url should contain twitter.com or x.com")
             return redirect("add_domain", id=id)
         if domain_data["github"] and "github.com" not in domain_data["github"]:
@@ -744,8 +779,13 @@ class AddDomainView(View):
 
         for domain_manager_email in managers_list:
             manager_email_domain = domain_manager_email.split("@")[-1]
-            if not domain_name.endswith(f".{manager_email_domain}") and domain_name != manager_email_domain:
-                messages.error(request, f"Manager: {domain_manager_email} does not match domain email.")
+            if (
+                not domain_name.endswith(f".{manager_email_domain}")
+                and domain_name != manager_email_domain
+            ):
+                messages.error(
+                    request, f"Manager: {domain_manager_email} does not match domain email."
+                )
                 return redirect("edit_domain", id=id, domain_id=domain_id)
 
         if request.FILES.get("logo"):
@@ -768,7 +808,10 @@ class AddDomainView(View):
             messages.error(request, "Facebook url should contain facebook.com")
             return redirect("edit_domain", id=id, domain_id=domain_id)
         if domain_data["twitter"]:
-            if "twitter.com" not in domain_data["twitter"] and "x.com" not in domain_data["twitter"]:
+            if (
+                "twitter.com" not in domain_data["twitter"]
+                and "x.com" not in domain_data["twitter"]
+            ):
                 messages.error(request, "Twitter url should contain twitter.com or x.com")
                 return redirect("edit_domain", id=id, domain_id=domain_id)
         if domain_data["github"] and "github.com" not in domain_data["github"]:
@@ -893,7 +936,9 @@ class AddSlackIntegrationView(View):
         if slack_integration:
             app = App(token=slack_integration.bot_access_token)
             if slack_data["default_channel"]:
-                slack_integration.default_channel_id = self.get_channel_id(app, slack_data["default_channel"])
+                slack_integration.default_channel_id = self.get_channel_id(
+                    app, slack_data["default_channel"]
+                )
                 slack_integration.default_channel_name = slack_data["default_channel"]
             slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
             slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
@@ -1043,16 +1088,18 @@ class DomainView(View):
         if not domain:
             raise Http404("Domain not found")
 
-        total_money_distributed = Issue.objects.filter(domain__id=domain["id"]).aggregate(total_money=Sum("rewarded"))[
-            "total_money"
-        ]
+        total_money_distributed = Issue.objects.filter(domain__id=domain["id"]).aggregate(
+            total_money=Sum("rewarded")
+        )["total_money"]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         # Query the database for the exact domain
         total_bug_reported = Issue.objects.filter(domain__id=domain["id"]).count()
         total_bug_accepted = Issue.objects.filter(domain__id=domain["id"], verified=True).count()
 
-        is_domain_manager = Domain.objects.filter(Q(id=domain["id"]) & Q(managers__in=[request.user])).exists()
+        is_domain_manager = Domain.objects.filter(
+            Q(id=domain["id"]) & Q(managers__in=[request.user])
+        ).exists()
         if is_domain_manager:
             latest_issues = (
                 Issue.objects.values(
@@ -1118,16 +1165,18 @@ class DomainView(View):
         first_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("created").first()
         last_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("-created").first()
 
-        ongoing_bughunts = Hunt.objects.filter(domain__id=domain["id"]).annotate(total_prize=Sum("huntprize__value"))[
-            :3
-        ]
+        ongoing_bughunts = Hunt.objects.filter(domain__id=domain["id"]).annotate(
+            total_prize=Sum("huntprize__value")
+        )[:3]
         context = {
             **domain,
             "total_money_distributed": total_money_distributed,
             "total_bug_reported": total_bug_reported,
             "total_bug_accepted": total_bug_accepted,
             "latest_issues": cleaned_issues,
-            "monthly_activity_chart": json.dumps(self.get_current_year_monthly_reported_bar_data(domain["id"])),
+            "monthly_activity_chart": json.dumps(
+                self.get_current_year_monthly_reported_bar_data(domain["id"])
+            ),
             "top_testers": top_testers,
             "first_bug": first_bug,
             "last_bug": last_bug,
@@ -1319,7 +1368,9 @@ class ShowBughuntView(View):
 
         # bughunt prizes
         rewards = HuntPrize.objects.filter(hunt_id=hunt_obj.id)
-        winners_count = {reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards}
+        winners_count = {
+            reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards
+        }
 
         # check winner have for this bughunt
         winners = Winner.objects.filter(hunt_id=hunt_obj.id).select_related("prize")
@@ -1571,8 +1622,12 @@ def edit_prize(request, prize_id, organization_id):
     data = json.loads(request.body)
     prize.name = data.get("prize_name", prize.name)
     prize.value = data.get("cash_value", prize.value)
-    prize.no_of_eligible_projects = data.get("number_of_winning_projects", prize.no_of_eligible_projects)
-    prize.valid_submissions_eligible = data.get("every_valid_submissions", prize.valid_submissions_eligible)
+    prize.no_of_eligible_projects = data.get(
+        "number_of_winning_projects", prize.no_of_eligible_projects
+    )
+    prize.valid_submissions_eligible = data.get(
+        "every_valid_submissions", prize.valid_submissions_eligible
+    )
     prize.description = data.get("prize_description", prize.description)
     prize.save()
 
@@ -1587,7 +1642,9 @@ def accept_bug(request, issue_id, reward_id=None):
             issue.verified = True
             issue.rewarded = 0
             issue.save()
-            Winner(hunt_id=issue.hunt.id, prize_id=None, winner_id=issue.user.id, prize_amount=0).save()
+            Winner(
+                hunt_id=issue.hunt.id, prize_id=None, winner_id=issue.user.id, prize_amount=0
+            ).save()
         else:
             reward = get_object_or_404(HuntPrize, id=reward_id)
             issue.verified = True

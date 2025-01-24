@@ -90,10 +90,7 @@ class Integration(models.Model):
 class SlackIntegration(models.Model):
     integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
     bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
-    integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
-    bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
-    default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
     default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
     default_channel_id = models.CharField(max_length=255, null=True, blank=True)
     daily_updates = models.BooleanField(default=False)
@@ -102,12 +99,6 @@ class SlackIntegration(models.Model):
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(23)],  # Valid hours: 0–23
         help_text="The hour of the day (0-23) to send daily updates",
-    )
-    # Add welcome message field
-    welcome_message = models.TextField(
-        null=True,
-        blank=True,
-        help_text="Custom welcome message for new members. Use Slack markdown formatting.",
     )
     # Add welcome message field
     welcome_message = models.TextField(
@@ -938,7 +929,6 @@ class Contribution(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     repository = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
-    contribution_type = models.CharField(max_length=20, choices=CONTRIBUTION_TYPES, default="commit")
     contribution_type = models.CharField(max_length=20, choices=CONTRIBUTION_TYPES, default="commit")
     github_username = models.CharField(max_length=255, default="")
     github_id = models.CharField(max_length=100, null=True, blank=True)
