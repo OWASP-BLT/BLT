@@ -90,6 +90,23 @@
                     </select>
                 </div>
             </div>
+            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div class="sm:col-span-6">
+                    <label for="welcome_message"
+                           class="block text-sm font-medium leading-6 text-gray-900">Welcome Message</label>
+                    <div class="mt-2">
+                        <textarea id="welcome_message"
+                                  name="welcome_message"
+                                  rows="10"
+                                  class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6"
+                                  placeholder="Welcome to our workspace! 👋  Here's some helpful information about our workspace: • Channel #general for general discussions • Channel #help for getting assistance • Channel #announcements for important updates  Feel free to introduce yourself!">{{ welcome_message }}</textarea>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">
+                        You can use Slack's markdown formatting:
+                        *bold*, _italic_, ~strikethrough~, `code`, and >quote
+                    </p>
+                </div>
+            </div>
             <div class="mt-6 flex items-center justify-end gap-x-6">
                 <button type="submit"
                         class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
@@ -99,3 +116,33 @@
         </div>
     </form>
 {% endblock body %}
+{% block extra_head %}
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+{% endblock %}
+{% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var quill = new Quill('#welcome_message', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'strike'],
+                    ['code-block', 'blockquote'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['link'],
+                    ['clean']
+                ]
+            },
+            placeholder: 'Write your welcome message here...'
+        });
+
+        // When form is submitted, update hidden input with Quill content
+        document.querySelector('form').onsubmit = function() {
+            var content = quill.root.innerHTML;
+            document.querySelector('#welcome_message').value = content;
+            return true;
+        };
+    });
+    </script>
+{% endblock %}
