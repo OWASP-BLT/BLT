@@ -48,12 +48,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    safe_redirect_allowed,
-    save_analysis_report,
-)
+from website.utils import analyze_pr_content, fetch_github_data, safe_redirect_allowed, save_analysis_report
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -249,10 +244,7 @@ def check_status(request):
         # Database connection check
         if CHECK_DATABASE:
             print("Getting database connection count...")
-            if (
-                settings.DATABASES.get("default", {}).get("ENGINE")
-                == "django.db.backends.postgresql"
-            ):
+            if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
                     status_data["db_connection_count"] = cursor.fetchone()[0]
@@ -305,13 +297,45 @@ def find_key(request, token):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    stype = request.GET.get("type", "organizations")
+    stype = request.GET.get("type", "all")
     context = None
     if query is None:
         return render(request, template)
     query = query.strip()
 
-    if stype == "issues":
+    if stype == "all":
+        # Search across multiple models
+        organizations = Organization.objects.filter(name__icontains=query)
+        issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=request.user.id)
+        )[0:20]
+        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+        users = (
+            UserProfile.objects.filter(Q(user__username__icontains=query))
+            .annotate(total_score=Sum("user__points__score"))
+            .order_by("-total_score")[0:20]
+        )
+        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        context = {
+            "query": query,
+            "type": stype,
+            "organizations": organizations,
+            "issues": issues,
+            "domains": domains,
+            "users": users,
+            "projects": projects,
+            "repos": repos,
+        }
+
+        for userprofile in users:
+            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+        for org in organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
+
+    elif stype == "issues":
         context = {
             "query": query,
             "type": stype,
@@ -362,17 +386,13 @@ def search(request, template="search.html"):
         context = {
             "query": query,
             "type": stype,
-            "projects": Project.objects.filter(
-                Q(name__icontains=query) | Q(description__icontains=query)
-            ),
+            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
         }
     elif stype == "repos":
         context = {
             "query": query,
             "type": stype,
-            "repos": Repo.objects.filter(
-                Q(name__icontains=query) | Q(description__icontains=query)
-            ),
+            "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
         }
     elif stype == "tags":
         tags = Tag.objects.filter(name__icontains=query)
@@ -527,15 +547,11 @@ def vote_suggestions(request):
             voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
 
             if up_vote:
-                voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=True, down_vote=False
-                )
+                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, up_vote=True, down_vote=False)
                 suggestion.up_votes += 1
 
             if down_vote:
-                voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
-                )
+                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, down_vote=True, up_vote=False)
                 suggestion.down_votes += 1
 
             suggestion.save()
@@ -561,12 +577,8 @@ def set_vote_status(request):
         except Suggestion.DoesNotExist:
             return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
 
-        up_vote = SuggestionVotes.objects.filter(
-            suggestion=suggestion, user=user, up_vote=True
-        ).exists()
-        down_vote = SuggestionVotes.objects.filter(
-            suggestion=suggestion, user=user, down_vote=True
-        ).exists()
+        up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
+        down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
 
         response = {"up_vote": up_vote, "down_vote": down_vote}
         return JsonResponse(response)
@@ -655,9 +667,7 @@ class UploadCreate(View):
 
     def post(self, request, *args, **kwargs):
         data = request.FILES.get("image")
-        result = default_storage.save(
-            "uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
-        )
+        result = default_storage.save("uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
         return JsonResponse({"status": result})
 
 
@@ -853,12 +863,7 @@ def submit_roadmap_pr(request):
 
         if "error" in pr_data or "error" in roadmap_data:
             return JsonResponse(
-                {
-                    "error": (
-                        f"Failed to fetch PR or roadmap data: "
-                        f"{pr_data.get('error', 'Unknown error')}"
-                    )
-                },
+                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
                 status=500,
             )
 
