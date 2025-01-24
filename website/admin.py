@@ -31,7 +31,6 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
-    SlackChannel,
     SlackIntegration,
     Subscription,
     Suggestion,
