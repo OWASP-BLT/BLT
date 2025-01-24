@@ -19,19 +19,24 @@
         .emoji-picker-container.show emoji-picker {
             display: block;
         }
-    </style>
-    <style>
-    .docs_style {
+        .docs_style {
         background-color: #EF4444!important;
         color: white!important;
-    }
-    .docs_style:hover {
+        }
+        .docs_style:hover {
         background-color: #dc2626!important;
-    }
-    .disabled-button {
+        }
+        .disabled-button {
         background-color: #a1a1aa !important;
         cursor: not-allowed !important;
-    }
+        }
+        .daily-challenge {
+            border: 2px solid #34D399;
+            background-color: #D1FAE5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
     <div class="container mx-auto p-6">
         {% include "includes/sidenav.html" %}
@@ -39,10 +44,19 @@
             <div class="mb-6">
                 <h1 class="text-4xl font-semibold text-gray-800 text-center">Add Sizzle Check-In</h1>
             </div>
+            {% if daily_challenge %}
+                <div class="daily-challenge">
+                    <h2 class="text-2xl font-bold text-gray-700">Today's Challenge: {{ daily_challenge.title }}</h2>
+                    <p class="mt-2 text-gray-600">{{ daily_challenge.description }}</p>
+                    <p class="mt-2 text-gray-500">
+                        <strong>Reward:</strong> {{ daily_challenge.reward_description }}
+                    </p>
+                </div>
+            {% endif %}
             <div class="flex justify-center">
                 <form id="checkInForm"
                       method="post"
-                      action="{% url 'sizzle_daily_log' %}"
+                      action="{% url 'add_sizzle_checkin' %}"
                       class="w-full max-w-5xl bg-white shadow-sm rounded-lg p-6"
                       {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
                     {% csrf_token %}
@@ -106,6 +120,7 @@
                             <emoji-picker id="emoji-picker"></emoji-picker>
                         </div>
                     </div>
+                    {% if daily_challenge %}<input type="hidden" name="challenge_id" value="{{ daily_challenge.id }}">{% endif %}
                     <div class="text-center">
                         <button type="submit"
                                 class="submit-button bg-red-500 text-white font-bold py-2 px-6 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">

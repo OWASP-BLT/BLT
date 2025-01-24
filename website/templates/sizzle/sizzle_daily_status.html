@@ -25,6 +25,13 @@
         .docs_style:hover {
             background-color: #dc2626!important;
         }
+        .challenge-status {
+            border: 2px solid #10B981;
+            background-color: #D1FAE5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
     </style>
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
@@ -80,6 +87,22 @@
                                 ❌ No
                             {% endif %}
                         </p>
+                        <p>
+                            <strong>Daily Challenge:</strong> {{ report.daily_challenge.title }}
+                        </p>
+                        <p>
+                            <strong>Challenge Completed:</strong>
+                            {% if report.challenge_completed %}
+                                ✅ Yes
+                            {% else %}
+                                ❌ No
+                            {% endif %}
+                        </p>
+                        {% if report.challenge_completed %}
+                            <div class="challenge-status">
+                                <p class="font-bold">Reward: {{ report.daily_challenge.reward_description }}</p>
+                            </div>
+                        {% endif %}
                         <p>
                             <strong>How are you feeling today?</strong>
                         </p>
