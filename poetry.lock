@@ -4509,13 +4509,13 @@ files = [
 
 [[package]]
 name = "unstructured"
-version = "0.16.14"
+version = "0.16.15"
 description = "A library that prepares raw documents for downstream ML tasks."
 optional = false
 python-versions = "<3.13,>=3.9.0"
 files = [
-    {file = "unstructured-0.16.14-py3-none-any.whl", hash = "sha256:7b3c2eb21e65d2f61240de7a5241fd7734d97be2c9cfa5f70934e10470318131"},
-    {file = "unstructured-0.16.14.tar.gz", hash = "sha256:cec819461090226cd478429c1e0fda19a66ba49ab9ade1ea1fd9ec79c279d7ac"},
+    {file = "unstructured-0.16.15-py3-none-any.whl", hash = "sha256:5b0931eb92fb858b983fada18111efdf9c2a0c861ef8e9b58c4e05b1daa50e35"},
+    {file = "unstructured-0.16.15.tar.gz", hash = "sha256:18fb850d47b5a2a6ea45b2f7e0eda687f903a2f2e58909b1defd48e2b3126ff4"},
 ]
 
 [package.dependencies]
@@ -4543,19 +4543,19 @@ unstructured-client = "*"
 wrapt = "*"
 
 [package.extras]
-all-docs = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
+all-docs = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (>=0.8.6)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
 csv = ["pandas"]
 doc = ["python-docx (>=1.1.2)"]
 docx = ["python-docx (>=1.1.2)"]
 epub = ["pypandoc"]
 huggingface = ["langdetect", "sacremoses", "sentencepiece", "torch", "transformers"]
-image = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)"]
-local-inference = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
+image = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (>=0.8.6)", "unstructured.pytesseract (>=0.3.12)"]
+local-inference = ["effdet", "google-cloud-vision", "markdown", "networkx", "onnx", "openpyxl", "pandas", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypandoc", "pypdf", "python-docx (>=1.1.2)", "python-pptx (>=1.0.1)", "unstructured-inference (>=0.8.6)", "unstructured.pytesseract (>=0.3.12)", "xlrd"]
 md = ["markdown"]
 odt = ["pypandoc", "python-docx (>=1.1.2)"]
 org = ["pypandoc"]
 paddleocr = ["paddlepaddle (==3.0.0b1)", "unstructured.paddleocr (==2.8.1.0)"]
-pdf = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (==0.8.1)", "unstructured.pytesseract (>=0.3.12)"]
+pdf = ["effdet", "google-cloud-vision", "onnx", "pdf2image", "pdfminer.six", "pi-heif", "pikepdf", "pypdf", "unstructured-inference (>=0.8.6)", "unstructured.pytesseract (>=0.3.12)"]
 ppt = ["python-pptx (>=1.0.1)"]
 pptx = ["python-pptx (>=1.0.1)"]
 rst = ["pypandoc"]
@@ -5021,4 +5021,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "37c2c20e44336bb3a5c07037884bb7eca9ac4268cd175dfca77be350e9e76da2"
+content-hash = "3be3fe281b04ee7a44701778fe8a0ddbe22d31ee146b0e14607a6fbd1c8cda41"
