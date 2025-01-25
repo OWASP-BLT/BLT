@@ -22,6 +22,7 @@ from django.views.generic import View
 from slack_bolt import App
 
 from website.models import (
+    DailyStatusReport,
     Domain,
     Hunt,
     HuntPrize,
@@ -31,6 +32,7 @@ from website.models import (
     IssueScreenshot,
     Organization,
     SlackIntegration,
+    UserProfile,
     Winner,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
@@ -430,6 +432,84 @@ class OrganizationDashboardIntegrations(View):
         return render(request, "organization/organization_integrations.html", context=context)
 
 
+class OrganizationDashboardTeamOverviewView(View):
+    @validate_organization_user
+    def get(self, request, id, *args, **kwargs):
+        sort_field = request.GET.get("sort", "date")
+        sort_direction = request.GET.get("direction", "desc")
+
+        organizations = (
+            Organization.objects.values("name", "id")
+            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+            .distinct()
+        )
+
+        organization_obj = Organization.objects.filter(id=id).first()
+
+        team_members = UserProfile.objects.filter(team=organization_obj)
+        team_member_users = [member.user for member in team_members]
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            filter_type = request.GET.get("filter_type")
+            filter_value = request.GET.get("filter_value")
+
+            reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+
+            if filter_type == "user":
+                reports = reports.filter(user_id=filter_value)
+            elif filter_type == "date":
+                reports = reports.filter(date=filter_value)
+            elif filter_type == "goal":
+                reports = reports.filter(goal_accomplished=filter_value == "true")
+            elif filter_type == "task":
+                reports = reports.filter(previous_work__icontains=filter_value)
+
+            data = []
+            for report in reports:
+                data.append(
+                    {
+                        "username": report.user.username,
+                        "avatar_url": report.user.userprofile.user_avatar.url
+                        if report.user.userprofile.user_avatar
+                        else None,
+                        "date": report.date.strftime("%B %d, %Y"),
+                        "previous_work": report.previous_work,
+                        "next_plan": report.next_plan,
+                        "blockers": report.blockers,
+                        "goal_accomplished": report.goal_accomplished,
+                        "current_mood": report.current_mood,
+                    }
+                )
+            return JsonResponse({"data": data})
+
+        daily_status_reports = DailyStatusReport.objects.filter(user__in=team_member_users)
+
+        sort_prefix = "-" if sort_direction == "desc" else ""
+        sort_mapping = {
+            "date": "date",
+            "username": "user__username",
+            "mood": "current_mood",
+            "goal": "goal_accomplished",
+        }
+
+        if sort_field in sort_mapping:
+            daily_status_reports = daily_status_reports.order_by(
+                f"{sort_prefix}{sort_mapping[sort_field]}"
+            )
+
+        context = {
+            "organization": id,
+            "organizations": organizations,
+            "organization_obj": organization_obj,
+            "team_members": team_members,
+            "daily_status_reports": daily_status_reports,
+            "current_sort": sort_field,
+            "current_direction": sort_direction,
+        }
+
+        return render(request, "organization/organization_team_overview.html", context=context)
+
+
 class OrganizationDashboardManageBugsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
@@ -790,12 +870,13 @@ class AddSlackIntegrationView(View):
                     "slack_integration": slack_integration,
                     "channels": channels_list,
                     "hours": hours,
+                    "welcome_message": slack_integration.welcome_message,
                 },
             )
 
         # Redirect to Slack OAuth flow if no integration exists
-        client_id = os.getenv("SLACK_CLIENT_ID")
-        scopes = "channels:read,chat:write,groups:read,channels:join"
+        client_id = os.getenv("SLACK_ID_CLIENT")
+        scopes = "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands"
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
         redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
@@ -841,6 +922,7 @@ class AddSlackIntegrationView(View):
             "default_channel": request.POST.get("target_channel"),
             "daily_sizzle_timelogs_status": request.POST.get("daily_sizzle_timelogs_status"),
             "daily_sizzle_timelogs_hour": request.POST.get("daily_sizzle_timelogs_hour"),
+            "welcome_message": request.POST.get("welcome_message"),  # Add this
         }
         slack_integration = (
             SlackIntegration.objects.filter(
@@ -860,6 +942,8 @@ class AddSlackIntegrationView(View):
                 slack_integration.default_channel_name = slack_data["default_channel"]
             slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
             slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
+            # Add welcome message
+            slack_integration.welcome_message = slack_data["welcome_message"]
             slack_integration.save()
 
         return redirect("organization_manage_integrations", id=id)
@@ -915,8 +999,8 @@ class SlackCallbackView(View):
 
             organization_id = int(organization_id)  # Safely cast to int after validation
 
-            # Exchange code for token
-            access_token = self.exchange_code_for_token(code, request)
+            # Exchange code for token and get team info
+            token_data = self.exchange_code_for_token(code, request)
 
             integration = Integration.objects.create(
                 organization_id=organization_id,
@@ -924,7 +1008,8 @@ class SlackCallbackView(View):
             )
             SlackIntegration.objects.create(
                 integration=integration,
-                bot_access_token=access_token,
+                bot_access_token=token_data["access_token"],
+                workspace_name=token_data["team"]["id"],
             )
 
             dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
@@ -936,11 +1021,13 @@ class SlackCallbackView(View):
 
     def exchange_code_for_token(self, code, request):
         """Exchanges OAuth code for Slack access token."""
-        client_id = os.getenv("SLACK_CLIENT_ID")
-        client_secret = os.getenv("SLACK_CLIENT_SECRET")
+        client_id = os.getenv("SLACK_ID_CLIENT")
+        client_secret = os.getenv("SLACK_SECRET_CLIENT")
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
-        redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
+        redirect_uri = os.environ.get(
+            "OAUTH_REDIRECT_URL", f"{request.scheme}://{request.get_host()}/oauth/slack/callback"
+        )
 
         url = "https://slack.com/api/oauth.v2.access"
         data = {
@@ -954,7 +1041,7 @@ class SlackCallbackView(View):
         token_data = response.json()
 
         if token_data.get("ok"):
-            return token_data["access_token"]
+            return token_data  # Return the full token data instead of just the access token
         else:
             raise Exception(f"Error exchanging code for token: {token_data.get('error')}")
 
