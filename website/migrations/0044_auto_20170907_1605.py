@@ -17,8 +17,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="userprofile",
             name="issue_upvoted",
-            field=models.ManyToManyField(
-                blank=True, null=True, related_name="upvoted", to="website.Issue"
-            ),
+            field=models.ManyToManyField(blank=True, null=True, related_name="upvoted", to="website.Issue"),
         ),
     ]
