@@ -3,6 +3,7 @@ import os
 import subprocess
 import tracemalloc
 import urllib
+from datetime import timedelta
 
 import psutil
 import requests
@@ -26,6 +27,7 @@ from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -41,6 +43,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SlackBotActivity,
     Suggestion,
     SuggestionVotes,
     Tag,
@@ -115,6 +118,7 @@ def check_status(request):
     CHECK_MEMORY = True
     CHECK_DATABASE = False
     CHECK_REDIS = False
+    CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
@@ -128,6 +132,7 @@ def check_status(request):
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
             "redis_stats": {} if not CHECK_REDIS else {},
+            "slack_bot": {},
         }
 
         if CHECK_MEMORY:
@@ -257,6 +262,35 @@ def check_status(request):
                 status_data["redis_stats"] = redis_client.info()
             except Exception as e:
                 print(f"Redis error or not supported: {e}")
+
+        # Slack bot activity metrics
+        if CHECK_SLACK_BOT:
+            last_24h = timezone.now() - timedelta(hours=24)
+
+            # Get bot activity metrics
+            bot_metrics = {
+                "total_activities": SlackBotActivity.objects.count(),
+                "last_24h_activities": SlackBotActivity.objects.filter(created__gte=last_24h).count(),
+                "success_rate": (
+                    SlackBotActivity.objects.filter(success=True).count() / SlackBotActivity.objects.count() * 100
+                    if SlackBotActivity.objects.exists()
+                    else 0
+                ),
+                "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
+                "recent_activities": list(
+                    SlackBotActivity.objects.filter(created__gte=last_24h)
+                    .values("activity_type", "workspace_name", "created", "success")
+                    .order_by("-created")[:5]
+                ),
+                "activity_types": {
+                    activity_type: count
+                    for activity_type, count in SlackBotActivity.objects.values("activity_type")
+                    .annotate(count=Count("id"))
+                    .values_list("activity_type", "count")
+                },
+            }
+
+            status_data["slack_bot"] = bot_metrics
 
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
