@@ -55,9 +55,7 @@ def get_email_from_domain(domain_name):
             response = requests.get(url)
         except:
             continue
-        new_emails = set(
-            re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I)
-        )
+        new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
         if new_emails:
             emails.update(new_emails)
             break
@@ -170,9 +168,7 @@ def safe_redirect_request(request: HttpRequest):
     if http_referer:
         referer_url = urlparse(http_referer)
         if referer_url.netloc == request.get_host():
-            safe_url = urlunparse(
-                (referer_url.scheme, referer_url.netloc, referer_url.path, "", "", "")
-            )
+            safe_url = urlunparse((referer_url.scheme, referer_url.netloc, referer_url.path, "", "", ""))
             return redirect(safe_url)
     fallback_url = f"{request.scheme}://{request.get_host()}/"
     return redirect(fallback_url)
@@ -254,9 +250,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
     """
     for attempt in range(retries):
         try:
-            response = openai.embeddings.create(
-                model="text-embedding-ada-002", input=text, encoding_format="float"
-            )
+            response = openai.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
             # response = {
             # "object": "list",
             # "data": [
@@ -301,9 +295,7 @@ def cosine_similarity(embedding1, embedding2):
     :param embedding2: The second embedding vector.
     :return: The cosine similarity score between the two embeddings.
     """
-    similarity = np.dot(embedding1, embedding2) / (
-        np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
-    )
+    similarity = np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
 
     similarity_score = similarity * 100  # Scale similarity to 0-100
     return round(similarity_score, 2)
@@ -329,9 +321,7 @@ def extract_function_signatures_and_content(repo_path):
                                 signature = {
                                     "name": node.name,
                                     "args": [arg.arg for arg in node.args.args],
-                                    "defaults": [
-                                        ast.dump(default) for default in node.args.defaults
-                                    ],
+                                    "defaults": [ast.dump(default) for default in node.args.defaults],
                                 }
                                 # Extract function body as full text
                                 function_text = ast.get_source_segment(file_content, node)
@@ -416,9 +406,7 @@ def compare_model_fields(model1, model2):
     :return: Dictionary containing name and field similarity details
     """
     # Compare model names
-    model_name_similarity = (
-        difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
-    )
+    model_name_similarity = difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
 
     # Initialize field comparison details
     field_comparison_details = []
@@ -431,14 +419,12 @@ def compare_model_fields(model1, model2):
         for field2 in fields2:
             # Compare field names
             field_name_similarity = (
-                difflib.SequenceMatcher(None, field1["field_name"], field2["field_name"]).ratio()
-                * 100
+                difflib.SequenceMatcher(None, field1["field_name"], field2["field_name"]).ratio() * 100
             )
 
             # Compare field types
             field_type_similarity = (
-                difflib.SequenceMatcher(None, field1["field_type"], field2["field_type"]).ratio()
-                * 100
+                difflib.SequenceMatcher(None, field1["field_type"], field2["field_type"]).ratio() * 100
             )
 
             # Average similarity between the field name and type

@@ -4,20 +4,20 @@ import json
 import os
 import time
 
+from django.db.models import Count
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from dotenv import load_dotenv
 from slack import WebClient
 from slack_sdk.errors import SlackApiError
 
-load_dotenv()
+from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
 
-DEPLOYS_CHANNEL_NAME = "#project-blt-lettuce-deploys"
-JOINS_CHANNEL_ID = "C076DAG65AT"
-CONTRIBUTE_ID = "C077QBBLY1Z"
+if os.getenv("ENV") != "production":
+    from dotenv import load_dotenv
 
-SLACK_TOKEN = os.getenv("SLACK_TOKEN")
-SIGNING_SECRET = os.getenv("SIGNING_SECRET")
+    load_dotenv()
+SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
+SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET")
 client = WebClient(token=SLACK_TOKEN)
 
 
@@ -25,17 +25,31 @@ def verify_slack_signature(request):
     timestamp = request.headers.get("X-Slack-Request-Timestamp", "")
     signature = request.headers.get("X-Slack-Signature", "")
 
-    # Verify timestamp to prevent replay attacks
-    if abs(time.time() - float(timestamp)) > 60 * 5:
+    # Check if required headers are present
+    if not timestamp or not signature:
         return False
 
-    sig_basestring = f"v0:{timestamp}:{request.body.decode()}"
-    my_signature = (
-        "v0="
-        + hmac.new(SIGNING_SECRET.encode(), sig_basestring.encode(), hashlib.sha256).hexdigest()
-    )
+    try:
+        # Verify timestamp to prevent replay attacks
+        current_time = time.time()
+        request_time = float(timestamp)
+        time_diff = abs(current_time - request_time)
 
-    return hmac.compare_digest(my_signature, signature)
+        if time_diff > 60 * 5:
+            return False
+
+        # Create the signature base string
+        sig_basestring = f"v0:{timestamp}:{request.body.decode()}"
+
+        # Calculate our signature
+        my_signature = "v0=" + hmac.new(SIGNING_SECRET.encode(), sig_basestring.encode(), hashlib.sha256).hexdigest()
+
+        # Compare signatures
+        is_valid = hmac.compare_digest(my_signature, signature)
+        return is_valid
+
+    except (ValueError, TypeError) as e:
+        return False
 
 
 @csrf_exempt
@@ -47,6 +61,11 @@ def slack_events(request):
             return HttpResponse(status=403)
 
         data = json.loads(request.body)
+
+        # Check if this is a retry event
+        is_retry = request.headers.get("X-Slack-Retry-Num")
+        if is_retry:
+            return HttpResponse(status=200)
 
         if "challenge" in data:
             return JsonResponse({"challenge": data["challenge"]})
@@ -62,131 +81,312 @@ def slack_events(request):
                 user_id = event.get("user")
 
             if user_id:
-                _handle_team_join(user_id)
-
-        elif event_type == "message":
-            handle_message(event)
+                _handle_team_join(user_id, request)
 
         return HttpResponse(status=200)
     return HttpResponse(status=405)
 
 
-def extract_text_from_blocks(blocks):
-    """Extracts message text from Slack's 'blocks' format"""
-    if not blocks:
-        return ""
-
-    text_parts = []
-    for block in blocks:
-        if block.get("type") == "rich_text":
-            for element in block.get("elements", []):
-                if element.get("type") == "rich_text_section":
-                    for item in element.get("elements", []):
-                        if item.get("type") == "text":
-                            text_parts.append(item.get("text", ""))
-
-    return " ".join(text_parts).strip()
-
-
-def _handle_contribute_message(message):
-    text = message.get("text", "").lower()
-    user = message.get("user")
-    channel = message.get("channel")
-
-    if message.get("subtype") is None and any(
-        keyword in text for keyword in ["contribute", "contributing", "contributes"]
-    ):
-        response = client.chat_postMessage(
-            channel=channel,
-            text=f"Hello <@{user}>! Please check <#{CONTRIBUTE_ID}> for contributing guidelines today!",
-        )
-
-
-def _handle_team_join(user_id):
-    # Send message to joins channel
-    join_response = client.chat_postMessage(
-        channel=JOINS_CHANNEL_ID, text=f"Welcome <@{user_id}> to the team! 🎉"
-    )
-
+def _handle_team_join(user_id, request):
     try:
-        # Try to open DM first
-        dm_response = client.conversations_open(users=[user_id])
-        if not dm_response["ok"]:
-            return
+        event_data = json.loads(request.body)
+        team_id = event_data["team_id"]
 
-        dm_channel = dm_response["channel"]["id"]
-
-        # Define welcome message
-        welcome_message = (
-            f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
-            "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
-            "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
-            ":small_blue_diamond: *Get Involved:*\n"
-            "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
-            "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
-            "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
-            ":small_blue_diamond: *Stay Updated:*\n"
-            "• Visit *#newsroom* for the latest updates and announcements.\n"
-            "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
-            ":small_blue_diamond: *Connect and Learn:*\n"
-            "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
-            "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
-            "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
-            "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
-            "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
-            "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
-            "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
-            "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
-            "Welcome aboard! :rocket:"
+        # Log the activity at the start
+        activity = SlackBotActivity.objects.create(
+            workspace_id=team_id, activity_type="team_join", user_id=user_id, details={"event_data": event_data}
         )
-
-        welcome_blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": welcome_message}}]
-
-        welcome_response = client.chat_postMessage(
-            channel=dm_channel, text=welcome_message, blocks=welcome_blocks
-        )
-
-    except SlackApiError as e:
-        return HttpResponse(status=500)
-
-
-def handle_message(payload):
-    # Get bot user ID
-    response = client.auth_test()
-    bot_user_id = response["user_id"]
-
-    # Skip if message is from the bot
-    if payload.get("user") == bot_user_id:
-        return
-
-    # Get message content from both text and blocks
-    text = payload.get("text", "")
-    blocks_text = extract_text_from_blocks(payload.get("blocks", []))
-
-    # Use text from blocks if direct text is empty
-    message_text = text or blocks_text
-
-    # Create message object with the extracted text
-    message = {
-        "user": payload.get("user"),
-        "channel": payload.get("channel"),
-        "text": message_text,
-        "subtype": payload.get("subtype"),
-        "channel_type": payload.get("channel_type"),
-    }
-
-    _handle_contribute_message(message)
-    _handle_direct_message(message, bot_user_id)
-
-
-def _handle_direct_message(message, bot_user_id):
-    if message.get("channel_type") == "im":
-        user = message["user"]
-        text = message.get("text", "")
 
         try:
-            if message.get("user") != bot_user_id:
-                client.chat_postMessage(channel=JOINS_CHANNEL_ID, text=f"<@{user}> said {text}")
-            client.chat_postMessage(channel=user, text=f"Hello <@{user}>, you said: {text}")
+            slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+            activity.workspace_name = slack_integration.integration.organization.name
+            activity.save()
+
+            # If integration exists and has welcome message
+            if slack_integration.welcome_message:
+                welcome_message = slack_integration.welcome_message
+                workspace_client = WebClient(token=slack_integration.bot_access_token)
+            else:
+                # If no welcome message but it's OWASP workspace
+                if team_id == "T04T40NHX":
+                    workspace_client = WebClient(token=SLACK_TOKEN)
+                    welcome_message = (
+                        f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+                        "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+                        "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+                        ":small_blue_diamond: *Get Involved:*\n"
+                        "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+                        "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
+                        "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
+                        ":small_blue_diamond: *Stay Updated:*\n"
+                        "• Visit *#newsroom* for the latest updates and announcements.\n"
+                        "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+                        ":small_blue_diamond: *Connect and Learn:*\n"
+                        "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+                        "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+                        "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+                        "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+                        "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+                        "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+                        "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+                        "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+                        "Welcome aboard! :rocket:"
+                    )
+                else:
+                    workspace_client = WebClient(token=slack_integration.bot_access_token)
+                    welcome_message = (
+                        f"Welcome <@{user_id}>! 👋\n\n"
+                        "Your workspace admin hasn't set up a custom welcome message yet. "
+                        "They can configure this in the organization's integration settings."
+                    )
+
+        except SlackIntegration.DoesNotExist:
+            # If no integration exists but it's OWASP workspace
+            if team_id == "T04T40NHX":
+                workspace_client = WebClient(token=SLACK_TOKEN)
+                # Use the default OWASP welcome message
+                welcome_message = (
+                    f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+                    "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+                    "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+                    ":small_blue_diamond: *Get Involved:*\n"
+                    "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+                    "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
+                    "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n\n"
+                    ":small_blue_diamond: *Stay Updated:*\n"
+                    "• Visit *#newsroom* for the latest updates and announcements.\n"
+                    "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+                    ":small_blue_diamond: *Connect and Learn:*\n"
+                    "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+                    "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+                    "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+                    "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+                    "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+                    "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+                    "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+                    "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+                    "Welcome aboard! :rocket:"
+                )
+            else:
+                return
+
+        # Add delay to ensure user is fully joined
+        time.sleep(2)  # Wait 2 seconds before sending message
+
+        # Try to open DM first
+        try:
+            dm_response = workspace_client.conversations_open(users=[user_id])
+            if not dm_response["ok"]:
+                return
+
+            dm_channel = dm_response["channel"]["id"]
+
+            welcome_blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": welcome_message}}]
+
+            # Send message using appropriate client
+            welcome_response = workspace_client.chat_postMessage(
+                channel=dm_channel, text=welcome_message, blocks=welcome_blocks
+            )
+
         except SlackApiError as e:
-            return HttpResponse(status=500)
+            activity.success = False
+            activity.error_message = str(e)
+            activity.save()
+            return
+
+    except Exception as e:
+        SlackBotActivity.objects.create(
+            workspace_id=team_id if "team_id" in locals() else "unknown",
+            activity_type="team_join",
+            user_id=user_id,
+            success=False,
+            error_message=str(e),
+        )
+        return
+
+
+@csrf_exempt
+def slack_commands(request):
+    """Handle Slack slash commands"""
+    if request.method == "POST":
+        # Verify the request is from Slack
+        is_valid = verify_slack_signature(request)
+
+        if not is_valid:
+            return HttpResponse(status=403)
+
+        command = request.POST.get("command")
+        user_id = request.POST.get("user_id")
+        team_id = request.POST.get("team_id")
+        team_domain = request.POST.get("team_domain")  # Get the team domain
+
+        # Log the command activity
+        activity = SlackBotActivity.objects.create(
+            workspace_id=team_id,
+            workspace_name=team_domain,
+            activity_type="command",
+            user_id=user_id,
+            details={"command": command, "channel_id": request.POST.get("channel_id")},
+        )
+
+        if command == "/stats":
+            # Get project counts by status
+            project_stats = Project.objects.values("status").annotate(count=Count("id"))
+            stats_by_status = {stat["status"]: stat["count"] for stat in project_stats}
+
+            # Get other key metrics
+            total_issues = Issue.objects.count()
+            total_users = User.objects.count()
+            total_domains = Domain.objects.count()
+            total_hunts = Hunt.objects.count()
+
+            # Format stats sections with line breaks for readability
+            stats_sections = [
+                "*Project Statistics:*\n",
+                "• Flagship Projects: " f"{stats_by_status.get('flagship', 0)}",
+                "• Production Projects: " f"{stats_by_status.get('production', 0)}",
+                "• Incubator Projects: " f"{stats_by_status.get('incubator', 0)}",
+                "• Lab Projects: " f"{stats_by_status.get('lab', 0)}",
+                "• New Projects: " f"{stats_by_status.get('new', 0)}",
+                "• Active Projects: " f"{stats_by_status.get('active', 0)}",
+                "• Inactive Projects: " f"{stats_by_status.get('inactive', 0)}",
+                "\n*Overall Platform Statistics:*\n",
+                f"• Total Issues: {total_issues}",
+                f"• Total Users: {total_users}",
+                f"• Total Domains: {total_domains}",
+                f"• Total Hunts: {total_hunts}",
+            ]
+
+            stats_message = "\n".join(stats_sections)
+
+            try:
+                # Post message to Slack
+                client = WebClient(token=workspace_client.bot_token)
+                client.chat_postMessage(channel=request.POST.get("channel_id"), text=stats_message)
+                return JsonResponse({"response_type": "in_channel"})
+            except SlackApiError:
+                activity.success = False
+                activity.error_message = "Error posting message"
+                activity.save()
+                return JsonResponse({"error": "Error posting message"}, status=500)
+
+        elif command == "/contrib":
+            try:
+                # First try to get custom integration
+                try:
+                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+                    workspace_client = WebClient(token=slack_integration.bot_access_token)
+                except SlackIntegration.DoesNotExist:
+                    # If no custom integration and it's OWASP workspace, use default token
+                    if team_domain == "owasp":
+                        workspace_client = WebClient(token=SLACK_TOKEN)
+                    else:
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "This workspace is not properly configured. Please contact the workspace admin.",
+                            }
+                        )
+
+                contribute_message = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": ":rocket: *Contributing to OWASP Projects*\n\n"
+                            "    🔹 *Join the OWASP Slack Channel:* Find guidance and check pinned posts for projects seeking contributors.\n"
+                            "    🔹 *Explore OWASP Projects Page:* Identify projects that align with your skills and interests.",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": ":loudspeaker: *Engaging on Slack*\n\n"
+                            "    Many projects have dedicated project channels for collaboration.\n\n"
+                            "   🔍 *Find and Join a Project Channel:*",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "To find project channels:\n\n"
+                            + "1️⃣ Use Slack's channel browser (Ctrl/Cmd + K)\n"
+                            + "2️⃣ Type *#project-* to see all project channels\n"
+                            + "3️⃣ Join the channels that interest you\n\n"
+                            + "_All OWASP project channels start with *#project-*_",
+                        },
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "    🛠 *GSOC Projects:* View this year's participating GSOC projects https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": ":busts_in_silhouette: *Identifying Key People and Activity*\n\n"
+                            "    • Visit the *OWASP Projects* page to find project leaders and contributors.\n"
+                            "    • Review *GitHub commit history* for active developers.\n"
+                            "    • Check *Slack activity* for updates on project progress.",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": ":pushpin: *Communication Guidelines*\n\n"
+                            "    ✅ *Check pinned messages* in project channels for updates.\n"
+                            "    ✅ *Ask questions* in relevant project channels.\n"
+                            "    ✅ *Introduce yourself* while keeping personal details private.",
+                        },
+                    },
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": ":hammer_and_wrench: *How to Contribute*\n\n"
+                            "     1️⃣ *Select a project* and review its contribution guidelines.\n"
+                            "     2️⃣ *Work on an open GitHub issue* or propose a new one.\n"
+                            "     3️⃣ *Coordinate with project leaders* to prevent overlaps.\n"
+                            "     4️⃣ *Submit a pull request* and keep the team informed.\n\n"
+                            "    💡 *Focus on clear communication and teamwork!* 🚀",
+                        },
+                    },
+                ]
+
+                # Open DM channel first
+                dm_response = workspace_client.conversations_open(users=[user_id])
+                if not dm_response["ok"]:
+                    return HttpResponse(status=500)
+
+                dm_channel = dm_response["channel"]["id"]
+
+                # Send message to DM channel
+                message_response = workspace_client.chat_postMessage(
+                    channel=dm_channel, blocks=contribute_message, mrkdwn=True
+                )
+
+                # Send ephemeral message in the channel where command was used
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "I've sent you a DM with information about contributing! 🚀",
+                    }
+                )
+
+            except SlackApiError as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                return HttpResponse(status=500)
+
+    return HttpResponse(status=405)

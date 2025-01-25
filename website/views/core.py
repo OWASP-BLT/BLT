@@ -3,6 +3,7 @@ import os
 import subprocess
 import tracemalloc
 import urllib
+from datetime import timedelta
 
 import psutil
 import requests
@@ -26,6 +27,7 @@ from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -37,18 +39,19 @@ from website.models import (
     Badge,
     Domain,
     Issue,
+    Organization,
     PRAnalysisReport,
+    Project,
+    Repo,
+    SlackBotActivity,
     Suggestion,
     SuggestionVotes,
+    Tag,
+    UserBadge,
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    analyze_pr_content,
-    fetch_github_data,
-    safe_redirect_allowed,
-    save_analysis_report,
-)
+from website.utils import analyze_pr_content, fetch_github_data, safe_redirect_allowed, save_analysis_report
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -115,6 +118,7 @@ def check_status(request):
     CHECK_MEMORY = True
     CHECK_DATABASE = False
     CHECK_REDIS = False
+    CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
@@ -128,6 +132,7 @@ def check_status(request):
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
             "redis_stats": {} if not CHECK_REDIS else {},
+            "slack_bot": {},
         }
 
         if CHECK_MEMORY:
@@ -244,10 +249,7 @@ def check_status(request):
         # Database connection check
         if CHECK_DATABASE:
             print("Getting database connection count...")
-            if (
-                settings.DATABASES.get("default", {}).get("ENGINE")
-                == "django.db.backends.postgresql"
-            ):
+            if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
                     status_data["db_connection_count"] = cursor.fetchone()[0]
@@ -260,6 +262,35 @@ def check_status(request):
                 status_data["redis_stats"] = redis_client.info()
             except Exception as e:
                 print(f"Redis error or not supported: {e}")
+
+        # Slack bot activity metrics
+        if CHECK_SLACK_BOT:
+            last_24h = timezone.now() - timedelta(hours=24)
+
+            # Get bot activity metrics
+            bot_metrics = {
+                "total_activities": SlackBotActivity.objects.count(),
+                "last_24h_activities": SlackBotActivity.objects.filter(created__gte=last_24h).count(),
+                "success_rate": (
+                    SlackBotActivity.objects.filter(success=True).count() / SlackBotActivity.objects.count() * 100
+                    if SlackBotActivity.objects.exists()
+                    else 0
+                ),
+                "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
+                "recent_activities": list(
+                    SlackBotActivity.objects.filter(created__gte=last_24h)
+                    .values("activity_type", "workspace_name", "created", "success")
+                    .order_by("-created")[:5]
+                ),
+                "activity_types": {
+                    activity_type: count
+                    for activity_type, count in SlackBotActivity.objects.values("activity_type")
+                    .annotate(count=Count("id"))
+                    .values_list("activity_type", "count")
+                },
+            }
+
+            status_data["slack_bot"] = bot_metrics
 
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
@@ -300,24 +331,13 @@ def find_key(request, token):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    stype = request.GET.get("type")
+    stype = request.GET.get("type", "organizations")
     context = None
     if query is None:
         return render(request, template)
     query = query.strip()
-    if query[:6] == "issue:":
-        stype = "issue"
-        query = query[6:]
-    elif query[:7] == "domain:":
-        stype = "domain"
-        query = query[7:]
-    elif query[:5] == "user:":
-        stype = "user"
-        query = query[5:]
-    elif query[:6] == "label:":
-        stype = "label"
-        query = query[6:]
-    if stype == "issue" or stype is None:
+
+    if stype == "issues":
         context = {
             "query": query,
             "type": stype,
@@ -325,21 +345,26 @@ def search(request, template="search.html"):
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
         }
-    elif stype == "domain":
+    elif stype == "domains":
         context = {
             "query": query,
             "type": stype,
             "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
         }
-    elif stype == "user":
+    elif stype == "users":
+        users = (
+            UserProfile.objects.filter(Q(user__username__icontains=query))
+            .annotate(total_score=Sum("user__points__score"))
+            .order_by("-total_score")[0:20]
+        )
+        for userprofile in users:
+            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
         context = {
             "query": query,
             "type": stype,
-            "users": UserProfile.objects.filter(Q(user__username__icontains=query))
-            .annotate(total_score=Sum("user__points__score"))
-            .order_by("-total_score")[0:20],
+            "users": users,
         }
-    elif stype == "label":
+    elif stype == "labels":
         context = {
             "query": query,
             "type": stype,
@@ -347,7 +372,57 @@ def search(request, template="search.html"):
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
             )[0:20],
         }
+    elif stype == "organizations":
+        organizations = Organization.objects.filter(name__icontains=query)
 
+        for org in organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
+        context = {
+            "query": query,
+            "type": stype,
+            "organizations": Organization.objects.filter(name__icontains=query),
+        }
+    elif stype == "projects":
+        context = {
+            "query": query,
+            "type": stype,
+            "projects": Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+        }
+    elif stype == "repos":
+        context = {
+            "query": query,
+            "type": stype,
+            "repos": Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)),
+        }
+    elif stype == "tags":
+        tags = Tag.objects.filter(name__icontains=query)
+        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+        matching_domains = Domain.objects.filter(tags__in=tags).distinct()
+        matching_issues = Issue.objects.filter(tags__in=tags).distinct()
+        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+        matching_repos = Repo.objects.filter(tags__in=tags).distinct()
+        for org in matching_organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
+        context = {
+            "query": query,
+            "type": stype,
+            "tags": tags,
+            "matching_organizations": matching_organizations,
+            "matching_domains": matching_domains,
+            "matching_issues": matching_issues,
+            "matching_user_profiles": matching_user_profiles,
+            "matching_repos": matching_repos,
+        }
+    elif stype == "languages":
+        context = {
+            "query": query,
+            "type": stype,
+            "repos": Repo.objects.filter(primary_language__icontains=query),
+        }
     if request.user.is_authenticated:
         context["wallet"] = Wallet.objects.get(user=request.user)
     return render(request, template, context)
@@ -474,15 +549,11 @@ def vote_suggestions(request):
             voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
 
             if up_vote:
-                voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, up_vote=True, down_vote=False
-                )
+                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, up_vote=True, down_vote=False)
                 suggestion.up_votes += 1
 
             if down_vote:
-                voted = SuggestionVotes.objects.create(
-                    user=user, suggestion=suggestion, down_vote=True, up_vote=False
-                )
+                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, down_vote=True, up_vote=False)
                 suggestion.down_votes += 1
 
             suggestion.save()
@@ -508,12 +579,8 @@ def set_vote_status(request):
         except Suggestion.DoesNotExist:
             return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
 
-        up_vote = SuggestionVotes.objects.filter(
-            suggestion=suggestion, user=user, up_vote=True
-        ).exists()
-        down_vote = SuggestionVotes.objects.filter(
-            suggestion=suggestion, user=user, down_vote=True
-        ).exists()
+        up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
+        down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
 
         response = {"up_vote": up_vote, "down_vote": down_vote}
         return JsonResponse(response)
@@ -602,9 +669,7 @@ class UploadCreate(View):
 
     def post(self, request, *args, **kwargs):
         data = request.FILES.get("image")
-        result = default_storage.save(
-            "uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read())
-        )
+        result = default_storage.save("uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
         return JsonResponse({"status": result})
 
 
@@ -800,12 +865,7 @@ def submit_roadmap_pr(request):
 
         if "error" in pr_data or "error" in roadmap_data:
             return JsonResponse(
-                {
-                    "error": (
-                        f"Failed to fetch PR or roadmap data: "
-                        f"{pr_data.get('error', 'Unknown error')}"
-                    )
-                },
+                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
                 status=500,
             )
 
