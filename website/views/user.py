@@ -766,9 +766,7 @@ def get_score(request):
 
 @login_required
 def fetch_notifications(request):
-    notifications = Notification.objects.filter(user=request.user).order_by(
-        "is_read", "-created_at"
-    )
+    notifications = Notification.objects.filter(user=request.user).order_by("is_read", "-created_at")
 
     notifications_data = [
         {
@@ -793,9 +791,7 @@ def mark_as_read(request):
             notifications.update(is_read=True)
             return JsonResponse({"status": "success"})
         except Notification.DoesNotExist:
-            return JsonResponse(
-                {"status": "error", "message": "Unable to fetch notifications"}, status=404
-            )
+            return JsonResponse({"status": "error", "message": "Unable to fetch notifications"}, status=404)
 
 
 @login_required(login_url="/accounts/login")

@@ -1297,9 +1297,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return (
-            f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
-        )
+        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
 
 
 class Notification(models.Model):
@@ -1315,7 +1313,6 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["is_read", "-created_at"]
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):
