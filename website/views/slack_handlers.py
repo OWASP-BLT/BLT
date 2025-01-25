@@ -1,9 +1,13 @@
 import hashlib
 import hmac
 import json
+import math
 import os
+import re
+import threading
 import time
 
+import requests
 from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -19,6 +23,9 @@ if os.getenv("ENV") != "production":
 SLACK_TOKEN = os.environ.get("SLACK_BOT_TOKEN")
 SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET")
 client = WebClient(token=SLACK_TOKEN)
+
+# Add at the top with other environment variables
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
 
 def verify_slack_signature(request):
@@ -54,34 +61,83 @@ def verify_slack_signature(request):
 
 @csrf_exempt
 def slack_events(request):
-    """Handle incoming Slack events"""
+    """Handle incoming Slack events and interactions"""
     if request.method == "POST":
-        # Verify the request is from Slack
         if not verify_slack_signature(request):
             return HttpResponse(status=403)
 
-        data = json.loads(request.body)
+        if request.content_type == "application/x-www-form-urlencoded":
+            try:
+                # Handle Interactive Components
+                payload = json.loads(request.POST.get("payload", "{}"))
+                team_id = payload.get("team", {}).get("id")
+                user_id = payload.get("user", {}).get("id")
 
-        # Check if this is a retry event
-        is_retry = request.headers.get("X-Slack-Retry-Num")
-        if is_retry:
-            return HttpResponse(status=200)
+                # Get the correct token for the workspace
+                try:
+                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+                    workspace_token = slack_integration.bot_access_token
+                except SlackIntegration.DoesNotExist:
+                    if team_id == "T04T40NHX":  # OWASP workspace
+                        workspace_token = SLACK_TOKEN
+                    else:
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "⚠️ This workspace is not properly configured. Please reinstall the app.",
+                            }
+                        )
 
-        if "challenge" in data:
-            return JsonResponse({"challenge": data["challenge"]})
+                # Create workspace-specific client
+                workspace_client = WebClient(token=workspace_token)
 
-        event = data.get("event", {})
-        event_type = event.get("type")
+                # Verify user exists in the workspace
+                try:
+                    user_info = workspace_client.users_info(user=user_id)
+                    if not user_info["ok"]:
+                        return JsonResponse(
+                            {"response_type": "ephemeral", "text": "⚠️ Unable to verify user in workspace."}
+                        )
+                except SlackApiError:
+                    return JsonResponse({"response_type": "ephemeral", "text": "⚠️ Unable to verify user in workspace."})
 
-        if event_type == "team_join":
-            user_data = event.get("user", {})
-            if isinstance(user_data, dict):
-                user_id = user_data.get("id")
-            else:
-                user_id = event.get("user")
+                action_type = payload.get("type")
+                if action_type == "block_actions":
+                    action_id = payload["actions"][0]["action_id"]
+                    if action_id == "select_repository":
+                        return handle_repository_selection(ack=lambda: None, body=payload, client=workspace_client)
+                    elif action_id == "pagination_prev":
+                        return handle_pagination_prev(ack=lambda: None, body=payload, client=workspace_client)
+                    elif action_id == "pagination_next":
+                        return handle_pagination_next(ack=lambda: None, body=payload, client=workspace_client)
 
-            if user_id:
-                _handle_team_join(user_id, request)
+            except json.JSONDecodeError:
+                return JsonResponse({"response_type": "ephemeral", "text": "⚠️ Invalid request format."}, status=400)
+
+        elif request.content_type == "application/json":
+            # Handle Events API requests
+            data = json.loads(request.body)
+
+            # Check if this is a retry event
+            is_retry = request.headers.get("X-Slack-Retry-Num")
+            if is_retry:
+                return HttpResponse(status=200)
+
+            if "challenge" in data:
+                return JsonResponse({"challenge": data["challenge"]})
+
+            event = data.get("event", {})
+            event_type = event.get("type")
+
+            if event_type == "team_join":
+                user_data = event.get("user", {})
+                if isinstance(user_data, dict):
+                    user_id = user_data.get("id")
+                else:
+                    user_id = event.get("user")
+
+                if user_id:
+                    _handle_team_join(user_id, request)
 
         return HttpResponse(status=200)
     return HttpResponse(status=405)
@@ -229,7 +285,273 @@ def slack_commands(request):
             details={"command": command, "channel_id": request.POST.get("channel_id")},
         )
 
-        if command == "/stats":
+        # Initialize workspace client
+        try:
+            slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+            workspace_client = WebClient(token=slack_integration.bot_access_token)
+        except SlackIntegration.DoesNotExist:
+            if team_id == "T04T40NHX":
+                workspace_client = WebClient(token=SLACK_TOKEN)
+            else:
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "This workspace is not properly configured. Please contact the workspace admin.",
+                    }
+                )
+
+        if command == "/discover":
+            try:
+                search_term = request.POST.get("text", "").strip()
+
+                # First, send an immediate response to avoid timeout
+                initial_response = {
+                    "response_type": "ephemeral",
+                    "text": "🔍 Searching OWASP projects... I'll send you the results in a DM shortly!",
+                }
+
+                if search_term:
+                    # Return immediate response to Slack
+                    response = JsonResponse(initial_response)
+
+                    # Then process the search asynchronously
+                    def process_search():
+                        try:
+                            repos = get_all_owasp_repos()
+                            if not repos:
+                                send_dm(workspace_client, user_id, "❌ Failed to fetch OWASP repositories.")
+                                return
+
+                            matched = []
+                            url_pattern = re.compile(r"https?://\S+")
+
+                            # Improve the display of search results with emojis and formatting
+                            for idx, repo in enumerate(repos, start=1):
+                                name_desc = (repo["name"] + " " + (repo["description"] or "")).lower()
+                                lang = (repo["language"] or "").lower()
+                                topics = [t.lower() for t in repo.get("topics", [])]
+
+                                if (
+                                    search_term.lower() in name_desc
+                                    or search_term.lower() in lang
+                                    or search_term.lower() in topics
+                                ):
+                                    desc = repo["description"] or "No description provided."
+                                    found_urls = url_pattern.findall(desc)
+                                    if found_urls:
+                                        link = found_urls[0]
+                                        link_label = "🌐 Website"
+                                    else:
+                                        link = f"https://owasp.org/www-project-{repo['name'].lower()}"
+                                        link_label = "📚 Wiki"
+
+                                    # Add language and topics info
+                                    extra_info = []
+                                    if repo["language"]:
+                                        extra_info.append(f"💻 {repo['language']}")
+                                    if repo.get("topics"):
+                                        topics_str = ", ".join(f"#{topic}" for topic in repo["topics"][:3])
+                                        if len(repo["topics"]) > 3:
+                                            topics_str += f" +{len(repo['topics']) - 3} more"
+                                        extra_info.append(f"🏷️ {topics_str}")
+
+                                    matched.append(
+                                        {
+                                            "owner_repo": repo["full_name"],
+                                            "name": repo["name"],
+                                            "description": desc,
+                                            "link_label": link_label,
+                                            "link": link,
+                                            "html_url": repo["html_url"],
+                                            "extra_info": " | ".join(extra_info) if extra_info else None,
+                                        }
+                                    )
+
+                            if not matched:
+                                send_dm(
+                                    workspace_client,
+                                    user_id,
+                                    f"❌ No OWASP projects found matching '*{search_term}*'.\nTry searching with different keywords!",
+                                )
+                                return
+
+                            pagination_data[user_id] = {
+                                "matched": matched,
+                                "current_page": 0,
+                                "page_size": 10,
+                            }
+
+                            send_paged_results(workspace_client, user_id, search_term)
+
+                        except requests.RequestException as e:
+                            send_dm(
+                                workspace_client, user_id, "❌ Failed to fetch repositories: Network error occurred."
+                            )
+                        except json.JSONDecodeError as e:
+                            send_dm(workspace_client, user_id, "❌ Failed to parse repository data.")
+                        except (KeyError, AttributeError) as e:
+                            send_dm(workspace_client, user_id, "❌ Invalid repository data format received.")
+
+                    # Start processing in a separate thread
+                    thread = threading.Thread(target=process_search)
+                    thread.start()
+
+                    return response
+
+                else:
+                    # Handle showing OWASP-BLT repositories
+                    try:
+                        headers = {"Accept": "application/vnd.github.v3+json"}
+                        if GITHUB_TOKEN:
+                            print("************************************")
+                            print(f"GITHUB_TOKEN: {GITHUB_TOKEN}")
+                            print("************************************")
+                            headers["Authorization"] = f"token {GITHUB_TOKEN}"
+                        else:
+                            # If no token, return a message about rate limiting
+                            return JsonResponse(
+                                {
+                                    "response_type": "ephemeral",
+                                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                                }
+                            )
+
+                        gh_response = requests.get(
+                            "https://api.github.com/orgs/OWASP-BLT/repos",
+                            headers=headers,
+                            timeout=10,  # Add timeout
+                        )
+
+                        if gh_response.status_code == 403:
+                            if "rate limit exceeded" in gh_response.text.lower():
+                                return JsonResponse(
+                                    {
+                                        "response_type": "ephemeral",
+                                        "text": "⚠️ GitHub API rate limit exceeded. Please try again later.",
+                                    }
+                                )
+                            return JsonResponse(
+                                {
+                                    "response_type": "ephemeral",
+                                    "text": "⚠️ Access to GitHub API denied. Please check the token configuration.",
+                                }
+                            )
+                        if gh_response.status_code == 200:
+                            repos = gh_response.json()
+                            if not repos:
+                                send_dm(workspace_client, user_id, "No repositories found for OWASP-BLT.")
+                            else:
+                                # Create header block
+                                blocks = [
+                                    {
+                                        "type": "header",
+                                        "text": {"type": "plain_text", "text": "🔍 OWASP BLT Projects", "emoji": True},
+                                    },
+                                    {
+                                        "type": "context",
+                                        "elements": [{"type": "mrkdwn", "text": f"Found {len(repos)} repositories"}],
+                                    },
+                                    {"type": "divider"},
+                                ]
+
+                                # Add repository blocks
+                                for idx, repo in enumerate(repos, start=1):
+                                    desc = repo["description"] if repo["description"] else "No description provided."
+
+                                    # Add language and topics info
+                                    extra_info = []
+                                    if repo.get("language"):
+                                        extra_info.append(f"💻 {repo['language']}")
+                                    if repo.get("topics"):
+                                        topics_str = ", ".join(f"#{topic}" for topic in repo["topics"][:3])
+                                        if len(repo["topics"]) > 3:
+                                            topics_str += f" +{len(repo['topics']) - 3} more"
+                                        extra_info.append(f"🏷️ {topics_str}")
+
+                                    blocks.extend(
+                                        [
+                                            {
+                                                "type": "section",
+                                                "text": {
+                                                    "type": "mrkdwn",
+                                                    "text": (
+                                                        f"*{idx}. <{repo['html_url']}|{repo['name']}>*\n"
+                                                        f"{desc}\n"
+                                                        f"{' | '.join(extra_info) if extra_info else ''}"
+                                                    ),
+                                                },
+                                            },
+                                            {"type": "divider"} if idx < len(repos) else None,
+                                        ]
+                                    )
+
+                                # Remove None blocks
+                                blocks = [b for b in blocks if b is not None]
+
+                                # Add repository selector
+                                blocks.append(
+                                    {
+                                        "type": "actions",
+                                        "elements": [
+                                            {
+                                                "type": "static_select",
+                                                "placeholder": {
+                                                    "type": "plain_text",
+                                                    "text": "View Repository Issues",
+                                                    "emoji": True,
+                                                },
+                                                "options": [
+                                                    {
+                                                        "text": {
+                                                            "type": "plain_text",
+                                                            "text": repo["name"],
+                                                            "emoji": True,
+                                                        },
+                                                        "value": f"OWASP-BLT/{repo['name']}",
+                                                    }
+                                                    for repo in repos
+                                                ],
+                                                "action_id": "select_repository",
+                                            }
+                                        ],
+                                    }
+                                )
+
+                                send_dm(workspace_client, user_id, "Here are the OWASP BLT repositories:", blocks)
+                                return JsonResponse(
+                                    {
+                                        "response_type": "ephemeral",
+                                        "text": "I've sent you the repository list in a DM! 📚",
+                                    }
+                                )
+                        else:
+                            return JsonResponse(
+                                {
+                                    "response_type": "ephemeral",
+                                    "text": "❌ Failed to fetch repositories from OWASP-BLT.",
+                                }
+                            )
+
+                    except Exception as e:
+                        activity.success = False
+                        activity.error_message = str(e)
+                        activity.save()
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "❌ An error occurred while processing your request.",
+                            }
+                        )
+
+            except Exception as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "An error occurred while processing your request."}
+                )
+
+        elif command == "/stats":
             try:
                 # Get project counts by status
                 project_stats = Project.objects.values("status").annotate(count=Count("id"))
@@ -308,21 +630,6 @@ def slack_commands(request):
                     },
                 ]
 
-                # Rest of the code remains the same, but use stats_blocks directly
-                try:
-                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
-                    workspace_client = WebClient(token=slack_integration.bot_access_token)
-                except SlackIntegration.DoesNotExist:
-                    if team_id == "T04T40NHX":
-                        workspace_client = WebClient(token=SLACK_TOKEN)
-                    else:
-                        return JsonResponse(
-                            {
-                                "response_type": "ephemeral",
-                                "text": "This workspace is not properly configured. Please contact the workspace admin.",
-                            }
-                        )
-
                 try:
                     # Open DM channel first
                     dm_response = workspace_client.conversations_open(users=[user_id])
@@ -371,22 +678,6 @@ def slack_commands(request):
 
         elif command == "/contrib":
             try:
-                # First try to get custom integration
-                try:
-                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
-                    workspace_client = WebClient(token=slack_integration.bot_access_token)
-                except SlackIntegration.DoesNotExist:
-                    # If no custom integration and it's OWASP workspace, use default token
-                    if team_domain == "owasp":
-                        workspace_client = WebClient(token=SLACK_TOKEN)
-                    else:
-                        return JsonResponse(
-                            {
-                                "response_type": "ephemeral",
-                                "text": "This workspace is not properly configured. Please contact the workspace admin.",
-                            }
-                        )
-
                 contribute_message = [
                     {
                         "type": "section",
@@ -489,3 +780,327 @@ def slack_commands(request):
                 return HttpResponse(status=500)
 
     return HttpResponse(status=405)
+
+
+def get_github_headers():
+    """Helper function to get GitHub API headers with authentication"""
+    headers = {"Accept": "application/vnd.github.v3+json"}
+    if GITHUB_TOKEN:
+        headers["Authorization"] = f"token {GITHUB_TOKEN}"
+    return headers
+
+
+def get_all_owasp_repos():
+    """Fetch ALL repos from the OWASP org by paginating through the results."""
+    current_time = time.time()
+
+    # Return cached data if available and not expired
+    if repo_cache["data"] and (current_time - repo_cache["timestamp"]) < CACHE_DURATION:
+        return repo_cache["data"]
+
+    all_repos = []
+    page = 1
+
+    headers = get_github_headers()
+    if not GITHUB_TOKEN:
+        return []  # Return empty if no token available
+
+    while True:
+        try:
+            resp = requests.get(
+                f"https://api.github.com/orgs/OWASP/repos?page={page}&per_page=100", headers=headers, timeout=10
+            )
+
+            if resp.status_code == 403:
+                if "rate limit exceeded" in resp.text.lower():
+                    return []  # Handle rate limiting
+                return []  # Handle other 403 errors
+
+            if resp.status_code != 200:
+                return []
+
+            page_data = resp.json()
+            if not page_data:
+                break
+
+            all_repos.extend(page_data)
+            page += 1
+
+        except (requests.RequestException, json.JSONDecodeError) as e:
+            return []
+
+    repo_cache["data"] = all_repos
+    repo_cache["timestamp"] = current_time
+    return all_repos
+
+
+# Add other necessary helper functions and variables
+pagination_data = {}
+repo_cache = {"timestamp": 0, "data": []}
+CACHE_DURATION = 3600
+
+
+def send_dm(client, user_id, text, blocks=None):
+    """Utility function to open a DM channel with user and send them a message."""
+    try:
+        dm_response = client.conversations_open(users=[user_id])
+        if not dm_response["ok"]:
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"❌ Failed to open DM channel: {dm_response.get('error', 'Unknown error')}",
+                },
+                status=503,
+            )
+
+        dm_channel_id = dm_response["channel"]["id"]
+        message_response = client.chat_postMessage(
+            channel=dm_channel_id,
+            text=text,
+            blocks=blocks,
+            mrkdwn=True,
+            unfurl_links=False,
+            unfurl_media=False,
+        )
+        if not message_response["ok"]:
+            return JsonResponse(
+                {
+                    "response_type": "ephemeral",
+                    "text": f"❌ Failed to send message: {message_response.get('error', 'Unknown error')}",
+                },
+                status=500,
+            )
+
+    except SlackApiError as e:
+        if e.response["error"] == "ratelimited":
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ Rate limit exceeded. Please try again later."}, status=429
+            )
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": f"❌ Slack API error: {e.response.get('error', 'Unknown error')}"},
+            status=503,
+        )
+    except (KeyError, AttributeError) as e:
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ Invalid response format from Slack API."}, status=500
+        )
+
+
+def send_paged_results(client, user_id, search_term):
+    """Sends the current page of matched projects to the user with next/prev buttons if needed."""
+    data = pagination_data[user_id]
+    matched = data["matched"]
+    page_size = data["page_size"]
+    total_pages = math.ceil(len(matched) / page_size)
+    current_page = data["current_page"]
+
+    start_idx = current_page * page_size
+    end_idx = start_idx + page_size
+    chunk = matched[start_idx:end_idx]
+
+    # Create header block
+    blocks = [
+        {
+            "type": "header",
+            "text": {"type": "plain_text", "text": f"🔍 OWASP Projects matching '{search_term}'", "emoji": True},
+        },
+        {
+            "type": "context",
+            "elements": [
+                {"type": "mrkdwn", "text": f"Found {len(matched)} projects • Page {current_page + 1} of {total_pages}"}
+            ],
+        },
+        {"type": "divider"},
+    ]
+
+    # Add project blocks
+    for idx, project in enumerate(chunk, start=start_idx + 1):
+        blocks.extend(
+            [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": (
+                            f"*{idx}. <{project['html_url']}|{project['name']}>*\n"
+                            f"{project['description']}\n"
+                            f"{project.get('extra_info', '')}\n"
+                            f"{project['link_label']}: <{project['link']}|Link>"
+                        ),
+                    },
+                },
+                {"type": "divider"} if idx < end_idx else None,
+            ]
+        )
+
+    # Remove None blocks
+    blocks = [b for b in blocks if b is not None]
+
+    # Add navigation buttons
+    navigation = {"type": "actions", "elements": []}
+
+    if current_page > 0:
+        navigation["elements"].append(
+            {
+                "type": "button",
+                "text": {"type": "plain_text", "text": "◀️ Previous", "emoji": True},
+                "value": "PREV",
+                "action_id": "pagination_prev",
+            }
+        )
+
+    if current_page < (total_pages - 1):
+        navigation["elements"].append(
+            {
+                "type": "button",
+                "text": {"type": "plain_text", "text": "Next ▶️", "emoji": True},
+                "value": "NEXT",
+                "action_id": "pagination_next",
+            }
+        )
+
+    # Add repository selector
+    if chunk:
+        navigation["elements"].append(
+            {
+                "type": "static_select",
+                "placeholder": {"type": "plain_text", "text": "View Repository Issues", "emoji": True},
+                "options": [
+                    {
+                        "text": {"type": "plain_text", "text": project["name"], "emoji": True},
+                        "value": project["owner_repo"],
+                    }
+                    for project in chunk
+                ],
+                "action_id": "select_repository",
+            }
+        )
+
+    blocks.append(navigation)
+
+    send_dm(client, user_id, f"Found {len(matched)} matching OWASP projects.", blocks)
+
+
+# Add the action handlers
+def handle_repository_selection(ack, body, client):
+    """Handles repository selection from dropdown"""
+    try:
+        user_id = body["user"]["id"]
+        selected_repo = body["actions"][0]["selected_option"]["value"]
+
+        headers = get_github_headers()
+        if not GITHUB_TOKEN:
+            send_dm(client, user_id, "⚠️ GitHub API token not configured. Please contact the administrator.")
+            return HttpResponse()
+
+        # Fetch latest issues from the selected GitHub repository
+        issues_response = requests.get(
+            f"https://api.github.com/repos/{selected_repo}/issues", headers=headers, timeout=10
+        )
+
+        if issues_response.status_code == 403:
+            if "rate limit exceeded" in issues_response.text.lower():
+                send_dm(client, user_id, "⚠️ GitHub API rate limit exceeded. Please try again later.")
+            else:
+                send_dm(client, user_id, "⚠️ Access to GitHub API denied. Please check the token configuration.")
+            return HttpResponse()
+
+        if issues_response.status_code == 200:
+            issues = issues_response.json()
+            issues = [issue for issue in issues if "pull_request" not in issue]
+            if not issues:
+                send_dm(client, user_id, "No open issues found for this repository.")
+            else:
+                blocks = [
+                    {
+                        "type": "header",
+                        "text": {"type": "plain_text", "text": f"Latest Issues for {selected_repo}", "emoji": True},
+                    },
+                    {"type": "divider"},
+                ]
+
+                for issue in issues[:5]:
+                    blocks.append(
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"*<{issue['html_url']}|{issue['title']}>* (#{issue['number']})\n"
+                                    f"👤 Opened by: {issue.get('user', {}).get('login', 'Unknown')}\n"
+                                    f"📅 Created: {issue['created_at'][:10]}"
+                                ),
+                            },
+                        }
+                    )
+
+                if len(issues) > 5:
+                    blocks.append(
+                        {
+                            "type": "context",
+                            "elements": [{"type": "mrkdwn", "text": f"_Showing 5 of {len(issues)} issues_"}],
+                        }
+                    )
+
+                send_dm(client, user_id, f"Found {len(issues)} open issues:", blocks)
+        else:
+            send_dm(client, user_id, "Failed to fetch issues. Please try again later.")
+
+        return HttpResponse()
+
+    except (KeyError, IndexError) as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid request format."}, status=400)
+    except requests.RequestException as e:
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ Failed to fetch issues: Network error occurred."}, status=503
+        )
+
+
+def handle_pagination_prev(ack, body, client):
+    """Handles the 'Previous' pagination button."""
+    try:
+        user_id = body["user"]["id"]
+        search_term = body.get("state", {}).get("values", {}).get("search_term", "Topic")
+
+        if user_id not in pagination_data:
+            send_dm(client, user_id, "No pagination data found.")
+            return HttpResponse()
+
+        data = pagination_data[user_id]
+        data["current_page"] = max(0, data["current_page"] - 1)
+        send_paged_results(client, user_id, search_term)
+        return HttpResponse()
+
+    except KeyError as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid request format."}, status=400)
+    except SlackApiError as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to send message to Slack."}, status=503)
+
+
+def handle_pagination_next(ack, body, client):
+    """Handles the 'Next' pagination button"""
+    try:
+        user_id = body["user"]["id"]
+        search_term = body.get("state", {}).get("values", {}).get("search_term", "Topic")
+
+        if user_id not in pagination_data:
+            send_dm(client, user_id, "No pagination data found.")
+            return HttpResponse()
+
+        data = pagination_data[user_id]
+        data["current_page"] += 1
+        total_pages = math.ceil(len(data["matched"]) / data["page_size"])
+        data["current_page"] = min(data["current_page"], total_pages - 1)
+        send_paged_results(client, user_id, search_term)
+        return HttpResponse()
+
+    except KeyError as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid request format."}, status=400)
+    except SlackApiError as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to send message to Slack."}, status=503)
+        return HttpResponse()
+
+    except KeyError as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid request format."}, status=400)
+    except SlackApiError as e:
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to send message to Slack."}, status=503)
