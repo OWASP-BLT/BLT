@@ -29,13 +29,8 @@ class TeamOverview(TemplateView):
 def search_users(request):
     query = request.GET.get("query", "")
     if query:
-        users = User.objects.filter(username__icontains=query).values(
-            "username", "userprofile__team__name"
-        )
-        users_list = [
-            {"username": user["username"], "team": user["userprofile__team__name"]}
-            for user in users
-        ]
+        users = User.objects.filter(username__icontains=query).values("username", "userprofile__team__name")
+        users_list = [{"username": user["username"], "team": user["userprofile__team__name"]} for user in users]
         return JsonResponse(users_list, safe=False)
     return JsonResponse([], safe=False)
 
@@ -61,9 +56,7 @@ def create_team(request):
                 counter += 1
 
             # Create the team
-            team = Organization.objects.create(
-                name=team_name, type="team", admin=request.user, url=team_url
-            )
+            team = Organization.objects.create(name=team_name, type="team", admin=request.user, url=team_url)
             if team_avatar:
                 team.logo = team_avatar
                 team.save()  # Save the logo if provided
@@ -85,9 +78,7 @@ def create_team(request):
             return redirect("team_overview")
 
         except IntegrityError:
-            messages.error(
-                request, "A team with this name or URL already exists. Please choose another name."
-            )
+            messages.error(request, "A team with this name or URL already exists. Please choose another name.")
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
 
@@ -192,9 +183,7 @@ def kick_member(request):
 
             # Check if the requester is the team admin
             if team.admin != request.user:
-                return JsonResponse(
-                    {"success": False, "error": "Only the team admin can kick members"}
-                )
+                return JsonResponse({"success": False, "error": "Only the team admin can kick members"})
 
             # Check if the user is a manager in the team
             if not team.managers.filter(username=username).exists():
@@ -208,9 +197,7 @@ def kick_member(request):
             user_profile.team = None
             user_profile.save()
 
-            return JsonResponse(
-                {"success": True, "message": f"User {username} has been kicked out of the team."}
-            )
+            return JsonResponse({"success": True, "message": f"User {username} has been kicked out of the team."})
 
         except User.DoesNotExist:
             return JsonResponse({"success": False, "error": "User does not exist"})

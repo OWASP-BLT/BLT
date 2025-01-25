@@ -98,9 +98,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "managers",
-                    models.ManyToManyField(
-                        related_name="user_organizations", to=settings.AUTH_USER_MODEL
-                    ),
+                    models.ManyToManyField(related_name="user_organizations", to=settings.AUTH_USER_MODEL),
                 ),
                 (
                     "subscription",
