@@ -4,7 +4,7 @@ import json
 import os
 import time
 
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from slack import WebClient
@@ -230,45 +230,144 @@ def slack_commands(request):
         )
 
         if command == "/stats":
-            # Get project counts by status
-            project_stats = Project.objects.values("status").annotate(count=Count("id"))
-            stats_by_status = {stat["status"]: stat["count"] for stat in project_stats}
-
-            # Get other key metrics
-            total_issues = Issue.objects.count()
-            total_users = User.objects.count()
-            total_domains = Domain.objects.count()
-            total_hunts = Hunt.objects.count()
-
-            # Format stats sections with line breaks for readability
-            stats_sections = [
-                "*Project Statistics:*\n",
-                "• Flagship Projects: " f"{stats_by_status.get('flagship', 0)}",
-                "• Production Projects: " f"{stats_by_status.get('production', 0)}",
-                "• Incubator Projects: " f"{stats_by_status.get('incubator', 0)}",
-                "• Lab Projects: " f"{stats_by_status.get('lab', 0)}",
-                "• New Projects: " f"{stats_by_status.get('new', 0)}",
-                "• Active Projects: " f"{stats_by_status.get('active', 0)}",
-                "• Inactive Projects: " f"{stats_by_status.get('inactive', 0)}",
-                "\n*Overall Platform Statistics:*\n",
-                f"• Total Issues: {total_issues}",
-                f"• Total Users: {total_users}",
-                f"• Total Domains: {total_domains}",
-                f"• Total Hunts: {total_hunts}",
-            ]
-
-            stats_message = "\n".join(stats_sections)
-
             try:
-                # Post message to Slack
-                client = WebClient(token=workspace_client.bot_token)
-                client.chat_postMessage(channel=request.POST.get("channel_id"), text=stats_message)
-                return JsonResponse({"response_type": "in_channel"})
-            except SlackApiError:
+                # Get project counts by status
+                project_stats = Project.objects.values("status").annotate(count=Count("id"))
+                stats_by_status = {stat["status"]: stat["count"] for stat in project_stats}
+                total_projects = sum(stats_by_status.values())
+                total_views = Project.objects.aggregate(total_views=Sum("project_visit_count"))["total_views"] or 0
+
+                # Create interactive blocks for better visualization
+                stats_blocks = [
+                    {
+                        "type": "header",
+                        "text": {"type": "plain_text", "text": "📊 OWASP Platform Statistics", "emoji": True},
+                    },
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*🎯 Project Categories*"}},
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Flagship:*\n{stats_by_status.get('flagship', 0)} projects 🏆",
+                            },
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Production:*\n{stats_by_status.get('production', 0)} projects ⚡",
+                            },
+                        ],
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Incubator:*\n{stats_by_status.get('incubator', 0)} projects 🌱",
+                            },
+                            {"type": "mrkdwn", "text": f"*Lab:*\n{stats_by_status.get('lab', 0)} projects 🔬"},
+                        ],
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"*Inactive:*\n{stats_by_status.get('inactive', 0)} projects 💤",
+                            },
+                            {"type": "mrkdwn", "text": f"*Total Projects:*\n{total_projects} projects 📈"},
+                        ],
+                    },
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*🔍 Project Activity*"}},
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": f"Total Project Views: *{total_views:,}* 👀"},
+                    },
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*📈 Platform Overview*"}},
+                    {
+                        "type": "section",
+                        "fields": [
+                            {"type": "mrkdwn", "text": f"*Issues:*\n{Issue.objects.count():,} 🐛"},
+                            {"type": "mrkdwn", "text": f"*Users:*\n{User.objects.count():,} 👥"},
+                        ],
+                    },
+                    {
+                        "type": "section",
+                        "fields": [
+                            {"type": "mrkdwn", "text": f"*Domains:*\n{Domain.objects.count():,} 🌐"},
+                            {"type": "mrkdwn", "text": f"*Hunts:*\n{Hunt.objects.count():,} 🎯"},
+                        ],
+                    },
+                    {
+                        "type": "context",
+                        "elements": [
+                            {"type": "mrkdwn", "text": "🕒 Stats generated at " + time.strftime("%Y-%m-%d %H:%M UTC")}
+                        ],
+                    },
+                ]
+
+                # Rest of the code remains the same, but use stats_blocks directly
+                try:
+                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+                    workspace_client = WebClient(token=slack_integration.bot_access_token)
+                except SlackIntegration.DoesNotExist:
+                    if team_id == "T04T40NHX":
+                        workspace_client = WebClient(token=SLACK_TOKEN)
+                    else:
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "This workspace is not properly configured. Please contact the workspace admin.",
+                            }
+                        )
+
+                try:
+                    # Open DM channel first
+                    dm_response = workspace_client.conversations_open(users=[user_id])
+                    if not dm_response["ok"]:
+                        return JsonResponse(
+                            {"response_type": "ephemeral", "text": "Sorry, I couldn't open a DM channel."}
+                        )
+
+                    dm_channel = dm_response["channel"]["id"]
+
+                    # Send message to DM channel using the new blocks
+                    workspace_client.chat_postMessage(
+                        channel=dm_channel,
+                        blocks=stats_blocks,
+                        text="OWASP Platform Statistics",  # Fallback text
+                    )
+
+                    return JsonResponse(
+                        {"response_type": "ephemeral", "text": "I've sent you the detailed statistics in a DM! 📊"}
+                    )
+
+                except SlackApiError as e:
+                    activity.success = False
+                    activity.error_message = f"Slack API error: {str(e)}"
+                    activity.save()
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "Sorry, there was an error sending the statistics. Please try again later.",
+                        }
+                    )
+
+            except (
+                Project.DoesNotExist,
+                Issue.DoesNotExist,
+                User.DoesNotExist,
+                Domain.DoesNotExist,
+                Hunt.DoesNotExist,
+            ) as e:
                 activity.success = False
-                activity.error_message = "Error posting message"
+                activity.error_message = f"Database error: {str(e)}"
                 activity.save()
-                return JsonResponse({"error": "Error posting message"}, status=500)
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "Sorry, there was an error retrieving the statistics."}
+                )
 
         elif command == "/contrib":
             try:
