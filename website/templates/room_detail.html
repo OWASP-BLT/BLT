@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}
+    {{ room.name }} - Room
+{% endblock title %}
+{% block content %}
+{% include "includes/sidenav.html" %}
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-col lg:flex-row">
+            <div class="lg:w-3/4">
+                <h1 class="text-3xl font-bold text-gray-900 mb-8">{{ room.name }}</h1>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                    <p class="text-gray-600">{{ room.description|default:"No description available." }}</p>
+                </div>
+                <div id="chat" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                    <div id="messages" class="overflow-y-auto h-64 mb-4"></div>
+                    <form id="messageForm">
+                        <input type="text" id="messageInput" class="border border-gray-300 rounded-lg w-full p-2" placeholder="Type a message...">
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded mt-2">Send</button>
+                    </form>
+                </div>
+            </div>
+            <div class="lg:w-1/4 lg:pl-8">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Admin</h2>
+                    <p><a href="/profile/{{ room.admin.username }}" class="text-red-500 hover:underline">{{ room.admin.username }}</a></p>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Members</h2>
+                    <ul id="membersList">
+                        {% for user in room.users.all %}
+                            <li id="user-{{ user.id }}">
+                                <a href="/profile/{{ user.username }}" class="text-gray-700 hover:underline">{{ user.username }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const roomId = "{{ room.id }}";
+        const userId = "{{ user.id }}";
+        const messagesDiv = document.getElementById('messages');
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+        const membersList = document.getElementById('membersList');
+
+        function addMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('mb-2');
+            messageElement.innerHTML = `<strong>${message.user.username}:</strong> ${message.message}`;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateMembers(members) {
+            membersList.innerHTML = '';
+            members.forEach(member => {
+                const memberElement = document.createElement('li');
+                memberElement.id = `user-${member.id}`;
+                memberElement.innerHTML = `<a href="/profile/${member.username}" class="text-gray-700 hover:underline">${member.username}</a>`;
+                if (member.is_connected) {
+                    memberElement.classList.add('text-green-500');
+                }
+                membersList.appendChild(memberElement);
+            });
+        }
+
+        messageForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const message = messageInput.value;
+            if (message.trim() === '') return;
+
+            fetch(`/api/rooms/${roomId}/messages/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ message, user: userId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    addMessage(data);
+                    messageInput.value = '';
+                });
+        });
+
+        // WebSocket connection for real-time updates
+        const socket = new WebSocket(`ws://${window.location.host}/ws/room/${roomId}/`);
+
+        socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'message') {
+                addMessage(data.message);
+            } else if (data.type === 'members') {
+                updateMembers(data.members);
+            }
+        };
+
+        socket.onclose = function(event) {
+            console.error('WebSocket closed unexpectedly');
+        };
+    </script>
+{% endblock content %}

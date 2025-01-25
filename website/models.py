@@ -1298,3 +1298,33 @@ class ContributorStats(models.Model):
 
     def __str__(self):
         return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+
+
+class Room(models.Model):
+    ROOM_TYPES = [
+        ("project", "Project"),
+        ("bug", "Bug"),
+        ("org", "Organization"),
+        ("custom", "Custom"),
+    ]
+
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=20, choices=ROOM_TYPES)
+    custom_type = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    admin = models.ForeignKey(User, related_name="admin_rooms", on_delete=models.CASCADE)
+    users = models.ManyToManyField(User, related_name="rooms", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
+class RoomMessage(models.Model):
+    room = models.ForeignKey(Room, related_name="messages", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name="messages", on_delete=models.CASCADE)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username}: {self.message[:50]}"

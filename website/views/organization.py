@@ -19,18 +19,19 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
+from django.views.generic import DetailView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from blt import settings
-from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
+from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm, RoomForm
 from website.models import (
     Activity,
     DailyStatusReport,
@@ -41,6 +42,7 @@ from website.models import (
     IssueScreenshot,
     Organization,
     OrganizationAdmin,
+    Room,
     Subscription,
     TimeLog,
     User,
@@ -1818,3 +1820,41 @@ def checkIN_detail(request, report_id):
         "blockers": report.blockers,
     }
     return render(request, "sizzle/checkin_detail.html", context)
+
+
+class RoomDetailView(DetailView):
+    model = Room
+    template_name = "room_detail.html"
+    context_object_name = "room"
+
+
+class RoomsListView(ListView):
+    model = Room
+    template_name = "rooms_list.html"
+    context_object_name = "rooms"
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = RoomForm()
+        return context
+
+
+class RoomCreateView(CreateView):
+    model = Room
+    form_class = RoomForm
+    template_name = "room_form.html"
+    success_url = reverse_lazy("rooms_list")
+
+    def form_valid(self, form):
+        form.instance.admin = self.request.user
+        return super().form_valid(form)
+
+
+@login_required
+def join_room(request, pk):
+    room = get_object_or_404(Room, pk=pk)
+    room.users.add(request.user)
+    room.save()
+    return redirect('room_detail', pk=pk)
+

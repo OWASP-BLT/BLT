@@ -174,6 +174,10 @@ from website.views.organization import (
     user_sizzle_report,
     view_hunt,
     weekly_report,
+    RoomsListView,
+    RoomCreateView,
+    RoomDetailView,
+    join_room,
 )
 from website.views.project import (
     ProjectBadgeView,
@@ -860,6 +864,11 @@ urlpatterns = [
     path("projects/create/", create_project, name="create_project"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("slack/events", slack_events, name="slack_events"),
+
+    path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
+    path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
+    path("discussion-rooms/<int:pk>/", RoomDetailView.as_view(), name="room_detail"),
+    path("discussion-rooms/join/<int:pk>/", join_room, name="join_room"),
 ]
 
 if settings.DEBUG:

@@ -3,6 +3,7 @@ from django import forms
 from mdeditor.fields import MDTextFormField
 
 from .models import Bid, IpReport, Monitor, UserProfile
+from website.models import Room
 
 
 class UserProfileForm(forms.ModelForm):
@@ -111,3 +112,12 @@ class GitHubURLForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
     )
+
+
+class RoomForm(forms.ModelForm):
+    class Meta:
+        model = Room
+        fields = ["name", "type", "custom_type", "description"]
+        widgets = {
+            "type": forms.Select(attrs={"onchange": "toggleCustomTypeField(this)"}),
+        }
