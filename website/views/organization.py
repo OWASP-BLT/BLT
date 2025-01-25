@@ -23,7 +23,6 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
@@ -44,6 +43,7 @@ from website.models import (
     OrganizationAdmin,
     Subscription,
     TimeLog,
+    Trademark,
     User,
     UserBadge,
     Wallet,
@@ -620,28 +620,6 @@ class OrganizationSettings(TemplateView):
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
-@csrf_exempt
-def fetch_related_trademarks(request, name):
-    # Fetch trademark data
-    url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
-    initial_payload = {
-        "keywords": f' ["{name}"]',
-        "start_index": "0",
-    }
-    headers = {
-        "x-rapidapi-key": f"{settings.USPTO_API}",
-        "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
-        "Content-Type": "application/x-www-form-urlencoded",
-    }
-    response = requests.post(url, data=initial_payload, headers=headers).json()
-    # The initial call returns a scroll_id, which is then used to obtain pagination results
-    scroll_id = response.get("scroll_id")
-    pagination_payload = {"keywords": f' ["{name}"]', "start_index": "0", "scroll_id": scroll_id}
-    response = requests.post(url, data=pagination_payload, headers=headers).json()
-    results = response.get("results")
-    return JsonResponse(results, safe=False)
-
-
 class DomainDetailView(ListView):
     template_name = "domain.html"
     model = Issue
@@ -654,6 +632,20 @@ class DomainDetailView(ListView):
         context["domain"] = domain
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
+        name = parsed_url.netloc.split(".")[-2:][0].title()
+        context["name"] = name
+
+        # Fetch the related organization
+        organization = domain.organization
+        if organization is None:
+            organization = get_object_or_404(Organization, Q(name__iexact=domain.get_name))
+        context["organization"] = organization
+
+        if organization:
+            # Fetch related trademarks for the organization
+            trademarks = Trademark.objects.filter(organization=organization)
+
+        context["trademarks"] = trademarks
 
         open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
@@ -668,8 +660,6 @@ class DomainDetailView(ListView):
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
         paginator = Paginator(open_issues, 3)
         page = self.request.GET.get("open")

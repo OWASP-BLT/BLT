@@ -325,7 +325,75 @@
                     </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
-                    <div id="trademark-container" class="p-4">Loading trademarks for {{ name }}...</div>
+                    <div id="trademark-container" class="p-4">
+                        <div class="trademark-header">
+                            <h2 class="text-2xl">
+                                <i class="fas fa-gavel icon"></i>
+                                Trademark Results For {{ name }}
+                            </h2>
+                            <span class="status-badge {% if trademarks|length > 0 %}status-live{% else %}status-dead{% endif %}">
+                                {{ trademarks|length }} Matches Found
+                            </span>
+                        </div>
+                        <div class="trademark-scroll">
+                            {% for trademark in trademarks %}
+                                <div class="trademark-item">
+                                    <h2>
+                                        <i class="fas fa-search icon"></i>
+                                        {{ trademark.keyword }}
+                                    </h2>
+                                    <div class="trademark-details">
+                                        <div>
+                                            <i class="fas fa-id-card icon"></i>
+                                            <strong>Reg No.:</strong> {{ trademark.registration_number | default:"N/A" }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-hashtag icon"></i>
+                                            <strong>Serial Number:</strong> {{ trademark.serial_number }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-calendar-alt icon"></i>
+                                            <strong>Filing Date:</strong> {{ trademark.filing_date | default:"N/A" }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-calendar-check icon"></i>
+                                            <strong>Reg Date:</strong> {{ trademark.registration_date | default:"N/A" }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-history icon"></i>
+                                            <strong>Status Date:</strong> {{ trademark.status_date | default:"N/A" }}
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-tag icon"></i>
+                                            <strong>Status:</strong>
+                                            <span class="status-badge {% if 'Live' in trademark.status_label %}status-live{% elif 'Dead' in trademark.status_label %}status-dead{% endif %}">
+                                                {{ trademark.status_label }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        <i class="fas fa-info-circle icon"></i>
+                                        <strong>Description:</strong> {{ trademark.description }}
+                                    </p>
+                                    {% if trademark.owners %}
+                                        <div class="owners-list">
+                                            <strong><i class="fas fa-users icon"></i> Owners:</strong>
+                                            <ul>
+                                                {% for owner in trademark.owners.all %}
+                                                    <li>
+                                                        {% if owner.name %}{{ owner.name }}{% endif %}
+                                                        {% if owner.city %}, {{ owner.city }}{% endif %}
+                                                        {% if owner.state %}, {{ owner.state }}{% endif %}
+                                                        {% if owner.country %}, {{ owner.country }}{% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
                 </div>
                 <div class="text-2xl font-bold my-4">
                     Monthly Report
@@ -424,115 +492,6 @@
   
           var chart = new ApexCharts(document.querySelector("#chart"), options);
           chart.render();
-    </script>
-    <script type="text/javascript">
-    async function fetchTrademarks() {
-        const name = "{{ name }}";
-        const url = `/trademarks/fetch-related-trademarks/${name}`;
-
-        try {
-            const response = await fetch(url);
-            const trademarks = await response.json();
-            renderTrademarks(trademarks);
-        } catch (error) {
-            console.error('Error fetching trademarks:', error);
-            alert('Error fetching trademarks');
-        }
-    }
-
-    function renderTrademarks(trademarks) {
-    const container = document.getElementById('trademark-container');
-    container.innerHTML = '';
-    
-    const header = document.createElement('div');
-    header.className = 'trademark-header';
-    header.innerHTML = `
-        <h2>
-            <i class="fas fa-gavel icon"></i>
-            Trademark Results
-        </h2>
-        <span class="status-badge ${trademarks.length > 0 ? 'status-live' : 'status-dead'}">
-            ${trademarks.length} Matches Found
-        </span>
-    `;
-    container.appendChild(header);
-
-    const scrollContainer = document.createElement('div');
-    scrollContainer.className = 'trademark-scroll';
-
-    trademarks.forEach(trademark => {
-        const item = document.createElement('div');
-        item.className = 'trademark-item';
-
-        const statusClass = trademark.status_label.includes('Live') ? 'status-live' : 
-                            trademark.status_label.includes('Dead') ? 'status-dead' : '';
-
-        item.innerHTML = `
-            <h2>
-                <i class="fas fa-search icon"></i>
-                ${trademark.keyword}
-            </h3>
-            <div class="trademark-details">
-                <div>
-                    <i class="fas fa-id-card icon"></i>
-                    <strong>Reg No.:</strong> ${trademark.registration_number || 'N/A'}
-                </div>
-                <div>
-                    <i class="fas fa-hashtag icon"></i>
-                    <strong>Serial Number:</strong> ${trademark.serial_number}
-                </div>
-                <div>
-                    <i class="fas fa-calendar-alt icon"></i>
-                    <strong>Filing Date:</strong> ${trademark.filing_date || 'N/A'}
-                </div>
-                <div>
-                    <i class="fas fa-calendar-check icon"></i>
-                    <strong>Reg Date:</strong> ${trademark.registration_date || 'N/A'}
-                </div>
-                <div>
-                    <i class="fas fa-history icon"></i>
-                    <strong>Status Date:</strong> ${trademark.status_date || 'N/A'}
-                </div>
-                <div>
-                    <i class="fas fa-tag icon"></i>
-                    <strong>Status:</strong> 
-                    <span class="status-badge ${statusClass}">
-                        ${trademark.status_label}
-                    </span>
-                </div>
-            </div>
-            <p>
-                <i class="fas fa-info-circle icon"></i>
-                <strong>Description:</strong> ${trademark.description}
-            </p>
-        `;
-
-        if (trademark.owners && trademark.owners.length > 0) {
-            const ownersList = document.createElement('div');
-            ownersList.className = 'owners-list';
-            ownersList.innerHTML = `<strong><i class="fas fa-users icon"></i> Owners:</strong>`;
-            
-            const ownerUl = document.createElement('ul');
-            trademark.owners.forEach(owner => {
-                const ownerItem = document.createElement('li');
-                ownerItem.innerText = `${owner.name}, ${owner.city}, ${owner.state}, ${owner.country}`;
-                ownerUl.appendChild(ownerItem);
-            });
-            
-            ownersList.appendChild(ownerUl);
-            item.appendChild(ownersList);
-        }
-        
-        scrollContainer.appendChild(item);
-    });
-
-    container.appendChild(scrollContainer);
-}
-
-
-
-    // Fetch and render trademarks on page load
-    fetchTrademarks();
     </script>
     <script src="https://unpkg.com/@material-tailwind/html@latest/scripts/tabs.js"></script>
 {% endblock content %}
