@@ -20,9 +20,7 @@ class Command(BaseCommand):
             while retries > 0:
                 try:
                     # Logging start of data fetching
-                    self.stdout.write(
-                        self.style.NOTICE(f"Starting data fetch for organization: {name}")
-                    )
+                    self.stdout.write(self.style.NOTICE(f"Starting data fetch for organization: {name}"))
 
                     # Fetch trademark data
                     url = "https://uspto-trademark.p.rapidapi.com/v1/batchTrademarkSearch/"
@@ -83,9 +81,7 @@ class Command(BaseCommand):
                                         owner_type=owner_data.get("owner_type"),
                                         owner_label=owner_data.get("owner_label"),
                                         legal_entity_type=owner_data.get("legal_entity_type"),
-                                        legal_entity_type_label=owner_data.get(
-                                            "legal_entity_type_label"
-                                        ),
+                                        legal_entity_type_label=owner_data.get("legal_entity_type_label"),
                                     )
                                     trademark.owners.add(owner)
 
@@ -93,9 +89,7 @@ class Command(BaseCommand):
                     organization.trademark_count = results and len(results) or 0
                     organization.save()
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Successfully stored data for organization: {name}")
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"Successfully stored data for organization: {name}"))
 
                     # Introduced delay between requests to avoid rate limiting
                     time.sleep(2)
@@ -108,14 +102,8 @@ class Command(BaseCommand):
                     else:
                         # Retry after a delay if rate limited
                         self.stdout.write(
-                            self.style.WARNING(
-                                f"Retrying for {name} due to {e}. Retries left: {retries}"
-                            )
+                            self.style.WARNING(f"Retrying for {name} due to {e}. Retries left: {retries}")
                         )
                         time.sleep(5)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                "Successfully fetched and stored trademark data for all organizations"
-            )
-        )
+        self.stdout.write(self.style.SUCCESS("Successfully fetched and stored trademark data for all organizations"))
