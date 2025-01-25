@@ -60,9 +60,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="issue",
             name="screenshot",
-            field=models.ImageField(
-                upload_to="screenshots", validators=[website.models.validate_image]
-            ),
+            field=models.ImageField(upload_to="screenshots", validators=[website.models.validate_image]),
         ),
         migrations.AlterField(
             model_name="issue",

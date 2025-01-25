@@ -244,9 +244,7 @@ if "DYNO" in os.environ:  # for Heroku
     if not GOOGLE_CREDENTIALS:
         raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
 
-    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS)
-    )
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(json.loads(GOOGLE_CREDENTIALS))
 
     STORAGES = {
         "default": {

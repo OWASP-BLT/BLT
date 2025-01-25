@@ -11,9 +11,7 @@ class SlackHandlerTests(TestCase):
     def setUp(self):
         # Create test organization and integration
         self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
-        self.integration = Integration.objects.create(
-            organization=self.organization, service_name="slack"
-        )
+        self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
         self.slack_integration = SlackIntegration.objects.create(
             integration=self.integration,
             bot_access_token="xoxb-test-token",

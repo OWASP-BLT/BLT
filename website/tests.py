@@ -42,9 +42,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "password1").send_keys("6:}jga,6mRKNUqMQ")
         self.selenium.find_element("name", "password2").send_keys("6:}jga,6mRKNUqMQ")
         self.selenium.find_element("name", "signup_button").click()
-        WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("bugbugbug (0 Pts)", body.text)
 
@@ -54,9 +52,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("bugbug (0 Pts)", body.text)
 
@@ -67,14 +63,10 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
         self.selenium.find_element("name", "url").send_keys("https://blt.owasp.org/report/")
-        self.selenium.find_element("id", "description").send_keys(
-            "XSS Attack on Google"
-        )  # title of bug
+        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
@@ -82,9 +74,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
         self.selenium.find_element("name", "reportbug_button").click()
         self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
-        WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 
@@ -95,14 +85,10 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
         self.selenium.find_element("name", "url").send_keys("https://google.com")
-        self.selenium.find_element("id", "description").send_keys(
-            "XSS Attack on Google"
-        )  # title of bug
+        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
@@ -110,9 +96,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
         self.selenium.find_element("name", "reportbug_button").click()
         self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
-        WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 

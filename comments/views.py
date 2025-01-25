@@ -128,9 +128,7 @@ def reply_comment(request, pk):
         issue = Issue.objects.get(pk=request.GET["issue_pk"])
         reply_text = request.GET.get("text_comment")
         reply_text = escape(reply_text)
-        comment = Comment(
-            author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj
-        )
+        comment = Comment(author=author, author_url=author_url, issue=issue, text=reply_text, parent=parent_obj)
         comment.save()
         all_comment = Comment.objects.filter(issue=issue)
     return render(
@@ -145,15 +143,11 @@ def autocomplete(request):
     q_string = request.GET.get("search", "")
     q_string = escape(q_string)
     if len(q_string) == 0:
-        return HttpResponse(
-            request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json"
-        )
+        return HttpResponse(request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json")
     q_list = q_string.split(" ")
     q_s = q_list[len(q_list) - 1]
     if len(q_s) == 0 or q_s[0] != "@":
-        return HttpResponse(
-            request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json"
-        )
+        return HttpResponse(request.GET["callback"] + "(" + json.dumps([]) + ");", content_type="application/json")
 
     q_s = q_s[1:]
     search_qs = User.objects.filter(username__startswith=q_s)
