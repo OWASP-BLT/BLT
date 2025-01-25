@@ -10,7 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from slack import WebClient
 from slack_sdk.errors import SlackApiError
 
-from website.models import Domain, Hunt, Issue, Project, SlackIntegration, User
+from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
@@ -91,8 +91,16 @@ def _handle_team_join(user_id, request):
     try:
         event_data = json.loads(request.body)
         team_id = event_data["team_id"]
+
+        # Log the activity at the start
+        activity = SlackBotActivity.objects.create(
+            workspace_id=team_id, activity_type="team_join", user_id=user_id, details={"event_data": event_data}
+        )
+
         try:
             slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+            activity.workspace_name = slack_integration.integration.organization.name
+            activity.save()
 
             # If integration exists and has welcome message
             if slack_integration.welcome_message:
@@ -181,9 +189,19 @@ def _handle_team_join(user_id, request):
             )
 
         except SlackApiError as e:
+            activity.success = False
+            activity.error_message = str(e)
+            activity.save()
             return
 
-    except SlackApiError as e:
+    except Exception as e:
+        SlackBotActivity.objects.create(
+            workspace_id=team_id if "team_id" in locals() else "unknown",
+            activity_type="team_join",
+            user_id=user_id,
+            success=False,
+            error_message=str(e),
+        )
         return
 
 
@@ -201,6 +219,15 @@ def slack_commands(request):
         user_id = request.POST.get("user_id")
         team_id = request.POST.get("team_id")
         team_domain = request.POST.get("team_domain")  # Get the team domain
+
+        # Log the command activity
+        activity = SlackBotActivity.objects.create(
+            workspace_id=team_id,
+            workspace_name=team_domain,
+            activity_type="command",
+            user_id=user_id,
+            details={"command": command, "channel_id": request.POST.get("channel_id")},
+        )
 
         if command == "/stats":
             # Get project counts by status
@@ -238,6 +265,9 @@ def slack_commands(request):
                 client.chat_postMessage(channel=request.POST.get("channel_id"), text=stats_message)
                 return JsonResponse({"response_type": "in_channel"})
             except SlackApiError:
+                activity.success = False
+                activity.error_message = "Error posting message"
+                activity.save()
                 return JsonResponse({"error": "Error posting message"}, status=500)
 
         elif command == "/contrib":
@@ -354,6 +384,9 @@ def slack_commands(request):
                 )
 
             except SlackApiError as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
                 return HttpResponse(status=500)
 
     return HttpResponse(status=405)
