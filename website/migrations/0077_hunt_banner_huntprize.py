@@ -35,9 +35,7 @@ class Migration(migrations.Migration):
                 ("description", models.TextField(blank=True, null=True)),
                 (
                     "hunt",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="website.hunt"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="website.hunt"),
                 ),
             ],
         ),

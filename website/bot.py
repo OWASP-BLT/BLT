@@ -133,9 +133,7 @@ def embed_documents_and_save(embed_docs):
             if file.is_file():
                 with open(file, "rb") as f:
                     content = f.read()
-                default_storage.save(
-                    str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content)
-                )
+                default_storage.save(str(db_folder_path / file.relative_to(temp_db_path)), ContentFile(content))
                 log_chat(f"Uploaded file {file.name} to storage")
     except Exception as e:
         log_chat(f"Error during FAISS index embedding and saving: {e}")
@@ -156,9 +154,7 @@ def load_vector_store():
     check_db_folder_str = db_folder_str + "/index.faiss"
     if not default_storage.exists(check_db_folder_str):
         temp_dir.cleanup()
-        ChatBotLog.objects.create(
-            question="Folder does not exist", answer=f"Folder Str: {str(db_folder_str)}"
-        )
+        ChatBotLog.objects.create(question="Folder does not exist", answer=f"Folder Str: {str(db_folder_str)}")
         return None
 
     # Download all files from the storage folder to the temp directory
@@ -193,9 +189,7 @@ def conversation_chain(vector_store):
         )
     )
     llm = ChatOpenAI(model_name="gpt-3.5-turbo-0125", temperature=0.5)
-    retriever = vector_store.as_retriever(
-        search_type="similarity", search_kwargs={"k": retrieval_search_results}
-    )
+    retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": retrieval_search_results})
     memory = ConversationSummaryMemory(
         llm=llm,
         return_messages=True,

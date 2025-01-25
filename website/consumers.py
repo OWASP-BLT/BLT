@@ -52,9 +52,7 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
         branch2 = data.get("branch2")  # Branch name for the second repository
 
         if not repo1 or not repo2 or not type1 or not type2:
-            await self.send(
-                json.dumps({"error": "Both repositories and their types are required."})
-            )
+            await self.send(json.dumps({"error": "Both repositories and their types are required."}))
             return
 
         if type1 not in ["github", "zip"] or type2 not in ["github", "zip"]:
@@ -152,9 +150,7 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             async with aiohttp.ClientSession() as session:
                 async with session.get(zip_url) as response:
                     if response.status != 200:
-                        raise Exception(
-                            f"Failed to download ZIP file. Status code: {response.status}"
-                        )
+                        raise Exception(f"Failed to download ZIP file. Status code: {response.status}")
 
                     # Extract the ZIP file
                     zip_file_path = Path(temp_dir) / f"{repo_name}.zip"
@@ -229,9 +225,7 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             if i % 5 == 0:
                 # Ping the frontend every 5 iterations
                 try:
-                    asyncio.run(
-                        self.send(json.dumps({"ping": "ping"}))
-                    )  # Send ping from the worker thread
+                    asyncio.run(self.send(json.dumps({"ping": "ping"})))  # Send ping from the worker thread
                 except Exception as e:
                     return None  # Stop the analysis if the connection is lost
             i += 1
@@ -247,23 +241,14 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
         for func1 in functions1:
             for func2 in functions2:
                 name_similarity = (
-                    difflib.SequenceMatcher(
-                        None, func1["signature"]["name"], func2["signature"]["name"]
-                    ).ratio()
-                    * 100
+                    difflib.SequenceMatcher(None, func1["signature"]["name"], func2["signature"]["name"]).ratio() * 100
                 )
 
                 # Signature similarity using difflib
-                signature1 = (
-                    f"{func1['signature']['name']}({', '.join(func1['signature']['args'])})"
-                )
-                signature2 = (
-                    f"{func2['signature']['name']}({', '.join(func2['signature']['args'])})"
-                )
+                signature1 = f"{func1['signature']['name']}({', '.join(func1['signature']['args'])})"
+                signature2 = f"{func2['signature']['name']}({', '.join(func2['signature']['args'])})"
 
-                signature_similarity = (
-                    difflib.SequenceMatcher(None, signature1, signature2).ratio() * 100
-                )
+                signature_similarity = difflib.SequenceMatcher(None, signature1, signature2).ratio() * 100
 
                 # Content similarity using OpenAI embeddings
                 fulltext1 = func1["full_text"]
@@ -302,9 +287,7 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
         models2 = extract_django_models(repo2_path)
         for model1 in models1:
             for model2 in models2:
-                model_similarity = (
-                    difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
-                )
+                model_similarity = difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
 
                 model_fields_similarity = compare_model_fields(model1, model2)
                 matching_details["models"].append(

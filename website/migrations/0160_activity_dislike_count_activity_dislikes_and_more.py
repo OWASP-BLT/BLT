@@ -43,8 +43,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="activity",
             name="likes",
-            field=models.ManyToManyField(
-                blank=True, related_name="liked_activities", to=settings.AUTH_USER_MODEL
-            ),
+            field=models.ManyToManyField(blank=True, related_name="liked_activities", to=settings.AUTH_USER_MODEL),
         ),
     ]

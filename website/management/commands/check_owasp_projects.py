@@ -23,16 +23,12 @@ class Command(BaseCommand):
         slack_webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
 
         if not github_token:
-            self.stderr.write(
-                self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting.")
-            )
+            self.stderr.write(self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting."))
             return
 
         if not slack_webhook_url:
             self.stderr.write(
-                self.style.WARNING(
-                    "SLACK_WEBHOOK_URL not found in environment. Slack notifications will be disabled."
-                )
+                self.style.WARNING("SLACK_WEBHOOK_URL not found in environment. Slack notifications will be disabled.")
             )
 
         headers = {
@@ -45,9 +41,7 @@ class Command(BaseCommand):
         max_rate_limit_retries = 5
 
         # Get or create OWASP organization
-        org, created = Organization.objects.get_or_create(
-            name__iexact="OWASP", defaults={"name": "OWASP"}
-        )
+        org, created = Organization.objects.get_or_create(name__iexact="OWASP", defaults={"name": "OWASP"})
 
         # Fetch all www-project repos
         www_project_repos = self.fetch_all_repos(headers)
@@ -66,9 +60,7 @@ class Command(BaseCommand):
 
             # Skip if repo already exists by checking Repo table
             if Repo.objects.filter(repo_url=repo_url).exists():
-                self.stdout.write(
-                    self.style.WARNING(f"Repository {repo_url} already exists. Skipping...")
-                )
+                self.stdout.write(self.style.WARNING(f"Repository {repo_url} already exists. Skipping..."))
                 continue
 
             self.stdout.write(f"Processing repository {repo_url}")
@@ -93,8 +85,7 @@ class Command(BaseCommand):
                         "name": project_name,
                         "description": repo_data.get("description")
                         or "No description available",  # Set default description
-                        "url": base_url
-                        or repo_data.get("html_url", ""),  # Fallback to repo URL if no homepage
+                        "url": base_url or repo_data.get("html_url", ""),  # Fallback to repo URL if no homepage
                         "organization": org,
                     }
 
@@ -132,9 +123,7 @@ class Command(BaseCommand):
                             watchers=repo_info.get("watchers", 0),
                             primary_language=repo_info.get("primary_language", ""),
                             license=repo_info.get("license", ""),
-                            last_commit_date=self.parse_date_safely(
-                                repo_info.get("last_commit_date")
-                            ),
+                            last_commit_date=self.parse_date_safely(repo_info.get("last_commit_date")),
                             created=self.parse_date_safely(repo_info.get("created")),
                             modified=self.parse_date_safely(repo_info.get("modified")),
                             network_count=repo_info.get("network_count", 0),
@@ -148,9 +137,7 @@ class Command(BaseCommand):
                             contributor_count=repo_info.get("contributor_count", 0),
                             commit_count=repo_info.get("commit_count", 0),
                             release_name=repo_info.get("release_name", ""),
-                            release_datetime=self.parse_date_safely(
-                                repo_info.get("release_datetime")
-                            ),
+                            release_datetime=self.parse_date_safely(repo_info.get("release_datetime")),
                         )
 
                         # Add to new projects list for Slack notification
@@ -175,29 +162,19 @@ class Command(BaseCommand):
                         if repo_info.get("logo_url"):
                             self.fetch_and_save_logo(project, repo_info["logo_url"], headers)
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Successfully created project and repo: {project_name}")
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"Successfully created project and repo: {project_name}"))
 
                 except ValueError as ve:
-                    self.stderr.write(
-                        self.style.ERROR(f"Validation error for {repo_url}: {str(ve)}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"Validation error for {repo_url}: {str(ve)}"))
                     continue
                 except IntegrityError as ie:
-                    self.stderr.write(
-                        self.style.ERROR(f"Database integrity error for {repo_url}: {str(ie)}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"Database integrity error for {repo_url}: {str(ie)}"))
                     continue
                 except requests.RequestException as re:
-                    self.stderr.write(
-                        self.style.ERROR(f"Network error while processing {repo_url}: {str(re)}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"Network error while processing {repo_url}: {str(re)}"))
                     continue
                 except CommandError as ce:
-                    self.stderr.write(
-                        self.style.ERROR(f"Command execution error for {repo_url}: {str(ce)}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"Command execution error for {repo_url}: {str(ce)}"))
                     continue
 
         # Send Slack notification if new projects were found and Slack webhook is configured
@@ -217,9 +194,7 @@ class Command(BaseCommand):
             try:
                 response = requests.get(url, headers=headers, timeout=10)
                 if response.status_code != 200:
-                    self.stderr.write(
-                        self.style.ERROR(f"Error: API returned status {response.status_code}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"Error: API returned status {response.status_code}"))
                     break
 
                 data = response.json()
@@ -240,9 +215,7 @@ class Command(BaseCommand):
 
         return all_repos
 
-    def fetch_github_repo_data(
-        self, repo_url, headers, delay, max_retries, is_wiki=False, is_main=False
-    ):
+    def fetch_github_repo_data(self, repo_url, headers, delay, max_retries, is_wiki=False, is_main=False):
         match = re.match(r"https://github.com/([^/]+/[^/]+)", repo_url)
         if not match:
             return None
@@ -252,26 +225,18 @@ class Command(BaseCommand):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):  # Rate limit or forbidden
-                        self.stderr.write(
-                            self.style.WARNING(
-                                f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"
-                            )
-                        )
+                        self.stderr.write(self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"))
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(
-                            f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}"
-                        )
+                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
                     )
                     time.sleep(delay)
                     continue
             # After max retries, return None instead of raising exception
-            self.stderr.write(
-                self.style.WARNING(f"Failed to fetch {url} after {max_retries} attempts")
-            )
+            self.stderr.write(self.style.WARNING(f"Failed to fetch {url} after {max_retries} attempts"))
             return None
 
         # Main repo data
@@ -325,9 +290,7 @@ class Command(BaseCommand):
             "last_updated": last_updated,
             "watchers": repo_data.get("watchers_count", 0),
             "primary_language": repo_data.get("language", ""),
-            "license": (
-                repo_data.get("license", {}).get("name") if repo_data.get("license") else None
-            ),
+            "license": (repo_data.get("license", {}).get("name") if repo_data.get("license") else None),
             "last_commit_date": last_commit_date,
             "created": created_date,
             "modified": modified_date,
@@ -403,19 +366,13 @@ class Command(BaseCommand):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):
-                        self.stderr.write(
-                            self.style.WARNING(
-                                f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"
-                            )
-                        )
+                        self.stderr.write(self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"))
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(
-                            f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}"
-                        )
+                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
                     )
                     time.sleep(delay)
                     continue
@@ -495,28 +452,18 @@ class Command(BaseCommand):
             if not created:
                 contributor_obj.name = contributor.get("login", contributor_obj.name)
                 contributor_obj.github_url = contributor.get("html_url", contributor_obj.github_url)
-                contributor_obj.avatar_url = contributor.get(
-                    "avatar_url", contributor_obj.avatar_url
-                )
-                contributor_obj.contributor_type = contributor.get(
-                    "type", contributor_obj.contributor_type
-                )
-                contributor_obj.contributions = contributor.get(
-                    "contributions", contributor_obj.contributions
-                )
+                contributor_obj.avatar_url = contributor.get("avatar_url", contributor_obj.avatar_url)
+                contributor_obj.contributor_type = contributor.get("type", contributor_obj.contributor_type)
+                contributor_obj.contributions = contributor.get("contributions", contributor_obj.contributions)
                 contributor_obj.save()
 
             contributor_instances.append(contributor_obj)
-            self.stdout.write(
-                self.style.SUCCESS(f"   -> Added/Updated Contributor: {contributor_obj.name}")
-            )
+            self.stdout.write(self.style.SUCCESS(f"   -> Added/Updated Contributor: {contributor_obj.name}"))
         # Assign all contributors to the repo
         repo_instance.contributor.add(*contributor_instances)
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Added {len(contributor_instances)} contributors to {repo_instance.name}"
-            )
+            self.style.SUCCESS(f"Added {len(contributor_instances)} contributors to {repo_instance.name}")
         )
 
     def send_slack_notification(self, new_projects, webhook_url):
@@ -557,14 +504,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS("Successfully sent Slack notification"))
             else:
                 self.stderr.write(
-                    self.style.WARNING(
-                        f"Failed to send Slack notification. Status code: {response.status_code}"
-                    )
+                    self.style.WARNING(f"Failed to send Slack notification. Status code: {response.status_code}")
                 )
         except requests.RequestException as re:
-            self.stderr.write(
-                self.style.ERROR(f"Network error sending Slack notification: {str(re)}")
-            )
+            self.stderr.write(self.style.ERROR(f"Network error sending Slack notification: {str(re)}"))
         except ValueError as ve:
             self.stderr.write(self.style.ERROR(f"Invalid message format for Slack: {str(ve)}"))
 

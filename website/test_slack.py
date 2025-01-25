@@ -1,89 +1,126 @@
+import json
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from website.views.slack_handlers import (
-    _handle_contribute_message,
-    _handle_team_join,
-    extract_text_from_blocks,
-    handle_message,
-)
+from website.models import Integration, Organization, SlackIntegration
+from website.views.slack_handlers import slack_commands, slack_events
 
 
-class SlackFunctionTests(TestCase):
+class SlackHandlerTests(TestCase):
     def setUp(self):
-        self.mock_client = MagicMock()
+        # Create test organization and integration
+        self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
+        self.slack_integration = SlackIntegration.objects.create(
+            integration=self.integration,
+            bot_access_token="xoxb-test-token",
+            workspace_name="T070JPE5BQQ",  # Test workspace ID
+            welcome_message="Welcome {user} to our workspace!",
+        )
 
-    def test_extract_text_from_blocks(self):
-        """Test extracting text from Slack block format"""
-        # Test rich text blocks
-        blocks = [
-            {
-                "type": "rich_text",
-                "elements": [
-                    {
-                        "type": "rich_text_section",
-                        "elements": [{"type": "text", "text": "I want to contribute"}],
-                    }
-                ],
-            }
-        ]
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_team_join_with_custom_message(self, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
 
-        self.assertEqual(extract_text_from_blocks(blocks), "I want to contribute")
-
-        # Test empty blocks
-        self.assertEqual(extract_text_from_blocks([]), "")
-
-        # Test invalid blocks
-        self.assertEqual(extract_text_from_blocks(None), "")
-
-    @patch("website.views.slack_handlers.client")
-    def test_handle_contribute_message(self, mock_client):
-        """Test contribute message handler"""
-        message = {
-            "user": "U123",
-            "channel": "C123",
-            "text": "How do I contribute?",
-            "subtype": None,
+        # Create test event data
+        event_data = {
+            "token": "test-token",
+            "team_id": "T070JPE5BQQ",
+            "event": {"type": "team_join", "user": {"id": "U123"}},
+            "type": "event_callback",
         }
 
-        _handle_contribute_message(message)
+        # Create test request
+        request = MagicMock()
+        request.body = json.dumps(event_data).encode()
+        request.method = "POST"
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
 
-        mock_client.chat_postMessage.assert_called_once()
+        # Call the event handler
+        response = slack_events(request)
 
-        # Test message without contribute keyword
-        message["text"] = "Hello world"
-        mock_client.chat_postMessage.reset_mock()
-        _handle_contribute_message(message)
-        mock_client.chat_postMessage.assert_not_called()
-
-    @patch("website.views.slack_handlers.client")
-    def test_handle_team_join(self, mock_client):
-        """Test team join handler"""
-        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
-
-        _handle_team_join("U123")
-
-        # Should send welcome message in joins channel
-        mock_client.chat_postMessage.assert_called()
-
-        # Should try to open DM
+        # Verify DM was opened
         mock_client.conversations_open.assert_called_once_with(users=["U123"])
 
-    @patch("website.views.slack_handlers.client")
-    def test_handle_message(self, mock_client):
-        """Test main message handler"""
-        # Mock bot user ID
-        mock_client.auth_test.return_value = {"user_id": "BOT123"}
+        # Verify welcome message was sent with custom message
+        mock_client.chat_postMessage.assert_called_once()
+        call_args = mock_client.chat_postMessage.call_args[1]
+        self.assertEqual(call_args["text"], "Welcome {user} to our workspace!")
 
-        # Test normal user message
-        payload = {"user": "U123", "text": "contribute", "channel": "C123"}
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_team_join_owasp_workspace(self, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
 
-        handle_message(payload)
-        mock_client.chat_postMessage.assert_called()
+        # Create test event data for OWASP workspace
+        event_data = {
+            "token": "test-token",
+            "team_id": "T04T40NHX",  # OWASP workspace ID
+            "event": {"type": "team_join", "user": {"id": "U123"}},
+            "type": "event_callback",
+        }
 
-        # Test bot message (should be ignored)
-        payload["user"] = "BOT123"
-        mock_client.chat_postMessage.reset_mock()
-        handle_message(payload)
-        mock_client.chat_postMessage.assert_not_called()
+        # Create test request
+        request = MagicMock()
+        request.body = json.dumps(event_data).encode()
+        request.method = "POST"
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        # Call the event handler
+        response = slack_events(request)
+
+        # Verify DM was opened
+        mock_client.conversations_open.assert_called_once_with(users=["U123"])
+
+        # Verify default OWASP welcome message was sent
+        mock_client.chat_postMessage.assert_called_once()
+        call_args = mock_client.chat_postMessage.call_args[1]
+        self.assertIn("Welcome to the OWASP Slack Community", call_args["text"])
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_slack_command_contrib(self, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        # Create test request
+        request = MagicMock()
+        request.method = "POST"
+        request.POST = {
+            "command": "/contrib",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+
+        # Verify DM was opened
+        mock_client.conversations_open.assert_called_once_with(users=["U123"])
+
+        # Verify contribute message was sent
+        mock_client.chat_postMessage.assert_called_once()
+        self.assertEqual(response.status_code, 200)

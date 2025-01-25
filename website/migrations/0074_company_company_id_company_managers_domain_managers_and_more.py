@@ -26,9 +26,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="company",
             name="managers",
-            field=models.ManyToManyField(
-                related_name="user_companies", to=settings.AUTH_USER_MODEL
-            ),
+            field=models.ManyToManyField(related_name="user_companies", to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name="domain",

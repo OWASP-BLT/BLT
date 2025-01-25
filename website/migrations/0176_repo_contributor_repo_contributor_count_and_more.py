@@ -12,9 +12,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="repo",
             name="contributor",
-            field=models.ManyToManyField(
-                blank=True, related_name="repos", to="website.contributor"
-            ),
+            field=models.ManyToManyField(blank=True, related_name="repos", to="website.contributor"),
         ),
         migrations.AddField(
             model_name="repo",
