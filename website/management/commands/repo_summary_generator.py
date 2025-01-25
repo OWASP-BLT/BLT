@@ -15,9 +15,7 @@ class Command(BaseCommand):
         self.stderr.write(self.style.WARNING("RUNNING"))
 
         if not github_token:
-            self.stderr.write(
-                self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting.")
-            )
+            self.stderr.write(self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting."))
             return
 
         headers = {
@@ -42,20 +40,14 @@ class Command(BaseCommand):
                     if response.status_code == 200:
                         repo.readme_content = response.text
                         repo.save()
-                        self.stderr.write(
-                            self.style.SUCCESS(f"Readme content fetched for {repo.name}")
-                        )
+                        self.stderr.write(self.style.SUCCESS(f"Readme content fetched for {repo.name}"))
                         readme_fetched = True
                         break
                 except Exception as e:
-                    self.stderr.write(
-                        self.style.ERROR(f"Error fetching README for {repo.name}: {e}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"Error fetching README for {repo.name}: {e}"))
 
             if not readme_fetched:
-                self.stderr.write(
-                    self.style.ERROR(f"Could not fetch README for {repo.name} at {repo.repo_url}")
-                )
+                self.stderr.write(self.style.ERROR(f"Could not fetch README for {repo.name} at {repo.repo_url}"))
                 continue
 
             try:
@@ -64,7 +56,5 @@ class Command(BaseCommand):
                 repo.save()
                 self.stderr.write(self.style.SUCCESS(f"Summary generated for {repo.name}"))
             except Exception as e:
-                self.stderr.write(
-                    self.style.ERROR(f"Error generating summary for {repo.name}: {e}")
-                )
+                self.stderr.write(self.style.ERROR(f"Error generating summary for {repo.name}: {e}"))
                 continue
