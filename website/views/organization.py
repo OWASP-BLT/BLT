@@ -125,9 +125,7 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
 
 
 @login_required(login_url="/accounts/login")
-def admin_organization_dashboard_detail(
-    request, pk, template="admin_dashboard_organization_detail.html"
-):
+def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_organization_detail.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -140,9 +138,7 @@ def admin_organization_dashboard_detail(
 
 def weekly_report(request):
     domains = Domain.objects.all()
-    report_data = [
-        "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
-    ]
+    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
     try:
         for domain in domains:
             open_issues = domain.open_issues
@@ -161,9 +157,7 @@ def weekly_report(request):
                 description = issue.description
                 views = issue.views
                 label = issue.get_label_display()
-                report_data.append(
-                    f"\n Description: {description} \n Views: {views} \n Labels: {label} \n"
-                )
+                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
 
         report_string = "".join(report_data)
         send_mail(
@@ -182,15 +176,11 @@ def weekly_report(request):
 @login_required(login_url="/accounts/login")
 def organization_hunt_results(request, pk, template="organization_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
-    issues = Issue.objects.filter(hunt=hunt).exclude(
-        Q(is_hidden=True) & ~Q(user_id=request.user.id)
-    )
+    issues = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
     context = {}
     if request.method == "GET":
         context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
+        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
         if hunt.result_published:
             context["winner"] = Winner.objects.get(hunt=hunt)
         return render(request, template, context)
@@ -239,11 +229,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                 if index == 4:
                     break
                 index = index + 1
-            total_amount = (
-                Decimal(hunt.prize_winner)
-                + Decimal(hunt.prize_runner)
-                + Decimal(hunt.prize_second_runner)
-            )
+            total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
             from django.conf import settings
 
             stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
@@ -268,9 +254,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
             hunt.save()
             context["winner"] = winner
         context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
+        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
         return render(request, template, context)
 
 
@@ -596,13 +580,9 @@ class OrganizationSettings(TemplateView):
             domain_admins = []
             domain_list = Domain.objects.filter(organization=domain_admin.organization)
             if domain_admin.role == 0:
-                domain_admins = OrganizationAdmin.objects.filter(
-                    organization=domain_admin.organization, is_active=True
-                )
+                domain_admins = OrganizationAdmin.objects.filter(organization=domain_admin.organization, is_active=True)
             else:
-                domain_admins = OrganizationAdmin.objects.filter(
-                    domain=domain_admin.domain, is_active=True
-                )
+                domain_admins = OrganizationAdmin.objects.filter(domain=domain_admin.domain, is_active=True)
             context = {
                 "admins": domain_admins,
                 "user": domain_admin,
@@ -711,9 +691,7 @@ class DomainDetailView(ListView):
             .order_by()
         )
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                domain=context["domain"], hunt=None, label=str(i)
-            )
+            context["bug_type_" + str(i)] = Issue.objects.filter(domain=context["domain"], hunt=None, label=str(i))
         context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
@@ -726,9 +704,7 @@ class DomainDetailView(ListView):
         )[0:3]
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity.pk
-            ).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
@@ -835,10 +811,7 @@ class CreateHunt(TemplateView):
             domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if (
                 domain_admin.role == 1
-                and (
-                    str(domain_admin.domain.pk)
-                    == ((request.POST["domain"]).split("-"))[0].replace(" ", "")
-                )
+                and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
             ) or domain_admin.role == 0:
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 total_amount = (
@@ -849,9 +822,7 @@ class CreateHunt(TemplateView):
                 if total_amount > wallet.current_balance:
                     return HttpResponse("failed")
                 hunt = Hunt()
-                hunt.domain = Domain.objects.get(
-                    pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-                )
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 data = {}
                 data["content"] = request.POST["content"]
                 data["start_date"] = request.POST["start_date"]
@@ -864,9 +835,7 @@ class CreateHunt(TemplateView):
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
                         return HttpResponse("failed")
-                hunt.domain = Domain.objects.get(
-                    pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-                )
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 tzsign = 1
                 offset = request.POST["tzoffset"]
                 if int(offset) < 0:
@@ -875,19 +844,11 @@ class CreateHunt(TemplateView):
                 start_date = form.cleaned_data["start_date"]
                 end_date = form.cleaned_data["end_date"]
                 if tzsign > 0:
-                    start_date = start_date + timedelta(
-                        hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-                    )
-                    end_date = end_date + timedelta(
-                        hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-                    )
+                    start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 else:
-                    start_date = start_date - (
-                        timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-                    )
-                    end_date = end_date - (
-                        timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-                    )
+                    start_date = start_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
+                    end_date = end_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
                 hunt.prize_runner = Decimal(request.POST["prize_runner"])
@@ -926,9 +887,7 @@ def user_sizzle_report(request, username):
         total_duration = sum((log.duration for log in logs if log.duration), timedelta())
 
         total_duration_seconds = total_duration.total_seconds()
-        formatted_duration = (
-            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
-        )
+        formatted_duration = f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
 
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
@@ -946,9 +905,7 @@ def user_sizzle_report(request, username):
 
         response_data.append(day_data)
 
-    return render(
-        request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user}
-    )
+    return render(request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user})
 
 
 @login_required
@@ -977,9 +934,7 @@ def sizzle_daily_log(request):
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return JsonResponse(
-                {"success": "true", "message": "Daily status report submitted successfully."}
-            )
+            return JsonResponse({"success": "true", "message": "Daily status report submitted successfully."})
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -1032,9 +987,7 @@ def TimeLogListAPIView(request):
     if not start_date or not end_date:
         return JsonResponse({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
 
-    time_logs = TimeLog.objects.filter(
-        user=request.user, created__range=[start_date, end_date]
-    ).order_by("created")
+    time_logs = TimeLog.objects.filter(user=request.user, created__range=[start_date, end_date]).order_by("created")
 
     grouped_logs = defaultdict(list)
     for log in time_logs:
@@ -1047,9 +1000,7 @@ def TimeLogListAPIView(request):
         total_duration = sum((log.duration for log in logs if log.duration), timedelta())
 
         total_duration_seconds = total_duration.total_seconds()
-        formatted_duration = (
-            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
-        )
+        formatted_duration = f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
 
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
@@ -1076,9 +1027,7 @@ def sizzle_docs(request):
 def sizzle(request):
     # Aggregate leaderboard data: username and total_duration
     leaderboard_qs = (
-        TimeLog.objects.values("user__username")
-        .annotate(total_duration=Sum("duration"))
-        .order_by("-total_duration")
+        TimeLog.objects.values("user__username").annotate(total_duration=Sum("duration")).order_by("-total_duration")
     )
 
     # Process leaderboard to include formatted_duration
@@ -1101,13 +1050,11 @@ def sizzle(request):
         last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
 
         if last_data:
-            all_data = TimeLog.objects.filter(
-                user=request.user, created__date=last_data.created.date()
-            ).order_by("created")
-
-            total_duration = sum(
-                (entry.duration for entry in all_data if entry.duration), timedelta()
+            all_data = TimeLog.objects.filter(user=request.user, created__date=last_data.created.date()).order_by(
+                "created"
             )
+
+            total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
 
             formatted_duration = format_timedelta(total_duration)
 
@@ -1125,18 +1072,14 @@ def sizzle(request):
                 "date": date,
             }
 
-    return render(
-        request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard}
-    )
+    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard})
 
 
 def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
 
-    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
-        slug
-    )
+    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (slug)
     headers = {
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
@@ -1145,9 +1088,7 @@ def trademark_detailview(request, slug):
     ta_data = trademark_available_response.json()
 
     if ta_data[0]["available"] == "no":
-        trademark_search_url = (
-            "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
-        )
+        trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
         ts_data = trademark_search_response.json()
         context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
@@ -1233,19 +1174,11 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         if tzsign > 0:
-            start_date = start_date + timedelta(
-                hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-            )
-            end_date = end_date + timedelta(
-                hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-            )
+            start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         else:
-            start_date = start_date - (
-                timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            )
-            end_date = end_date - (
-                timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            )
+            start_date = start_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
+            end_date = end_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
         hunt.starts_on = start_date
         hunt.end_on = end_date
 
@@ -1261,9 +1194,7 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_hunt_detail(
-    request, pk, template="organization_dashboard_hunt_detail.html"
-):
+def organization_dashboard_hunt_detail(request, pk, template="organization_dashboard_hunt_detail.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
@@ -1275,9 +1206,7 @@ def hunt_results(request, pk, template="hunt_results.html"):
 
 
 @login_required(login_url="/accounts/login")
-def organization_dashboard_domain_detail(
-    request, pk, template="organization_dashboard_domain_detail.html"
-):
+def organization_dashboard_domain_detail(request, pk, template="organization_dashboard_domain_detail.html"):
     user = request.user
     domain_admin = OrganizationAdmin.objects.get(user=request.user)
     try:
@@ -1370,9 +1299,7 @@ def add_or_update_organization(request):
             except:
                 organization.is_active = False
             try:
-                organization.subscription = Subscription.objects.get(
-                    name=request.POST["subscription"]
-                )
+                organization.subscription = Subscription.objects.get(name=request.POST["subscription"])
             except:
                 pass
             try:
@@ -1495,9 +1422,7 @@ def get_scoreboard(request):
         domain = paginator.page(1)
     except EmptyPage:
         domain = paginator.page(paginator.num_pages)
-    return HttpResponse(
-        json.dumps(domain.object_list, default=str), content_type="application/json"
-    )
+    return HttpResponse(json.dumps(domain.object_list, default=str), content_type="application/json")
 
 
 @require_POST
@@ -1584,9 +1509,7 @@ class ReportIpView(FormView):
         reporter_ip = get_client_ip(self.request)
         limit = 50 if self.request.user.is_authenticated else 30
         today = now().date()
-        recent_reports_count = IpReport.objects.filter(
-            reporter_ip_address=reporter_ip, created=today
-        ).count()
+        recent_reports_count = IpReport.objects.filter(reporter_ip_address=reporter_ip, created=today).count()
 
         if recent_reports_count >= limit:
             messages.error(self.request, "You have reached the daily limit for IP reports.")
@@ -1735,10 +1658,7 @@ def approve_activity(request, id):
     user = request.user
 
     # Check if the user has the "Mentor" badge
-    if (
-        UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
-        and not activity.is_approved
-    ):
+    if UserBadge.objects.filter(user=user, badge__title="Mentor").exists() and not activity.is_approved:
         activity.is_approved = True
         activity.save()
 
