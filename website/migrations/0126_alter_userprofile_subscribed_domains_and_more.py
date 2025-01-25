@@ -14,9 +14,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="userprofile",
             name="subscribed_domains",
-            field=models.ManyToManyField(
-                blank=True, related_name="user_subscribed_domains", to="website.domain"
-            ),
+            field=models.ManyToManyField(blank=True, related_name="user_subscribed_domains", to="website.domain"),
         ),
         migrations.AlterField(
             model_name="userprofile",
