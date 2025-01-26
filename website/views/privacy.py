@@ -36,7 +36,6 @@ def overlay_faces(img, color=(255, 255, 255)):
     except Exception:
         raise ValueError("An error occurred while processing the image.")
 
-    # Measure memory usage and print results
     current_mem, peak_mem = tracemalloc.get_traced_memory()
     tracemalloc.stop()
     print(f"Memory usage: current={current_mem} bytes, peak={peak_mem} bytes")
