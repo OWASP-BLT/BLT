@@ -252,7 +252,7 @@ class ProjectView(FilterView):
 
         if organization_id:
             queryset = queryset.filter(project__organization_id=organization_id)
-        return queryset.select_related("project").prefetch_related("tags", "contributor")
+        return queryset.select_related("project").prefetch_related("tags", "contributor").order_by('-created')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -329,6 +329,12 @@ def create_project(request):
             except (ValidationError, ValueError):
                 return False
 
+        # def validate_slack_url(url):
+        #     """Validate Slack invite URL"""
+        #     if not url:
+        #         return True  # Slack URL is optional
+        #     return re.match(r"https://[a-zA-Z0-9]+\.slack\.com/invite/[a-zA-Z0-9]+", url) is not None
+
         # Validate project URL
         project_url = request.POST.get("url")
         if project_url and not validate_url(project_url):
@@ -365,6 +371,16 @@ def create_project(request):
                     },
                     status=400,
                 )
+
+        slack_url = request.POST.get("slack_url")
+        # if slack_url and not validate_slack_url(slack_url):
+        #     return JsonResponse(
+        #         {
+        #             "error": "Invalid Slack invite URL",
+        #             "code": "INVALID_SLACK_URL",
+        #         },
+        #         status=400,
+        #     )
 
         # Validate repository URLs
         repo_urls = request.POST.getlist("repo_urls[]")
@@ -413,7 +429,7 @@ def create_project(request):
             )  # 409 Conflict
 
         # Check if project URL already exists
-        project_url = request.POST.get("url")
+        project_url = request.POST.get("project_url")
         if project_url and Project.objects.filter(url=project_url).exists():
             return JsonResponse(
                 {
@@ -422,7 +438,7 @@ def create_project(request):
                 },
                 status=409,
             )
-
+        slack_url = request.POST.get("slack_url")  
         # Check if any of the repository URLs are already linked to other projects
         repo_urls = request.POST.getlist("repo_urls[]")
         existing_repos = Repo.objects.filter(repo_url__in=repo_urls)
@@ -442,6 +458,7 @@ def create_project(request):
             "name": project_name,
             "description": request.POST.get("description"),
             "url": project_url,
+            "slack_url": slack_url,
             "twitter": request.POST.get("twitter"),
             "facebook": request.POST.get("facebook"),
         }
