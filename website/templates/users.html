@@ -41,6 +41,9 @@
                 <p class="text-xl bg-red-600 text-white w-max px-5 py-2 rounded-lg lg:text-4xl">
                     A warm and welcoming collection of open sourcers
                 </p>
+                {% if user_count %}
+                    <p class="mt-4 text-lg">{{ user_count }} user{{ user_count|pluralize }} found with the tag {{ tag }}</p>
+                {% endif %}
             </div>
         </div>
         <div class="font-['Ubuntu'] max-sm:w-full w-3/4 mx-auto">

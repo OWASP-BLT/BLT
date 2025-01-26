@@ -73,22 +73,21 @@ def update_bch_address(request):
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
-                match selected_crypto:
-                    case "Bitcoin":
-                        user_profile.btc_address = new_address
-                    case "Ethereum":
-                        user_profile.eth_address = new_address
-                    case "BitcoinCash":
-                        user_profile.bch_address = new_address
-                    case _:
-                        messages.error(request, f"Invalid crypto selected: {selected_crypto}")
-                        return redirect(reverse("profile", args=[request.user.username]))
+                if selected_crypto == "Bitcoin":
+                    user_profile.btc_address = new_address
+                elif selected_crypto == "Ethereum":
+                    user_profile.eth_address = new_address
+                elif selected_crypto == "BitcoinCash":
+                    user_profile.bch_address = new_address
+                else:
+                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                    return redirect(reverse("profile", args=[request.user.username]))
                 user_profile.save()
                 messages.success(request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
                 messages.error(request, f"Failed to update {selected_crypto} Address.")
         else:
-            messages.error(request, f"Please provide a valid {selected_crypto}  Address.")
+            messages.error(request, f"Please provide a valid {selected_crypto} Address.")
     else:
         messages.error(request, "Invalid request method.")
 
@@ -98,6 +97,7 @@ def update_bch_address(request):
 
 @login_required
 def profile_edit(request):
+    Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
@@ -591,11 +591,14 @@ def users_view(request, *args, **kwargs):
         if context["user_related_tags"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
+            context["user_count"] = context["users"].count()
         else:
             context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
+            context["user_count"] = 0
     else:
         context["tag"] = "BLT Contributors"
         context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+        context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
 
