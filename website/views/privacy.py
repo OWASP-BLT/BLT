@@ -1,32 +1,41 @@
+import tracemalloc
+
 import cv2
 
 
 def overlay_faces(img, color=(255, 255, 255)):
     """Apply white rectangles over detected faces in an image."""
-    if img is None:
-        raise ValueError("Invalid image input - image could not be decoded")
+    tracemalloc.start()
+    try:
+        if img is None:
+            raise ValueError("Invalid image input - image could not be decoded")
+        if len(img.shape) == 2:
+            img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        elif len(img.shape) == 3 and img.shape[2] == 4:
+            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-    if len(img.shape) == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    elif len(img.shape) == 3 and img.shape[2] == 4:
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        face_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+        if face_cascade.empty():
+            return img
 
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    )
-    if face_cascade.empty():
-        return img
+        # Detect faces with tuned parameters
+        faces = face_cascade.detectMultiScale(
+            gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE
+        )
+        if len(faces) == 0:
+            return img
 
-    # Detect faces with tuned parameters
-    faces = face_cascade.detectMultiScale(
-        gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30), flags=cv2.CASCADE_SCALE_IMAGE
-    )
+        for x, y, w, h in faces:
+            cv2.rectangle(img, (x, y), (x + w, y + h), color, thickness=cv2.FILLED)
+    except Exception:
+        raise ValueError("An error occurred while processing the image.")
 
-    if len(faces) == 0:
-        return img
+    current_mem, peak_mem = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    print(f"Memory usage: current={current_mem} bytes, peak={peak_mem} bytes")
 
-    for x, y, w, h in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), color, thickness=cv2.FILLED)
     return img
