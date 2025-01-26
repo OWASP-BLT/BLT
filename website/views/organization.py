@@ -26,12 +26,11 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
-from django.views.generic import DetailView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from blt import settings
-from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm, RoomForm
+from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
     Activity,
     DailyStatusReport,
@@ -1763,3 +1762,17 @@ class RoomCreateView(CreateView):
     def form_valid(self, form):
         form.instance.admin = self.request.user
         return super().form_valid(form)
+
+
+def join_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+    return render(request, "room.html", {"room": room})
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def delete_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id, admin=request.user)
+    room.delete()
+    messages.success(request, "Room deleted successfully.")
+    return redirect("rooms_list")

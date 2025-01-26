@@ -133,6 +133,8 @@ from website.views.organization import (
     PreviousHunts,
     ReportedIpListView,
     ReportIpView,
+    RoomCreateView,
+    RoomsListView,
     ScoreboardView,
     TimeLogListAPIView,
     TimeLogListView,
@@ -147,11 +149,13 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_room,
     delete_time_entry,
     dislike_activity,
     feed,
     get_scoreboard,
     hunt_results,
+    join_room,
     like_activity,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -168,10 +172,6 @@ from website.views.organization import (
     user_sizzle_report,
     view_hunt,
     weekly_report,
-    RoomsListView,
-    RoomCreateView,
-    RoomDetailView,
-    join_room,
 )
 from website.views.project import (
     ProjectBadgeView,
@@ -865,10 +865,10 @@ urlpatterns = [
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
-
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
-
+    path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
+    path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
 ]
 
 if settings.DEBUG:

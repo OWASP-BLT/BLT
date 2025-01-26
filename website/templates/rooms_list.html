@@ -4,18 +4,40 @@
     Discussion Rooms
 {% endblock title %}
 {% block content %}
-{% include "includes/sidenav.html" %}
+    {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 class="text-3xl font-bold text-gray-900 mb-8">Discussion Rooms</h1>
         <div class="mb-4">
-            <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded" onclick="openRoomModal()">Create Room</button>
+            <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
+                    onclick="openRoomModal()">Create Room</button>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {% for room in rooms %}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-xl font-bold text-gray-900">{{ room.name }}</h2>
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-gray-900">{{ room.name }}</h2>
+                        {% if room.admin == request.user %}
+                            <form method="post"
+                                  action="{% url 'delete_room' room.id %}"
+                                  onsubmit="return confirm('Are you sure you want to delete this room?');">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-500 hover:text-red-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-6 w-6"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
                     <p class="text-gray-600">{{ room.description|default:"No description available." }}</p>
-                    <a href="{% url 'join_room' room.id %}" class="inline-flex items-center px-4 py-2 mt-4 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">Join Room</a>
+                    <a href="{% url 'join_room' room.id %}"
+                       class="inline-flex items-center px-4 py-2 mt-4 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                        Join Room
+                    </a>
                 </div>
             {% empty %}
                 <p class="text-gray-500">No rooms found.</p>
@@ -26,38 +48,43 @@
             <div class="mt-8">
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                     {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Previous</a>
+                        <a href="?page={{ page_obj.previous_page_number }}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Previous</a>
                     {% endif %}
                     {% for i in page_obj.paginator.page_range %}
                         {% if page_obj.number == i %}
                             <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-red-50 text-sm font-medium text-red-600">{{ i }}</span>
                         {% else %}
-                            <a href="?page={{ i }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ i }}</a>
+                            <a href="?page={{ i }}"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">{{ i }}</a>
                         {% endif %}
                     {% endfor %}
                     {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Next</a>
+                        <a href="?page={{ page_obj.next_page_number }}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">Next</a>
                     {% endif %}
                 </nav>
             </div>
         {% endif %}
     </div>
-
     <!-- Room Modal -->
-    <div id="roomModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div id="roomModal"
+         class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
             <h2 class="text-xl font-bold mb-4">Create Room</h2>
             <form method="post" action="{% url 'room_create' %}">
                 {% csrf_token %}
                 {{ form.as_p }}
                 <div class="mt-4">
-                    <button type="submit" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Create</button>
-                    <button type="button" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded" onclick="closeRoomModal()">Cancel</button>
+                    <button type="submit"
+                            class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Create</button>
+                    <button type="button"
+                            class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+                            onclick="closeRoomModal()">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
-
     <script>
         function openRoomModal() {
             document.getElementById('roomModal').classList.remove('hidden');
@@ -81,7 +108,6 @@
             toggleCustomTypeField(select);
         });
     </script>
-
     <style>
         #roomModal input, #roomModal textarea, #roomModal select {
             border: 1px solid #ccc;
