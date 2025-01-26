@@ -321,13 +321,15 @@ def validate_image(fieldfile_obj):
         fieldfile_obj.file = ContentFile(buffer.tobytes())
         fieldfile_obj.file.seek(0)
 
-    except Exception as e:
-        print(f"Image validation error: {str(e)}")
+    except ValidationError:
+        raise
+    except Exception:
+        logger.error("Image validation failed.")
         return False
 
     megabyte_limit = 3.0
     if filesize > megabyte_limit * 1024 * 1024:
-        raise ValidationError(f"Max file size is {str(megabyte_limit)}MB")
+        raise ValidationError(f"Max file size is {megabyte_limit}MB")
 
     return True
 
