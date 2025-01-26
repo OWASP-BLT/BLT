@@ -20,9 +20,7 @@ class BlogCommentTests(TestCase):
         data = {"content_type": "post", "comment": "This is a test comment."}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            Comment.objects.filter(content_type__model="post", object_id=self.post.pk).exists()
-        )
+        self.assertTrue(Comment.objects.filter(content_type__model="post", object_id=self.post.pk).exists())
 
     def test_update_comment(self):
         comment = Comment.objects.create(

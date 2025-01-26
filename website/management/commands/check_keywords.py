@@ -35,17 +35,13 @@ class Command(BaseCommand):
                 monitor.last_checked_time = timezone.now()
                 monitor.save()
 
-                self.stdout.write(
-                    self.style.SUCCESS(f"Monitoring {monitor.url}: status {monitor.status}")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Monitoring {monitor.url}: status {monitor.status}"))
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"Error monitoring {monitor.url}: {str(e)}"))
 
     def notify_user(self, username, website, email, status):
         subject = f"Website Status Update: {website} is {status}"
-        message = (
-            f"Dear {username},\n\nThe website '{website}' you are monitoring is currently {status}."
-        )
+        message = f"Dear {username},\n\nThe website '{website}' you are monitoring is currently {status}."
 
         send_mail(
             subject,

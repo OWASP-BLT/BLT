@@ -87,9 +87,7 @@ class IPRestrictMiddleware:
             if ip:
                 blocked_entry = Blocked.objects.select_for_update().filter(address=ip).first()
             elif network:
-                blocked_entry = (
-                    Blocked.objects.select_for_update().filter(ip_network=network).first()
-                )
+                blocked_entry = Blocked.objects.select_for_update().filter(ip_network=network).first()
             elif user_agent:
                 # Correct lookup: find if any user_agent_string is a substring of the user_agent
                 blocked_entry = (
@@ -111,9 +109,7 @@ class IPRestrictMiddleware:
                 blocked_entry.save(update_fields=["count"])
 
     def __call__(self, request):
-        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get(
-            "REMOTE_ADDR", ""
-        )
+        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
         agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
         blocked_ips = self.blocked_ips()

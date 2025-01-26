@@ -68,9 +68,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "badge",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="website.badge"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="website.badge"),
                 ),
                 (
                     "user",

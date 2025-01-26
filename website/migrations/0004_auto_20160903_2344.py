@@ -18,9 +18,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "id",
-                    models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
+                    models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
                 ),
                 ("url", models.URLField()),
                 ("prize", models.IntegerField()),
@@ -30,9 +28,7 @@ class Migration(migrations.Migration):
                 ("modified", models.DateTimeField(auto_now=True)),
                 (
                     "user",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
                 ),
             ],
         ),
