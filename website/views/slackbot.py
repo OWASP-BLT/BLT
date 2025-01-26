@@ -91,11 +91,7 @@ if app:
                     lang = (repo["language"] or "").lower()
                     topics = [t.lower() for t in repo.get("topics", [])]
 
-                    if (
-                        search_term.lower() in name_desc
-                        or search_term.lower() in lang
-                        or search_term.lower() in topics
-                    ):
+                    if search_term.lower() in name_desc or search_term.lower() in lang or search_term.lower() in topics:
                         desc = repo["description"] or "No description provided."
 
                         found_urls = url_pattern.findall(desc)
@@ -145,28 +141,19 @@ if app:
                     if gh_response.status_code == 200:
                         repos = gh_response.json()
                         if not repos:
-                            send_dm(
-                                client, command["user_id"], "No repositories found for OWASP-BLT."
-                            )
+                            send_dm(client, command["user_id"], "No repositories found for OWASP-BLT.")
                         else:
                             repo_list = []
                             for idx, repo in enumerate(repos, start=1):
-                                desc = (
-                                    repo["description"]
-                                    if repo["description"]
-                                    else "No description provided."
-                                )
-                                repo_list.append(
-                                    f"{idx}. <{repo['html_url']}|{repo['name']}> - {desc}"
-                                )
+                                desc = repo["description"] if repo["description"] else "No description provided."
+                                repo_list.append(f"{idx}. <{repo['html_url']}|{repo['name']}> - {desc}")
 
                             blocks = [
                                 {
                                     "type": "section",
                                     "text": {
                                         "type": "mrkdwn",
-                                        "text": "Here are the OWASP BLT project repositories:\n"
-                                        + "\n".join(repo_list),
+                                        "text": "Here are the OWASP BLT project repositories:\n" + "\n".join(repo_list),
                                     },
                                 },
                                 {
@@ -236,8 +223,7 @@ if app:
                     send_dm(client, user_id, "No issues found for this repository.")
                 else:
                     issues_list = [
-                        f"- <{issue['html_url']}|{issue['title']}> (#{issue['number']})"
-                        for issue in issues[:5]
+                        f"- <{issue['html_url']}|{issue['title']}> (#{issue['number']})" for issue in issues[:5]
                     ]
                     issues_text = "Here are the latest issues:\n" + "\n".join(issues_list)
                     send_dm(client, user_id, issues_text)

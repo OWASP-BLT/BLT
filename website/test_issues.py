@@ -12,9 +12,7 @@ class IssueCommentTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="testuser", password="12345")
         self.user_profile, created = UserProfile.objects.get_or_create(user=self.user)
-        self.issue = Issue.objects.create(
-            url="http://example.com", description="Test Issue", user=self.user
-        )
+        self.issue = Issue.objects.create(url="http://example.com", description="Test Issue", user=self.user)
         self.client.login(username="testuser", password="12345")
 
     def test_add_comment(self):
@@ -22,9 +20,7 @@ class IssueCommentTests(TestCase):
         data = {"content_type": "issue", "comment": "This is a test comment."}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(
-            Comment.objects.filter(content_type__model="issue", object_id=self.issue.pk).exists()
-        )
+        self.assertTrue(Comment.objects.filter(content_type__model="issue", object_id=self.issue.pk).exists())
 
     def test_update_comment(self):
         comment = Comment.objects.create(
