@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Team Leaderboard
+{% endblock title %}
+{% block description %}
+    Check out the top performing teams on the leaderboard. View their scores, names, and rankings.
+{% endblock description %}
+{% block keywords %}
+    Team Leaderboard, Top Teams, Scores, Rankings, Team Performance
+{% endblock keywords %}
+{% block og_title %}
+    Team Leaderboard - Top Performing Teams
+{% endblock og_title %}
+{% block og_description %}
+    Explore the leaderboard to see the top performing teams and their rankings.
+{% endblock og_description %}
+{% load gravatar %}
+{% block style %}
+    <style>
+        .list-group-item img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .list-group-item .badge {
+            margin-top: 15px;
+        }
+
+        .list-group-item a {
+            text-decoration: none;
+            margin-left: 10px;
+        }
+
+        @media (min-height: 800px) and (min-width: 992px) {
+            .col-md-8 {
+                width: 66.66666667%;
+            }
+        }
+        
+        @media (min-height: 800px) and (min-width: 360px) {
+            .col-md-8 {
+                width: 90%;
+                font-size: small;
+            }
+        }
+
+        .silver {
+            background-color: #C0C0C0;
+            color: #333;
+        }
+
+        .gold {
+            background-color: #D4AF37;
+            color: #333;
+        }
+
+        .bronze {
+            background-color: #be7225; 
+            color: #FFFFFF; 
+        }
+
+        .platinum {
+            background-color: #E5E4E2; 
+            color: #333;
+        }
+
+        .unrated {
+            background-color: #000000; 
+            color: #FFFFFF; 
+        }
+
+        .profileimage {
+            border-radius: 50%;
+        }
+
+        .teamname {
+            font-weight: bold;
+        }
+
+        /* Styles for team badge colors */
+        .team-badge {
+            padding: 5px 10px;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .team-badge.silver { background-color: #C0C0C0; }
+        .team-badge.gold { background-color: #D4AF37; }
+        .team-badge.bronze { background-color: #be7225; }
+        .team-badge.platinum { background-color: #E5E4E2; }
+        .team-badge.unrated { background-color: #000000; }
+    </style>
+{% endblock style %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="row container-min-height flex justify-center">
+        <div class="col-lg-6 flex justify-center items-center">
+            <h1 class="page-header">Global Teams Leaderboard</h1>
+        </div>
+    </div>
+    <div class="row flex justify-center">
+        <div class="col-md-8">
+            <div class="list-group">
+                {% if not leaderboard %}
+                    <p class="text-red-900">No data available for teams yet</p>
+                {% else %}
+                    {% for team, points in leaderboard %}
+                        <div class="list-group-item">
+                            {% if team.logo %}
+                                <img src="{{ team.logo.url }}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="{{ team.name }}"
+                                     width="50px"
+                                     height="50px">
+                            {% else %}
+                                <img src="{% static 'images/default-team-logo.png' %}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="{{ team.name }}"
+                                     width="50px"
+                                     height="50px">
+                            {% endif %}
+                            <a href="#" class="teamname">{{ team.name }}</a>
+                            <span class="pull-right badge">{{ points }} Points</span>
+                            {% if team.rank %}
+                                <span class="pull-right badge team-badge {{ team.rank|lower }}">{{ team.rank }} Rank</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}
