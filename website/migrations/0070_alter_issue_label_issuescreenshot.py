@@ -50,9 +50,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "issue",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="website.issue"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="website.issue"),
                 ),
             ],
         ),
