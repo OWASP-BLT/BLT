@@ -44,6 +44,7 @@ from website.models import (
     Room,
     Subscription,
     TimeLog,
+    Trademark,
     User,
     UserBadge,
     Wallet,
@@ -612,6 +613,20 @@ class DomainDetailView(ListView):
         context["domain"] = domain
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
+        name = parsed_url.netloc.split(".")[-2:][0].title()
+        context["name"] = name
+
+        # Fetch the related organization
+        organization = domain.organization
+        if organization is None:
+            organization = get_object_or_404(Organization, Q(name__iexact=domain.get_name))
+        context["organization"] = organization
+
+        if organization:
+            # Fetch related trademarks for the organization
+            trademarks = Trademark.objects.filter(organization=organization)
+
+        context["trademarks"] = trademarks
 
         open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
@@ -626,8 +641,6 @@ class DomainDetailView(ListView):
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
         paginator = Paginator(open_issues, 3)
         page = self.request.GET.get("open")

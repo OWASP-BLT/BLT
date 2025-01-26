@@ -37,6 +37,8 @@ from website.models import (
     SuggestionVotes,
     Tag,
     TimeLog,
+    Trademark,
+    TrademarkOwner,
     Transaction,
     UserProfile,
     Wallet,
@@ -494,3 +496,5 @@ admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
+admin.site.register(Trademark)
+admin.site.register(TrademarkOwner)

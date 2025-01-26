@@ -1,3 +1,4 @@
+from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
@@ -113,6 +114,16 @@ class GitHubURLForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
     )
+
+
+class SignupFormWithCaptcha(SignupForm, CaptchaForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+    def save(self, request):
+        user = super().save(request)
+        return user
 
 
 class RoomForm(forms.ModelForm):
