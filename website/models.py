@@ -1300,6 +1300,34 @@ class ContributorStats(models.Model):
         return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
 
 
+class SlackBotActivity(models.Model):
+    ACTIVITY_TYPES = [
+        ("team_join", "Team Join"),
+        ("command", "Slash Command"),
+        ("message", "Message"),
+        ("error", "Error"),
+    ]
+
+    workspace_id = models.CharField(max_length=20)
+    workspace_name = models.CharField(max_length=255, null=True, blank=True)
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
+    user_id = models.CharField(max_length=20, null=True, blank=True)
+    details = models.JSONField(default=dict)  # Stores flexible activity-specific data
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["workspace_id", "activity_type"]),
+            models.Index(fields=["created"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_activity_type_display()} in {self.workspace_name} at {self.created}"
+
+
 class Room(models.Model):
     ROOM_TYPES = [
         ("project", "Project"),
@@ -1319,12 +1347,3 @@ class Room(models.Model):
     def __str__(self):
         return self.name
 
-
-class RoomMessage(models.Model):
-    room = models.ForeignKey(Room, related_name="messages", on_delete=models.CASCADE)
-    user = models.ForeignKey(User, related_name="messages", on_delete=models.CASCADE)
-    message = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username}: {self.message[:50]}"

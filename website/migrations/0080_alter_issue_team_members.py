@@ -14,8 +14,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="issue",
             name="team_members",
-            field=models.ManyToManyField(
-                blank=True, related_name="reportmembers", to=settings.AUTH_USER_MODEL
-            ),
+            field=models.ManyToManyField(blank=True, related_name="reportmembers", to=settings.AUTH_USER_MODEL),
         ),
     ]

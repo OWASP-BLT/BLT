@@ -35,13 +35,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views.blog import (
-    PostCreateView,
-    PostDeleteView,
-    PostDetailView,
-    PostListView,
-    PostUpdateView,
-)
+from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -867,8 +861,7 @@ urlpatterns = [
 
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
-    path("discussion-rooms/<int:pk>/", RoomDetailView.as_view(), name="room_detail"),
-    path("discussion-rooms/join/<int:pk>/", join_room, name="join_room"),
+
 ]
 
 if settings.DEBUG:
