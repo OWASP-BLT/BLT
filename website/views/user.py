@@ -17,13 +17,7 @@ from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -39,6 +33,7 @@ from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
     Badge,
+    Challenge,
     Domain,
     Hunt,
     InviteFriend,
@@ -238,18 +233,14 @@ class UserProfileDetailView(DetailView):
         context["user_points"] = user_points
         context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
-            Domain.objects.filter(issue__user=self.object)
-            .annotate(total=Count("issue"))
-            .order_by("-total")
+            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
         )
         context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:3]
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity.pk
-            ).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
@@ -269,9 +260,7 @@ class UserProfileDetailView(DetailView):
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                user=self.object, hunt=None, label=str(i)
-            )
+            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -285,14 +274,10 @@ class UserProfileDetailView(DetailView):
             arr.append(User.objects.get(username=str(userprofile.user)))
         context["following"] = arr
 
-        context["followers_list"] = [
-            str(prof.user.email) for prof in user.userprofile.follower.all()
-        ]
+        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         # tags
-        context["user_related_tags"] = (
-            UserProfile.objects.filter(user=self.object).first().tags.all()
-        )
+        context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         return context
 
@@ -333,9 +318,7 @@ class UserProfileDetailsView(DetailView):
             Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
         )[0]
         context["websites"] = (
-            Domain.objects.filter(issue__user=self.object)
-            .annotate(total=Count("issue"))
-            .order_by("-total")
+            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -360,9 +343,9 @@ class UserProfileDetailsView(DetailView):
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object).count()
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                user=self.object, hunt=None, label=str(i)
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i)).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -376,9 +359,7 @@ class UserProfileDetailsView(DetailView):
             arr.append(User.objects.get(username=str(userprofile.user)))
         context["following"] = arr
 
-        context["followers_list"] = [
-            str(prof.user.email) for prof in user.userprofile.follower.all()
-        ]
+        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         return context
 
@@ -416,9 +397,7 @@ class LeaderboardBase:
         """
         leaderboard which includes current month users scores
         """
-        return self.get_leaderboard(
-            month=int(datetime.now().month), year=int(datetime.now().year), api=api
-        )
+        return self.get_leaderboard(month=int(datetime.now().month), year=int(datetime.now().year), api=api)
 
     def monthly_year_leaderboard(self, year, api=False):
         """
@@ -704,9 +683,7 @@ def withdraw(request):
                         wallet.save()
                         payment.active = False
                         payment.save()
-                        return HttpResponseRedirect(
-                            "/dashboard/user/profile/" + request.user.username
-                        )
+                        return HttpResponseRedirect("/dashboard/user/profile/" + request.user.username)
                     else:
                         return HttpResponse("INSUFFICIENT BALANCE")
                 else:
@@ -769,9 +746,7 @@ def create_tokens(request):
 def get_score(request):
     users = []
     temp_users = (
-        User.objects.annotate(total_score=Sum("points__score"))
-        .order_by("-total_score")
-        .filter(total_score__gt=0)
+        User.objects.annotate(total_score=Sum("points__score")).order_by("-total_score").filter(total_score__gt=0)
     )
     rank_user = 1
     for each in temp_users.all():
@@ -801,12 +776,8 @@ def follow_user(request, user):
                 flag = 1
         if flag != 1:
             request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string(
-                "email/follow_user.txt", {"follower": request.user, "followed": userx}
-            )
-            msg_html = render_to_string(
-                "email/follow_user.txt", {"follower": request.user, "followed": userx}
-            )
+            msg_plain = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
+            msg_html = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
 
             send_mail(
                 "You got a new follower!!",
@@ -940,9 +911,7 @@ def github_webhook(request):
 
 def handle_pull_request_event(payload):
     if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(
-            github_url=payload["pull_request"]["user"]["html_url"]
-        ).first()
+        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
         if pr_user_profile:
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
@@ -969,9 +938,7 @@ def handle_review_event(payload):
 def handle_issue_event(payload):
     print("issue closed")
     if payload["action"] == "closed":
-        closer_profile = UserProfile.objects.filter(
-            github_url=payload["sender"]["html_url"]
-        ).first()
+        closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
@@ -1028,3 +995,26 @@ def assign_github_badge(user, action_title):
 #     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 
 #     return hmac.compare_digest(computed_signature, signature)
+
+
+@method_decorator(login_required, name="dispatch")
+class UserChallengeListView(View):
+    """View to display all challenges and handle updates inline."""
+
+    def get(self, request):
+        challenges = Challenge.objects.filter(challenge_type="single")  # All single-user challenges
+        user_challenges = challenges.filter(participants=request.user)  # Challenges the user is participating in
+
+        for challenge in challenges:
+            if challenge in user_challenges:
+                # If the user is participating, show their progress
+                challenge.progress = challenge.progress
+            else:
+                # If the user is not participating, set progress to 0
+                challenge.progress = 0
+
+        return render(
+            request,
+            "user_challenges.html",
+            {"challenges": challenges, "user_challenges": user_challenges},
+        )

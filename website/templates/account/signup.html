@@ -19,6 +19,16 @@
 {% load i18n %}
 {% load custom_tags %}
 {% block natural_content %}
+    <style>
+    .captcha-field input {
+    border: 1px solid #d1d5db;
+    margin-top: 10px;
+    padding-left: 6px;
+    border-radius: 4px;
+}
+
+
+    </style>
     {% include "includes/sidenav.html" %}
     <div class="flex items-center w-[100%] h-[60vh] min-h-screen p-4 bg-gray-100 lg:justify-center">
         <div class="flex flex-col  lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
@@ -116,6 +126,11 @@
                             </button>
                         </div>
                         <span class="help-block">{{ form.password2.errors }}</span>
+                    </div>
+                    <div class="flex flex-col space-y-1">
+                        <label for="captcha" class="text-sm font-semibold text-gray-500">Captcha</label>
+                        <div class="captcha-field">{{ form.captcha }}</div>
+                        <span class="help-block">{{ form.captcha.errors }}</span>
                     </div>
                     {% if redirect_field_value %}
                         <input type="hidden"

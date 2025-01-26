@@ -25,9 +25,7 @@ def create_bacon_token(user, contribution):
         contribution.txid = txid
         contribution.save()
 
-        token = BaconToken.objects.create(
-            user=user, amount=amount, contribution=contribution, token_id=txid
-        )
+        token = BaconToken.objects.create(user=user, amount=amount, contribution=contribution, token_id=txid)
         return token
 
     except JSONRPCException as e:

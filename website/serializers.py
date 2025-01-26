@@ -35,11 +35,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """
 
     def get_total_score(self, instance):
-        score = (
-            Points.objects.filter(user=instance.user)
-            .aggregate(total_score=Sum("score"))
-            .get("total_score")
-        )
+        score = Points.objects.filter(user=instance.user).aggregate(total_score=Sum("score")).get("total_score")
         if score is None:
             return 0
         return score

@@ -9,9 +9,7 @@ def replace_blt_contributors_tag(apps, schema_editor):
     UserProfile = apps.get_model("website", "UserProfile")
 
     # Get or create the "BLT Contributors" tag
-    blt_contributors_tag, _ = Tag.objects.get_or_create(
-        name="BLT Contributors", slug="blt_contributors"
-    )
+    blt_contributors_tag, _ = Tag.objects.get_or_create(name="BLT Contributors", slug="blt_contributors")
 
     try:
         # Get the "BLT-Contributors" tag

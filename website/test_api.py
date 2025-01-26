@@ -111,8 +111,7 @@ class APITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         if len(response.data):
             self.assertTrue(
-                response.data[0]["starts_on"] < timezone.now()
-                and response.data[0]["end_on"] > timezone.now(),
+                response.data[0]["starts_on"] < timezone.now() and response.data[0]["end_on"] > timezone.now(),
                 "Invalid Response",
             )
         response = self.client.get("".join([url, "previousHunt=1/"]))

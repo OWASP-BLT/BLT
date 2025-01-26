@@ -89,9 +89,7 @@ def add_badge_icons(apps, schema_editor):
                 print(f"Found image for {badge_data['title']} at {static_icon_path}")
 
                 # Create the target directory in MEDIA_ROOT (media/badges/)
-                media_icon_path = os.path.join(
-                    settings.MEDIA_ROOT, "badges", os.path.basename(static_icon_path)
-                )
+                media_icon_path = os.path.join(settings.MEDIA_ROOT, "badges", os.path.basename(static_icon_path))
 
                 # Ensure the target directory exists
                 os.makedirs(os.path.dirname(media_icon_path), exist_ok=True)
