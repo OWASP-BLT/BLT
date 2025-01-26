@@ -5,9 +5,7 @@ from django.utils import timezone
 from .models import Challenge, IpReport, Issue, Points, TimeLog, UserProfile
 
 
-def update_challenge_progress(
-    user, challenge_title, model_class, reason, threshold=None, team_threshold=None
-):
+def update_challenge_progress(user, challenge_title, model_class, reason, threshold=None, team_threshold=None):
     if not user.is_authenticated:
         return
     try:

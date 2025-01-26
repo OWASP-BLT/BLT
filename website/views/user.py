@@ -1003,9 +1003,7 @@ class UserChallengeListView(View):
 
     def get(self, request):
         challenges = Challenge.objects.filter(challenge_type="single")  # All single-user challenges
-        user_challenges = challenges.filter(
-            participants=request.user
-        )  # Challenges the user is participating in
+        user_challenges = challenges.filter(participants=request.user)  # Challenges the user is participating in
 
         for challenge in challenges:
             if challenge in user_challenges:
