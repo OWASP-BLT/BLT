@@ -27,6 +27,58 @@ client = WebClient(token=SLACK_TOKEN)
 # Add at the top with other environment variables
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN")
 
+# Replace GSoC cache with hardcoded project data
+GSOC_PROJECTS = [
+    {
+        "title": "BLT (Bug Logging Tool)",
+        "tech": "Python, Django, Flutter, Blockchain",
+        "mentor": "Donnie, Yash Pandey",
+        "repo": "https://github.com/OWASP-BLT/BLT",
+    },
+    {
+        "title": "OWASP Juice Shop",
+        "tech": "TypeScript, JavaScript",
+        "mentor": "Bjoern Kimminich, Shubham Palriwala, Jannik Hollenbach",
+        "repo": "https://github.com/juice-shop/juice-shop",
+    },
+    {
+        "title": "OWASP DevSecOps Maturity Model",
+        "tech": "TypeScript, HTML",
+        "mentor": "Timo Pagel, Aryan Prasad",
+        "repo": "https://github.com/devsecopsmaturitymodel/DevSecOps-MaturityModel",
+    },
+    {
+        "title": "OWASP OWTF",
+        "tech": "Python, TypeScript, JavaScript",
+        "mentor": "Viyat Bhalodia, Abraham Aranguran",
+        "repo": "https://github.com/owtf/owtf",
+    },
+    {
+        "title": "OWASP secureCodeBox",
+        "tech": "JavaScript, Go, Python, Java",
+        "mentor": "Jannik Hollenbach, Robert Felber",
+        "repo": "https://github.com/secureCodeBox/secureCodeBox",
+    },
+    {
+        "title": "OWASP Nettacker",
+        "tech": "Python, Css, JavaScript",
+        "mentor": "Sam Stepanyan, Ali Razmjoo, Arkadii Yakovets",
+        "repo": "https://github.com/OWASP/Nettacker",
+    },
+    {
+        "title": "OWASP Threat Dragon",
+        "tech": "JavaScript, Vue.js",
+        "mentor": "Jon Gadsden",
+        "repo": "https://github.com/OWASP/threat-dragon",
+    },
+    {
+        "title": "OWASP Website",
+        "tech": "HTML, CSS, JavaScript, Github",
+        "mentor": "Donnie",
+        "repo": "https://github.com/orgs/OWASP",
+    },
+]
+
 
 def verify_slack_signature(request):
     timestamp = request.headers.get("X-Slack-Request-Timestamp", "")
@@ -779,6 +831,181 @@ def slack_commands(request):
                 activity.save()
                 return HttpResponse(status=500)
 
+        elif command == "/gsoc25":
+            try:
+                search_term = request.POST.get("text", "").strip()
+                team_id = request.POST.get("team_id")
+                user_id = request.POST.get("user_id")
+
+                # Prepare base blocks
+                blocks = [
+                    {
+                        "type": "header",
+                        "text": {"type": "plain_text", "text": "🎓 Google Summer of Code 2025 - OWASP", "emoji": True},
+                    },
+                    {
+                        "type": "section",
+                        "text": {"type": "mrkdwn", "text": "*Welcome to OWASP's GSoC 2025 Program!* 🚀"},
+                    },
+                ]
+
+                # Add workspace-specific content
+                if team_id == "T04T40NHX":  # OWASP workspace
+                    blocks.extend(
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": (
+                                        "*Important Links:*\n"
+                                        "• Join <#CFJLZNFN1|gsoc> for program discussions 💬\n"
+                                        "• Check <#C04DH8HEPTR|contribute> for contribution guidelines 📝\n"
+                                        "• View project ideas: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas|GSoC 2025 Ideas> 💡"
+                                    ),
+                                },
+                            }
+                        ]
+                    )
+                else:
+                    blocks.extend(
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": (
+                                        "*Get Started:*\n"
+                                        "1. Join OWASP Slack: <https://join.slack.com/t/owasp/shared_invite/zt-2y4cvxl3l-_S~G_iKEShwmbQACu~QRyQ|Click to Join> 🔗\n"
+                                        "2. Once joined, check #gsoc and #contribute channels 📢\n"
+                                        "3. View project ideas: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas|GSoC 2025 Ideas> 💡"
+                                    ),
+                                },
+                            }
+                        ]
+                    )
+
+                # Add search tip
+                blocks.extend(
+                    [
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    "*🔍 Search Tips:*\n"
+                                    "• Search by technology: `/gsoc25 python`\n"
+                                    "• Search by mentor: `/gsoc25 mentor:donnie`\n"
+                                    "• Search by project: `/gsoc25 security`"
+                                ),
+                            },
+                        },
+                    ]
+                )
+
+                # Show search results or default projects
+                if search_term:
+                    matched_projects = filter_gsoc_projects(search_term)
+                    if matched_projects:
+                        blocks.extend(
+                            [
+                                {"type": "divider"},
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"*🎯 Found {len(matched_projects)} matching projects:*",
+                                    },
+                                },
+                            ]
+                        )
+
+                        for project in matched_projects[:5]:
+                            blocks.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": (
+                                            f"*{project['title']}* 📚\n"
+                                            f"🔧 *Tech Stack:* {project['tech']}\n"
+                                            f"👥 *Mentors:* {project['mentor']}\n"
+                                            f"🔗 *Repository:* <{project['repo']}|View Project>"
+                                        ),
+                                    },
+                                }
+                            )
+
+                        if len(matched_projects) > 5:
+                            blocks.append(
+                                {
+                                    "type": "context",
+                                    "elements": [
+                                        {"type": "mrkdwn", "text": f"_Showing 5 of {len(matched_projects)} matches_"}
+                                    ],
+                                }
+                            )
+                    else:
+                        blocks.append(
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "❌ No matching projects found. Try different search terms or check the full project list.",
+                                },
+                            }
+                        )
+                else:
+                    # Show first 3 projects by default
+                    blocks.extend(
+                        [
+                            {"type": "divider"},
+                            {"type": "section", "text": {"type": "mrkdwn", "text": "*🌟 Featured Projects:*"}},
+                        ]
+                    )
+
+                    for project in GSOC_PROJECTS[:3]:
+                        blocks.append(
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": (
+                                        f"*{project['title']}* 📚\n"
+                                        f"🔧 *Tech Stack:* {project['tech']}\n"
+                                        f"👥 *Mentors:* {project['mentor']}\n"
+                                        f"🔗 *Repository:* <{project['repo']}|View Project>"
+                                    ),
+                                },
+                            }
+                        )
+
+                    blocks.extend(
+                        [
+                            {"type": "divider"},
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "_💡 *Tip:* Use `/gsoc25 <technology>` to find projects matching your skills! For example: `/gsoc25 python` or `/gsoc25 javascript`_",
+                                },
+                            },
+                        ]
+                    )
+
+                # Send response
+                send_dm(workspace_client, user_id, "GSoC 2025 Information", blocks)
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "I've sent you GSoC information in a DM! 📚"}
+                )
+
+            except (SlackApiError, KeyError, ValueError) as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                return JsonResponse({"response_type": "ephemeral", "text": f"❌ Error: {str(e)}"}, status=400)
+
     return HttpResponse(status=405)
 
 
@@ -1098,9 +1325,13 @@ def handle_pagination_next(ack, body, client):
         return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid request format."}, status=400)
     except SlackApiError as e:
         return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to send message to Slack."}, status=503)
-        return HttpResponse()
 
-    except KeyError as e:
-        return JsonResponse({"response_type": "ephemeral", "text": "❌ Invalid request format."}, status=400)
-    except SlackApiError as e:
-        return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to send message to Slack."}, status=503)
+
+def filter_gsoc_projects(search_term):
+    """Filter GSoC projects based on search term"""
+    search_term = search_term.lower()
+    if search_term.startswith("mentor:"):
+        mentor_name = search_term[7:].strip()
+        return [p for p in GSOC_PROJECTS if mentor_name in p["mentor"].lower()]
+
+    return [p for p in GSOC_PROJECTS if search_term in p["title"].lower() or search_term in p["tech"].lower()]
