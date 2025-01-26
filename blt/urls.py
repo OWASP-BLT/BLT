@@ -860,6 +860,7 @@ urlpatterns = [
     path("challenges/", UserChallengeListView.as_view(), name="user_challenges"),
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("slack/events", slack_events, name="slack_events"),
+    path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
 ]
 
 if settings.DEBUG:
