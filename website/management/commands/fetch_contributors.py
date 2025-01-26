@@ -85,6 +85,4 @@ class Command(BaseCommand):
         project.contributor_count = len(contributors)
         project.save()
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Successfully fetched contributors for project {project.name}")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Successfully fetched contributors for project {project.name}"))

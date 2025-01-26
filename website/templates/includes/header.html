@@ -149,9 +149,11 @@
                           action="{% url 'search' %}"
                           method="get">
                         <i class="lg:!flex hidden fa fa-search absolute left-4 text-[#9CA3AF] z-10 my-auto"></i>
+                        <input type="hidden" name="type" id="filter-type" value="all">
                         <!-- Search Input -->
                         <input type="text"
                                name="query"
+                               id="query-input"
                                placeholder="Search"
                                class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
                         <div class="relative">
@@ -159,14 +161,20 @@
                             <button id="organizations-btn"
                                     type="button"
                                     class="flex items-center text-xl lg:text-base h-16 bg-[#ededed] p-5 font-semibold text-[#9CA3AF] outline-none rounded-r-2xl">
-                                <i id="selected-icon" class="fa fa-building mr-2"></i>
-                                <span id="selected-filter">{% trans "Organizations" %}</span>
+                                <i id="selected-icon" class="fas fa-search mr-2"></i>
+                                <span id="selected-filter">{% trans "All" %}</span>
                                 <i class="fa fa-chevron-down ml-2"></i>
                             </button>
                             <!-- Dropdown Menu -->
                             <div id="organizations-dropdown"
                                  class="hidden absolute bg-white border rounded-lg shadow-md mt-2 w-48 z-50 right-0 top-full">
                                 <div class="py-1">
+                                    <!-- Default All category-->
+                                    <a href="#"
+                                       data-value="all"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-search mr-2"></i> {% trans "All" %}
+                                    </a>
                                     <a href="#"
                                        data-value="organizations"
                                        class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
@@ -178,9 +186,29 @@
                                         <i class="fas fa-box mr-2"></i> {% trans "Projects" %}
                                     </a>
                                     <a href="#"
+                                       data-value="repos"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-folder mr-2"></i> {% trans "Repos" %}
+                                    </a>
+                                    <a href="#"
                                        data-value="users"
                                        class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
                                         <i class="fas fa-user-friends mr-2"></i> {% trans "Users" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="issues"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-exclamation-circle mr-2"></i> {% trans "Issues" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="domains"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-globe mr-2"></i> {% trans "Domains" %}
+                                    </a>
+                                    <a href="#"
+                                       data-value="labels"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-tag mr-2"></i> {% trans "Labels" %}
                                     </a>
                                     <a href="#"
                                        data-value="tags"
@@ -345,9 +373,37 @@
 <!--Script for Dropdown button-->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        
         const organizationsBtn = document.getElementById("organizations-btn");
         const organizationsDropdown = document.getElementById("organizations-dropdown");
+        const queryInput = document.getElementById("query-input");
+        
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+        
+        // Set initial values from URL parameters if they exist
+        const savedQuery = getUrlParameter('query');
+        const savedType = getUrlParameter('type');
+        
+        if (savedQuery) {
+            queryInput.value = savedQuery;
+        }
+        
+        if (savedType) {
+            // Find the matching filter option
+            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
+            if (matchingOption) {
+                const iconElement = matchingOption.querySelector('i');
+                const textContent = matchingOption.textContent.trim();
+                
+                // Update the button display
+                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
+                document.getElementById('selected-filter').textContent = textContent;
+                document.getElementById('filter-type').value = savedType;
+            }
+        }
 
         if (organizationsBtn && organizationsDropdown) {
             organizationsBtn.addEventListener("click", function (e) {
@@ -355,7 +411,7 @@
                 e.stopPropagation();
                 
                 const isHidden = organizationsDropdown.classList.toggle('hidden');
-                               
+                            
                 if (!isHidden) {
                     const btnRect = organizationsBtn.getBoundingClientRect();
                     Object.assign(organizationsDropdown.style, {
@@ -365,10 +421,11 @@
                         minWidth: `${btnRect.width}px`,
                         display: 'block',
                     });
-                } else{
+                } else {
                     organizationsDropdown.style.display = 'none';
                 }
             });
+            
             // Close dropdown when clicking outside
             document.addEventListener("click", function (e) {
                 if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
@@ -379,18 +436,18 @@
         } else {
             console.error('Required elements not found!');
         }
+        
         document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function(e) {
+            option.addEventListener('click', function (e) {
                 e.preventDefault();
                 const iconElement = this.querySelector('i');
                 const textContent = this.textContent.trim();
-                
-                const selectedIcon = document.getElementById('selected-icon');
-                const selectedFilter = document.getElementById('selected-filter');
+                const filterValue = this.getAttribute('data-value');
 
-                selectedIcon.className = iconElement.className + ' mr-2';
-                selectedFilter.textContent = textContent;
-                
+                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
+                document.getElementById('selected-filter').textContent = textContent;
+                document.getElementById('filter-type').value = filterValue;
+
                 organizationsDropdown.classList.add('hidden');
                 organizationsDropdown.style.display = 'none';
             });

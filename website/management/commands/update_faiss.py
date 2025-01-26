@@ -25,9 +25,7 @@ class Command(BaseCommand):
 
         # Check if the documents directory exists
         if not documents_dir.exists():
-            self.stdout.write(
-                self.style.ERROR(f"Documents directory does not exist: {documents_dir}")
-            )
+            self.stdout.write(self.style.ERROR(f"Documents directory does not exist: {documents_dir}"))
             return None
 
         # Load the list of already processed files

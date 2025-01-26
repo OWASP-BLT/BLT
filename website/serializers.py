@@ -35,11 +35,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """
 
     def get_total_score(self, instance):
-        score = (
-            Points.objects.filter(user=instance.user)
-            .aggregate(total_score=Sum("score"))
-            .get("total_score")
-        )
+        score = Points.objects.filter(user=instance.user).aggregate(total_score=Sum("score")).get("total_score")
         if score is None:
             return 0
         return score
@@ -172,4 +168,9 @@ class ActivityLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityLog
         fields = ["id", "user", "window_title", "url", "recorded_at", "created"]
-        read_only_fields = ["id", "user", "recorded_at", "created"]  # Auto-filled fields
+        read_only_fields = [
+            "id",
+            "user",
+            "recorded_at",
+            "created",
+        ]  # Auto-filled fields

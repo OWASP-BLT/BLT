@@ -1,10 +1,10 @@
 import ipaddress
 import json
-import logging
 import re
 import socket
 import time
-from datetime import datetime, timedelta
+from calendar import monthrange
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
@@ -12,30 +12,31 @@ from urllib.parse import urlparse
 import django_filters
 import matplotlib.pyplot as plt
 import requests
+from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
-from django.db.models import Count, Q, Sum
-from django.db.models.functions import TruncDate
+from django.db.models import F, Q, Sum
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView
 from django_filters.views import FilterView
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
-from website.forms import GitHubURLForm
-from website.models import IP, BaconToken, Contribution, Organization, Project, Repo
+from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.utils import admin_required
 
-logging.getLogger("matplotlib").setLevel(logging.ERROR)
+# logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
 def blt_tomato(request):
@@ -69,10 +70,7 @@ def select_contribution(request):
 @user_passes_test(admin_required)
 def distribute_bacon(request, contribution_id):
     contribution = Contribution.objects.get(id=contribution_id)
-    if (
-        contribution.status == "closed"
-        and not BaconToken.objects.filter(contribution=contribution).exists()
-    ):
+    if contribution.status == "closed" and not BaconToken.objects.filter(contribution=contribution).exists():
         token = create_bacon_token(contribution.user, contribution)
         if token:
             messages.success(request, "Bacon distributed successfully")
@@ -85,130 +83,68 @@ def distribute_bacon(request, contribution_id):
     return render(request, "select_contribution.html", {"contributions": contributions})
 
 
-class ProjectDetailView(DetailView):
-    model = Project
-    period = None
-    selected_year = None
-
-    def post(self, request, *args, **kwargs):
-        from django.core.management import call_command
-
-        project = self.get_object()
-
-        if "refresh_stats" in request.POST:
-            call_command("update_projects", "--project_id", project.pk)
-            messages.success(request, f"Refreshing stats for {project.name}")
-
-        elif "refresh_contributor_stats" in request.POST:
-            owner_repo = project.github_url.rstrip("/").split("/")[-2:]
-            repo = f"{owner_repo[0]}/{owner_repo[1]}"
-            call_command("fetch_contributor_stats", "--repo", repo)
-            messages.success(request, f"Refreshing contributor stats for {project.name}")
-
-        elif "refresh_contributors" in request.POST:
-            call_command("fetch_contributors", "--project_id", project.pk)
-        return redirect("project_view", slug=project.slug)
-
-    def get(self, request, *args, **kwargs):
-        project = self.get_object()
-        project.project_visit_count += 1
-        project.save()
-        return super().get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        end_date = now()
-        display_end_date = end_date.date()
-        selected_year = self.request.GET.get("year", None)
-        if selected_year:
-            start_date = datetime(int(selected_year), 1, 1)
-            display_end_date = datetime(int(selected_year), 12, 31)
-        else:
-            self.period = self.request.GET.get("period", "30")
-            days = int(self.period)
-            start_date = end_date - timedelta(days=days)
-            start_date = start_date.date()
-
-        contributions = Contribution.objects.filter(
-            created__date__gte=start_date,
-            created__date__lte=display_end_date,
-            repository=self.get_object(),
-        )
-
-        user_stats = {}
-        for contribution in contributions:
-            username = contribution.github_username
-            if username not in user_stats:
-                user_stats[username] = {
-                    "commits": 0,
-                    "issues_opened": 0,
-                    "issues_closed": 0,
-                    "prs": 0,
-                    "comments": 0,
-                    "total": 0,
-                }
-            if contribution.contribution_type == "commit":
-                user_stats[username]["commits"] += 1
-            elif contribution.contribution_type == "issue_opened":
-                user_stats[username]["issues_opened"] += 1
-            elif contribution.contribution_type == "issue_closed":
-                user_stats[username]["issues_closed"] += 1
-            elif contribution.contribution_type == "pull_request":
-                user_stats[username]["prs"] += 1
-            elif contribution.contribution_type == "comment":
-                user_stats[username]["comments"] += 1
-            total = (
-                user_stats[username]["commits"] * 5
-                + user_stats[username]["prs"] * 3
-                + user_stats[username]["issues_opened"] * 2
-                + user_stats[username]["issues_closed"] * 2
-                + user_stats[username]["comments"]
-            )
-            user_stats[username]["total"] = total
-
-        user_stats = dict(sorted(user_stats.items(), key=lambda x: x[1]["total"], reverse=True))
-
-        current_year = now().year
-        year_list = list(range(current_year, current_year - 10, -1))
-
-        context.update(
-            {
-                "user_stats": user_stats,
-                "period": self.period,
-                "start_date": start_date.strftime("%Y-%m-%d"),
-                "end_date": display_end_date.strftime("%Y-%m-%d"),
-                "year_list": year_list,
-                "selected_year": selected_year,
-            }
-        )
-        return context
-
-
 class ProjectBadgeView(APIView):
+    def get_client_ip(self, request):
+        # Check X-Forwarded-For header first
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            # Return first IP in chain (real client IP)
+            ip = x_forwarded_for.split(",")[0].strip()
+            return ip
+
+        # Try X-Real-IP header next
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
+        if x_real_ip:
+            return x_real_ip
+
+        # Finally fall back to REMOTE_ADDR
+        remote_addr = request.META.get("REMOTE_ADDR")
+        return remote_addr
+
     def get(self, request, slug):
-        # Retrieve the project or return 404
+        # Get the project or return 404
         project = get_object_or_404(Project, slug=slug)
 
-        # Get unique visits, grouped by date
-        visit_counts = (
-            IP.objects.filter(path=request.path)
-            .annotate(date=TruncDate("created"))
-            .values("date")
-            .annotate(visit_count=Count("address"))
-            .order_by("date")  # Order from oldest to newest
-        )
+        # Get today's date
+        today = now().date()
 
-        # Update project visit count
-        project.repo_visit_count += 1
-        project.save()
+        # Get the real client IP
+        user_ip = self.get_client_ip(request)
 
-        # Extract dates and counts
-        dates = [entry["date"] for entry in visit_counts]
-        counts = [entry["visit_count"] for entry in visit_counts]
-        total_views = sum(counts)  # Calculate total views
+        # Continue with existing code but use the new user_ip
+        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).last()
+
+        if visited_data:
+            # If the creation date is today
+            if visited_data.created.date() == today:
+                # If the visit count is 1, update the project visit count
+                if visited_data.count == 1:
+                    project.project_visit_count = F("project_visit_count") + 1
+                    project.save()
+            else:
+                # If the creation date is not today, reset the creation date and count
+                visited_data.created = now()
+                visited_data.count = 1
+                visited_data.save()
+
+                # Increment the project visit count
+                project.project_visit_count = F("project_visit_count") + 1
+                project.save()
+        else:
+            # If no record exists, create a new one
+            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
+
+            # Increment the project's visit count
+            project.project_visit_count = F("project_visit_count") + 1
+            project.save()
+
+        # Refresh project to get the latest visit count
+        project.refresh_from_db()
+
+        total_views = project.project_visit_count
 
         fig = plt.figure(figsize=(4, 1))
-        plt.bar(dates, counts, width=0.5, color="red")
+        plt.bar(0, total_views, color="red", width=0.5)
 
         plt.title(
             f"{total_views}",
@@ -237,94 +173,6 @@ class ProjectBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
-
-
-class ProjectListView(ListView):
-    model = Project
-    context_object_name = "projects"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["form"] = GitHubURLForm()
-        context["sort_by"] = self.request.GET.get("sort_by", "-created")
-        context["order"] = self.request.GET.get("order", "desc")
-        return context
-
-    def post(self, request, *args, **kwargs):
-        if "refresh_stats" in request.POST:
-            from django.core.management import call_command
-
-            call_command("update_projects")
-            messages.success(request, "Refreshing project statistics...")
-            return redirect("project_list")
-
-        if "refresh_contributors" in request.POST:
-            from django.core.management import call_command
-
-            projects = Project.objects.all()
-            for project in projects:
-                owner_repo = project.github_url.rstrip("/").split("/")[-2:]
-                repo = f"{owner_repo[0]}/{owner_repo[1]}"
-                call_command("fetch_contributor_stats", "--repo", repo)
-            messages.success(request, "Refreshing contributor data...")
-            return redirect("project_list")
-
-        form = GitHubURLForm(request.POST)
-        if form.is_valid():
-            github_url = form.cleaned_data["github_url"]
-            # Extract the repository part of the URL
-            match = re.match(r"https://github.com/([^/]+/[^/]+)", github_url)
-            if match:
-                repo_path = match.group(1)
-                api_url = f"https://api.github.com/repos/{repo_path}"
-                response = requests.get(api_url)
-                if response.status_code == 200:
-                    data = response.json()
-                    # if the description is empty, use the name as the description
-                    if not data["description"]:
-                        data["description"] = data["name"]
-
-                    # Check if a project with the same slug already exists
-                    slug = data["name"].lower()
-                    if Project.objects.filter(slug=slug).exists():
-                        messages.error(request, "A project with this slug already exists.")
-                        return redirect("project_list")
-
-                    project, created = Project.objects.get_or_create(
-                        github_url=github_url,
-                        defaults={
-                            "name": data["name"],
-                            "slug": slug,
-                            "description": data["description"],
-                            "wiki_url": data["html_url"],
-                            "homepage_url": data.get("homepage", ""),
-                            "logo_url": data["owner"]["avatar_url"],
-                        },
-                    )
-                    if created:
-                        messages.success(request, "Project added successfully.")
-                    else:
-                        messages.info(request, "Project already exists.")
-                else:
-                    messages.error(request, "Failed to fetch project from GitHub.")
-            else:
-                messages.error(request, "Invalid GitHub URL.")
-            return redirect("project_list")
-        context = self.get_context_data()
-        context["form"] = form
-        return self.render_to_response(context)
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        sort_by = self.request.GET.get("sort_by", "-created")
-        order = self.request.GET.get("order", "desc")
-
-        if order == "asc" and sort_by.startswith("-"):
-            sort_by = sort_by[1:]
-        elif order == "desc" and not sort_by.startswith("-"):
-            sort_by = f"-{sort_by}"
-
-        return queryset.order_by(sort_by)
 
 
 class ProjectRepoFilter(django_filters.FilterSet):
@@ -498,7 +346,10 @@ def create_project(request):
             if twitter.startswith(("http://", "https://")):
                 if not validate_url(twitter):
                     return JsonResponse(
-                        {"error": "Twitter URL is not accessible", "code": "INVALID_TWITTER_URL"},
+                        {
+                            "error": "Twitter URL is not accessible",
+                            "code": "INVALID_TWITTER_URL",
+                        },
                         status=400,
                     )
             elif not twitter.startswith("@"):
@@ -554,7 +405,10 @@ def create_project(request):
         project_name = request.POST.get("name")
         if Project.objects.filter(name__iexact=project_name).exists():
             return JsonResponse(
-                {"error": "A project with this name already exists", "code": "NAME_EXISTS"},
+                {
+                    "error": "A project with this name already exists",
+                    "code": "NAME_EXISTS",
+                },
                 status=409,
             )  # 409 Conflict
 
@@ -562,7 +416,10 @@ def create_project(request):
         project_url = request.POST.get("url")
         if project_url and Project.objects.filter(url=project_url).exists():
             return JsonResponse(
-                {"error": "A project with this URL already exists", "code": "URL_EXISTS"},
+                {
+                    "error": "A project with this URL already exists",
+                    "code": "URL_EXISTS",
+                },
                 status=409,
             )
 
@@ -600,9 +457,7 @@ def create_project(request):
                 org = Organization.objects.get(id=org_id)
                 if not (request.user == org.admin):
                     return JsonResponse(
-                        {
-                            "error": "You do not have permission to add projects to this organization"
-                        },
+                        {"error": "You do not have permission to add projects to this organization"},
                         status=403,
                     )
                 project_data["organization"] = org
@@ -743,7 +598,7 @@ def create_project(request):
                     contributor_count=len(all_contributors),
                     commit_count=commit_count,
                     release_name=release_name,
-                    release_datetime=parse_datetime(release_datetime) if release_datetime else None,
+                    release_datetime=(parse_datetime(release_datetime) if release_datetime else None),
                     open_pull_requests=open_pull_requests,
                 )
 
@@ -753,9 +608,7 @@ def create_project(request):
         return JsonResponse({"message": "Project created successfully"}, status=201)
 
     except Organization.DoesNotExist:
-        return JsonResponse(
-            {"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404
-        )
+        return JsonResponse({"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404)
     except PermissionError:
         return JsonResponse(
             {
@@ -777,9 +630,7 @@ class ProjectsDetailView(DetailView):
 
         # Get all repositories associated with the project
         repositories = (
-            Repo.objects.select_related("project")
-            .filter(project=project)
-            .prefetch_related("tags", "contributor")
+            Repo.objects.select_related("project").filter(project=project).prefetch_related("tags", "contributor")
         )
 
         # Calculate aggregate metrics
@@ -863,9 +714,7 @@ class RepoDetailView(DetailView):
 
         # Get other repos from same project
         context["related_repos"] = (
-            Repo.objects.filter(project=repo.project)
-            .exclude(id=repo.id)
-            .select_related("project")[:5]
+            Repo.objects.filter(project=repo.project).exclude(id=repo.id).select_related("project")[:5]
         )
 
         # Get top contributors from GitHub
@@ -874,9 +723,7 @@ class RepoDetailView(DetailView):
         if github_contributors:
             # Match by github_id instead of username
             github_ids = [str(c["id"]) for c in github_contributors]
-            verified_contributors = repo.contributor.filter(
-                github_id__in=github_ids
-            ).select_related()
+            verified_contributors = repo.contributor.filter(github_id__in=github_ids).select_related()
 
             # Create a mapping of github_id to database contributor
             contributor_map = {str(c.github_id): c for c in verified_contributors}
@@ -924,4 +771,585 @@ class RepoDetailView(DetailView):
                 for c in repo.contributor.all()[:6]
             ]
 
+        # Get time period from request, default to
+        time_period = self.request.GET.get("time_period", "current_month")
+        page_number = self.request.GET.get("page", 1)
+        # if time_period  exist in request.post do something
+        if self.request.method == "POST":
+            time_period = self.request.POST.get("time_period", "current_month")
+            page_number = self.request.POST.get("page", 1)
+
+        # Calculate date range based on time period
+        end_date = timezone.now().date()
+        start_date = None
+
+        if time_period == "today":
+            start_date = end_date
+        elif time_period == "current_month":
+            start_date = end_date.replace(day=1)
+        elif time_period == "last_month":
+            last_month = end_date - relativedelta(months=1)
+            start_date = last_month.replace(day=1)
+            end_date = last_month.replace(day=monthrange(last_month.year, last_month.month)[1])
+        elif time_period == "last_6_months":
+            start_date = end_date - relativedelta(months=6)
+        elif time_period == "last_year":
+            start_date = end_date - relativedelta(years=1)
+        elif time_period == "all_time":
+            # Get repository creation date from GitHub
+            try:
+                owner, repo_name = repo.repo_url.rstrip("/").split("/")[-2:]
+                headers = {
+                    "Authorization": f"token {settings.GITHUB_TOKEN}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers)
+                if response.status_code == 200:
+                    repo_data = response.json()
+                    start_date = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
+                else:
+                    start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
+            except Exception:
+                start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
+
+        # Query contributor stats
+        stats_query = ContributorStats.objects.filter(repo=repo, date__gte=start_date, date__lte=end_date)
+
+        # Aggregate the stats
+        stats_query = (
+            stats_query.values("contributor")
+            .annotate(
+                total_commits=Sum("commits"),
+                total_issues_opened=Sum("issues_opened"),
+                total_issues_closed=Sum("issues_closed"),
+                total_prs=Sum("pull_requests"),
+                total_comments=Sum("comments"),
+            )
+            .order_by("-total_commits")
+        )
+
+        # Calculate impact scores and enrich with contributor details
+        processed_stats = []
+        for stat in stats_query:
+            contributor = Contributor.objects.get(id=stat["contributor"])
+
+            # Calculate impact score using weighted values
+            impact_score = (
+                stat["total_commits"] * 5
+                + stat["total_prs"] * 3
+                + stat["total_issues_opened"] * 2
+                + stat["total_issues_closed"] * 2
+                + stat["total_comments"]
+            )
+
+            # Determine impact level based on score
+            if impact_score > 200:
+                impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
+            elif impact_score > 100:
+                impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
+            else:
+                impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+
+            processed_stats.append(
+                {
+                    "contributor": contributor,
+                    "commits": stat["total_commits"],
+                    "issues_opened": stat["total_issues_opened"],
+                    "issues_closed": stat["total_issues_closed"],
+                    "pull_requests": stat["total_prs"],
+                    "comments": stat["total_comments"],
+                    "impact_score": impact_score,
+                    "impact_level": impact_level,
+                }
+            )
+
+        # Sort processed stats by impact score
+        processed_stats.sort(key=lambda x: x["impact_score"], reverse=True)
+
+        # Set up pagination
+        paginator = Paginator(processed_stats, 10)  # Changed from 2 to 10 entries per page
+        try:
+            paginated_stats = paginator.page(page_number)
+        except PageNotAnInteger:
+            paginated_stats = paginator.page(1)
+        except EmptyPage:
+            paginated_stats = paginator.page(paginator.num_pages)
+
+        # Prepare time period options
+        time_period_options = [
+            ("today", "Today's Data"),
+            ("current_month", "Current Month"),
+            ("last_month", "Last Month"),
+            ("last_6_months", "Last 6 Months"),
+            ("last_year", "1 Year"),
+            ("all_time", "All Time"),
+        ]
+
+        # Add to context
+        context.update(
+            {
+                "contributor_stats": paginated_stats,
+                "page_obj": paginated_stats,  # Add this
+                "paginator": paginator,  # Add this
+                "time_period": time_period,
+                "time_period_options": time_period_options,
+                "start_date": start_date,
+                "end_date": end_date,
+                "is_paginated": paginator.num_pages > 1,  # Add this
+            }
+        )
+
         return context
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()  # Fix the missing object attribute
+
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            if "time_period" in request.POST:
+                context = self.get_context_data()
+                return render(request, "projects/_contributor_stats_table.html", context)
+
+        def get_issue_count(full_name, query, headers):
+            search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
+            resp = requests.get(search_url, headers=headers)
+            if resp.status_code == 200:
+                return resp.json().get("total_count", 0)
+            return 0
+
+        repo = self.get_object()
+        section = request.POST.get("section")
+
+        if section == "basic":
+            try:
+                # Get GitHub API token
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse({"status": "error", "message": "GitHub token not configured"}, status=500)
+
+                # Extract owner/repo from GitHub URL
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse({"status": "error", "message": "Invalid repository URL"}, status=400)
+
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+                # Make GitHub API request
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(api_url, headers=headers)
+
+                if response.status_code == 200:
+                    data = response.json()
+
+                    # Update repo with fresh data
+                    repo.stars = data.get("stargazers_count", 0)
+                    repo.forks = data.get("forks_count", 0)
+                    repo.watchers = data.get("watchers_count", 0)
+                    repo.open_issues = data.get("open_issues_count", 0)
+                    repo.network_count = data.get("network_count", 0)
+                    repo.subscribers_count = data.get("subscribers_count", 0)
+                    repo.last_updated = parse_datetime(data.get("updated_at"))
+                    repo.save()
+
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "Basic information updated successfully",
+                            "data": {
+                                "stars": repo.stars,
+                                "forks": repo.forks,
+                                "watchers": repo.watchers,
+                                "network_count": repo.network_count,
+                                "subscribers_count": repo.subscribers_count,
+                                "last_updated": naturaltime(repo.last_updated).replace(
+                                    "\xa0", " "
+                                ),  # Fix unicode space
+                            },
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {"status": "error", "message": f"GitHub API error: {response.status_code}"},
+                        status=response.status_code,
+                    )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
+                )
+            except requests.HTTPError as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "A GitHub API error occurred. Please try again later.",
+                    },
+                    status=e.response.status_code,
+                )
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
+                )
+
+        elif section == "metrics":
+            try:
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse({"status": "error", "message": "GitHub token not configured"}, status=500)
+
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse({"status": "error", "message": "Invalid repository URL"}, status=400)
+
+                # Extract owner and repo from API call
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+                response = requests.get(api_url, headers=headers)
+
+                if response.status_code != 200:
+                    return JsonResponse(
+                        {"status": "error", "message": "Failed to fetch repository data"},
+                        status=500,
+                    )
+
+                repo_data = response.json()
+                full_name = repo_data.get("full_name")
+                default_branch = repo_data.get("default_branch")
+                if not full_name:
+                    return JsonResponse(
+                        {"status": "error", "message": "Could not get repository full name"},
+                        status=500,
+                    )
+
+                full_name = full_name.replace(" ", "+")
+
+                # get the total commit
+                url = f"https://api.github.com/repos/{full_name}/commits"
+                params = {"per_page": 1, "page": 1}
+                response = requests.get(url, headers=headers, params=params)
+                if response.status_code == 200:
+                    if "Link" in response.headers:
+                        links = response.headers["Link"]
+                        last_page = 1
+                        for link in links.split(","):
+                            if 'rel="last"' in link:
+                                last_page = int(link.split("&page=")[1].split(">")[0])
+                        commit_count = last_page
+                    else:
+                        commits = response.json()
+                        total_commits = len(commits)
+                        commit_count = total_commits
+                else:
+                    commit_count = 0
+
+                # Get open issues and PRs
+                open_issues = get_issue_count(full_name, "type:issue+state:open", headers)
+                closed_issues = get_issue_count(full_name, "type:issue+state:closed", headers)
+                open_pull_requests = get_issue_count(full_name, "type:pr+state:open", headers)
+                total_issues = open_issues + closed_issues
+
+                if (
+                    repo.open_issues != open_issues
+                    or repo.closed_issues != closed_issues
+                    or repo.total_issues != total_issues
+                    or repo.open_pull_requests != open_pull_requests
+                    or repo.commit_count != commit_count
+                ):
+                    # Update repository metrics
+                    repo.open_issues = open_issues
+                    repo.closed_issues = closed_issues
+                    repo.total_issues = total_issues
+                    repo.open_pull_requests = open_pull_requests
+                    repo.commit_count = commit_count
+
+                commits_url = f"{api_url}/commits?sha={default_branch}&per_page=1"
+                commits_response = requests.get(commits_url, headers=headers)
+                if commits_response.status_code == 200:
+                    commit_data = commits_response.json()
+                    if commit_data:
+                        date_str = commit_data[0]["commit"]["committer"]["date"]
+                        repo.last_commit_date = parse_datetime(date_str)
+                repo.save()
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Activity metrics updated successfully",
+                        "data": {
+                            "open_issues": repo.open_issues,
+                            "closed_issues": repo.closed_issues,
+                            "total_issues": repo.total_issues,
+                            "open_pull_requests": repo.open_pull_requests,
+                            "commit_count": repo.commit_count,
+                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
+                            if repo.last_commit_date
+                            else "",
+                        },
+                    }
+                )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
+                )
+            except requests.HTTPError as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "A GitHub API error occurred. Please try again later.",
+                    },
+                    status=e.response.status_code,
+                )
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
+                )
+
+        elif section == "technical":
+            try:
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse({"status": "error", "message": "GitHub token not configured"}, status=500)
+
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse({"status": "error", "message": "Invalid repository URL"}, status=400)
+
+                owner, repo_name = match.groups()
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+
+                response = requests.get(api_url, headers=headers)
+                if response.status_code != 200:
+                    return JsonResponse(
+                        {"status": "error", "message": "Failed to fetch repository data"},
+                        status=500,
+                    )
+
+                repo_data = response.json()
+
+                # Update repository technical details
+                repo.primary_language = repo_data.get("language")
+                repo.size = repo_data.get("size", 0)
+                repo.license = repo_data.get("license", {}).get("name")
+
+                # Get latest release info
+                releases_url = f"{api_url}/releases/latest"
+                release_response = requests.get(releases_url, headers=headers)
+                if release_response.status_code == 200:
+                    release_data = release_response.json()
+                    repo.release_name = release_data.get("name") or release_data.get("tag_name")
+                    repo.release_datetime = parse_datetime(release_data.get("published_at"))
+
+                repo.save()
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Technical information updated successfully",
+                        "data": {
+                            "primary_language": repo.primary_language or "Not specified",
+                            "size": repo.size,
+                            "license": repo.license or "Not specified",
+                            "release_name": repo.release_name or "Not available",
+                            "release_date": repo.release_datetime.strftime("%b %d, %Y")
+                            if repo.release_datetime
+                            else "Not available",
+                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
+                            if repo.last_commit_date
+                            else "Not available",
+                        },
+                    }
+                )
+
+            except requests.RequestException as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "Network error: A network error occurred. Please try again later.",
+                    },
+                    status=503,
+                )
+            except Exception as e:
+                return JsonResponse({"status": "error", "message": "An unexpected error occurred."}, status=500)
+
+        elif section == "community":
+            try:
+                from django.core.management import call_command
+
+                repo = self.get_object()
+
+                # Run sync command
+                call_command("sync_repo_contributors", "--repo_id", repo.id)
+
+                # Refresh repo instance to get updated contributor_count
+                repo.refresh_from_db()
+
+                # Fetch real-time top contributors from GitHub
+                github_contributors = self.get_github_top_contributors(repo.repo_url)
+                merged_contributors = []
+                for gh_contrib in github_contributors:
+                    merged_contributors.append(
+                        {
+                            "name": gh_contrib["login"],
+                            "github_id": gh_contrib["id"],
+                            "avatar_url": gh_contrib["avatar_url"],
+                            "contributions": gh_contrib["contributions"],
+                            "github_url": gh_contrib["html_url"],
+                            "verified": False,
+                        }
+                    )
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Fetched real-time contributor data from GitHub.",
+                        "data": {
+                            "contributors": merged_contributors,
+                            "total_contributors": repo.contributor_count,
+                        },
+                    }
+                )
+
+            except ValueError as e:
+                return JsonResponse(
+                    {"status": "error", "message": "There was an error processing your data."},
+                    status=400,
+                )
+
+        elif section == "contributor_stats":
+            try:
+                repo = self.get_object()
+                # we have to run a management command to fetch the contributor stats
+                from django.core.management import call_command
+
+                call_command("update_contributor_stats", "--repo_id", repo.id)
+
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": "Contributor statistics updated successfully",
+                    }
+                )
+
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": "An unexpected error occurred",
+                    },
+                    status=500,
+                )
+
+        return super().post(request, *args, **kwargs)
+
+
+class RepoBadgeView(APIView):
+    def get_client_ip(self, request):
+        # Check X-Forwarded-For header first
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            # Return first IP in chain (real client IP)
+            ip = x_forwarded_for.split(",")[0].strip()
+            return ip
+
+        # Try X-Real-IP header next
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
+        if x_real_ip:
+            return x_real_ip
+
+        # Finally fall back to REMOTE_ADDR
+        remote_addr = request.META.get("REMOTE_ADDR")
+        return remote_addr
+
+    def get(self, request, slug):
+        # Get the repo or return 404
+        repo = get_object_or_404(Repo, slug=slug)
+
+        # Get today's date
+        today = now().date()
+
+        # Get the real client IP
+        user_ip = self.get_client_ip(request)
+
+        # Continue with existing code but use the new user_ip
+        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).last()
+
+        if visited_data:
+            # If the creation date is today
+            if visited_data.created.date() == today:
+                # If the visit count is 1, update the repo visit count
+                if visited_data.count == 1:
+                    repo.repo_visit_count = F("repo_visit_count") + 1
+                    repo.save()
+            else:
+                # If the creation date is not today, reset the creation date and count
+                visited_data.created = now()
+                visited_data.count = 1
+                visited_data.save()
+
+                # Increment the repo visit count
+                repo.repo_visit_count = F("repo_visit_count") + 1
+                repo.save()
+        else:
+            # If no record exists, create a new one
+            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
+
+            # Increment the repo's visit count
+            repo.repo_visit_count = F("repo_visit_count") + 1
+            repo.save()
+
+        # Refresh project to get the latest visit count
+        repo.refresh_from_db()
+
+        total_views = repo.repo_visit_count
+
+        fig = plt.figure(figsize=(4, 1))
+        plt.bar(0, total_views, color="red", width=0.5)
+
+        plt.title(
+            f"{total_views}",
+            loc="left",
+            x=-0.36,
+            y=0.3,
+            fontsize=15,
+            fontweight="bold",
+            color="red",
+        )
+
+        plt.gca().set_xticks([])  # Remove x-axis ticks
+        plt.gca().set_yticks([])
+        plt.box(False)
+
+        # Save the plot to an in-memory file
+        buffer = BytesIO()
+        plt.savefig(buffer, format="png", bbox_inches="tight")
+        plt.close()
+        buffer.seek(0)
+
+        # Prepare the HTTP response with the bar graph image
+        response = HttpResponse(buffer, content_type="image/png")
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response["Pragma"] = "no-cache"
+        response["Expires"] = "0"
+
+        return response

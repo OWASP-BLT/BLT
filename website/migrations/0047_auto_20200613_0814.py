@@ -17,9 +17,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "id",
-                    models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
+                    models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
                 ),
                 ("name", models.CharField(blank=True, max_length=25)),
                 ("charge_per_month", models.IntegerField(blank=True)),
@@ -48,9 +46,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="hunt",
             name="domain",
-            field=models.ForeignKey(
-                default=1, on_delete=django.db.models.deletion.CASCADE, to="website.Domain"
-            ),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to="website.Domain"),
             preserve_default=False,
         ),
         migrations.CreateModel(
@@ -58,9 +54,7 @@ class Migration(migrations.Migration):
             fields=[
                 (
                     "id",
-                    models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
-                    ),
+                    models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
                 ),
                 ("is_active", models.BooleanField(default=True)),
                 (

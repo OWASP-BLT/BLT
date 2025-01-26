@@ -44,9 +44,7 @@ class Command(BaseCommand):
         # Check if GITHUB_TOKEN is set
         github_token = getattr(settings, "GITHUB_TOKEN", None)
         if not github_token:
-            self.stderr.write(
-                self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting.")
-            )
+            self.stderr.write(self.style.ERROR("GITHUB_TOKEN is not configured in settings. Aborting."))
             return
 
         headers = {
@@ -54,20 +52,15 @@ class Command(BaseCommand):
             "Accept": "application/vnd.github.v3+json",
         }
 
-        # Check if OWASP organization exists
-        try:
-            org = Organization.objects.get(name__iexact="OWASP")
+        # Get or create OWASP organization
+        org, created = Organization.objects.get_or_create(name__iexact="OWASP", defaults={"name": "OWASP"})
+        if created:
+            self.stdout.write(self.style.SUCCESS(f"Created Organization: {org.name}"))
+        else:
             self.stdout.write(self.style.SUCCESS(f"Found Organization: {org.name}"))
-        except Organization.DoesNotExist:
-            self.stderr.write(self.style.ERROR("Organization 'OWASP' does not exist. Aborting."))
-            return
 
         # Prompt user for confirmation
-        confirm = (
-            input(f"Do you want to add projects to the organization '{org.name}'? (yes/no): ")
-            .strip()
-            .lower()
-        )
+        confirm = input(f"Do you want to add projects to the organization '{org.name}'? (yes/no): ").strip().lower()
         if confirm not in ["yes", "y"]:
             self.stdout.write(self.style.WARNING("Operation cancelled by the user."))
             return
@@ -76,7 +69,14 @@ class Command(BaseCommand):
         try:
             with open(csv_file, newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
-                required_fields = ["Name", "Tag", "License(s)", "Repo", "Website URL", "Code URL"]
+                required_fields = [
+                    "Name",
+                    "Tag",
+                    "License(s)",
+                    "Repo",
+                    "Website URL",
+                    "Code URL",
+                ]
                 for field in required_fields:
                     if field not in reader.fieldnames:
                         raise CommandError(f"Missing required field in CSV: {field}")
@@ -92,9 +92,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("CSV file is empty. No projects to add."))
             return
 
-        self.stdout.write(
-            self.style.NOTICE(f"Processing {len(rows)} projects from the CSV file...")
-        )
+        self.stdout.write(self.style.NOTICE(f"Processing {len(rows)} projects from the CSV file..."))
 
         project_count = 0
 
@@ -119,11 +117,7 @@ class Command(BaseCommand):
             repo_field = row.get("Repo", "").strip()
             website_url = row.get("Website URL", "").strip()
             code_urls_csv = row.get("Code URL", "").strip()
-            code_urls = [
-                clean_github_url(url.strip())
-                for url in re.split(r"[,\n]+", code_urls_csv)
-                if url.strip()
-            ]
+            code_urls = [clean_github_url(url.strip()) for url in re.split(r"[,\n]+", code_urls_csv) if url.strip()]
             # Filter out any empty strings after cleaning
             code_urls = [url for url in code_urls if url]
             # Remove duplicates that might occur after cleaning URLs
@@ -140,13 +134,9 @@ class Command(BaseCommand):
                 repo_url = f"https://github.com/OWASP/{repo_field}"
 
             # Validate GitHub repo existence
-            if not self.validate_github_repo(
-                repo_url, headers, delay_on_rate_limit, max_rate_limit_retries
-            ):
+            if not self.validate_github_repo(repo_url, headers, delay_on_rate_limit, max_rate_limit_retries):
                 self.stderr.write(
-                    self.style.WARNING(
-                        f"Invalid or inaccessible Repo URL: {repo_url}. Skipping row {row_index}."
-                    )
+                    self.style.WARNING(f"Invalid or inaccessible Repo URL: {repo_url}. Skipping row {row_index}.")
                 )
                 continue
 
@@ -161,9 +151,7 @@ class Command(BaseCommand):
             )
             if not repo_info:
                 self.stderr.write(
-                    self.style.WARNING(
-                        f"Failed to fetch complete data for {repo_url}. Skipping row {row_index}."
-                    )
+                    self.style.WARNING(f"Failed to fetch complete data for {repo_url}. Skipping row {row_index}.")
                 )
                 continue
 
@@ -204,9 +192,7 @@ class Command(BaseCommand):
             with transaction.atomic():
                 # Check if project already exists by URL or slug
                 if Project.objects.filter(
-                    models.Q(url=website_url)
-                    | models.Q(url=repo_info.get("html_url"))
-                    | models.Q(slug=project_slug)
+                    models.Q(url=website_url) | models.Q(url=repo_info.get("html_url")) | models.Q(slug=project_slug)
                 ).exists():
                     self.stdout.write(
                         self.style.WARNING(
@@ -227,36 +213,22 @@ class Command(BaseCommand):
                         organization=org,
                     )
                 except IntegrityError:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            "Failed to create project due to duplicate data. Skipping..."
-                        )
-                    )
+                    self.stdout.write(self.style.WARNING("Failed to create project due to duplicate data. Skipping..."))
                     continue
 
                 # Fetch and save the logo
                 project_logo_url = repo_info.get("logo_url", "")
                 if self.fetch_and_save_logo(project, project_logo_url, headers):
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"Successfully fetched and saved logo for {project.name}"
-                        )
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"Successfully fetched and saved logo for {project.name}"))
                 else:
                     self.stdout.write(self.style.WARNING(f"No logo found for {project.name}"))
 
-                self.stdout.write(
-                    self.style.SUCCESS(f"Updated project: {project.name} ({repo_url})")
-                )
+                self.stdout.write(self.style.SUCCESS(f"Updated project: {project.name} ({repo_url})"))
 
                 # Handle wiki repo
                 try:
                     repo = Repo.objects.get(repo_url=repo_url)
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"Wiki repo {repo_url} already exists. Skipping creation..."
-                        )
-                    )
+                    self.stdout.write(self.style.WARNING(f"Wiki repo {repo_url} already exists. Skipping creation..."))
                 except Repo.DoesNotExist:
                     try:
                         repo = Repo.objects.create(
@@ -270,15 +242,17 @@ class Command(BaseCommand):
                             is_main=False,
                             stars=repo_info.get("stars", 0),
                             forks=repo_info.get("forks", 0),
-                            last_updated=parse_datetime(repo_info.get("last_updated"))
-                            if repo_info.get("last_updated")
-                            else None,
+                            last_updated=(
+                                parse_datetime(repo_info.get("last_updated")) if repo_info.get("last_updated") else None
+                            ),
                             watchers=repo_info.get("watchers", 0),
                             primary_language=repo_info.get("primary_language", ""),
                             license=repo_info.get("license", ""),
-                            last_commit_date=parse_datetime(repo_info.get("last_commit_date"))
-                            if repo_info.get("last_commit_date")
-                            else None,
+                            last_commit_date=(
+                                parse_datetime(repo_info.get("last_commit_date"))
+                                if repo_info.get("last_commit_date")
+                                else None
+                            ),
                             network_count=repo_info.get("network_count", 0),
                             subscribers_count=repo_info.get("subscribers_count", 0),
                             size=repo_info.get("size", 0),
@@ -290,34 +264,28 @@ class Command(BaseCommand):
                             contributor_count=repo_info.get("contributor_count", 0),
                             commit_count=repo_info.get("commit_count", 0),
                             release_name=repo_info.get("release_name", ""),
-                            release_datetime=parse_datetime(repo_info.get("release_datetime"))
-                            if repo_info.get("release_datetime")
-                            else None,
+                            release_datetime=(
+                                parse_datetime(repo_info.get("release_datetime"))
+                                if repo_info.get("release_datetime")
+                                else None
+                            ),
                         )
                     except IntegrityError:
                         self.stdout.write(
-                            self.style.WARNING(
-                                "Failed to create wiki repo due to duplicate data. Skipping..."
-                            )
+                            self.style.WARNING("Failed to create wiki repo due to duplicate data. Skipping...")
                         )
                         continue
 
                 # Handle additional repos
                 for idx, code_url in enumerate(code_urls, start=1):
                     if not code_url.startswith("https://github.com/"):
-                        self.stderr.write(
-                            self.style.WARNING(f"Invalid Code URL: {code_url}. Skipping.")
-                        )
+                        self.stderr.write(self.style.WARNING(f"Invalid Code URL: {code_url}. Skipping."))
                         continue
 
                     # Validate Code Repo URL
-                    if not self.validate_github_repo(
-                        code_url, headers, delay_on_rate_limit, max_rate_limit_retries
-                    ):
+                    if not self.validate_github_repo(code_url, headers, delay_on_rate_limit, max_rate_limit_retries):
                         self.stderr.write(
-                            self.style.WARNING(
-                                f"Invalid or inaccessible Code Repo URL: {code_url}. Skipping."
-                            )
+                            self.style.WARNING(f"Invalid or inaccessible Code Repo URL: {code_url}. Skipping.")
                         )
                         continue
 
@@ -333,18 +301,14 @@ class Command(BaseCommand):
 
                     if not code_repo_info:
                         self.stderr.write(
-                            self.style.WARNING(
-                                f"Failed to fetch complete data for {code_url}. Skipping."
-                            )
+                            self.style.WARNING(f"Failed to fetch complete data for {code_url}. Skipping.")
                         )
                         continue
 
                     try:
                         code_repo = Repo.objects.get(repo_url=code_url)
                         self.stdout.write(
-                            self.style.WARNING(
-                                f"Code repo {code_url} already exists. Skipping creation..."
-                            )
+                            self.style.WARNING(f"Code repo {code_url} already exists. Skipping creation...")
                         )
                         continue
                     except Repo.DoesNotExist:
@@ -376,17 +340,19 @@ class Command(BaseCommand):
                                 is_main=idx == 1,
                                 stars=code_repo_info["stars"],
                                 forks=code_repo_info["forks"],
-                                last_updated=parse_datetime(code_repo_info.get("last_updated"))
-                                if code_repo_info.get("last_updated")
-                                else None,
+                                last_updated=(
+                                    parse_datetime(code_repo_info.get("last_updated"))
+                                    if code_repo_info.get("last_updated")
+                                    else None
+                                ),
                                 watchers=code_repo_info["watchers"],
                                 primary_language=code_repo_info["primary_language"],
                                 license=code_repo_info["license"],
-                                last_commit_date=parse_datetime(
-                                    code_repo_info.get("last_commit_date")
-                                )
-                                if code_repo_info.get("last_commit_date")
-                                else None,
+                                last_commit_date=(
+                                    parse_datetime(code_repo_info.get("last_commit_date"))
+                                    if code_repo_info.get("last_commit_date")
+                                    else None
+                                ),
                                 created=code_repo_info["created"],
                                 modified=code_repo_info["modified"],
                                 network_count=code_repo_info["network_count"],
@@ -400,17 +366,15 @@ class Command(BaseCommand):
                                 contributor_count=code_repo_info["contributor_count"],
                                 commit_count=code_repo_info["commit_count"],
                                 release_name=code_repo_info.get("release_name", ""),
-                                release_datetime=parse_datetime(
-                                    code_repo_info.get("release_datetime")
-                                )
-                                if code_repo_info.get("release_datetime")
-                                else None,
+                                release_datetime=(
+                                    parse_datetime(code_repo_info.get("release_datetime"))
+                                    if code_repo_info.get("release_datetime")
+                                    else None
+                                ),
                             )
                         except IntegrityError:
                             self.stdout.write(
-                                self.style.WARNING(
-                                    "Failed to create code repo due to duplicate data. Skipping..."
-                                )
+                                self.style.WARNING("Failed to create code repo due to duplicate data. Skipping...")
                             )
                             continue
 
@@ -420,31 +384,26 @@ class Command(BaseCommand):
 
                     if not code_repo:
                         self.stderr.write(
-                            self.style.WARNING(
-                                f"Failed to create/update Code Repo for {code_url}. Skipping."
-                            )
+                            self.style.WARNING(f"Failed to create/update Code Repo for {code_url}. Skipping.")
                         )
                         continue
 
                     # Handle contributors only for newly created repos
                     if code_repo:
                         code_contributors_data = self.fetch_contributors_data(
-                            code_url, headers, delay_on_rate_limit, max_rate_limit_retries
+                            code_url,
+                            headers,
+                            delay_on_rate_limit,
+                            max_rate_limit_retries,
                         )
                         if code_contributors_data:
                             self.handle_contributors(code_repo, code_contributors_data)
 
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"   -> Added/Updated Repo: {code_repo.name} ({code_url})"
-                        )
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"   -> Added/Updated Repo: {code_repo.name} ({code_url})"))
 
             project_count += 1
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Import completed. Processed {project_count} projects.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Import completed. Processed {project_count} projects."))
 
     def validate_github_repo(self, repo_url, headers, delay, max_retries):
         """Check if a GitHub repository exists."""
@@ -458,18 +417,14 @@ class Command(BaseCommand):
                 if response.status_code == 200:
                     return True
                 elif response.status_code in [403, 429]:
-                    self.stderr.write(
-                        self.style.WARNING(f"Rate limit reached. Waiting for {delay} seconds...")
-                    )
+                    self.stderr.write(self.style.WARNING(f"Rate limit reached. Waiting for {delay} seconds..."))
                     time.sleep(delay)
                     continue
                 elif response.status_code == 404:
                     return False
                 else:
                     self.stderr.write(
-                        self.style.WARNING(
-                            f"Unexpected status code {response.status_code} for URL: {repo_url}"
-                        )
+                        self.style.WARNING(f"Unexpected status code {response.status_code} for URL: {repo_url}")
                     )
                     return False
             except requests.exceptions.RequestException as e:
@@ -494,9 +449,7 @@ class Command(BaseCommand):
             self.stderr.write(self.style.WARNING(f"Invalid GitHub URL format: {repo_url}"))
             return None
 
-    def fetch_github_repo_data(
-        self, repo_url, headers, delay, max_retries, is_wiki=False, is_main=False
-    ):
+    def fetch_github_repo_data(self, repo_url, headers, delay, max_retries, is_wiki=False, is_main=False):
         match = re.match(r"https://github.com/([^/]+/[^/]+)", repo_url)
         if not match:
             return None
@@ -506,26 +459,18 @@ class Command(BaseCommand):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):  # Rate limit or forbidden
-                        self.stderr.write(
-                            self.style.WARNING(
-                                f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"
-                            )
-                        )
+                        self.stderr.write(self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"))
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(
-                            f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}"
-                        )
+                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
                     )
                     time.sleep(delay)
                     continue
             # After max retries, return None instead of raising exception
-            self.stderr.write(
-                self.style.WARNING(f"Failed to fetch {url} after {max_retries} attempts")
-            )
+            self.stderr.write(self.style.WARNING(f"Failed to fetch {url} after {max_retries} attempts"))
             return None
 
         # Main repo data
@@ -555,9 +500,7 @@ class Command(BaseCommand):
             "last_updated": repo_data.get("updated_at"),
             "watchers": repo_data.get("watchers_count", 0),
             "primary_language": repo_data.get("language", ""),
-            "license": repo_data.get("license", {}).get("name")
-            if repo_data.get("license")
-            else None,
+            "license": (repo_data.get("license", {}).get("name") if repo_data.get("license") else None),
             "last_commit_date": repo_data.get("pushed_at"),
             "created": repo_data.get("created_at", ""),
             "modified": repo_data.get("updated_at", ""),
@@ -633,19 +576,13 @@ class Command(BaseCommand):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):
-                        self.stderr.write(
-                            self.style.WARNING(
-                                f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"
-                            )
-                        )
+                        self.stderr.write(self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"))
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(
-                            f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}"
-                        )
+                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
                     )
                     time.sleep(delay)
                     continue
@@ -722,26 +659,16 @@ class Command(BaseCommand):
             if not created:
                 contributor_obj.name = contributor.get("login", contributor_obj.name)
                 contributor_obj.github_url = contributor.get("html_url", contributor_obj.github_url)
-                contributor_obj.avatar_url = contributor.get(
-                    "avatar_url", contributor_obj.avatar_url
-                )
-                contributor_obj.contributor_type = contributor.get(
-                    "type", contributor_obj.contributor_type
-                )
-                contributor_obj.contributions = contributor.get(
-                    "contributions", contributor_obj.contributions
-                )
+                contributor_obj.avatar_url = contributor.get("avatar_url", contributor_obj.avatar_url)
+                contributor_obj.contributor_type = contributor.get("type", contributor_obj.contributor_type)
+                contributor_obj.contributions = contributor.get("contributions", contributor_obj.contributions)
                 contributor_obj.save()
 
             contributor_instances.append(contributor_obj)
-            self.stdout.write(
-                self.style.SUCCESS(f"   -> Added/Updated Contributor: {contributor_obj.name}")
-            )
+            self.stdout.write(self.style.SUCCESS(f"   -> Added/Updated Contributor: {contributor_obj.name}"))
         # Assign all contributors to the repo
         repo_instance.contributor.add(*contributor_instances)
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Added {len(contributor_instances)} contributors to {repo_instance.name}"
-            )
+            self.style.SUCCESS(f"Added {len(contributor_instances)} contributors to {repo_instance.name}")
         )
