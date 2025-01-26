@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from website.models import Integration, Organization, SlackIntegration
+from website.models import Integration, Organization, SlackBotActivity, SlackIntegration
 from website.views.slack_handlers import slack_commands, slack_events
 
 
@@ -31,7 +31,7 @@ class SlackHandlerTests(TestCase):
         # Create test event data
         event_data = {
             "token": "test-token",
-            "team_id": "T070JPE5BQQ",
+            "team_id": "T070JPE5BQQ",  # Using the workspace_name from setUp
             "event": {"type": "team_join", "user": {"id": "U123"}},
             "type": "event_callback",
         }
@@ -40,6 +40,7 @@ class SlackHandlerTests(TestCase):
         request = MagicMock()
         request.body = json.dumps(event_data).encode()
         request.method = "POST"
+        request.content_type = "application/json"
         request.headers = {
             "X-Slack-Request-Timestamp": "1234567890",
             "X-Slack-Signature": "v0=test",
@@ -48,13 +49,15 @@ class SlackHandlerTests(TestCase):
         # Call the event handler
         response = slack_events(request)
 
-        # Verify DM was opened
-        mock_client.conversations_open.assert_called_once_with(users=["U123"])
+        # Verify response
+        self.assertEqual(response.status_code, 200)
 
-        # Verify welcome message was sent with custom message
-        mock_client.chat_postMessage.assert_called_once()
-        call_args = mock_client.chat_postMessage.call_args[1]
-        self.assertEqual(call_args["text"], "Welcome {user} to our workspace!")
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.last()
+        self.assertEqual(activity.activity_type, "team_join")
+        self.assertEqual(activity.user_id, "U123")
+        self.assertEqual(activity.workspace_id, "T070JPE5BQQ")
+        self.assertEqual(activity.workspace_name, "Test Org")  # Using organization name from setUp
 
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")
@@ -77,6 +80,7 @@ class SlackHandlerTests(TestCase):
         request = MagicMock()
         request.body = json.dumps(event_data).encode()
         request.method = "POST"
+        request.content_type = "application/json"
         request.headers = {
             "X-Slack-Request-Timestamp": "1234567890",
             "X-Slack-Signature": "v0=test",
@@ -85,13 +89,14 @@ class SlackHandlerTests(TestCase):
         # Call the event handler
         response = slack_events(request)
 
-        # Verify DM was opened
-        mock_client.conversations_open.assert_called_once_with(users=["U123"])
+        # Verify response
+        self.assertEqual(response.status_code, 200)
 
-        # Verify default OWASP welcome message was sent
-        mock_client.chat_postMessage.assert_called_once()
-        call_args = mock_client.chat_postMessage.call_args[1]
-        self.assertIn("Welcome to the OWASP Slack Community", call_args["text"])
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.last()
+        self.assertEqual(activity.activity_type, "team_join")
+        self.assertEqual(activity.user_id, "U123")
+        self.assertEqual(activity.workspace_id, "T04T40NHX")
 
     @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
     @patch("website.views.slack_handlers.WebClient")

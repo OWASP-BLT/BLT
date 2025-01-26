@@ -149,7 +149,7 @@
                           action="{% url 'search' %}"
                           method="get">
                         <i class="lg:!flex hidden fa fa-search absolute left-4 text-[#9CA3AF] z-10 my-auto"></i>
-                        <input type="hidden" name="type" id="filter-type" value="organizations">
+                        <input type="hidden" name="type" id="filter-type" value="all">
                         <!-- Search Input -->
                         <input type="text"
                                name="query"
@@ -161,14 +161,20 @@
                             <button id="organizations-btn"
                                     type="button"
                                     class="flex items-center text-xl lg:text-base h-16 bg-[#ededed] p-5 font-semibold text-[#9CA3AF] outline-none rounded-r-2xl">
-                                <i id="selected-icon" class="fas fa-building mr-2"></i>
-                                <span id="selected-filter">{% trans "Organizations" %}</span>
+                                <i id="selected-icon" class="fas fa-search mr-2"></i>
+                                <span id="selected-filter">{% trans "All" %}</span>
                                 <i class="fa fa-chevron-down ml-2"></i>
                             </button>
                             <!-- Dropdown Menu -->
                             <div id="organizations-dropdown"
                                  class="hidden absolute bg-white border rounded-lg shadow-md mt-2 w-48 z-50 right-0 top-full">
                                 <div class="py-1">
+                                    <!-- Default All category-->
+                                    <a href="#"
+                                       data-value="all"
+                                       class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
+                                        <i class="fas fa-search mr-2"></i> {% trans "All" %}
+                                    </a>
                                     <a href="#"
                                        data-value="organizations"
                                        class="filter-option flex items-center px-3 py-2 hover:bg-gray-100 text-sm">
