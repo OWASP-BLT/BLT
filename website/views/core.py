@@ -331,13 +331,45 @@ def find_key(request, token):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    stype = request.GET.get("type", "organizations")
+    stype = request.GET.get("type", "all")
     context = None
     if query is None:
         return render(request, template)
     query = query.strip()
 
-    if stype == "issues":
+    if stype == "all":
+        # Search across multiple models
+        organizations = Organization.objects.filter(name__icontains=query)
+        issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=request.user.id)
+        )[0:20]
+        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+        users = (
+            UserProfile.objects.filter(Q(user__username__icontains=query))
+            .annotate(total_score=Sum("user__points__score"))
+            .order_by("-total_score")[0:20]
+        )
+        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        context = {
+            "query": query,
+            "type": stype,
+            "organizations": organizations,
+            "issues": issues,
+            "domains": domains,
+            "users": users,
+            "projects": projects,
+            "repos": repos,
+        }
+
+        for userprofile in users:
+            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+        for org in organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
+
+    elif stype == "issues":
         context = {
             "query": query,
             "type": stype,
