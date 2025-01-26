@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    Welcome to OWASP
+{% endblock title %}
+{% block description %}
+    A guide for new community members to get involved with OWASP.
+{% endblock description %}
+{% block keywords %}
+    OWASP, security, open source, community, software security, projects, chapters, membership
+{% endblock keywords %}
+{% block og_title %}
+    Welcome to OWASP
+{% endblock og_title %}
+{% block og_description %}
+    Learn how to get involved with OWASP, join local chapters, contribute to projects, and more.
+{% endblock og_description %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Introduction -->
+        <section class="mb-12">
+            <h1 class="text-4xl font-bold mb-4">Welcome to OWASP</h1>
+            <p class="text-lg leading-relaxed">
+                Welcome to the Open Worldwide Application Security Project (OWASP) community! OWASP is a global, nonprofit organization focused on improving the security of software through community-led open-source projects, local chapters, education, and collaboration. This page will guide you through everything you need to know to get involved, whether you’re joining a local chapter, contributing to open-source projects, or even starting your own initiative.
+            </p>
+        </section>
+        <!-- What is OWASP Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4">What is OWASP?</h2>
+            <p class="text-lg leading-relaxed">
+                OWASP is a community-driven organization dedicated to improving the security of software. Our mission is to make security visible so that individuals and organizations worldwide can make informed decisions about software security risks.
+            </p>
+        </section>
+        <!-- Getting Involved Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4">Getting Involved in OWASP</h2>
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold mb-2">1. Join a Local Chapter</h3>
+                <p class="text-lg leading-relaxed">
+                    OWASP operates local chapters in cities across the globe, offering a great way to connect with like-minded professionals and engage with the community in person or virtually.
+                </p>
+                <ul class="list-disc list-inside ml-6">
+                    <li>
+                        <a href="https://owasp.org/chapters"
+                           class="text-blue-500 hover:underline">Find Your Chapter</a>: Visit the OWASP Chapters page to locate a chapter near you.
+                    </li>
+                    <li>Chapter Activities: Chapters host events such as meetups, workshops, conferences, and training sessions.</li>
+                    <li>
+                        Start Your Own Chapter: If there isn’t a chapter in your area, you can apply to start one. OWASP provides all the resources and support needed to help you build a local community.
+                    </li>
+                </ul>
+            </div>
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold mb-2">2. Become a Member</h3>
+                <p class="text-lg leading-relaxed">
+                    Joining OWASP as a member provides access to exclusive benefits while supporting the community’s mission.
+                </p>
+                <ul class="list-disc list-inside ml-6">
+                    <li>
+                        Membership Benefits: Discounts on conferences, voting rights for the OWASP Board elections, and access to special resources.
+                    </li>
+                    <li>
+                        <a href="https://owasp.org/membership"
+                           class="text-blue-500 hover:underline">How to Join</a>: Membership options include individual, student, and corporate levels. Visit OWASP Membership for more details.
+                    </li>
+                </ul>
+            </div>
+            <div class="mb-8">
+                <h3 class="text-2xl font-semibold mb-2">3. Contribute to OWASP</h3>
+                <p class="text-lg leading-relaxed">
+                    OWASP thrives because of its contributors! Whether you’re a developer, writer, designer, or security expert, there’s a role for you.
+                </p>
+                <ul class="list-disc list-inside ml-6">
+                    <li>Ways to Contribute:</li>
+                    <ul class="list-disc list-inside ml-6">
+                        <li>Write documentation.</li>
+                        <li>Develop and test tools.</li>
+                        <li>Translate projects into other languages.</li>
+                        <li>Provide feedback and reviews for active projects.</li>
+                    </ul>
+                    <li>
+                        <a href="https://github.com/OWASP" class="text-blue-500 hover:underline">How to Start</a>: Explore the OWASP GitHub repository to find active projects where you can contribute.
+                    </li>
+                </ul>
+            </div>
+        </section>
+        <!-- Open Source Projects Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4">Open Source Projects</h2>
+            <p class="text-lg leading-relaxed">
+                OWASP is best known for its community-driven projects. These projects range from tools and frameworks to guidelines and methodologies.
+            </p>
+            <ul class="list-disc list-inside ml-6">
+                <li>Flagship Projects: Some of the most popular OWASP projects include:</li>
+                <ul class="list-disc list-inside ml-6">
+                    <li>
+                        <a href="https://owasp.org/www-project-top-ten/"
+                           class="text-blue-500 hover:underline">OWASP Top Ten</a>
+                    </li>
+                    <li>
+                        <a href="https://owasp.org/www-project-zap/"
+                           class="text-blue-500 hover:underline">OWASP ZAP (Zed Attack Proxy)</a>
+                    </li>
+                    <li>
+                        <a href="https://owasp.org/www-project-application-security-verification-standard/"
+                           class="text-blue-500 hover:underline">OWASP ASVS (Application Security Verification Standard)</a>
+                    </li>
+                </ul>
+                <li>GSOC (Google Summer of Code):</li>
+                <ul class="list-disc list-inside ml-6">
+                    <li>
+                        Over the past five years, OWASP has participated in GSOC, offering students the opportunity to work on cutting-edge security projects.
+                    </li>
+                    <li>
+                        <a href="https://owasp.org/www-project-gsoc/"
+                           class="text-blue-500 hover:underline">Notable Projects</a>: Explore a list of GSOC projects here.
+                    </li>
+                    <li>Get Involved: If you’re interested in mentoring or participating, review the GSOC guidelines for contributors.</li>
+                </ul>
+            </ul>
+        </section>
+        <!-- Starting Your Own Project Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4">Starting Your Own Project</h2>
+            <p class="text-lg leading-relaxed">
+                OWASP encourages innovation and supports individuals looking to start their own projects.
+            </p>
+            <ul class="list-disc list-inside ml-6">
+                <li>How to Propose a Project:</li>
+                <ul class="list-disc list-inside ml-6">
+                    <li>
+                        <a href="https://owasp.org/www-policy/"
+                           class="text-blue-500 hover:underline">Review the OWASP Project Process</a> to understand the steps for creating a new project.
+                    </li>
+                    <li>Submit a project proposal that outlines the goals, scope, and resources needed.</li>
+                </ul>
+                <li>Project Support:</li>
+                <ul class="list-disc list-inside ml-6">
+                    <li>Access OWASP’s vast network for mentorship, funding, and collaboration.</li>
+                    <li>Showcase your project at OWASP global events to reach a wider audience.</li>
+                </ul>
+            </ul>
+        </section>
+        <!-- Stay Connected Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4">Stay Connected</h2>
+            <ul class="list-disc list-inside ml-6">
+                <li>Mailing Lists: Sign up for OWASP newsletters to stay updated on global and local events.</li>
+                <li>
+                    <a href="https://owasp.org/events/"
+                       class="text-blue-500 hover:underline">Events</a>: Attend OWASP Global AppSec conferences to network and learn from industry leaders.
+                </li>
+                <li>
+                    Social Media: Follow OWASP on <a href="https://twitter.com/owasp"
+    class="text-blue-500 hover:underline">Twitter</a>, <a href="https://linkedin.com/company/owasp"
+    class="text-blue-500 hover:underline">LinkedIn</a>, and other platforms.
+                </li>
+            </ul>
+        </section>
+        <!-- Conclusion Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold mb-4">Conclusion</h2>
+            <p class="text-lg leading-relaxed">
+                OWASP thrives on its community’s energy and contributions. Whether you’re here to learn, connect, or innovate, there’s a place for you at OWASP. Take the first step today—join a chapter, contribute to a project, or start your own initiative. Together, we can make software security visible and accessible for everyone.
+            </p>
+            <p class="text-lg leading-relaxed">
+                For additional questions or guidance, visit the <a href="https://owasp.org/" class="text-blue-500 hover:underline">OWASP website</a> or reach out to a chapter leader near you.
+            </p>
+        </section>
+    </div>
+{% endblock content %}

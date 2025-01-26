@@ -97,7 +97,7 @@ def handle_post_save(sender, instance, created, **kwargs):
 @receiver(pre_delete)
 def handle_pre_delete(sender, instance, **kwargs):
     """Generic handler for pre_delete signal."""
-    if sender in [Issue, Hunt, IpReport, Post]:  # Add any model you want to track
+    if sender in [Issue, Hunt, IpReport, Post]:
         create_activity(instance, "deleted")
 
 
@@ -106,15 +106,12 @@ def update_user_streak(sender, instance, created, **kwargs):
     """
     Automatically update user's streak when a TimeLog is created
     """
-    if created:
-        # Use the date of the start_time for streak tracking
+    if created and instance.user and instance.user.is_authenticated:
         check_in_date = instance.start_time.date()
-        # Get the user's profile and update streak
         try:
             user_profile = instance.user.userprofile
             user_profile.update_streak_and_award_points(check_in_date)
         except UserProfile.DoesNotExist:
-            # Fallback: create profile if it doesn't exist
             UserProfile.objects.create(
                 user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )

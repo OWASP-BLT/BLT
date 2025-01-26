@@ -1431,6 +1431,7 @@ def comment_on_content(request, content_pk):
     content_type = request.POST.get("content_type")
     content_type_obj = ContentType.objects.get(model=content_type)
     content = content_type_obj.get_object_for_this_type(pk=content_pk)
+
     VALID_CONTENT_TYPES = ["issue", "post"]
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -1452,6 +1453,7 @@ def comment_on_content(request, content_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
+
                 return redirect("home")
 
             Comment.objects.create(
