@@ -1,20 +1,23 @@
 {% extends "base.html" %}
-{% block title %}{{ room.name }}{% endblock title %}
+{% block title %}
+    {{ room.name }}
+{% endblock title %}
 {% block content %}
-{% include "includes/sidenav.html" %}
-<div class="max-w-4xl mx-auto py-8">
-    <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
-    <div id="log-history" class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
-        <!-- Messages will be appended here -->
+    {% include "includes/sidenav.html" %}
+    <div class="max-w-4xl mx-auto py-8">
+        <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
+        <div id="log-history"
+             class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
+            <!-- Messages will be appended here -->
+        </div>
+        <input id="message-field"
+               type="text"
+               placeholder="Type a message..."
+               class="border rounded-lg px-4 py-2 w-full" />
+        <button id="send-button"
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-2">Send</button>
     </div>
-    <input id="message-field" type="text" placeholder="Type a message..." 
-            class="border rounded-lg px-4 py-2 w-full" />
-    <button id="send-button"
-            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-2">
-        Send
-    </button>
-</div>
-<script>
+    <script>
     const roomId = {{ room.id }};
     const username = "{{ request.user.username|escapejs }}"; // Add user's name
     let socket;
@@ -81,5 +84,5 @@
     connectWebSocket().catch(error => {
         console.error('WebSocket connection failed:', error);
     });
-</script>
+    </script>
 {% endblock content %}

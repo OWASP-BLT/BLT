@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0184_merge_0183_merge_20250124_0618_0183_slackbotactivity"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -54,9 +53,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "users",
-                    models.ManyToManyField(
-                        blank=True, related_name="rooms", to=settings.AUTH_USER_MODEL
-                    ),
+                    models.ManyToManyField(blank=True, related_name="rooms", to=settings.AUTH_USER_MODEL),
                 ),
             ],
         ),
