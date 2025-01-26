@@ -24,9 +24,7 @@ class TeamOverview(TemplateView):
             team_kudos = []
             if user_profile.team:
                 user_profile.team.managers.add(user_profile.team.admin)
-                team_members = user_profile.team.managers.annotate(
-                    kudos_count=Count("kudos_received")
-                )
+                team_members = user_profile.team.managers.annotate(kudos_count=Count("kudos_received"))
                 team_kudos = Kudos.objects.filter(receiver__in=team_members).order_by("-timestamp")
 
             received_kudos = self.request.user.kudos_received.all()
@@ -239,9 +237,7 @@ def give_kudos(request):
         if receiver_username:
             try:
                 receiver = User.objects.get(username=receiver_username)
-                Kudos.objects.create(
-                    sender=request.user, receiver=receiver, link=link_url, comment=comment_text
-                )
+                Kudos.objects.create(sender=request.user, receiver=receiver, link=link_url, comment=comment_text)
                 return JsonResponse({"success": True, "message": "Kudos sent successfully!"})
             except User.DoesNotExist:
                 return JsonResponse({"success": False, "error": "User does not exist"})
