@@ -41,6 +41,7 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "email").send_keys("bugbugbug@bugbug.com")
         self.selenium.find_element("name", "password1").send_keys("6:}jga,6mRKNUqMQ")
         self.selenium.find_element("name", "password2").send_keys("6:}jga,6mRKNUqMQ")
+        self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
         self.selenium.find_element("name", "signup_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
