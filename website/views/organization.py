@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -261,12 +262,45 @@ class DomainListView(ListView):
     model = Domain
     paginate_by = 20
     template_name = "domain_list.html"
+    context_object_name = "domain"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        domain = Domain.objects.all()
+        db_domains = list(context["domain"])
 
-        paginator = Paginator(domain, self.paginate_by)
+        # Read external organizations from JSON
+        json_file = os.path.join(settings.BASE_DIR, "website", "fixtures", "merged_organizations.json")
+        with open(json_file, "r", encoding="utf-8") as f:
+            external_data = json.load(f)
+
+        external_domains = []
+        for item in external_data:
+            if not item.get("name"):
+                continue
+            external_domains.append(
+                {
+                    "name": item["name"],
+                    "get_logo": item.get("logo", ""),
+                    "get_absolute_url": f"/domain/{item['name']}",
+                    "years": item.get("years", []),
+                }
+            )
+
+        merged_list = []
+        for d in db_domains:
+            merged_list.append(
+                {
+                    "name": d.name,
+                    "get_logo": d.get_logo if hasattr(d, "get_logo") else "",
+                    "get_absolute_url": d.get_absolute_url() if hasattr(d, "get_absolute_url") else "",
+                    "years": [],
+                }
+            )
+        merged_list.extend(external_domains)
+
+        context["domain"] = merged_list
+
+        paginator = Paginator(context["domain"], self.paginate_by)
         page = self.request.GET.get("page")
 
         try:
