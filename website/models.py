@@ -191,8 +191,16 @@ class Domain(models.Model):
 
     @property
     def get_name(self):
-        parsed_url = urlparse(self.url)
-        return parsed_url.netloc.split(".")[-2:][0].title()
+        # Ensure the URL has a scheme; if not, add one.
+        url = self.url if "://" in self.url else f"http://{self.url}"
+        parsed_url = urlparse(url)
+
+        # Extract domain name safely
+        if parsed_url.netloc:
+            domain_parts = parsed_url.netloc.split(".")
+            if len(domain_parts) >= 2:
+                return domain_parts[-2].title()
+        return ""
 
     def get_logo(self):
         if self.logo:

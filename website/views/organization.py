@@ -618,14 +618,18 @@ class DomainDetailView(ListView):
         # Fetch the related organization
         organization = domain.organization
         if organization is None:
-            organization = get_object_or_404(Organization, Q(name__iexact=domain.get_name))
+            organizations = Organization.objects.filter(name__iexact=domain.get_name)
+            if organizations.exists():
+                organization = organizations.first()
+            else:
+                organization = None
+
         context["organization"] = organization
 
         if organization:
             # Fetch related trademarks for the organization
             trademarks = Trademark.objects.filter(organization=organization)
-
-        context["trademarks"] = trademarks
+            context["trademarks"] = trademarks
 
         open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
