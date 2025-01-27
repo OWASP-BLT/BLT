@@ -582,18 +582,18 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
-    context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
-
-    context["tags"] = Tag.objects.all()
+    context["tags_with_counts"] = (
+        Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
+    )
 
     tag_name = request.GET.get("tag")
     if tag_name:
-        if context["user_related_tags"].filter(name=tag_name).exists():
+        if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
             context["user_count"] = context["users"].count()
         else:
-            context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
+            context["users"] = UserProfile.objects.none()
             context["user_count"] = 0
     else:
         context["tag"] = "BLT Contributors"

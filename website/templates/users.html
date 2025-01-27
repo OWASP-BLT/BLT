@@ -18,9 +18,27 @@
 {% endblock og_description %}
 {% block style %}
     <style type="text/tailwindcss">
-    @layer components {
+     @layer components {
       .card {
         @apply flex items-center justify-center flex-col gap-2 p-5 w-full sm:w-72 h-full bg-gray-100 border rounded-2xl;
+      }
+      .tag-count {
+        @apply ml-2 px-2 py-0.5 text-sm rounded-full inline-flex items-center justify-center;
+      }
+      .tag-link {
+        @apply inline-flex items-center px-4 py-2 rounded-full transition-all duration-200 ease-in-out font-medium text-sm hover:shadow-md;
+      }
+      .tag-link.active {
+        @apply bg-red-100 text-red-800;
+      }
+      .tag-link.active .tag-count {
+        @apply bg-red-200 text-red-800;
+      }
+      .tag-link.inactive {
+        @apply bg-gray-100 text-gray-800 hover:bg-gray-200;
+      }
+      .tag-link.inactive .tag-count {
+        @apply bg-gray-200 text-gray-700;
       }
     }
     </style>
@@ -41,33 +59,44 @@
                 <p class="text-xl bg-red-600 text-white w-max px-5 py-2 rounded-lg lg:text-4xl">
                     A warm and welcoming collection of open sourcers
                 </p>
-                {% if user_count %}
-                    <p class="mt-4 text-lg">{{ user_count }} user{{ user_count|pluralize }} found with the tag {{ tag }}</p>
-                {% endif %}
             </div>
         </div>
-        <div class="font-['Ubuntu'] max-sm:w-full w-3/4 mx-auto">
-            <select class="w-full p-3 border rounded-2xl bg-gray-100 text-lg font-semibold"
-                    onchange="window.location.href = `{% url 'users' %}?tag=${this.value}`">
-                {% for tag_info in user_related_tags %}
-                    <option value="{{ tag_info.name }}"
-                            {% if forloop.first and not tag %}selected{% elif tag_info.name == tag %}selected{% endif %}>
-                        {{ tag_info.name }}
-                    </option>
-                {% endfor %}
-            </select>
+        <!-- New block to show tags with counts -->
+        <div class="flex flex-wrap items-center justify-center gap-3 my-8">
+            {% for tag_obj in tags_with_counts %}
+                <a href="?tag={{ tag_obj.name }}"
+                   class="tag-link {% if tag_obj.name == tag %}active{% else %}inactive{% endif %}">
+                    <span>{{ tag_obj.name }}</span>
+                    <span class="tag-count">{{ tag_obj.user_count }}</span>
+                </a>
+            {% endfor %}
         </div>
         <div class="flex items-center justify-center flex-wrap gap-4 p-4">
             {% for user in users %}
                 <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between border rounded-lg transition duration-200 shadow-lg hover:shadow-2xl">
-                    {% if user.userprofile.user_avatar %}
-                        <img src="{{ user.userprofile.user_avatar.url }}" class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110" width="100px" height="100px" alt="{{ user.username }}'s avatar" onerror="this.src='{% static "images/dummy-user.png" %}'">
+                    {% if user.userprofile and user.userprofile.user_avatar %}
+                        <img src="{{ user.userprofile.user_avatar.url }}"
+                             class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                             width="100px"
+                             height="100px"
+                             alt="{{ user.user.username }}'s avatar"
+                             onerror="this.src='{% static 'images/dummy-user.png' %}'">
                     {% else %}
                         {% for account in user.socialaccount_set.all %}
                             {% if account.extra_data.avatar_url %}
-                                <img src="{{ account.extra_data.avatar_url }}" class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110" width="100px" height="100px" alt="{{ user.username }}'s avatar" onerror="this.src='{% static "images/dummy-user.png" %}'">
+                                <img src="{{ account.extra_data.avatar_url }}"
+                                     class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                                     width="100px"
+                                     height="100px"
+                                     alt="{{ user.username }}'s avatar"
+                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
                             {% elif account.extra_data.picture %}
-                                <img src="{{ account.extra_data.picture }}" class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110" width="100px" height="100px" alt="{{ user.username }}'s avatar" onerror="this.src='{% static "images/dummy-user.png" %}'">
+                                <img src="{{ account.extra_data.picture }}"
+                                     class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                                     width="100px"
+                                     height="100px"
+                                     alt="{{ user.username }}'s avatar"
+                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
                             {% endif %}
                         {% empty %}
                             <img src="{% static 'images/dummy-user.png' %}"
