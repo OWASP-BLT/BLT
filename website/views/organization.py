@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
-import humanize
 import requests
 import stripe
 from bs4 import BeautifulSoup
@@ -13,6 +12,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
@@ -895,7 +895,11 @@ def user_sizzle_report(request, username):
 
         response_data.append(day_data)
 
-    return render(request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user})
+    return render(
+        request,
+        "sizzle/user_sizzle_report.html",
+        {"response_data": response_data, "user": user},
+    )
 
 
 @login_required
@@ -924,7 +928,12 @@ def sizzle_daily_log(request):
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return JsonResponse({"success": "true", "message": "Daily status report submitted successfully."})
+            return JsonResponse(
+                {
+                    "success": "true",
+                    "message": "Daily status report submitted successfully.",
+                }
+            )
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -1062,7 +1071,11 @@ def sizzle(request):
                 "date": date,
             }
 
-    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard})
+    return render(
+        request,
+        "sizzle/sizzle.html",
+        {"sizzle_data": sizzle_data, "leaderboard": leaderboard},
+    )
 
 
 def trademark_detailview(request, slug):
@@ -1103,7 +1116,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
         hunt_active = False
         hunt_completed = False
-        time_remaining = humanize.naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
+        time_remaining = naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
     elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
         hunt_active = False
         hunt_completed = True
@@ -1673,7 +1686,11 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
-    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
+    return render(
+        request,
+        "sizzle/add_sizzle_checkin.html",
+        {"yesterday_report": yesterday_report},
+    )
 
 
 def checkIN(request):
