@@ -67,6 +67,7 @@ uvicorn = "^0.34.0"
 channels = "^4.2.0"
 channels-redis = "^4.2.1"
 aiohttp = "^3.11.11"
+drf-yasg = "^1.21.8"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -77,7 +78,7 @@ pre-commit = "^3.8.0"
 selenium = "^4.28.1"
 webdriver-manager = "^4.0.2"
 chromedriver-autoinstaller = "^0.6.4"
-drf-yasg = "^1.21.8"
+
 
 
 
