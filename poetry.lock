@@ -4173,14 +4173,14 @@ files = [
 
 [[package]]
 name = "stripe"
-version = "8.11.0"
+version = "7.14.0"
 description = "Python bindings for the Stripe API"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "stripe-8.11.0-py2.py3-none-any.whl", hash = "sha256:57187676dcc8713080169db4589c676d038c3a72961e04e43e44cf539b1a5a5a"},
-    {file = "stripe-8.11.0.tar.gz", hash = "sha256:11714a38d48ca551a353503c2f97a7df720d0a533d9d321ca245bc1fdff1ce62"},
+    {file = "stripe-7.14.0-py2.py3-none-any.whl", hash = "sha256:f39def4dec42b374a39b110ab809c8130e14b7027ee40e3111a658e0f46709cb"},
+    {file = "stripe-7.14.0.tar.gz", hash = "sha256:556bfa86f8b298b666ff2caa0d754ee19ece52159d12a45ed7ddb02daadd1799"},
 ]
 
 [package.dependencies]
@@ -4219,6 +4219,18 @@ pandas = ["pandas"]
 xls = ["xlrd", "xlwt"]
 xlsx = ["openpyxl (>=2.6.0)"]
 yaml = ["pyyaml"]
+
+[[package]]
+name = "tld"
+version = "0.13"
+description = "Extract the top-level domain (TLD) from the URL given."
+optional = false
+python-versions = ">=3.7, <4"
+groups = ["main"]
+files = [
+    {file = "tld-0.13-py2.py3-none-any.whl", hash = "sha256:f75b2be080f767ed17c2338a339eaa4fab5792586319ca819119da252f9f3749"},
+    {file = "tld-0.13.tar.gz", hash = "sha256:93dde5e1c04bdf1844976eae440706379d21f4ab235b73c05d7483e074fb5629"},
+]
 
 [[package]]
 name = "tqdm"
@@ -4277,30 +4289,6 @@ files = [
 [package.dependencies]
 trio = ">=0.11"
 wsproto = ">=0.14"
-
-[[package]]
-name = "tweepy"
-version = "4.15.0"
-description = "Twitter library for Python"
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "tweepy-4.15.0-py3-none-any.whl", hash = "sha256:64adcea317158937059e4e2897b3ceb750b0c2dd5df58938c2da8f7eb3b88e6a"},
-    {file = "tweepy-4.15.0.tar.gz", hash = "sha256:1345cbcdf0a75e2d89f424c559fd49fda4d8cd7be25cd5131e3b57bad8a21d76"},
-]
-
-[package.dependencies]
-oauthlib = ">=3.2.0,<4"
-requests = ">=2.27.0,<3"
-requests-oauthlib = ">=1.2.0,<3"
-
-[package.extras]
-async = ["aiohttp (>=3.7.3,<4)", "async-lru (>=1.0.3,<3)"]
-dev = ["coverage (>=4.4.2)", "coveralls (>=2.1.0)", "tox (>=3.21.0)"]
-docs = ["myst-parser (==0.15.2)", "readthedocs-sphinx-search (==0.1.1)", "sphinx (==4.2.0)", "sphinx-hoverxref (==0.7b1)", "sphinx-tabs (==3.2.0)", "sphinx_rtd_theme (==1.0.0)"]
-socks = ["requests[socks] (>=2.27.0,<3)"]
-test = ["urllib3 (<2)", "vcrpy (>=1.10.3)"]
 
 [[package]]
 name = "typing-extensions"
@@ -4904,4 +4892,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "3.11.2"
-content-hash = "f6c2893f43bafc682bb402b12dc8b63d7c77bf18ed1c1ee3c0e1934c87389485"
+content-hash = "83360143704fb0869fb646b585bb67739fc657465c08ac1541860d882b048489"

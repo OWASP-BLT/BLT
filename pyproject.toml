@@ -63,8 +63,7 @@ channels-redis = "^4.2.1"
 aiohttp = "^3.11.11"
 drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
-tld = "^0.13.1"
-
+tld = "0.13"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
@@ -74,9 +73,6 @@ pre-commit = "^3.8.0"
 selenium = "^4.28.1"
 webdriver-manager = "^4.0.2"
 chromedriver-autoinstaller = "^0.6.4"
-
-
-
 
 [tool.isort]
 known_first_party = ["blt"]
