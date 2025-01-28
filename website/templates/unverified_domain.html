@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ organization.name }} - Unverified Domain{% endblock %}
+{% block description %}View details for unverified domain {{ organization.name }}{% endblock %}
+{% block content %}
+    <style>
+    .unverified-domain {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .unverified-domain h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+    }
+    
+    .unverified-domain img {
+        max-width: 200px;
+        margin: 20px 0;
+    }
+    
+    .unverified-notice {
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+    }
+    
+    .years ul {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .years li {
+        background: #e9f2fe;
+        padding: 5px 15px;
+        border-radius: 15px;
+        color: #007bff;
+    }
+    .unverified-domain img {
+    max-width: 200px;
+    margin: 20px 0;
+    object-fit: contain;
+}
+    </style>
+    <div class="unverified-domain">
+        <h1>{{ organization.name }}</h1>
+        {% if organization.logo %}
+            <img src="{{ organization.logo }}"
+                 alt="{{ organization.name }} logo"
+                 width="200"
+                 height="200">
+        {% endif %}
+        <div class="unverified-notice">
+            <p>This organization profile has not been verified or claimed yet.</p>
+            <p>If you represent this organization, please contact us to claim and verify this profile.</p>
+        </div>
+        {% if organization.years %}
+            <div class="years">
+                <h3>Active Years</h3>
+                <ul>
+                    {% for year in organization.years %}<li>{{ year }}</li>{% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

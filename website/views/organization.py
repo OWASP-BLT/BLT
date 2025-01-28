@@ -18,7 +18,7 @@ from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
@@ -260,57 +260,81 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
 
 class DomainListView(ListView):
     model = Domain
-    paginate_by = 20
+    paginate_by = 30
     template_name = "domain_list.html"
-    context_object_name = "domain"
+    context_object_name = "domains"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        db_domains = list(context["domain"])
+    def get_queryset(self):
+        db_domains = list(super().get_queryset())
+        json_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "merged_organizations.json")
+        try:
+            with open(json_path, "r") as f:
+                merged_orgs = json.load(f)
+        except FileNotFoundError:
+            merged_orgs = []
+            with open(json_path, "w") as f:
+                json.dump(merged_orgs, f)
 
-        # Read external organizations from JSON
-        json_file = os.path.join(settings.BASE_DIR, "website", "fixtures", "merged_organizations.json")
-        with open(json_file, "r", encoding="utf-8") as f:
-            external_data = json.load(f)
+        # Create a list of objects that mimic Domain for unverified orgs
+        unverified = []
+        db_domain_names = {d.name for d in db_domains}
+        for org in merged_orgs:
+            if org["name"] not in db_domain_names:
+                unverified.append(
+                    {
+                        "id": None,
+                        "name": org["name"],
+                        "logo": org.get("logo"),
+                        "years": org.get("years", []),
+                        "is_external": True,
+                        "unverified": True,
+                        "get_absolute_url": f"/domain/{org['name']}/unverified",
+                    }
+                )
 
-        external_domains = []
-        for item in external_data:
-            if not item.get("name"):
-                continue
-            external_domains.append(
-                {
-                    "name": item["name"],
-                    "get_logo": item.get("logo", ""),
-                    "get_absolute_url": f"/domain/{item['name']}",
-                    "years": item.get("years", []),
-                }
-            )
+        # Merge DB domains with unverified organizations
+        all_domains = db_domains + unverified
 
-        merged_list = []
-        for d in db_domains:
-            merged_list.append(
-                {
-                    "name": d.name,
-                    "get_logo": d.get_logo if hasattr(d, "get_logo") else "",
-                    "get_absolute_url": d.get_absolute_url() if hasattr(d, "get_absolute_url") else "",
-                    "years": [],
-                }
-            )
-        merged_list.extend(external_domains)
-
-        context["domain"] = merged_list
-
-        paginator = Paginator(context["domain"], self.paginate_by)
+        paginator = Paginator(all_domains, self.paginate_by)
         page = self.request.GET.get("page")
 
         try:
-            domain_paginated = paginator.page(page)
+            domains = paginator.page(page)
         except PageNotAnInteger:
-            domain_paginated = paginator.page(1)
+            domains = paginator.page(1)
         except EmptyPage:
-            domain_paginated = paginator.page(paginator.num_pages)
+            domains = paginator.page(paginator.num_pages)
 
-        context["domain"] = domain_paginated
+        return domains
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["is_paginated"] = True
+        return context
+
+
+class UnverifiedDomainView(TemplateView):
+    template_name = "unverified_domain.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        org_name = kwargs.get("org_name")
+
+        json_path = os.path.join(settings.BASE_DIR, "website", "fixtures", "merged_organizations.json")
+        try:
+            with open(json_path, "r") as f:
+                orgs = json.load(f)
+                org = next((o for o in orgs if o["name"] == org_name), None)
+                if org is None:
+                    raise Http404("Organization not found")
+                context["organization"] = org
+        except FileNotFoundError:
+            merged_orgs = []
+            os.makedirs(os.path.dirname(json_path), exist_ok=True)
+            with open(json_path, "w") as f:
+                json.dump(merged_orgs, f)
+            raise Http404("Organizations data not found")
+
         return context
 
 
@@ -637,26 +661,66 @@ class DomainDetailView(ListView):
     template_name = "domain.html"
     model = Issue
 
+    def get(self, request, *args, **kwargs):
+        # Check if slug is for unverified domain first
+        org_name = kwargs.get("slug")
+        json_path = os.path.join(settings.BASE_DIR, "merged_organizations.json")
+        try:
+            with open(json_path, "r") as f:
+                orgs = json.load(f)
+                if next((o for o in orgs if o["name"] == org_name), None):
+                    return redirect("domain_unverified", org_name=org_name)
+        except FileNotFoundError:
+            pass
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, *args, **kwargs):
-        context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
-        # remove any arguments from the slug
+        context = super().get_context_data(*args, **kwargs)
         self.kwargs["slug"] = self.kwargs["slug"].split("?")[0]
-        domain = get_object_or_404(Domain, name=self.kwargs["slug"])
-        context["domain"] = domain
 
-        parsed_url = urlparse("http://" + self.kwargs["slug"])
+        domain_instance = Domain.objects.filter(name=self.kwargs["slug"]).first()
+        context["is_external"] = False
 
-        open_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
-            .filter(status="open", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-        )
+        if not domain_instance:
+            # Load external data securely using HTTPS path
+            json_url = settings.BASE_URL + "website/fixtures/merged_organizations.json"
+            try:
+                response = requests.get(json_url, verify=True)
+                response.raise_for_status()
+                external_data = response.json()
+            except requests.RequestException as e:
+                raise Http404(f"Error loading external data: {str(e)}")
 
-        closed_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
-            .filter(status="closed", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-        )
+            match = next((item for item in external_data if item.get("name") == self.kwargs["slug"]), None)
+            if not match:
+                raise Http404("No Domain matches the given query.")
+            context["domain"] = {
+                "name": match["name"],
+                "url": f"http://{match['name']}",
+                "logo": match.get("logo", "").split("/")[1] if match.get("logo") else "",
+                "pk": None,
+            }
+            context["is_external"] = True
+        else:
+            context["domain"] = domain_instance
+            context["is_external"] = False
+
+            # Fetch issues only if domain is from the database
+        if not context["is_external"]:
+            open_issues = Issue.objects.filter(domain=domain_instance, hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
+            closed_issues = Issue.objects.filter(domain=domain_instance, hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
+        else:
+            open_issues = Issue.objects.none()
+            closed_issues = Issue.objects.none()
+
+        context["open_issues"] = open_issues
+        context["closed_issues"] = closed_issues
+
+        parsed_url = urlparse(f"http://{self.kwargs['slug']}")
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
@@ -671,14 +735,14 @@ class DomainDetailView(ListView):
         except EmptyPage:
             openissue_paginated = paginator.page(paginator.num_pages)
 
-        paginator = Paginator(closed_issues, 3)
+        closed_paginator = Paginator(closed_issues, 3)
         page = self.request.GET.get("close")
         try:
-            closeissue_paginated = paginator.page(page)
+            closeissue_paginated = closed_paginator.page(page)
         except PageNotAnInteger:
-            closeissue_paginated = paginator.page(1)
+            closeissue_paginated = closed_paginator.page(1)
         except EmptyPage:
-            closeissue_paginated = paginator.page(paginator.num_pages)
+            closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
         context["opened_net"] = open_issues
         context["opened"] = openissue_paginated
@@ -691,7 +755,7 @@ class DomainDetailView(ListView):
         )
         context["current_month"] = datetime.now().month
         context["domain_graph"] = (
-            Issue.objects.filter(domain=context["domain"], hunt=None)
+            Issue.objects.filter(domain__name=self.kwargs["slug"], hunt=None)
             .filter(
                 created__month__gte=(datetime.now().month - 6),
                 created__month__lte=datetime.now().month,
@@ -699,24 +763,33 @@ class DomainDetailView(ListView):
             .annotate(month=ExtractMonth("created"))
             .values("month")
             .annotate(c=Count("id"))
-            .order_by()
+            .order_by("month")
         )
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(domain=context["domain"], hunt=None, label=str(i))
-        context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
+        for i in range(7):
+            context[f"bug_type_{i}"] = Issue.objects.filter(domain__name=self.kwargs["slug"], hunt=None, label=str(i))
+
+            # Total Bug Count
+        context["total_bugs"] = Issue.objects.filter(domain__name=self.kwargs["slug"], hunt=None).count()
         context["pie_chart"] = (
-            Issue.objects.filter(domain=context["domain"], hunt=None)
+            Issue.objects.filter(domain__name=self.kwargs["slug"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
-            .order_by()
+            .order_by("label")
         )
-        context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:3]
-        context["activity_screenshots"] = {}
-        for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
-        context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
+        activity_feed = (
+            Issue.objects.filter(domain__name=self.kwargs["slug"], hunt=None)
+            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            .select_related("user")[:3]
+        )
+        context["activities"] = activity_feed
+        context["activity_screenshots"] = {
+            activity: IssueScreenshot.objects.filter(issue=activity).first() for activity in activity_feed
+        }
+        context["twitter_url"] = (
+            f"https://twitter.com/{domain_instance.get_or_set_x_url(domain_instance.get_name)}"
+            if domain_instance
+            else None
+        )
 
         return context
 

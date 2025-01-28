@@ -136,6 +136,7 @@ from website.views.organization import (
     ScoreboardView,
     TimeLogListAPIView,
     TimeLogListView,
+    UnverifiedDomainView,
     UpcomingHunts,
     add_domain_to_organization,
     add_or_update_domain,
@@ -770,6 +771,7 @@ urlpatterns = [
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", DomainListView.as_view(), name="domain_lists"),
+    path("domain/<str:org_name>/unverified", UnverifiedDomainView.as_view(), name="domain_unverified"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path(
         "generate_bid_image/<int:bid_amount>/",
