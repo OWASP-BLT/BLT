@@ -2,10 +2,13 @@ import base64
 import io
 import json
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
+import cv2
+import numpy as np
 import requests
 import six
 import tweepy
@@ -17,11 +20,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.core import serializers
+from django.core.cache import cache
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q, Sum
 from django.db.transaction import atomic
 from django.dispatch import receiver
@@ -69,6 +74,8 @@ from website.utils import (
     rebuild_safe_url,
     safe_redirect_request,
 )
+
+from .privacy import overlay_faces
 
 
 @login_required(login_url="/accounts/login")
@@ -334,25 +341,67 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@transaction.atomic
 def delete_issue(request, id):
-    try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
-        tokenauth = False
+    """Delete an issue and all related objects"""
+    tokenauth = False
 
-    issue = Issue.objects.get(id=id)
+    # Check for token in POST
+    token_key = request.POST.get("token")
+
+    # Rate limiting check for 1 minute
+    cache_key = f"delete_issue_{request.user.id if request.user.is_authenticated else 'anon'}"
+    if cache.get(cache_key):
+        messages.error(request, "Please wait before deleting another issue")
+        return redirect("/")
+    cache.set(cache_key, True, 60)
+
+    # Token authentication
+    if token_key:
+        try:
+            token = Token.objects.get(key=token_key)
+            request.user = User.objects.get(id=token.user_id)
+            tokenauth = True
+        except (Token.DoesNotExist, User.DoesNotExist):
+            tokenauth = False
+
+    try:
+        issue = Issue.objects.get(id=id)
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue not found")
+        return redirect("/")
+
     if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
-        issue.delete()
-        messages.success(request, "Issue deleted")
+        try:
+            with transaction.atomic():
+                Comment.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Issue), object_id=id
+                ).delete()
+                Points.objects.filter(issue=issue).delete()
+                Activity.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Issue), object_id=id
+                ).delete()
+
+            screenshots = issue.screenshots.all()
+            for screenshot in screenshots:
+                screenshot.delete()
+            issue.delete()
+
+            messages.success(request, "Issue deleted successfully")
+            if tokenauth:
+                return JsonResponse({"status": "success", "message": "Issue deleted successfully"})
+
+        except Exception as e:
+            messages.error(request, f"Error deleting issue: {str(e)}")
+            if tokenauth:
+                return JsonResponse(
+                    {"status": "error", "message": f"Error deleting issue: {str(e)}"}, status=500
+                )
+    else:
+        messages.error(request, "Permission denied")
         if tokenauth:
-            return JsonResponse("Deleted", safe=False)
+            return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
+
     return redirect("/")
 
 
@@ -960,11 +1009,55 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             # Save screenshots
             for screenshot in self.request.FILES.getlist("screenshots"):
-                filename = screenshot.name
-                extension = filename.split(".")[-1]
-                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
+                try:
+                    screenshot.seek(0)
+
+                    # Read image data
+                    image_data = screenshot.read()
+                    np_img = np.frombuffer(image_data, np.uint8)
+                    img = cv2.imdecode(np_img, cv2.IMREAD_UNCHANGED)
+
+                    if img is None:
+                        raise ValueError("Failed to decode image")
+
+                    # Process image - original returned if no faces
+                    img_with_faces_hidden = overlay_faces(img)
+
+                    # Save processed image
+                    filename = screenshot.name
+                    extension = filename.split(".")[-1].lower()
+
+                    if extension not in ["jpg", "jpeg", "png"]:
+                        extension = "jpg"
+
+                    new_filename = f"{filename[:10]}_{uuid.uuid4()}_{int(time.time())}.{extension}"
+
+                    # Encode and save image
+                    if extension in ["jpg", "jpeg"]:
+                        _, buffer = cv2.imencode(
+                            ".jpg", img_with_faces_hidden, [cv2.IMWRITE_JPEG_QUALITY, 90]
+                        )
+                    else:
+                        _, buffer = cv2.imencode(".png", img_with_faces_hidden)
+
+                    if buffer is None:
+                        raise ValueError("Failed to encode processed image")
+
+                    processed_image = ContentFile(buffer.tobytes())
+                    saved_path = default_storage.save(
+                        f"screenshots/{new_filename}", processed_image
+                    )
+
+                    # Create screenshot object
+                    IssueScreenshot.objects.create(image=saved_path, issue=obj)
+
+                except Exception as e:
+                    messages.error(self.request, f"Error processing image: {str(e)}")
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                    )
 
             # Handle team members
             team_members_id = [
