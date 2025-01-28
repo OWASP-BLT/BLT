@@ -1392,3 +1392,31 @@ class Challenge(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class GitHubIssue(models.Model):
+    ISSUE_TYPE_CHOICES = [
+        ("issue", "Issue"),
+        ("pull_request", "Pull Request"),
+    ]
+
+    issue_id = models.IntegerField(unique=True)
+    title = models.CharField(max_length=255)
+    body = models.TextField(blank=True)
+    state = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, choices=ISSUE_TYPE_CHOICES, default="issue")
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    closed_at = models.DateTimeField(null=True, blank=True)
+    merged_at = models.DateTimeField(null=True, blank=True)
+    url = models.URLField()
+
+    organization = models.CharField(max_length=255)
+    repos = models.ForeignKey(Repo, null=True, blank=True, on_delete=models.SET_NULL, related_name="github_issues")
+
+    user_profile = models.ForeignKey(
+        UserProfile, null=True, blank=True, on_delete=models.SET_NULL, related_name="github_issues"
+    )
+
+    def __str__(self):
+        return f"{self.type.capitalize()}: {self.title}"
