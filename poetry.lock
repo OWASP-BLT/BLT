@@ -2791,18 +2791,6 @@ files = [
 ]
 
 [[package]]
-name = "parse"
-version = "1.20.2"
-description = "parse() is the opposite of format()"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "parse-1.20.2-py2.py3-none-any.whl", hash = "sha256:967095588cb802add9177d0c0b6133b5ba33b1ea9007ca800e526f42a85af558"},
-    {file = "parse-1.20.2.tar.gz", hash = "sha256:b41d604d16503c79d81af5165155c0b20f6c8d6c559efa66b4b695c3e5a0a0ce"},
-]
-
-[[package]]
 name = "pathspec"
 version = "0.12.1"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -4916,4 +4904,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "3.11.2"
-content-hash = "fed2a9e81f9e326412ce6aa802aec0bc9510562b830623434b92f02969f91d36"
+content-hash = "f6c2893f43bafc682bb402b12dc8b63d7c77bf18ed1c1ee3c0e1934c87389485"
