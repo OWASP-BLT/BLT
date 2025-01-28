@@ -68,6 +68,7 @@ channels = "^4.2.0"
 channels-redis = "^4.2.1"
 aiohttp = "^3.11.11"
 drf-yasg = "^1.21.8"
+slack-bolt = "^1.22.0"
 
 
 [tool.poetry.group.dev.dependencies]
