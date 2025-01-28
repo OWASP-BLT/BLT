@@ -1106,21 +1106,6 @@ files = [
 ]
 
 [[package]]
-name = "django-humanize"
-version = "0.1.2"
-description = "Use humanize 3rd-party lib as template filters"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "django-humanize-0.1.2.tar.gz", hash = "sha256:32491bf0209b89a277f7bfdab7fd6d4cc7944bb037f742d62e8e447a575c0028"},
-]
-
-[package.dependencies]
-Django = "*"
-humanize = ">=0.5.1"
-
-[[package]]
 name = "django-import-export"
 version = "4.3.4"
 description = "Django application and library for importing and exporting data with included admin integration."
@@ -1918,21 +1903,6 @@ cli = ["click (==8.*)", "pygments (==2.*)", "rich (>=10,<14)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
 zstd = ["zstandard (>=0.18.0)"]
-
-[[package]]
-name = "humanize"
-version = "4.11.0"
-description = "Python humanize utilities"
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "humanize-4.11.0-py3-none-any.whl", hash = "sha256:b53caaec8532bcb2fff70c8826f904c35943f8cecaca29d272d9df38092736c0"},
-    {file = "humanize-4.11.0.tar.gz", hash = "sha256:e66f36020a2d5a974c504bd2555cf770621dbdbb6d82f94a6857c0b1ea2608be"},
-]
-
-[package.extras]
-tests = ["freezegun", "pytest", "pytest-cov"]
 
 [[package]]
 name = "identify"
@@ -4946,4 +4916,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "3.11.2"
-content-hash = "ab9b7b1003b7ff31ecb6febd7c6f70e9a3efe8500efb9b43c081c8c0ed59a84c"
+content-hash = "fed2a9e81f9e326412ce6aa802aec0bc9510562b830623434b92f02969f91d36"
