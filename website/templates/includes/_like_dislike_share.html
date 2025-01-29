@@ -3,28 +3,10 @@
 {% load static %}
 
 {% block meta %}
-<!-- Open Graph meta tags -->
-<meta property="og:title" content="Bug Report: {{ object.description|truncatechars:100 }}" />
-<meta property="og:description" content="A bug was found on {{ object.domain_title }} - {{ object.description|truncatechars:200 }}" />
-<meta property="og:type" content="article" />
+<link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
 <meta property="og:url" content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
-{% if object.screenshot %}
-<meta property="og:image" content="{{ object.screenshot.url }}" />
-{% else %}
-<meta property="og:image" content="{% static 'images/default-bug-preview.png' %}" />
-{% endif %}
-<meta property="og:site_name" content="BLTBugBounty">
-
-<!-- Twitter Card meta tags -->
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:site" content="@BLTBugBounty">
-<meta name="twitter:title" content="Bug Report: {{ object.description|truncatechars:100 }}">
-<meta name="twitter:description" content="A bug was found on {{ object.domain_title }} - {{ object.description|truncatechars:200 }}">
-{% if object.screenshot %}
-<meta name="twitter:image" content="{{ object.screenshot.url }}">
-{% else %}
-<meta name="twitter:image" content="{% static 'images/default-bug-preview.png' %}">
-{% endif %}
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content="{% env 'PROJECT_NAME' %}" />
 {% endblock meta %}
 
 {% comment %} three dot  {% endcomment %}
