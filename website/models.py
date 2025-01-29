@@ -1388,3 +1388,23 @@ class Challenge(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Room(models.Model):
+    ROOM_TYPES = [
+        ("project", "Project"),
+        ("bug", "Bug"),
+        ("org", "Organization"),
+        ("custom", "Custom"),
+    ]
+
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=20, choices=ROOM_TYPES)
+    custom_type = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    admin = models.ForeignKey(User, related_name="admin_rooms", on_delete=models.CASCADE)
+    users = models.ManyToManyField(User, related_name="rooms", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
