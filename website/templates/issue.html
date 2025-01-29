@@ -1,13 +1,44 @@
 {% extends "base.html" %}
 {% load custom_tags %}
-{% load static %}
 {% block metaTags %}
+    <title>
+        {% block title %}
+            {% env 'PROJECT_NAME' %} Issue - {{ object.description|escapejs }}
+        {% endblock title %}
+    </title>
+    <meta name="description"
+          content="{{ object.markdown_description|escapejs }}">
+    {% if object.user.username %}
+        <meta name="author" content="{{ object.user.username }}">
+    {% else %}
+        <meta name="author" content="Anonymous">
+    {% endif %}
+    
+    <!-- Essential Open Graph Meta Tags -->
     <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
     <meta property="og:url" content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
     <meta property="og:type" content="website" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="{% env 'PROJECT_NAME' %}" />
+    
+    <!-- Social Sharing Image and Description -->
+    <meta property="og:title" content="Bug Report: {{ object.description|truncatechars:100 }}" />
+    <meta property="og:description" content="A bug was found on {{ object.domain.name }} - {{ object.description|truncatechars:200 }}" />
+    {% if object.screenshot %}
+        <meta property="og:image" content="https://{% env 'FQDN' %}{{ object.screenshot.url }}" />
+        <meta property="og:image:alt" content="Screenshot of the reported issue" />
+    {% else %}
+        <meta property="og:image" content="https://{% env 'FQDN' %}{% static 'img/logo.png' %}" />
+        <meta property="og:image:alt" content="{% env 'PROJECT_NAME' %} Logo" />
+    {% endif %}
+    
+    <meta name="robots" content="index, follow">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css"
+          integrity="sha256-5uKiXEwbaQh9cgd2/5Vp6WmMnsUr3VZZw0a8rKnOKNU="
+          crossorigin="anonymous">
 {% endblock metaTags %}
+{% load static %}
 {% load gravatar %}
 {% block content %}
     <style>

@@ -1,14 +1,5 @@
 {% load gravatar %}
 {% load custom_tags %}
-{% load static %}
-
-{% block meta %}
-<link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">
-<meta property="og:url" content="https://{% env 'FQDN' %}/issue/{{ object.id }}" />
-<meta property="og:type" content="article" />
-<meta property="og:site_name" content="{% env 'PROJECT_NAME' %}" />
-{% endblock meta %}
-
 {% comment %} three dot  {% endcomment %}
 <button id="dropdownDefaultButton"
         data-dropdown-toggle="dropdown"
@@ -18,39 +9,6 @@
         <circle cx="8" cy="8" r="1.31"></circle><circle cx="1.31" cy="8" r="1.31"></circle><circle cx="14.69" cy="8" r="1.31"></circle>
     </svg>
 </button>
-
-<script>
-    function toggleShareMenu() {
-        const menu = document.getElementById('shareMenu');
-        menu.classList.toggle('hidden');
-    }
-
-    function copyToClipboard() {
-        const text = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
-        navigator.clipboard.writeText(text).then(() => {
-            $.notify("Link copied to clipboard!", {
-                style: "custom",
-                className: "success"
-            });
-            toggleShareMenu();
-        }).catch(() => {
-            $.notify("Failed to copy link", {
-                style: "custom",
-                className: "danger"
-            });
-        });
-    }
-
-    // Close share menu when clicking outside
-    document.addEventListener('click', function(event) {
-        const shareButton = document.getElementById('shareButton');
-        const shareMenu = document.getElementById('shareMenu');
-        if (!shareButton.contains(event.target) && !shareMenu.contains(event.target)) {
-            shareMenu.classList.add('hidden');
-        }
-    });
-</script>
-
 <!-- Dropdown menu -->
 <div id="dropdown"
      class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
@@ -241,82 +199,59 @@
     $('body').on('click', '#dislike-btn', dislike_handler);
 </script>
 <script>
-    function flag_unflag_handler(e) {
+    function flag_unflag_handler(e){
         e.preventDefault();
-        const issue_pk = $(this).attr('name');
-        if (!issue_pk) {
-            $.notify("Invalid issue ID", {
-                style: "custom",
-                className: "danger"
-            });
-            return;
-        }
-
+        var issue_pk = $(this).attr('name');
         $.ajax({
             type: 'GET',
             url: '/flag_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                if (data && data.error) {
-                    $.notify(data.error, {
-                        style: "custom",
-                        className: "danger"
-                    });
-                    return;
-                }
+                // Test this behaviour
                 window.location.reload();
+                // $('#flag-unflag').remove();
+                // $('#flag-container').append(data);
             },
-            error: function(xhr) {
-                let errorMsg = "Some error occurred!";
-                if (xhr.status === 403) {
-                    errorMsg = "You don't have permission to perform this action";
-                } else if (xhr.status === 500) {
-                    errorMsg = "Server error occurred. Please try again later.";
-                }
-                $.notify(errorMsg, {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
         });
+            // Later, when you want to "destroy" the event handler:
+            // Remove destroy
+        // $('body').off('click', '#flag-unflag', flag_unflag_handler);
     }
 
+    // Attach the click event handler
     $('body').on('click', '#flag-unflag', flag_unflag_handler);
+
 </script>
 <script>
-    function bookmark_handler(e) {
+    function bookmark_handler(e){
         e.preventDefault();
-        const issue_pk = $(this).attr('name');
-        if (!issue_pk) {
-            $.notify("Invalid issue ID", {
-                style: "custom",
-                className: "danger"
-            });
-            return;
-        }
-
+        var issue_pk = $(this).attr('name');
         $.ajax({
             type: 'GET',
             url: '/save_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                if (data && data.error) {
-                    $.notify(data.error, {
-                        style: "custom",
-                        className: "danger"
-                    });
-                    return;
-                }
+                // Test this behaviour
                 window.location.reload();
+                //if (data === "REMOVED"){
+                    // $('.bookmark i').removeClass('fa-solid');
+                    // $('.bookmark i').addClass('fa-regular');
+                    // $.notify("Bookmark Removed!", {
+                    //     style: "custom",
+                    //     className: "success"
+                    // });
+                //}
+                //else{
+                    // $('.bookmark i').removeClass('fa-regular');
+                    // $('.bookmark i').addClass('fa-solid');
+                    // $.notify("Bookmark Added!", {
+                    //     style: "custom",
+                    //     className: "success"
+                    // });
+                //}
             },
-            error: function(xhr) {
-                let errorMsg = "Some error occurred!";
-                if (xhr.status === 403) {
-                    errorMsg = "You don't have permission to perform this action";
-                } else if (xhr.status === 500) {
-                    errorMsg = "Server error occurred. Please try again later.";
-                }
-                $.notify(errorMsg, {
+            error: function (e) {
+                $.notify("Some error occurred!", {
                     style: "custom",
                     className: "danger"
                 });
@@ -324,96 +259,41 @@
         });
     }
 
+    // Attach the click event handler
     $('body').on('click', '#bookmark', bookmark_handler);
 </script>
 <script>
-    (function() {
-        window.resolveIssue = async function() {
-            const issueId = "{{object.pk}}";
-            if (!issueId) {
-                $.notify("Invalid issue ID", {
-                    style: "custom",
-                    className: "danger"
-                });
-                return;
-            }
 
-            try {
-                const request = await fetch(`/resolve/${issueId}/`);
-                const data = await request.json().catch(() => ({}));
-                
-                if (request.status === 403) {
-                    $.notify("You don't have permission to perform this action", {
-                        style: "custom",
-                        className: "danger"
-                    });
-                    return;
-                }
-                
-                if (request.status === 500) {
-                    $.notify("Server error occurred. Please try again later.", {
-                        style: "custom",
-                        className: "danger"
-                    });
-                    return;
-                }
+    async function resolveIssue(){
+        var id = {{object.pk}};
 
-                if (!request.ok) {
-                    $.notify(data.error || "Failed to resolve issue", {
-                        style: "custom",
-                        className: "danger"
-                    });
-                    return;
-                }
-
-                window.location.reload();
-            } catch (error) {
-                console.error('Error:', error);
-                $.notify("Network error occurred. Please check your connection.", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        };
-    })();
-</script>
-<script>
-    function createIssue() {
-        const issue_pk = $("#create_issue").attr('name');
-        if (!issue_pk) {
-            $.notify("Invalid issue ID", {
+        const request = await fetch(`/resolve/${id}/`)
+        window.location.reload();
+        if (request.status == 403){
+            $.notify("Permission Denied", {
                 style: "custom",
                 className: "danger"
             });
-            return;
         }
-
+    }
+</script>
+<script>
+    function createIssue(){
+        var issue_pk = $("#create_issue").attr('name');
         $.ajax({
             type: 'GET',
             url: '/create_github_issue/' + issue_pk,
             data: {},
             success: function (data) {
-                if (!data || data.status !== "ok") {
-                    $.notify(data.status_reason || "Failed to create GitHub issue", {
+                if(data["status"] != "ok"){
+                    $.notify(data["status_reason"], {
                         style: "custom",
                         className: "danger"
                     });
-                    return;
+                }else{
+                    window.location.reload();
                 }
-                window.location.reload();
             },
-            error: function(xhr) {
-                let errorMsg = "Some error occurred!";
-                if (xhr.status === 403) {
-                    errorMsg = "You don't have permission to perform this action";
-                } else if (xhr.status === 500) {
-                    errorMsg = "Server error occurred. Please try again later.";
-                }
-                $.notify(errorMsg, {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
         });
     }
 
