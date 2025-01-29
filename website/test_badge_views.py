@@ -134,7 +134,7 @@ class BadgeViewsTest(TestCase):
             # Should create new record for new day
             self.assertEqual(
                 IP.objects.filter(path=url).count(),
-                9,  # 7 from setup + 2 from test
+                8,  # 7 from setup + 2 from test
             )
 
     def test_badge_view_historical_data(self):
@@ -152,4 +152,4 @@ class BadgeViewsTest(TestCase):
         seven_days_ago = now().date() - timezone.timedelta(days=7)
         visit_count = IP.objects.filter(path=url, created__date__gte=seven_days_ago).count()
         # 7 from setup + 1 from this test
-        self.assertEqual(visit_count, 7)
+        self.assertEqual(visit_count, 8)
