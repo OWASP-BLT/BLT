@@ -1,7 +1,9 @@
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from decimal import Decimal
+from urllib.parse import urlparse
 
 import requests
 import stripe
@@ -50,6 +52,8 @@ from website.models import (
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
 
+logger = logging.getLogger(__name__)
+
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
@@ -73,27 +77,26 @@ def update_bch_address(request):
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
-                match selected_crypto:
-                    case "Bitcoin":
-                        user_profile.btc_address = new_address
-                    case "Ethereum":
-                        user_profile.eth_address = new_address
-                    case "BitcoinCash":
-                        user_profile.bch_address = new_address
-                    case _:
-                        messages.error(request, f"Invalid crypto selected: {selected_crypto}")
-                        return redirect(reverse("profile", args=[request.user.username]))
+                if selected_crypto == "Bitcoin":
+                    user_profile.btc_address = new_address
+                elif selected_crypto == "Ethereum":
+                    user_profile.eth_address = new_address
+                elif selected_crypto == "BitcoinCash":
+                    user_profile.bch_address = new_address
+                else:
+                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                    return redirect(reverse("profile", args=[request.user.username]))
                 user_profile.save()
                 messages.success(request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
                 messages.error(request, f"Failed to update {selected_crypto} Address.")
+            else:
+                messages.error(request, f"Please provide a valid {selected_crypto} Address.")
         else:
-            messages.error(request, f"Please provide a valid {selected_crypto}  Address.")
-    else:
-        messages.error(request, "Invalid request method.")
+            messages.error(request, "Invalid request method.")
 
-    username = request.user.username if request.user.username else "default_username"
-    return redirect(reverse("profile", args=[username]))
+        username = request.user.username if request.user.username else "default_username"
+        return redirect(reverse("profile", args=[username]))
 
 
 @login_required
@@ -279,6 +282,37 @@ class UserProfileDetailView(DetailView):
         # tags
         context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+
+        context["prs_grouped"] = None
+        context["total_pr_reviews"] = 0
+
+        if user.userprofile.github_url:
+            try:
+                parsed_url = urlparse(user.userprofile.github_url)
+                path_parts = parsed_url.path.strip("/").split("/")
+                if path_parts:
+                    github_username = path_parts[0]
+                    headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"} if settings.GITHUB_TOKEN else {}
+
+                    response = requests.get(
+                        f"https://api.github.com/search/issues?q=type:pr+reviewed-by:{github_username}",
+                        headers=headers,
+                        timeout=5,
+                    )
+
+                    if response.status_code == 200:
+                        prs = response.json().get("items", [])
+                        prs_grouped = {}
+                        for pr in prs:
+                            repo_name = pr["repository_url"].split("/")[-1]
+                            prs_grouped.setdefault(repo_name, []).append(pr)
+                        context["prs_grouped"] = prs_grouped
+                        context["total_pr_reviews"] = len(prs)
+                    else:
+                        logger.warning(f"GitHub API error: {response.status_code}")
+            except Exception as e:
+                logger.error(f"Error fetching GitHub PRs: {str(e)}")
+
         return context
 
     @method_decorator(login_required)

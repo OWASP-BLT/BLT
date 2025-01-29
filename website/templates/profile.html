@@ -688,6 +688,53 @@
                         <p class="col-span-full text-center text-gray-500">No badges awarded yet.</p>
                     {% endfor %}
                 </div>
+                <!--  Reviewed Pull Requests Section -->
+                {% if user.userprofile.github_url %}
+                    <div class="font-bold mb-3 mt-4">
+                        Reviewed Pull Requests ({{ total_pr_reviews }})
+                        <hr>
+                    </div>
+                    <div class="p-3 bg-gray-100 rounded-md">
+                        {% if prs_grouped %}
+                            <!-- Dropdown for Organizations/Repositories -->
+                            <div class="mb-4">
+                                <label for="repo-dropdown" class="block text-sm font-medium text-gray-700">Select Repository:</label>
+                                <select id="repo-dropdown" class="block w-full mt-1 p-2 border rounded-md">
+                                    <option value="">-- Select a Repository --</option>
+                                    {% for repo, prs in prs_grouped.items %}<option value="{{ repo }}">{{ repo }} ({{ prs|length }})</option>{% endfor %}
+                                </select>
+                            </div>
+                            <!-- List of Reviews for Selected Repository -->
+                            <div id="reviews-list" class="space-y-2">
+                                {% for repo, prs in prs_grouped.items %}
+                                    <div class="repo-reviews hidden" data-repo="{{ repo }}">
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <i class="fab fa-github"></i>
+                                            <h4 class="font-semibold">{{ repo }} ({{ prs|length }})</h4>
+                                        </div>
+                                        <div class="ml-4 space-y-2">
+                                            {% for pr in prs %}
+                                                <div class="flex items-center justify-between">
+                                                    <a href="{{ pr.html_url }}"
+                                                       target="_blank"
+                                                       class="text-blue-600 hover:text-blue-800 text-sm">
+                                                        #{{ pr.number }}: {{ pr.title|truncatechars:40 }}
+                                                    </a>
+                                                    <span class="text-xs text-gray-500">{{ pr.created_at|date:"M d, Y" }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-gray-500 text-center py-3">
+                                No reviewed pull requests found yet.
+                                <i class="fas fa-code-branch ml-2"></i>
+                            </p>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -1083,4 +1130,22 @@
 
     </script>
     <script src="{% static 'js/validate-btc.js' %}"></script>
+    <script>
+    document.getElementById('repo-dropdown').addEventListener('change', function() {
+        var selectedRepo = this.value;
+        var reviewsList = document.getElementById('reviews-list');
+        var repoReviews = reviewsList.querySelectorAll('.repo-reviews');
+        
+        repoReviews.forEach(function(repoReview) {
+            repoReview.classList.add('hidden');
+        });
+        
+        if (selectedRepo) {
+            var selectedReviewList = reviewsList.querySelector('.repo-reviews[data-repo="' + selectedRepo + '"]');
+            if (selectedReviewList) {
+                selectedReviewList.classList.remove('hidden');
+            }
+        }
+    });
+    </script>
 {% endblock content %}
