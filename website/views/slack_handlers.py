@@ -353,255 +353,8 @@ def slack_commands(request):
                 )
 
         if command == "/discover":
-            try:
-                search_term = request.POST.get("text", "").strip()
-
-                # First, send an immediate response to avoid timeout
-                initial_response = {
-                    "response_type": "ephemeral",
-                    "text": "🔍 Searching OWASP projects... I'll send you the results in a DM shortly!",
-                }
-
-                if search_term:
-                    # Return immediate response to Slack
-                    response = JsonResponse(initial_response)
-
-                    # Then process the search asynchronously
-                    def process_search():
-                        try:
-                            repos = get_all_owasp_repos()
-                            if not repos:
-                                send_dm(workspace_client, user_id, "❌ Failed to fetch OWASP repositories.")
-                                return
-
-                            matched = []
-                            url_pattern = re.compile(r"https?://\S+")
-
-                            # Improve the display of search results with emojis and formatting
-                            for idx, repo in enumerate(repos, start=1):
-                                name_desc = (repo["name"] + " " + (repo["description"] or "")).lower()
-                                lang = (repo["language"] or "").lower()
-                                topics = [t.lower() for t in repo.get("topics", [])]
-
-                                if (
-                                    search_term.lower() in name_desc
-                                    or search_term.lower() in lang
-                                    or search_term.lower() in topics
-                                ):
-                                    desc = repo["description"] or "No description provided."
-                                    found_urls = url_pattern.findall(desc)
-                                    if found_urls:
-                                        link = found_urls[0]
-                                        link_label = "🌐 Website"
-                                    else:
-                                        link = f"https://owasp.org/www-project-{repo['name'].lower()}"
-                                        link_label = "📚 Wiki"
-
-                                    # Add language and topics info
-                                    extra_info = []
-                                    if repo["language"]:
-                                        extra_info.append(f"💻 {repo['language']}")
-                                    if repo.get("topics"):
-                                        topics_str = ", ".join(f"#{topic}" for topic in repo["topics"][:3])
-                                        if len(repo["topics"]) > 3:
-                                            topics_str += f" +{len(repo['topics']) - 3} more"
-                                        extra_info.append(f"🏷️ {topics_str}")
-
-                                    matched.append(
-                                        {
-                                            "owner_repo": repo["full_name"],
-                                            "name": repo["name"],
-                                            "description": desc,
-                                            "link_label": link_label,
-                                            "link": link,
-                                            "html_url": repo["html_url"],
-                                            "extra_info": " | ".join(extra_info) if extra_info else None,
-                                        }
-                                    )
-
-                            if not matched:
-                                send_dm(
-                                    workspace_client,
-                                    user_id,
-                                    f"❌ No OWASP projects found matching '*{search_term}*'.\nTry searching with different keywords!",
-                                )
-                                return
-
-                            pagination_data[user_id] = {
-                                "matched": matched,
-                                "current_page": 0,
-                                "page_size": 10,
-                            }
-
-                            send_paged_results(workspace_client, user_id, search_term)
-
-                        except requests.RequestException as e:
-                            send_dm(
-                                workspace_client, user_id, "❌ Failed to fetch repositories: Network error occurred."
-                            )
-                        except json.JSONDecodeError as e:
-                            send_dm(workspace_client, user_id, "❌ Failed to parse repository data.")
-                        except (KeyError, AttributeError) as e:
-                            send_dm(workspace_client, user_id, "❌ Invalid repository data format received.")
-
-                    # Start processing in a separate thread
-                    thread = threading.Thread(target=process_search)
-                    thread.start()
-
-                    return response
-
-                else:
-                    # Handle showing OWASP-BLT repositories
-                    try:
-                        headers = {"Accept": "application/vnd.github.v3+json"}
-                        if GITHUB_TOKEN:
-                            print("************************************")
-                            print(f"GITHUB_TOKEN: {GITHUB_TOKEN}")
-                            print("************************************")
-                            headers["Authorization"] = f"token {GITHUB_TOKEN}"
-                        else:
-                            # If no token, return a message about rate limiting
-                            return JsonResponse(
-                                {
-                                    "response_type": "ephemeral",
-                                    "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
-                                }
-                            )
-
-                        gh_response = requests.get(
-                            "https://api.github.com/orgs/OWASP-BLT/repos",
-                            headers=headers,
-                            timeout=10,  # Add timeout
-                        )
-
-                        if gh_response.status_code == 403:
-                            if "rate limit exceeded" in gh_response.text.lower():
-                                return JsonResponse(
-                                    {
-                                        "response_type": "ephemeral",
-                                        "text": "⚠️ GitHub API rate limit exceeded. Please try again later.",
-                                    }
-                                )
-                            return JsonResponse(
-                                {
-                                    "response_type": "ephemeral",
-                                    "text": "⚠️ Access to GitHub API denied. Please check the token configuration.",
-                                }
-                            )
-                        if gh_response.status_code == 200:
-                            repos = gh_response.json()
-                            if not repos:
-                                send_dm(workspace_client, user_id, "No repositories found for OWASP-BLT.")
-                            else:
-                                # Create header block
-                                blocks = [
-                                    {
-                                        "type": "header",
-                                        "text": {"type": "plain_text", "text": "🔍 OWASP BLT Projects", "emoji": True},
-                                    },
-                                    {
-                                        "type": "context",
-                                        "elements": [{"type": "mrkdwn", "text": f"Found {len(repos)} repositories"}],
-                                    },
-                                    {"type": "divider"},
-                                ]
-
-                                # Add repository blocks
-                                for idx, repo in enumerate(repos, start=1):
-                                    desc = repo["description"] if repo["description"] else "No description provided."
-
-                                    # Add language and topics info
-                                    extra_info = []
-                                    if repo.get("language"):
-                                        extra_info.append(f"💻 {repo['language']}")
-                                    if repo.get("topics"):
-                                        topics_str = ", ".join(f"#{topic}" for topic in repo["topics"][:3])
-                                        if len(repo["topics"]) > 3:
-                                            topics_str += f" +{len(repo['topics']) - 3} more"
-                                        extra_info.append(f"🏷️ {topics_str}")
-
-                                    blocks.extend(
-                                        [
-                                            {
-                                                "type": "section",
-                                                "text": {
-                                                    "type": "mrkdwn",
-                                                    "text": (
-                                                        f"*{idx}. <{repo['html_url']}|{repo['name']}>*\n"
-                                                        f"{desc}\n"
-                                                        f"{' | '.join(extra_info) if extra_info else ''}"
-                                                    ),
-                                                },
-                                            },
-                                            {"type": "divider"} if idx < len(repos) else None,
-                                        ]
-                                    )
-
-                                # Remove None blocks
-                                blocks = [b for b in blocks if b is not None]
-
-                                # Add repository selector
-                                blocks.append(
-                                    {
-                                        "type": "actions",
-                                        "elements": [
-                                            {
-                                                "type": "static_select",
-                                                "placeholder": {
-                                                    "type": "plain_text",
-                                                    "text": "View Repository Issues",
-                                                    "emoji": True,
-                                                },
-                                                "options": [
-                                                    {
-                                                        "text": {
-                                                            "type": "plain_text",
-                                                            "text": repo["name"],
-                                                            "emoji": True,
-                                                        },
-                                                        "value": f"OWASP-BLT/{repo['name']}",
-                                                    }
-                                                    for repo in repos
-                                                ],
-                                                "action_id": "select_repository",
-                                            }
-                                        ],
-                                    }
-                                )
-
-                                send_dm(workspace_client, user_id, "Here are the OWASP BLT repositories:", blocks)
-                                return JsonResponse(
-                                    {
-                                        "response_type": "ephemeral",
-                                        "text": "I've sent you the repository list in a DM! 📚",
-                                    }
-                                )
-                        else:
-                            return JsonResponse(
-                                {
-                                    "response_type": "ephemeral",
-                                    "text": "❌ Failed to fetch repositories from OWASP-BLT.",
-                                }
-                            )
-
-                    except Exception as e:
-                        activity.success = False
-                        activity.error_message = str(e)
-                        activity.save()
-                        return JsonResponse(
-                            {
-                                "response_type": "ephemeral",
-                                "text": "❌ An error occurred while processing your request.",
-                            }
-                        )
-
-            except Exception as e:
-                activity.success = False
-                activity.error_message = str(e)
-                activity.save()
-                return JsonResponse(
-                    {"response_type": "ephemeral", "text": "An error occurred while processing your request."}
-                )
+            search_term = request.POST.get("text", "").strip()
+            return get_project_overview(workspace_client, user_id, search_term, activity)
 
         elif command == "/stats":
             try:
@@ -832,179 +585,23 @@ def slack_commands(request):
                 return HttpResponse(status=500)
 
         elif command == "/gsoc25":
-            try:
-                search_term = request.POST.get("text", "").strip()
-                team_id = request.POST.get("team_id")
-                user_id = request.POST.get("user_id")
+            search_term = request.POST.get("text", "").strip()
+            return get_gsoc_overview(workspace_client, user_id, search_term, activity, team_id)
 
-                # Prepare base blocks
-                blocks = [
-                    {
-                        "type": "header",
-                        "text": {"type": "plain_text", "text": "🎓 Google Summer of Code 2025 - OWASP", "emoji": True},
-                    },
-                    {
-                        "type": "section",
-                        "text": {"type": "mrkdwn", "text": "*Welcome to OWASP's GSoC 2025 Program!* 🚀"},
-                    },
-                ]
-
-                # Add workspace-specific content
-                if team_id == "T04T40NHX":  # OWASP workspace
-                    blocks.extend(
-                        [
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": (
-                                        "*Important Links:*\n"
-                                        "• Join <#CFJLZNFN1|gsoc> for program discussions 💬\n"
-                                        "• Check <#C04DH8HEPTR|contribute> for contribution guidelines 📝\n"
-                                        "• View project ideas: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas|GSoC 2025 Ideas> 💡"
-                                    ),
-                                },
-                            }
-                        ]
-                    )
+        elif command == "/blt":
+            search_term = request.POST.get("text", "").strip()
+            if search_term == "projects" or search_term.startswith("projects "):
+                if search_term.startswith("projects "):
+                    additional_search_term = search_term.replace("projects ", "")
                 else:
-                    blocks.extend(
-                        [
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": (
-                                        "*Get Started:*\n"
-                                        "1. Join OWASP Slack: <https://join.slack.com/t/owasp/shared_invite/zt-2y4cvxl3l-_S~G_iKEShwmbQACu~QRyQ|Click to Join> 🔗\n"
-                                        "2. Once joined, check #gsoc and #contribute channels 📢\n"
-                                        "3. View project ideas: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas|GSoC 2025 Ideas> 💡"
-                                    ),
-                                },
-                            }
-                        ]
-                    )
-
-                # Add search tip
-                blocks.extend(
-                    [
-                        {"type": "divider"},
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": (
-                                    "*🔍 Search Tips:*\n"
-                                    "• Search by technology: `/gsoc25 python`\n"
-                                    "• Search by mentor: `/gsoc25 mentor:donnie`\n"
-                                    "• Search by project: `/gsoc25 security`"
-                                ),
-                            },
-                        },
-                    ]
-                )
-
-                # Show search results or default projects
-                if search_term:
-                    matched_projects = filter_gsoc_projects(search_term)
-                    if matched_projects:
-                        blocks.extend(
-                            [
-                                {"type": "divider"},
-                                {
-                                    "type": "section",
-                                    "text": {
-                                        "type": "mrkdwn",
-                                        "text": f"*🎯 Found {len(matched_projects)} matching projects:*",
-                                    },
-                                },
-                            ]
-                        )
-
-                        for project in matched_projects[:5]:
-                            blocks.append(
-                                {
-                                    "type": "section",
-                                    "text": {
-                                        "type": "mrkdwn",
-                                        "text": (
-                                            f"*{project['title']}* 📚\n"
-                                            f"🔧 *Tech Stack:* {project['tech']}\n"
-                                            f"👥 *Mentors:* {project['mentor']}\n"
-                                            f"🔗 *Repository:* <{project['repo']}|View Project>"
-                                        ),
-                                    },
-                                }
-                            )
-
-                        if len(matched_projects) > 5:
-                            blocks.append(
-                                {
-                                    "type": "context",
-                                    "elements": [
-                                        {"type": "mrkdwn", "text": f"_Showing 5 of {len(matched_projects)} matches_"}
-                                    ],
-                                }
-                            )
-                    else:
-                        blocks.append(
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": "❌ No matching projects found. Try different search terms or check the full project list.",
-                                },
-                            }
-                        )
+                    additional_search_term = ""
+                return get_project_overview(workspace_client, user_id, additional_search_term, activity)
+            elif search_term == "gsoc" or search_term.startswith("gsoc "):
+                if search_term.startswith("gsoc "):
+                    additional_search_term = search_term.replace("gsoc ", "")
                 else:
-                    # Show first 3 projects by default
-                    blocks.extend(
-                        [
-                            {"type": "divider"},
-                            {"type": "section", "text": {"type": "mrkdwn", "text": "*🌟 Featured Projects:*"}},
-                        ]
-                    )
-
-                    for project in GSOC_PROJECTS[:3]:
-                        blocks.append(
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": (
-                                        f"*{project['title']}* 📚\n"
-                                        f"🔧 *Tech Stack:* {project['tech']}\n"
-                                        f"👥 *Mentors:* {project['mentor']}\n"
-                                        f"🔗 *Repository:* <{project['repo']}|View Project>"
-                                    ),
-                                },
-                            }
-                        )
-
-                    blocks.extend(
-                        [
-                            {"type": "divider"},
-                            {
-                                "type": "section",
-                                "text": {
-                                    "type": "mrkdwn",
-                                    "text": "_💡 *Tip:* Use `/gsoc25 <technology>` to find projects matching your skills! For example: `/gsoc25 python` or `/gsoc25 javascript`_",
-                                },
-                            },
-                        ]
-                    )
-
-                # Send response
-                send_dm(workspace_client, user_id, "GSoC 2025 Information", blocks)
-                return JsonResponse(
-                    {"response_type": "ephemeral", "text": "I've sent you GSoC information in a DM! 📚"}
-                )
-
-            except (SlackApiError, KeyError, ValueError) as e:
-                activity.success = False
-                activity.error_message = str(e)
-                activity.save()
-                return JsonResponse({"response_type": "ephemeral", "text": f"❌ Error: {str(e)}"}, status=400)
+                    additional_search_term = ""
+                return get_gsoc_overview(workspace_client, user_id, additional_search_term, activity, team_id)
 
     return HttpResponse(status=405)
 
@@ -1335,3 +932,414 @@ def filter_gsoc_projects(search_term):
         return [p for p in GSOC_PROJECTS if mentor_name in p["mentor"].lower()]
 
     return [p for p in GSOC_PROJECTS if search_term in p["title"].lower() or search_term in p["tech"].lower()]
+
+
+def get_project_overview(workspace_client, user_id, search_term, activity):
+    try:
+        # First, send an immediate response to avoid timeout
+        initial_response = {
+            "response_type": "ephemeral",
+            "text": "🔍 Searching OWASP projects... I'll send you the results in a DM shortly!",
+        }
+
+        if search_term:
+            # Return immediate response to Slack
+            response = JsonResponse(initial_response)
+
+            # Then process the search asynchronously
+            def process_search():
+                try:
+                    repos = get_all_owasp_repos()
+                    if not repos:
+                        send_dm(workspace_client, user_id, "❌ Failed to fetch OWASP repositories.")
+                        return
+
+                    matched = []
+                    url_pattern = re.compile(r"https?://\S+")
+
+                    # Improve the display of search results with emojis and formatting
+                    for idx, repo in enumerate(repos, start=1):
+                        name_desc = (repo["name"] + " " + (repo["description"] or "")).lower()
+                        lang = (repo["language"] or "").lower()
+                        topics = [t.lower() for t in repo.get("topics", [])]
+
+                        if (
+                            search_term.lower() in name_desc
+                            or search_term.lower() in lang
+                            or search_term.lower() in topics
+                        ):
+                            desc = repo["description"] or "No description provided."
+                            found_urls = url_pattern.findall(desc)
+                            if found_urls:
+                                link = found_urls[0]
+                                link_label = "🌐 Website"
+                            else:
+                                link = f"https://owasp.org/www-project-{repo['name'].lower()}"
+                                link_label = "📚 Wiki"
+
+                            # Add language and topics info
+                            extra_info = []
+                            if repo["language"]:
+                                extra_info.append(f"💻 {repo['language']}")
+                            if repo.get("topics"):
+                                topics_str = ", ".join(f"#{topic}" for topic in repo["topics"][:3])
+                                if len(repo["topics"]) > 3:
+                                    topics_str += f" +{len(repo['topics']) - 3} more"
+                                extra_info.append(f"🏷️ {topics_str}")
+
+                            matched.append(
+                                {
+                                    "owner_repo": repo["full_name"],
+                                    "name": repo["name"],
+                                    "description": desc,
+                                    "link_label": link_label,
+                                    "link": link,
+                                    "html_url": repo["html_url"],
+                                    "extra_info": " | ".join(extra_info) if extra_info else None,
+                                }
+                            )
+
+                    if not matched:
+                        send_dm(
+                            workspace_client,
+                            user_id,
+                            f"❌ No OWASP projects found matching '*{search_term}*'.\nTry searching with different keywords!",
+                        )
+                        return
+
+                    pagination_data[user_id] = {
+                        "matched": matched,
+                        "current_page": 0,
+                        "page_size": 10,
+                    }
+
+                    send_paged_results(workspace_client, user_id, search_term)
+
+                except requests.RequestException as e:
+                    send_dm(workspace_client, user_id, "❌ Failed to fetch repositories: Network error occurred.")
+                except json.JSONDecodeError as e:
+                    send_dm(workspace_client, user_id, "❌ Failed to parse repository data.")
+                except (KeyError, AttributeError) as e:
+                    send_dm(workspace_client, user_id, "❌ Invalid repository data format received.")
+
+            # Start processing in a separate thread
+            thread = threading.Thread(target=process_search)
+            thread.start()
+
+            return response
+
+        else:
+            # Handle showing OWASP-BLT repositories
+            try:
+                headers = {"Accept": "application/vnd.github.v3+json"}
+                if GITHUB_TOKEN:
+                    headers["Authorization"] = f"token {GITHUB_TOKEN}"
+                else:
+                    # If no token, return a message about rate limiting
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                        }
+                    )
+
+                gh_response = requests.get(
+                    "https://api.github.com/orgs/OWASP-BLT/repos",
+                    headers=headers,
+                    timeout=10,  # Add timeout
+                )
+
+                if gh_response.status_code == 403:
+                    if "rate limit exceeded" in gh_response.text.lower():
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "⚠️ GitHub API rate limit exceeded. Please try again later.",
+                            }
+                        )
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "⚠️ Access to GitHub API denied. Please check the token configuration.",
+                        }
+                    )
+                if gh_response.status_code == 200:
+                    repos = gh_response.json()
+                    if not repos:
+                        send_dm(workspace_client, user_id, "No repositories found for OWASP-BLT.")
+                    else:
+                        # Create header block
+                        blocks = [
+                            {
+                                "type": "header",
+                                "text": {"type": "plain_text", "text": "🔍 OWASP BLT Projects", "emoji": True},
+                            },
+                            {
+                                "type": "context",
+                                "elements": [{"type": "mrkdwn", "text": f"Found {len(repos)} repositories"}],
+                            },
+                            {"type": "divider"},
+                        ]
+
+                        # Add repository blocks
+                        for idx, repo in enumerate(repos, start=1):
+                            desc = repo["description"] if repo["description"] else "No description provided."
+
+                            # Add language and topics info
+                            extra_info = []
+                            if repo.get("language"):
+                                extra_info.append(f"💻 {repo['language']}")
+                            if repo.get("topics"):
+                                topics_str = ", ".join(f"#{topic}" for topic in repo["topics"][:3])
+                                if len(repo["topics"]) > 3:
+                                    topics_str += f" +{len(repo['topics']) - 3} more"
+                                extra_info.append(f"🏷️ {topics_str}")
+
+                            blocks.extend(
+                                [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": (
+                                                f"*{idx}. <{repo['html_url']}|{repo['name']}>*\n"
+                                                f"{desc}\n"
+                                                f"{' | '.join(extra_info) if extra_info else ''}"
+                                            ),
+                                        },
+                                    },
+                                    {"type": "divider"} if idx < len(repos) else None,
+                                ]
+                            )
+
+                        # Remove None blocks
+                        blocks = [b for b in blocks if b is not None]
+
+                        # Add repository selector
+                        blocks.append(
+                            {
+                                "type": "actions",
+                                "elements": [
+                                    {
+                                        "type": "static_select",
+                                        "placeholder": {
+                                            "type": "plain_text",
+                                            "text": "View Repository Issues",
+                                            "emoji": True,
+                                        },
+                                        "options": [
+                                            {
+                                                "text": {
+                                                    "type": "plain_text",
+                                                    "text": repo["name"],
+                                                    "emoji": True,
+                                                },
+                                                "value": f"OWASP-BLT/{repo['name']}",
+                                            }
+                                            for repo in repos
+                                        ],
+                                        "action_id": "select_repository",
+                                    }
+                                ],
+                            }
+                        )
+
+                        send_dm(workspace_client, user_id, "Here are the OWASP BLT repositories:", blocks)
+                        return JsonResponse(
+                            {
+                                "response_type": "ephemeral",
+                                "text": "I've sent you the repository list in a DM! 📚",
+                            }
+                        )
+                else:
+                    return JsonResponse(
+                        {
+                            "response_type": "ephemeral",
+                            "text": "❌ Failed to fetch repositories from OWASP-BLT.",
+                        }
+                    )
+
+            except Exception as e:
+                activity.success = False
+                activity.error_message = str(e)
+                activity.save()
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "❌ An error occurred while processing your request.",
+                    }
+                )
+
+    except Exception as e:
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse({"response_type": "ephemeral", "text": "An error occurred while processing your request."})
+
+
+def get_gsoc_overview(workspace_client, user_id, search_term, activity, team_id):
+    try:
+        # Prepare base blocks
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "🎓 Google Summer of Code 2025 - OWASP", "emoji": True},
+            },
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": "*Welcome to OWASP's GSoC 2025 Program!* 🚀"},
+            },
+        ]
+
+        # Add workspace-specific content
+        if team_id == "T04T40NHX":  # OWASP workspace
+            blocks.extend(
+                [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                "*Important Links:*\n"
+                                "• Join <#CFJLZNFN1|gsoc> for program discussions 💬\n"
+                                "• Check <#C04DH8HEPTR|contribute> for contribution guidelines 📝\n"
+                                "• View project ideas: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas|GSoC 2025 Ideas> 💡"
+                            ),
+                        },
+                    }
+                ]
+            )
+        else:
+            blocks.extend(
+                [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                "*Get Started:*\n"
+                                "1. Join OWASP Slack: <https://join.slack.com/t/owasp/shared_invite/zt-2y4cvxl3l-_S~G_iKEShwmbQACu~QRyQ|Click to Join> 🔗\n"
+                                "2. Once joined, check #gsoc and #contribute channels 📢\n"
+                                "3. View project ideas: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas|GSoC 2025 Ideas> 💡"
+                            ),
+                        },
+                    }
+                ]
+            )
+
+        # Add search tip
+        blocks.extend(
+            [
+                {"type": "divider"},
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": (
+                            "*🔍 Search Tips:*\n"
+                            "• Search by technology: `/gsoc25 python or /blt gsoc python`\n"
+                            "• Search by mentor: `/gsoc25 mentor:donnie or /blt gsoc mentor:donnie`\n"
+                            "• Search by project: `/gsoc25 security or /blt gsoc security`"
+                        ),
+                    },
+                },
+            ]
+        )
+
+        # Show search results or default projects
+        if search_term:
+            matched_projects = filter_gsoc_projects(search_term)
+            if matched_projects:
+                blocks.extend(
+                    [
+                        {"type": "divider"},
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"*🎯 Found {len(matched_projects)} matching projects:*",
+                            },
+                        },
+                    ]
+                )
+
+                for project in matched_projects[:5]:
+                    blocks.append(
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": (
+                                    f"*{project['title']}* 📚\n"
+                                    f"🔧 *Tech Stack:* {project['tech']}\n"
+                                    f"👥 *Mentors:* {project['mentor']}\n"
+                                    f"🔗 *Repository:* <{project['repo']}|View Project>"
+                                ),
+                            },
+                        }
+                    )
+
+                if len(matched_projects) > 5:
+                    blocks.append(
+                        {
+                            "type": "context",
+                            "elements": [{"type": "mrkdwn", "text": f"_Showing 5 of {len(matched_projects)} matches_"}],
+                        }
+                    )
+            else:
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "❌ No matching projects found. Try different search terms or check the full project list.",
+                        },
+                    }
+                )
+        else:
+            # Show first 3 projects by default
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*🌟 Featured Projects:*"}},
+                ]
+            )
+
+            for project in GSOC_PROJECTS[:3]:
+                blocks.append(
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                f"*{project['title']}* 📚\n"
+                                f"🔧 *Tech Stack:* {project['tech']}\n"
+                                f"👥 *Mentors:* {project['mentor']}\n"
+                                f"🔗 *Repository:* <{project['repo']}|View Project>"
+                            ),
+                        },
+                    }
+                )
+
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "_💡 *Tip:* Use `/gsoc25 <technology> or /blt gsoc <technology>` to find projects matching your skills! For example: `/gsoc25 python or /blt gsoc python` or `/gsoc25 javascript or /blt gsoc javascript`_",
+                        },
+                    },
+                ]
+            )
+
+        # Send response
+        send_dm(workspace_client, user_id, "GSoC 2025 Information", blocks)
+        return JsonResponse({"response_type": "ephemeral", "text": "I've sent you GSoC information in a DM! 📚"})
+
+    except (SlackApiError, KeyError, ValueError) as e:
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse({"response_type": "ephemeral", "text": f"❌ Error: {str(e)}"}, status=400)
