@@ -630,6 +630,8 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    merged_pr_count = models.PositiveIntegerField(default=0)
+    contribution_rank = models.PositiveIntegerField(default=0)
 
     def check_team_membership(self):
         return self.team is not None
@@ -1388,3 +1390,29 @@ class Challenge(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class GitHubIssue(models.Model):
+    ISSUE_TYPE_CHOICES = [
+        ("issue", "Issue"),
+        ("pull_request", "Pull Request"),
+    ]
+
+    issue_id = models.IntegerField(unique=True)
+    title = models.CharField(max_length=255)
+    body = models.TextField(null=True, blank=True)
+    state = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, choices=ISSUE_TYPE_CHOICES, default="issue")
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    closed_at = models.DateTimeField(null=True, blank=True)
+    merged_at = models.DateTimeField(null=True, blank=True)
+    is_merged = models.BooleanField(default=False)
+    url = models.URLField()
+    repo = models.ForeignKey(Repo, null=True, blank=True, on_delete=models.SET_NULL, related_name="github_issues")
+    user_profile = models.ForeignKey(
+        UserProfile, null=True, blank=True, on_delete=models.SET_NULL, related_name="github_issues"
+    )
+
+    def __str__(self):
+        return f"{self.title} by {self.user_profile.user.username} - {self.state}"
