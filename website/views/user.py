@@ -35,6 +35,7 @@ from website.models import (
     Badge,
     Challenge,
     Domain,
+    GitHubIssue,
     Hunt,
     InviteFriend,
     Issue,
@@ -187,6 +188,59 @@ class InviteCreate(TemplateView):
         return render(request, "invite.html", context)
 
 
+def get_github_stats(user_profile):
+    # Get all PRs with repo info
+    user_prs = (
+        GitHubIssue.objects.filter(user_profile=user_profile, type="pull_request")
+        .select_related("repo")
+        .order_by("-created_at")
+    )
+    print(f"Total PRs found: {user_prs.count()}")
+
+    # Overall stats
+    merged_count = user_prs.filter(is_merged=True).count()
+    open_count = user_prs.filter(state="open").count()
+    closed_count = user_prs.filter(state="closed", is_merged=False).count()
+
+    users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
+    contributor_count = users_with_github.count()
+
+    # Group PRs by repo
+    repos_with_prs = {}
+    for pr in user_prs:
+        repo_name = pr.repo.name if pr.repo else "Other"
+        repo_id = pr.repo.id if pr.repo else None
+        repo_url = pr.repo.repo_url if pr.repo else None
+
+        if repo_name not in repos_with_prs:
+            repos_with_prs[repo_name] = {
+                "repo_name": repo_name,
+                "repo_id": repo_id,
+                "repo_url": repo_url,
+                "pull_requests": [],
+                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0},
+            }
+
+        repos_with_prs[repo_name]["pull_requests"].append(pr)
+
+        if pr.is_merged:
+            repos_with_prs[repo_name]["stats"]["merged_count"] += 1
+        elif pr.state == "open":
+            repos_with_prs[repo_name]["stats"]["open_count"] += 1
+        elif pr.state == "closed" and not pr.is_merged:
+            repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+
+    return {
+        "overall_stats": {
+            "merged_count": merged_count,
+            "open_count": open_count,
+            "closed_count": closed_count,
+            "user_rank": f"#{user_profile.contribution_rank} out of {contributor_count}",
+        },
+        "repos_with_prs": repos_with_prs,
+    }
+
+
 class UserProfileDetailView(DetailView):
     model = get_user_model()
     slug_field = "username"
@@ -279,6 +333,9 @@ class UserProfileDetailView(DetailView):
         # tags
         context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        # pull request info
+        stats = get_github_stats(user.userprofile)
+        context.update({"overall_stats": stats["overall_stats"], "repos_with_prs": stats["repos_with_prs"]})
         return context
 
     @method_decorator(login_required)
