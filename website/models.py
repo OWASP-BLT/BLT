@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
-from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -209,21 +208,6 @@ class Domain(models.Model):
             return favicon_url
 
     @property
-    def get_color(self):
-        if self.color:
-            return self.color
-        else:
-            if not self.logo:
-                self.get_logo()
-            try:
-                color_thief = ColorThief(self.logo)
-                self.color = "#%02x%02x%02x" % color_thief.get_color(quality=1)
-            except:
-                self.color = "#0000ff"
-            self.save()
-            return self.color
-
-    @property
     def hostname_domain(self):
         parsed_url = urlparse(self.url)
         return parsed_url.hostname
@@ -288,7 +272,11 @@ class Trademark(models.Model):
     description = models.TextField(blank=True, null=True)
     owners = models.ManyToManyField(TrademarkOwner, related_name="trademarks")
     organization = models.ForeignKey(
-        Organization, null=True, blank=True, on_delete=models.CASCADE, related_name="trademarks"
+        Organization,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="trademarks",
     )
 
     def __str__(self):
