@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load custom_tags %}
+{% load static %}
 {% block metaTags %}
     <title>
         {% block title %}
@@ -38,7 +39,6 @@
           integrity="sha256-5uKiXEwbaQh9cgd2/5Vp6WmMnsUr3VZZw0a8rKnOKNU="
           crossorigin="anonymous">
 {% endblock metaTags %}
-{% load static %}
 {% load gravatar %}
 {% block content %}
     <style>
