@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
-from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -191,8 +190,16 @@ class Domain(models.Model):
 
     @property
     def get_name(self):
-        parsed_url = urlparse(self.url)
-        return parsed_url.netloc.split(".")[-2:][0].title()
+        # Ensure the URL has a scheme; if not, add one.
+        url = self.url if "://" in self.url else f"http://{self.url}"
+        parsed_url = urlparse(url)
+
+        # Extract domain name safely
+        if parsed_url.netloc:
+            domain_parts = parsed_url.netloc.split(".")
+            if len(domain_parts) >= 2:
+                return domain_parts[-2].title()
+        return ""
 
     def get_logo(self):
         if self.logo:
@@ -207,21 +214,6 @@ class Domain(models.Model):
         except:
             favicon_url = self.url + "/favicon.ico"
             return favicon_url
-
-    @property
-    def get_color(self):
-        if self.color:
-            return self.color
-        else:
-            if not self.logo:
-                self.get_logo()
-            try:
-                color_thief = ColorThief(self.logo)
-                self.color = "#%02x%02x%02x" % color_thief.get_color(quality=1)
-            except:
-                self.color = "#0000ff"
-            self.save()
-            return self.color
 
     @property
     def hostname_domain(self):
@@ -288,7 +280,11 @@ class Trademark(models.Model):
     description = models.TextField(blank=True, null=True)
     owners = models.ManyToManyField(TrademarkOwner, related_name="trademarks")
     organization = models.ForeignKey(
-        Organization, null=True, blank=True, on_delete=models.CASCADE, related_name="trademarks"
+        Organization,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="trademarks",
     )
 
     def __str__(self):
