@@ -35,6 +35,7 @@ from website.models import (
     Badge,
     Challenge,
     Domain,
+    GitHubIssue,
     Hunt,
     InviteFriend,
     Issue,
@@ -73,22 +74,21 @@ def update_bch_address(request):
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
-                match selected_crypto:
-                    case "Bitcoin":
-                        user_profile.btc_address = new_address
-                    case "Ethereum":
-                        user_profile.eth_address = new_address
-                    case "BitcoinCash":
-                        user_profile.bch_address = new_address
-                    case _:
-                        messages.error(request, f"Invalid crypto selected: {selected_crypto}")
-                        return redirect(reverse("profile", args=[request.user.username]))
+                if selected_crypto == "Bitcoin":
+                    user_profile.btc_address = new_address
+                elif selected_crypto == "Ethereum":
+                    user_profile.eth_address = new_address
+                elif selected_crypto == "BitcoinCash":
+                    user_profile.bch_address = new_address
+                else:
+                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                    return redirect(reverse("profile", args=[request.user.username]))
                 user_profile.save()
                 messages.success(request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
                 messages.error(request, f"Failed to update {selected_crypto} Address.")
         else:
-            messages.error(request, f"Please provide a valid {selected_crypto}  Address.")
+            messages.error(request, f"Please provide a valid {selected_crypto} Address.")
     else:
         messages.error(request, "Invalid request method.")
 
@@ -98,6 +98,7 @@ def update_bch_address(request):
 
 @login_required
 def profile_edit(request):
+    Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
@@ -185,6 +186,59 @@ class InviteCreate(TemplateView):
             "email": email,
         }
         return render(request, "invite.html", context)
+
+
+def get_github_stats(user_profile):
+    # Get all PRs with repo info
+    user_prs = (
+        GitHubIssue.objects.filter(user_profile=user_profile, type="pull_request")
+        .select_related("repo")
+        .order_by("-created_at")
+    )
+    print(f"Total PRs found: {user_prs.count()}")
+
+    # Overall stats
+    merged_count = user_prs.filter(is_merged=True).count()
+    open_count = user_prs.filter(state="open").count()
+    closed_count = user_prs.filter(state="closed", is_merged=False).count()
+
+    users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
+    contributor_count = users_with_github.count()
+
+    # Group PRs by repo
+    repos_with_prs = {}
+    for pr in user_prs:
+        repo_name = pr.repo.name if pr.repo else "Other"
+        repo_id = pr.repo.id if pr.repo else None
+        repo_url = pr.repo.repo_url if pr.repo else None
+
+        if repo_name not in repos_with_prs:
+            repos_with_prs[repo_name] = {
+                "repo_name": repo_name,
+                "repo_id": repo_id,
+                "repo_url": repo_url,
+                "pull_requests": [],
+                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0},
+            }
+
+        repos_with_prs[repo_name]["pull_requests"].append(pr)
+
+        if pr.is_merged:
+            repos_with_prs[repo_name]["stats"]["merged_count"] += 1
+        elif pr.state == "open":
+            repos_with_prs[repo_name]["stats"]["open_count"] += 1
+        elif pr.state == "closed" and not pr.is_merged:
+            repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+
+    return {
+        "overall_stats": {
+            "merged_count": merged_count,
+            "open_count": open_count,
+            "closed_count": closed_count,
+            "user_rank": f"#{user_profile.contribution_rank} out of {contributor_count}",
+        },
+        "repos_with_prs": repos_with_prs,
+    }
 
 
 class UserProfileDetailView(DetailView):
@@ -279,6 +333,14 @@ class UserProfileDetailView(DetailView):
         # tags
         context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        # pull request info
+        stats = get_github_stats(user.userprofile)
+        context.update(
+            {
+                "overall_stats": stats["overall_stats"],
+                "repos_with_prs": stats["repos_with_prs"],
+            }
+        )
         return context
 
     @method_decorator(login_required)
@@ -431,6 +493,20 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = self.get_leaderboard()
+
+        # Get pull request leaderboard
+        pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            .values(
+                "user_profile__user__username",
+                "user_profile__user__email",  # For gravatar fallback
+                "user_profile__github_url",  # Using github_url instead of avatar
+            )
+            .annotate(total_prs=Count("id"))
+            .order_by("-total_prs")[:10]
+        )
+        context["pr_leaderboard"] = pr_leaderboard
+
         return context
 
 
@@ -582,20 +658,23 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
-    context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
-
-    context["tags"] = Tag.objects.all()
+    context["tags_with_counts"] = (
+        Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
+    )
 
     tag_name = request.GET.get("tag")
     if tag_name:
-        if context["user_related_tags"].filter(name=tag_name).exists():
+        if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
+            context["user_count"] = context["users"].count()
         else:
-            context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
+            context["users"] = UserProfile.objects.none()
+            context["user_count"] = 0
     else:
         context["tag"] = "BLT Contributors"
         context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+        context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
 
