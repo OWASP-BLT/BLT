@@ -8,6 +8,7 @@ import threading
 import time
 
 import requests
+import yaml
 from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -162,6 +163,18 @@ def slack_events(request):
                         return handle_pagination_prev(ack=lambda: None, body=payload, client=workspace_client)
                     elif action_id == "pagination_next":
                         return handle_pagination_next(ack=lambda: None, body=payload, client=workspace_client)
+                    elif action_id == "chapters_prev" or action_id == "chapters_next":
+                        return handle_chapter_pagination(action_id, payload, workspace_client)
+                    elif action_id == "select_chapter":
+                        chapter_name = payload["actions"][0]["selected_option"]["value"]
+                        return get_chapter_details(chapter_name, get_github_headers(), workspace_client, user_id)
+                    elif action_id == "events_prev" or action_id == "events_next":
+                        return handle_event_pagination(action_id, payload, workspace_client)
+                    elif action_id == "committees_prev" or action_id == "committees_next":
+                        return handle_committee_pagination(action_id, payload, workspace_client)
+                    elif action_id == "select_committee":
+                        committee_name = payload["actions"][0]["selected_option"]["value"]
+                        return get_committee_details(committee_name, get_github_headers(), workspace_client, user_id)
 
             except json.JSONDecodeError:
                 return JsonResponse({"response_type": "ephemeral", "text": "⚠️ Invalid request format."}, status=400)
@@ -590,7 +603,41 @@ def slack_commands(request):
 
         elif command == "/blt":
             search_term = request.POST.get("text", "").strip()
-            if search_term == "projects" or search_term.startswith("projects "):
+            if search_term.startswith("user "):
+                username = search_term.replace("user ", "").strip()
+                # Send immediate response
+                response = JsonResponse(
+                    {"response_type": "ephemeral", "text": "I've sent you the user profile in a DM! 👤"}
+                )
+
+                # Process the request in a separate thread
+                def process_profile():
+                    blocks = get_user_profile(username, workspace_client, user_id)
+                    send_dm(workspace_client, user_id, f"OWASP Profile for {username}", blocks)
+
+                thread = threading.Thread(target=process_profile)
+                thread.start()
+
+                return response
+            elif search_term == "chapters" or search_term.startswith("chapters "):
+                # Send immediate response
+                response = JsonResponse(
+                    {"response_type": "ephemeral", "text": "🌍 I'll send you the chapter information in a DM shortly!"}
+                )
+
+                # Process the request in a background thread
+                def process_chapters():
+                    if search_term.startswith("chapters "):
+                        additional_search_term = search_term.replace("chapters ", "")
+                    else:
+                        additional_search_term = ""
+                    get_chapter_overview(workspace_client, user_id, additional_search_term, activity)
+
+                thread = threading.Thread(target=process_chapters)
+                thread.start()
+
+                return response
+            elif search_term == "projects" or search_term.startswith("projects "):
                 if search_term.startswith("projects "):
                     additional_search_term = search_term.replace("projects ", "")
                 else:
@@ -602,6 +649,33 @@ def slack_commands(request):
                 else:
                     additional_search_term = ""
                 return get_gsoc_overview(workspace_client, user_id, additional_search_term, activity, team_id)
+            elif search_term == "events" or search_term.startswith("events "):
+                if search_term.startswith("events "):
+                    additional_search_term = search_term.replace("events ", "")
+                else:
+                    additional_search_term = ""
+                return get_event_overview(workspace_client, user_id, additional_search_term, activity, team_id)
+            elif search_term == "committees" or search_term.startswith("committees "):
+                # Send immediate response
+                response = JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "🌍 I'll send you the committee information in a DM shortly!",
+                    }
+                )
+
+                # Process the request in a background thread
+                def process_committees():
+                    if search_term.startswith("committees "):
+                        additional_search_term = search_term.replace("committees ", "")
+                    else:
+                        additional_search_term = ""
+                    get_committees_overview(workspace_client, user_id, additional_search_term, activity)
+
+                thread = threading.Thread(target=process_committees)
+                thread.start()
+
+                return response
 
     return HttpResponse(status=405)
 
@@ -1342,4 +1416,956 @@ def get_gsoc_overview(workspace_client, user_id, search_term, activity, team_id)
         activity.success = False
         activity.error_message = str(e)
         activity.save()
-        return JsonResponse({"response_type": "ephemeral", "text": f"❌ Error: {str(e)}"}, status=400)
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ Error: Check the logs for more details."}, status=400
+        )
+
+
+def get_user_profile(username, workspace_client, user_id):
+    """
+    Get comprehensive OWASP profile for a GitHub user.
+    Returns formatted blocks for Slack message.
+    """
+    try:
+        headers = get_github_headers()
+        if not GITHUB_TOKEN:
+            return [
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                    },
+                }
+            ]
+
+        # Fetch basic GitHub profile
+        gh_response = requests.get(f"https://api.github.com/users/{username}", headers=headers, timeout=10)
+
+        if gh_response.status_code == 404:
+            return [{"type": "section", "text": {"type": "mrkdwn", "text": f"❌ GitHub user '{username}' not found."}}]
+        elif gh_response.status_code != 200:
+            return [{"type": "section", "text": {"type": "mrkdwn", "text": "❌ Failed to fetch GitHub profile."}}]
+
+        profile = gh_response.json()
+
+        # Initialize blocks with header
+        blocks = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": f"🔍 OWASP Profile: {profile.get('name', username)}",
+                    "emoji": True,
+                },
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*GitHub Profile:* <{profile['html_url']}|@{username}>\n"
+                        f"*Location:* {profile.get('location', 'Not specified')}\n"
+                        f"*Bio:* {profile.get('bio', 'No bio provided')}"
+                    ),
+                },
+                "accessory": {
+                    "type": "image",
+                    "image_url": profile["avatar_url"],
+                    "alt_text": f"GitHub avatar for {username}",
+                }
+                if profile.get("avatar_url")
+                else None,
+            },
+        ]
+
+        # Fetch OWASP contributions
+        contributions = get_owasp_contributions(username, headers)
+        if contributions:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*🛠 OWASP Contributions*"}},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": contributions}},
+                ]
+            )
+
+        # Check GSoC mentorship
+        gsoc_info = get_gsoc_involvement(username)
+        if gsoc_info:
+            blocks.extend(
+                [
+                    {"type": "divider"},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": "*🎓 GSoC Involvement*"}},
+                    {"type": "section", "text": {"type": "mrkdwn", "text": gsoc_info}},
+                ]
+            )
+
+        # Add quick actions
+        blocks.extend(
+            [
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {"type": "plain_text", "text": "View GitHub Profile", "emoji": True},
+                            "url": profile["html_url"],
+                            "action_id": "view_github",
+                        },
+                    ],
+                }
+            ]
+        )
+
+        return blocks
+
+    except Exception as e:
+        print(f"Error in get_user_profile: {str(e)}")
+        return [
+            {"type": "section", "text": {"type": "mrkdwn", "text": "❌ An error occurred while fetching user profile."}}
+        ]
+
+
+def get_owasp_contributions(username, headers):
+    """Get user's contributions to OWASP projects across both OWASP and OWASP-BLT organizations"""
+    try:
+        # Search for PRs in both OWASP and OWASP-BLT repositories
+        owasp_prs = get_org_prs(username, "OWASP", headers)
+        blt_prs = get_org_prs(username, "OWASP-BLT", headers)
+
+        total_prs = (owasp_prs.get("total_count", 0) if owasp_prs else 0) + (
+            blt_prs.get("total_count", 0) if blt_prs else 0
+        )
+
+        contribution_text = []
+
+        if total_prs > 0:
+            contribution_text.append(f"• Pull Requests: {total_prs} contributions to OWASP projects")
+
+        return "\n".join(contribution_text) if contribution_text else None
+
+    except Exception as e:
+        print(f"Error getting contributions: {str(e)}")
+        return None
+
+
+def get_org_prs(username, org, headers):
+    """Helper function to get PRs for a specific organization"""
+    try:
+        search_url = f"https://api.github.com/search/issues?q=author:{username}+org:{org}+type:pr"
+        pr_response = requests.get(search_url, headers=headers, timeout=10)
+
+        if pr_response.status_code == 200:
+            return pr_response.json()
+        return None
+
+    except Exception as e:
+        print(f"Error getting PRs for {org}: {str(e)}")
+        return None
+
+
+def get_gsoc_involvement(username):
+    """Check if user is a GSoC mentor"""
+    try:
+        # Check against GSOC_PROJECTS for mentorship
+        mentor_projects = [project for project in GSOC_PROJECTS if username.lower() in project["mentor"].lower()]
+
+        if mentor_projects:
+            projects_text = "\n".join(f"• Mentor for *{project['title']}*" for project in mentor_projects)
+            return f"🎯 GSoC Mentor:\n{projects_text}"
+
+        return None
+
+    except Exception as e:
+        print(f"Error checking GSoC involvement: {str(e)}")
+        return None
+
+
+def get_chapter_overview(workspace_client, user_id, search_term, activity):
+    """Handle chapter repository overview and search"""
+    try:
+        headers = get_github_headers()
+        if not GITHUB_TOKEN:
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                        },
+                    }
+                ],
+            )
+            return
+
+        # If searching for a specific chapter
+        if search_term:
+            # Format chapter name to match repository naming convention
+            chapter_name = f"www-chapter-{search_term.lower().replace(' ', '-')}"
+            get_chapter_details(chapter_name, headers, workspace_client, user_id)
+            return
+
+        # Get all chapter repositories
+        search_url = "https://api.github.com/search/repositories"
+        params = {"q": "org:OWASP www-chapter in:name", "sort": "updated", "order": "desc", "per_page": 100}
+
+        response = requests.get(search_url, headers=headers, params=params, timeout=10)
+
+        if response.status_code != 200:
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [{"type": "section", "text": {"type": "mrkdwn", "text": "❌ Failed to fetch chapter repositories."}}],
+            )
+            return
+
+        repos = response.json()["items"]
+
+        # Store pagination data
+        pagination_data[user_id] = {"repos": repos, "current_page": 0, "page_size": 10}
+
+        # Send first page
+        send_chapter_page(workspace_client, user_id, repos[:10])
+
+    except Exception as e:
+        print(f"Error in get_chapter_overview: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        send_dm(
+            workspace_client,
+            user_id,
+            "Error",
+            [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "❌ An error occurred while fetching chapter information."},
+                }
+            ],
+        )
+
+
+def send_chapter_page(client, user_id, chapters):
+    """Send a page of chapter repositories to the user"""
+    try:
+        blocks = [
+            {"type": "header", "text": {"type": "plain_text", "text": "🌍 OWASP Chapters", "emoji": True}},
+            {"type": "divider"},
+        ]
+
+        for chapter in chapters:
+            # Extract chapter location from repo name
+            chapter_name = chapter["name"].replace("www-chapter-", "").replace("-", " ").title()
+
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": (
+                            f"*{chapter_name}*\n"
+                            f"📝 {chapter.get('description', 'No description available')}\n"
+                            f"⭐ Stars: {chapter['stargazers_count']} | "
+                            f"👀 Watchers: {chapter['watchers_count']} | "
+                            f"🔄 Forks: {chapter['forks_count']}"
+                        ),
+                    },
+                }
+            )
+
+        # Add navigation buttons
+        navigation = {"type": "actions", "elements": []}
+
+        data = pagination_data.get(user_id, {})
+        current_page = data.get("current_page", 0)
+        total_pages = math.ceil(len(data.get("repos", [])) / data.get("page_size", 10))
+
+        if current_page > 0:
+            navigation["elements"].append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "◀️ Previous", "emoji": True},
+                    "value": "prev",
+                    "action_id": "chapters_prev",
+                }
+            )
+
+        if current_page < total_pages - 1:
+            navigation["elements"].append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Next ▶️", "emoji": True},
+                    "value": "next",
+                    "action_id": "chapters_next",
+                }
+            )
+
+        # Add chapter selector
+        if chapters:
+            navigation["elements"].append(
+                {
+                    "type": "static_select",
+                    "placeholder": {"type": "plain_text", "text": "View Chapter Details", "emoji": True},
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": chapter["name"].replace("www-chapter-", "").replace("-", " ").title(),
+                                "emoji": True,
+                            },
+                            "value": chapter["name"],
+                        }
+                        for chapter in chapters
+                    ],
+                    "action_id": "select_chapter",
+                }
+            )
+
+        blocks.append(navigation)
+
+        send_dm(client, user_id, "OWASP Chapters", blocks)
+
+    except Exception as e:
+        print(f"Error sending chapter page: {str(e)}")
+
+
+def get_chapter_details(repo_name, headers, workspace_client, user_id):
+    """Get detailed information about a specific chapter repository"""
+    try:
+        # Get repository details
+        repo_url = f"https://api.github.com/repos/OWASP/{repo_name}"
+        repo_response = requests.get(repo_url, headers=headers, timeout=10)
+
+        if repo_response.status_code == 404:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": f"❌ Chapter repository '{repo_name}' not found."}
+            )
+        elif repo_response.status_code != 200:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to fetch chapter details."})
+
+        repo = repo_response.json()
+
+        # Get contributors count
+        contributors_url = f"https://api.github.com/repos/OWASP/{repo_name}/contributors"
+        contributors_response = requests.get(contributors_url, headers=headers, timeout=10)
+        contributors_count = len(contributors_response.json()) if contributors_response.status_code == 200 else 0
+
+        # Get languages
+        languages_url = f"https://api.github.com/repos/OWASP/{repo_name}/languages"
+        languages_response = requests.get(languages_url, headers=headers, timeout=10)
+        languages = list(languages_response.json().keys()) if languages_response.status_code == 200 else []
+
+        # Format chapter name
+        chapter_name = repo_name.replace("www-chapter-", "").replace("-", " ").title()
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"🌍 OWASP {chapter_name} Chapter", "emoji": True},
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*About:*\n{repo.get('description', 'No description available')}\n\n"
+                        f"*Stats:*\n"
+                        f"• 👥 Contributors: {contributors_count}\n"
+                        f"• ⭐ Stars: {repo['stargazers_count']}\n"
+                        f"• 👀 Watchers: {repo['watchers_count']}\n"
+                        f"• 🔄 Forks: {repo['forks_count']}\n\n"
+                        f"*Tech Stack:*\n{', '.join(languages) if languages else 'No languages detected'}"
+                    ),
+                },
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "View Repository", "emoji": True},
+                        "url": repo["html_url"],
+                        "action_id": "view_chapter_repo",
+                    }
+                ],
+            },
+        ]
+
+        send_dm(workspace_client, user_id, f"OWASP {chapter_name} Chapter", blocks)
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": f"I've sent you the details for the {chapter_name} chapter in a DM! 🌍",
+            }
+        )
+
+    except Exception as e:
+        print(f"Error getting chapter details: {str(e)}")
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while fetching chapter details."}
+        )
+
+
+def handle_chapter_pagination(action, body, client):
+    """Handle chapter pagination buttons"""
+    try:
+        user_id = body["user"]["id"]
+        data = pagination_data.get(user_id)
+
+        if not data:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ No pagination data found. Please try the command again."}
+            )
+
+        if action == "chapters_prev":
+            data["current_page"] = max(0, data["current_page"] - 1)
+        else:  # chapters_next
+            data["current_page"] += 1
+
+        start_idx = data["current_page"] * data["page_size"]
+        end_idx = start_idx + data["page_size"]
+        current_chapters = data["repos"][start_idx:end_idx]
+
+        send_chapter_page(client, user_id, current_chapters)
+        return HttpResponse()
+
+    except Exception as e:
+        print(f"Error handling chapter pagination: {str(e)}")
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating chapters."})
+
+
+def fetch_owasp_events():
+    """Fetch events from OWASP's events.yml file"""
+    try:
+        response = requests.get(
+            "https://raw.githubusercontent.com/OWASP/owasp.github.io/main/_data/events.yml", timeout=10
+        )
+        if response.status_code != 200:
+            return None
+
+        # Parse YAML data
+        events_data = yaml.safe_load(response.text)
+        return events_data
+
+    except Exception as e:
+        print(f"Error fetching events: {str(e)}")
+        return None
+
+
+def get_event_overview(workspace_client, user_id, search_term, activity, team_id):
+    """Handle OWASP events overview and search"""
+    try:
+        response = JsonResponse(
+            {"response_type": "ephemeral", "text": "🎯 I'll send you the event information in a DM shortly!"}
+        )
+
+        def process_events():
+            try:
+                events_data = fetch_owasp_events()
+
+                if not events_data:
+                    send_dm(
+                        workspace_client,
+                        user_id,
+                        "Error",
+                        [
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": "❌ Unable to fetch events at this time. Please try again later.",
+                                },
+                            }
+                        ],
+                    )
+                    return
+
+                blocks = [{"type": "header", "text": {"type": "plain_text", "text": "🎯 OWASP Events", "emoji": True}}]
+
+                # If searching for a specific category
+                if search_term:
+                    category_name = search_term.lower()
+                    category_data = next((cat for cat in events_data if cat["category"].lower() == category_name), None)
+
+                    if category_data:
+                        blocks.extend(
+                            [
+                                {"type": "divider"},
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"*{category_data['category']} Events*\n_{category_data['description']}_",
+                                    },
+                                },
+                                {"type": "divider"},
+                            ]
+                        )
+
+                        # Show only the first event for the specified category
+                        events_to_show = category_data["events"][:5]  # Show only 5 events
+                        pagination_data[user_id] = {
+                            "category_events": category_data["events"],
+                            "current_page": 0,
+                            "page_size": 5,
+                        }
+
+                        for event in events_to_show:
+                            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+                            if event.get("optional-text"):
+                                event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
+                            if event.get("url"):
+                                event_text += f"🔗 <{event['url']}|View Event Details>\n"
+
+                            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": event_text}})
+
+                        # Add navigation buttons if more events are available
+                        if len(category_data["events"]) > 5:
+                            blocks.append(
+                                {
+                                    "type": "actions",
+                                    "elements": [
+                                        {
+                                            "type": "button",
+                                            "text": {"type": "plain_text", "text": "Next ▶️", "emoji": True},
+                                            "value": "next",
+                                            "action_id": "events_next",
+                                        }
+                                    ],
+                                }
+                            )
+                    else:
+                        blocks.append(
+                            {
+                                "type": "section",
+                                "text": {
+                                    "type": "mrkdwn",
+                                    "text": f"Category '{search_term}' not found. Available categories:\n"
+                                    + "\n".join(f"• {cat['category']}" for cat in events_data),
+                                },
+                            }
+                        )
+                        return
+                else:
+                    # Show overview of all categories
+                    for category in events_data:
+                        blocks.extend(
+                            [
+                                {"type": "divider"},
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"*{category['category']} Events*\n_{category['description']}_",
+                                    },
+                                },
+                            ]
+                        )
+
+                        # Show first 2 events from each category
+                        events_to_show = category["events"][:2]
+
+                        for event in events_to_show:
+                            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+                            if event.get("optional-text"):
+                                event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
+                            if event.get("url"):
+                                event_text += f"🔗 <{event['url']}|View Event Details>\n"
+
+                            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": event_text}})
+
+                        if len(category["events"]) > 2:
+                            blocks.append(
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": "mrkdwn",
+                                        "text": f"_...and {len(category['events']) - 2} more events. Use `/blt events {category['category'].lower()}` to see all._",
+                                    },
+                                }
+                            )
+
+                # Add footer
+                blocks.extend(
+                    [
+                        {"type": "divider"},
+                        {
+                            "type": "context",
+                            "elements": [
+                                {
+                                    "type": "mrkdwn",
+                                    "text": "💡 *Tip:* Use `/blt events <category>` to see all events in a specific category",
+                                }
+                            ],
+                        },
+                    ]
+                )
+
+                send_dm(workspace_client, user_id, "OWASP Events", blocks)
+
+            except Exception as e:
+                print(f"Error processing events: {str(e)}")
+                send_dm(
+                    workspace_client,
+                    user_id,
+                    "Error",
+                    [
+                        {
+                            "type": "section",
+                            "text": {"type": "mrkdwn", "text": "❌ An error occurred while processing events."},
+                        }
+                    ],
+                )
+
+        thread = threading.Thread(target=process_events)
+        thread.start()
+
+        return response
+
+    except Exception as e:
+        print(f"Error in get_event_overview: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while fetching event information."}
+        )
+
+
+def handle_event_pagination(action, body, client):
+    """Handle event pagination buttons"""
+    try:
+        user_id = body["user"]["id"]
+        data = pagination_data.get(user_id)
+
+        if not data or "category_events" not in data:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ No event data found. Please try the command again."}
+            )
+
+        if action == "events_prev":
+            data["current_page"] = max(0, data["current_page"] - 1)
+        else:  # events_next
+            data["current_page"] += 1
+
+        # Get events for current page
+        start_idx = data["current_page"] * data["page_size"]
+        end_idx = start_idx + data["page_size"]
+        events_to_show = data["category_events"][start_idx:end_idx]
+
+        blocks = [
+            {"type": "header", "text": {"type": "plain_text", "text": "🎯 OWASP Events", "emoji": True}},
+            {"type": "divider"},
+        ]
+
+        # Add event blocks
+        for event in events_to_show:
+            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+            if event.get("optional-text"):
+                event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
+            if event.get("url"):
+                event_text += f"🔗 <{event['url']}|View Event Details>\n"
+
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": event_text}})
+
+        # Add navigation buttons
+        navigation = {"type": "actions", "elements": []}
+
+        if data["current_page"] > 0:
+            navigation["elements"].append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "◀️ Previous", "emoji": True},
+                    "value": "prev",
+                    "action_id": "events_prev",
+                }
+            )
+
+        total_pages = len(data["category_events"]) // data["page_size"]
+
+        if data["current_page"] < total_pages - 1:
+            navigation["elements"].append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Next ▶️", "emoji": True},
+                    "value": "next",
+                    "action_id": "events_next",
+                }
+            )
+
+        if navigation["elements"]:
+            blocks.append(navigation)
+
+        send_dm(client, user_id, "OWASP Events", blocks)
+        return HttpResponse()
+
+    except Exception as e:
+        print(f"Error handling event pagination: {str(e)}")
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating events."})
+
+
+def get_committees_overview(workspace_client, user_id, search_term, activity):
+    """Handle committee repository overview and search"""
+    try:
+        headers = get_github_headers()
+        if not GITHUB_TOKEN:
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "⚠️ GitHub API token not configured. Please contact the administrator.",
+                        },
+                    }
+                ],
+            )
+            return
+
+        # If searching for a specific committee
+        if search_term:
+            # Format committee name to match repository naming convention
+            committee_name = f"www-committees-{search_term.lower().replace(' ', '-')}"
+            get_committee_details(committee_name, headers, workspace_client, user_id)
+            return
+
+        # Get all committee repositories
+        search_url = "https://api.github.com/search/repositories"
+        params = {"q": "org:OWASP www-committee in:name", "sort": "updated", "order": "desc", "per_page": 100}
+
+        response = requests.get(search_url, headers=headers, params=params, timeout=10)
+
+        if response.status_code != 200:
+            send_dm(
+                workspace_client,
+                user_id,
+                "Error",
+                [{"type": "section", "text": {"type": "mrkdwn", "text": "❌ Failed to fetch committee repositories."}}],
+            )
+            return
+
+        repos = response.json()["items"]
+
+        # Store pagination data
+        pagination_data[user_id] = {"repos": repos, "current_page": 0, "page_size": 5}
+
+        # Send first page
+        send_committee_page(workspace_client, user_id, repos[:5])
+
+    except Exception as e:
+        print(f"Error in get_committees_overview: {str(e)}")
+        activity.success = False
+        activity.error_message = str(e)
+        activity.save()
+        send_dm(
+            workspace_client,
+            user_id,
+            "Error",
+            [
+                {
+                    "type": "section",
+                    "text": {"type": "mrkdwn", "text": "❌ An error occurred while fetching committee information."},
+                }
+            ],
+        )
+
+
+def send_committee_page(client, user_id, committees):
+    """Send a page of committee repositories to the user"""
+    try:
+        blocks = [
+            {"type": "header", "text": {"type": "plain_text", "text": "🌍 OWASP Committees", "emoji": True}},
+            {"type": "divider"},
+        ]
+
+        for committee in committees:
+            # Format committee name
+            committee_name = committee["name"].replace("www-committees-", "").replace("-", " ").title()
+
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": (
+                            f"*{committee_name}*\n"
+                            f"📝 {committee.get('description', 'No description available')}\n"
+                            f"⭐ Stars: {committee['stargazers_count']} | "
+                            f"👀 Watchers: {committee['watchers_count']} | "
+                            f"🔄 Forks: {committee['forks_count']}"
+                        ),
+                    },
+                }
+            )
+
+        # Add navigation buttons
+        navigation = {"type": "actions", "elements": []}
+
+        data = pagination_data.get(user_id, {})
+        current_page = data.get("current_page", 0)
+        total_pages = math.ceil(len(data.get("repos", [])) / data.get("page_size", 5))
+
+        if current_page > 0:
+            navigation["elements"].append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "◀️ Previous", "emoji": True},
+                    "value": "prev",
+                    "action_id": "committees_prev",
+                }
+            )
+
+        if current_page < total_pages - 1:
+            navigation["elements"].append(
+                {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "Next ▶️", "emoji": True},
+                    "value": "next",
+                    "action_id": "committees_next",
+                }
+            )
+
+        # Add committee selector
+        if committees:
+            navigation["elements"].append(
+                {
+                    "type": "static_select",
+                    "placeholder": {"type": "plain_text", "text": "View Committee Details", "emoji": True},
+                    "options": [
+                        {
+                            "text": {
+                                "type": "plain_text",
+                                "text": committee["name"].replace("www-committees-", "").replace("-", " ").title(),
+                                "emoji": True,
+                            },
+                            "value": committee["name"],
+                        }
+                        for committee in committees
+                    ],
+                    "action_id": "select_committee",
+                }
+            )
+
+        blocks.append(navigation)
+
+        send_dm(client, user_id, "OWASP Committees", blocks)
+
+    except Exception as e:
+        print(f"Error sending committee page: {str(e)}")
+
+
+def get_committee_details(repo_name, headers, workspace_client, user_id):
+    """Get detailed information about a specific committee repository"""
+    try:
+        # Get repository details
+        repo_url = f"https://api.github.com/repos/OWASP/{repo_name}"
+        repo_response = requests.get(repo_url, headers=headers, timeout=10)
+
+        if repo_response.status_code == 404:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": f"❌ Committee repository '{repo_name}' not found."}
+            )
+        elif repo_response.status_code != 200:
+            return JsonResponse({"response_type": "ephemeral", "text": "❌ Failed to fetch committee details."})
+
+        repo = repo_response.json()
+
+        # Get contributors count
+        contributors_url = f"https://api.github.com/repos/OWASP/{repo_name}/contributors"
+        contributors_response = requests.get(contributors_url, headers=headers, timeout=10)
+        contributors_count = len(contributors_response.json()) if contributors_response.status_code == 200 else 0
+
+        # Get languages
+        languages_url = f"https://api.github.com/repos/OWASP/{repo_name}/languages"
+        languages_response = requests.get(languages_url, headers=headers, timeout=10)
+        languages = list(languages_response.json().keys()) if languages_response.status_code == 200 else []
+
+        # Format committee name
+        committee_name = repo_name.replace("www-committees-", "").replace("-", " ").title()
+
+        blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f"🌍 OWASP {committee_name} Committee", "emoji": True},
+            },
+            {"type": "divider"},
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": (
+                        f"*About:*\n{repo.get('description', 'No description available')}\n\n"
+                        f"*Stats:*\n"
+                        f"• 👥 Contributors: {contributors_count}\n"
+                        f"• ⭐ Stars: {repo['stargazers_count']}\n"
+                        f"• 👀 Watchers: {repo['watchers_count']}\n"
+                        f"• 🔄 Forks: {repo['forks_count']}\n\n"
+                        f"*Tech Stack:*\n{', '.join(languages) if languages else 'No languages detected'}"
+                    ),
+                },
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {"type": "plain_text", "text": "View Repository", "emoji": True},
+                        "url": repo["html_url"],
+                        "action_id": "view_committee_repo",
+                    }
+                ],
+            },
+        ]
+
+        send_dm(workspace_client, user_id, f"OWASP {committee_name} Committee", blocks)
+        return JsonResponse(
+            {
+                "response_type": "ephemeral",
+                "text": f"I've sent you the details for the {committee_name} committee in a DM! 🌍",
+            }
+        )
+
+    except Exception as e:
+        print(f"Error getting committee details: {str(e)}")
+        return JsonResponse(
+            {"response_type": "ephemeral", "text": "❌ An error occurred while fetching committee details."}
+        )
+
+
+def handle_committee_pagination(action, body, client):
+    """Handle committee pagination buttons"""
+    try:
+        user_id = body["user"]["id"]
+        data = pagination_data.get(user_id)
+
+        if not data:
+            return JsonResponse(
+                {"response_type": "ephemeral", "text": "❌ No pagination data found. Please try the command again."}
+            )
+
+        if action == "committees_prev":
+            data["current_page"] = max(0, data["current_page"] - 1)
+        else:  # committees_next
+            data["current_page"] += 1
+
+        start_idx = data["current_page"] * data["page_size"]
+        end_idx = start_idx + data["page_size"]
+        current_committees = data["repos"][start_idx:end_idx]
+
+        send_committee_page(client, user_id, current_committees)
+        return HttpResponse()
+
+    except Exception as e:
+        print(f"Error handling committee pagination: {str(e)}")
+        return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})

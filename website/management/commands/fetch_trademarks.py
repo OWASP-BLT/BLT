@@ -48,6 +48,8 @@ class Command(BaseCommand):
                     response.raise_for_status()
                     results = response.json().get("results")
 
+                    print(results)
+
                     # Store trademark data in the database
                     if results:
                         for item in results:

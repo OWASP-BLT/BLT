@@ -16,6 +16,7 @@ from website.models import (
     Contributor,
     ContributorStats,
     Domain,
+    GitHubIssue,
     Hunt,
     HuntPrize,
     Integration,
@@ -500,3 +501,4 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Notification)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
+admin.site.register(GitHubIssue)
