@@ -39,7 +39,9 @@ EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
 BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
 TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
-GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
+GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP-BLT/BLT")
+GITHUB_API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com/repos/OWASP-BLT/BLT")
+WEBSITE_URL = os.environ.get("WEBSITE_URL", "https://blt.owasp.org/")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)

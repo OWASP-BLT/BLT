@@ -230,6 +230,14 @@
                               rows="4"
                               placeholder="Describe your suggestion in detail"></textarea>
                 </div>
+                <label>Organization</label>
+                <select id="organization" name="organization">
+                    <option value="" selected>-- None --</option>
+                    {% for organization in organizations %}
+                        <option value="{{ organization.id }}">{{ organization.name }}</option>
+                    {% endfor %}
+                </select>
+                <br>
                 <button type="submit" class="submit-button" onclick="Savefeature()">Post Suggestion</button>
             </form>
         </div>
@@ -348,6 +356,7 @@
         const formData = new FormData(form);
         const title = formData.get('title');
         const description = formData.get('description');
+        const organization = formData.get('organization')
 
         if (!title) {
             alert('Please enter a title for your suggestion.');
@@ -362,7 +371,8 @@
             },
             body: JSON.stringify({
                 title: title,
-                description: description
+                description: description,
+                organization: organization,
             }),
         })
         .then(response => response.json())

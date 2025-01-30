@@ -620,22 +620,60 @@ def set_vote_status(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
+@login_required
 def add_suggestions(request):
     if request.method == "POST":
         user = request.user if request.user.is_authenticated else None
         data = json.loads(request.body)
         title = data.get("title")
         description = data.get("description", "")
-        if title and description:
-            suggestion = Suggestion(user=user, title=title, description=description)
+        organization_id = data.get("organization")
+        if title and description and user:
+            organization = None
+            if organization_id:
+                try:
+                    organization = Organization.objects.get(id=organization_id)
+                except Organization.DoesNotExist:
+                    print("Couldn't find organization with id: ", organization_id)
+                    pass
+
+            # Save Suggestion in DB
+            suggestion = Suggestion(user=user, title=title, description=description, organization=organization)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
+
+            # GitHub Issue Creation
+            github_token = settings.GITHUB_TOKEN
+            github_api_url = settings.GITHUB_API_URL
+            if github_api_url and github_token:
+                url = f"{github_api_url}/issues"
+
+                organization_text = f" for organization: **{organization.name}**" if organization else ""
+                user_profile_link = f"[{user}]({settings.WEBSITE_URL}/profile/{user.username})"
+
+                issue_data = {
+                    "title": title,
+                    "body": f"{description}\n\nSuggested by {user_profile_link}{organization_text}",
+                }
+
+                milestone_id = 42  # Milestone ID on the BLT GitHub repository
+                if milestone_id:
+                    issue_data["milestone"] = milestone_id
+
+                response = requests.post(url, json=issue_data, headers={"Authorization": f"Bearer {github_token}"})
+
+                if response.status_code == 201:
+                    print("GitHub issue created successfully.")
+                else:
+                    print("GitHub API Error:", response.json())
+                    print("Suggestion added but failed to create GitHub issue.")
+
             return JsonResponse({"status": "success"})
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
 
 class GoogleLogin(SocialLoginView):
@@ -818,7 +856,12 @@ class StatsDetailView(TemplateView):
 
 def view_suggestions(request):
     suggestion = Suggestion.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+    organizations = Organization.objects.all()
+    return render(
+        request,
+        "feature_suggestion.html",
+        {"suggestions": suggestion, "organizations": organizations},
+    )
 
 
 def sitemap(request):
