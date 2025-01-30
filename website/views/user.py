@@ -601,7 +601,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Reviewed Pull Request Leaderboard
+        # Get Reviewed Pull Request Leaderboard
         reviewed_pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request")
             .values(
