@@ -335,7 +335,12 @@ class UserProfileDetailView(DetailView):
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         # pull request info
         stats = get_github_stats(user.userprofile)
-        context.update({"overall_stats": stats["overall_stats"], "repos_with_prs": stats["repos_with_prs"]})
+        context.update(
+            {
+                "overall_stats": stats["overall_stats"],
+                "repos_with_prs": stats["repos_with_prs"],
+            }
+        )
         return context
 
     @method_decorator(login_required)
@@ -488,6 +493,16 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
         context["leaderboard"] = self.get_leaderboard()
+
+        # Get pull request leaderboard
+        pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            .values("user_profile__user__username", "user_profile__avatar")
+            .annotate(total_prs=Count("id"))
+            .order_by("-total_prs")[:10]
+        )
+        context["pr_leaderboard"] = pr_leaderboard
+
         return context
 
 

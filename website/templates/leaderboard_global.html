@@ -33,13 +33,13 @@
         }
 
         @media (min-height: 800px) and (min-width: 992px) {
-            .col-md-8 {
-                width: 66.66666667%;
+            .col-md-6 {
+                width: 50%;
             }
         }
         
         @media (min-height: 800px) and (min-width: 360px) {
-            .col-md-8 {
+            .col-md-6 {
                 width: 90%;
                 font-size: small;
             }
@@ -59,7 +59,6 @@
             background-color: #be7225; 
             color: #FFFFFF; 
         }
-
 
         .platinum {
             background-color: #E5E4E2; 
@@ -128,17 +127,38 @@
             background-color: #17a2b8;
             border-color: #17a2b8;
         }
+
+        .leaderboard-container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .leaderboard-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 600px;
+        }
+
+        .leaderboard-title {
+            text-align: center;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="row container-min-height flex justify-center">
-        <div class="col-lg-6 flex justify-center items-center">
-            <h1 class="page-header">Global Leaderboard</h1>
+        <div class="col-lg-12 flex justify-center items-center">
+            <h1 class="page-header">Global Leaderboards</h1>
         </div>
     </div>
-    <div class="row flex justify-center">
-        <div class="col-md-8">
+    <div class="leaderboard-container">
+        <div class="leaderboard-section">
+            <div class="leaderboard-title">Points Leaderboard</div>
             <div class="list-group">
                 {% if not leaderboard %}
                     <p class="text-red-900">No data for this month</p>
@@ -170,6 +190,34 @@
                                 <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
                             {% endif %}
                             <span><kbd class="{{ leader.userprofile.get_title_display|lower }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="leaderboard-section">
+            <div class="leaderboard-title">Pull Request Leaderboard</div>
+            <div class="list-group">
+                {% if not pr_leaderboard %}
+                    <p class="text-red-900">No pull request data available</p>
+                {% else %}
+                    {% for leader in pr_leaderboard %}
+                        <div class="list-group-item">
+                            {% if leader.user_profile__avatar %}
+                                <img src="{{ leader.user_profile__avatar }}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="{{ leader.user_profile__user__username }}"
+                                     width="50px"
+                                     height="50px">
+                            {% else %}
+                                <img src="{% gravatar_url leader.user_profile__user__username 50 %}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="username"
+                                     width="50px"
+                                     height="50px">
+                            {% endif %}
+                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}">{{ leader.user_profile__user__username }}</a>
+                            <span class="pull-right badge">{{ leader.total_prs }} PRs</span>
                         </div>
                     {% endfor %}
                 {% endif %}
