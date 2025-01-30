@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 
 import requests
 import six
-import tweepy
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from django.conf import settings
@@ -335,18 +334,14 @@ def newhome(request, template="new_home.html"):
 
 
 def delete_issue(request, id):
-    tokenauth = False
-    
-    # Handle token authentication for POST requests
-    if request.method == "POST" and "token" in request.POST:
-        try:
-            for token in Token.objects.all():
-                if request.POST["token"] == token.key:
-                    request.user = User.objects.get(id=token.user_id)
-                    tokenauth = True
-                    break
-        except Token.DoesNotExist:
-            tokenauth = False
+    try:
+        # TODO: Refactor this for a direct query instead of looping through all tokens
+        for token in Token.objects.all():
+            if request.POST["token"] == token.key:
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
+    except Token.DoesNotExist:
+        tokenauth = False
 
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user or tokenauth:
@@ -602,43 +597,45 @@ class IssueBaseCreate(object):
         # print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
-        try:
-            auth = tweepy.Client(
-                settings.BEARER_TOKEN,
-                settings.APP_KEY,
-                settings.APP_KEY_SECRET,
-                settings.ACCESS_TOKEN,
-                settings.ACCESS_TOKEN_SECRET,
-            )
 
-            blt_url = "https://%s/issue/%d" % (
-                settings.DOMAIN_NAME,
-                obj.id,
-            )
-            domain_name = domain.get_name
-            twitter_account = (
-                "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
-            )
+        # Twitter posting code removed as we no longer use Twitter integration
+        # try:
+        #     auth = tweepy.Client(
+        #         settings.BEARER_TOKEN,
+        #         settings.APP_KEY,
+        #         settings.APP_KEY_SECRET,
+        #         settings.ACCESS_TOKEN,
+        #         settings.ACCESS_TOKEN_SECRET,
+        #     )
 
-            issue_title = obj.description + " " if not obj.is_hidden else ""
+        #     blt_url = "https://%s/issue/%d" % (
+        #         settings.DOMAIN_NAME,
+        #         obj.id,
+        #     )
+        #     domain_name = domain.get_name
+        #     twitter_account = (
+        #         "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
+        #     )
 
-            message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
-                twitter_account,
-                issue_title,
-                domain_name,
-                user.username,
-                settings.PROJECT_NAME,
-                blt_url,
-            )
+        #     issue_title = obj.description + " " if not obj.is_hidden else ""
 
-            auth.create_tweet(text=message)
+        #     message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
+        #         twitter_account,
+        #         issue_title,
+        #         domain_name,
+        #         user.username,
+        #         settings.PROJECT_NAME,
+        #         blt_url,
+        #     )
 
-        except (
-            TypeError,
-            tweepy.errors.HTTPException,
-            tweepy.errors.TweepyException,
-        ) as e:
-            print(e)
+        #     auth.create_tweet(text=message)
+
+        # except (
+        #     TypeError,
+        #     tweepy.errors.HTTPException,
+        #     tweepy.errors.TweepyException,
+        # ) as e:
+        #     print(e)
 
         if created:
             try:
