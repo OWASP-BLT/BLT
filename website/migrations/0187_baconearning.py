@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0186_userprofile_contribution_rank_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
