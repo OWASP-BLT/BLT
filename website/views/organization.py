@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
-import humanize
 import requests
 import stripe
 from bs4 import BeautifulSoup
@@ -13,6 +12,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
@@ -43,6 +43,7 @@ from website.models import (
     OrganizationAdmin,
     Subscription,
     TimeLog,
+    Trademark,
     User,
     UserBadge,
     Wallet,
@@ -611,6 +612,24 @@ class DomainDetailView(ListView):
         context["domain"] = domain
 
         parsed_url = urlparse("http://" + self.kwargs["slug"])
+        name = parsed_url.netloc.split(".")[-2:][0].title()
+        context["name"] = name
+
+        # Fetch the related organization
+        organization = domain.organization
+        if organization is None:
+            organizations = Organization.objects.filter(name__iexact=domain.get_name)
+            if organizations.exists():
+                organization = organizations.first()
+            else:
+                organization = None
+
+        context["organization"] = organization
+
+        if organization:
+            # Fetch related trademarks for the organization
+            trademarks = Trademark.objects.filter(organization=organization)
+            context["trademarks"] = trademarks
 
         open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
@@ -625,8 +644,6 @@ class DomainDetailView(ListView):
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
         paginator = Paginator(open_issues, 3)
         page = self.request.GET.get("open")
@@ -882,7 +899,11 @@ def user_sizzle_report(request, username):
 
         response_data.append(day_data)
 
-    return render(request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user})
+    return render(
+        request,
+        "sizzle/user_sizzle_report.html",
+        {"response_data": response_data, "user": user},
+    )
 
 
 @login_required
@@ -911,7 +932,12 @@ def sizzle_daily_log(request):
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return JsonResponse({"success": "true", "message": "Daily status report submitted successfully."})
+            return JsonResponse(
+                {
+                    "success": "true",
+                    "message": "Daily status report submitted successfully.",
+                }
+            )
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -1049,7 +1075,11 @@ def sizzle(request):
                 "date": date,
             }
 
-    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard})
+    return render(
+        request,
+        "sizzle/sizzle.html",
+        {"sizzle_data": sizzle_data, "leaderboard": leaderboard},
+    )
 
 
 def trademark_detailview(request, slug):
@@ -1090,7 +1120,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
         hunt_active = False
         hunt_completed = False
-        time_remaining = humanize.naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
+        time_remaining = naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
     elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
         hunt_active = False
         hunt_completed = True
@@ -1660,7 +1690,11 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
-    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
+    return render(
+        request,
+        "sizzle/add_sizzle_checkin.html",
+        {"yesterday_report": yesterday_report},
+    )
 
 
 def checkIN(request):

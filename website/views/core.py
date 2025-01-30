@@ -3,6 +3,7 @@ import os
 import subprocess
 import tracemalloc
 import urllib
+from datetime import timedelta
 
 import psutil
 import requests
@@ -26,6 +27,7 @@ from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -41,6 +43,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SlackBotActivity,
     Suggestion,
     SuggestionVotes,
     Tag,
@@ -115,6 +118,7 @@ def check_status(request):
     CHECK_MEMORY = True
     CHECK_DATABASE = False
     CHECK_REDIS = False
+    CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
@@ -128,6 +132,7 @@ def check_status(request):
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
             "redis_stats": {} if not CHECK_REDIS else {},
+            "slack_bot": {},
         }
 
         if CHECK_MEMORY:
@@ -258,6 +263,35 @@ def check_status(request):
             except Exception as e:
                 print(f"Redis error or not supported: {e}")
 
+        # Slack bot activity metrics
+        if CHECK_SLACK_BOT:
+            last_24h = timezone.now() - timedelta(hours=24)
+
+            # Get bot activity metrics
+            bot_metrics = {
+                "total_activities": SlackBotActivity.objects.count(),
+                "last_24h_activities": SlackBotActivity.objects.filter(created__gte=last_24h).count(),
+                "success_rate": (
+                    SlackBotActivity.objects.filter(success=True).count() / SlackBotActivity.objects.count() * 100
+                    if SlackBotActivity.objects.exists()
+                    else 0
+                ),
+                "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
+                "recent_activities": list(
+                    SlackBotActivity.objects.filter(created__gte=last_24h)
+                    .values("activity_type", "workspace_name", "created", "success")
+                    .order_by("-created")[:5]
+                ),
+                "activity_types": {
+                    activity_type: count
+                    for activity_type, count in SlackBotActivity.objects.values("activity_type")
+                    .annotate(count=Count("id"))
+                    .values_list("activity_type", "count")
+                },
+            }
+
+            status_data["slack_bot"] = bot_metrics
+
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
@@ -297,13 +331,45 @@ def find_key(request, token):
 
 def search(request, template="search.html"):
     query = request.GET.get("query")
-    stype = request.GET.get("type", "organizations")
+    stype = request.GET.get("type", "all")
     context = None
     if query is None:
         return render(request, template)
     query = query.strip()
 
-    if stype == "issues":
+    if stype == "all":
+        # Search across multiple models
+        organizations = Organization.objects.filter(name__icontains=query)
+        issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
+            Q(is_hidden=True) & ~Q(user_id=request.user.id)
+        )[0:20]
+        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+        users = (
+            UserProfile.objects.filter(Q(user__username__icontains=query))
+            .annotate(total_score=Sum("user__points__score"))
+            .order_by("-total_score")[0:20]
+        )
+        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        context = {
+            "query": query,
+            "type": stype,
+            "organizations": organizations,
+            "issues": issues,
+            "domains": domains,
+            "users": users,
+            "projects": projects,
+            "repos": repos,
+        }
+
+        for userprofile in users:
+            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+        for org in organizations:
+            d = Domain.objects.filter(organization=org).first()
+            if d:
+                org.absolute_url = d.get_absolute_url()
+
+    elif stype == "issues":
         context = {
             "query": query,
             "type": stype,

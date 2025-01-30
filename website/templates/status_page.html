@@ -62,6 +62,59 @@
         .memory-consumers li, .memory-by-module li {
             margin-bottom: 5px;
         }
+        /* Slack Bot Activity styles */
+        .slack-stats {
+            padding: 10px 0;
+        }
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stats-overview p {
+            margin: 5px 0;
+        }
+        .activity-types ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+        .recent-activities table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .recent-activities th,
+        .recent-activities td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        .recent-activities th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+        .recent-activities tr:hover {
+            background-color: #f8f9fa;
+        }
+        .mt-4 {
+            margin-top: 1.5rem;
+        }
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        .text-lg {
+            font-size: 1.125rem;
+        }
+        .font-semibold {
+            font-weight: 600;
+        }
+        .overflow-x-auto {
+            overflow-x: auto;
+        }
     </style>
     <div class="status-container">
         <div class="status-header">Service Status</div>
@@ -181,6 +234,60 @@
                     </li>
                 {% endfor %}
             </ul>
+        </div>
+        <!-- Slack Bot Activity -->
+        <div class="status-card">
+            <h3>Slack Bot Activity</h3>
+            <div class="slack-stats">
+                <div class="stats-overview">
+                    <p>
+                        <strong>Total Activities:</strong> {{ status.slack_bot.total_activities }}
+                    </p>
+                    <p>
+                        <strong>Last 24h Activities:</strong> {{ status.slack_bot.last_24h_activities }}
+                    </p>
+                    <p>
+                        <strong>Success Rate:</strong> {{ status.slack_bot.success_rate|floatformat:1 }}%
+                    </p>
+                    <p>
+                        <strong>Active Workspaces:</strong> {{ status.slack_bot.workspace_count }}
+                    </p>
+                </div>
+                <div class="activity-types mt-4">
+                    <h4 class="text-lg font-semibold mb-2">Activity Distribution</h4>
+                    <ul>
+                        {% for type, count in status.slack_bot.activity_types.items %}<li>{{ type|title }}: {{ count }}</li>{% endfor %}
+                    </ul>
+                </div>
+                <div class="recent-activities mt-4">
+                    <h4 class="text-lg font-semibold mb-2">Recent Activities</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr>
+                                    <th class="text-left">Type</th>
+                                    <th class="text-left">Workspace</th>
+                                    <th class="text-left">Time</th>
+                                    <th class="text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in status.slack_bot.recent_activities %}
+                                    <tr>
+                                        <td>{{ activity.activity_type|title }}</td>
+                                        <td>{{ activity.workspace_name|default:"Unknown" }}</td>
+                                        <td>{{ activity.created|date:"M d, H:i" }}</td>
+                                        <td>
+                                            <span class="status-dot {% if activity.success %}green{% else %}red{% endif %}"></span>
+                                            {{ activity.success|yesno:"Success,Failed" }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="status-card">
             <h3>OpenAI API</h3>

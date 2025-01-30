@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
-from colorthief import ColorThief
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
@@ -191,8 +190,16 @@ class Domain(models.Model):
 
     @property
     def get_name(self):
-        parsed_url = urlparse(self.url)
-        return parsed_url.netloc.split(".")[-2:][0].title()
+        # Ensure the URL has a scheme; if not, add one.
+        url = self.url if "://" in self.url else f"http://{self.url}"
+        parsed_url = urlparse(url)
+
+        # Extract domain name safely
+        if parsed_url.netloc:
+            domain_parts = parsed_url.netloc.split(".")
+            if len(domain_parts) >= 2:
+                return domain_parts[-2].title()
+        return ""
 
     def get_logo(self):
         if self.logo:
@@ -207,21 +214,6 @@ class Domain(models.Model):
         except:
             favicon_url = self.url + "/favicon.ico"
             return favicon_url
-
-    @property
-    def get_color(self):
-        if self.color:
-            return self.color
-        else:
-            if not self.logo:
-                self.get_logo()
-            try:
-                color_thief = ColorThief(self.logo)
-                self.color = "#%02x%02x%02x" % color_thief.get_color(quality=1)
-            except:
-                self.color = "#0000ff"
-            self.save()
-            return self.color
 
     @property
     def hostname_domain(self):
@@ -254,6 +246,49 @@ class Domain(models.Model):
             return name
         except ValidationError:
             pass
+
+
+class TrademarkOwner(models.Model):
+    name = models.CharField(max_length=255)
+    address1 = models.CharField(max_length=255, blank=True, null=True)
+    address2 = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    postcode = models.CharField(max_length=20, blank=True, null=True)
+    owner_type = models.CharField(max_length=20, blank=True, null=True)
+    owner_label = models.CharField(max_length=100, blank=True, null=True)
+    legal_entity_type = models.CharField(max_length=20, blank=True, null=True)
+    legal_entity_type_label = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Trademark(models.Model):
+    keyword = models.CharField(max_length=255)
+    registration_number = models.CharField(max_length=50, blank=True, null=True)
+    serial_number = models.CharField(max_length=50, blank=True, null=True)
+    status_label = models.CharField(max_length=50, blank=True, null=True)
+    status_code = models.CharField(max_length=20, blank=True, null=True)
+    status_date = models.DateField(blank=True, null=True)
+    status_definition = models.CharField(max_length=255, blank=True, null=True)
+    filing_date = models.DateField(blank=True, null=True)
+    registration_date = models.DateField(blank=True, null=True)
+    abandonment_date = models.DateField(blank=True, null=True)
+    expiration_date = models.DateField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    owners = models.ManyToManyField(TrademarkOwner, related_name="trademarks")
+    organization = models.ForeignKey(
+        Organization,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="trademarks",
+    )
+
+    def __str__(self):
+        return self.keyword
 
 
 def validate_image(fieldfile_obj):
@@ -531,6 +566,9 @@ class Points(models.Model):
     modified = models.DateTimeField(auto_now=True)
     reason = models.TextField(null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.user.username} - {self.score} points"
+
 
 class InviteFriend(models.Model):
     sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
@@ -592,6 +630,8 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    merged_pr_count = models.PositiveIntegerField(default=0)
+    contribution_rank = models.PositiveIntegerField(default=0)
 
     def check_team_membership(self):
         return self.team is not None
@@ -696,6 +736,9 @@ class UserProfile(models.Model):
                 # Avoid duplicate badge awards
                 if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
                     UserBadge.objects.create(user=self.user, badge=badge)
+
+    def __str__(self):
+        return self.user.username
 
 
 def create_profile(sender, **kwargs):
@@ -1300,3 +1343,91 @@ class ContributorStats(models.Model):
 
     def __str__(self):
         return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+
+
+class SlackBotActivity(models.Model):
+    ACTIVITY_TYPES = [
+        ("team_join", "Team Join"),
+        ("command", "Slash Command"),
+        ("message", "Message"),
+        ("error", "Error"),
+    ]
+
+    workspace_id = models.CharField(max_length=20)
+    workspace_name = models.CharField(max_length=255, null=True, blank=True)
+    activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
+    user_id = models.CharField(max_length=20, null=True, blank=True)
+    details = models.JSONField(default=dict)  # Stores flexible activity-specific data
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["workspace_id", "activity_type"]),
+            models.Index(fields=["created"]),
+        ]
+
+    def __str__(self):
+        return f"{self.get_activity_type_display()} in {self.workspace_name} at {self.created}"
+
+
+class Challenge(models.Model):
+    CHALLENGE_TYPE_CHOICES = [
+        ("single", "Single User"),
+        ("team", "Team"),
+    ]
+
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    challenge_type = models.CharField(max_length=10, choices=CHALLENGE_TYPE_CHOICES, default="single")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    participants = models.ManyToManyField(User, related_name="user_challenges", blank=True)  # For single users
+    team_participants = models.ManyToManyField(
+        Organization, related_name="team_challenges", blank=True
+    )  # For team challenges
+    points = models.IntegerField(default=0)  # Points for completing the challenge
+    progress = models.IntegerField(default=0)  # Progress in percentage
+    completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return self.title
+
+
+class GitHubIssue(models.Model):
+    ISSUE_TYPE_CHOICES = [
+        ("issue", "Issue"),
+        ("pull_request", "Pull Request"),
+    ]
+
+    issue_id = models.IntegerField(unique=True)
+    title = models.CharField(max_length=255)
+    body = models.TextField(null=True, blank=True)
+    state = models.CharField(max_length=50)
+    type = models.CharField(max_length=50, choices=ISSUE_TYPE_CHOICES, default="issue")
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    closed_at = models.DateTimeField(null=True, blank=True)
+    merged_at = models.DateTimeField(null=True, blank=True)
+    is_merged = models.BooleanField(default=False)
+    url = models.URLField()
+    repo = models.ForeignKey(
+        Repo,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
+    user_profile = models.ForeignKey(
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
+
+    def __str__(self):
+        return f"{self.title} by {self.user_profile.user.username} - {self.state}"

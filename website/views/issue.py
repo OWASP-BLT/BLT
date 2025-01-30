@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 
 import requests
 import six
-import tweepy
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from django.conf import settings
@@ -598,43 +597,45 @@ class IssueBaseCreate(object):
         # print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
-        try:
-            auth = tweepy.Client(
-                settings.BEARER_TOKEN,
-                settings.APP_KEY,
-                settings.APP_KEY_SECRET,
-                settings.ACCESS_TOKEN,
-                settings.ACCESS_TOKEN_SECRET,
-            )
 
-            blt_url = "https://%s/issue/%d" % (
-                settings.DOMAIN_NAME,
-                obj.id,
-            )
-            domain_name = domain.get_name
-            twitter_account = (
-                "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
-            )
+        # Twitter posting code removed as we no longer use Twitter integration
+        # try:
+        #     auth = tweepy.Client(
+        #         settings.BEARER_TOKEN,
+        #         settings.APP_KEY,
+        #         settings.APP_KEY_SECRET,
+        #         settings.ACCESS_TOKEN,
+        #         settings.ACCESS_TOKEN_SECRET,
+        #     )
 
-            issue_title = obj.description + " " if not obj.is_hidden else ""
+        #     blt_url = "https://%s/issue/%d" % (
+        #         settings.DOMAIN_NAME,
+        #         obj.id,
+        #     )
+        #     domain_name = domain.get_name
+        #     twitter_account = (
+        #         "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
+        #     )
 
-            message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
-                twitter_account,
-                issue_title,
-                domain_name,
-                user.username,
-                settings.PROJECT_NAME,
-                blt_url,
-            )
+        #     issue_title = obj.description + " " if not obj.is_hidden else ""
 
-            auth.create_tweet(text=message)
+        #     message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
+        #         twitter_account,
+        #         issue_title,
+        #         domain_name,
+        #         user.username,
+        #         settings.PROJECT_NAME,
+        #         blt_url,
+        #     )
 
-        except (
-            TypeError,
-            tweepy.errors.HTTPException,
-            tweepy.errors.TweepyException,
-        ) as e:
-            print(e)
+        #     auth.create_tweet(text=message)
+
+        # except (
+        #     TypeError,
+        #     tweepy.errors.HTTPException,
+        #     tweepy.errors.TweepyException,
+        # ) as e:
+        #     print(e)
 
         if created:
             try:
@@ -1431,6 +1432,7 @@ def comment_on_content(request, content_pk):
     content_type = request.POST.get("content_type")
     content_type_obj = ContentType.objects.get(model=content_type)
     content = content_type_obj.get_object_for_this_type(pk=content_pk)
+
     VALID_CONTENT_TYPES = ["issue", "post"]
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -1452,6 +1454,7 @@ def comment_on_content(request, content_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
+
                 return redirect("home")
 
             Comment.objects.create(

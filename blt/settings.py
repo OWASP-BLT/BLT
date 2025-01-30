@@ -311,6 +311,7 @@ else:
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
