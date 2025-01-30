@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            logger.info(f"Starting daily scheduled tasks at {timezone.now()}")   
+            logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
             management.call_command("checkin_reminder_notification")
             management.call_command("update_github_issues")
             management.call_command("fetch_contributor_stats")
