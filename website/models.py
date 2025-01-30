@@ -1429,3 +1429,19 @@ class GitHubIssue(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+
+      
+  
+class Kudos(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    link = models.URLField(blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name_plural = "Kudos"
+
+    def __str__(self):
+        return f"Kudos from {self.sender.username} to {self.receiver.username}"
