@@ -202,7 +202,7 @@ def get_github_stats(user_profile):
         .order_by("-created_at")
     )
 
-    # Calculate reviewed PRs (only merged)
+    # Calculate reviewed PRs
     reviewed_count = GitHubIssue.objects.filter(
         reviews__reviewer=user_profile,
     ).count()
