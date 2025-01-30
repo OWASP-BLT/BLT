@@ -203,7 +203,6 @@ from website.views.user import (
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    addbalance,
     assign_badge,
     badge_user_list,
     contributors,
@@ -217,11 +216,9 @@ from website.views.user import (
     profile,
     profile_edit,
     referral_signup,
-    stripe_connected,
     update_bch_address,
     user_dashboard,
     users_view,
-    withdraw,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -317,17 +314,6 @@ urlpatterns = [
         r"^dashboard/organization/$",
         organization_dashboard,
         name="organization_dashboard_home",
-    ),
-    re_path(
-        r"^dashboard/user/profile/addbalance$",
-        addbalance,
-        name="addbalance",
-    ),
-    re_path(r"^dashboard/user/profile/withdraw$", withdraw, name="withdraw"),
-    re_path(
-        r"^dashboard/user/stripe/connected/(?P<username>[^/]+)/$",
-        stripe_connected,
-        name="stripe_connected",
     ),
     re_path(
         r"^dashboard/admin/organization$",
