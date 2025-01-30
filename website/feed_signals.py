@@ -3,7 +3,20 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
-from .models import Activity, Badge, Bid, Hunt, IpReport, Issue, Post, Suggestion, TimeLog, UserBadge, UserProfile
+from .models import (
+    Activity,
+    BaconEarning,
+    Badge,
+    Bid,
+    Hunt,
+    IpReport,
+    Issue,
+    Post,
+    Suggestion,
+    TimeLog,
+    UserBadge,
+    UserProfile,
+)
 
 
 def get_default_user():
@@ -45,11 +58,26 @@ def create_activity(instance, action_type):
     )
 
 
+def giveBacon(user):
+    # Check if the user already has a token record
+    if user is None or user.is_authenticated is False:
+        return
+    token_earning, created = BaconEarning.objects.get_or_create(user=user)
+
+    if created:
+        token_earning.tokens_earned = 1  # Reward 10 tokens for completing the action (adjust as needed)
+    else:
+        token_earning.tokens_earned += 1  # Add 10 tokens if the user already exists in the system
+
+    token_earning.save()  # Save the updated record
+
+
 @receiver(post_save)
 def handle_post_save(sender, instance, created, **kwargs):
     """Generic handler for post_save signal."""
     if sender == IpReport and created:  # Track first IP report
         assign_first_action_badge(instance.user, "First IP Reported")
+        giveBacon(instance.user)
         create_activity(instance, "created")
 
     elif sender == Post and created:  # Track first blog post
