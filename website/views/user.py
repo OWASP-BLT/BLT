@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import requests
-import stripe
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -677,128 +676,6 @@ def users_view(request, *args, **kwargs):
         context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
-
-
-@login_required(login_url="/accounts/login")
-def stripe_connected(request, username):
-    user = User.objects.get(username=username)
-    wallet, created = Wallet.objects.get_or_create(user=user)
-    from django.conf import settings
-
-    stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-    account = stripe.Account.retrieve(wallet.account_id)
-    if account.payouts_enabled:
-        payment = Payment.objects.get(wallet=wallet, active=True)
-        balance = stripe.Balance.retrieve()
-        if balance.available[0].amount > payment.value * 100:
-            stripe.Transfer.create(
-                amount=payment.value * 100,
-                currency="usd",
-                destination="000123456789",
-                transfer_group="ORDER_95",
-            )
-            wallet.withdraw(Decimal(request.POST["amount"]))
-            wallet.save()
-            payment.active = False
-            payment.save()
-            return HttpResponseRedirect("/dashboard/user/profile/" + username)
-        else:
-            return HttpResponse("ERROR")
-    else:
-        wallet.account_id = None
-        wallet.save()
-    return HttpResponse("error")
-
-
-@login_required(login_url="/accounts/login")
-def addbalance(request):
-    if request.method == "POST":
-        if request.user.is_authenticated:
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            charge = stripe.Charge.create(
-                amount=int(Decimal(request.POST["amount"]) * 100),
-                currency="usd",
-                description="Example charge",
-                source=request.POST["stripeToken"],
-            )
-            wallet.deposit(request.POST["amount"])
-        return HttpResponse("success")
-
-
-@login_required(login_url="/accounts/login")
-def withdraw(request):
-    if request.method == "POST":
-        if request.user.is_authenticated:
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            if wallet.current_balance < Decimal(request.POST["amount"]):
-                return HttpResponse("msg : amount greater than wallet balance")
-            else:
-                amount = Decimal(request.POST["amount"])
-            payments = Payment.objects.filter(wallet=wallet)
-            for payment in payments:
-                payment.active = False
-            payment = Payment()
-            payment.wallet = wallet
-            payment.value = Decimal(request.POST["amount"])
-            payment.save()
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            if wallet.account_id:
-                account = stripe.Account.retrieve(wallet.account_id)
-                if account.payouts_enabled:
-                    balance = stripe.Balance.retrieve()
-                    if balance.available[0].amount > payment.value * 100:
-                        stripe.Transfer.create(
-                            amount=Decimal(request.POST["amount"]) * 100,
-                            currency="usd",
-                            destination=wallet.account_id,
-                            transfer_group="ORDER_95",
-                        )
-                        wallet.withdraw(Decimal(request.POST["amount"]))
-                        wallet.save()
-                        payment.active = False
-                        payment.save()
-                        return HttpResponseRedirect("/dashboard/user/profile/" + request.user.username)
-                    else:
-                        return HttpResponse("INSUFFICIENT BALANCE")
-                else:
-                    wallet.account_id = None
-                    wallet.save()
-                    account = stripe.Account.create(
-                        type="express",
-                    )
-                    wallet.account_id = account.id
-                    wallet.save()
-                    account_links = stripe.AccountLink.create(
-                        account=account,
-                        return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                        + request.user.username,
-                        refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                        + request.user.username,
-                        type="account_onboarding",
-                    )
-                    return JsonResponse({"redirect": account_links.url, "status": "success"})
-            else:
-                account = stripe.Account.create(
-                    type="express",
-                )
-                wallet.account_id = account.id
-                wallet.save()
-                account_links = stripe.AccountLink.create(
-                    account=account,
-                    return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                    + request.user.username,
-                    refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                    + request.user.username,
-                    type="account_onboarding",
-                )
-                return JsonResponse({"redirect": account_links.url, "status": "success"})
-        return JsonResponse({"status": "error"})
-
 
 def contributors(request):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")

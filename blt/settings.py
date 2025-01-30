@@ -528,18 +528,6 @@ SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
 
 SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 
-STRIPE_LIVE_PUBLIC_KEY = os.environ.get("STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>")
-STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
-STRIPE_TEST_PUBLIC_KEY = os.environ.get(
-    "STRIPE_TEST_PUBLIC_KEY",
-    "pk_test_12345",
-)
-STRIPE_TEST_SECRET_KEY = os.environ.get(
-    "STRIPE_TEST_SECRET_KEY",
-    "sk_test_12345",
-)
-
-STRIPE_LIVE_MODE = False  # TODO: remove stripe
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 IS_TEST = False
