@@ -17,6 +17,20 @@ from website.models import Contributor, Organization, Project, Repo
 class Command(BaseCommand):
     help = "Automatically detects and imports new OWASP www-project repositories"
 
+    def parse_date_safely(self, date_string):
+        """Safely parse datetime string, return None if invalid"""
+        if not date_string or not isinstance(date_string, str):
+            return None
+        try:
+            parsed_date = parse_datetime(date_string)
+            if parsed_date is None:
+                # If Django's parse_datetime fails, try a simpler ISO format parse
+                parsed_date = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
+            return parsed_date
+        except (ValueError, TypeError, AttributeError):
+            self.stderr.write(self.style.WARNING(f"Failed to parse date: {date_string}"))
+            return None
+
     def handle(self, *args, **options):
         # Check required environment variables
         github_token = getattr(settings, "GITHUB_TOKEN", None)
@@ -153,7 +167,10 @@ class Command(BaseCommand):
 
                         # Handle contributors
                         contributors_data = self.fetch_contributors_data(
-                            repo_url, headers, delay_on_rate_limit, max_rate_limit_retries
+                            repo_url,
+                            headers,
+                            delay_on_rate_limit,
+                            max_rate_limit_retries,
                         )
                         if contributors_data:
                             self.handle_contributors(repo, contributors_data)
@@ -170,8 +187,8 @@ class Command(BaseCommand):
                 except IntegrityError as ie:
                     self.stderr.write(self.style.ERROR(f"Database integrity error for {repo_url}: {str(ie)}"))
                     continue
-                except requests.RequestException as re:
-                    self.stderr.write(self.style.ERROR(f"Network error while processing {repo_url}: {str(re)}"))
+                except requests.RequestException as req_exc:
+                    self.stderr.write(self.style.WARNING(f"Network error while processing {repo_url}: {str(req_exc)}"))
                     continue
                 except CommandError as ce:
                     self.stderr.write(self.style.ERROR(f"Command execution error for {repo_url}: {str(ce)}"))
@@ -247,36 +264,22 @@ class Command(BaseCommand):
         if response is None or response.status_code != 200:
             return None
 
-        def parse_date_safely(date_string):
-            """Safely parse datetime string, return None if invalid"""
-            if not date_string or not isinstance(date_string, str):
-                return None
-            try:
-                parsed_date = parse_datetime(date_string)
-                if parsed_date is None:
-                    # If Django's parse_datetime fails, try a simpler ISO format parse
-                    parsed_date = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
-                return parsed_date
-            except (ValueError, TypeError, AttributeError):
-                self.stderr.write(self.style.WARNING(f"Failed to parse date: {date_string}"))
-                return None
-
         try:
             repo_data = response.json()
         except ValueError as ve:
             self.stderr.write(self.style.WARNING(f"Invalid JSON response from {url}: {str(ve)}"))
             return None
-        except requests.RequestException as re:
-            self.stderr.write(self.style.WARNING(f"Request failed for {url}: {str(re)}"))
+        except requests.RequestException as req_exc:
+            self.stderr.write(self.style.WARNING(f"Request failed for {url}: {str(req_exc)}"))
             return None
 
         full_name = repo_data.get("full_name")
 
         # Safely parse all date fields
-        last_updated = parse_date_safely(repo_data.get("updated_at"))
-        last_commit_date = parse_date_safely(repo_data.get("pushed_at"))
-        created_date = parse_date_safely(repo_data.get("created_at"))
-        modified_date = parse_date_safely(repo_data.get("updated_at"))
+        last_updated = self.parse_date_safely(repo_data.get("updated_at"))
+        last_commit_date = self.parse_date_safely(repo_data.get("pushed_at"))
+        created_date = self.parse_date_safely(repo_data.get("created_at"))
+        modified_date = self.parse_date_safely(repo_data.get("updated_at"))
 
         data = {
             "name": repo_data.get("name"),
@@ -317,7 +320,7 @@ class Command(BaseCommand):
         if release_resp.status_code == 200:
             release_info = release_resp.json()
             data["release_name"] = release_info.get("name") or release_info.get("tag_name")
-            data["release_datetime"] = parse_date_safely(release_info.get("published_at"))
+            data["release_datetime"] = self.parse_date_safely(release_info.get("published_at"))
 
         commit_count, contributor_data_list = self.compute_commit_count_and_contributors(
             full_name, headers, delay, max_retries
@@ -496,7 +499,10 @@ class Command(BaseCommand):
             if project != new_projects[-1]:
                 blocks.append({"type": "divider"})
 
-        message = {"text": f"Found {len(new_projects)} new OWASP projects!", "blocks": blocks}
+        message = {
+            "text": f"Found {len(new_projects)} new OWASP projects!",
+            "blocks": blocks,
+        }
 
         try:
             response = requests.post(webhook_url, json=message)
@@ -510,17 +516,3 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Network error sending Slack notification: {str(re)}"))
         except ValueError as ve:
             self.stderr.write(self.style.ERROR(f"Invalid message format for Slack: {str(ve)}"))
-
-    def parse_date_safely(self, date_string):
-        """Safely parse datetime string, return None if invalid"""
-        if not date_string or not isinstance(date_string, str):
-            return None
-        try:
-            parsed_date = parse_datetime(date_string)
-            if parsed_date is None:
-                # If Django's parse_datetime fails, try a simpler ISO format parse
-                parsed_date = datetime.fromisoformat(date_string.replace("Z", "+00:00"))
-            return parsed_date
-        except (ValueError, TypeError, AttributeError):
-            self.stderr.write(self.style.WARNING(f"Failed to parse date: {date_string}"))
-            return None

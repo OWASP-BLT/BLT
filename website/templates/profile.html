@@ -688,6 +688,85 @@
                         <p class="col-span-full text-center text-gray-500">No badges awarded yet.</p>
                     {% endfor %}
                 </div>
+                <div class="my-6 mr-5">
+                    {% if repos_with_prs %}
+                        <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                    Overall Pull Requests <i class="fas fa-code-branch text-blue-500"></i>
+                                </h2>
+                            </div>
+                            <div class="flex justify-between items-center gap-0">
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-purple-100 text-purple-700 font-semibold flex-grow">
+                                    <i class="fas fa-check-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ overall_stats.merged_count }}</div>
+                                        <div class="text-md font-normal">Merged</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
+                                    <i class="fas fa-exclamation-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ overall_stats.open_count }}</div>
+                                        <div class="text-md font-normal">Open</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-red-100 text-red-700 font-semibold flex-grow">
+                                    <i class="fas fa-times-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ overall_stats.closed_count }}</div>
+                                        <div class="text-md font-normal">Closed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
+                                <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.user_rank }}
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            {% for repo_name, repo_data in repos_with_prs.items %}
+                                <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                                    <div class="bg-gray-50 p-4 border-b border-gray-200">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                                <i class="fas fa-book text-gray-600"></i>
+                                                <a href="{{ repo_data.repo_url }}"
+                                                   class="text-blue-600 font-bold text-2xl hover:underline">{{ repo_name }}</a>
+                                            </h3>
+                                            <div class="flex gap-3 text-md">
+                                                <span class="flex items-center gap-1 text-purple-700 font-bold">
+                                                    <i class="fas fa-check-circle text-xl"></i> {{ repo_data.stats.merged_count }}
+                                                </span>
+                                                <span class="flex items-center gap-1 text-yellow-700 font-bold">
+                                                    <i class="fas fa-exclamation-circle text-xl"></i> {{ repo_data.stats.open_count }}
+                                                </span>
+                                                <span class="flex items-center gap-1 text-red-700 font-bold">
+                                                    <i class="fas fa-times-circle text-xl"></i> {{ repo_data.stats.closed_count }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                        {% for pr in repo_data.pull_requests %}
+                                            <div class="flex justify-between items-center p-4 hover:bg-gray-50">
+                                                <a href="{{ pr.url }}" class="text-blue-600 font-medium hover:underline">{{ pr.title }}</a>
+                                                <span class="flex items-center gap-2 px-3 py-1 rounded-sm text-sm font-medium {% if pr.is_merged %} bg-purple-100 text-purple-700 {% elif pr.state == 'open' %} bg-yellow-100 text-yellow-700 {% else %} bg-red-100 text-red-700 {% endif %} text-lg">
+                                                    {% if pr.is_merged %}
+                                                        <i class="fas fa-check-circle text-lg"></i>
+                                                    {% elif pr.state == 'open' %}
+                                                        <i class="fas fa-exclamation-circle text-lg"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-lg"></i>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
