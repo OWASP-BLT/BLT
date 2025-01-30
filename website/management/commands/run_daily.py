@@ -18,6 +18,9 @@ class Command(BaseCommand):
             logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
             management.call_command("update_github_issues")
             management.call_command("fetch_contributor_stats")
+            management.call_command("check_keywords")
+            management.call_command("check_owasp_projects")
+            management.call_command("check_trademarks")
         except Exception as e:
             logger.error(f"Error in daily tasks: {str(e)}")
             raise
