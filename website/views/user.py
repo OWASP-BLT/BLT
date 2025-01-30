@@ -1,7 +1,6 @@
 import json
 import os
 from datetime import datetime, timezone
-from decimal import Decimal
 
 import requests
 from allauth.account.signals import user_signed_up
@@ -16,7 +15,7 @@ from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -40,7 +39,6 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
-    Payment,
     Points,
     Tag,
     User,
@@ -676,6 +674,7 @@ def users_view(request, *args, **kwargs):
         context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
+
 
 def contributors(request):
     contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")

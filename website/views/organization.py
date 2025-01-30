@@ -229,7 +229,6 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                     break
                 index = index + 1
             total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
-            from django.conf import settings
             winner.prize_distributed = True
             winner.hunt = hunt
             winner.save()
@@ -346,8 +345,6 @@ class Joinorganization(TemplateView):
             return JsonResponse({"status": "Success"})
             # company.subscription =
         elif paymentType == "card":
-            from django.conf import settings
-
             organization = Organization()
             organization.admin = request.user
             organization.name = name
