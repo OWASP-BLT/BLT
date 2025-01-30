@@ -335,14 +335,18 @@ def newhome(request, template="new_home.html"):
 
 
 def delete_issue(request, id):
-    try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
-        tokenauth = False
+    tokenauth = False
+    
+    # Handle token authentication for POST requests
+    if request.method == "POST" and "token" in request.POST:
+        try:
+            for token in Token.objects.all():
+                if request.POST["token"] == token.key:
+                    request.user = User.objects.get(id=token.user_id)
+                    tokenauth = True
+                    break
+        except Token.DoesNotExist:
+            tokenauth = False
 
     issue = Issue.objects.get(id=id)
     if request.user.is_superuser or request.user == issue.user or tokenauth:
