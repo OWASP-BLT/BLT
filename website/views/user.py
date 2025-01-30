@@ -497,7 +497,11 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Get pull request leaderboard
         pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request", is_merged=True)
-            .values("user_profile__user__username", "user_profile__avatar")
+            .values(
+                "user_profile__user__username",
+                "user_profile__user__email",  # For gravatar fallback
+                "user_profile__github_url",  # Using github_url instead of avatar
+            )
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )

@@ -203,20 +203,23 @@
                 {% else %}
                     {% for leader in pr_leaderboard %}
                         <div class="list-group-item">
-                            {% if leader.user_profile__avatar %}
-                                <img src="{{ leader.user_profile__avatar }}"
+                            {% if leader.user_profile__github_url %}
+                                <img src="https://github.com/{{ leader.user_profile__user__username }}.png"
                                      class="img-responsive img-thumbnail profileimage"
                                      alt="{{ leader.user_profile__user__username }}"
                                      width="50px"
                                      height="50px">
                             {% else %}
-                                <img src="{% gravatar_url leader.user_profile__user__username 50 %}"
+                                <img src="{% gravatar_url leader.user_profile__user__email 50 %}"
                                      class="img-responsive img-thumbnail profileimage"
                                      alt="username"
                                      width="50px"
                                      height="50px">
                             {% endif %}
-                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}">{{ leader.user_profile__user__username }}</a>
+                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}">
+                                {{ leader.user_profile__user__username }}
+                                {% if leader.user_profile__github_url %}<i class="fa fa-github"></i>{% endif %}
+                            </a>
                             <span class="pull-right badge">{{ leader.total_prs }} PRs</span>
                         </div>
                     {% endfor %}
