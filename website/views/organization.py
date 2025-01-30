@@ -5,14 +5,13 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
-import humanize
 import requests
-import stripe
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Q, Sum
@@ -230,23 +229,6 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                     break
                 index = index + 1
             total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            balance = stripe.Balance.retrieve()
-            if balance.available[0].amount > total_amount * 100:
-                if winner.winner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.winner)
-                    wallet.deposit(hunt.prize_winner)
-                    wallet.save()
-                if winner.runner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.runner)
-                    wallet.deposit(hunt.prize_runner)
-                    wallet.save()
-                if winner.second_runner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.second_runner)
-                    wallet.deposit(hunt.prize_second_runner)
-                    wallet.save()
             winner.prize_distributed = True
             winner.hunt = hunt
             winner.save()
@@ -363,15 +345,6 @@ class Joinorganization(TemplateView):
             return JsonResponse({"status": "Success"})
             # company.subscription =
         elif paymentType == "card":
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            charge = stripe.Charge.create(
-                amount=int(Decimal(sub.charge_per_month) * 100),
-                currency="usd",
-                description="Example charge",
-                source=request.POST["stripeToken"],
-            )
             organization = Organization()
             organization.admin = request.user
             organization.name = name
@@ -618,14 +591,18 @@ class DomainDetailView(ListView):
         # Fetch the related organization
         organization = domain.organization
         if organization is None:
-            organization = get_object_or_404(Organization, Q(name__iexact=domain.get_name))
+            organizations = Organization.objects.filter(name__iexact=domain.get_name)
+            if organizations.exists():
+                organization = organizations.first()
+            else:
+                organization = None
+
         context["organization"] = organization
 
         if organization:
             # Fetch related trademarks for the organization
             trademarks = Trademark.objects.filter(organization=organization)
-
-        context["trademarks"] = trademarks
+            context["trademarks"] = trademarks
 
         open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
@@ -895,7 +872,11 @@ def user_sizzle_report(request, username):
 
         response_data.append(day_data)
 
-    return render(request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user})
+    return render(
+        request,
+        "sizzle/user_sizzle_report.html",
+        {"response_data": response_data, "user": user},
+    )
 
 
 @login_required
@@ -924,7 +905,12 @@ def sizzle_daily_log(request):
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return JsonResponse({"success": "true", "message": "Daily status report submitted successfully."})
+            return JsonResponse(
+                {
+                    "success": "true",
+                    "message": "Daily status report submitted successfully.",
+                }
+            )
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -1062,7 +1048,11 @@ def sizzle(request):
                 "date": date,
             }
 
-    return render(request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard})
+    return render(
+        request,
+        "sizzle/sizzle.html",
+        {"sizzle_data": sizzle_data, "leaderboard": leaderboard},
+    )
 
 
 def trademark_detailview(request, slug):
@@ -1103,7 +1093,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
         hunt_active = False
         hunt_completed = False
-        time_remaining = humanize.naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
+        time_remaining = naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
     elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
         hunt_active = False
         hunt_completed = True
@@ -1673,7 +1663,11 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
-    return render(request, "sizzle/add_sizzle_checkin.html", {"yesterday_report": yesterday_report})
+    return render(
+        request,
+        "sizzle/add_sizzle_checkin.html",
+        {"yesterday_report": yesterday_report},
+    )
 
 
 def checkIN(request):
