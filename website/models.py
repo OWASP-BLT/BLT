@@ -737,6 +737,9 @@ class UserProfile(models.Model):
                 if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
                     UserBadge.objects.create(user=self.user, badge=badge)
 
+    def __str__(self):
+        return self.user.username
+
 
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
@@ -1409,9 +1412,19 @@ class GitHubIssue(models.Model):
     merged_at = models.DateTimeField(null=True, blank=True)
     is_merged = models.BooleanField(default=False)
     url = models.URLField()
-    repo = models.ForeignKey(Repo, null=True, blank=True, on_delete=models.SET_NULL, related_name="github_issues")
+    repo = models.ForeignKey(
+        Repo,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
     user_profile = models.ForeignKey(
-        UserProfile, null=True, blank=True, on_delete=models.SET_NULL, related_name="github_issues"
+        UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
     )
 
     def __str__(self):
