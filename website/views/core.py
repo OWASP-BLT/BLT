@@ -620,9 +620,6 @@ def set_vote_status(request):
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 
 
-
-
-
 @login_required
 def add_suggestions(request):
     if request.method == "POST":
@@ -632,60 +629,51 @@ def add_suggestions(request):
         description = data.get("description", "")
         organization_id = data.get("organization")
         if title and description and user:
-            suggestion = Suggestion(user=user, title=title, description=description)
+            organization = None
             if organization_id:
                 try:
                     organization = Organization.objects.get(id=organization_id)
                 except Organization.DoesNotExist:
-                    organization = None
-            else:
-                organization = None
-            suggestion = Suggestion(
-                user=user, title=title, description=description, organization=organization
-            )
+                    print("Couldn't find organization with id: ", organization_id)
+                    pass
+
+            # Save Suggestion in DB
+            suggestion = Suggestion(user=user, title=title, description=description, organization=organization)
             suggestion.save()
             messages.success(request, "Suggestion added successfully.")
 
-            # GitHub issue creation
-            github_repo_url = os.environ.get("GITHUB_REPO_URL")
-            github_token = os.environ.get("GITHUB_ACCESS_TOKEN")
+            # GitHub Issue Creation
+            github_token = settings.GITHUB_TOKEN
+            github_api_url = settings.GITHUB_API_URL
+            if github_api_url and github_token:
+                url = f"{github_api_url}/issues"
 
-            github_url = github_repo_url.replace("https", "git").replace("http", "git") + ".git"
-            p = parse(github_url)
+                organization_text = f" for organization: **{organization.name}**" if organization else ""
+                user_profile_link = f"[{user}]({settings.WEBSITE_URL}/profile/{user.username})"
 
-            url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
+                issue_data = {
+                    "title": title,
+                    "body": f"{description}\n\nSuggested by {user_profile_link}{organization_text}",
+                }
 
-            organization_name = organization.name if organization else ""
-            organization_text = f" for company: {organization_name}" if organization else ""
-            suggestion = {
-                "title": title,
-                "body": description + "\n\n" + " Suggested by " + str(user) + organization_text,
-                "milestone": 42,
-            }
+                milestone_id = 42  # Milestone ID on the BLT GitHub repository
+                if milestone_id:
+                    issue_data["milestone"] = milestone_id
 
-            if github_repo_url and github_token:
-                response = requests.post(
-                    url, json.dumps(suggestion), headers={"Authorization": "token " + github_token}
-                )
+                response = requests.post(url, json=issue_data, headers={"Authorization": f"Bearer {github_token}"})
 
                 if response.status_code == 201:
-                    messages.success(
-                        request, "Suggestion added successfully and GitHub issue created."
-                    )
+                    print("GitHub issue created successfully.")
                 else:
-                    messages.warning(request, "Suggestion added but failed to create GitHub issue.")
-            else:
-                messages.warning(request, "Suggestion added but GitHub settings are missing.")
+                    print("GitHub API Error:", response.json())
+                    print("Suggestion added but failed to create GitHub issue.")
 
             return JsonResponse({"status": "success"})
         else:
             messages.error(request, "Please fill all the fields.")
             return JsonResponse({"status": "error"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
-    organizations = Organization.objects.all()
-    return render(request, "suggestions/add_suggestion.html", {"organizations": organizations})
+    return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
 
 
 class GoogleLogin(SocialLoginView):
