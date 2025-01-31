@@ -8,6 +8,53 @@ from django.db import migrations
 
 def add_badge_icons(apps, schema_editor):
     Badge = apps.get_model("website", "Badge")
+
+    pr_badges = [
+        {
+            "title": "1 Merged Pull Request",
+            "description": "Awarded for merging your first pull request",
+            "icon": "badges/1-pr.png",
+        },
+        {
+            "title": "10 Merged Pull Requests",
+            "description": "Awarded for merging 10 pull requests",
+            "icon": "badges/10-pr.png",
+        },
+        {
+            "title": "25 Merged Pull Requests",
+            "description": "Awarded for merging 25 pull requests",
+            "icon": "badges/25-pr.png",
+        },
+        {
+            "title": "50 Merged Pull Requests",
+            "description": "Awarded for merging 50 pull requests",
+            "icon": "badges/50-pr.png",
+        },
+        {
+            "title": "100 Merged Pull Requests",
+            "description": "Awarded for merging 100 pull requests",
+            "icon": "badges/100-pr.png",
+        },
+    ]
+
+    # Create PR milestone badges
+    for badge_data in pr_badges:
+        badge = Badge.objects.filter(title=badge_data["title"]).first()
+        if not badge:
+            badge = Badge.objects.create(
+                title=badge_data["title"], description=badge_data["description"], type="automatic"
+            )
+
+        # Handle icon assignment
+        static_icon_path = os.path.join("website", "static", "img", badge_data["icon"])
+        if os.path.exists(static_icon_path):
+            media_icon_path = os.path.join(settings.MEDIA_ROOT, "badges", os.path.basename(static_icon_path))
+            os.makedirs(os.path.dirname(media_icon_path), exist_ok=True)
+            shutil.copy(static_icon_path, media_icon_path)
+
+            with open(media_icon_path, "rb") as f:
+                badge.icon.save(os.path.basename(media_icon_path), File(f), save=True)
+
     new_badges = [
         {"title": "Mentor", "icon": "badges/icons8-mentor-94.png"},
         {"title": "First Pull Request Merged", "icon": "badges/icons8-merge-40.png"},
