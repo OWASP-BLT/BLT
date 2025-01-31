@@ -561,3 +561,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
