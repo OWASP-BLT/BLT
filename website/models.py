@@ -713,7 +713,7 @@ class UserProfile(models.Model):
             return False
 
         return True
-
+     
     def award_streak_badges(self):
         """
         Award badges for streak milestones
@@ -739,6 +739,30 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+       def check_merged_pr_badges(self):
+        thresholds = [
+            (1, ("1 Merged Pull Request", "1-pr.png")),
+            (10, ("10 Merged Pull Requests", "10-pr.png")),
+            (25, ("25 Merged Pull Requests", "25-pr.png")),
+            (50, ("50 Merged Pull Requests", "50-pr.png")),
+            (100, ("100 Merged Pull Requests", "100-pr.png")),
+        ]
+        for limit, (badge_name, icon_file) in thresholds:
+            if self.merged_pr_count >= limit:
+                badge, created = Badge.objects.get_or_create(
+                    title=badge_name,
+                    type="automatic",
+                    defaults={
+                        "description": f"Awarded for merging {limit} pull requests.",
+                        "icon": f"badges/{icon_file}",
+                    },
+                )
+                if not UserBadge.objects.filter(user=self.user, badge=badge).exists():
+                    UserBadge.objects.create(user=self.user, badge=badge)
+                    print(f"Awarded badge '{badge_name}' to {self.user.username}")
+
+
 
 
 def create_profile(sender, **kwargs):
