@@ -21,10 +21,25 @@
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold mb-12 mt-6 text-center">Badges</h1>
         <hr>
+        <!-- Badge Categories -->
+        <div class="mb-8">
+            <div class="inline-flex rounded-md shadow-sm" role="group">
+                <button type="button"
+                        class="filter-btn active px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-l-lg hover:bg-gray-100 focus:z-10 focus:ring-2"
+                        data-category="all">All Badges</button>
+                <button type="button"
+                        class="filter-btn px-4 py-2 text-sm font-medium bg-white border border-gray-200 hover:bg-gray-100 focus:z-10 focus:ring-2"
+                        data-category="pr">Pull Request Badges</button>
+                <button type="button"
+                        class="filter-btn px-4 py-2 text-sm font-medium bg-white border border-gray-200 rounded-r-lg hover:bg-gray-100 focus:z-10 focus:ring-2"
+                        data-category="streak">Streak Badges</button>
+            </div>
+        </div>
         <!-- Badge Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
             {% for badge in badges %}
-                <div class="bg-white border-2 border-gray-100 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-100 hover:shadow-4xl hover:scale-102 hover:-translate-y-2 relative">
+                <div class="badge-card bg-white border-2 border-gray-100 rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-100 hover:shadow-4xl hover:scale-102 hover:-translate-y-2 relative"
+                     data-category="{% if 'Pull Request' in badge.title %}pr{% elif 'Streak' in badge.title %}streak{% else %}other{% endif %}">
                     <a href="{% url 'badge_user_list' badge_id=badge.id %}"
                        class="absolute top-0 left-0 w-full z-10">
                         <div class="absolute top-0 left-0 w-full h-2 bg-purple-600"></div>
@@ -68,4 +83,30 @@
             {% endfor %}
         </div>
     </div>
+    <script>
+    // Filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const badges = document.querySelectorAll('.badge-card');
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                // Add active class to clicked button
+                button.classList.add('active');
+                
+                const category = button.dataset.category;
+                
+                badges.forEach(badge => {
+                    if (category === 'all' || badge.dataset.category === category) {
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+    </script>
 {% endblock content %}
