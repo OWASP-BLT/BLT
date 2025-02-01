@@ -34,7 +34,6 @@
         padding: 10px;
         font-size: 1.4rem;
     }
-
     @media (max-width:1130px) {
         #bug-description-container{
             flex-direction: column;
@@ -43,61 +42,23 @@
             width: 100%;
         }
     }
-
     @media (max-width: 1514px) {
         #files_manage{
             width: 100%;
             height: max-content;
             justify-content: space-around;
-            
         }
         #files_manage div{
             margin-top: 20px;
         }
         #screenshot-container{
-            width: 73vw
+            width: 73vw;
         }
     }
-
     .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-    }
-    #duplicate-container {
-        background: rgba(0,0,0,0.5);
-    }
-    #duplicate-container li {
-        padding: 1.5rem;
-        border-bottom: 1px solid #e5e7eb;
-        transition: all 0.2s;
-        background: white;
-    }
-    #duplicate-container li:hover {
-        background: #f8fafc;
-        transform: translateX(4px);
-    }
-    #duplicate-container .issue-description {
-        font-size: 1.2rem;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        color: #1e293b;
-    }
-    #duplicate-container .issue-date {
-        font-size: 0.95rem;
-        color: #64748b;
-    }
-    #duplicate-container .issue-link {
-        font-size: 1rem;
-        color: #3b82f6;
-        text-decoration: underline;
-    }
-    #duplicate-container .close-footer {
-        padding: 1.5rem;
-        border-top: 1px solid #e5e7eb;
-        background: #f8fafc;
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
     }
     @media (max-width: 768px) {
         #duplicate-container .list-container {
@@ -111,13 +72,12 @@
             margin-top: 2rem !important;
         }
     }
-
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div id="duplicate-container"
-         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10"
+         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10 bg-black bg-opacity-50"
          hidden>
         <div class="flex flex-col w-full h-full items-center">
             <div class="w-full flex bg-red-500 items-center justify-between p-4">
@@ -144,7 +104,7 @@
                             class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto">
                         </ul>
                     </div>
-                    <div class="close-footer text-center">
+                    <div class="p-6 border-t border-gray-200 bg-gray-100 text-center">
                         <button onclick="$('#duplicate-container').hide()"
                                 class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
                             Close List
@@ -327,7 +287,7 @@
                                                         var img = new Image();
                                                         img.src = event.target.result;
 
-                                                        
+
                                                         var file = new File([blob], "pasted-image.png", {type: blob.type});
 
                                                         var dt = new DataTransfer();
@@ -344,7 +304,7 @@
                                                         // Replace the file input's FileList with the new one
                                                         file_input.files = dt.files;
                                                         file_input.dispatchEvent(new Event('change'));
-                                                        
+
                                                     };
                                                     reader.readAsDataURL(blob);
                                                 }
@@ -508,7 +468,7 @@
             let titleDiv = $("<div>").addClass("w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500");
             let titleP = $("<p>").addClass("text-xl text-white font-bold").text(safeNameDisplay);
             let img = $("<img>").addClass("object-cover").attr("src", escapeHtml(src));
-    
+
             titleDiv.append(titleP);
             fileDiv.append(titleDiv).append(img);
             $("#files_manage").append(fileDiv);
@@ -598,7 +558,7 @@
             <div class="mt-2 flex flex-row items-center w-[70%]">
                 <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600" />
                 <button type="button" onclick="remove_email_container()">
-                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>   
+                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
                 </button>
             </div>
         `;
