@@ -35,6 +35,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
@@ -848,6 +849,8 @@ urlpatterns = [
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
+    path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
+    path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
 ]
 
 if settings.DEBUG:
