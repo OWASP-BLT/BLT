@@ -1431,6 +1431,16 @@ class GitHubIssue(models.Model):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
 
 
+class BaconEarning(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tokens_earned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Tokens earned by user
+    timestamp = models.DateTimeField(auto_now_add=True)  # When the record was created
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tokens_earned} Tokens"
+
+
+
 class GitHubReview(models.Model):
     """
     Model to store reviews made by users on pull requests.
@@ -1453,4 +1463,4 @@ class GitHubReview(models.Model):
     url = models.URLField()
 
     def __str__(self):
-        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"      
