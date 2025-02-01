@@ -603,6 +603,37 @@ def slack_commands(request):
 
         elif command == "/blt":
             search_term = request.POST.get("text", "").strip()
+            if not search_term:
+                # Provide guidance on how to use the /blt command
+                guidance_message = [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": (
+                                ":information_source: *How to use the /blt command:*\n\n"
+                                "• `/blt user <username>` - Get the OWASP profile for a specific GitHub user.\n"
+                                "• `/blt chapters` - View information about OWASP chapters.\n"
+                                "• `/blt projects` - Discover OWASP projects.\n"
+                                "• `/blt gsoc` - Explore Google Summer of Code projects.\n"
+                                "• `/blt events` - Get details on upcoming OWASP events.\n"
+                                "• `/blt committees` - View information about OWASP committees.\n\n"
+                                "Use these subcommands to explore more about OWASP initiatives and resources!"
+                            ),
+                        },
+                    }
+                ]
+
+                # Send guidance message as a DM
+                send_dm(workspace_client, user_id, "How to use the /blt command", guidance_message)
+                return JsonResponse(
+                    {
+                        "response_type": "ephemeral",
+                        "text": "I've sent you guidance on using the /blt command in a DM! 📚",
+                    }
+                )
+
+            # Existing logic for handling specific subcommands...
             if search_term.startswith("user "):
                 username = search_term.replace("user ", "").strip()
                 # Send immediate response

@@ -35,6 +35,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
@@ -203,7 +204,6 @@ from website.views.user import (
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    addbalance,
     assign_badge,
     badge_user_list,
     contributors,
@@ -217,11 +217,9 @@ from website.views.user import (
     profile,
     profile_edit,
     referral_signup,
-    stripe_connected,
     update_bch_address,
     user_dashboard,
     users_view,
-    withdraw,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -317,17 +315,6 @@ urlpatterns = [
         r"^dashboard/organization/$",
         organization_dashboard,
         name="organization_dashboard_home",
-    ),
-    re_path(
-        r"^dashboard/user/profile/addbalance$",
-        addbalance,
-        name="addbalance",
-    ),
-    re_path(r"^dashboard/user/profile/withdraw$", withdraw, name="withdraw"),
-    re_path(
-        r"^dashboard/user/stripe/connected/(?P<username>[^/]+)/$",
-        stripe_connected,
-        name="stripe_connected",
     ),
     re_path(
         r"^dashboard/admin/organization$",
@@ -860,6 +847,8 @@ urlpatterns = [
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
+    path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
+    path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
 ]
 
 if settings.DEBUG:
