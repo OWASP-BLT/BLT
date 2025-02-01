@@ -40,7 +40,6 @@ from website.models import (
     IssueScreenshot,
     Monitor,
     Notification,
-    Payment,
     Points,
     Tag,
     User,
