@@ -39,6 +39,7 @@ from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView
 from django.views.generic.edit import CreateView
+from django.views.generic import TemplateView
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from user_agents import parse
@@ -46,6 +47,10 @@ from user_agents import parse
 from blt import settings
 from comments.models import Comment
 from website.forms import CaptchaForm
+
+from django.views.decorators.csrf import csrf_exempt
+from openai import OpenAI
+
 from website.models import (
     IP,
     Activity,
@@ -1583,3 +1588,80 @@ def flag_issue(request, issue_pk):
 
 def select_bid(request):
     return render(request, "bid_selection.html")
+
+class GithubIssueView(TemplateView):
+    
+    def post(self, request, *args, **kwargs):
+        # Retrieve data from form
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        repository = request.POST.get('repository')
+        repository_url = request.POST.get('repository_url')
+
+        # Get the access token from session
+        access_token = request.session.get('github_access_token')
+
+        if not access_token:
+            return redirect('login')  # Redirect to login if no token found
+        
+        # Create GitHub issue
+        issue = self.create_github_issue(repository, title, description, access_token)
+
+        if 'id' in issue:
+            # Issue was created successfully
+            return redirect('issue_success')  # Redirect to success page
+        else:
+            return render(request, 'github_issue.html', {'error': issue.get('message'), 'form_data': request.POST})
+
+    def create_github_issue(self, repo, title, description, access_token):
+        url = f'https://api.github.com/repos/{repo}/issues'
+        headers = {
+            'Authorization': f'token {access_token}',
+            'Accept': 'application/vnd.github.v3+json'
+        }
+        data = {
+            'title': title,
+            'body': description,
+            'labels': []  # Add labels if required
+        }
+        response = requests.post(url, json=data, headers=headers)
+        return response.json() 
+
+@csrf_exempt
+def generate_github_issue(request):
+    print(os.getenv("OPENAI_API_KEY"))
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            description = data.get('description', '')
+
+            if not description:
+                return JsonResponse({'error': 'Description is required'}, status=400)
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            
+            # Call the OpenAI API with the o3-mini model
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                # model="openai-o3-mini",
+                messages=[
+                    {"role": "developer", "content": "You are a helpful assistant that generates descriptions for GitHub issues including a comprehensive description, reproduction steps, subtasks and any other relevant information."},
+                    {
+                        "role": "user",
+                        "content":  f"Generate a detailed GitHub issue description for: {description}"
+                    }
+                ],
+                # reasoning_effort="medium" 
+            )
+            # print(response)
+            if response.choices and response.choices[0].message:
+                issue_details = response.choices[0].message.content
+            else:
+                issue_details = "No response content received."
+            print(issue_details)
+
+            return JsonResponse({'issue_details': issue_details})
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

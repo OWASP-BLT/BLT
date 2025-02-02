@@ -62,6 +62,7 @@ aiohttp = "^3.11.11"
 drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
 tld = "0.13"
+social-auth-app-django = "^5.4.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
