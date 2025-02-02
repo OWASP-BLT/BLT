@@ -1482,3 +1482,21 @@ class Kudos(models.Model):
 
     def __str__(self):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
+
+      
+class OpenSourceRepo(models.Model):
+    name = models.CharField(max_length=255)
+    owner = models.CharField(max_length=255)
+    url = models.URLField()
+    description = models.TextField(blank=True)
+    primary_language = models.CharField(max_length=50)
+    last_updated = models.DateTimeField()
+    tags = models.ManyToManyField("Tag", related_name="repositories")
+    stars = models.PositiveIntegerField(default=0)
+    forks = models.PositiveIntegerField(default=0)
+    open_issues = models.PositiveIntegerField(default=0)
+    last_pushed = models.DateTimeField()
+    license = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return self.name

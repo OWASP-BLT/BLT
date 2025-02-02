@@ -465,3 +465,83 @@ def git_url_to_zip_url(git_url, branch="master"):
         return zip_url
     else:
         raise ValueError("Invalid .git URL provided")
+
+
+import requests
+
+
+def fetch_github_user_data(username):
+    """Fetches relevant GitHub user data for recommendations."""
+    base_url = "https://api.github.com/users/"
+    repos_url = f"https://api.github.com/users/{username}/repos"
+    starred_url = f"https://api.github.com/users/{username}/starred"
+    events_url = f"https://api.github.com/users/{username}/events"
+
+    user_data = {}
+
+    try:
+        user_response = requests.get(f"{base_url}{username}")
+        if user_response.status_code == 200:
+            user_info = user_response.json()
+            user_data["profile"] = {
+                "username": user_info.get("login"),
+                "name": user_info.get("name"),
+                "bio": user_info.get("bio"),
+                "location": user_info.get("location"),
+                "followers": user_info.get("followers"),
+                "following": user_info.get("following"),
+                "avatar_url": user_info.get("avatar_url"),
+                "blog": user_info.get("blog"),
+                "company": user_info.get("company"),
+                "twitter": user_info.get("twitter_username"),
+                "public_repos": user_info.get("public_repos"),
+            }
+
+        repos_response = requests.get(repos_url)
+        if repos_response.status_code == 200:
+            repos = repos_response.json()
+            user_data["repositories"] = [
+                {
+                    "name": repo["name"],
+                    "url": repo["html_url"],
+                    "language": repo["language"],
+                    "stars": repo["stargazers_count"],
+                    "forks": repo["forks_count"],
+                    "description": repo["description"],
+                }
+                for repo in repos
+            ]
+
+        starred_response = requests.get(starred_url)
+        if starred_response.status_code == 200:
+            starred = starred_response.json()
+            user_data["starred_repos"] = [
+                {
+                    "name": repo["name"],
+                    "url": repo["html_url"],
+                    "language": repo["language"],
+                    "stars": repo["stargazers_count"],
+                }
+                for repo in starred
+            ]
+
+        events_response = requests.get(events_url)
+        if events_response.status_code == 200:
+            events = events_response.json()
+            user_data["recent_activity"] = [
+                {
+                    "type": event["type"],
+                    "repo": event["repo"]["name"],
+                    "created_at": event["created_at"],
+                }
+                for event in events
+                if event["type"] in ["PushEvent", "PullRequestEvent", "IssuesEvent"]
+            ]
+
+        languages = [repo["language"] for repo in user_data.get("repositories", []) if repo["language"]]
+        user_data["top_languages"] = list(set(languages))
+
+    except Exception as e:
+        user_data["error"] = str(e)
+
+    return user_data
