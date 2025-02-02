@@ -1464,8 +1464,12 @@ class GitHubReview(models.Model):
     def __str__(self):
         return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
 
-      
+
 class Kudos(models.Model):
+    """
+    Model to send kudos to team members.
+    """
+
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -1477,4 +1481,4 @@ class Kudos(models.Model):
         verbose_name_plural = "Kudos"
 
     def __str__(self):
-        return f"Kudos from {self.sender.username} to {self.receiver.username}"      
+        return f"Kudos from {self.sender.username} to {self.receiver.username}"
