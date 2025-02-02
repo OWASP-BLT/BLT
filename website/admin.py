@@ -24,6 +24,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    OpenSourceRepo,
     Organization,
     OrganizationAdmin,
     Payment,
@@ -500,3 +501,4 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(GitHubIssue)
+admin.site.register(OpenSourceRepo)
