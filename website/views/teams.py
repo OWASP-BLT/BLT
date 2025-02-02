@@ -3,13 +3,14 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 # Create your views here.
 from django.views.generic import TemplateView
 
-from website.models import Challenge, JoinRequest, Organization
+from website.models import Challenge, JoinRequest, Kudos, Organization
 
 
 class TeamOverview(TemplateView):
@@ -19,9 +20,21 @@ class TeamOverview(TemplateView):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
             user_profile = self.request.user.userprofile
+            team_members = []
+            team_kudos = []
             if user_profile.team:
-                team_members = user_profile.team.managers.all()
-                context["team_members"] = team_members
+                user_profile.team.managers.add(user_profile.team.admin)
+                team_members = user_profile.team.managers.annotate(kudos_count=Count("kudos_received"))
+                team_kudos = Kudos.objects.filter(receiver__in=team_members).order_by("-timestamp")
+
+            received_kudos = self.request.user.kudos_received.all()
+            context.update(
+                {
+                    "team_members": team_members,
+                    "received_kudos": received_kudos,
+                    "team_kudos": team_kudos,
+                }
+            )
         return context
 
 
@@ -57,6 +70,7 @@ def create_team(request):
 
             # Create the team
             team = Organization.objects.create(name=team_name, type="team", admin=request.user, url=team_url)
+            team.managers.add(request.user)
             if team_avatar:
                 team.logo = team_avatar
                 team.save()  # Save the logo if provided
@@ -206,6 +220,30 @@ def kick_member(request):
             return JsonResponse({"success": False, "error": "User does not exist"})
         except json.JSONDecodeError:
             return JsonResponse({"success": False, "error": "Invalid JSON data"})
+    return JsonResponse({"success": False, "error": "Invalid request method"})
+
+
+@login_required
+def give_kudos(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            receiver_username = data.get("kudosReceiver")
+            link_url = data.get("link")
+            comment_text = data.get("comment", "")
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid request data"})
+
+        if receiver_username:
+            try:
+                receiver = User.objects.get(username=receiver_username)
+                Kudos.objects.create(sender=request.user, receiver=receiver, link=link_url, comment=comment_text)
+                return JsonResponse({"success": True, "message": "Kudos sent successfully!"})
+            except User.DoesNotExist:
+                return JsonResponse({"success": False, "error": "User does not exist"})
+
+        return JsonResponse({"success": False, "error": "Missing receiver or message"})
+
     return JsonResponse({"success": False, "error": "Invalid request method"})
 
 
