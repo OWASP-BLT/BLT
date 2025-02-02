@@ -248,7 +248,6 @@ def UpdateIssue(request):
                 if request.POST["token"] == token.key:
                     request.user = User.objects.get(id=token.user_id)
                     tokenauth = True
-                    break
     except:
         tokenauth = False
     if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
@@ -333,28 +332,36 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@login_required(login_url="/accounts/login")
 def delete_issue(request, id):
     try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
+        issue = Issue.objects.get(id=id)
         tokenauth = False
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
-        issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
-    return redirect("/")
+        # Handle API token authentication for POST requests
+        if request.method == 'POST' and 'token' in request.POST:
+            for token in Token.objects.all():
+                if request.POST["token"] == token.key:
+                    request.user = User.objects.get(id=token.user_id)
+                    tokenauth = True
 
-
+        # Check if user has permission to delete
+        if request.user.is_superuser or request.user == issue.user or tokenauth:
+            screenshots = issue.screenshots.all()
+            for screenshot in screenshots:
+                screenshot.delete()
+            issue.delete()
+            messages.success(request, "Issue deleted")
+            if tokenauth:
+                return JsonResponse("Deleted", safe=False)
+            return redirect("/")
+        else:
+            messages.error(request, "You don't have permission to delete this issue")
+            return redirect("/")
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue not found")
+        return redirect("/")
+        
 def remove_user_from_issue(request, id):
     tokenauth = False
     try:
