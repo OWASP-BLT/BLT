@@ -7,11 +7,11 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
-from website.models import GitHubIssue, Repo, UserProfile
+from website.models import GitHubIssue, GitHubReview, Repo, UserProfile
 
 
 class Command(BaseCommand):
-    help = "Fetches and updates GitHub issue data for users with GitHub profiles"
+    help = "Fetches and updates GitHub issue and review data for users with GitHub profiles"
 
     def handle(self, *args, **options):
         users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
             all_prs = []
 
-            # Handle pagination
+            # Handle pagination for pull requests
             while api_url:
                 try:
                     response = requests.get(api_url, headers=headers)
@@ -60,7 +60,8 @@ class Command(BaseCommand):
                         merged = True if pr["pull_request"].get("merged_at") else False
                         repo = Repo.objects.get(name__iexact=repo_name)
 
-                        GitHubIssue.objects.update_or_create(
+                        # Create or update the pull request
+                        github_issue, created = GitHubIssue.objects.update_or_create(
                             issue_id=pr["number"],
                             defaults={
                                 "title": pr["title"],
@@ -93,6 +94,28 @@ class Command(BaseCommand):
                         if merged:
                             merged_pr_counts[user.id] += 1
 
+                        # Fetch reviews for this pull request
+                        reviews_url = pr["pull_request"]["url"] + "/reviews"
+                        reviews_response = requests.get(reviews_url, headers=headers)
+                        reviews_data = reviews_response.json()
+
+                        # Store reviews made by the user
+                        for review in reviews_data:
+                            if review["user"]["login"] == github_username:
+                                GitHubReview.objects.update_or_create(
+                                    review_id=review["id"],
+                                    defaults={
+                                        "pull_request": github_issue,
+                                        "reviewer": user,
+                                        "body": review.get("body", ""),
+                                        "state": review["state"],
+                                        "submitted_at": timezone.make_aware(
+                                            datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                        ),
+                                        "url": review["html_url"],
+                                    },
+                                )
+
                     except Repo.DoesNotExist:
                         self.stdout.write(
                             self.style.WARNING(
@@ -101,7 +124,7 @@ class Command(BaseCommand):
                         )
                         continue
 
-            self.stdout.write(self.style.SUCCESS(f"Successfully updated PRs for {github_username}"))
+            self.stdout.write(self.style.SUCCESS(f"Successfully updated PRs and reviews for {github_username}"))
 
         # Bulk update merged PR count
         UserProfile.objects.bulk_update(
