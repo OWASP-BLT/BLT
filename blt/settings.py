@@ -92,6 +92,11 @@ INSTALLED_APPS = (
     "storages",
 )
 
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
+
+GITHUB_LOGIN_URL= os.environ.get("GITHUB_LOGIN_URL", "github_login")
+GITHUB_LOGIN_REDIRECT_URL = os.environ.get("/")   # Redirect after successful login
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -169,6 +174,7 @@ TEMPLATES = [
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
+    # 'social_core.backends.github.GithubOAuth2', 
 )
 
 
@@ -447,7 +453,7 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user:email"],
+        "SCOPE": ["user:email", "user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
     "google": {

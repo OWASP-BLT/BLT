@@ -118,6 +118,8 @@ from website.views.issue import (
     unsave_issue,
     update_content_comment,
     vote_count,
+    GithubIssueView,
+    generate_github_issue,
 )
 from website.views.organization import (
     CreateHunt,
@@ -849,6 +851,8 @@ urlpatterns = [
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path('api/generate-github-issue/', generate_github_issue, name='generate_github_issue'),
 ]
 
 if settings.DEBUG:
