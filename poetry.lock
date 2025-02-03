@@ -192,13 +192,13 @@ files = [
 
 [[package]]
 name = "atproto"
-version = "0.0.55"
+version = "0.0.58"
 description = "The AT Protocol SDK"
 optional = false
 python-versions = "<3.14,>=3.8"
 files = [
-    {file = "atproto-0.0.55-py3-none-any.whl", hash = "sha256:b32252bb9702df86f672d5fd5bbc905ce3865691cdbd0ece7278d7592053dde9"},
-    {file = "atproto-0.0.55.tar.gz", hash = "sha256:8074181cb4647e56476c05ab36e20ff599a00366d34094a76ccc77e46498d7dd"},
+    {file = "atproto-0.0.58-py3-none-any.whl", hash = "sha256:4fd281b9a1f408f794d6995b2ca57bb85f06cdf1206c4346b61e7e22fbd0ab56"},
+    {file = "atproto-0.0.58.tar.gz", hash = "sha256:908135065411577502fbbbacd055c270e34beeec8d7ec0e672a090970a081b70"},
 ]
 
 [package.dependencies]
@@ -4364,4 +4364,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "4f95a88a0bedc84cbc7417f724e27c0005cac528e3584f70e176c100e6f54844"
+content-hash = "44f34ca675a3dcd62a4c9f06ec5a8f4e1ca22a5358986868281228e4872150bb"
