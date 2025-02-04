@@ -243,18 +243,18 @@ files = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.0"
+version = "4.13.1"
 description = "Screen-scraping library"
 optional = false
-python-versions = ">=3.6.0"
+python-versions = ">=3.7.0"
 files = [
-    {file = "beautifulsoup4-4.13.0-py3-none-any.whl", hash = "sha256:9c4c3dfa67aba55f6cd03769c441b21e6a369797fd6766e4b4c6b3399aae2735"},
-    {file = "beautifulsoup4-4.13.0.tar.gz", hash = "sha256:b6e5afb3a2b1472c8db751a92eabf7834e5c7099f990c5e4b35f1f16b60bae64"},
+    {file = "beautifulsoup4-4.13.1-py3-none-any.whl", hash = "sha256:72465267014897bb10ca749bb632bde6c2d20f3254afd5458544bd74e6c2e6d8"},
+    {file = "beautifulsoup4-4.13.1.tar.gz", hash = "sha256:741c8b6903a1e4ae8ba32b9c9ae7510dab7a197fdbadcf9fcdeb0891ef5ec66a"},
 ]
 
 [package.dependencies]
 soupsieve = ">1.2"
-typing-extensions = "*"
+typing-extensions = ">=4.0.0"
 
 [package.extras]
 cchardet = ["cchardet"]
@@ -4364,4 +4364,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "4f95a88a0bedc84cbc7417f724e27c0005cac528e3584f70e176c100e6f54844"
+content-hash = "cedf2f670268d17f20011c013db573f92dc65c0c7455110d8344961378cabca4"
