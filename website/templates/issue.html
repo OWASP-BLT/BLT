@@ -15,10 +15,10 @@
     {% endif %}
     <meta property="og:title"
           content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
-    {% for screenshot in screenshots %}
-        <meta property="og:image"
-              content="https://{% env 'FQDN' %}{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
-    {% endfor %}
+    {% if object.screenshot.all %}
+        <meta property="og:image" 
+              content="https://392e-223-233-80-245.ngrok-free.app/{{ object.screenshot.0.image.url }}" />
+    {% endif %}
     <meta property="og:description"
           content="{{ object.markdown_description|escapejs }}" />
     <meta name="keywords"
