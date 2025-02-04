@@ -243,17 +243,18 @@ files = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.12.3"
+version = "4.13.1"
 description = "Screen-scraping library"
 optional = false
-python-versions = ">=3.6.0"
+python-versions = ">=3.7.0"
 files = [
-    {file = "beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"},
-    {file = "beautifulsoup4-4.12.3.tar.gz", hash = "sha256:74e3d1928edc070d21748185c46e3fb33490f22f52a3addee9aee0f4f7781051"},
+    {file = "beautifulsoup4-4.13.1-py3-none-any.whl", hash = "sha256:72465267014897bb10ca749bb632bde6c2d20f3254afd5458544bd74e6c2e6d8"},
+    {file = "beautifulsoup4-4.13.1.tar.gz", hash = "sha256:741c8b6903a1e4ae8ba32b9c9ae7510dab7a197fdbadcf9fcdeb0891ef5ec66a"},
 ]
 
 [package.dependencies]
 soupsieve = ">1.2"
+typing-extensions = ">=4.0.0"
 
 [package.extras]
 cchardet = ["cchardet"]
@@ -962,13 +963,13 @@ files = [
 
 [[package]]
 name = "django-import-export"
-version = "4.3.4"
+version = "4.3.5"
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "django_import_export-4.3.4-py3-none-any.whl", hash = "sha256:9b56e847ddcb22c0bfbb508bc3668f8b33f95d888002e931c4039d0466270230"},
-    {file = "django_import_export-4.3.4.tar.gz", hash = "sha256:9ba43ced4fefae614ee7e30da8fdb55d6fcf0450489e7d290299672e0830a436"},
+    {file = "django_import_export-4.3.5-py3-none-any.whl", hash = "sha256:143611d9d3c8b000c54e33db122c8d283eef38167acd7a854d15b9ad77c328e7"},
+    {file = "django_import_export-4.3.5.tar.gz", hash = "sha256:61e078cea307a6199a7e905840640e55db3521d7c81be224fd8b6576ce9bd0fc"},
 ]
 
 [package.dependencies]
@@ -1216,37 +1217,37 @@ tests = ["pytest"]
 
 [[package]]
 name = "faiss-cpu"
-version = "1.9.0.post1"
+version = "1.10.0"
 description = "A library for efficient similarity search and clustering of dense vectors."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "faiss_cpu-1.9.0.post1-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:e18602465f5a96c3c973ab440f9263a0881034fb54810be20bc8cdb8b069456d"},
-    {file = "faiss_cpu-1.9.0.post1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:5dddeecdb68fb95b4a3343a6ff89498fd7c222726706538f360132bfe3d8aebe"},
-    {file = "faiss_cpu-1.9.0.post1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:15d2d7e522e6d55dbf14e57fcac1d38d62c95479b847562004f9e7c97c139ee8"},
-    {file = "faiss_cpu-1.9.0.post1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:86ffbbb1ec9ae503df1fcdfd5c3a8594d8b76fb4b8ebf0a697c1492f1f9cec1a"},
-    {file = "faiss_cpu-1.9.0.post1-cp310-cp310-win_amd64.whl", hash = "sha256:29cae0dfa6c286c043d45572a39288f5a56ffb694a20a90c6946018241002d90"},
-    {file = "faiss_cpu-1.9.0.post1-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:7ef0c81a798a64fc932e15d560ddc01021df9ed70b678367aec6e01f39d075c1"},
-    {file = "faiss_cpu-1.9.0.post1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:783f545c3999909164a975b97d99749b244b62651ce976ee76b8a171c62e827d"},
-    {file = "faiss_cpu-1.9.0.post1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6c0408261ed85d0bd8e30716a3fd441d0c51a5563cf3a795a488eab9c492ea33"},
-    {file = "faiss_cpu-1.9.0.post1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7068e14e8f557659c68bdf4d511571630721e1502efa87a70fe44023f3741645"},
-    {file = "faiss_cpu-1.9.0.post1-cp311-cp311-win_amd64.whl", hash = "sha256:274a66868a498687641faf964f6eddbe70ccb5bee56239862ee0aa079415779e"},
-    {file = "faiss_cpu-1.9.0.post1-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:ae3fbe0f26c05bef26c626f9e293cc4dd0e685ec02d64100c686276a8c14bf88"},
-    {file = "faiss_cpu-1.9.0.post1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:3b4d5e79643a09d91d339ba7609fb2e9b3ce6de3cd069b9183e97a843261e0e8"},
-    {file = "faiss_cpu-1.9.0.post1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5bd1a0412528202e4a4cc38953f81bb7d9b9a783881fa06d822b717a1b090bdd"},
-    {file = "faiss_cpu-1.9.0.post1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d4a499aa20b00266c78b9768de962e6a8dd2e2b2eb3d02aa4c41af4c6913eeba"},
-    {file = "faiss_cpu-1.9.0.post1-cp312-cp312-win_amd64.whl", hash = "sha256:d6920f2db8581eb6dcd519c024120061d7d68bc075d494e59b1b2af9a1729d03"},
-    {file = "faiss_cpu-1.9.0.post1-cp313-cp313-macosx_10_14_x86_64.whl", hash = "sha256:10e38642c5f147642c4aa8a6c1704fb1900b2b8dd5f33b49a45fa5a67df4837d"},
-    {file = "faiss_cpu-1.9.0.post1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ec25338fc06fa8aa6ef5c7a2ba9f1aa03f64f9b38ba82402a6495cc981426571"},
-    {file = "faiss_cpu-1.9.0.post1-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2951be3d2713a128e7f625a4b508419238b6c09cce747a0de7708bdcf1b7e3d6"},
-    {file = "faiss_cpu-1.9.0.post1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a6467aafa148d39e6e9bc26c1d84e07f16cbf910297a90ec2e8597cf69772a82"},
-    {file = "faiss_cpu-1.9.0.post1-cp313-cp313-win_amd64.whl", hash = "sha256:87a224a01a4ad80e0f849b2b2b1fba8b197e5803416ea861faf1b0de255871ea"},
-    {file = "faiss_cpu-1.9.0.post1-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:a88ebc13a6827b2520eddd5f1c948f377c34cc07571ce6e4c0e6af0696a77288"},
-    {file = "faiss_cpu-1.9.0.post1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:0241d7441c291a64a26f8ae3d9c23adccb392524a4a5555b32aff08c7c1766f2"},
-    {file = "faiss_cpu-1.9.0.post1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:aafa02b77e9c94b858cf86bc69bfa72a3754b5cfe8a0e9c1c70c6cf5c8c6b0a6"},
-    {file = "faiss_cpu-1.9.0.post1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ba6e57971d7b112eb372d805a809b36573f50c10a08a7ecc97e4039ec369a1f6"},
-    {file = "faiss_cpu-1.9.0.post1-cp39-cp39-win_amd64.whl", hash = "sha256:b4eeb44949805d4a88de507636b01382da0527280a64ecb99bc4eb596a1a81e5"},
-    {file = "faiss_cpu-1.9.0.post1.tar.gz", hash = "sha256:920725d485aab05dd87d34ef63257332441e9b53d382069f034996465827143a"},
+    {file = "faiss_cpu-1.10.0-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:6693474be296a7142ade1051ea18e7d85cedbfdee4b7eac9c52f83fed0467855"},
+    {file = "faiss_cpu-1.10.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:70ebe60a560414dc8dd6cfe8fed105c8f002c0d11f765f5adfe8d63d42c0467f"},
+    {file = "faiss_cpu-1.10.0-cp310-cp310-manylinux_2_28_aarch64.whl", hash = "sha256:74c5712d4890f15c661ab7b1b75867812e9596e1469759956fad900999bedbb5"},
+    {file = "faiss_cpu-1.10.0-cp310-cp310-manylinux_2_28_x86_64.whl", hash = "sha256:473d158fbd638d6ad5fb64469ba79a9f09d3494b5f4e8dfb4f40ce2fc335dca4"},
+    {file = "faiss_cpu-1.10.0-cp310-cp310-win_amd64.whl", hash = "sha256:dcd0cb2ec84698cbe3df9ed247d2392f09bda041ad34b92d38fa916cd019ad4b"},
+    {file = "faiss_cpu-1.10.0-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:8ff6924b0f00df278afe70940ae86302066466580724c2f3238860039e9946f1"},
+    {file = "faiss_cpu-1.10.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:cb80b530a9ded44a7d4031a7355a237aaa0ff1f150c1176df050e0254ea5f6f6"},
+    {file = "faiss_cpu-1.10.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:7a9fef4039ed877d40e41d5563417b154c7f8cd57621487dad13c4eb4f32515f"},
+    {file = "faiss_cpu-1.10.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:49b6647aa9e159a2c4603cbff2e1b313becd98ad6e851737ab325c74fe8e0278"},
+    {file = "faiss_cpu-1.10.0-cp311-cp311-win_amd64.whl", hash = "sha256:6f8c0ef8b615c12c7bf612bd1fc51cffa49c1ddaa6207c6981f01ab6782e6b3b"},
+    {file = "faiss_cpu-1.10.0-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:2aca486fe2d680ea64a18d356206c91ff85db99fd34c19a757298c67c23262b1"},
+    {file = "faiss_cpu-1.10.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c1108a4059c66c37c403183e566ca1ed0974a6af7557c92d49207639aab661bc"},
+    {file = "faiss_cpu-1.10.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:449f3eb778d6d937e01a16a3170de4bb8aabfe87c7cb479b458fb790276310c5"},
+    {file = "faiss_cpu-1.10.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:9899c340f92bd94071d6faf4bef0ccb5362843daea42144d4ba857a2a1f67511"},
+    {file = "faiss_cpu-1.10.0-cp312-cp312-win_amd64.whl", hash = "sha256:345a52dbfa980d24b93c94410eadf82d1eef359c6a42e5e0768cca96539f1c3c"},
+    {file = "faiss_cpu-1.10.0-cp313-cp313-macosx_10_14_x86_64.whl", hash = "sha256:cb8473d69c3964c1bf3f8eb3e04287bb3275f536e6d9635ef32242b5f506b45d"},
+    {file = "faiss_cpu-1.10.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:82ca5098de694e7b8495c1a8770e2c08df6e834922546dad0ae1284ff519ced6"},
+    {file = "faiss_cpu-1.10.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:035e4d797e2db7fc0d0c90531d4a655d089ad5d1382b7a49358c1f2307b3a309"},
+    {file = "faiss_cpu-1.10.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:e02af3696a6b9e1f9072e502f48095a305de2163c42ceb1f6f6b1db9e7ffe574"},
+    {file = "faiss_cpu-1.10.0-cp313-cp313-win_amd64.whl", hash = "sha256:e71f7e24d5b02d3a51df47b77bd10f394a1b48a8331d5c817e71e9e27a8a75ac"},
+    {file = "faiss_cpu-1.10.0-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:3118b5d7680b0e0a3cd64b3d29389d8384de4298739504fc661b658109540b4b"},
+    {file = "faiss_cpu-1.10.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:f71c5860c860df2320299f9e4f2ca1725beb559c04acb1cf961ed24e6218277a"},
+    {file = "faiss_cpu-1.10.0-cp39-cp39-manylinux_2_28_aarch64.whl", hash = "sha256:2f15b7957d474391fc63f02bfb8011b95317a580e4d9bd70c276f4bc179a17b3"},
+    {file = "faiss_cpu-1.10.0-cp39-cp39-manylinux_2_28_x86_64.whl", hash = "sha256:dadbbb834ddc34ca7e21411811833cebaae4c5a86198dd7c2a349dbe4e7e0398"},
+    {file = "faiss_cpu-1.10.0-cp39-cp39-win_amd64.whl", hash = "sha256:cb77a6a5f304890c23ffb4c566bc819c0e0cf34370b20ddff02477f2bbbaf7a3"},
+    {file = "faiss_cpu-1.10.0.tar.gz", hash = "sha256:5bdca555f24bc036f4d67f8a5a4d6cc91b8d2126d4e78de496ca23ccd46e479d"},
 ]
 
 [package.dependencies]
@@ -3821,13 +3822,13 @@ files = [
 
 [[package]]
 name = "ua-parser"
-version = "1.0.0"
+version = "1.0.1"
 description = "Python port of Browserscope's user agent parser"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "ua_parser-1.0.0-py3-none-any.whl", hash = "sha256:5b31133606a781f56692caa11a9671a9f330c22604b3c4957a7ba18c152212d0"},
-    {file = "ua_parser-1.0.0.tar.gz", hash = "sha256:a9740f53f4fbb72b7a03d304cae32a2785cafc55e8207efb74877bba17c35324"},
+    {file = "ua_parser-1.0.1-py3-none-any.whl", hash = "sha256:b059f2cb0935addea7e551251cbbf42e9a8872f86134163bc1a4f79e0945ffea"},
+    {file = "ua_parser-1.0.1.tar.gz", hash = "sha256:f9d92bf19d4329019cef91707aecc23c6d65143ad7e29a233f0580fb0d15547d"},
 ]
 
 [package.dependencies]
@@ -4363,4 +4364,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "3.11.2"
-content-hash = "5ea984665ff334e0feaa8d8face206e93608ae04dde2bf329d5858fa6a3b5150"
+content-hash = "cedf2f670268d17f20011c013db573f92dc65c0c7455110d8344961378cabca4"
