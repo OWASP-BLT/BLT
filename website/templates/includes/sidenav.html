@@ -40,9 +40,9 @@
         <div class="overflow-auto no-scrollbar">
             <ul class="font-medium text-2xl mt-6 mb-0">
                 <!-- Organizations Header Link -->
-                <li class="mb-2 {% if '/companies/' in request.path %}bg-gray-200{% endif %}">
+                <li class="mb-2 {% if '/organizations/' in request.path %}bg-gray-200{% endif %}">
                     <a href="{% url 'domain_lists' %}"
-                       class="flex items-center w-full no-underline p-2 {% if '/companies/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                       class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-red-500">
                             <i class="fas fa-building fa-lg"></i>
                         </div>
@@ -124,12 +124,21 @@
                             <span>Trademarks</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/similarity-scan/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'similarity_scan' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/similarity-scan/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-indigo-500">
+                                <i class="fas fa-clone fa-lg"></i> <!-- Updated icon -->
+                            </div>
+                            <span>SimilarityScan</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
                 <!-- Projects Header Link -->
                 <li class="mb-2 {% if request.path == '/projects/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'project_list' %}"
+                    <a href="{% url 'project_view' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/projects/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-orange-500">
                             <i class="fas fa-box fa-lg"></i>
@@ -181,6 +190,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/challenges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'user_challenges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/challenges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-yellow-500">
+                                <i class="fas fa-flag-checkered fa-lg"></i>
+                            </div>
+                            <span>Challenges</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'leaderboard_global' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/leaderboard/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
@@ -215,6 +233,48 @@
                                 <i class="fas fa-certificate fa-lg"></i>
                             </div>
                             <span>Badges</span>
+                        </a>
+                    </li>
+                </ul>
+                <!-- Spacer -->
+                <div class="my-4 border-t border-gray-300"></div>
+                <!-- Teams (Gamification) Static Item -->
+                <li class="mb-2">
+                    <div class="flex items-center w-full p-2 hover:text-red-500 text-black ">
+                        <div class="icon text-purple-500">
+                            <i class="fas fa-trophy fa-lg"></i> <!-- Gamification Icon -->
+                        </div>
+                        <span class="ml-2 font-semibold">Teams</span>
+                    </div>
+                </li>
+                <!-- Submenu Items -->
+                <ul class="pl-8">
+                    <!-- Team Overview -->
+                    <li class="mb-2 {% if request.path == 'teams/overview/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'team_overview' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/teams/overview/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-users fa-lg"></i> <!-- Team Icon -->
+                            </div>
+                            <span>Your Team</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == 'teams/challenges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'team_challenges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/teams/challenges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-flag-checkered fa-lg"></i> <!-- Team Icon -->
+                            </div>
+                            <span>Challenges</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == 'teams/leaderboard/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'team_leaderboard' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/teams/leaderboard/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-medal fa-lg"></i> <!-- Team Icon -->
+                            </div>
+                            <span>Leaderboard</span>
                         </a>
                     </li>
                 </ul>
@@ -321,6 +381,15 @@
                                 <i class="fas fa-sun-o fa-lg"></i>
                             </div>
                             <span>GSOC</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if '/submit-roadmap-pr/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'submit-roadmap-pr' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/submit-roadmap-pr/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-red-500">
+                                <i class="fas fa-code-branch fa-lg"></i>
+                            </div>
+                            <span>Submit PR for review</span>
                         </a>
                     </li>
                 </ul>

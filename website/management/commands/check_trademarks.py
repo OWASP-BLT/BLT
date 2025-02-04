@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import models
 from django.utils.timezone import now
 
-from website.models import Company
+from website.models import Organization
 
 
 def search_uspto_database(term):
@@ -35,19 +35,19 @@ def search_uspto_database(term):
     return None
 
 
-def send_email_alert(company, results_count):
+def send_email_alert(organization, results_count):
     """
-    Send a trademark alert email to the company's registered email.
+    Send a trademark alert email to the organization's registered email.
     """
-    subject = f"Trademark Alert for {company.name}"
+    subject = f"Trademark Alert for {organization.name}"
     message = (
-        f"New trademarks have been found for {company.name}.\n\n"
+        f"New trademarks have been found for {organization.name}.\n\n"
         f"Total trademarks now: {results_count}\n\n"
         "Please log in to the system for more details."
     )
     from_email = settings.DEFAULT_FROM_EMAIL
     print(from_email)
-    recipient_list = [company.email]
+    recipient_list = [organization.email]
     print(recipient_list)
 
     send_mail(subject, message, from_email, recipient_list)
@@ -58,71 +58,69 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            uninitialized_companies = Company.objects.filter(
+            uninitialized_organizations = Organization.objects.filter(
                 models.Q(trademark_check_date__isnull=True) | models.Q(trademark_count__isnull=True)
             )
 
-            if uninitialized_companies.exists():
-                self.stdout.write("Initializing trademark data for all companies...")
-                self.initialize_trademark_data(uninitialized_companies)
+            if uninitialized_organizations.exists():
+                self.stdout.write("Initializing trademark data for all organizations...")
+                self.initialize_trademark_data(uninitialized_organizations)
             else:
-                self.stdout.write("All companies initialized. Running rate-limited checks...")
+                self.stdout.write("All organizations initialized. Running rate-limited checks...")
                 self.rate_limited_check()
 
         except Exception as e:
             self.stderr.write(f"Error occurred: {e}")
 
-    def initialize_trademark_data(self, companies):
+    def initialize_trademark_data(self, organizations):
         """
-        Initialize trademark data for all companies missing information.
+        Initialize trademark data for all organizations missing information.
         """
-        for company in companies:
-            self.stdout.write(f"Initializing data for {company.name}...")
-            response_data = search_uspto_database(company.name)
+        for organization in organizations:
+            self.stdout.write(f"Initializing data for {organization.name}...")
+            response_data = search_uspto_database(organization.name)
             if response_data:
-                company.trademark_count = response_data.get("count", 0)
-                company.trademark_check_date = now()
+                organization.trademark_count = response_data.get("count", 0)
+                organization.trademark_check_date = now()
                 self.stdout.write(
-                    f"The last trademark check date for {company.name} is updated to {company.trademark_check_date}"
+                    f"The last trademark check date for {organization.name} is updated to {organization.trademark_check_date}"
                 )
-                company.save()
-                self.stdout.write(
-                    f"Initialized data for {company.name}: Count = {company.trademark_count}"
-                )
+                organization.save()
+                self.stdout.write(f"Initialized data for {organization.name}: Count = {organization.trademark_count}")
             else:
-                self.stderr.write(f"Failed to fetch trademark data for {company.name}.")
+                self.stderr.write(f"Failed to fetch trademark data for {organization.name}.")
 
     def rate_limited_check(self):
         """
-        Perform trademark checks for companies on a rate-limited basis.
+        Perform trademark checks for organizations on a rate-limited basis.
         """
         one_week_ago = now() - timedelta(weeks=1)
-        company = (
-            Company.objects.filter(models.Q(trademark_check_date__lt=one_week_ago))
+        organization = (
+            Organization.objects.filter(models.Q(trademark_check_date__lt=one_week_ago))
             .order_by("trademark_check_date")
             .first()
         )
-        if not company:
-            self.stdout.write("No companies need a trademark search at this time.")
+        if not organization:
+            self.stdout.write("No organizations need a trademark search at this time.")
             return
-        self.stdout.write(f"Checking trademarks for {company.name}...")
+        self.stdout.write(f"Checking trademarks for {organization.name}...")
 
-        response_data = search_uspto_database(company.name)
+        response_data = search_uspto_database(organization.name)
         if response_data:
             new_trademark_count = response_data.get("count", 0)
-            if new_trademark_count > company.trademark_count:
-                self.stdout.write(f"New trademarks found for {company.name}: {new_trademark_count}")
-                company.trademark_count = new_trademark_count
-                company.trademark_check_date = now()
-                company.save()
-                send_email_alert(company, new_trademark_count)
+            if new_trademark_count > organization.trademark_count:
+                self.stdout.write(f"New trademarks found for {organization.name}: {new_trademark_count}")
+                organization.trademark_count = new_trademark_count
+                organization.trademark_check_date = now()
+                organization.save()
+                send_email_alert(organization, new_trademark_count)
             else:
                 self.stdout.write(
-                    f"No new trademarks for {company.name}. Current count: {company.trademark_count}"
+                    f"No new trademarks for {organization.name}. Current count: {organization.trademark_count}"
                 )
-                company.trademark_check_date = now()
-                company.save()
+                organization.trademark_check_date = now()
+                organization.save()
         else:
             self.stderr.write(
-                f"Failed to fetch trademark data for {company.name}. Please check the API or credentials."
+                f"Failed to fetch trademark data for {organization.name}. Please check the API or credentials."
             )

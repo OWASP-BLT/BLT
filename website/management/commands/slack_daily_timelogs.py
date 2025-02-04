@@ -14,17 +14,16 @@ class Command(BaseCommand):
         # Get the current hour in UTC
         current_hour_utc = datetime.utcnow().hour
 
-        # Fetch all Slack integrations with related company data
-        slack_integrations = SlackIntegration.objects.select_related("integration__company").all()
+        # Fetch all Slack integrations with related integration data
+        slack_integrations = SlackIntegration.objects.select_related("integration__organization").all()
 
         for integration in slack_integrations:
-            current_org = integration.integration.company
+            current_org = integration.integration.organization
             if (
                 integration.default_channel_id
                 and current_org
                 and integration.daily_updates
-                and integration.daily_update_time
-                == current_hour_utc  # Ensure it's the correct hour
+                and integration.daily_update_time == current_hour_utc  # Ensure it's the correct hour
             ):
                 print(f"Processing updates for organization: {current_org.name}")
 
@@ -44,14 +43,9 @@ class Command(BaseCommand):
                     for timelog in timelog_history:
                         st = timelog.start_time
                         et = timelog.end_time
-                        issue_url = (
-                            timelog.github_issue_url if timelog.github_issue_url else "No issue URL"
-                        )
+                        issue_url = timelog.github_issue_url if timelog.github_issue_url else "No issue URL"
                         summary_message += (
-                            f"Task: {timelog}\n"
-                            f"Start: {st}\n"
-                            f"End: {et}\n"
-                            f"Issue URL: {issue_url}\n\n"
+                            f"Task: {timelog}\n" f"Start: {st}\n" f"End: {et}\n" f"Issue URL: {issue_url}\n\n"
                         )
                         total_time += et - st
 

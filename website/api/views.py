@@ -1,4 +1,5 @@
 import json
+import smtplib
 import uuid
 from datetime import datetime
 from urllib.parse import urlparse
@@ -23,7 +24,6 @@ from rest_framework.views import APIView
 
 from website.models import (
     ActivityLog,
-    Company,
     Contributor,
     Domain,
     Hunt,
@@ -31,6 +31,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     Tag,
@@ -43,10 +44,10 @@ from website.serializers import (
     ActivityLogSerializer,
     BugHuntPrizeSerializer,
     BugHuntSerializer,
-    CompanySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
+    OrganizationSerializer,
     ProjectSerializer,
     TagSerializer,
     TimeLogSerializer,
@@ -165,15 +166,11 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue.screenshot:
             # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
-                request.build_absolute_uri(screenshot.image.url)
-                for screenshot in issue.screenshots.all()
+                request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()
             ]
         else:
             # If no image exists in the Issue table, return only the images from IssueScreenshot
-            screenshots = [
-                request.build_absolute_uri(screenshot.image.url)
-                for screenshot in issue.screenshots.all()
-            ]
+            screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
 
         is_upvoted = False
         is_flagged = False
@@ -231,9 +228,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 
         screenshot_count = len(self.request.FILES.getlist("screenshots"))
         if screenshot_count == 0:
-            return Response(
-                {"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST)
         elif screenshot_count > 5:
             return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -246,9 +241,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         for screenshot in self.request.FILES.getlist("screenshots"):
             if image_validator(screenshot):
                 filename = screenshot.name
-                screenshot.name = (
-                    f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
-                )
+                screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
                 file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
 
                 # Create the IssueScreenshot object and associate it with the issue
@@ -386,19 +379,11 @@ class LeaderboardApiViewSet(APIView):
             temp["rank"] = rank_user
             temp["id"] = each["id"]
             temp["User"] = each["username"]
-            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(
-                total_score=Sum("score")
-            )
-            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[
-                0
-            ]
-            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[
-                0
-            ]
+            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
+            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
+            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
             temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
-            temp["savedissue"] = list(
-                UserProfile.objects.filter(user=each["id"]).values("issue_saved")
-            )[0]
+            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
             rank_user = rank_user + 1
             users.append(temp)
 
@@ -461,19 +446,17 @@ class LeaderboardApiViewSet(APIView):
 
         elif group_by_month:
             return self.group_by_month(request, *args, **kwargs)
-        elif leaderboard_type == "companies":
-            return self.company_leaderboard(request, *args, **kwargs)
+        elif leaderboard_type == "organizations":
+            return self.organization_leaderboard(request, *args, **kwargs)
         else:
             return self.global_leaderboard(request, *args, **kwargs)
 
-    def company_leaderboard(self, request, *args, **kwargs):
+    def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
-        companies = (
-            Company.objects.values()
-            .annotate(issue_count=Count("domain__issue"))
-            .order_by("-issue_count")
+        organizations = (
+            Organization.objects.values().annotate(issue_count=Count("domain__issue")).order_by("-issue_count")
         )
-        page = paginator.paginate_queryset(companies, request)
+        page = paginator.paginate_queryset(organizations, request)
 
         return paginator.get_paginated_response(page)
 
@@ -485,9 +468,7 @@ class StatsApiViewset(APIView):
         hunt_count = Hunt.objects.all().count()
         domain_count = Domain.objects.all().count()
 
-        return Response(
-            {"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count}
-        )
+        return Response({"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count})
 
 
 class UrlCheckApiViewset(APIView):
@@ -502,9 +483,7 @@ class UrlCheckApiViewset(APIView):
         domain = domain_url.replace("https://", "").replace("http://", "").replace("www.", "")
 
         issues = (
-            Issue.objects.filter(
-                Q(Q(domain__name=domain) | Q(domain__url__icontains=domain)) & Q(is_hidden=False)
-            )
+            Issue.objects.filter(Q(Q(domain__name=domain) | Q(domain__url__icontains=domain)) & Q(is_hidden=False))
             .values(
                 "id",
                 "description",
@@ -532,27 +511,17 @@ class BugHuntApiViewset(APIView):
         return Response(hunts)
 
     def get_previous_hunts(self, request, fields, *args, **kwargs):
-        hunts = (
-            Hunt.objects.values(*fields)
-            .filter(is_published=True, end_on__lte=datetime.now())
-            .order_by("-end_on")
-        )
+        hunts = Hunt.objects.values(*fields).filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(hunts)
 
     def get_upcoming_hunts(self, request, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(*fields)
-            .filter(is_published=True, starts_on__gte=datetime.now())
-            .order_by("starts_on")
+            Hunt.objects.values(*fields).filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         )
         return Response(hunts)
 
     def get_search_by_name(self, request, search_query, fields, *args, **kwargs):
-        hunts = (
-            Hunt.objects.values(*fields)
-            .filter(is_published=True, name__icontains=search_query)
-            .order_by("end_on")
-        )
+        hunts = Hunt.objects.values(*fields).filter(is_published=True, name__icontains=search_query).order_by("end_on")
         return Response(hunts)
 
     def get(self, request, *args, **kwargs):
@@ -607,15 +576,11 @@ class BugHuntApiViewsetV2(APIView):
         return Response(self.serialize_hunts(hunts))
 
     def get_previous_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by(
-            "-end_on"
-        )
+        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(self.serialize_hunts(hunts))
 
     def get_upcoming_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by(
-            "starts_on"
-        )
+        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         return Response(self.serialize_hunts(hunts))
 
     def get(self, request, *args, **kwargs):
@@ -625,23 +590,17 @@ class BugHuntApiViewsetV2(APIView):
         previousHunt = request.query_params.get("previousHunt")
         upcomingHunt = request.query_params.get("upcomingHunt")
         if activeHunt:
-            page = paginator.paginate_queryset(
-                self.get_active_hunts(request, *args, **kwargs), request
-            )
+            page = paginator.paginate_queryset(self.get_active_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
         elif previousHunt:
-            page = paginator.paginate_queryset(
-                self.get_previous_hunts(request, *args, **kwargs), request
-            )
+            page = paginator.paginate_queryset(self.get_previous_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
         elif upcomingHunt:
-            page = paginator.paginate_queryset(
-                self.get_upcoming_hunts(request, *args, **kwargs), request
-            )
+            page = paginator.paginate_queryset(self.get_upcoming_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
@@ -652,50 +611,69 @@ class BugHuntApiViewsetV2(APIView):
 
 
 class InviteFriendApiViewset(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request, *args, **kwargs):
-        email = request.POST.get("email")
-        already_exists = User.objects.filter(email=email).exists()
+        email = request.data.get("email")
 
-        if already_exists:
-            return Response("USER EXISTS", status=409)
+        if not email:
+            return Response({"error": "Email is required"}, status=400)
 
-        site = get_current_site(self.request)
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "User already exists"}, status=400)
 
-        invite = InviteFriend.objects.create(sender=request.user, recipient=email, sent=False)
+        try:
+            current_site = get_current_site(request)
+            referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+            referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
 
-        mail_status = send_mail(
-            "Inivtation to {site} from {user}".format(site=site.name, user=request.user.username),
-            "You have been invited by {user} to join {site} community.".format(
-                user=request.user.username, site=site.name
-            ),
-            settings.DEFAULT_FROM_EMAIL,
-            [invite.recipient],
-        )
+            # Prepare email content
+            subject = f"Join me on {current_site.name}!"
+            message = render_to_string(
+                "email/invite_friend.txt",
+                {
+                    "sender": request.user.username,
+                    "referral_link": referral_link,
+                    "site_name": current_site.name,
+                    "site_domain": current_site.domain,
+                },
+            )
 
-        if mail_status:
-            invite.sent = True
-            invite.save()
+            # Send the invitation email
+            email_result = send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
 
-        if (
-            mail_status
-            and InviteFriend.objects.filter(sender=self.request.user, sent=True).count() == 2
-        ):
-            Points.objects.create(user=self.request.user, score=1, reason="Invited friend")
-            InviteFriend.objects.filter(sender=self.request.user).delete()
+            if email_result == 1:
+                return Response(
+                    {
+                        "success": True,
+                        "message": "Invitation sent successfully",
+                        "referral_link": referral_link,
+                        "email_status": "delivered",
+                    }
+                )
+            else:
+                return Response({"error": "Email failed to send", "email_status": "failed"}, status=500)
 
-        return Response(
-            {
-                "title": "SUCCESS",
-                "Points": "+1",
-                "message": "An email has been sent to your friend. Keep inviting your friends and get points!",
-            },
-            status=200,
-        )
+        except smtplib.SMTPException as e:
+            return Response(
+                {
+                    "error": "Failed to send invitation email for an unexpected reason",
+                    "email_status": "error",
+                },
+                status=500,
+            )
 
 
-class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
-    serializer_class = CompanySerializer
+class OrganizationViewSet(viewsets.ModelViewSet):
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
@@ -856,12 +834,12 @@ class TimeLogViewSet(viewsets.ModelViewSet):
 
                 # Normalize the URL in the Company model (remove the protocol if present)
                 try:
-                    organization = Company.objects.get(
+                    organization = Organization.objects.get(
                         Q(url__iexact=normalized_url)
                         | Q(url__iexact=f"http://{normalized_url}")
                         | Q(url__iexact=f"https://{normalized_url}")
                     )
-                except Company.DoesNotExist:
+                except Organization.DoesNotExist:
                     raise ParseError(detail="Organization not found for the given URL.")
 
             else:

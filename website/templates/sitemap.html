@@ -102,7 +102,7 @@
                                 </li>
                                 <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                     <i class="fas fa-folder w-5 h-5 mr-1 align-middle"></i>
-                                    <a href="{% url 'project_list' %}">Projects</a>
+                                    <a href="{% url 'project_view' %}">Projects</a>
                                 </li>
                                 <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                     <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle"></i>
@@ -208,11 +208,11 @@
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-comment-dots w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'comment_on_issue' 1 %}">Comment on Issue // 1</a>
+                                <a href="{% url 'comment_on_content' 1 %}">Comment on Content // 1</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-sync-alt w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'update_comment' 1 1 %}">Update Comment // 1</a>
+                                <a href="{% url 'update_content_comment' 1 1 %}">Update Comment // 1</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle"></i>
@@ -237,7 +237,7 @@
                         <ul class="mt-2   mb-4">
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_manage_bughunts' 1 %}">Manage Bughunts</a>
+                                <a href="{% url 'organization_manage_bughunts' 1 %}">Manage Bughunts</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-ban w-5 h-5 mr-1 align-middle"></i>
@@ -273,7 +273,7 @@
                         <ul class="mt-2">
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-clipboard-list w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'register_company' %}">Register Organization</a>
+                                <a href="{% url 'register_organization' %}">Register Organization</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-server w-5 h-5 mr-1 align-middle"></i>
@@ -295,18 +295,6 @@
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle"></i>
                                 <a href="{% url 'user' %}">User Dashboard</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'addbalance' %}">User Dashboard Addbalance</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-dollar-sign w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'withdraw' %}">User Dashboard Withdraw</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-plug w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'stripe_connected' 1 %}">User Dashboard Stripe connected</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-eye w-5 h-5 mr-1 align-middle"></i>
@@ -339,7 +327,7 @@
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_manage_domains' 1 %}">Manage Domains</a>
+                                <a href="{% url 'organization_manage_domains' 1 %}">Manage Domains</a>
                             </li>
                         </ul>
                     </div>
@@ -508,35 +496,35 @@
                         <ul class="mt-2  ">
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_view' %}">Dashboard</a>
+                                <a href="{% url 'organization_view' %}">Dashboard</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-home w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_dashboard_home' %}">Home</a>
+                                <a href="{% url 'organization_dashboard_home' %}">Home</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'admin_company_dashboard' %}">Admin Organization Dashboard</a>
+                                <a href="{% url 'admin_organization_dashboard' %}">Admin Organization Dashboard</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'add_or_update_company' %}">Add or Update Organization</a>
+                                <a href="{% url 'add_or_update_organization' %}">Add or Update Organization</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_dashboard_domain_detail' 1 %}">Organization Dashboard Domain Detail</a>
+                                <a href="{% url 'organization_dashboard_domain_detail' 1 %}">Organization Dashboard Domain Detail</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-search w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_dashboard_hunt_detail' 1 %}">Organization Dashboard Hunt Detail</a>
+                                <a href="{% url 'organization_dashboard_hunt_detail' 1 %}">Organization Dashboard Hunt Detail</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-pencil-alt w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_dashboard_hunt_edit' 1 %}">Organization Dashboard Hunt Edit</a>
+                                <a href="{% url 'organization_dashboard_hunt_edit' 1 %}">Organization Dashboard Hunt Edit</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'admin_company_dashboard_detail' 1 %}">Admin Organization Dashboard Detail</a>
+                                <a href="{% url 'admin_organization_dashboard_detail' 1 %}">Admin Organization Dashboard Detail</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle"></i>
@@ -556,7 +544,7 @@
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-trophy w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_hunt_results' 1 %}">Organization Dashboard Hunt Results</a>
+                                <a href="{% url 'organization_hunt_results' 1 %}">Organization Dashboard Hunt Results</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-running w-5 h-5 mr-1 align-middle"></i>
@@ -564,7 +552,7 @@
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-cogs w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company-settings' %}">Organization Dashboard Settings</a>
+                                <a href="{% url 'organization-settings' %}">Organization Dashboard Settings</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-edit w-5 h-5 mr-1 align-middle"></i>
@@ -576,15 +564,15 @@
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_view' %}">Dashboard</a>
+                                <a href="{% url 'organization_view' %}">Dashboard</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-bug w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_manage_bugs' 1 %}">Manage Bugs</a>
+                                <a href="{% url 'organization_manage_bugs' 1 %}">Manage Bugs</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                                 <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle"></i>
-                                <a href="{% url 'company_manage_roles' 1 %}">Manage Roles</a>
+                                <a href="{% url 'organization_manage_roles' 1 %}">Manage Roles</a>
                             </li>
                             <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
                             </li>

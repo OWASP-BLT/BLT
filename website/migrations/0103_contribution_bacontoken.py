@@ -29,9 +29,7 @@ class Migration(migrations.Migration):
                 ("date_created", models.DateTimeField(auto_now_add=True)),
                 (
                     "status",
-                    models.CharField(
-                        choices=[("open", "Open"), ("closed", "Closed")], max_length=50
-                    ),
+                    models.CharField(choices=[("open", "Open"), ("closed", "Closed")], max_length=50),
                 ),
                 ("txid", models.CharField(blank=True, max_length=64, null=True)),
                 (

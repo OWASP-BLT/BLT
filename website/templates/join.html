@@ -425,7 +425,7 @@
             <h1>Create Organization</h1>
             <section>
                 <p>Organization information</p>
-                <input type="text" name="company" placeholder="Organization's Name" />
+                <input type="text" name="organization" placeholder="Organization's Name" />
                 <input type="url" name="url" placeholder="Website" />
                 <input type="file" name="file" placeholder="Logo" />
                 <input type="email" name="email" placeholder="Email Address" />
@@ -514,33 +514,31 @@
 </div>
 </section>
 <section class="p-8 max-w-[500px]">
-    {% ifnotequal wallet.current_balance 0 %}
-    <div class="formHolder wallet">
-        <h3>Wallet</h3>
-        Current Balance : {{ wallet.current_balance }}$
-        <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
-    </div>
-{% endifnotequal %}
-<div class="formHolder card">
-    <h3>Card</h3>
-    <script src="https://js.stripe.com/v3/"></script>
-    <div class="col-md-12" id="card-element-container">
-        <div>
-            <label for="card-element">Credit or debit card</label>
-            <div id="card-element">
-                <!-- A Stripe Element will be inserted here. -->
-            </div>
-            <!-- Used to display form errors. -->
-            <div id="card-errors" role="alert"></div>
+    {% if wallet.current_balance != 0 %}
+        <div class="formHolder wallet">
+            <h3>Wallet</h3>
+            Current Balance : {{ wallet.current_balance }}$
+            <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
         </div>
-        <button>Submit Payment</button>
+    {% endif %}
+    <div class="formHolder card">
+        <h3>Card</h3>
+        <!-- <script src="https://js.stripe.com/v3/"></script> -->
+        <div class="col-md-12" id="card-element-container">
+            <div>
+                <label for="card-element">Credit or debit card</label>
+                <div id="card-element"></div>
+                <!-- Used to display form errors. -->
+                <div id="card-errors" role="alert"></div>
+            </div>
+            <button>Submit Payment</button>
+        </div>
+        {% if wallet.current_balance != 0 %}
+            <div type="submit"
+                 class="btn btn-sm btn-link newAccButton"
+                 id="showwallet">Use Wallet</div>
+        {% endif %}
     </div>
-    {% ifnotequal wallet.current_balance 0 %}
-    <div type="submit"
-         class="btn btn-sm btn-link newAccButton"
-         id="showwallet">Use Wallet</div>
-{% endifnotequal %}
-</div>
 </section>
 <section>
     <p>General condtitions</p>
@@ -570,11 +568,6 @@
   showwallet.addEventListener('click', function (event) {
     paymentType = 'wallet'
   })
-  var stripe = Stripe(
-    'pk_test_51HFiXMFf0OkkOVnDkNs4opFLqM0Sx5GA6Pedf63uGzG1gHhumFYHEOLfCA7yzZwXUpjaa5j9ZhS1yciNhouYCMh400pSx5ZEx6');
-
-  // Create an instance of Elements.
-  var elements = stripe.elements();
 
   // Custom styling can be passed to options when creating an Element.
   // (Note that this demo uses a wider set of styles than the guide below.)
@@ -610,76 +603,6 @@
       displayError.textContent = '';
     }
   });
-
-  // Handle form submission.
-  var form = document.getElementById('payment-form');
-  form.addEventListener('submit', function (event) {
-    event.preventDefault();
-    document.getElementsByClassName("overlay")[0].style.display = "block";
-    if (paymentType == 'card') {
-      stripe.createToken(card).then(function (result) {
-        if (result.error) {
-          document.getElementsByClassName("overlay")[0].style.display = "none";
-          // Inform the user if there was an error.
-          var errorElement = document.getElementById('card-errors');
-          errorElement.textContent = result.error.message;
-        } else {
-          // Send the token to your server.
-          stripeTokenHandler(result.token);
-        }
-      });
-    } else {
-      stripeTokenHandler('', false)
-    }
-  });
-
-  // Submit the form with the token ID.
-  function stripeTokenHandler(token, flag = true) {
-    // Insert the token ID into the form so it gets submitted to the server
-    var paymentType = 'card'
-    if (flag == true) {
-      var form = document.getElementById('payment-form');
-      var hiddenInput = document.createElement('input');
-      hiddenInput.setAttribute('type', 'hidden');
-      hiddenInput.setAttribute('name', 'stripeToken');
-      hiddenInput.setAttribute('value', token.id);
-      var typeHiddenInput = document.createElement('input');
-      typeHiddenInput.setAttribute('type', 'hidden');
-      typeHiddenInput.setAttribute('name', 'paymentType');
-      typeHiddenInput.setAttribute('value', 'wallet');
-      form.appendChild(typeHiddenInput);
-      form.appendChild(hiddenInput);
-    } else {
-      paymentType = 'wallet'
-      var form = document.getElementById('payment-form');
-      var typeHiddenInput = document.createElement('input');
-      typeHiddenInput.setAttribute('type', 'hidden');
-      typeHiddenInput.setAttribute('name', 'paymentType');
-      typeHiddenInput.setAttribute('value', 'wallet');
-      form.appendChild(typeHiddenInput);
-    }
-    var serializedData = $("#payment-form").serializeArray()
-    console.log(serializedData)
-    console.log(card)
-    $.ajax({
-      type: 'POST',
-      url: "/join",
-      data: serializedData,
-      success: function (response) {
-        document.getElementsByClassName("overlay")[0].style.display = "none";
-        document.getElementsByClassName("base-body")[0].style.display = "none";
-        document.getElementsByClassName("content")[0].style.display = "block";
-        document.body.style.background = "#000";
-        console.log("SUCCESS")
-      },
-      error: function (response) {
-        // alert the error if any error occured
-        alert(response["responseJSON"]["error"]);
-      }
-    })
-    // Submit the form
-    // form.submit();
-  }
     </script>
     <script type="text/javascript">
   $('document').ready(function () {
