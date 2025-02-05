@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from website.models import OpenSourceRepo, Tag
+from website.models import Repo, Tag
 
 # ANSI escape codes for colors
 COLOR_RED = "\033[91m"
@@ -203,11 +203,10 @@ class Command(BaseCommand):
                     continue
 
                 with transaction.atomic():
-                    repo, created = OpenSourceRepo.objects.update_or_create(
-                        url=repo_data["html_url"],
+                    repo, created = Repo.objects.update_or_create(
+                        repo_url=repo_data["html_url"],
                         defaults={
                             "name": repo_data["name"],
-                            "owner": repo_data["owner"]["login"],
                             "description": repo_data["description"] or "",
                             "primary_language": repo_data["language"] or "",
                             "last_updated": timezone.make_aware(
@@ -216,10 +215,18 @@ class Command(BaseCommand):
                             "stars": repo_data["stargazers_count"],
                             "forks": repo_data["forks_count"],
                             "open_issues": repo_data["open_issues_count"],
-                            "last_pushed": timezone.make_aware(
+                            "last_commit_date": timezone.make_aware(
                                 datetime.strptime(repo_data["pushed_at"], "%Y-%m-%dT%H:%M:%SZ"), dt_timezone.utc
                             ),
                             "license": repo_data.get("license", {}).get("spdx_id", ""),
+                            "contributor_count": self.get_contributors_count(repo_data["full_name"]),
+                            "commit_count": self.get_commit_count(repo_data["full_name"]),
+                            "size": repo_data.get("size", 0),
+                            "watchers": repo_data.get("watchers_count", 0),
+                            "subscribers_count": repo_data.get("subscribers_count", 0),
+                            "network_count": repo_data.get("network_count", 0),
+                            "closed_issues": repo_data.get("closed_issues_count", 0),
+                            "open_pull_requests": repo_data.get("open_pull_requests_count", 0),
                         },
                     )
 
