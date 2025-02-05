@@ -90,6 +90,7 @@ from website.views.core import (  # chatbot_conversation,
 )
 from website.views.issue import (
     AllIssuesView,
+    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -105,6 +106,7 @@ from website.views.issue import (
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
+    generate_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -279,14 +281,14 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
+    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
-    path("auth/github/url/", github_views.oauth2_login),
     path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_oauth_callback"),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
@@ -853,6 +855,8 @@ urlpatterns = [
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path("api/generate-github-issue/", generate_github_issue, name="generate_github_issue"),
 ]
 
 if settings.DEBUG:

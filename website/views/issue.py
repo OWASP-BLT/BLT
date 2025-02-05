@@ -10,6 +10,7 @@ import requests
 import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
+from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -34,11 +35,13 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
+from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from user_agents import parse
@@ -1583,3 +1586,86 @@ def flag_issue(request, issue_pk):
 
 def select_bid(request):
     return render(request, "bid_selection.html")
+
+
+@method_decorator(login_required, name="dispatch")
+class GithubIssueView(TemplateView):
+    template_name = "github_issue.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if the user has a GitHub social token
+        has_github_token = SocialToken.objects.filter(account__user=request.user, account__provider="github").exists()
+
+        # Redirect to social connections if no token is found
+        if not has_github_token:
+            return redirect("/accounts/social/connections/")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Retrieve data from form
+        title = request.POST.get("issue_title")
+        description = request.POST.get("description")
+
+        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
+        labels = request.POST.get("labels")
+        labels_list = [label.strip() for label in labels.split(",")] if labels else []
+        try:
+            access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
+        except SocialToken.DoesNotExist:
+            print("Access token not found")
+            return redirect("github_login")
+
+        token = access_token.token
+        # Create GitHub issue
+        issue = self.create_github_issue(repository, title, description, token, labels_list)
+
+        if "id" in issue:
+            success_message = f"Issue successfully created: #{issue['number']} - {issue['title']}"
+            return render(request, "github_issue.html", {"message": success_message})
+        else:
+            return render(request, "github_issue.html", {"error": issue.get("message"), "form_data": request.POST})
+
+    def create_github_issue(self, repo, title, description, access_token, labels_list):
+        url = f"https://api.github.com/repos/{repo}/issues"
+        headers = {"Authorization": f"token {access_token}", "Accept": "application/vnd.github.v3+json"}
+        data = {"title": title, "body": description, "labels": labels_list}
+        response = requests.post(url, json=data, headers=headers)
+        return response.json()
+
+
+def generate_github_issue(request):
+    print(os.getenv("OPENAI_API_KEY"))
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            description = data.get("description", "")
+
+            if not description:
+                return JsonResponse({"error": "Description is required"}, status=400)
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            # Call the OpenAI API with the o3-mini model
+            response = client.chat.completions.create(
+                # model="gpt-4o-mini",
+                model="openai-o3-mini",
+                messages=[
+                    {
+                        "role": "developer",
+                        "content": "You are a helpful assistant that generates descriptions for GitHub issues including a comprehensive description, reproduction steps, subtasks and any other relevant information.",
+                    },
+                    {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
+                ],
+                reasoning_effort="medium",
+            )
+            if response.choices and response.choices[0].message:
+                issue_details = response.choices[0].message.content
+            else:
+                issue_details = "No response content received."
+
+            return JsonResponse({"issue_details": issue_details})
+
+        except Exception as e:
+            return JsonResponse({"error": "There's a problem with openAI"}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
