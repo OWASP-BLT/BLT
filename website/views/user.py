@@ -1,10 +1,11 @@
 import json
+import logging
 import os
+from collections import defaultdict
 from datetime import datetime, timezone
-from decimal import Decimal
+from urllib.parse import urlparse
 
 import requests
-import stripe
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -17,10 +18,11 @@ from django.core.mail import send_mail
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, TemplateView, View
@@ -41,7 +43,6 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
-    Payment,
     Points,
     Tag,
     User,
@@ -50,6 +51,8 @@ from website.models import (
     Wallet,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(user_signed_up)
@@ -92,8 +95,8 @@ def update_bch_address(request):
     else:
         messages.error(request, "Invalid request method.")
 
-    username = request.user.username if request.user.username else "default_username"
-    return redirect(reverse("profile", args=[username]))
+        username = request.user.username if request.user.username else "default_username"
+        return redirect(reverse("profile", args=[username]))
 
 
 @login_required
@@ -191,10 +194,19 @@ class InviteCreate(TemplateView):
 def get_github_stats(user_profile):
     # Get all PRs with repo info
     user_prs = (
-        GitHubIssue.objects.filter(user_profile=user_profile, type="pull_request")
+        GitHubIssue.objects.filter(
+            Q(user_profile=user_profile) | Q(reviews__reviewer=user_profile), type="pull_request"
+        )
         .select_related("repo")
+        .distinct()
         .order_by("-created_at")
     )
+
+    # Calculate reviewed PRs
+    reviewed_count = GitHubIssue.objects.filter(
+        reviews__reviewer=user_profile,
+    ).count()
+
     print(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
@@ -212,30 +224,52 @@ def get_github_stats(user_profile):
         repo_id = pr.repo.id if pr.repo else None
         repo_url = pr.repo.repo_url if pr.repo else None
 
-        if repo_name not in repos_with_prs:
-            repos_with_prs[repo_name] = {
+        repos_with_prs.setdefault(
+            repo_name,
+            {
                 "repo_name": repo_name,
                 "repo_id": repo_id,
                 "repo_url": repo_url,
                 "pull_requests": [],
-                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0},
-            }
+                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0, "reviewed_count": 0},
+            },
+        )
 
         repos_with_prs[repo_name]["pull_requests"].append(pr)
 
-        if pr.is_merged:
-            repos_with_prs[repo_name]["stats"]["merged_count"] += 1
-        elif pr.state == "open":
-            repos_with_prs[repo_name]["stats"]["open_count"] += 1
-        elif pr.state == "closed" and not pr.is_merged:
-            repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+        # Track authored vs reviewed contributions
+        if pr.user_profile == user_profile:
+            if pr.is_merged:
+                repos_with_prs[repo_name]["stats"]["merged_count"] += 1
+            elif pr.state == "open":
+                repos_with_prs[repo_name]["stats"]["open_count"] += 1
+            elif pr.state == "closed" and not pr.is_merged:
+                repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+        elif pr.reviews.filter(reviewer=user_profile).exists():
+            repos_with_prs[repo_name]["stats"]["reviewed_count"] += 1
+
+    # Get review ranking
+    all_reviewers = (
+        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        .filter(review_count__gt=0)
+        .order_by("-review_count")
+    )
+
+    review_rank = None
+    total_reviewers = all_reviewers.count()
+    for i, reviewer in enumerate(all_reviewers, 1):
+        if reviewer.id == user_profile.id:
+            review_rank = f"#{i} out of {total_reviewers}"
+            break
 
     return {
         "overall_stats": {
             "merged_count": merged_count,
             "open_count": open_count,
             "closed_count": closed_count,
+            "reviewed_count": reviewed_count,
             "user_rank": f"#{user_profile.contribution_rank} out of {contributor_count}",
+            "review_rank": review_rank,
         },
         "repos_with_prs": repos_with_prs,
     }
@@ -341,6 +375,63 @@ class UserProfileDetailView(DetailView):
                 "repos_with_prs": stats["repos_with_prs"],
             }
         )
+
+        context["prs_grouped"] = None
+        context["total_pr_reviews"] = 0
+
+        if user.userprofile.github_url:
+            try:
+                parsed_url = urlparse(user.userprofile.github_url)
+                path_parts = parsed_url.path.strip("/").split("/")
+                if path_parts:
+                    github_username = path_parts[0]
+                    headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"} if settings.GITHUB_TOKEN else {}
+                    reviewed_prs_response = requests.get(
+                        f"https://api.github.com/search/issues?q=type:pr+reviewed-by:{github_username}",
+                        headers=headers,
+                        timeout=5,
+                    )
+                    if reviewed_prs_response.status_code == 200:
+                        reviewed_prs = reviewed_prs_response.json().get("items", [])
+                        prs_grouped = defaultdict(list)
+                        reviewed_stats = {"merged_count": 0, "open_count": 0, "closed_count": 0}
+
+                        for pr in reviewed_prs:
+                            repo_name = pr["repository_url"].split("/")[-1]
+                            is_merged = pr.get("pull_request", {}).get("merged_at") is not None
+                            state = pr["state"]
+
+                            # Update counts
+                            if is_merged:
+                                reviewed_stats["merged_count"] += 1
+                            elif state == "open":
+                                reviewed_stats["open_count"] += 1
+                            else:
+                                reviewed_stats["closed_count"] += 1
+
+                            # Add to grouped PRs
+                            prs_grouped[repo_name].append(
+                                {
+                                    "html_url": pr["html_url"],
+                                    "number": pr["number"],
+                                    "title": pr["title"],
+                                    "state": state,
+                                    "merged": is_merged,
+                                    "created_at": pr["created_at"],
+                                }
+                            )
+
+                        context.update(
+                            {
+                                "prs_grouped": dict(prs_grouped),
+                                "reviewed_stats": reviewed_stats,
+                                "total_pr_reviews": len(reviewed_prs),
+                            }
+                        )
+
+            except Exception as e:
+                logger.error(f"Error fetching GitHub PRs: {str(e)}")
+
         return context
 
     @method_decorator(login_required)
@@ -499,13 +590,26 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             GitHubIssue.objects.filter(type="pull_request", is_merged=True)
             .values(
                 "user_profile__user__username",
-                "user_profile__user__email",  # For gravatar fallback
-                "user_profile__github_url",  # Using github_url instead of avatar
+                "user_profile__user__email",
+                "user_profile__github_url",
             )
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
         context["pr_leaderboard"] = pr_leaderboard
+
+        # Get Reviewed Pull Request Leaderboard
+        reviewed_pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request")
+            .values(
+                "reviews__reviewer__user__username",
+                "reviews__reviewer__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_reviews=Count("id"))
+            .order_by("-total_reviews")[:10]
+        )
+        context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         return context
 
@@ -677,127 +781,6 @@ def users_view(request, *args, **kwargs):
         context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
-
-
-@login_required(login_url="/accounts/login")
-def stripe_connected(request, username):
-    user = User.objects.get(username=username)
-    wallet, created = Wallet.objects.get_or_create(user=user)
-    from django.conf import settings
-
-    stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-    account = stripe.Account.retrieve(wallet.account_id)
-    if account.payouts_enabled:
-        payment = Payment.objects.get(wallet=wallet, active=True)
-        balance = stripe.Balance.retrieve()
-        if balance.available[0].amount > payment.value * 100:
-            stripe.Transfer.create(
-                amount=payment.value * 100,
-                currency="usd",
-                destination="000123456789",
-                transfer_group="ORDER_95",
-            )
-            wallet.withdraw(Decimal(request.POST["amount"]))
-            wallet.save()
-            payment.active = False
-            payment.save()
-            return HttpResponseRedirect("/dashboard/user/profile/" + username)
-        else:
-            return HttpResponse("ERROR")
-    else:
-        wallet.account_id = None
-        wallet.save()
-    return HttpResponse("error")
-
-
-@login_required(login_url="/accounts/login")
-def addbalance(request):
-    if request.method == "POST":
-        if request.user.is_authenticated:
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            charge = stripe.Charge.create(
-                amount=int(Decimal(request.POST["amount"]) * 100),
-                currency="usd",
-                description="Example charge",
-                source=request.POST["stripeToken"],
-            )
-            wallet.deposit(request.POST["amount"])
-        return HttpResponse("success")
-
-
-@login_required(login_url="/accounts/login")
-def withdraw(request):
-    if request.method == "POST":
-        if request.user.is_authenticated:
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            if wallet.current_balance < Decimal(request.POST["amount"]):
-                return HttpResponse("msg : amount greater than wallet balance")
-            else:
-                amount = Decimal(request.POST["amount"])
-            payments = Payment.objects.filter(wallet=wallet)
-            for payment in payments:
-                payment.active = False
-            payment = Payment()
-            payment.wallet = wallet
-            payment.value = Decimal(request.POST["amount"])
-            payment.save()
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            if wallet.account_id:
-                account = stripe.Account.retrieve(wallet.account_id)
-                if account.payouts_enabled:
-                    balance = stripe.Balance.retrieve()
-                    if balance.available[0].amount > payment.value * 100:
-                        stripe.Transfer.create(
-                            amount=Decimal(request.POST["amount"]) * 100,
-                            currency="usd",
-                            destination=wallet.account_id,
-                            transfer_group="ORDER_95",
-                        )
-                        wallet.withdraw(Decimal(request.POST["amount"]))
-                        wallet.save()
-                        payment.active = False
-                        payment.save()
-                        return HttpResponseRedirect("/dashboard/user/profile/" + request.user.username)
-                    else:
-                        return HttpResponse("INSUFFICIENT BALANCE")
-                else:
-                    wallet.account_id = None
-                    wallet.save()
-                    account = stripe.Account.create(
-                        type="express",
-                    )
-                    wallet.account_id = account.id
-                    wallet.save()
-                    account_links = stripe.AccountLink.create(
-                        account=account,
-                        return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                        + request.user.username,
-                        refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                        + request.user.username,
-                        type="account_onboarding",
-                    )
-                    return JsonResponse({"redirect": account_links.url, "status": "success"})
-            else:
-                account = stripe.Account.create(
-                    type="express",
-                )
-                wallet.account_id = account.id
-                wallet.save()
-                account_links = stripe.AccountLink.create(
-                    account=account,
-                    return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                    + request.user.username,
-                    refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                    + request.user.username,
-                    type="account_onboarding",
-                )
-                return JsonResponse({"redirect": account_links.url, "status": "success"})
-        return JsonResponse({"status": "error"})
 
 
 def contributors(request):
