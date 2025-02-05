@@ -63,6 +63,8 @@ from website.views.company import (
 from website.views.core import (  # chatbot_conversation,
     FacebookConnect,
     FacebookLogin,
+    GithubConnect,
+    GithubLogin,
     GoogleConnect,
     GoogleLogin,
     StatsDetailView,
@@ -73,6 +75,7 @@ from website.views.core import (  # chatbot_conversation,
     donate_view,
     facebook_callback,
     find_key,
+    github_callback,
     google_callback,
     home,
     robots_txt,
@@ -234,6 +237,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 from allauth.socialaccount.providers.facebook import views as facebook_views
+from allauth.socialaccount.providers.github import views as github_views
 from allauth.socialaccount.providers.google import views as google_views
 from django.contrib import admin
 from django.urls import include, path
@@ -276,6 +280,10 @@ urlpatterns = [
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
+    path("auth/github/", GithubLogin.as_view(), name="github_login"),
+    path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),

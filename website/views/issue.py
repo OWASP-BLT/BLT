@@ -1647,8 +1647,8 @@ def generate_github_issue(request):
 
             # Call the OpenAI API with the o3-mini model
             response = client.chat.completions.create(
-                # model="gpt-4o-mini",
-                model="openai-o3-mini",
+                model="gpt-4o-mini",
+                # model="openai-o3-mini",
                 messages=[
                     {
                         "role": "developer",
@@ -1656,7 +1656,7 @@ def generate_github_issue(request):
                     },
                     {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
                 ],
-                reasoning_effort="medium",
+                # reasoning_effort="medium",
             )
             if response.choices and response.choices[0].message:
                 issue_details = response.choices[0].message.content
