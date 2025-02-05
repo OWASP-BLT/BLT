@@ -6,7 +6,7 @@ import cv2
 def overlay_faces(img, color=(255, 255, 255)):
     """Apply white rectangles over detected faces in an image."""
 
-    # tracemalloc used to measure memory usage
+    # trace-malloc used to measure memory usage of the function
     tracemalloc.start()
     try:
         if img is None:
@@ -18,6 +18,7 @@ def overlay_faces(img, color=(255, 255, 255)):
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+        # Load the pre-trained face detection model
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
         if face_cascade.empty():
             return img
