@@ -1,3 +1,4 @@
+from captcha.views import captcha_refresh
 from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
 from django.conf import settings
@@ -189,6 +190,7 @@ from website.views.teams import (
     add_member,
     create_team,
     delete_team,
+    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -264,6 +266,7 @@ urlpatterns = [
     ),
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
+    path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
@@ -835,6 +838,7 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path("teams/give-kudos/", give_kudos, name="give_kudos"),
     path(
         "similarity-scan",
         TemplateView.as_view(template_name="similarity.html"),
