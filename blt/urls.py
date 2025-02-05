@@ -109,6 +109,7 @@ from website.views.issue import (
     issue_count,
     like_issue,
     newhome,
+    process_bug_image,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -853,6 +854,7 @@ urlpatterns = [
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("process_bug_image", process_bug_image, name="process_bug_image"),
 ]
 
 if settings.DEBUG:

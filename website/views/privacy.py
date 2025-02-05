@@ -18,9 +18,7 @@ def overlay_faces(img, color=(255, 255, 255)):
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        face_cascade = cv2.CascadeClassifier(
-            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-        )
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
         if face_cascade.empty():
             return img
 

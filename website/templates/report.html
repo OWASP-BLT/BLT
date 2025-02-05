@@ -454,26 +454,54 @@
         event.preventDefault();
 
     }
+    function clearPreviews() {
+    manage_div.innerHTML = '';
+    }
 
-    screenshots.addEventListener('change', (event) => {
+    screenshots.addEventListener('change', async (event) => {
+    clearPreviews();
 
-        const fileList = Array.from(event.target.files);
+    const fileList = Array.from(event.target.files);
+    for (let file of fileList) {
+        let formData = new FormData();
+        formData.append("file", file);
+        let res = await fetch("/process_bug_image", {
+            method: "POST",
+            body: formData
+        });
+        if (!res.ok) {
+            console.log("Error processing file:", file.name);
+            continue;
+        }
+        let data = await res.json();
+        if (data.error) {
+            console.log("Error from server:", data.error);
+            continue;
+        }
+        let base64Img = data.image;
+        let safeName = file.name;
+        let safeNameDisplay = safeName.slice(0, 20) + (safeName.length > 20 ? "..." : "");
 
-        fileList.map(file => {
-            let src = URL.createObjectURL(file);
-            let safeName = $("<div>").text(file.name).html();
-            let safeNameDisplay = safeName.slice(0, 20) + (safeName.length > 20 ? "..." : "");
-            // Use the safe name for display and in the onclick handler
-            let fileDiv = $("<div>").addClass("w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg").attr("onclick", `previewFile('${safeName}')`);
-            let titleDiv = $("<div>").addClass("w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500");
-            let titleP = $("<p>").addClass("text-xl text-white font-bold").text(safeNameDisplay);
-            let img = $("<img>").addClass("object-cover").attr("src", escapeHtml(src));
+        // Build preview element
+        let fileDiv = document.createElement("div");
+        fileDiv.className = "w-full md:w-[300px] h-[180px] overflow-hidden rounded-lg";
 
-            titleDiv.append(titleP);
-            fileDiv.append(titleDiv).append(img);
-            $("#files_manage").append(fileDiv);
-        })
+        let titleDiv = document.createElement("div");
+        titleDiv.className = "w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500";
 
+        let titleP = document.createElement("p");
+        titleP.className = "text-xl text-white font-bold";
+        titleP.textContent = safeNameDisplay;
+        titleDiv.appendChild(titleP);
+
+        let img = document.createElement("img");
+        img.src = "data:image/jpeg;base64," + base64Img;
+        img.className = "object-cover";
+
+        fileDiv.appendChild(titleDiv);
+        fileDiv.appendChild(img);
+        manage_div.appendChild(fileDiv);
+    }
     });
 
 

@@ -373,13 +373,9 @@ def delete_issue(request, id):
     if request.user.is_superuser or request.user == issue.user or tokenauth:
         try:
             with transaction.atomic():
-                Comment.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Issue), object_id=id
-                ).delete()
+                Comment.objects.filter(content_type=ContentType.objects.get_for_model(Issue), object_id=id).delete()
                 Points.objects.filter(issue=issue).delete()
-                Activity.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Issue), object_id=id
-                ).delete()
+                Activity.objects.filter(content_type=ContentType.objects.get_for_model(Issue), object_id=id).delete()
 
             screenshots = issue.screenshots.all()
             for screenshot in screenshots:
@@ -393,9 +389,7 @@ def delete_issue(request, id):
         except Exception as e:
             messages.error(request, f"Error deleting issue: {str(e)}")
             if tokenauth:
-                return JsonResponse(
-                    {"status": "error", "message": f"Error deleting issue: {str(e)}"}, status=500
-                )
+                return JsonResponse({"status": "error", "message": f"Error deleting issue: {str(e)}"}, status=500)
     else:
         messages.error(request, "Permission denied")
         if tokenauth:
@@ -1008,12 +1002,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     save=True,
                 )
 
-            # Save screenshots
             for screenshot in self.request.FILES.getlist("screenshots"):
                 try:
                     screenshot.seek(0)
 
-                    # Read image data
                     image_data = screenshot.read()
                     np_img = np.frombuffer(image_data, np.uint8)
                     img = cv2.imdecode(np_img, cv2.IMREAD_UNCHANGED)
@@ -1021,10 +1013,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     if img is None:
                         raise ValueError("Failed to decode image")
 
-                    # Process image - original returned if no faces
                     img_with_faces_hidden = overlay_faces(img)
 
-                    # Save processed image
                     filename = screenshot.name
                     extension = filename.split(".")[-1].lower()
 
@@ -1033,11 +1023,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     new_filename = f"{filename[:10]}_{uuid.uuid4()}_{int(time.time())}.{extension}"
 
-                    # Encode and save image
                     if extension in ["jpg", "jpeg"]:
-                        _, buffer = cv2.imencode(
-                            ".jpg", img_with_faces_hidden, [cv2.IMWRITE_JPEG_QUALITY, 90]
-                        )
+                        _, buffer = cv2.imencode(".jpg", img_with_faces_hidden, [cv2.IMWRITE_JPEG_QUALITY, 90])
                     else:
                         _, buffer = cv2.imencode(".png", img_with_faces_hidden)
 
@@ -1045,11 +1032,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         raise ValueError("Failed to encode processed image")
 
                     processed_image = ContentFile(buffer.tobytes())
-                    saved_path = default_storage.save(
-                        f"screenshots/{new_filename}", processed_image
-                    )
+                    saved_path = default_storage.save(f"screenshots/{new_filename}", processed_image)
 
-                    # Create screenshot object
                     IssueScreenshot.objects.create(image=saved_path, issue=obj)
 
                 except Exception as e:
@@ -1676,3 +1660,34 @@ def flag_issue(request, issue_pk):
 
 def select_bid(request):
     return render(request, "bid_selection.html")
+
+
+@csrf_exempt
+def process_bug_image(request):
+    if request.method == "POST":
+        file = request.FILES.get("file")
+        if not file:
+            return JsonResponse({"error": "No file provided"}, status=400)
+        try:
+            import cv2
+            import numpy as np
+
+            from .privacy import overlay_faces
+
+            in_memory_file = file.read()
+            file_array = np.frombuffer(in_memory_file, np.uint8)
+            img = cv2.imdecode(file_array, cv2.IMREAD_UNCHANGED)
+            if img is None:
+                return JsonResponse({"error": "Could not decode image"}, status=400)
+
+            processed_img = overlay_faces(img)
+
+            ret, buffer = cv2.imencode(".jpg", processed_img, [cv2.IMWRITE_JPEG_QUALITY, 90])
+            if not ret:
+                return JsonResponse({"error": "Failed to encode processed image"}, status=500)
+
+            base64_data = base64.b64encode(buffer).decode("utf-8")
+            return JsonResponse({"image": base64_data}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+    return JsonResponse({"error": "Only POST allowed"}, status=405)
