@@ -1666,6 +1666,6 @@ def generate_github_issue(request):
             return JsonResponse({"issue_details": issue_details})
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return JsonResponse({"error": "There's a problem with openAI"}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
