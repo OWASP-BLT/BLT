@@ -95,8 +95,6 @@ INSTALLED_APPS = (
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
-GITHUB_LOGIN_URL= os.environ.get("GITHUB_LOGIN_URL", "github_login")
-GITHUB_LOGIN_REDIRECT_URL = os.environ.get("/")   # Redirect after successful login
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -174,7 +172,6 @@ TEMPLATES = [
 AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
     "allauth.account.auth_backends.AuthenticationBackend",
-    # 'social_core.backends.github.GithubOAuth2', 
 )
 
 
@@ -360,14 +357,6 @@ LOGGING = {
         },
     },
 }
-# disable logging unless critical
-
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": True,  # Disable all existing loggers
-#     "handlers": {},  # No handlers defined
-#     "loggers": {},  # No loggers defined
-# }
 
 
 USERS_AVATAR_PATH = "avatars"
@@ -453,7 +442,7 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user:email", "user", "repo"],
+        "SCOPE": ["user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
     "google": {
@@ -569,3 +558,4 @@ CHANNEL_LAYERS = {
 }
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
+SOCIALACCOUNT_STORE_TOKENS = True
