@@ -387,9 +387,9 @@ def delete_issue(request, id):
                 return JsonResponse({"status": "success", "message": "Issue deleted successfully"})
 
         except Exception as e:
-            messages.error(request, f"Error deleting issue: {str(e)}")
+            messages.error(request, "Error deleting issue (see logs)")
             if tokenauth:
-                return JsonResponse({"status": "error", "message": f"Error deleting issue: {str(e)}"}, status=500)
+                return JsonResponse({"status": "error", "message": "An internal error occurred."}, status=500)
     else:
         messages.error(request, "Permission denied")
         if tokenauth:
@@ -1689,5 +1689,5 @@ def process_bug_image(request):
             base64_data = base64.b64encode(buffer).decode("utf-8")
             return JsonResponse({"image": base64_data}, status=200)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            return JsonResponse({"error": "An internal error occurred."}, status=500)
     return JsonResponse({"error": "Only POST allowed"}, status=405)
