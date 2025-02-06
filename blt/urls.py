@@ -171,6 +171,7 @@ from website.views.organization import (
     view_hunt,
     weekly_report,
 )
+from website.views.ossh import ossh_home, ossh_results
 from website.views.project import (
     ProjectBadgeView,
     ProjectsDetailView,
@@ -853,6 +854,8 @@ urlpatterns = [
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("open-source-sorting-hat/", ossh_home, name="ossh_home"),
+    path("open-source-sorting-hat/results", ossh_results, name="ossh_results"),
 ]
 
 if settings.DEBUG:

@@ -1254,7 +1254,7 @@ def verify_file_upload(sender, instance, **kwargs):
 
 
 class Repo(models.Model):
-    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
@@ -1286,7 +1286,8 @@ class Repo(models.Model):
     release_datetime = models.DateTimeField(null=True, blank=True)
     logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
-    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True, null=True)
+    is_owasp_repo = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1482,3 +1483,41 @@ class Kudos(models.Model):
 
     def __str__(self):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
+
+
+class OsshCommunity(models.Model):
+    CATEGORY_CHOICES = [
+        ("forum", "Forum"),
+        ("community", "Community"),
+        ("mentorship", "Mentorship Program"),
+    ]
+
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+    website = models.URLField(unique=True, help_text="Direct link to the community")
+    source = models.CharField(max_length=100, help_text="Source API (GitHub, Dev.to, etc.)")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="community")
+    external_id = models.CharField(
+        max_length=255, blank=True, null=True, unique=True, help_text="ID from external source"
+    )
+    tags = models.ManyToManyField(Tag, related_name="communities", blank=True)
+    metadata = models.JSONField(default=dict, help_text="Additional API-specific metadata")
+    contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class OsshDiscussionChannel(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    source = models.CharField(max_length=100, help_text="Source API (Discord, Slack etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
+    member_count = models.PositiveIntegerField(default=0)
+    invite_url = models.URLField(blank=True)
+    logo_url = models.URLField(blank=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="channels")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
