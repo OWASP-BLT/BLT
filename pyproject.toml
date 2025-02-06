@@ -64,7 +64,7 @@ slack-bolt = "^1.22.0"
 tld = "0.13"
 
 [tool.poetry.group.dev.dependencies]
-black = "^24.8.0"
+black = "^25.1.0"
 isort = "^5.13.2"
 ruff = "^0.9.4"
 pre-commit = "^3.8.0"
