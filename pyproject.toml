@@ -65,7 +65,7 @@ tld = "0.13"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
-isort = "^5.13.2"
+isort = "^6.0.0"
 ruff = "^0.9.4"
 pre-commit = "^3.8.0"
 selenium = "^4.28.1"
