@@ -1505,3 +1505,19 @@ class OsshCommunity(models.Model):
     contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+
+class OsshDiscussionChannel(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    source = models.CharField(max_length=100, help_text="Source API (Discord, Slack etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
+    member_count = models.PositiveIntegerField(default=0)
+    invite_url = models.URLField(blank=True)
+    logo_url = models.URLField(blank=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="channels")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
