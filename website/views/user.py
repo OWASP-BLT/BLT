@@ -1052,7 +1052,7 @@ def assign_github_badge(user, action_title):
 #     if not signature:
 #         return False
 
-#     secret = bytes(os.environ.get("GITHUB_ACCESS_TOKEN", ""), "utf-8")
+#     secret = bytes(os.environ.get("GITHUB_TOKEN", ""), "utf-8")
 #     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
 #     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 
