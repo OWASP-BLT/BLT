@@ -17,6 +17,7 @@ django-gravatar2 = "^1.4.5"
 django-import-export = "^4.3.5"
 django-annoying = "^0.10.7"
 dj-rest-auth = "^5.0.2"
+openai = "^1.60.0"
 user-agents = "^2.2.0"
 whitenoise = "^6.8.2"
 
