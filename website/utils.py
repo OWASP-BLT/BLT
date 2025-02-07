@@ -19,7 +19,7 @@ from django.shortcuts import redirect
 from .models import PRAnalysisReport
 
 # openai.api_key = os.getenv("OPENAI_API_KEY")
-GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
