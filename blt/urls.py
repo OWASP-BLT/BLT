@@ -1,3 +1,4 @@
+from captcha.views import captcha_refresh
 from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
 from django.conf import settings
@@ -35,6 +36,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
@@ -192,6 +194,7 @@ from website.views.teams import (
     add_member,
     create_team,
     delete_team,
+    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -207,7 +210,6 @@ from website.views.user import (
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    addbalance,
     assign_badge,
     badge_user_list,
     contributors,
@@ -221,11 +223,9 @@ from website.views.user import (
     profile,
     profile_edit,
     referral_signup,
-    stripe_connected,
     update_bch_address,
     user_dashboard,
     users_view,
-    withdraw,
 )
 
 favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
@@ -270,6 +270,7 @@ urlpatterns = [
     ),
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
+    path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
@@ -321,17 +322,6 @@ urlpatterns = [
         r"^dashboard/organization/$",
         organization_dashboard,
         name="organization_dashboard_home",
-    ),
-    re_path(
-        r"^dashboard/user/profile/addbalance$",
-        addbalance,
-        name="addbalance",
-    ),
-    re_path(r"^dashboard/user/profile/withdraw$", withdraw, name="withdraw"),
-    re_path(
-        r"^dashboard/user/stripe/connected/(?P<username>[^/]+)/$",
-        stripe_connected,
-        name="stripe_connected",
     ),
     re_path(
         r"^dashboard/admin/organization$",
@@ -852,6 +842,7 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path("teams/give-kudos/", give_kudos, name="give_kudos"),
     path(
         "similarity-scan",
         TemplateView.as_view(template_name="similarity.html"),
@@ -868,6 +859,8 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
+    path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
 ]
 
 if settings.DEBUG:

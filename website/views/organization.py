@@ -6,7 +6,6 @@ from decimal import Decimal
 from urllib.parse import urlparse
 
 import requests
-import stripe
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
@@ -231,23 +230,6 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                     break
                 index = index + 1
             total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            balance = stripe.Balance.retrieve()
-            if balance.available[0].amount > total_amount * 100:
-                if winner.winner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.winner)
-                    wallet.deposit(hunt.prize_winner)
-                    wallet.save()
-                if winner.runner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.runner)
-                    wallet.deposit(hunt.prize_runner)
-                    wallet.save()
-                if winner.second_runner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.second_runner)
-                    wallet.deposit(hunt.prize_second_runner)
-                    wallet.save()
             winner.prize_distributed = True
             winner.hunt = hunt
             winner.save()
@@ -364,15 +346,6 @@ class Joinorganization(TemplateView):
             return JsonResponse({"status": "Success"})
             # company.subscription =
         elif paymentType == "card":
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            charge = stripe.Charge.create(
-                amount=int(Decimal(sub.charge_per_month) * 100),
-                currency="usd",
-                description="Example charge",
-                source=request.POST["stripeToken"],
-            )
             organization = Organization()
             organization.admin = request.user
             organization.name = name
@@ -619,14 +592,18 @@ class DomainDetailView(ListView):
         # Fetch the related organization
         organization = domain.organization
         if organization is None:
-            organization = get_object_or_404(Organization, Q(name__iexact=domain.get_name))
+            organizations = Organization.objects.filter(name__iexact=domain.get_name)
+            if organizations.exists():
+                organization = organizations.first()
+            else:
+                organization = None
+
         context["organization"] = organization
 
         if organization:
             # Fetch related trademarks for the organization
             trademarks = Trademark.objects.filter(organization=organization)
-
-        context["trademarks"] = trademarks
+            context["trademarks"] = trademarks
 
         open_issues = (
             Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
