@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
@@ -220,7 +221,7 @@ class OrganizationAdmins(ImportExportModelAdmin):
 
     def get_url_icon(self, obj):
         if obj.url:
-            return f'<a href="{obj.url}" target="_blank">' f'<i class="fas fa-external-link-alt"></i></a>'
+            return mark_safe(f'<a href="{obj.url}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
         return ""
 
     get_url_icon.short_description = " "
