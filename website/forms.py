@@ -3,6 +3,8 @@ from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
 
+from website.models import Room
+
 from .models import Bid, IpReport, Monitor, UserProfile
 
 
@@ -122,3 +124,12 @@ class SignupFormWithCaptcha(SignupForm, CaptchaForm):
     def save(self, request):
         user = super().save(request)
         return user
+
+
+class RoomForm(forms.ModelForm):
+    class Meta:
+        model = Room
+        fields = ["name", "type", "custom_type", "description"]
+        widgets = {
+            "type": forms.Select(attrs={"onchange": "toggleCustomTypeField(this)"}),
+        }
