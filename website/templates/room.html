@@ -33,6 +33,10 @@
     const roomId = {{ room.id }};
     const username = {% if request.user.is_authenticated %}"{{ request.user.username|escapejs }}"{% else %}"anon_{{ request.session.session_key|slice:'-4:'|escapejs }}"{% endif %};
     let socket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10;
+    const baseDelay = 1000; // Start with 1 second delay
+    const maxDelay = 30000; // Maximum delay of 30 seconds
 
     const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
     const wsUrl = `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`;
@@ -43,31 +47,46 @@
     const connectionStatus = document.getElementById('connection-status');
     const connectionText = document.getElementById('connection-text');
 
-    function updateConnectionStatus(status) {
+    function updateConnectionStatus(status, message = null) {
         if (status === 'connected') {
             connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
             connectionText.textContent = 'Connected';
             connectionText.className = 'text-sm text-green-600';
             sendButton.disabled = false;
             messageInput.disabled = false;
+            reconnectAttempts = 0; // Reset reconnect attempts on successful connection
         } else if (status === 'disconnected') {
             connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
-            connectionText.textContent = 'Disconnected';
+            connectionText.textContent = message || 'Disconnected';
             connectionText.className = 'text-sm text-red-600';
             sendButton.disabled = true;
             messageInput.disabled = true;
         } else {
             connectionStatus.className = 'w-3 h-3 rounded-full bg-gray-400';
-            connectionText.textContent = 'Connecting...';
+            connectionText.textContent = message || 'Connecting...';
             connectionText.className = 'text-sm text-gray-600';
             sendButton.disabled = true;
             messageInput.disabled = true;
         }
     }
 
+    function getReconnectDelay() {
+        // Calculate exponential backoff delay: baseDelay * 2^attempts
+        const delay = baseDelay * Math.pow(2, reconnectAttempts);
+        // Ensure delay doesn't exceed maxDelay
+        return Math.min(delay, maxDelay);
+    }
+
     // Connect to WebSocket server
     function connectWebSocket() {
         return new Promise((resolve, reject) => {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                updateConnectionStatus('disconnected', 'Max reconnection attempts reached. Please refresh the page.');
+                reject(new Error('Max reconnection attempts reached'));
+                return;
+            }
+
+            updateConnectionStatus('connecting', `Connecting... Attempt ${reconnectAttempts + 1}`);
             socket = new WebSocket(wsUrl);
 
             socket.onopen = () => {
@@ -81,19 +100,22 @@
             };
 
             socket.onerror = (error) => {
-                updateConnectionStatus('disconnected');
+                updateConnectionStatus('disconnected', 'Connection error');
                 reject(error);
             };
 
             socket.onclose = () => {
-                updateConnectionStatus('disconnected');
-                console.error('Chat socket closed unexpectedly');
-                // Try to reconnect after 5 seconds
+                const delay = getReconnectDelay();
+                reconnectAttempts++;
+                updateConnectionStatus('disconnected', 
+                    `Connection lost. Reconnecting in ${Math.round(delay/1000)} seconds... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`
+                );
+                
                 setTimeout(() => {
                     connectWebSocket().catch(error => {
                         console.error('WebSocket reconnection failed:', error);
                     });
-                }, 5000);
+                }, delay);
             };
         });
     }
