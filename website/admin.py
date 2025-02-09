@@ -18,6 +18,7 @@ from website.models import (
     ContributorStats,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     HuntPrize,
     Integration,
@@ -474,6 +475,52 @@ class PostAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
 
 
+class GitHubIssueAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user_profile",
+        "type",
+        "title",
+        "state",
+        "is_merged",
+        "created_at",
+        "updated_at",
+        "url",
+    )
+    list_filter = [
+        "type",
+        "state",
+        "is_merged",
+        "user_profile",
+    ]
+    search_fields = [
+        "title",
+        "url",
+        "user_profile__user__username",
+    ]
+    date_hierarchy = "created_at"
+
+
+class GitHubReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "reviewer",
+        "state",
+        "submitted_at",
+        "pull_request",
+        "url",
+    )
+    list_filter = [
+        "state",
+        "reviewer",
+    ]
+    search_fields = [
+        "reviewer__user__username",
+        "url",
+    ]
+    date_hierarchy = "submitted_at"
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -511,4 +558,5 @@ admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
-admin.site.register(GitHubIssue)
+admin.site.register(GitHubIssue, GitHubIssueAdmin)
+admin.site.register(GitHubReview, GitHubReviewAdmin)
