@@ -204,16 +204,27 @@ class SubscriptionAdmin(ImportExportModelAdmin):
 class OrganizationAdmins(ImportExportModelAdmin):
     resource_class = OrganizationResource
     list_display = (
-        "admin",
+        "id",
         "name",
         "url",
-        "email",
-        "twitter",
-        "facebook",
+        "get_url_icon",
+        "is_active",
         "created",
         "modified",
-        "subscription",
     )
+    list_display_links = ("id",)
+    list_editable = ("name", "url", "is_active")
+    search_fields = ("name", "url")
+    list_filter = ("is_active",)
+    ordering = ("-created",)
+
+    def get_url_icon(self, obj):
+        if obj.url:
+            return f'<a href="{obj.url}" target="_blank">' f'<i class="fas fa-external-link-alt"></i></a>'
+        return ""
+
+    get_url_icon.short_description = " "
+    get_url_icon.allow_tags = True
 
 
 class PointsAdmin(admin.ModelAdmin):
