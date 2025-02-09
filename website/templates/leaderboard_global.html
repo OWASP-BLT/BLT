@@ -232,30 +232,21 @@
                 {% if code_review_leaderboard %}
                     {% for leader in code_review_leaderboard %}
                         <div class="list-group-item">
-                            {% if leader.reviewer__user__userprofile__user_avatar %}
-                                <img src="{{ leader.reviewer__user__userprofile__user_avatar.url }}"
-                                     class="img-responsive img-thumbnail profileimage"
-                                     alt="{{ leader.reviewer__user__username }}"
-                                     width="50px"
-                                     height="50px">
-                            {% elif leader.reviewer__user__userprofile__github_url %}
-                                <img src="https://github.com/{{ leader.reviewer__user__username }}.png"
-                                     class="img-responsive img-thumbnail profileimage"
-                                     alt="{{ leader.reviewer__user__username }}"
-                                     width="50px"
-                                     height="50px">
+                            {% if leader.user_avatar %}
+                                <img src="{{ leader.user_avatar.url }}"
+                                     alt="{{ leader.user.username }}'s avatar"
+                                     width="36"
+                                     height="36"
+                                     class="rounded-full">
                             {% else %}
-                                <img src="{% gravatar_url leader.reviewer__user__email 50 %}"
-                                     class="img-responsive img-thumbnail profileimage"
-                                     alt="username"
-                                     width="50px"
-                                     height="50px">
+                                <img src="{% gravatar_url leader.user.email 36 %}"
+                                     alt="{{ leader.user.username }}'s gravatar"
+                                     width="36"
+                                     height="36"
+                                     class="rounded-full">
                             {% endif %}
-                            <a href="{% url 'profile' slug=leader.reviewer__user__username %}">
-                                {{ leader.reviewer__user__username }}
-                                {% if leader.reviewer__user__userprofile__github_url %}<i class="fab fa-github"></i>{% endif %}
-                            </a>
-                            <span class="pull-right badge">{{ leader.total_reviews }} Reviews</span>
+                            <a href="{% url 'profile' slug=leader.user.username %}">{{ leader.user.username }}</a>
+                            <span class="pull-right badge">{{ leader.total_reviews }} Review{{ leader.total_reviews|pluralize }}</span>
                         </div>
                     {% endfor %}
                 {% else %}

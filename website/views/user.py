@@ -38,7 +38,6 @@ from website.models import (
     Challenge,
     Domain,
     GitHubIssue,
-    GitHubReview,
     Hunt,
     InviteFriend,
     Issue,
@@ -588,28 +587,17 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Get pull request leaderboard
         pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
-            .values(
-                "user_profile__user__username",
-                "user_profile__user__email",
-                "user_profile__user__userprofile__user_avatar",
-                "user_profile__github_url",
-            )
-            .annotate(total_prs=Count("id"))
-            .order_by("-total_prs")
-            .filter(total_prs__gt=0)[:25]
+            UserProfile.objects.filter(user__githubissue__type="pull_request", user__githubissue__is_merged=True)
+            .annotate(total_prs=Count("user__githubissue"))
+            .filter(total_prs__gt=0)
+            .order_by("-total_prs")[:25]
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Get Code Review Leaderboard
+        # Get code review leaderboard using GitHubReview model
         code_review_leaderboard = (
-            GitHubReview.objects.values(
-                "reviewer__user__username",
-                "reviewer__user__email",
-                "reviewer__user__userprofile__user_avatar",
-                "reviewer__user__userprofile__github_url",
-            )
-            .annotate(total_reviews=Count("id"))
+            UserProfile.objects.filter(reviews_made__state__in=["APPROVED", "CHANGES_REQUESTED", "COMMENTED"])
+            .annotate(total_reviews=Count("reviews_made"))
             .filter(total_reviews__gt=0)
             .order_by("-total_reviews")[:25]
         )
