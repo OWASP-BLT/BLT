@@ -587,21 +587,29 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         # Get pull request leaderboard
         pr_leaderboard = (
-            UserProfile.objects.filter(user__githubissue__type="pull_request", user__githubissue__is_merged=True)
-            .annotate(total_prs=Count("user__githubissue"))
-            .filter(total_prs__gt=0)
-            .order_by("-total_prs")[:25]
+            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            .values(
+                "user_profile__user__username",
+                "user_profile__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_prs=Count("id"))
+            .order_by("-total_prs")[:10]
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Get code review leaderboard using GitHubReview model
-        code_review_leaderboard = (
-            UserProfile.objects.filter(reviews_made__state__in=["APPROVED", "CHANGES_REQUESTED", "COMMENTED"])
-            .annotate(total_reviews=Count("reviews_made", distinct=True))
-            .filter(total_reviews__gt=0)
-            .order_by("-total_reviews")[:25]
+        # Get Reviewed Pull Request Leaderboard
+        reviewed_pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request")
+            .values(
+                "reviews__reviewer__user__username",
+                "reviews__reviewer__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_reviews=Count("id"))
+            .order_by("-total_reviews")[:10]
         )
-        context["code_review_leaderboard"] = code_review_leaderboard
+        context["code_review_leaderboard"] = reviewed_pr_leaderboard
 
         return context
 
