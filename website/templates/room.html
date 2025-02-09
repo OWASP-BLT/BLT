@@ -19,7 +19,7 @@
     </div>
     <script>
     const roomId = {{ room.id }};
-    const username = "{{ request.user.username|escapejs }}"; // Add user's name
+    const username = {% if request.user.is_authenticated %}"{{ request.user.username|escapejs }}"{% else %}"anon_{{ request.session.session_key|slice:'-4:'|escapejs }}"{% endif %};
     let socket;
 
     const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";

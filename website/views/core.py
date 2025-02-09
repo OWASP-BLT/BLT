@@ -36,10 +36,13 @@ from django_redis import get_redis_connection
 
 from blt import settings
 from website.models import (
+    Activity,
     Badge,
     Domain,
+    Hunt,
     Issue,
     Organization,
+    Points,
     PRAnalysisReport,
     Project,
     Repo,
@@ -47,6 +50,7 @@ from website.models import (
     Suggestion,
     SuggestionVotes,
     Tag,
+    User,
     UserBadge,
     UserProfile,
     Wallet,
@@ -924,3 +928,41 @@ def handler404(request, exception):
 
 def handler500(request, exception=None):
     return render(request, "500.html", {}, status=500)
+
+
+def stats_dashboard(request):
+    # Collect stats from various models
+    stats = {
+        "users": {
+            "total": User.objects.count(),
+            "active": User.objects.filter(is_active=True).count(),
+        },
+        "issues": {
+            "total": Issue.objects.count(),
+            "open": Issue.objects.filter(status="open").count(),
+        },
+        "domains": {
+            "total": Domain.objects.count(),
+            "active": Domain.objects.filter(is_active=True).count(),
+        },
+        "organizations": {
+            "total": Organization.objects.count(),
+            "active": Organization.objects.filter(is_active=True).count(),
+        },
+        "hunts": {
+            "total": Hunt.objects.count(),
+            "active": Hunt.objects.filter(is_published=True).count(),
+        },
+        "points": {
+            "total": Points.objects.aggregate(total=Sum("score"))["total"] or 0,
+        },
+        "projects": {
+            "total": Project.objects.count(),
+        },
+        "activities": {
+            "total": Activity.objects.count(),
+            "recent": Activity.objects.order_by("-timestamp")[:5],
+        },
+    }
+
+    return render(request, "stats_dashboard.html", {"stats": stats})

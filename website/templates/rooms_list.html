@@ -16,7 +16,7 @@
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <div class="flex justify-between items-center">
                         <h2 class="text-xl font-bold text-gray-900">{{ room.name }}</h2>
-                        {% if room.admin == request.user %}
+                        {% if room.admin == request.user or room.session_key == request.session.session_key %}
                             <form method="post"
                                   action="{% url 'delete_room' room.id %}"
                                   onsubmit="return confirm('Are you sure you want to delete this room?');">
@@ -34,10 +34,20 @@
                         {% endif %}
                     </div>
                     <p class="text-gray-600">{{ room.description|default:"No description available." }}</p>
-                    <a href="{% url 'join_room' room.id %}"
-                       class="inline-flex items-center px-4 py-2 mt-4 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
-                        Join Room
-                    </a>
+                    <div class="mt-4 flex items-center justify-between">
+                        <a href="{% url 'join_room' room.id %}"
+                           class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                            Join Room
+                        </a>
+                        <span class="text-sm text-gray-500">
+                            Created by:
+                            {% if room.admin %}
+                                {{ room.admin.username }}
+                            {% else %}
+                                anon_{{ room.session_key|slice:'-4:' }}
+                            {% endif %}
+                        </span>
+                    </div>
                 </div>
             {% empty %}
                 <p class="text-gray-500">No rooms found.</p>

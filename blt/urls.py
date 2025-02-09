@@ -83,6 +83,7 @@ from website.views.core import (  # chatbot_conversation,
     set_vote_status,
     sitemap,
     sponsor_view,
+    stats_dashboard,
     submit_roadmap_pr,
     view_pr_analysis,
     view_suggestions,
@@ -291,7 +292,11 @@ urlpatterns = [
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
-    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_oauth_callback"),
+    path(
+        "oauth/slack/callback/",
+        SlackCallbackView.as_view(),
+        name="slack_oauth_callback",
+    ),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
@@ -859,8 +864,13 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
-    path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
+    path(
+        "batch-send-bacon-tokens/",
+        batch_send_bacon_tokens_view,
+        name="batch_send_bacon_tokens",
+    ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
 ]
 
 if settings.DEBUG:

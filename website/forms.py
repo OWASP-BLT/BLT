@@ -90,7 +90,13 @@ class MonitorForm(forms.ModelForm):
 class IpReportForm(forms.ModelForm):
     class Meta:
         model = IpReport
-        fields = ["ip_address", "ip_type", "description", "activity_title", "activity_type"]
+        fields = [
+            "ip_address",
+            "ip_type",
+            "description",
+            "activity_title",
+            "activity_type",
+        ]
 
 
 class BidForm(forms.ModelForm):
@@ -127,9 +133,17 @@ class SignupFormWithCaptcha(SignupForm, CaptchaForm):
 
 
 class RoomForm(forms.ModelForm):
+    captcha = CaptchaField(required=False)  # Will be required only for anonymous users
+
     class Meta:
         model = Room
         fields = ["name", "type", "custom_type", "description"]
         widgets = {
             "type": forms.Select(attrs={"onchange": "toggleCustomTypeField(this)"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        is_anonymous = kwargs.pop("is_anonymous", False)
+        super().__init__(*args, **kwargs)
+        if is_anonymous:
+            self.fields["captcha"].required = True

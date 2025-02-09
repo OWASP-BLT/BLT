@@ -815,8 +815,8 @@ class CreateHunt(TemplateView):
                     start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                     end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 else:
-                    start_date = start_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
-                    end_date = end_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
+                    start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
                 hunt.prize_runner = Decimal(request.POST["prize_runner"])
@@ -1158,8 +1158,8 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
             start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
             end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         else:
-            start_date = start_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
-            end_date = end_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
+            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         hunt.starts_on = start_date
         hunt.end_on = end_date
 
@@ -1766,8 +1766,22 @@ class RoomCreateView(CreateView):
     template_name = "room_form.html"
     success_url = reverse_lazy("rooms_list")
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["is_anonymous"] = self.request.user.is_anonymous
+        return kwargs
+
     def form_valid(self, form):
-        form.instance.admin = self.request.user
+        if self.request.user.is_anonymous:
+            # Get or create session key
+            if not self.request.session.session_key:
+                self.request.session.create()
+            session_key = self.request.session.session_key
+            # Use last 4 characters of session key for anonymous username
+            anon_name = f"anon_{session_key[-4:]}"
+            form.instance.session_key = session_key
+        else:
+            form.instance.admin = self.request.user
         return super().form_valid(form)
 
 
@@ -1779,7 +1793,16 @@ def join_room(request, room_id):
 @login_required(login_url="/accounts/login")
 @require_POST
 def delete_room(request, room_id):
-    room = get_object_or_404(Room, id=room_id, admin=request.user)
+    room = get_object_or_404(Room, id=room_id)
+
+    # Check if the user is the admin or the anonymous creator
+    is_admin = request.user.is_authenticated and room.admin == request.user
+    is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
+
+    if not (is_admin or is_anon_creator):
+        messages.error(request, "You don't have permission to delete this room.")
+        return redirect("rooms_list")
+
     room.delete()
     messages.success(request, "Room deleted successfully.")
     return redirect("rooms_list")
