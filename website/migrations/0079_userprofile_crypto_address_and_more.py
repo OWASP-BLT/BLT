@@ -19,15 +19,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="userprofile",
             name="subscribed_domains",
-            field=models.ManyToManyField(
-                related_name="user_subscribed_domains", to="website.domain"
-            ),
+            field=models.ManyToManyField(related_name="user_subscribed_domains", to="website.domain"),
         ),
         migrations.AddField(
             model_name="userprofile",
             name="subscribed_users",
-            field=models.ManyToManyField(
-                related_name="user_subscribed_users", to=settings.AUTH_USER_MODEL
-            ),
+            field=models.ManyToManyField(related_name="user_subscribed_users", to=settings.AUTH_USER_MODEL),
         ),
     ]

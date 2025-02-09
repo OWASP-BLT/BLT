@@ -244,9 +244,7 @@ if "DYNO" in os.environ:  # for Heroku
     if not GOOGLE_CREDENTIALS:
         raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
 
-    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS)
-    )
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(json.loads(GOOGLE_CREDENTIALS))
 
     STORAGES = {
         "default": {
@@ -313,6 +311,7 @@ else:
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -529,18 +528,6 @@ SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
 
 SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 
-STRIPE_LIVE_PUBLIC_KEY = os.environ.get("STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>")
-STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
-STRIPE_TEST_PUBLIC_KEY = os.environ.get(
-    "STRIPE_TEST_PUBLIC_KEY",
-    "pk_test_12345",
-)
-STRIPE_TEST_SECRET_KEY = os.environ.get(
-    "STRIPE_TEST_SECRET_KEY",
-    "sk_test_12345",
-)
-
-STRIPE_LIVE_MODE = False  # TODO: remove stripe
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 IS_TEST = False
@@ -574,3 +561,5 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development

@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from .models import (
     Activity,
+    BaconEarning,
     Badge,
     Bid,
     Hunt,
@@ -38,9 +39,7 @@ def create_activity(instance, action_type):
     """Generic function to create an activity for a given model instance."""
     model_name = instance._meta.model_name
     user_field = (
-        getattr(instance, "user", None)
-        or getattr(instance, "author", None)
-        or getattr(instance, "modified_by", None)
+        getattr(instance, "user", None) or getattr(instance, "author", None) or getattr(instance, "modified_by", None)
     )
     user = user_field or get_default_user()
 
@@ -59,11 +58,26 @@ def create_activity(instance, action_type):
     )
 
 
+def giveBacon(user):
+    # Check if the user already has a token record
+    if user is None or user.is_authenticated is False:
+        return
+    token_earning, created = BaconEarning.objects.get_or_create(user=user)
+
+    if created:
+        token_earning.tokens_earned = 1  # Reward 10 tokens for completing the action (adjust as needed)
+    else:
+        token_earning.tokens_earned += 1  # Add 10 tokens if the user already exists in the system
+
+    token_earning.save()  # Save the updated record
+
+
 @receiver(post_save)
 def handle_post_save(sender, instance, created, **kwargs):
     """Generic handler for post_save signal."""
     if sender == IpReport and created:  # Track first IP report
         assign_first_action_badge(instance.user, "First IP Reported")
+        giveBacon(instance.user)
         create_activity(instance, "created")
 
     elif sender == Post and created:  # Track first blog post
@@ -111,7 +125,7 @@ def handle_post_save(sender, instance, created, **kwargs):
 @receiver(pre_delete)
 def handle_pre_delete(sender, instance, **kwargs):
     """Generic handler for pre_delete signal."""
-    if sender in [Issue, Hunt, IpReport, Post]:  # Add any model you want to track
+    if sender in [Issue, Hunt, IpReport, Post]:
         create_activity(instance, "deleted")
 
 
@@ -120,15 +134,12 @@ def update_user_streak(sender, instance, created, **kwargs):
     """
     Automatically update user's streak when a TimeLog is created
     """
-    if created:
-        # Use the date of the start_time for streak tracking
+    if created and instance.user and instance.user.is_authenticated:
         check_in_date = instance.start_time.date()
-        # Get the user's profile and update streak
         try:
             user_profile = instance.user.userprofile
             user_profile.update_streak_and_award_points(check_in_date)
         except UserProfile.DoesNotExist:
-            # Fallback: create profile if it doesn't exist
             UserProfile.objects.create(
                 user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )

@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 
 import requests
 import six
-import tweepy
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from django.conf import settings
@@ -136,9 +135,7 @@ def dislike_issue(request, issue_pk):
     total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
     context["object"] = issue
     context["dislikes"] = total_votes
-    context["isDisliked"] = UserProfile.objects.filter(
-        issue_downvoted=issue, user=request.user
-    ).exists()
+    context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
     return HttpResponse("Success")
 
 
@@ -155,7 +152,7 @@ def vote_count(request, issue_pk):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+    if not os.environ.get("GITHUB_TOKEN"):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
@@ -167,9 +164,7 @@ def create_github_issue(request, id):
     if issue.domain.github:
         screenshot_text = ""
         for screenshot in screenshot_all:
-            screenshot_text += (
-                f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
-            )
+            screenshot_text += f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
 
         github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
         from giturlparse import parse as parse_github_url
@@ -189,7 +184,7 @@ def create_github_issue(request, id):
             response = requests.post(
                 url,
                 data=json.dumps(issue_data),
-                headers={"Authorization": f"token {os.environ.get('GITHUB_ACCESS_TOKEN')}"},
+                headers={"Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"},
             )
             if response.status_code == 201:
                 response_data = response.json()
@@ -256,11 +251,7 @@ def UpdateIssue(request):
                     break
     except:
         tokenauth = False
-    if (
-        request.method == "POST"
-        and request.user.is_superuser
-        or (issue is not None and request.user == issue.user)
-    ):
+    if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
@@ -276,13 +267,7 @@ def UpdateIssue(request):
                     "action": "closed",
                 },
             )
-            subject = (
-                issue.domain.name
-                + " bug # "
-                + str(issue.id)
-                + " closed by "
-                + request.user.username
-            )
+            subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
 
         elif request.POST.get("action") == "open":
             issue.status = "open"
@@ -298,13 +283,7 @@ def UpdateIssue(request):
                     "action": "opened",
                 },
             )
-            subject = (
-                issue.domain.name
-                + " bug # "
-                + str(issue.id)
-                + " opened by "
-                + request.user.username
-            )
+            subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
 
         mailer = settings.EMAIL_TO_STRING
         email_to = issue.user.email
@@ -428,9 +407,7 @@ def search_issues(request, template="search.html"):
         query = query[6:]
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
-            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
-                Q(is_hidden=True)
-            )[0:20]
+            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
         else:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
@@ -602,13 +579,9 @@ class IssueBaseCreate(object):
         if self.request.POST.get("screenshot-hash"):
             filename = self.request.POST.get("screenshot-hash")
             extension = filename.split(".")[-1]
-            self.request.POST["screenshot-hash"] = (
-                filename[:99] + str(uuid.uuid4()) + "." + extension
-            )
+            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
 
-            reopen = default_storage.open(
-                "uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb"
-            )
+            reopen = default_storage.open("uploads\/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
             django_file = File(reopen)
             obj.screenshot.save(
                 self.request.POST.get("screenshot-hash") + ".png",
@@ -624,45 +597,45 @@ class IssueBaseCreate(object):
         # print("processing process_issue for ip address: ", get_client_ip(self.request))
         p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
-        try:
-            auth = tweepy.Client(
-                settings.BEARER_TOKEN,
-                settings.APP_KEY,
-                settings.APP_KEY_SECRET,
-                settings.ACCESS_TOKEN,
-                settings.ACCESS_TOKEN_SECRET,
-            )
 
-            blt_url = "https://%s/issue/%d" % (
-                settings.DOMAIN_NAME,
-                obj.id,
-            )
-            domain_name = domain.get_name
-            twitter_account = (
-                "@" + domain.get_or_set_x_url(domain_name) + " "
-                if domain.get_or_set_x_url(domain_name)
-                else ""
-            )
+        # Twitter posting code removed as we no longer use Twitter integration
+        # try:
+        #     auth = tweepy.Client(
+        #         settings.BEARER_TOKEN,
+        #         settings.APP_KEY,
+        #         settings.APP_KEY_SECRET,
+        #         settings.ACCESS_TOKEN,
+        #         settings.ACCESS_TOKEN_SECRET,
+        #     )
 
-            issue_title = obj.description + " " if not obj.is_hidden else ""
+        #     blt_url = "https://%s/issue/%d" % (
+        #         settings.DOMAIN_NAME,
+        #         obj.id,
+        #     )
+        #     domain_name = domain.get_name
+        #     twitter_account = (
+        #         "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
+        #     )
 
-            message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
-                twitter_account,
-                issue_title,
-                domain_name,
-                user.username,
-                settings.PROJECT_NAME,
-                blt_url,
-            )
+        #     issue_title = obj.description + " " if not obj.is_hidden else ""
 
-            auth.create_tweet(text=message)
+        #     message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
+        #         twitter_account,
+        #         issue_title,
+        #         domain_name,
+        #         user.username,
+        #         settings.PROJECT_NAME,
+        #         blt_url,
+        #     )
 
-        except (
-            TypeError,
-            tweepy.errors.HTTPException,
-            tweepy.errors.TweepyException,
-        ) as e:
-            print(e)
+        #     auth.create_tweet(text=message)
+
+        # except (
+        #     TypeError,
+        #     tweepy.errors.HTTPException,
+        #     tweepy.errors.TweepyException,
+        # ) as e:
+        #     print(e)
 
         if created:
             try:
@@ -675,12 +648,8 @@ class IssueBaseCreate(object):
 
             name = email_to.split("@")[0]
 
-            msg_plain = render_to_string(
-                "email/domain_added.txt", {"domain": domain.name, "name": name}
-            )
-            msg_html = render_to_string(
-                "email/domain_added.txt", {"domain": domain.name, "name": name}
-            )
+            msg_plain = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
+            msg_html = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
 
             send_mail(
                 domain.name + " added to " + settings.PROJECT_NAME,
@@ -780,12 +749,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 if isinstance(self.request.POST.get("file"), six.string_types):
                     import imghdr
 
-                    data = (
-                        "data:image/"
-                        + self.request.POST.get("type")
-                        + ";base64,"
-                        + self.request.POST.get("file")
-                    )
+                    data = "data:image/" + self.request.POST.get("type") + ";base64," + self.request.POST.get("file")
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
                     if "data:" in data and ";base64," in data:
@@ -806,9 +770,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         file_extension,
                     )
 
-                    self.request.FILES["screenshot"] = ContentFile(
-                        decoded_file, name=complete_file_name
-                    )
+                    self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
         except:
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
@@ -891,9 +853,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = now().date()
-        recent_issues_count = Issue.objects.filter(
-            reporter_ip_address=reporter_ip, created__date=today
-        ).count()
+        recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
 
         if recent_issues_count >= limit:
             messages.error(self.request, "You have reached your issue creation limit for today.")
@@ -903,9 +863,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         @atomic
         def create_issue(self, form):
             # Validate screenshots first before any database operations
-            if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get(
-                "screenshot-hash"
-            ):
+            if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
                 messages.error(self.request, "Screenshot is needed!")
                 return render(
                     self.request,
@@ -1012,9 +970,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             # Handle team members
             team_members_id = [
                 member["id"]
-                for member in User.objects.values("id").filter(
-                    email__in=self.request.POST.getlist("team_members")
-                )
+                for member in User.objects.values("id").filter(email__in=self.request.POST.getlist("team_members"))
             ] + [self.request.user.id]
             team_members_id = [member_id for member_id in team_members_id if member_id is not None]
             obj.team_members.set(team_members_id)
@@ -1037,9 +993,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     user_prof.save()
 
                 if tokenauth:
-                    total_issues = Issue.objects.filter(
-                        user=User.objects.get(id=token.user_id)
-                    ).count()
+                    total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
                     user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
                     if total_issues <= 10:
                         user_prof.title = 1
@@ -1054,7 +1008,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             redirect_url = "/report"
 
-            if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
+            if domain.github and os.environ.get("GITHUB_TOKEN"):
                 import json
 
                 import requests
@@ -1087,16 +1041,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 r = requests.post(
                     url,
                     json.dumps(issue),
-                    headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+                    headers={"Authorization": "token " + os.environ.get("GITHUB_TOKEN")},
                 )
                 response = r.json()
                 try:
                     obj.github_url = response["html_url"]
                 except Exception as e:
                     send_mail(
-                        "Error in github issue creation for "
-                        + str(domain.name)
-                        + ", check your github settings",
+                        "Error in github issue creation for " + str(domain.name) + ", check your github settings",
                         "Error in github issue creation, check your github settings\n"
                         + " your current settings are: "
                         + str(domain.github)
@@ -1117,9 +1069,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 return HttpResponseRedirect("/")
 
             if tokenauth:
-                self.process_issue(
-                    User.objects.get(id=token.user_id), obj, domain_exists, domain, True
-                )
+                self.process_issue(User.objects.get(id=token.user_id), obj, domain_exists, domain, True)
                 return JsonResponse("Created", safe=False)
             else:
                 self.process_issue(self.request.user, obj, domain_exists, domain)
@@ -1137,9 +1087,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         #     "processing get_context_data for ip address: ", get_client_ip(self.request)
         # )
         context = super(IssueCreate, self).get_context_data(**kwargs)
-        context["activities"] = Issue.objects.exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:10]
+        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1160,15 +1108,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
             )
             context["report_on_hunt"] = True
         else:
-            context["hunts"] = Hunt.objects.values("id", "name").filter(
-                is_published=True, result_published=False
-            )
+            context["hunts"] = Hunt.objects.values("id", "name").filter(is_published=True, result_published=False)
             context["report_on_hunt"] = False
 
         context["top_domains"] = (
-            Issue.objects.values("domain__name")
-            .annotate(count=Count("domain__name"))
-            .order_by("-count")[:30]
+            Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
         )
 
         return context
@@ -1208,9 +1152,7 @@ class AllIssuesView(ListView):
         context["user"] = self.request.GET.get("user")
         context["activity_screenshots"] = {}
         for activity in self.activities:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity
-            ).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
         return context
 
 
@@ -1248,13 +1190,13 @@ class SpecificIssuesView(ListView):
                 Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
             )
         elif statu != "none":
-            self.activities = Issue.objects.filter(
-                user__username=username, status=statu, hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            self.activities = Issue.objects.filter(user__username=username, status=statu, hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
         else:
-            self.activities = Issue.objects.filter(
-                user__username=username, label=query, hunt=None
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            self.activities = Issue.objects.filter(user__username=username, label=query, hunt=None).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
@@ -1313,9 +1255,7 @@ class IssueView(DetailView):
                     self.object.save()
             else:
                 try:
-                    objectget = IP.objects.get(
-                        address=get_client_ip(request), issuenumber=self.object.id
-                    )
+                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
                     self.object.save()
                 except Exception as e:
                     print(e)
@@ -1341,9 +1281,7 @@ class IssueView(DetailView):
             context["os_family"] = user_agent.os.family
             context["os_version"] = user_agent.os.version_string
         context["users_score"] = list(
-            Points.objects.filter(user=self.object.user)
-            .aggregate(total_score=Sum("score"))
-            .values()
+            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
         )[0]
 
         if self.request.user.is_authenticated:
@@ -1403,12 +1341,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 if isinstance(request.POST.get("file"), six.string_types):
                     import imghdr
 
-                    data = (
-                        "data:image/"
-                        + request.POST.get("type")
-                        + ";base64,"
-                        + request.POST.get("file")
-                    )
+                    data = "data:image/" + request.POST.get("type") + ";base64," + request.POST.get("file")
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
                     if "data:" in data and ";base64," in data:
@@ -1464,15 +1397,13 @@ def delete_content_comment(request):
     content = content_type_obj.get_object_for_this_type(pk=content_pk)
 
     if request.method == "POST":
-        comment = Comment.objects.get(
-            pk=int(request.POST["comment_pk"]), author=request.user.username
-        )
+        comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
         comment.delete()
 
     context = {
-        "all_comments": Comment.objects.filter(
-            content_type=content_type_obj, object_id=content_pk
-        ).order_by("-created_date"),
+        "all_comments": Comment.objects.filter(content_type=content_type_obj, object_id=content_pk).order_by(
+            "-created_date"
+        ),
         "object": content,
     }
     return render(request, "comments2.html", context)
@@ -1489,9 +1420,9 @@ def update_content_comment(request, content_pk, comment_pk):
         comment.save()
 
     context = {
-        "all_comment": Comment.objects.filter(
-            content_type=content_type_obj, object_id=content_pk
-        ).order_by("-created_date"),
+        "all_comment": Comment.objects.filter(content_type=content_type_obj, object_id=content_pk).order_by(
+            "-created_date"
+        ),
         "object": content,
     }
     return render(request, "comments2.html", context)
@@ -1501,6 +1432,7 @@ def comment_on_content(request, content_pk):
     content_type = request.POST.get("content_type")
     content_type_obj = ContentType.objects.get(model=content_type)
     content = content_type_obj.get_object_for_this_type(pk=content_pk)
+
     VALID_CONTENT_TYPES = ["issue", "post"]
 
     if request.method == "POST" and isinstance(request.user, User):
@@ -1522,6 +1454,7 @@ def comment_on_content(request, content_pk):
 
             if parent_comment is None:
                 messages.error(request, "Parent comment doesn't exist.")
+
                 return redirect("home")
 
             Comment.objects.create(
@@ -1545,9 +1478,9 @@ def comment_on_content(request, content_pk):
             )
 
     context = {
-        "all_comment": Comment.objects.filter(
-            content_type=content_type_obj, object_id=content_pk
-        ).order_by("-created_date"),
+        "all_comment": Comment.objects.filter(content_type=content_type_obj, object_id=content_pk).order_by(
+            "-created_date"
+        ),
         "object": content,
     }
 
@@ -1611,9 +1544,7 @@ def IssueEdit(request):
         uri = request.POST.get("domain")
         link = uri.replace("www.", "")
         if request.user == issue.user or request.user.is_superuser:
-            domain, created = Domain.objects.get_or_create(
-                name=link, defaults={"url": "http://" + link}
-            )
+            domain, created = Domain.objects.get_or_create(name=link, defaults={"url": "http://" + link})
             issue.domain = domain
             if uri[:4] != "http" and uri[:5] != "https":
                 uri = "https://" + uri

@@ -86,9 +86,7 @@ class Command(BaseCommand):
                     f"The last trademark check date for {organization.name} is updated to {organization.trademark_check_date}"
                 )
                 organization.save()
-                self.stdout.write(
-                    f"Initialized data for {organization.name}: Count = {organization.trademark_count}"
-                )
+                self.stdout.write(f"Initialized data for {organization.name}: Count = {organization.trademark_count}")
             else:
                 self.stderr.write(f"Failed to fetch trademark data for {organization.name}.")
 
@@ -111,9 +109,7 @@ class Command(BaseCommand):
         if response_data:
             new_trademark_count = response_data.get("count", 0)
             if new_trademark_count > organization.trademark_count:
-                self.stdout.write(
-                    f"New trademarks found for {organization.name}: {new_trademark_count}"
-                )
+                self.stdout.write(f"New trademarks found for {organization.name}: {new_trademark_count}")
                 organization.trademark_count = new_trademark_count
                 organization.trademark_check_date = now()
                 organization.save()

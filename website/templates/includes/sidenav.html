@@ -2,12 +2,10 @@
 <!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<aside id="sidebar"
-       class="tracking-tight fixed top-0 left-0 z-40 w-[210px] h-screen pt-[70px] transition-transform -translate-x-full bg-white lg:translate-x-0 no-scrollbar"
-       aria-label="Sidebar">
+<div class="sidebar fixed left-0 top-[64px] h-full bg-white border-r border-gray-200 w-[210px] transform -translate-x-full transition-transform duration-300 ease-in-out z-40">
     <style>
         .sidenav {
-            margin-top: 15px;
+            margin-top: 60px;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -39,14 +37,34 @@
     <div class="h-full px-11 overflow-y-auto bg-white flex flex-col justify-between no-scrollbar sidenav">
         <div class="overflow-auto no-scrollbar">
             <ul class="font-medium text-2xl mt-6 mb-0">
+                <!-- Stats Dashboard Link -->
+                <li class="mb-2 {% if request.path == '/stats-dashboard/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'stats_dashboard' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/stats-dashboard' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                        <div class="icon text-blue-500">
+                            <i class="fas fa-chart-bar fa-lg"></i>
+                        </div>
+                        <span>Stats Dashboard</span>
+                    </a>
+                </li>
                 <!-- Organizations Header Link -->
                 <li class="mb-2 {% if '/organizations/' in request.path %}bg-gray-200{% endif %}">
-                    <a href="{% url 'domain_lists' %}"
+                    <a href="{% url 'organizations' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
                         <div class="icon text-red-500">
                             <i class="fas fa-building fa-lg"></i>
                         </div>
                         <span>Organizations</span>
+                    </a>
+                </li>
+                <!-- Domains Link -->
+                <li class="mb-2 {% if '/domains/' in request.path %}bg-gray-200{% endif %}">
+                    <a href="{% url 'domains' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/domains/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                        <div class="icon text-red-500">
+                            <i class="fas fa-globe fa-lg"></i>
+                        </div>
+                        <span>Domains</span>
                     </a>
                 </li>
                 <!-- Submenu Items -->
@@ -133,6 +151,15 @@
                             <span>SimilarityScan</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/discussion-rooms/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'rooms_list' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/discussion-rooms/' %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="icon text-indigo-500">
+                                <i class="fas fa-door-open fa-lg"></i> <!-- Updated icon -->
+                            </div>
+                            <span>Rooms</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
@@ -190,6 +217,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/challenges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'user_challenges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/challenges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-yellow-500">
+                                <i class="fas fa-flag-checkered fa-lg"></i>
+                            </div>
+                            <span>Challenges</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/leaderboard/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'leaderboard_global' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/leaderboard/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
@@ -247,7 +283,25 @@
                             <div class="icon text-blue-500">
                                 <i class="fas fa-users fa-lg"></i> <!-- Team Icon -->
                             </div>
-                            <span>Team</span>
+                            <span>Your Team</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == 'teams/challenges/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'team_challenges' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/teams/challenges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-flag-checkered fa-lg"></i> <!-- Team Icon -->
+                            </div>
+                            <span>Challenges</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == 'teams/leaderboard/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'team_leaderboard' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/teams/leaderboard/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-medal fa-lg"></i> <!-- Team Icon -->
+                            </div>
+                            <span>Leaderboard</span>
                         </a>
                     </li>
                 </ul>
@@ -285,6 +339,17 @@
                                 <i class="fas fa-handshake fa-lg"></i>
                             </div>
                             <span>Sponsorships</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="https://owasp.org/www-project-bug-logging-tool/"
+                           target="_blank"
+                           rel="noopener"
+                           class="flex items-center w-full no-underline p-2 hover:text-red-500 text-black">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-shield-alt fa-lg"></i>
+                            </div>
+                            <span>OWASP Project</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/donate/' %}bg-gray-200{% endif %}">
@@ -536,4 +601,4 @@
             });
         });
     </script>
-</aside>
+</div>

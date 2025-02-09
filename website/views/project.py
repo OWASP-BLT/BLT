@@ -4,52 +4,43 @@ import re
 import socket
 import time
 from calendar import monthrange
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
 import django_filters
-import matplotlib.pyplot as plt
 import requests
+from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
-from django.db.models import F, Q, Sum
+from django.db.models import Count, F, Q, Sum
+from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
-from django.utils.timezone import localtime, now
+from django.utils.timezone import now
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView
 from django_filters.views import FilterView
+from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
-from website.models import (
-    IP,
-    BaconToken,
-    Contribution,
-    Contributor,
-    ContributorStats,
-    Organization,
-    Project,
-    Repo,
-)
+from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
 def blt_tomato(request):
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).parent.parent
     json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
 
     try:
@@ -58,14 +49,22 @@ def blt_tomato(request):
     except Exception:
         data = []
 
+    processed_projects = []
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
 
         funding_link = funding_links[0] if funding_links else "#"
-        project["funding_hyperlinks"] = funding_link
+        processed_projects.append(
+            {
+                "project_name": project.get("project_name"),
+                "repo_url": project.get("repo_url"),
+                "funding_hyperlinks": funding_link,
+                "funding_details": project.get("funding_details"),
+            }
+        )
 
-    return render(request, "blt_tomato.html", {"projects": data})
+    return render(request, "blt_tomato.html", {"projects": processed_projects})
 
 
 @user_passes_test(admin_required)
@@ -79,10 +78,7 @@ def select_contribution(request):
 @user_passes_test(admin_required)
 def distribute_bacon(request, contribution_id):
     contribution = Contribution.objects.get(id=contribution_id)
-    if (
-        contribution.status == "closed"
-        and not BaconToken.objects.filter(contribution=contribution).exists()
-    ):
+    if contribution.status == "closed" and not BaconToken.objects.filter(contribution=contribution).exists():
         token = create_bacon_token(contribution.user, contribution)
         if token:
             messages.success(request, "Bacon distributed successfully")
@@ -118,69 +114,107 @@ class ProjectBadgeView(APIView):
         project = get_object_or_404(Project, slug=slug)
 
         # Get today's date
-        today = now().date()
+        current_time = now()
+        today = current_time.date()
 
         # Get the real client IP
         user_ip = self.get_client_ip(request)
 
-        # Continue with existing code but use the new user_ip
-        visited_data = IP.objects.filter(
-            address=user_ip, path=request.path, created__date=today
-        ).last()
+        # Check if we have a record for today
+        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
 
         if visited_data:
-            # If the creation date is today
-            if visited_data.created.date() == today:
-                # If the visit count is 1, update the project visit count
-                if visited_data.count == 1:
-                    project.project_visit_count = F("project_visit_count") + 1
-                    project.save()
-            else:
-                # If the creation date is not today, reset the creation date and count
-                visited_data.created = now()
-                visited_data.count = 1
-                visited_data.save()
-
-                # Increment the project visit count
+            # If we have a record for today, only update project visit count if needed
+            if visited_data.count == 1:
                 project.project_visit_count = F("project_visit_count") + 1
                 project.save()
         else:
-            # If no record exists, create a new one
-            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
+            # If no record exists for today, create a new one
+            IP.objects.create(address=user_ip, path=request.path, created=current_time, count=1)
 
             # Increment the project's visit count
             project.project_visit_count = F("project_visit_count") + 1
             project.save()
 
+        # Get unique visits, grouped by date (last 7 days)
+        seven_days_ago = today - timedelta(days=7)
+        visit_counts = (
+            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(visit_count=Count("address"))
+            .order_by("date")
+        )
+
         # Refresh project to get the latest visit count
         project.refresh_from_db()
 
+        # Extract dates and counts
+        dates = [entry["date"] for entry in visit_counts]
+        counts = [entry["visit_count"] for entry in visit_counts]
         total_views = project.project_visit_count
 
-        fig = plt.figure(figsize=(4, 1))
-        plt.bar(0, total_views, color="red", width=0.5)
+        # Create a new image with a white background
+        width = 600
+        height = 200
+        img = Image.new("RGB", (width, height), color="white")
+        draw = ImageDraw.Draw(img)
 
-        plt.title(
-            f"{total_views}",
-            loc="left",
-            x=-0.36,
-            y=0.3,
-            fontsize=15,
-            fontweight="bold",
-            color="red",
-        )
+        # Define colors
+        bar_color = "#e05d44"
+        text_color = "#333333"
+        grid_color = "#eeeeee"
 
-        plt.gca().set_xticks([])  # Remove x-axis ticks
-        plt.gca().set_yticks([])
-        plt.box(False)
+        # Calculate chart dimensions
+        margin = 40
+        chart_width = width - 2 * margin
+        chart_height = height - 2 * margin
 
-        # Save the plot to an in-memory file
+        if counts:
+            max_count = max(counts)
+            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
+        else:
+            max_count = 1
+            bar_width = chart_width / 14  # Default for empty data
+
+        # Draw grid lines
+        for i in range(5):
+            y = margin + (chart_height * i) // 4
+            draw.line([(margin, y), (width - margin, y)], fill=grid_color)
+
+        # Draw bars
+        if dates and counts:
+            for i, count in enumerate(counts):
+                bar_height = (count / max_count) * chart_height
+                x1 = margin + (i * 2 * bar_width)
+                y1 = height - margin - bar_height
+                x2 = x1 + bar_width
+                y2 = height - margin
+
+                # Draw bar with a slight gradient effect
+                for h in range(int(y1), int(y2)):
+                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
+                    r, g, b = 224, 93, 68  # RGB values for #e05d44
+                    current_color = f"#{r:02x}{g:02x}{b:02x}"
+                    draw.line([(x1, h), (x2, h)], fill=current_color)
+
+        # Draw total views text
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+        except OSError:
+            font = ImageFont.load_default()
+
+        text = f"Total Views: {total_views}"
+        text_bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+
+        # Save the image to a buffer
         buffer = BytesIO()
-        plt.savefig(buffer, format="png", bbox_inches="tight")
-        plt.close()
+        img.save(buffer, format="PNG", quality=95)
         buffer.seek(0)
 
-        # Prepare the HTTP response with the bar graph image
+        # Return the image with appropriate headers
         response = HttpResponse(buffer, content_type="image/png")
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"
@@ -501,9 +535,7 @@ def create_project(request):
                 org = Organization.objects.get(id=org_id)
                 if not (request.user == org.admin):
                     return JsonResponse(
-                        {
-                            "error": "You do not have permission to add projects to this organization"
-                        },
+                        {"error": "You do not have permission to add projects to this organization"},
                         status=403,
                     )
                 project_data["organization"] = org
@@ -644,9 +676,7 @@ def create_project(request):
                     contributor_count=len(all_contributors),
                     commit_count=commit_count,
                     release_name=release_name,
-                    release_datetime=(
-                        parse_datetime(release_datetime) if release_datetime else None
-                    ),
+                    release_datetime=(parse_datetime(release_datetime) if release_datetime else None),
                     open_pull_requests=open_pull_requests,
                 )
 
@@ -656,9 +686,7 @@ def create_project(request):
         return JsonResponse({"message": "Project created successfully"}, status=201)
 
     except Organization.DoesNotExist:
-        return JsonResponse(
-            {"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404
-        )
+        return JsonResponse({"error": "Organization not found", "code": "ORG_NOT_FOUND"}, status=404)
     except PermissionError:
         return JsonResponse(
             {
@@ -680,9 +708,7 @@ class ProjectsDetailView(DetailView):
 
         # Get all repositories associated with the project
         repositories = (
-            Repo.objects.select_related("project")
-            .filter(project=project)
-            .prefetch_related("tags", "contributor")
+            Repo.objects.select_related("project").filter(project=project).prefetch_related("tags", "contributor")
         )
 
         # Calculate aggregate metrics
@@ -766,9 +792,7 @@ class RepoDetailView(DetailView):
 
         # Get other repos from same project
         context["related_repos"] = (
-            Repo.objects.filter(project=repo.project)
-            .exclude(id=repo.id)
-            .select_related("project")[:5]
+            Repo.objects.filter(project=repo.project).exclude(id=repo.id).select_related("project")[:5]
         )
 
         # Get top contributors from GitHub
@@ -777,9 +801,7 @@ class RepoDetailView(DetailView):
         if github_contributors:
             # Match by github_id instead of username
             github_ids = [str(c["id"]) for c in github_contributors]
-            verified_contributors = repo.contributor.filter(
-                github_id__in=github_ids
-            ).select_related()
+            verified_contributors = repo.contributor.filter(github_id__in=github_ids).select_related()
 
             # Create a mapping of github_id to database contributor
             contributor_map = {str(c.github_id): c for c in verified_contributors}
@@ -859,23 +881,17 @@ class RepoDetailView(DetailView):
                     "Authorization": f"token {settings.GITHUB_TOKEN}",
                     "Accept": "application/vnd.github.v3+json",
                 }
-                response = requests.get(
-                    f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers
-                )
+                response = requests.get(f"https://api.github.com/repos/{owner}/{repo_name}", headers=headers)
                 if response.status_code == 200:
                     repo_data = response.json()
-                    start_date = datetime.strptime(
-                        repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                    ).date()
+                    start_date = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                 else:
                     start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
             except Exception:
                 start_date = end_date - relativedelta(years=1)  # Fallback to 1 year
 
         # Query contributor stats
-        stats_query = ContributorStats.objects.filter(
-            repo=repo, date__gte=start_date, date__lte=end_date
-        )
+        stats_query = ContributorStats.objects.filter(repo=repo, date__gte=start_date, date__lte=end_date)
 
         # Aggregate the stats
         stats_query = (
@@ -906,11 +922,20 @@ class RepoDetailView(DetailView):
 
             # Determine impact level based on score
             if impact_score > 200:
-                impact_level = {"class": "bg-green-100 text-green-800", "text": "High Impact"}
+                impact_level = {
+                    "class": "bg-green-100 text-green-800",
+                    "text": "High Impact",
+                }
             elif impact_score > 100:
-                impact_level = {"class": "bg-yellow-100 text-yellow-800", "text": "Medium Impact"}
+                impact_level = {
+                    "class": "bg-yellow-100 text-yellow-800",
+                    "text": "Medium Impact",
+                }
             else:
-                impact_level = {"class": "bg-blue-100 text-blue-800", "text": "Growing Impact"}
+                impact_level = {
+                    "class": "bg-blue-100 text-blue-800",
+                    "text": "Growing Impact",
+                }
 
             processed_stats.append(
                 {
@@ -987,14 +1012,16 @@ class RepoDetailView(DetailView):
                 github_token = getattr(settings, "GITHUB_TOKEN", None)
                 if not github_token:
                     return JsonResponse(
-                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                        {"status": "error", "message": "GitHub token not configured"},
+                        status=500,
                     )
 
                 # Extract owner/repo from GitHub URL
                 match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
                 if not match:
                     return JsonResponse(
-                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                        {"status": "error", "message": "Invalid repository URL"},
+                        status=400,
                     )
 
                 owner, repo_name = match.groups()
@@ -1038,7 +1065,10 @@ class RepoDetailView(DetailView):
                     )
                 else:
                     return JsonResponse(
-                        {"status": "error", "message": f"GitHub API error: {response.status_code}"},
+                        {
+                            "status": "error",
+                            "message": f"GitHub API error: {response.status_code}",
+                        },
                         status=response.status_code,
                     )
 
@@ -1060,7 +1090,10 @@ class RepoDetailView(DetailView):
                 )
             except ValueError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "There was an error processing your data."},
+                    {
+                        "status": "error",
+                        "message": "There was an error processing your data.",
+                    },
                     status=400,
                 )
 
@@ -1069,13 +1102,15 @@ class RepoDetailView(DetailView):
                 github_token = getattr(settings, "GITHUB_TOKEN", None)
                 if not github_token:
                     return JsonResponse(
-                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                        {"status": "error", "message": "GitHub token not configured"},
+                        status=500,
                     )
 
                 match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
                 if not match:
                     return JsonResponse(
-                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                        {"status": "error", "message": "Invalid repository URL"},
+                        status=400,
                     )
 
                 # Extract owner and repo from API call
@@ -1089,7 +1124,10 @@ class RepoDetailView(DetailView):
 
                 if response.status_code != 200:
                     return JsonResponse(
-                        {"status": "error", "message": "Failed to fetch repository data"},
+                        {
+                            "status": "error",
+                            "message": "Failed to fetch repository data",
+                        },
                         status=500,
                     )
 
@@ -1098,7 +1136,10 @@ class RepoDetailView(DetailView):
                 default_branch = repo_data.get("default_branch")
                 if not full_name:
                     return JsonResponse(
-                        {"status": "error", "message": "Could not get repository full name"},
+                        {
+                            "status": "error",
+                            "message": "Could not get repository full name",
+                        },
                         status=500,
                     )
 
@@ -1162,9 +1203,9 @@ class RepoDetailView(DetailView):
                             "total_issues": repo.total_issues,
                             "open_pull_requests": repo.open_pull_requests,
                             "commit_count": repo.commit_count,
-                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
-                            if repo.last_commit_date
-                            else "",
+                            "last_commit_date": (
+                                repo.last_commit_date.strftime("%b %d, %Y") if repo.last_commit_date else ""
+                            ),
                         },
                     }
                 )
@@ -1187,7 +1228,10 @@ class RepoDetailView(DetailView):
                 )
             except ValueError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "There was an error processing your data."},
+                    {
+                        "status": "error",
+                        "message": "There was an error processing your data.",
+                    },
                     status=400,
                 )
 
@@ -1196,13 +1240,15 @@ class RepoDetailView(DetailView):
                 github_token = getattr(settings, "GITHUB_TOKEN", None)
                 if not github_token:
                     return JsonResponse(
-                        {"status": "error", "message": "GitHub token not configured"}, status=500
+                        {"status": "error", "message": "GitHub token not configured"},
+                        status=500,
                     )
 
                 match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
                 if not match:
                     return JsonResponse(
-                        {"status": "error", "message": "Invalid repository URL"}, status=400
+                        {"status": "error", "message": "Invalid repository URL"},
+                        status=400,
                     )
 
                 owner, repo_name = match.groups()
@@ -1215,7 +1261,10 @@ class RepoDetailView(DetailView):
                 response = requests.get(api_url, headers=headers)
                 if response.status_code != 200:
                     return JsonResponse(
-                        {"status": "error", "message": "Failed to fetch repository data"},
+                        {
+                            "status": "error",
+                            "message": "Failed to fetch repository data",
+                        },
                         status=500,
                     )
 
@@ -1245,12 +1294,16 @@ class RepoDetailView(DetailView):
                             "size": repo.size,
                             "license": repo.license or "Not specified",
                             "release_name": repo.release_name or "Not available",
-                            "release_date": repo.release_datetime.strftime("%b %d, %Y")
-                            if repo.release_datetime
-                            else "Not available",
-                            "last_commit_date": repo.last_commit_date.strftime("%b %d, %Y")
-                            if repo.last_commit_date
-                            else "Not available",
+                            "release_date": (
+                                repo.release_datetime.strftime("%b %d, %Y")
+                                if repo.release_datetime
+                                else "Not available"
+                            ),
+                            "last_commit_date": (
+                                repo.last_commit_date.strftime("%b %d, %Y")
+                                if repo.last_commit_date
+                                else "Not available"
+                            ),
                         },
                     }
                 )
@@ -1265,7 +1318,8 @@ class RepoDetailView(DetailView):
                 )
             except Exception as e:
                 return JsonResponse(
-                    {"status": "error", "message": "An unexpected error occurred."}, status=500
+                    {"status": "error", "message": "An unexpected error occurred."},
+                    status=500,
                 )
 
         elif section == "community":
@@ -1308,7 +1362,10 @@ class RepoDetailView(DetailView):
 
             except ValueError as e:
                 return JsonResponse(
-                    {"status": "error", "message": "There was an error processing your data."},
+                    {
+                        "status": "error",
+                        "message": "There was an error processing your data.",
+                    },
                     status=400,
                 )
 
@@ -1362,69 +1419,102 @@ class RepoBadgeView(APIView):
         repo = get_object_or_404(Repo, slug=slug)
 
         # Get today's date
-        today = now().date()
+        current_time = now()
+        today = current_time.date()
 
         # Get the real client IP
         user_ip = self.get_client_ip(request)
 
-        # Continue with existing code but use the new user_ip
-        visited_data = IP.objects.filter(
-            address=user_ip, path=request.path, created__date=today
-        ).last()
+        # Check if we have a record for today
+        visited_data = IP.objects.filter(address=user_ip, path=request.path, created__date=today).first()
 
         if visited_data:
-            # If the creation date is today
-            if visited_data.created.date() == today:
-                # If the visit count is 1, update the repo visit count
-                if visited_data.count == 1:
-                    repo.repo_visit_count = F("repo_visit_count") + 1
-                    repo.save()
-            else:
-                # If the creation date is not today, reset the creation date and count
-                visited_data.created = now()
-                visited_data.count = 1
-                visited_data.save()
-
-                # Increment the repo visit count
+            # If we have a record for today, only update repo visit count if needed
+            if visited_data.count == 1:
                 repo.repo_visit_count = F("repo_visit_count") + 1
                 repo.save()
         else:
-            # If no record exists, create a new one
-            IP.objects.create(address=user_ip, path=request.path, created=now(), count=1)
+            # If no record exists for today, create a new one
+            IP.objects.create(address=user_ip, path=request.path, created=current_time, count=1)
 
             # Increment the repo's visit count
             repo.repo_visit_count = F("repo_visit_count") + 1
             repo.save()
 
-        # Refresh project to get the latest visit count
-        repo.refresh_from_db()
-
-        total_views = repo.repo_visit_count
-
-        fig = plt.figure(figsize=(4, 1))
-        plt.bar(0, total_views, color="red", width=0.5)
-
-        plt.title(
-            f"{total_views}",
-            loc="left",
-            x=-0.36,
-            y=0.3,
-            fontsize=15,
-            fontweight="bold",
-            color="red",
+        # Get unique visits, grouped by date (last 7 days)
+        seven_days_ago = today - timedelta(days=7)
+        visit_counts = (
+            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(visit_count=Count("address"))
+            .order_by("date")
         )
 
-        plt.gca().set_xticks([])  # Remove x-axis ticks
-        plt.gca().set_yticks([])
-        plt.box(False)
+        # Refresh repo to get the latest visit count
+        repo.refresh_from_db()
 
-        # Save the plot to an in-memory file
+        # Extract dates and counts
+        dates = [entry["date"] for entry in visit_counts]
+        counts = [entry["visit_count"] for entry in visit_counts]
+        total_views = repo.repo_visit_count
+
+        # Create a new image with a white background
+        width = 600
+        height = 200
+        img = Image.new("RGB", (width, height), color="white")
+        draw = ImageDraw.Draw(img)
+
+        # Define colors
+        bar_color = "#e05d44"
+        text_color = "#333333"
+        grid_color = "#eeeeee"
+
+        # Calculate chart dimensions
+        margin = 40
+        chart_width = width - 2 * margin
+        chart_height = height - 2 * margin
+
+        # Draw grid lines
+        for i in range(5):
+            y = margin + (chart_height * i) // 4
+            draw.line([(margin, y), (width - margin, y)], fill=grid_color)
+
+        # Draw bars
+        if dates and counts:
+            max_count = max(counts)
+            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
+            for i, count in enumerate(counts):
+                bar_height = (count / max_count) * chart_height
+                x1 = margin + (i * 2 * bar_width)
+                y1 = height - margin - bar_height
+                x2 = x1 + bar_width
+                y2 = height - margin
+
+                # Draw bar with a slight gradient effect
+                for h in range(int(y1), int(y2)):
+                    alpha = int(255 * (1 - (h - y1) / bar_height * 0.2))
+                    r, g, b = 224, 93, 68  # RGB values for #e05d44
+                    current_color = f"#{r:02x}{g:02x}{b:02x}"
+                    draw.line([(x1, h), (x2, h)], fill=current_color)
+
+        # Draw total views text
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", 32)
+        except OSError:
+            font = ImageFont.load_default()
+
+        text = f"Total Views: {total_views}"
+        text_bbox = draw.textbbox((0, 0), text, font=font)
+        text_width = text_bbox[2] - text_bbox[0]
+        draw.text(((width - text_width) // 2, margin // 2), text, font=font, fill=bar_color)
+
+        # Save the image to a buffer
         buffer = BytesIO()
-        plt.savefig(buffer, format="png", bbox_inches="tight")
-        plt.close()
+        img.save(buffer, format="PNG", quality=95)
         buffer.seek(0)
 
-        # Prepare the HTTP response with the bar graph image
+        # Return the image with appropriate headers
         response = HttpResponse(buffer, content_type="image/png")
         response["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
         response["Pragma"] = "no-cache"

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}
+    {{ room.name }}
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="max-w-4xl mx-auto py-8">
+        <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
+        <div id="log-history"
+             class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
+            <!-- Messages will be appended here -->
+        </div>
+        <input id="message-field"
+               type="text"
+               placeholder="Type a message..."
+               class="border rounded-lg px-4 py-2 w-full" />
+        <button id="send-button"
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-2">Send</button>
+    </div>
+    <script>
+    const roomId = {{ room.id }};
+    const username = {% if request.user.is_authenticated %}"{{ request.user.username|escapejs }}"{% else %}"anon_{{ request.session.session_key|slice:'-4:'|escapejs }}"{% endif %};
+    let socket;
+
+    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const wsUrl = `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`;
+
+    const sendButton = document.getElementById("send-button");
+    const messageInput = document.getElementById('message-field');
+    const chatLog = document.getElementById('log-history');
+
+    // Connect to WebSocket server
+    function connectWebSocket() {
+        return new Promise((resolve, reject) => {
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                resolve(); // Resolve the promise when the connection is established
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleSocketMessage(data);
+            };
+
+            socket.onerror = (error) => {
+                reject(error); // Reject the promise if there's an error
+            };
+
+            socket.onclose = () => {
+                console.error('Chat socket closed unexpectedly');
+            };
+        });
+    }
+
+    // Handle WebSocket messages
+    function handleSocketMessage(data) {
+        const newMessage = document.createElement('div');
+        newMessage.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+        newMessage.classList.add('py-1', 'px-2', 'bg-white', 'rounded-lg', 'mb-2', 'shadow-sm');
+        chatLog.appendChild(newMessage);
+        chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll to the bottom
+    }
+
+    // Send message through WebSocket
+    function sendMessage() {
+        const message = messageInput.value;
+        if (message.trim() !== "") {
+            const data = {
+                'type': 'message',
+                'message': message,
+                'username': username
+            };
+            socket.send(JSON.stringify(data));
+            // handleSocketMessage(data); // Display the message for the sender
+            messageInput.value = '';
+        }
+    }
+
+    // Event listener for send button
+    sendButton.addEventListener('click', sendMessage);
+
+    // Connect to WebSocket when the page loads
+    connectWebSocket().catch(error => {
+        console.error('WebSocket connection failed:', error);
+    });
+    </script>
+{% endblock content %}

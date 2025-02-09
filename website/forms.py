@@ -1,6 +1,9 @@
+from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from mdeditor.fields import MDTextFormField
+
+from website.models import Room
 
 from .models import Bid, IpReport, Monitor, UserProfile
 
@@ -87,7 +90,13 @@ class MonitorForm(forms.ModelForm):
 class IpReportForm(forms.ModelForm):
     class Meta:
         model = IpReport
-        fields = ["ip_address", "ip_type", "description", "activity_title", "activity_type"]
+        fields = [
+            "ip_address",
+            "ip_type",
+            "description",
+            "activity_title",
+            "activity_type",
+        ]
 
 
 class BidForm(forms.ModelForm):
@@ -111,3 +120,30 @@ class GitHubURLForm(forms.Form):
         required=True,
         widget=forms.TextInput(attrs={"placeholder": "Add any Github URL"}),
     )
+
+
+class SignupFormWithCaptcha(SignupForm, CaptchaForm):
+    def clean(self):
+        cleaned_data = super().clean()
+        return cleaned_data
+
+    def save(self, request):
+        user = super().save(request)
+        return user
+
+
+class RoomForm(forms.ModelForm):
+    captcha = CaptchaField(required=False)  # Will be required only for anonymous users
+
+    class Meta:
+        model = Room
+        fields = ["name", "type", "custom_type", "description"]
+        widgets = {
+            "type": forms.Select(attrs={"onchange": "toggleCustomTypeField(this)"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        is_anonymous = kwargs.pop("is_anonymous", False)
+        super().__init__(*args, **kwargs)
+        if is_anonymous:
+            self.fields["captcha"].required = True
