@@ -86,21 +86,169 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter']">
+    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
         <style>
             .bottom-right {
                 position: absolute;
                 bottom: 10px;
                 right: 15px;
             }
+
+            .messages {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                z-index: 1000;
+                max-width: 400px;
+                width: 100%;
+            }
+
+            .alert {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 10px;
+                padding: 15px;
+                position: relative;
+                animation: slideIn 0.5s ease-out;
+                border-left: 4px solid;
+            }
+
+            .alert-success {
+                border-left-color: #48bb78;
+            }
+
+            .alert-error {
+                border-left-color: #f56565;
+            }
+
+            .alert-warning {
+                border-left-color: #ed8936;
+            }
+
+            .alert-info {
+                border-left-color: #4299e1;
+            }
+
+            .alert .close {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                opacity: 0.5;
+            }
+
+            .alert .close:hover {
+                opacity: 1;
+            }
+
+            @keyframes slideIn {
+                from {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
         </style>
         {% include "includes/header.html" %}
-        {% comment %} <div class="lg:ml-[215px] mt-[90px]"></div> {% endcomment %}
-        <div class="lg:ml-[230px] mt-[70px]">
+        <!-- Spacer div to fix spacing after header -->
+        <div class="w-full h-[130px]"></div>
+        <!-- Organization and Project Selection -->
+        <div class="fixed top-[85px] left-0 right-0 bg-white border-b border-gray-300 shadow-sm z-40">
+            <div class="flex items-center space-x-4 p-3">
+                <div class="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full overflow-hidden border border-gray-300">
+                    <img id="orgLogo"
+                         src="{% static 'img/default-org.png' %}"
+                         alt="Organization Logo"
+                         class="w-full h-full object-cover"
+                         width="32"
+                         height="32">
+                </div>
+                <div class="flex space-x-4">
+                    <div class="w-[200px]">
+                        <label for="orgSelect" class="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="orgSelect"
+                                   class="w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-red-500 focus:ring-red-500 cursor-pointer"
+                                   placeholder="All Organizations"
+                                   readonly
+                                   value="All">
+                            <div id="orgDropdown"
+                                 class="absolute z-10 w-[300px] mt-1 bg-white rounded-md shadow-lg max-h-[400px] overflow-auto border border-gray-200">
+                                <div class="p-2">
+                                    <div class="sticky top-0 bg-white p-2 border-b border-gray-200">
+                                        <input type="text"
+                                               id="orgSearchInput"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                                               placeholder="Search organizations...">
+                                    </div>
+                                    <div class="mt-2">
+                                        <a href="#"
+                                           class="flex items-center p-3 hover:bg-gray-50 rounded-lg group">
+                                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                <i class="fas fa-globe text-gray-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <p class="font-medium text-gray-800">All Organizations</p>
+                                                <p class="text-sm text-gray-500">View all domains</p>
+                                            </div>
+                                        </a>
+                                        {% for org in organizations %}
+                                            <a href="#"
+                                               class="flex items-center p-3 hover:bg-gray-50 rounded-lg group">
+                                                {% if org.logo %}
+                                                    <img src="{{ org.logo.url }}"
+                                                         alt="{{ org.name }}"
+                                                         width="40"
+                                                         height="40"
+                                                         class="w-10 h-10 rounded-full object-cover">
+                                                {% else %}
+                                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                        <i class="fas fa-building text-gray-400"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="ml-3 flex-grow">
+                                                    <p class="font-medium text-gray-800">{{ org.name }}</p>
+                                                    <p class="text-sm text-gray-500">{{ org.domains.count }} domains</p>
+                                                </div>
+                                                {% if org.is_active %}
+                                                    <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Active</span>
+                                                {% endif %}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-[200px]">
+                        <label for="projectSelect"
+                               class="block text-sm font-medium text-gray-700 mb-1">Project</label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="projectSelect"
+                                   class="w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-red-500 focus:ring-red-500"
+                                   placeholder="All Projects"
+                                   value="All">
+                            <div id="projectDropdown"
+                                 class="hidden absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto border-2 border-gray-300">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <main class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
             {% endblock content %}
-            {% comment %} </div> {% endcomment %}
-            {% comment %} block with no bootstrap wrappers {% endcomment %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% block edit_link %}
@@ -115,202 +263,365 @@
                 </div>
             {% endblock edit_link %}
             {% include "includes/checkInModal.html" %}
-        </body>
-        <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-        <script src="{% static 'js/ui.js' %}"></script>
-        {% block after_js %}
-        {% endblock after_js %}
+        </main>
+        <!-- Add JavaScript for autocomplete -->
         <script>
-    $("#report-bug-btn").click(function () {
-        $("#spinner").show()
-    });
-        </script>
-        <script>
-    (function (i, s, o, g, r, a, m) {
-        i['GoogleAnalyticsObject'] = r;
-        i[r] = i[r] || function () {
-            (i[r].q = i[r].q || []).push(arguments)
-        }, i[r].l = 1 * new Date();
-        a = s.createElement(o),
-            m = s.getElementsByTagName(o)[0];
-        a.async = 1;
-        a.src = g;
-        m.parentNode.insertBefore(a, m)
-    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-    ga('create', 'UA-66634107-1', 'auto');
-    ga('send', 'pageview');
-        </script>
-        <script type="text/javascript">
-    $(".mbug").click(function () {
-        $(this).addClass("hidden-xs");
-        $(this).addClass("hidden-sm");
-        $(".mnav").removeClass("hidden-xs");
-        $(".mnav").removeClass("hidden-sm");
-    });
-    $(function () {
-        $('button[name="test_files"]').on('click', function () {
-            $(this).parent().find('input[type=file]').click();
-        });
-        $('input[name="screenshot"]').on('change', function () {
-            var file = $(this).val().replace('C:\\fakepath\\', '');
-            $(this).parent().find('span').html(file);
-        });
-
-
-        {% if messages %}
-            {% for message in messages %}
-            $.notify("{{ message }}", {
-                style: "custom",
-                className: "{{message.level_tag }}",
-                autoHide: true,
-                autoHideDelay: 2000,
-                clicktoHide: true,
-                position: "left bottom",
-                gap: 5,
-                elementSize: {
-                    width: "auto",
-                    height: "auto"
-                }
-            });
-            setTimeout(function() {
-                $('.notifyjs-wrapper').on('mouseenter', function() {
-                    $(this).fadeOut();
-                    });
-                }, 100);
-            {% endfor %} 
-        {% endif %}
-    });
-        </script>
-        <script type="text/javascript">
-    window._mfq = window._mfq || [];
-    (function () {
-        var mf = document.createElement("script");
-        mf.type = "text/javascript";
-        mf.async = true;
-        mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
-        document.getElementsByTagName("head")[0].appendChild(mf);
-    })();
-        </script>
-        <script type="text/javascript">
             document.addEventListener('DOMContentLoaded', function() {
-                  // logic to toggle password visibility for all password fields
-                  const passwordToggles = document.querySelectorAll(".password-toggle");
+                const orgSelect = document.getElementById('orgSelect');
+                const orgDropdown = document.getElementById('orgDropdown');
+                const orgSearchInput = document.getElementById('orgSearchInput');
+                const orgLogo = document.getElementById('orgLogo');
+                
+                // Initially hide the dropdown
+                orgDropdown.style.display = 'none';
+                
+                // Toggle dropdown on input click
+                orgSelect.addEventListener('click', function() {
+                    orgDropdown.style.display = orgDropdown.style.display === 'none' ? 'block' : 'none';
+                    if (orgDropdown.style.display === 'block') {
+                        orgSearchInput.focus();
+                    }
+                });
+                
+                // Handle search functionality with API
+                let searchTimeout;
+                orgSearchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    
+                    // Clear the previous timeout
+                    clearTimeout(searchTimeout);
+                    
+                    // Set a new timeout to prevent too many API calls
+                    searchTimeout = setTimeout(() => {
+                        if (searchTerm.length > 0) {
+                            fetch(`/api/v1/organizations/?search=${encodeURIComponent(searchTerm)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const orgList = document.querySelector('#orgDropdown .mt-2');
+                                    // Keep the "All Organizations" option
+                                    const allOrgsOption = orgList.firstElementChild;
+                                    orgList.innerHTML = '';
+                                    orgList.appendChild(allOrgsOption);
+                                    
+                                    data.results.forEach(org => {
+                                        const orgElement = document.createElement('a');
+                                        orgElement.href = '#';
+                                        orgElement.className = 'flex items-center p-3 hover:bg-gray-50 rounded-lg group';
+                                        
+                                        const logoContainer = document.createElement('div');
+                                        if (org.logo) {
+                                            const logoImg = document.createElement('img');
+                                            logoImg.src = org.logo;
+                                            logoImg.alt = `${org.name} logo`;
+                                            logoImg.className = 'w-10 h-10 rounded-full object-cover';
+                                            logoContainer.appendChild(logoImg);
+                                        } else {
+                                            logoContainer.className = 'w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center';
+                                            const icon = document.createElement('i');
+                                            icon.className = 'fas fa-building text-gray-400';
+                                            logoContainer.appendChild(icon);
+                                        }
+                                        
+                                        const infoContainer = document.createElement('div');
+                                        infoContainer.className = 'ml-3 flex-grow';
+                                        infoContainer.innerHTML = `
+                                            <p class="font-medium text-gray-800">${org.name}</p>
+                                            <p class="text-sm text-gray-500">${org.domains ? org.domains.length : 0} domains</p>
+                                        `;
+                                        
+                                        if (org.is_active) {
+                                            const activeTag = document.createElement('span');
+                                            activeTag.className = 'inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20';
+                                            activeTag.textContent = 'Active';
+                                            infoContainer.appendChild(activeTag);
+                                        }
+                                        
+                                        orgElement.appendChild(logoContainer);
+                                        orgElement.appendChild(infoContainer);
+                                        
+                                        // Add click handler
+                                        orgElement.addEventListener('click', function(e) {
+                                            e.preventDefault();
+                                            orgSelect.value = org.name;
+                                            if (org.logo) {
+                                                orgLogo.src = org.logo;
+                                            } else {
+                                                orgLogo.src = '{% static "img/default-org.png" %}';
+                                            }
+                                            orgDropdown.style.display = 'none';
+                                            
+                                            window.location.href = `/organization/${org.id}/dashboard/analytics/`;
 
-                  passwordToggles.forEach((toggle) => {
-                    toggle.addEventListener("click", function () {
-                      const input = document.querySelector(`#${toggle.dataset.target}`);
-                      const isPassword = input.type === "password";
+                                        });
+                                        
+                                        orgList.appendChild(orgElement);
+                                    });
+                                })
+                                .catch(error => console.error('Error:', error));
+                        }
+                    }, 300); // 300ms delay
+                });
                 
-                      // Toggle input type
-                      input.type = isPassword ? "text" : "password";
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!orgSelect.contains(e.target) && !orgDropdown.contains(e.target)) {
+                        orgDropdown.style.display = 'none';
+                    }
+                });
                 
-                      // Toggle icon
-                      const icon = toggle.querySelector("svg");
-                      if (isPassword) {
-                        icon.innerHTML = `
-                          <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                          <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
-                        `; // Eye open icon
-                      } else {
-                        icon.innerHTML = `
-                          <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577a11.217 11.217 0 0 1 4.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113Z" />
-                          <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0 1 15.75 12ZM12.53 15.713l-4.243-4.244a3.75 3.75 0 0 0 4.244 4.243Z" />
-                          <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
-                        `; // Eye closed icon
-                      }
+                // Prevent dropdown from closing when clicking inside search input
+                orgSearchInput.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // Handle "All Organizations" option click
+                const allOrgsOption = document.querySelector('#orgDropdown .mt-2 a');
+                allOrgsOption.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    orgSelect.value = 'All';
+                    orgLogo.src = '{% static "img/default-org.png" %}';
+                    orgDropdown.style.display = 'none';
+                });
+            });
+        </script>
+        <div class="pb-[50px]">
+            <!-- Adding bottom padding to prevent content overlap with footer -->
+        </div>
+        {% include "includes/footer.html" %}
+        {% block scripts %}
+        {% endblock %}
+        <script>
+            // Auto-dismiss messages after 5 seconds
+            document.addEventListener('DOMContentLoaded', function() {
+                const messages = document.querySelectorAll('.alert');
+                messages.forEach(function(message) {
+                    setTimeout(function() {
+                        message.style.animation = 'slideOut 0.5s ease-in forwards';
+                        setTimeout(function() {
+                            message.remove();
+                        }, 500);
+                    }, 5000);
+                });
+
+                // Handle manual close button
+                document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        const alert = this.parentElement;
+                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 500);
                     });
                 });
-            // Check if the modal exists in the DOM
-            const modal = document.getElementById('cardModalDailyStatus');
-            if (!modal) {
-                return; // Exit if modal is not present
-            }
-
-            const closeButton = modal.querySelector('.close-button');
-            const openCheckInButton = document.getElementById('openCheckIn');
-            const checkInForm = document.getElementById('checkInForm');
-
-            // Function to check if form was submitted today
-            function isFormSubmittedToday() {
-                const submittedDate = localStorage.getItem('formSubmittedDateCard');
-                const today = new Date().toISOString().split('T')[0];
-                return submittedDate === today;
-            }
-
-            // Function to show modal
-            function showModal() {
-                modal.classList.remove('hidden');
-                document.body.classList.add('modal-open'); // Prevent background scrolling
-                // Focus on the first input field
-                const firstInput = modal.querySelector('input, textarea');
-                if (firstInput) {
-                    firstInput.focus();
-                }
-            }
-
-            // Function to hide modal
-            function hideModal() {
-                modal.classList.add('hidden');
-                document.body.classList.remove('modal-open'); // Restore background scrolling
-            }
-
-            // Event listener to close modal when clicking the close button
-            closeButton.addEventListener('click', hideModal);
-
-            // Close modal when clicking outside the modal content
-            modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
-
-            // Close modal on 'Esc' key press
-            document.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
-                    hideModal();
-                }
             });
 
-            // Event listener to open modal when clicking the openCheckIn button           
-            if (openCheckInButton) {
-                 openCheckInButton.addEventListener('click', showModal);
-             }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+        </script>
+    </body>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'js/ui.js' %}"></script>
+    {% block after_js %}
+    {% endblock after_js %}
+    <script>
+        $("#report-bug-btn").click(function () {
+            $("#spinner").show()
+        });
+    </script>
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r;
+            i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date();
+            a = s.createElement(o),
+                m = s.getElementsByTagName(o)[0];
+            a.async = 1;
+            a.src = g;
+            m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+        ga('create', 'UA-66634107-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+    <script type="text/javascript">
+        $(".mbug").click(function () {
+            $(this).addClass("hidden-xs");
+            $(this).addClass("hidden-sm");
+            $(".mnav").removeClass("hidden-xs");
+            $(".mnav").removeClass("hidden-sm");
+        });
+        $(function () {
+            $('button[name="test_files"]').on('click', function () {
+                $(this).parent().find('input[type=file]').click();
+            });
+            $('input[name="screenshot"]').on('change', function () {
+                var file = $(this).val().replace('C:\\fakepath\\', '');
+                $(this).parent().find('span').html(file);
+            });
 
-            // Handle check-in form submission with AJAX
-            if (checkInForm) {
-                checkInForm.addEventListener('submit', function(e) {
-                    e.preventDefault(); // Prevent the default form submission
 
-                    const formData = new FormData(checkInForm); // Gather form data
-                    const submitButton = checkInForm.querySelector('.submit-button');
-
-                    // Disable the submit button and show a loading state
-                    submitButton.disabled = true;
-                    submitButton.textContent = 'Submitting...';
-
-                    fetch(checkInForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json()) // Expect a JSON response from the server
-                    .then(data => {
-                        if (data.success) {
-                            hideModal(); // Hide the modal on successful submission
-                            localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
-                            alert('Your report has been submitted successfully!');
-                        } else {
-                            throw new Error(data.error || 'Submission failed');
-                        }
-                    })
-                    .catch(error => {
-                        alert(`There was an error submitting your report: ${error.message}. Please try again.`);
-                    })
-                    .finally(() => {
-                        // Re-enable the submit button and reset its text
-                        submitButton.disabled = false;
-                        submitButton.textContent = 'Submit';
-                    });
+            {% if messages %}
+                {% for message in messages %}
+                $.notify("{{ message }}", {
+                    style: "custom",
+                    className: "{{message.level_tag }}",
+                    autoHide: true,
+                    autoHideDelay: 2000,
+                    clicktoHide: true,
+                    position: "left bottom",
+                    gap: 5,
+                    elementSize: {
+                        width: "auto",
+                        height: "auto"
+                    }
                 });
+                setTimeout(function() {
+                    $('.notifyjs-wrapper').on('mouseenter', function() {
+                        $(this).fadeOut();
+                        });
+                    }, 100);
+                {% endfor %} 
+            {% endif %}
+        });
+    </script>
+    <script type="text/javascript">
+        window._mfq = window._mfq || [];
+        (function () {
+            var mf = document.createElement("script");
+            mf.type = "text/javascript";
+            mf.async = true;
+            mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
+            document.getElementsByTagName("head")[0].appendChild(mf);
+        })();
+    </script>
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+              // logic to toggle password visibility for all password fields
+              const passwordToggles = document.querySelectorAll(".password-toggle");
+
+              passwordToggles.forEach((toggle) => {
+                toggle.addEventListener("click", function () {
+                  const input = document.querySelector(`#${toggle.dataset.target}`);
+                  const isPassword = input.type === "password";
+            
+                  // Toggle input type
+                  input.type = isPassword ? "text" : "password";
+            
+                  // Toggle icon
+                  const icon = toggle.querySelector("svg");
+                  if (isPassword) {
+                    icon.innerHTML = `
+                      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                      <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
+                    `; // Eye open icon
+                  } else {
+                    icon.innerHTML = `
+                      <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577a11.217 11.217 0 0 1 4.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113Z" />
+                      <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0 1 15.75 12ZM12.53 15.713l-4.243-4.244a3.75 3.75 0 0 0 4.244 4.243Z" />
+                      <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
+                    `; // Eye closed icon
+                  }
+                });
+            });
+        // Check if the modal exists in the DOM
+        const modal = document.getElementById('cardModalDailyStatus');
+        if (!modal) {
+            return; // Exit if modal is not present
+        }
+
+        const closeButton = modal.querySelector('.close-button');
+        const openCheckInButton = document.getElementById('openCheckIn');
+        const checkInForm = document.getElementById('checkInForm');
+
+        // Function to check if form was submitted today
+        function isFormSubmittedToday() {
+            const submittedDate = localStorage.getItem('formSubmittedDateCard');
+            const today = new Date().toISOString().split('T')[0];
+            return submittedDate === today;
+        }
+
+        // Function to show modal
+        function showModal() {
+            modal.classList.remove('hidden');
+            document.body.classList.add('modal-open'); // Prevent background scrolling
+            // Focus on the first input field
+            const firstInput = modal.querySelector('input, textarea');
+            if (firstInput) {
+                firstInput.focus();
+            }
+        }
+
+        // Function to hide modal
+        function hideModal() {
+            modal.classList.add('hidden');
+            document.body.classList.remove('modal-open'); // Restore background scrolling
+        }
+
+        // Event listener to close modal when clicking the close button
+        closeButton.addEventListener('click', hideModal);
+
+        // Close modal when clicking outside the modal content
+        modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
+
+        // Close modal on 'Esc' key press
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+                hideModal();
             }
         });
-        </script>
-    </html>
+
+        // Event listener to open modal when clicking the openCheckIn button           
+        if (openCheckInButton) {
+             openCheckInButton.addEventListener('click', showModal);
+         }
+
+        // Handle check-in form submission with AJAX
+        if (checkInForm) {
+            checkInForm.addEventListener('submit', function(e) {
+                e.preventDefault(); // Prevent the default form submission
+
+                const formData = new FormData(checkInForm); // Gather form data
+                const submitButton = checkInForm.querySelector('.submit-button');
+
+                // Disable the submit button and show a loading state
+                submitButton.disabled = true;
+                submitButton.textContent = 'Submitting...';
+
+                fetch(checkInForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: formData
+                })
+                .then(response => response.json()) // Expect a JSON response from the server
+                .then(data => {
+                    if (data.success) {
+                        hideModal(); // Hide the modal on successful submission
+                        localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
+                        alert('Your report has been submitted successfully!');
+                    } else {
+                        throw new Error(data.error || 'Submission failed');
+                    }
+                })
+                .catch(error => {
+                    alert(`There was an error submitting your report: ${error.message}. Please try again.`);
+                })
+                .finally(() => {
+                    // Re-enable the submit button and reset its text
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Submit';
+                });
+            });
+        }
+    });
+    </script>
+</html>

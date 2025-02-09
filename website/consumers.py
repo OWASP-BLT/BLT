@@ -7,8 +7,12 @@ import zipfile
 from pathlib import Path
 
 import aiohttp
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import User
+from django.utils import timezone
 
+from website.models import Message, Room
 from website.utils import (
     compare_model_fields,
     cosine_similarity,
@@ -305,3 +309,155 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
             return None
 
         return matching_details
+
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        try:
+            self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+            self.room_group_name = f"chat_{self.room_id}"
+            self.connected = False
+
+            # Verify room exists
+            room_exists = await self.check_room_exists()
+            if not room_exists:
+                await self.close(code=4004)
+                return
+
+            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+            self.connected = True
+            await self.accept()
+
+            # Send connection status
+            await self.send(text_data=json.dumps({"type": "connection_status", "status": "connected"}))
+
+        except Exception as e:
+            await self.close(code=4000)
+
+    async def disconnect(self, close_code):
+        try:
+            self.connected = False
+            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+            # Send disconnect status if possible
+            try:
+                await self.send(
+                    text_data=json.dumps({"type": "connection_status", "status": "disconnected", "code": close_code})
+                )
+            except:
+                pass
+        except:
+            pass
+
+    @database_sync_to_async
+    def check_room_exists(self):
+        try:
+            return Room.objects.filter(id=self.room_id).exists()
+        except:
+            return False
+
+    @database_sync_to_async
+    def save_message(self, message, username):
+        try:
+            room = Room.objects.get(id=self.room_id)
+            user = None
+            session_key = None
+
+            if username.startswith("anon_"):
+                session_key = username.split("_")[1]
+            else:
+                user = User.objects.filter(username=username).first()
+
+            return Message.objects.create(
+                room=room, user=user, username=username, content=message, session_key=session_key
+            )
+        except Exception as e:
+            return None
+
+    async def receive(self, text_data):
+        if not self.connected:
+            await self.send(
+                text_data=json.dumps(
+                    {"type": "error", "code": "not_connected", "message": "Not connected to chat room"}
+                )
+            )
+            return
+
+        try:
+            data = json.loads(text_data)
+            message_type = data.get("type", "message")
+
+            if message_type == "message":
+                message = data.get("message", "").strip()
+                username = data.get("username", "Anonymous")
+
+                # Validate message
+                if not message:
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "invalid_message", "message": "Message cannot be empty"}
+                        )
+                    )
+                    return
+
+                if len(message) > 1000:
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "code": "message_too_long",
+                                "message": "Message too long (max 1000 chars)",
+                            }
+                        )
+                    )
+                    return
+
+                # Save and broadcast message
+                saved_message = await self.save_message(message, username)
+                if saved_message:
+                    message_data = {
+                        "type": "chat_message",
+                        "message": message,
+                        "username": username,
+                        "timestamp": saved_message.timestamp.isoformat(),
+                    }
+                    await self.channel_layer.group_send(self.room_group_name, message_data)
+
+                    # Send acknowledgment
+                    await self.send(text_data=json.dumps({"type": "message_ack", "message_id": saved_message.id}))
+                else:
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "save_failed", "message": "Failed to save message"}
+                        )
+                    )
+
+            elif message_type == "ping":
+                await self.send(text_data=json.dumps({"type": "pong", "timestamp": timezone.now().isoformat()}))
+
+        except json.JSONDecodeError:
+            await self.send(
+                text_data=json.dumps({"type": "error", "code": "invalid_format", "message": "Invalid message format"})
+            )
+        except Exception as e:
+            await self.send(
+                text_data=json.dumps({"type": "error", "code": "internal_error", "message": "Internal server error"})
+            )
+
+    async def chat_message(self, event):
+        if not self.connected:
+            return
+
+        try:
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "message",
+                        "message": event["message"],
+                        "username": event["username"],
+                        "timestamp": event.get("timestamp"),
+                    }
+                )
+            )
+        except Exception:
+            pass

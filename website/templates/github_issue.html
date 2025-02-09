@@ -98,7 +98,8 @@
                                    maxlength="100"
                                    required
                                    placeholder="Short Title"
-                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
+                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   value="{{ issue_title }}" />
                         </div>
                     </div>
                 </div>
@@ -115,13 +116,7 @@
                                       required
                                       rows="15"
                                       placeholder="Describe the issue in detail"
-                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"></textarea>
-                            <button type="button"
-                                    id="generate-ai-button"
-                                    onclick="generateAIDetails()"
-                                    class="absolute top-2 right-2 bg-blue-500 text-white px-4 py-2 rounded-md">
-                                Generate with AI
-                            </button>
+                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"> {{description}}</textarea>
                         </div>
                     </div>
                 </div>
@@ -135,7 +130,8 @@
                                    type="text"
                                    name="labels"
                                    placeholder="Comma-separated labels"
-                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
+                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   value="{{ labels }}" />
                         </div>
                     </div>
                 </div>
@@ -152,7 +148,8 @@
                                    type="text"
                                    name="repository_url"
                                    placeholder="Or enter repository URL"
-                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
+                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   value="{{ repository_url }}" />
                         </div>
                     </div>
                 </div>

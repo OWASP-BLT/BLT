@@ -155,7 +155,7 @@ def vote_count(request, issue_pk):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+    if not os.environ.get("GITHUB_TOKEN"):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
@@ -187,7 +187,7 @@ def create_github_issue(request, id):
             response = requests.post(
                 url,
                 data=json.dumps(issue_data),
-                headers={"Authorization": f"token {os.environ.get('GITHUB_ACCESS_TOKEN')}"},
+                headers={"Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"},
             )
             if response.status_code == 201:
                 response_data = response.json()
@@ -1011,7 +1011,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             redirect_url = "/report"
 
-            if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
+            if domain.github and os.environ.get("GITHUB_TOKEN"):
                 import json
 
                 import requests
@@ -1044,7 +1044,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 r = requests.post(
                     url,
                     json.dumps(issue),
-                    headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+                    headers={"Authorization": "token " + os.environ.get("GITHUB_TOKEN")},
                 )
                 response = r.json()
                 try:
@@ -1634,38 +1634,107 @@ class GithubIssueView(TemplateView):
         return response.json()
 
 
-def generate_github_issue(request):
-    print(os.getenv("OPENAI_API_KEY"))
+# def generate_github_issue(request):
+#     print(os.getenv("OPENAI_API_KEY"))
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body)
+#             description = data.get("description", "")
+
+#             if not description:
+#                 return JsonResponse({"error": "Description is required"}, status=400)
+#             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+#             # Call the OpenAI API with the o3-mini model
+#             response = client.chat.completions.create(
+#                 model="gpt-4o-mini",
+#                 # model="openai-o3-mini",
+#                 messages=[
+#                     {
+#                         "role": "developer",
+#                         "content": "You are a helpful assistant that generates descriptions for GitHub issues including a comprehensive description, reproduction steps, subtasks and any other relevant information.",
+#                     },
+#                     {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
+#                 ],
+#                 # reasoning_effort="medium",
+#             )
+#             if response.choices and response.choices[0].message:
+#                 issue_details = response.choices[0].message.content
+#             else:
+#                 issue_details = "No response content received."
+
+#             return JsonResponse({"issue_details": issue_details})
+
+#         except Exception as e:
+#             return JsonResponse({"error": "There's a problem with openAI"}, status=500)
+
+#     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+@login_required(login_url="/accounts/login")
+def get_github_issue(request):
     if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            description = data.get("description", "")
+        description = request.POST.get("description")
+        repository_url = request.POST.get("repository_url")
 
-            if not description:
-                return JsonResponse({"error": "Description is required"}, status=400)
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        if not description:
+            return JsonResponse({"error": "Description is required"}, status=400)
 
-            # Call the OpenAI API with the o3-mini model
-            response = client.chat.completions.create(
-                # model="gpt-4o-mini",
-                model="openai-o3-mini",
-                messages=[
-                    {
-                        "role": "developer",
-                        "content": "You are a helpful assistant that generates descriptions for GitHub issues including a comprehensive description, reproduction steps, subtasks and any other relevant information.",
-                    },
-                    {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
-                ],
-                reasoning_effort="medium",
-            )
-            if response.choices and response.choices[0].message:
-                issue_details = response.choices[0].message.content
-            else:
-                issue_details = "No response content received."
+        # Call the generate_github_issue function
+        issue_details = generate_github_issue(description)
 
-            return JsonResponse({"issue_details": issue_details})
+        if "error" in issue_details:
+            return JsonResponse(issue_details, status=500)
 
-        except Exception as e:
-            return JsonResponse({"error": "There's a problem with openAI"}, status=500)
+        # Render the github_issue.html page with the generated issue details
+        return render(
+            request,
+            "github_issue.html",
+            {
+                "issue_title": issue_details.get("title", ""),
+                "description": issue_details.get("description", ""),
+                "labels": ", ".join(issue_details.get("labels", [])),
+                "repository_url": repository_url,
+            },
+        )
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+def generate_github_issue(description):
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        # Call the OpenAI API with the gpt-4o-mini model
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "developer",
+                    "content": (
+                        "You are a helpful assistant that generates descriptions for GitHub issues. "
+                        "Return a JSON object containing 'title', 'description', and 'labels'. Example:\n"
+                        '{"title": "Bug in user login", "description": "Steps to reproduce the bug...", "labels": ["bug", "authentication"]}'
+                    ),
+                },
+                {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
+            ],
+        )
+
+        # Extract and parse the response
+        if response.choices and response.choices[0].message:
+            issue_details_str = response.choices[0].message.content
+            issue_details = json.loads(issue_details_str)  # Parse the JSON response
+
+            return {
+                "title": issue_details.get("title", "Generated Issue Title"),
+                "description": issue_details.get("description", "No description provided."),
+                "labels": issue_details.get("labels", []),
+            }
+
+        return {"error": "No valid response from OpenAI"}
+
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
+    except Exception as e:
+        return {"error": "There's a problem with OpenAI", "details": str(e)}

@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 
@@ -17,12 +18,14 @@ from website.models import (
     ContributorStats,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     HuntPrize,
     Integration,
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Message,
     Monitor,
     Organization,
     OrganizationAdmin,
@@ -204,16 +207,27 @@ class SubscriptionAdmin(ImportExportModelAdmin):
 class OrganizationAdmins(ImportExportModelAdmin):
     resource_class = OrganizationResource
     list_display = (
-        "admin",
+        "id",
         "name",
         "url",
-        "email",
-        "twitter",
-        "facebook",
+        "get_url_icon",
+        "is_active",
         "created",
         "modified",
-        "subscription",
     )
+    list_display_links = ("id",)
+    list_editable = ("name", "url", "is_active")
+    search_fields = ("name", "url")
+    list_filter = ("is_active",)
+    ordering = ("-created",)
+
+    def get_url_icon(self, obj):
+        if obj.url:
+            return mark_safe(f'<a href="{obj.url}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
+        return ""
+
+    get_url_icon.short_description = " "
+    get_url_icon.allow_tags = True
 
 
 class PointsAdmin(admin.ModelAdmin):
@@ -462,6 +476,59 @@ class PostAdmin(admin.ModelAdmin):
     prepopulated_fields = {"slug": ("title",)}
 
 
+class GitHubIssueAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user_profile",
+        "type",
+        "title",
+        "state",
+        "is_merged",
+        "created_at",
+        "updated_at",
+        "url",
+    )
+    list_filter = [
+        "type",
+        "state",
+        "is_merged",
+        "user_profile",
+    ]
+    search_fields = [
+        "title",
+        "url",
+        "user_profile__user__username",
+    ]
+    date_hierarchy = "created_at"
+
+
+class GitHubReviewAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "reviewer",
+        "state",
+        "submitted_at",
+        "pull_request",
+        "url",
+    )
+    list_filter = [
+        "state",
+        "reviewer",
+    ]
+    search_fields = [
+        "reviewer__user__username",
+        "url",
+    ]
+    date_hierarchy = "submitted_at"
+
+
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ("id", "room", "username", "content", "timestamp")
+    list_filter = ("room", "timestamp")
+    search_fields = ("username", "content")
+    date_hierarchy = "timestamp"
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -499,4 +566,6 @@ admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
-admin.site.register(GitHubIssue)
+admin.site.register(GitHubIssue, GitHubIssueAdmin)
+admin.site.register(GitHubReview, GitHubReviewAdmin)
+admin.site.register(Message, MessageAdmin)
