@@ -306,15 +306,16 @@ if not db_from_env:
 else:
     db_config = dj_database_url.config(
         conn_max_age=0,  # Must be 0 when using PgBouncer
-        ssl_require=False,  # Disable SSL for PgBouncer connections
+        ssl_require=True,  # Enable SSL for RDS connections
     )
     DATABASES["default"].update(db_config)
     DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True  # Required for PgBouncer
     DATABASES["default"]["CONN_MAX_AGE"] = 0  # Must be 0 when using PgBouncer
 
-    # Additional PgBouncer-specific settings
+    # Additional RDS-specific settings
     DATABASES["default"]["OPTIONS"] = {
-        "sslmode": "disable",  # Explicitly disable SSL
+        "sslmode": "require",  # Force SSL connection
+        "sslrootcert": None,  # Use system default CA certificates
     }
 
 # Ensure this is set to None or 0 when using PgBouncer
