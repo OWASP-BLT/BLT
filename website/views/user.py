@@ -759,7 +759,13 @@ def users_view(request, *args, **kwargs):
     )
 
     tag_name = request.GET.get("tag")
-    if tag_name:
+    show_githubbers = request.GET.get("githubbers") == "true"
+
+    if show_githubbers:
+        context["githubbers"] = True
+        context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
+        context["user_count"] = context["users"].count()
+    elif tag_name:
         if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
