@@ -180,7 +180,7 @@ AUTHENTICATION_BACKENDS = (
 REST_AUTH = {"SESSION_LOGIN": False}
 CONN_MAX_AGE = 0
 
-WSGI_APPLICATION = "blt.wsgi.application"
+# WSGI_APPLICATION = "blt.wsgi.application"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
