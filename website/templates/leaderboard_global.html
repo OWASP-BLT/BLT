@@ -234,28 +234,28 @@
                 {% else %}
                     {% for leader in code_review_leaderboard %}
                         <div class="list-group-item">
-                            {% if leader.reviews__reviewer__user__userprofile__user_avatar %}
-                                <img src="{{ leader.reviews__reviewer__user__userprofile__user_avatar.url }}"
+                            {% if leader.reviewer__user__userprofile__user_avatar %}
+                                <img src="{{ leader.reviewer__user__userprofile__user_avatar.url }}"
                                      class="img-responsive img-thumbnail profileimage"
-                                     alt="{{ leader.reviews__reviewer__user__username }}"
+                                     alt="{{ leader.reviewer__user__username }}"
                                      width="50px"
                                      height="50px">
-                            {% elif leader.reviews__reviewer__user__userprofile__github_url %}
-                                <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
+                            {% elif leader.reviewer__user__userprofile__github_url %}
+                                <img src="https://github.com/{{ leader.reviewer__user__username }}.png"
                                      class="img-responsive img-thumbnail profileimage"
-                                     alt="{{ leader.reviews__reviewer__user__username }}"
+                                     alt="{{ leader.reviewer__user__username }}"
                                      width="50px"
                                      height="50px">
                             {% else %}
-                                <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
+                                <img src="{% gravatar_url leader.reviewer__user__email 50 %}"
                                      class="img-responsive img-thumbnail profileimage"
                                      alt="username"
                                      width="50px"
                                      height="50px">
                             {% endif %}
-                            <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}">
-                                {{ leader.reviews__reviewer__user__username }}
-                                {% if leader.reviews__reviewer__user__userprofile__github_url %}<i class="fab fa-github"></i>{% endif %}
+                            <a href="{% url 'profile' slug=leader.reviewer__user__username %}">
+                                {{ leader.reviewer__user__username }}
+                                {% if leader.reviewer__user__userprofile__github_url %}<i class="fab fa-github"></i>{% endif %}
                             </a>
                             <span class="pull-right badge">{{ leader.total_reviews }} Reviews</span>
                         </div>

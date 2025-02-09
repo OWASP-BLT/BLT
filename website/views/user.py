@@ -38,6 +38,7 @@ from website.models import (
     Challenge,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     InviteFriend,
     Issue,
@@ -583,7 +584,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard()
+        context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
 
         # Get pull request leaderboard
         pr_leaderboard = (
@@ -599,19 +600,18 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Get Reviewed Pull Request Leaderboard
-        reviewed_pr_leaderboard = (
-            GitHubIssue.objects.filter(type="pull_request")
-            .values(
-                "reviews__reviewer__user__username",
-                "reviews__reviewer__user__email",
-                "reviews__reviewer__user__userprofile__user_avatar",
-                "reviews__reviewer__user__userprofile__github_url",
+        # Get Code Review Leaderboard
+        code_review_leaderboard = (
+            GitHubReview.objects.values(
+                "reviewer__user__username",
+                "reviewer__user__email",
+                "reviewer__user__userprofile__user_avatar",
+                "reviewer__user__userprofile__github_url",
             )
             .annotate(total_reviews=Count("id"))
             .order_by("-total_reviews")[:25]
         )
-        context["code_review_leaderboard"] = reviewed_pr_leaderboard
+        context["code_review_leaderboard"] = code_review_leaderboard
 
         return context
 

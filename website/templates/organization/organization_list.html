@@ -13,25 +13,64 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for org in organizations %}
                         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
-                            <div class="flex items-center mb-4">
-                                {% if org.logo %}
-                                    <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                         alt="{{ org.name }} logo"
-                                         width="48"
-                                         height="48"
-                                         class="w-12 h-12 rounded-full object-cover mr-4">
-                                {% else %}
-                                    <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
-                                        <i class="fas fa-building text-gray-400"></i>
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    {% if org.logo %}
+                                        <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                             alt="{{ org.name }} logo"
+                                             width="48"
+                                             height="48"
+                                             class="w-12 h-12 rounded-full object-cover mr-4">
+                                    {% else %}
+                                        <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+                                            <i class="fas fa-building text-gray-400"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900">{{ org.name }}</h2>
+                                        {% if org.url %}
+                                            <a href="{{ org.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="text-blue-600 hover:text-blue-800 text-sm">{{ org.url }}</a>
+                                        {% endif %}
                                     </div>
+                                </div>
+                                {% if request.user.is_superuser %}
+                                    <a href="{% url 'admin:website_organization_change' org.id %}"
+                                       class="text-gray-500 hover:text-blue-600"
+                                       title="Edit in Admin">
+                                        <i class="fas fa-cog text-xl"></i>
+                                    </a>
                                 {% endif %}
-                                <div>
-                                    <h2 class="text-xl font-semibold text-gray-900">{{ org.name }}</h2>
-                                    {% if org.url %}
-                                        <a href="{{ org.url }}"
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           class="text-blue-600 hover:text-blue-800 text-sm">{{ org.url }}</a>
+                            </div>
+                            <!-- Domains and Stats Section -->
+                            <div class="mt-4 p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h3 class="text-sm font-semibold text-gray-700">Domains</h3>
+                                    <span class="text-sm text-gray-500">{{ org.domain_set.count }} total</span>
+                                </div>
+                                <div class="space-y-2">
+                                    {% for domain in org.domain_set.all|slice:":3" %}
+                                        <div class="flex items-center justify-between text-sm">
+                                            <a href="{% url 'domain' slug=domain.name %}"
+                                               class="text-gray-600 hover:text-blue-600">{{ domain.name }}</a>
+                                            <div class="flex items-center space-x-3">
+                                                <span class="flex items-center text-gray-500">
+                                                    <i class="fas fa-mouse-pointer text-xs mr-1"></i>
+                                                    {{ domain.clicks }}
+                                                </span>
+                                                {% if domain.email_event %}
+                                                    <span class="flex items-center text-gray-500">
+                                                        <i class="fas fa-envelope text-xs mr-1"></i>
+                                                        <i class="fas fa-check text-green-500 text-xs"></i>
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                    {% if org.domain_set.count > 3 %}
+                                        <div class="text-center text-sm text-gray-500 mt-2">+ {{ org.domain_set.count|add:"-3" }} more domains</div>
                                     {% endif %}
                                 </div>
                             </div>
