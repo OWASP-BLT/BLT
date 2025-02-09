@@ -153,7 +153,7 @@
     {% include "includes/sidenav.html" %}
     <div class="row container-min-height flex justify-center">
         <div class="col-lg-12 flex justify-center items-center">
-            <h1 class="page-header">Global Leaderboards</h1>
+            <h1 class="page-header">Global Leaderboard</h1>
         </div>
     </div>
     <div class="leaderboard-container">
@@ -214,9 +214,11 @@
                                      width="50px"
                                      height="50px">
                             {% endif %}
-                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}">
-                                {{ leader.user_profile__user__username }}
-                                {% if leader.user_profile__github_url %}<i class="fab fa-github"></i>{% endif %}
+                            <a href="{% url 'profile' slug=leader.user_profile__user__username %}">{{ leader.user_profile__user__username }}</a>
+                            <a href="{{ leader.user_profile__github_url }}"
+                               target="_blank"
+                               class="ml-2">
+                                <i class="fab fa-github"></i>
                             </a>
                             <span class="pull-right badge">{{ leader.total_prs }} PRs</span>
                         </div>
@@ -232,21 +234,28 @@
                 {% if code_review_leaderboard %}
                     {% for leader in code_review_leaderboard %}
                         <div class="list-group-item">
-                            {% if leader.user_avatar %}
-                                <img src="{{ leader.user_avatar.url }}"
-                                     alt="{{ leader.user.username }}'s avatar"
-                                     width="36"
-                                     height="36"
-                                     class="rounded-full">
+                            {% if leader.reviews__reviewer__user__username %}
+                                <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="{{ leader.reviews__reviewer__user__username }}"
+                                     width="50px"
+                                     height="50px">
                             {% else %}
-                                <img src="{% gravatar_url leader.user.email 36 %}"
-                                     alt="{{ leader.user.username }}'s gravatar"
-                                     width="36"
-                                     height="36"
-                                     class="rounded-full">
+                                <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
+                                     class="img-responsive img-thumbnail profileimage"
+                                     alt="username"
+                                     width="50px"
+                                     height="50px">
                             {% endif %}
-                            <a href="{% url 'profile' slug=leader.user.username %}">{{ leader.user.username }}</a>
-                            <span class="pull-right badge">{{ leader.total_reviews }} Review{{ leader.total_reviews|pluralize }}</span>
+                            <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}">
+                                {{ leader.reviews__reviewer__user__username }}
+                            </a>
+                            <a href="https://github.com/{{ leader.reviews__reviewer__user__username }}"
+                               target="_blank"
+                               class="ml-2">
+                                <i class="fab fa-github"></i>
+                            </a>
+                            <span class="pull-right badge">Reviews: {{ leader.total_reviews }}</span>
                         </div>
                     {% endfor %}
                 {% else %}
