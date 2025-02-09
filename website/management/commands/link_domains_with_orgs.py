@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.utils.text import slugify
 
 from website.models import Domain, Organization
 
@@ -26,9 +25,6 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.WARNING(f"Skipping domain {domain.id}: Empty name"))
                         continue
 
-                    # Create a clean version of the name for matching
-                    clean_name = slugify(domain_name)
-
                     # Try to find existing organization by exact domain name
                     org = Organization.objects.filter(name__iexact=domain_name).first()
 
@@ -42,7 +38,6 @@ class Command(BaseCommand):
                                 url=domain.url or "",
                                 logo=domain.logo if hasattr(domain, "logo") else None,
                                 description=f"Organization for {domain_name}",
-                                slug=clean_name,
                             )
                             self.stdout.write(f"Created new organization: {org.name}")
                         except Exception as org_error:
