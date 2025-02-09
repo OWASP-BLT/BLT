@@ -1,9 +1,9 @@
-import re
-
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from mdeditor.fields import MDTextFormField
 
 from website.models import Room
@@ -131,31 +131,20 @@ class SignupFormWithCaptcha(SignupForm, CaptchaForm):
         widget=forms.HiddenInput(attrs={"autocomplete": "off", "tabindex": "-1", "style": "display:none;"}),
     )
 
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     return cleaned_data
-
-    # def save(self, request):
-    #     user = super().save(request)
-    #     return user
-
     def clean_password1(self):
         password = self.cleaned_data.get("password1")
-        if len(password) < 8:
-            raise ValidationError("Password must be at least 8 characters long")
-        if not re.search(r"[A-Z]", password):
-            raise ValidationError("Password must contain at least one uppercase letter")
-        if not re.search(r"[a-z]", password):
-            raise ValidationError("Password must contain at least one lowercase letter")
-        if not re.search(r"[0-9]", password):
-            raise ValidationError("Password must contain at least one number")
-        if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
-            raise ValidationError("Password must contain at least one special character")
+        if password:
+            try:
+                validate_password(password, user=None)
+            except ValidationError as e:
+                raise ValidationError(e.messages)
         return password
 
     def clean_email(self):
         email = self.cleaned_data.get("email")
-        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email):
+        try:
+            validate_email(email)
+        except ValidationError:
             raise ValidationError("Please enter a valid email address")
         return email
 
