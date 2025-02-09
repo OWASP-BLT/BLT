@@ -36,6 +36,9 @@
     .captcha-reload:hover {
         background-color: #f3f4f6;
     }
+    .hidden-email-field {
+    display: none;
+    }
     </style>
     {% include "includes/sidenav.html" %}
     <div class="flex items-center w-[100%] h-[60vh] min-h-screen p-4 bg-gray-100 lg:justify-center">
@@ -81,6 +84,11 @@
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
+                    <input type="email"
+                           name="hidden_email"
+                           tabindex="-1"
+                           class="hidden-email-field"
+                           autocomplete="off">
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
                             <label for="password" class="text-sm font-semibold text-gray-500">Password</label>
@@ -107,6 +115,16 @@
                             </button>
                         </div>
                         <span class="help-block">{{ form.password1.errors }}</span>
+                        <div class="password-requirements mt-2 text-sm text-gray-500">
+                            <p class="font-medium mb-1">Password must contain:</p>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li id="req-length" class="requirement">At least 8 characters</li>
+                                <li id="req-upper" class="requirement">One uppercase letter</li>
+                                <li id="req-lower" class="requirement">One lowercase letter</li>
+                                <li id="req-number" class="requirement">One number</li>
+                                <li id="req-special" class="requirement">One special character (!@#$%^&*)</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
@@ -205,6 +223,35 @@
             const captchaImg = document.getElementById('captcha-image');
             if (!captchaImg || !captchaImg.getAttribute('src').trim()) {
                 refreshCaptcha();
+            }
+        });
+    </script>
+    <script>
+        document.getElementById('id_password').addEventListener('input', function() {
+            const password = this.value;
+            const requirements = {
+                length: password.length >= 8,
+                upper: /[A-Z]/.test(password),
+                lower: /[a-z]/.test(password),
+                number: /[0-9]/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+
+            document.getElementById('req-length').style.color = requirements.length ? 'green' : '#666';
+            document.getElementById('req-upper').style.color = requirements.upper ? 'green' : '#666';
+            document.getElementById('req-lower').style.color = requirements.lower ? 'green' : '#666';
+            document.getElementById('req-number').style.color = requirements.number ? 'green' : '#666';
+            document.getElementById('req-special').style.color = requirements.special ? 'green' : '#666';
+        });
+        
+        document.getElementById('id_password2').addEventListener('input', function() {
+            const password1 = document.getElementById('id_password').value;
+            const password2 = this.value;
+            
+            if(password2 && password1 !== password2) {
+                this.classList.add('border-red-500');
+            } else {
+                this.classList.remove('border-red-500');
             }
         });
     </script>
