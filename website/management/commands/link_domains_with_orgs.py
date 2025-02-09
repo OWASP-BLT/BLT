@@ -26,52 +26,76 @@ class Command(BaseCommand):
             domain = domain_match.group(1)
             # Remove www.
             domain = re.sub(r"^www\.", "", domain)
-            return f"https://{domain}"
-
+            # Basic domain validation
+            if re.match(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", domain):
+                return f"https://{domain}"
         return ""
 
+    def clean_name(self, name):
+        # Extract domain from URL-like names
+        domain_match = re.search(r"(?:https?://)?([^/\s]+)", name)
+        if domain_match:
+            name = domain_match.group(1)
+        # Remove www and common TLDs
+        name = re.sub(r"^www\.", "", name)
+        name = re.sub(r"\.(com|org|net|edu)$", "", name)
+        # Convert to title case and limit length
+        return name.title()[:50]
+
     def handle(self, *args, **options):
-        with transaction.atomic():
-            # Process all organizations
-            orgs = Organization.objects.select_for_update().all()
+        # Process all organizations
+        orgs = Organization.objects.all()
+        self.stdout.write(f"Processing {orgs.count()} organizations")
 
-            self.stdout.write(f"Processing {orgs.count()} organizations")
-
-            for org in orgs:
-                try:
+        for org in orgs:
+            try:
+                with transaction.atomic():
                     # Clean URL
                     old_url = org.url
                     new_url = self.clean_url(old_url)
-                    if old_url != new_url:
-                        self.stdout.write(f"Org {org.name}: {old_url} -> {new_url}")
-                        org.url = new_url
 
-                    # Set active
-                    if not org.is_active:
-                        org.is_active = True
-                        self.stdout.write(f"Set {org.name} active")
+                    # Only update if we got a valid URL
+                    if new_url:
+                        if old_url != new_url:
+                            self.stdout.write(self.style.SUCCESS(f"Org: {old_url} -> {new_url}"))
+                            org.url = new_url
 
-                    org.save()
+                        # Clean name if it looks like a URL
+                        if "/" in org.name or "." in org.name:
+                            old_name = org.name
+                            new_name = self.clean_name(old_name)
+                            if old_name != new_name:
+                                self.stdout.write(self.style.SUCCESS(f"Name: {old_name} -> {new_name}"))
+                                org.name = new_name
 
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Error with org {org.name}: {e}"))
+                        # Set active
+                        if not org.is_active:
+                            org.is_active = True
+                            self.stdout.write(f"Set {org.name} active")
 
-            # Process all domains
-            domains = Domain.objects.select_for_update().all()
+                        org.save()
 
-            self.stdout.write(f"Processing {domains.count()} domains")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error with org: {str(e)}"))
 
-            for domain in domains:
-                try:
+        # Process all domains
+        domains = Domain.objects.all()
+        self.stdout.write(f"Processing {domains.count()} domains")
+
+        for domain in domains:
+            try:
+                with transaction.atomic():
                     # Clean URL
                     old_url = domain.url
                     new_url = self.clean_url(old_url)
-                    if old_url != new_url:
-                        self.stdout.write(f"Domain {domain.name}: {old_url} -> {new_url}")
+
+                    # Only update if we got a valid URL
+                    if new_url and old_url != new_url:
+                        self.stdout.write(self.style.SUCCESS(f"Domain: {old_url} -> {new_url}"))
                         domain.url = new_url
                         domain.save()
 
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Error with domain {domain.name}: {e}"))
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error with domain: {str(e)}"))
 
-            self.stdout.write(self.style.SUCCESS("URL cleaning completed"))
+        self.stdout.write(self.style.SUCCESS("URL cleaning completed"))
