@@ -317,7 +317,7 @@ class UserProfileDetailView(DetailView):
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        user_points = Points.objects.filter(user=self.object)
+        user_points = Points.objects.filter(user=self.object).order_by("id")
         context["user_points"] = user_points
         context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
