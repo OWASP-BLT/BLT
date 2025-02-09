@@ -16,16 +16,17 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, staff_member_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -966,3 +967,14 @@ def stats_dashboard(request):
     }
 
     return render(request, "stats_dashboard.html", {"stats": stats})
+
+
+@staff_member_required
+def sync_github_projects(request):
+    if request.method == "POST":
+        try:
+            call_command("check_owasp_projects")
+            messages.success(request, "Successfully synced OWASP GitHub projects.")
+        except Exception as e:
+            messages.error(request, f"Error syncing OWASP GitHub projects: {str(e)}")
+    return redirect("stats_dashboard")
