@@ -54,8 +54,16 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "password1").send_keys("6:}jga,6mRKNUqMQ")
         self.selenium.find_element("name", "password2").send_keys("6:}jga,6mRKNUqMQ")
         self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
+
+        # Find the signup button
+        signup_button = self.selenium.find_element("name", "signup_button")
+        # Scroll the button into view
+        self.selenium.execute_script("arguments[0].scrollIntoView(true);", signup_button)
+        # Add a small wait to ensure the page has settled after scrolling
         WebDriverWait(self.selenium, 10).until(EC.element_to_be_clickable((By.NAME, "signup_button")))
-        self.selenium.find_element("name", "signup_button").click()
+        # Click the button
+        signup_button.click()
+
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("bugbugbug (0 Pts)", body.text)
