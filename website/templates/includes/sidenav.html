@@ -331,6 +331,17 @@
                             <span>Sponsorships</span>
                         </a>
                     </li>
+                    <li class="mb-2">
+                        <a href="https://owasp.org/www-project-bug-logging-tool/"
+                           target="_blank"
+                           rel="noopener"
+                           class="flex items-center w-full no-underline p-2 hover:text-red-500 text-black">
+                            <div class="icon text-blue-500">
+                                <i class="fas fa-shield-alt fa-lg"></i>
+                            </div>
+                            <span>OWASP Project</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/donate/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'donate' %}"
                            class="flex items-center w-full text-black no-underline p-2">
