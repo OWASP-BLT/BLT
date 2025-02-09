@@ -173,7 +173,7 @@ AUTHENTICATION_BACKENDS = (
 
 
 REST_AUTH = {"SESSION_LOGIN": False}
-CONN_MAX_AGE = None
+CONN_MAX_AGE = 0
 
 WSGI_APPLICATION = "blt.wsgi.application"
 
@@ -304,9 +304,16 @@ DATABASES = {
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    print("using database url: ", db_from_env)
-    DATABASES["default"].update(db_from_env)
+    db_config = dj_database_url.config(
+        conn_max_age=0,  # Must be 0 when using PgBouncer
+        ssl_require=True,
+    )
+    DATABASES["default"].update(db_config)
+    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True  # Required for PgBouncer
+    DATABASES["default"]["CONN_MAX_AGE"] = 0  # Must be 0 when using PgBouncer
 
+# Ensure this is set to None or 0 when using PgBouncer
+CONN_MAX_AGE = 0
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
