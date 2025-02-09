@@ -243,7 +243,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
 
 class DomainListView(ListView):
     model = Domain
-    paginate_by = 20
+    paginate_by = 100
     template_name = "domain_list.html"
 
     def get_context_data(self, **kwargs):

@@ -1721,7 +1721,7 @@ class OrganizationListView(ListView):
     model = Organization
     template_name = "organization/organization_list.html"
     context_object_name = "organizations"
-    paginate_by = 10
+    paginate_by = 100
 
     def get_queryset(self):
         return Organization.objects.filter(is_active=True).order_by("name")
