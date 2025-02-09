@@ -1724,9 +1724,30 @@ class OrganizationListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        return Organization.objects.filter(is_active=True).order_by("name")
+        # Get organizations with domain stats
+        return (
+            Organization.objects.filter(is_active=True)
+            .prefetch_related(
+                "domain_set",
+                "domain_set__issue_set",
+                Prefetch(
+                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.annotate(issue_count=Count("id")).order_by("-issue_count"),
+                    to_attr="top_testers_list",
+                ),
+            )
+            .order_by("name")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["total_organizations"] = self.get_queryset().count()
+        context["total_organizations"] = Organization.objects.filter(is_active=True).count()
         return context

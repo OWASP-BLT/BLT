@@ -74,7 +74,7 @@
                                                 <span class="flex items-center text-gray-500 group relative"
                                                       title="Open Issues">
                                                     <i class="fas fa-exclamation-circle text-xs mr-1"></i>
-                                                    {{ domain.open_issues|length }}
+                                                    {{ domain.open_issues_list|length }}
                                                     <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
                                                         Open Issues
                                                     </span>
@@ -82,7 +82,7 @@
                                                 <span class="flex items-center text-gray-500 group relative"
                                                       title="Closed Issues">
                                                     <i class="fas fa-check-circle text-xs mr-1"></i>
-                                                    {{ domain.closed_issues|length }}
+                                                    {{ domain.closed_issues_list|length }}
                                                     <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
                                                         Closed Issues
                                                     </span>
@@ -103,16 +103,18 @@
                                                         {% endif %}
                                                     </span>
                                                 </span>
-                                                {% if domain.top_tester %}
-                                                    <span class="flex items-center text-gray-500 group relative"
-                                                          title="Top Tester">
-                                                        <i class="fas fa-trophy text-xs mr-1"></i>
-                                                        {{ domain.top_tester.username }}
-                                                        <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
-                                                            Top Tester
+                                                {% with top_tester=domain.top_testers_list|first %}
+                                                    {% if top_tester %}
+                                                        <span class="flex items-center text-gray-500 group relative"
+                                                              title="Top Tester">
+                                                            <i class="fas fa-trophy text-xs mr-1"></i>
+                                                            {{ top_tester.user.username }}
+                                                            <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
+                                                                Top Tester ({{ top_tester.issue_count }} issues)
+                                                            </span>
                                                         </span>
-                                                    </span>
-                                                {% endif %}
+                                                    {% endif %}
+                                                {% endwith %}
                                             </div>
                                         </div>
                                     {% endfor %}

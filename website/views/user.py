@@ -597,7 +597,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         # Get code review leaderboard using GitHubReview model
         code_review_leaderboard = (
             UserProfile.objects.filter(reviews_made__state__in=["APPROVED", "CHANGES_REQUESTED", "COMMENTED"])
-            .annotate(total_reviews=Count("reviews_made"))
+            .annotate(total_reviews=Count("reviews_made", distinct=True))
             .filter(total_reviews__gt=0)
             .order_by("-total_reviews")[:25]
         )
