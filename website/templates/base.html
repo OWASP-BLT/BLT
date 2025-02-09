@@ -93,6 +93,69 @@
                 bottom: 10px;
                 right: 15px;
             }
+
+            .messages {
+                position: fixed;
+                bottom: 20px;
+                left: 20px;
+                z-index: 1000;
+                max-width: 400px;
+                width: 100%;
+            }
+
+            .alert {
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 10px;
+                padding: 15px;
+                position: relative;
+                animation: slideIn 0.5s ease-out;
+                border-left: 4px solid;
+            }
+
+            .alert-success {
+                border-left-color: #48bb78;
+            }
+
+            .alert-error {
+                border-left-color: #f56565;
+            }
+
+            .alert-warning {
+                border-left-color: #ed8936;
+            }
+
+            .alert-info {
+                border-left-color: #4299e1;
+            }
+
+            .alert .close {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                opacity: 0.5;
+            }
+
+            .alert .close:hover {
+                opacity: 1;
+            }
+
+            @keyframes slideIn {
+                from {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
         </style>
         {% include "includes/header.html" %}
         <!-- Organization and Project Selection -->
@@ -180,19 +243,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="messages mt-[100px]">
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible text-center"
-                         role="alert">
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
         </div>
         <main class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
@@ -338,6 +388,42 @@
         {% include "includes/footer.html" %}
         {% block scripts %}
         {% endblock %}
+        <script>
+            // Auto-dismiss messages after 5 seconds
+            document.addEventListener('DOMContentLoaded', function() {
+                const messages = document.querySelectorAll('.alert');
+                messages.forEach(function(message) {
+                    setTimeout(function() {
+                        message.style.animation = 'slideOut 0.5s ease-in forwards';
+                        setTimeout(function() {
+                            message.remove();
+                        }, 500);
+                    }, 5000);
+                });
+
+                // Handle manual close button
+                document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
+                    closeBtn.addEventListener('click', function() {
+                        const alert = this.parentElement;
+                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
+                        setTimeout(function() {
+                            alert.remove();
+                        }, 500);
+                    });
+                });
+            });
+
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
+        </script>
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'js/ui.js' %}"></script>
