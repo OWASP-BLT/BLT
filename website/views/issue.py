@@ -1649,7 +1649,6 @@ def get_github_issue(request):
         if "error" in issue_details:
             return JsonResponse({"error": "There's a problem with AI"}, status=500)
 
-
         # Render the github_issue.html page with the generated issue details
         return render(
             request,
