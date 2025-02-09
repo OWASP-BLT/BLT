@@ -40,7 +40,7 @@ from website.utils import admin_required
 
 
 def blt_tomato(request):
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).parent.parent
     json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
 
     try:
@@ -49,14 +49,22 @@ def blt_tomato(request):
     except Exception:
         data = []
 
+    processed_projects = []
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
 
         funding_link = funding_links[0] if funding_links else "#"
-        project["funding_hyperlinks"] = funding_link
+        processed_projects.append(
+            {
+                "project_name": project.get("project_name"),
+                "repo_url": project.get("repo_url"),
+                "funding_hyperlinks": funding_link,
+                "funding_details": project.get("funding_details"),
+            }
+        )
 
-    return render(request, "blt_tomato.html", {"projects": data})
+    return render(request, "blt_tomato.html", {"projects": processed_projects})
 
 
 @user_passes_test(admin_required)
