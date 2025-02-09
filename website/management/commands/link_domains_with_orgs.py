@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils.text import slugify
 
 from website.models import Domain, Organization
 
@@ -9,48 +10,52 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            domains = Domain.objects.select_for_update()
+            domains = Domain.objects.select_for_update().filter(organization__isnull=True)
+
+            if not domains.exists():
+                self.stdout.write(self.style.SUCCESS("No unlinked domains found to process"))
+                return
+
+            self.stdout.write(f"Found {domains.count()} domains to process")
 
             for domain in domains:
                 try:
-                    org_name = domain.get_name
-                    if not org_name:
+                    # Get domain name, clean it up
+                    domain_name = domain.name.strip() if domain.name else None
+                    if not domain_name:
                         self.stdout.write(self.style.WARNING(f"Skipping domain {domain.id}: Empty name"))
                         continue
 
-                    # Try to find existing organizations by name or URL
-                    matching_orgs = Organization.objects.filter(name__iexact=org_name) | Organization.objects.filter(
-                        url=domain.url
-                    )
+                    # Create a clean version of the name for matching
+                    clean_name = slugify(domain_name)
 
-                    if matching_orgs.exists():
-                        organization = matching_orgs.first()  # Use the first matching organization
-                        created = False
-                        matcher = (
-                            f"name: {organization.name}"
-                            if organization.name == domain.name
-                            else f"url: {organization.url}"
-                        )
-                        self.stdout.write(self.style.SUCCESS(f"Found match based on {matcher}"))
+                    # Try to find existing organization by exact domain name
+                    org = Organization.objects.filter(name__iexact=domain_name).first()
+
+                    if org:
+                        self.stdout.write(f"Found existing organization: {org.name}")
                     else:
-                        # Create a new organization if none exists
-                        organization = Organization.objects.create(
-                            name=org_name,
-                            url=domain.url,
-                            logo=domain.logo,
-                            description=f"Organization for {org_name}",
-                        )
-                        created = True
+                        # Create new organization from domain
+                        try:
+                            org = Organization.objects.create(
+                                name=domain_name,
+                                url=domain.url or "",
+                                logo=domain.logo if hasattr(domain, "logo") else None,
+                                description=f"Organization for {domain_name}",
+                                slug=clean_name,
+                            )
+                            self.stdout.write(f"Created new organization: {org.name}")
+                        except Exception as org_error:
+                            self.stdout.write(self.style.ERROR(f"Failed to create org for {domain_name}: {org_error}"))
+                            continue
 
-                    domain.organization = organization
+                    # Link domain to organization
+                    domain.organization = org
                     domain.save()
-
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"{'Created' if created else 'Linked'} organization '{organization.name}' with domain '{domain.name}'"
-                        )
-                    )
+                    self.stdout.write(f"Linked domain '{domain_name}' to organization '{org.name}'")
 
                 except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Error processing domain {domain.name}: {str(e)}"))
+                    self.stdout.write(self.style.ERROR(f"Error processing domain {domain.id}: {str(e)}"))
                     continue
+
+            self.stdout.write("Domain linking process completed")
