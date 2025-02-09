@@ -63,14 +63,54 @@
                                             <a href="{% url 'domain' slug=domain.name %}"
                                                class="text-gray-600 hover:text-blue-600">{{ domain.name }}</a>
                                             <div class="flex items-center space-x-3">
-                                                <span class="flex items-center text-gray-500">
+                                                <span class="flex items-center text-gray-500 group relative"
+                                                      title="Total Clicks">
                                                     <i class="fas fa-mouse-pointer text-xs mr-1"></i>
-                                                    {{ domain.clicks }}
+                                                    {{ domain.clicks|default:"0" }}
+                                                    <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
+                                                        Total Clicks
+                                                    </span>
                                                 </span>
-                                                {% if domain.email_event %}
-                                                    <span class="flex items-center text-gray-500">
-                                                        <i class="fas fa-envelope text-xs mr-1"></i>
+                                                <span class="flex items-center text-gray-500 group relative"
+                                                      title="Open Issues">
+                                                    <i class="fas fa-exclamation-circle text-xs mr-1"></i>
+                                                    {{ domain.open_issues|length }}
+                                                    <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
+                                                        Open Issues
+                                                    </span>
+                                                </span>
+                                                <span class="flex items-center text-gray-500 group relative"
+                                                      title="Closed Issues">
+                                                    <i class="fas fa-check-circle text-xs mr-1"></i>
+                                                    {{ domain.closed_issues|length }}
+                                                    <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
+                                                        Closed Issues
+                                                    </span>
+                                                </span>
+                                                <span class="flex items-center text-gray-500 group relative"
+                                                      title="Email Verification">
+                                                    <i class="fas fa-envelope text-xs mr-1"></i>
+                                                    {% if domain.email_event %}
                                                         <i class="fas fa-check text-green-500 text-xs"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-times text-red-500 text-xs"></i>
+                                                    {% endif %}
+                                                    <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
+                                                        {% if domain.email_event %}
+                                                            Email Verified
+                                                        {% else %}
+                                                            Email Not Verified
+                                                        {% endif %}
+                                                    </span>
+                                                </span>
+                                                {% if domain.top_tester %}
+                                                    <span class="flex items-center text-gray-500 group relative"
+                                                          title="Top Tester">
+                                                        <i class="fas fa-trophy text-xs mr-1"></i>
+                                                        {{ domain.top_tester.username }}
+                                                        <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
+                                                            Top Tester
+                                                        </span>
                                                     </span>
                                                 {% endif %}
                                             </div>
