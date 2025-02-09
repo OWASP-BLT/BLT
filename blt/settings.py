@@ -304,22 +304,7 @@ DATABASES = {
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    db_config = dj_database_url.config(
-        conn_max_age=0,  # Must be 0 when using PgBouncer
-        ssl_require=True,  # Enable SSL for RDS connections
-    )
-    DATABASES["default"].update(db_config)
-    DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True  # Required for PgBouncer
-    DATABASES["default"]["CONN_MAX_AGE"] = 0  # Must be 0 when using PgBouncer
-
-    # Additional RDS-specific settings
-    DATABASES["default"]["OPTIONS"] = {
-        "sslmode": "require",  # Force SSL connection
-        "sslrootcert": None,  # Use system default CA certificates
-    }
-
-# Ensure this is set to None or 0 when using PgBouncer
-CONN_MAX_AGE = 0
+    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
