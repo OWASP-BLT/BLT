@@ -3,29 +3,22 @@ import string
 from datetime import timedelta
 
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from website.models import (
-    Activity,
-    Badge,
-    Domain,
-    Hunt,
-    Issue,
-    Organization,
-    Points,
-    Project,
-    Repo,
-    Tag,
-    UserBadge,
-    UserProfile,
-)
+from website.models import Activity, Badge, Domain, Hunt, Issue, Organization, Points, Project, Repo, Tag, UserBadge
 
 
 def random_string(length=10):
     """Generate a random string of fixed length"""
     letters = string.ascii_letters + string.digits
     return "".join(random.choice(letters) for _ in range(length))
+
+
+def random_name():
+    """Generate a random name"""
+    return f"User_{random_string(8)}"
 
 
 def random_sentence(word_count=6):
@@ -55,33 +48,87 @@ def random_sentence(word_count=6):
 
 
 class Command(BaseCommand):
-    help = "Generates sample data for all models"
+    help = "Generate sample data for testing"
 
-    def create_users(self, count=10):
+    def clear_existing_data(self):
+        """Clear all existing data from the models we're generating"""
+        self.stdout.write("Clearing existing data...")
+
+        # First delete models that depend on other models
+        Activity.objects.all().delete()
+        Points.objects.all().delete()
+        Issue.objects.all().delete()
+        Hunt.objects.all().delete()
+        Repo.objects.all().delete()
+        Project.objects.all().delete()
+        Domain.objects.all().delete()
+        UserBadge.objects.all().delete()
+        Badge.objects.all().delete()
+        Tag.objects.all().delete()
+
+        # Delete users (cascades to profiles)
+        User.objects.all().delete()
+
+        # Finally delete organizations
+        Organization.objects.all().delete()
+
+    def create_users(self, count):
         users = []
-        for i in range(count):
-            username = f"user_{i+1}"
-            email = f"user{i+1}@example.com"
+        used_usernames = set()
+        used_emails = set()
+
+        for _ in range(count):
+            while True:
+                username = f"user_{random_string(8)}"
+                email = f"{username}@example.com"
+                if username not in used_usernames and email not in used_emails:
+                    break
+
+            used_usernames.add(username)
+            used_emails.add(email)
+
             user = User.objects.create_user(
                 username=username,
                 email=email,
                 password="testpass123",
-                first_name=f"First{i+1}",
-                last_name=f"Last{i+1}",
+                first_name=f"First{random_string(5)}",
+                last_name=f"Last{random_string(5)}",
             )
-            UserProfile.objects.create(user=user, follows=random.sample(users, min(len(users), 3)))
             users.append(user)
+
+        # After all users are created, randomly assign follows
+        for user in users:
+            other_profiles = [u.userprofile.id for u in users if u.userprofile.id != user.userprofile.id]
+            follow_count = random.randint(0, min(5, len(other_profiles)))
+            follow_ids = random.sample(other_profiles, k=follow_count)
+            user.userprofile.follows.set(follow_ids)
+
         return users
 
     def create_organizations(self, count=5):
         orgs = []
+        used_names = set()
+        used_urls = set()
+
         for i in range(count):
+            while True:
+                name = f"Organization {random_string(5)}"
+                url = f"https://org-{random_string(8)}.example.com"
+
+                if name not in used_names and url not in used_urls:
+                    break
+
+            used_names.add(name)
+            used_urls.add(url)
+
             org = Organization.objects.create(
-                name=f"Organization {i+1}",
+                name=name,
                 description=random_sentence(),
-                email=f"org{i+1}@example.com",
-                website=f"https://org{i+1}.example.com",
+                url=url,  # Using url instead of website field
+                email=f"org-{random_string(5)}@example.com",
+                # 2/3 chance of being active
                 is_active=random.choice([True, True, False]),
+                team_points=random.randint(0, 1000),
             )
             orgs.append(org)
         return orgs
@@ -89,11 +136,12 @@ class Command(BaseCommand):
     def create_domains(self, organizations, count=20):
         domains = []
         for i in range(count):
+            created_date = timezone.now() - timedelta(days=random.randint(1, 365))
             domain = Domain.objects.create(
                 name=f"domain{i+1}.example.com",
                 url=f"https://domain{i+1}.example.com",
                 organization=random.choice(organizations),
-                created=timezone.now() - timedelta(days=random.randint(1, 365)),
+                created=created_date,
             )
             domains.append(domain)
         return domains
@@ -102,13 +150,14 @@ class Command(BaseCommand):
         status_choices = ["open", "closed", "in_review"]
         issues = []
         for i in range(count):
+            created_date = timezone.now() - timedelta(days=random.randint(1, 180))
             issue = Issue.objects.create(
                 user=random.choice(users),
                 domain=random.choice(domains),
                 url=f"https://example.com/issue/{i+1}",
                 description=random_sentence(10),
                 status=random.choice(status_choices),
-                created=timezone.now() - timedelta(days=random.randint(1, 180)),
+                created=created_date,
             )
             issues.append(issue)
         return issues
@@ -116,56 +165,83 @@ class Command(BaseCommand):
     def create_hunts(self, users, count=10):
         hunts = []
         for i in range(count):
+            created_date = timezone.now() - timedelta(days=random.randint(1, 90))
+            starts_on = timezone.now() + timedelta(days=random.randint(1, 30))
+            end_on = starts_on + timedelta(days=random.randint(30, 90))
             hunt = Hunt.objects.create(
                 name=f"Bug Hunt {i+1}",
                 description=random_sentence(15),
                 prize=random.randint(100, 1000),
-                created=timezone.now() - timedelta(days=random.randint(1, 90)),
-                end_date=timezone.now() + timedelta(days=random.randint(1, 30)),
+                created=created_date,
+                starts_on=starts_on,
+                end_on=end_on,
+                url=f"https://hunt-{i+1}.example.com",
+                domain=random.choice(Domain.objects.all()),
+                plan="free",
+                is_published=True,
             )
-            hunt.participants.set(random.sample(users, random.randint(1, 5)))
             hunts.append(hunt)
         return hunts
 
     def create_projects(self, organizations, count=15):
         projects = []
+        used_names = set()
+        used_urls = set()
+        statuses = ["flagship", "production", "incubator", "lab", "inactive"]
+
         for i in range(count):
+            while True:
+                name = f"Project {random_string(5)}"
+                url = f"https://project-{random_string(8)}.example.com"
+
+                if name not in used_names and url not in used_urls:
+                    break
+
+            used_names.add(name)
+            used_urls.add(url)
+
+            created_date = timezone.now() - timedelta(days=random.randint(1, 180))
             project = Project.objects.create(
-                name=f"Project {i+1}",
+                name=name,
                 description=random_sentence(12),
                 organization=random.choice(organizations),
-                created=timezone.now() - timedelta(days=random.randint(1, 180)),
+                url=url,
+                created=created_date,
+                status=random.choice(statuses),
             )
             projects.append(project)
         return projects
 
     def create_points(self, users, count=100):
         for _ in range(count):
+            created_date = timezone.now() - timedelta(days=random.randint(1, 365))
             Points.objects.create(
                 user=random.choice(users),
                 score=random.randint(1, 100),
-                created=timezone.now() - timedelta(days=random.randint(1, 365)),
+                created=created_date,
             )
 
     def create_activities(self, users, count=200):
-        activity_types = [
-            "reported_issue",
-            "closed_issue",
-            "received_points",
-            "joined_hunt",
-        ]
+        action_types = ["create", "update", "delete", "signup"]
+        content_type = ContentType.objects.get_for_model(Issue)
+        issues = Issue.objects.all()
+
         for _ in range(count):
+            issue = random.choice(issues)
             Activity.objects.create(
                 user=random.choice(users),
-                activity_type=random.choice(activity_types),
+                action_type=random.choice(action_types),
+                title=f"Issue {issue.id}",
                 description=random_sentence(),
-                created=timezone.now() - timedelta(days=random.randint(1, 90)),
+                content_type=content_type,
+                object_id=issue.id,
+                url=issue.url,
             )
 
     def create_badges(self, count=10):
         badges = []
         for i in range(count):
-            badge = Badge.objects.create(name=f"Badge {i+1}", description=random_sentence())
+            badge = Badge.objects.create(title=f"Badge {i+1}", description=random_sentence(), type="automatic")
             badges.append(badge)
         return badges
 
@@ -177,31 +253,61 @@ class Command(BaseCommand):
                 UserBadge.objects.create(
                     user=user,
                     badge=badge,
-                    created=timezone.now() - timedelta(days=days),
+                    awarded_at=timezone.now() - timedelta(days=days),
                 )
 
     def create_tags(self, count=20):
         tags = []
         for i in range(count):
-            tag = Tag.objects.create(name=f"tag_{i+1}", description=random_sentence())
+            tag = Tag.objects.create(name=f"tag_{i+1}")
             tags.append(tag)
         return tags
 
     def create_repos(self, organizations, count=30):
         repos = []
+        projects = []
+
+        # First create projects
+        for i in range(count // 2):  # Create half as many projects as repos
+            project = Project.objects.create(
+                name=f"Project {i+1}",
+                description=random_sentence(),
+                organization=random.choice(organizations),
+                url=f"https://project-{i+1}.example.com",
+            )
+            projects.append(project)
+
+        # Then create repos
         for i in range(count):
             repo = Repo.objects.create(
                 name=f"repo_{i+1}",
-                url=f"https://github.com/org/repo_{i+1}",
-                organization=random.choice(organizations),
+                description=random_sentence(),
+                repo_url=f"https://github.com/org/repo_{i+1}",
+                project=random.choice(projects),
+                slug=f"repo-{i+1}",
+                is_main=random.choice([True, False]),
+                is_wiki=random.choice([True, False]),
+                stars=random.randint(0, 1000),
+                forks=random.randint(0, 500),
+                open_issues=random.randint(0, 100),
+                total_issues=random.randint(100, 200),
+                watchers=random.randint(0, 1000),
+                open_pull_requests=random.randint(0, 50),
+                primary_language=random.choice(["Python", "JavaScript", "Java", "Go", "Ruby"]),
+                license=random.choice(["MIT", "Apache-2.0", "GPL-3.0", "BSD-3-Clause"]),
+                size=random.randint(1000, 100000),
+                commit_count=random.randint(100, 1000),
+                contributor_count=random.randint(1, 50),
             )
             repos.append(repo)
         return repos
 
-    def handle(self, *args, **kwargs):
+    def handle(self, *args, **options):
         self.stdout.write("Generating sample data...")
 
-        self.stdout.write("Creating users...")
+        self.clear_existing_data()
+
+        self.stdout.write("Creating sample users...")
         users = self.create_users(10)
 
         self.stdout.write("Creating organizations...")

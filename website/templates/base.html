@@ -112,11 +112,55 @@
                         <div class="relative">
                             <input type="text"
                                    id="orgSelect"
-                                   class="w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-red-500 focus:ring-red-500"
+                                   class="w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-red-500 focus:ring-red-500 cursor-pointer"
                                    placeholder="All Organizations"
+                                   readonly
                                    value="All">
                             <div id="orgDropdown"
-                                 class="hidden absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto border-2 border-gray-300">
+                                 class="absolute z-10 w-[300px] mt-1 bg-white rounded-md shadow-lg max-h-[400px] overflow-auto border border-gray-200">
+                                <div class="p-2">
+                                    <div class="sticky top-0 bg-white p-2 border-b border-gray-200">
+                                        <input type="text"
+                                               id="orgSearchInput"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                                               placeholder="Search organizations...">
+                                    </div>
+                                    <div class="mt-2">
+                                        <a href="#"
+                                           class="flex items-center p-3 hover:bg-gray-50 rounded-lg group">
+                                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                <i class="fas fa-globe text-gray-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <p class="font-medium text-gray-800">All Organizations</p>
+                                                <p class="text-sm text-gray-500">View all domains</p>
+                                            </div>
+                                        </a>
+                                        {% for org in organizations %}
+                                            <a href="#"
+                                               class="flex items-center p-3 hover:bg-gray-50 rounded-lg group">
+                                                {% if org.logo %}
+                                                    <img src="{{ org.logo.url }}"
+                                                         alt="{{ org.name }}"
+                                                         width="40"
+                                                         height="40"
+                                                         class="w-10 h-10 rounded-full object-cover">
+                                                {% else %}
+                                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                        <i class="fas fa-building text-gray-400"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="ml-3 flex-grow">
+                                                    <p class="font-medium text-gray-800">{{ org.name }}</p>
+                                                    <p class="text-sm text-gray-500">{{ org.domains.count }} domains</p>
+                                                </div>
+                                                {% if org.is_active %}
+                                                    <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Active</span>
+                                                {% endif %}
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -137,7 +181,7 @@
                 </div>
             </div>
         </div>
-        <div class="messages mt-[160px]">
+        <div class="messages mt-[100px]">
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible text-center"
@@ -171,82 +215,129 @@
         <!-- Add JavaScript for autocomplete -->
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const orgInput = document.getElementById('orgSelect');
-                const projectInput = document.getElementById('projectSelect');
+                const orgSelect = document.getElementById('orgSelect');
                 const orgDropdown = document.getElementById('orgDropdown');
-                const projectDropdown = document.getElementById('projectDropdown');
+                const orgSearchInput = document.getElementById('orgSearchInput');
                 const orgLogo = document.getElementById('orgLogo');
+                
+                // Initially hide the dropdown
+                orgDropdown.style.display = 'none';
+                
+                // Toggle dropdown on input click
+                orgSelect.addEventListener('click', function() {
+                    orgDropdown.style.display = orgDropdown.style.display === 'none' ? 'block' : 'none';
+                    if (orgDropdown.style.display === 'block') {
+                        orgSearchInput.focus();
+                    }
+                });
+                
+                // Handle search functionality with API
+                let searchTimeout;
+                orgSearchInput.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    
+                    // Clear the previous timeout
+                    clearTimeout(searchTimeout);
+                    
+                    // Set a new timeout to prevent too many API calls
+                    searchTimeout = setTimeout(() => {
+                        if (searchTerm.length > 0) {
+                            fetch(`/api/v1/organizations/?search=${encodeURIComponent(searchTerm)}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    const orgList = document.querySelector('#orgDropdown .mt-2');
+                                    // Keep the "All Organizations" option
+                                    const allOrgsOption = orgList.firstElementChild;
+                                    orgList.innerHTML = '';
+                                    orgList.appendChild(allOrgsOption);
+                                    
+                                    data.results.forEach(org => {
+                                        const orgElement = document.createElement('a');
+                                        orgElement.href = '#';
+                                        orgElement.className = 'flex items-center p-3 hover:bg-gray-50 rounded-lg group';
+                                        
+                                        const logoContainer = document.createElement('div');
+                                        if (org.logo) {
+                                            const logoImg = document.createElement('img');
+                                            logoImg.src = org.logo;
+                                            logoImg.alt = `${org.name} logo`;
+                                            logoImg.className = 'w-10 h-10 rounded-full object-cover';
+                                            logoContainer.appendChild(logoImg);
+                                        } else {
+                                            logoContainer.className = 'w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center';
+                                            const icon = document.createElement('i');
+                                            icon.className = 'fas fa-building text-gray-400';
+                                            logoContainer.appendChild(icon);
+                                        }
+                                        
+                                        const infoContainer = document.createElement('div');
+                                        infoContainer.className = 'ml-3 flex-grow';
+                                        infoContainer.innerHTML = `
+                                            <p class="font-medium text-gray-800">${org.name}</p>
+                                            <p class="text-sm text-gray-500">${org.domains ? org.domains.length : 0} domains</p>
+                                        `;
+                                        
+                                        if (org.is_active) {
+                                            const activeTag = document.createElement('span');
+                                            activeTag.className = 'inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20';
+                                            activeTag.textContent = 'Active';
+                                            infoContainer.appendChild(activeTag);
+                                        }
+                                        
+                                        orgElement.appendChild(logoContainer);
+                                        orgElement.appendChild(infoContainer);
+                                        
+                                        // Add click handler
+                                        orgElement.addEventListener('click', function(e) {
+                                            e.preventDefault();
+                                            orgSelect.value = org.name;
+                                            if (org.logo) {
+                                                orgLogo.src = org.logo;
+                                            } else {
+                                                orgLogo.src = '{% static "img/default-org.png" %}';
+                                            }
+                                            orgDropdown.style.display = 'none';
+                                            
+                                            window.location.href = `/organization/${org.id}/dashboard/analytics/`;
 
-                // Sample data - replace with actual API endpoints
-                const organizations = [
-                    { id: 1, name: 'All', logo: '{% static "img/default-org.png" %}' },
-                    // Add more organizations here
-                ];
-
-                const projects = [
-                    { id: 1, name: 'All' },
-                    // Add more projects here
-                ];
-
-                function setupAutocomplete(input, dropdown, items, isOrg = false) {
-                    input.addEventListener('input', function() {
-                        const value = this.value.toLowerCase();
-                        const filtered = items.filter(item => 
-                            item.name.toLowerCase().includes(value)
-                        );
-                        
-                        renderDropdown(dropdown, filtered, isOrg);
-                        dropdown.classList.remove('hidden');
-                    });
-
-                    // Hide dropdown when clicking outside
-                    document.addEventListener('click', function(e) {
-                        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-                            dropdown.classList.add('hidden');
+                                        });
+                                        
+                                        orgList.appendChild(orgElement);
+                                    });
+                                })
+                                .catch(error => console.error('Error:', error));
                         }
-                    });
-                }
-
-                function renderDropdown(dropdown, items, isOrg) {
-                    dropdown.innerHTML = '';
-                    items.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'p-2 hover:bg-gray-100 cursor-pointer';
-                        
-                        if (isOrg) {
-                            div.innerHTML = `
-                                <div class="flex items-center">
-                                    <img src="${item.logo}" class="w-6 h-6 rounded-full mr-2" width="24" height="24">
-                                    <span>${item.name}</span>
-                                </div>
-                            `;
-                        } else {
-                            div.textContent = item.name;
-                        }
-
-                        div.addEventListener('click', function() {
-                            const input = isOrg ? orgInput : projectInput;
-                            input.value = item.name;
-                            dropdown.classList.add('hidden');
-                            
-                            if (isOrg) {
-                                orgLogo.src = item.logo;
-                            }
-                        });
-
-                        dropdown.appendChild(div);
-                    });
-                }
-
-                setupAutocomplete(orgInput, orgDropdown, organizations, true);
-                setupAutocomplete(projectInput, projectDropdown, projects);
+                    }, 300); // 300ms delay
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!orgSelect.contains(e.target) && !orgDropdown.contains(e.target)) {
+                        orgDropdown.style.display = 'none';
+                    }
+                });
+                
+                // Prevent dropdown from closing when clicking inside search input
+                orgSearchInput.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // Handle "All Organizations" option click
+                const allOrgsOption = document.querySelector('#orgDropdown .mt-2 a');
+                allOrgsOption.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    orgSelect.value = 'All';
+                    orgLogo.src = '{% static "img/default-org.png" %}';
+                    orgDropdown.style.display = 'none';
+                });
             });
         </script>
         <div class="pb-[50px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
         {% include "includes/footer.html" %}
-        {% block scripts %}{% endblock %}
+        {% block scripts %}
+        {% endblock %}
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'js/ui.js' %}"></script>
