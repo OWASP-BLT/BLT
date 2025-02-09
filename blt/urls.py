@@ -887,7 +887,6 @@ urlpatterns = [
     ),
     path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
     path("get-github-issue/", get_github_issue, name="get_github_issue"),
-    # path("api/generate-github-issue/", generate_github_issue, name="generate_github_issue"),
 ]
 
 if settings.DEBUG:

@@ -1634,43 +1634,6 @@ class GithubIssueView(TemplateView):
         return response.json()
 
 
-# def generate_github_issue(request):
-#     print(os.getenv("OPENAI_API_KEY"))
-#     if request.method == "POST":
-#         try:
-#             data = json.loads(request.body)
-#             description = data.get("description", "")
-
-#             if not description:
-#                 return JsonResponse({"error": "Description is required"}, status=400)
-#             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-#             # Call the OpenAI API with the o3-mini model
-#             response = client.chat.completions.create(
-#                 model="gpt-4o-mini",
-#                 # model="openai-o3-mini",
-#                 messages=[
-#                     {
-#                         "role": "developer",
-#                         "content": "You are a helpful assistant that generates descriptions for GitHub issues including a comprehensive description, reproduction steps, subtasks and any other relevant information.",
-#                     },
-#                     {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
-#                 ],
-#                 # reasoning_effort="medium",
-#             )
-#             if response.choices and response.choices[0].message:
-#                 issue_details = response.choices[0].message.content
-#             else:
-#                 issue_details = "No response content received."
-
-#             return JsonResponse({"issue_details": issue_details})
-
-#         except Exception as e:
-#             return JsonResponse({"error": "There's a problem with openAI"}, status=500)
-
-#     return JsonResponse({"error": "Invalid request method"}, status=405)
-
-
 @login_required(login_url="/accounts/login")
 def get_github_issue(request):
     if request.method == "POST":
@@ -1707,7 +1670,8 @@ def generate_github_issue(description):
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            # model="gpt-4o-mini",
+            model="openai-o3-mini",
             messages=[
                 {
                     "role": "developer",
@@ -1719,6 +1683,7 @@ def generate_github_issue(description):
                 },
                 {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
             ],
+            reasoning_effort="medium",
         )
 
         # Extract and parse the response
