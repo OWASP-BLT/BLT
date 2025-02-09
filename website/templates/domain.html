@@ -256,12 +256,12 @@
                                target="/new">{{ name }}</a>
                             {% if request.user.is_superuser %}
                                 <div class="flex items-center gap-2">
-                                    <a href="/admin/website/domain/{{ domain.id }}/change/"
+                                    <a href="{% url 'admin:website_domain_change' domain.id %}"
                                        class="text-blue-600 hover:text-blue-800"
                                        title="Edit Domain">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="/admin/website/domain/{{ domain.id }}/delete/"
+                                    <a href="{% url 'admin:website_domain_delete' domain.id %}"
                                        class="text-red-600 hover:text-red-800"
                                        title="Delete Domain">
                                         <i class="fas fa-trash"></i>
