@@ -8,7 +8,11 @@
         <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
         <div id="log-history"
              class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
-            <!-- Messages will be appended here -->
+            {% for message in room.messages.all %}
+                <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm">
+                    <strong>{{ message.username }}:</strong> {{ message.content }}
+                </div>
+            {% endfor %}
         </div>
         <input id="message-field"
                type="text"
@@ -72,7 +76,6 @@
                 'username': username
             };
             socket.send(JSON.stringify(data));
-            // handleSocketMessage(data); // Display the message for the sender
             messageInput.value = '';
         }
     }
@@ -80,9 +83,19 @@
     // Event listener for send button
     sendButton.addEventListener('click', sendMessage);
 
+    // Event listener for Enter key
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
     // Connect to WebSocket when the page loads
     connectWebSocket().catch(error => {
         console.error('WebSocket connection failed:', error);
     });
+
+    // Auto-scroll to bottom on page load
+    chatLog.scrollTop = chatLog.scrollHeight;
     </script>
 {% endblock content %}

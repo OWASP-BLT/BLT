@@ -7,8 +7,11 @@ import zipfile
 from pathlib import Path
 
 import aiohttp
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import User
 
+from website.models import Message, Room
 from website.utils import (
     compare_model_fields,
     cosine_similarity,
@@ -319,10 +322,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
+    @database_sync_to_async
+    def save_message(self, message, username):
+        room = Room.objects.get(id=self.room_id)
+        user = None
+        session_key = None
+
+        if username.startswith("anon_"):
+            session_key = username.split("_")[1]
+        else:
+            user = User.objects.filter(username=username).first()
+
+        Message.objects.create(room=room, user=user, username=username, content=message, session_key=session_key)
+
     async def receive(self, text_data):
         data = json.loads(text_data)
         message = data.get("message", "")
         username = data.get("username", "Anonymous")
+
+        # Save message to database
+        await self.save_message(message, username)
 
         await self.channel_layer.group_send(
             self.room_group_name, {"type": "chat_message", "message": message, "username": username}
