@@ -932,39 +932,42 @@ def handler500(request, exception=None):
 
 
 def stats_dashboard(request):
-    # Collect stats from various models
-    stats = {
-        "users": {
-            "total": User.objects.count(),
-            "active": User.objects.filter(is_active=True).count(),
-        },
-        "issues": {
-            "total": Issue.objects.count(),
-            "open": Issue.objects.filter(status="open").count(),
-        },
-        "domains": {
-            "total": Domain.objects.count(),
-            "active": Domain.objects.filter(is_active=True).count(),
-        },
-        "organizations": {
-            "total": Organization.objects.count(),
-            "active": Organization.objects.filter(is_active=True).count(),
-        },
-        "hunts": {
-            "total": Hunt.objects.count(),
-            "active": Hunt.objects.filter(is_published=True).count(),
-        },
-        "points": {
-            "total": Points.objects.aggregate(total=Sum("score"))["total"] or 0,
-        },
-        "projects": {
-            "total": Project.objects.count(),
-        },
-        "activities": {
-            "total": Activity.objects.count(),
-            "recent": Activity.objects.order_by("-timestamp")[:5],
-        },
-    }
+    # Try to get stats from cache first
+    cache_key = "dashboard_stats"
+    stats = cache.get(cache_key)
+
+    if stats is None:
+        # If not in cache, compute stats with optimized queries
+        users = User.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+
+        issues = Issue.objects.aggregate(total=Count("id"), open=Count("id", filter=Q(status="open")))
+
+        domains = Domain.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+
+        organizations = Organization.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+
+        hunts = Hunt.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_published=True)))
+
+        # Combine all stats
+        stats = {
+            "users": {"total": users["total"], "active": users["active"]},
+            "issues": {"total": issues["total"], "open": issues["open"]},
+            "domains": {"total": domains["total"], "active": domains["active"]},
+            "organizations": {"total": organizations["total"], "active": organizations["active"]},
+            "hunts": {"total": hunts["total"], "active": hunts["active"]},
+            "points": {"total": Points.objects.aggregate(total=Sum("score"))["total"] or 0},
+            "projects": {"total": Project.objects.count()},
+            "activities": {
+                "total": Activity.objects.count(),
+                # Only fetch recent activities if needed for display
+                "recent": list(
+                    Activity.objects.order_by("-timestamp").values("id", "title", "description", "timestamp")[:5]
+                ),
+            },
+        }
+
+        # Cache the results for 5 minutes
+        cache.set(cache_key, stats, timeout=300)
 
     return render(request, "stats_dashboard.html", {"stats": stats})
 
