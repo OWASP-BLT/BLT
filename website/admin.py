@@ -25,6 +25,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Message,
     Monitor,
     Organization,
     OrganizationAdmin,
@@ -521,6 +522,13 @@ class GitHubReviewAdmin(admin.ModelAdmin):
     date_hierarchy = "submitted_at"
 
 
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ("id", "room", "username", "content", "timestamp")
+    list_filter = ("room", "timestamp")
+    search_fields = ("username", "content")
+    date_hierarchy = "timestamp"
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -560,3 +568,4 @@ admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
+admin.site.register(Message, MessageAdmin)

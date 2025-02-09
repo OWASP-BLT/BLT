@@ -1787,7 +1787,12 @@ class RoomCreateView(CreateView):
 
 def join_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
-    return render(request, "room.html", {"room": room})
+    # Ensure session key exists for anonymous users
+    if request.user.is_anonymous and not request.session.session_key:
+        request.session.create()
+    # Get messages ordered by timestamp
+    messages = room.messages.all().order_by("timestamp")
+    return render(request, "room.html", {"room": room, "messages": messages})
 
 
 @login_required(login_url="/accounts/login")

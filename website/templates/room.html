@@ -5,21 +5,29 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="max-w-4xl mx-auto py-8">
-        <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
+        <div class="flex items-center justify-between">
+            <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
+            <div class="flex items-center gap-2">
+                <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                <span id="connection-text" class="text-sm text-gray-600">Connecting...</span>
+            </div>
+        </div>
         <div id="log-history"
              class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
-            {% for message in room.messages.all %}
+            {% for message in messages %}
                 <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm">
                     <strong>{{ message.username }}:</strong> {{ message.content }}
                 </div>
             {% endfor %}
         </div>
-        <input id="message-field"
-               type="text"
-               placeholder="Type a message..."
-               class="border rounded-lg px-4 py-2 w-full" />
-        <button id="send-button"
-                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg mt-2">Send</button>
+        <div class="mt-4 flex gap-2">
+            <input id="message-field"
+                   type="text"
+                   placeholder="Type a message..."
+                   class="border rounded-lg px-4 py-2 flex-1" />
+            <button id="send-button"
+                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg">Send</button>
+        </div>
     </div>
     <script>
     const roomId = {{ room.id }};
@@ -32,6 +40,30 @@
     const sendButton = document.getElementById("send-button");
     const messageInput = document.getElementById('message-field');
     const chatLog = document.getElementById('log-history');
+    const connectionStatus = document.getElementById('connection-status');
+    const connectionText = document.getElementById('connection-text');
+
+    function updateConnectionStatus(status) {
+        if (status === 'connected') {
+            connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
+            connectionText.textContent = 'Connected';
+            connectionText.className = 'text-sm text-green-600';
+            sendButton.disabled = false;
+            messageInput.disabled = false;
+        } else if (status === 'disconnected') {
+            connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
+            connectionText.textContent = 'Disconnected';
+            connectionText.className = 'text-sm text-red-600';
+            sendButton.disabled = true;
+            messageInput.disabled = true;
+        } else {
+            connectionStatus.className = 'w-3 h-3 rounded-full bg-gray-400';
+            connectionText.textContent = 'Connecting...';
+            connectionText.className = 'text-sm text-gray-600';
+            sendButton.disabled = true;
+            messageInput.disabled = true;
+        }
+    }
 
     // Connect to WebSocket server
     function connectWebSocket() {
@@ -39,7 +71,8 @@
             socket = new WebSocket(wsUrl);
 
             socket.onopen = () => {
-                resolve(); // Resolve the promise when the connection is established
+                updateConnectionStatus('connected');
+                resolve();
             };
 
             socket.onmessage = (event) => {
@@ -48,11 +81,19 @@
             };
 
             socket.onerror = (error) => {
-                reject(error); // Reject the promise if there's an error
+                updateConnectionStatus('disconnected');
+                reject(error);
             };
 
             socket.onclose = () => {
+                updateConnectionStatus('disconnected');
                 console.error('Chat socket closed unexpectedly');
+                // Try to reconnect after 5 seconds
+                setTimeout(() => {
+                    connectWebSocket().catch(error => {
+                        console.error('WebSocket reconnection failed:', error);
+                    });
+                }, 5000);
             };
         });
     }
@@ -69,7 +110,7 @@
     // Send message through WebSocket
     function sendMessage() {
         const message = messageInput.value;
-        if (message.trim() !== "") {
+        if (message.trim() !== "" && socket.readyState === WebSocket.OPEN) {
             const data = {
                 'type': 'message',
                 'message': message,
@@ -91,6 +132,7 @@
     });
 
     // Connect to WebSocket when the page loads
+    updateConnectionStatus('connecting');
     connectWebSocket().catch(error => {
         console.error('WebSocket connection failed:', error);
     });
