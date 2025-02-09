@@ -37,11 +37,18 @@
                                     </div>
                                 </div>
                                 {% if request.user.is_superuser %}
-                                    <a href="{% url 'admin:website_organization_change' org.id %}"
-                                       class="text-gray-500 hover:text-blue-600"
-                                       title="Edit in Admin">
-                                        <i class="fas fa-cog text-xl"></i>
-                                    </a>
+                                    <div class="flex items-center gap-2">
+                                        <a href="{% url 'admin:website_organization_change' org.id %}"
+                                           class="text-gray-500 hover:text-blue-600"
+                                           title="Edit in Admin">
+                                            <i class="fas fa-cog text-xl"></i>
+                                        </a>
+                                        <a href="{% url 'admin:website_organization_delete' org.id %}"
+                                           class="text-gray-500 hover:text-red-600"
+                                           title="Delete in Admin">
+                                            <i class="fas fa-trash text-xl"></i>
+                                        </a>
+                                    </div>
                                 {% endif %}
                             </div>
                             <!-- Domains and Stats Section -->

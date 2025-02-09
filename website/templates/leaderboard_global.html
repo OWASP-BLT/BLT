@@ -198,9 +198,7 @@
         <div class="leaderboard-section">
             <div class="leaderboard-title">Pull Request Leaderboard</div>
             <div class="list-group">
-                {% if not pr_leaderboard %}
-                    <p class="text-red-900">No pull request data available</p>
-                {% else %}
+                {% if pr_leaderboard %}
                     {% for leader in pr_leaderboard %}
                         <div class="list-group-item">
                             {% if leader.user_profile__github_url %}
@@ -223,15 +221,15 @@
                             <span class="pull-right badge">{{ leader.total_prs }} PRs</span>
                         </div>
                     {% endfor %}
+                {% else %}
+                    <p class="text-red-900">No pull request data available</p>
                 {% endif %}
             </div>
         </div>
         <div class="leaderboard-section">
             <div class="leaderboard-title">Code Review Leaderboard</div>
             <div class="list-group">
-                {% if not code_review_leaderboard %}
-                    <p class="text-red-900">No code review data available</p>
-                {% else %}
+                {% if code_review_leaderboard %}
                     {% for leader in code_review_leaderboard %}
                         <div class="list-group-item">
                             {% if leader.reviewer__user__userprofile__user_avatar %}
@@ -260,6 +258,8 @@
                             <span class="pull-right badge">{{ leader.total_reviews }} Reviews</span>
                         </div>
                     {% endfor %}
+                {% else %}
+                    <p class="text-red-900">No code review data available</p>
                 {% endif %}
             </div>
         </div>

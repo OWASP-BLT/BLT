@@ -596,7 +596,8 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 "user_profile__github_url",
             )
             .annotate(total_prs=Count("id"))
-            .order_by("-total_prs")[:25]
+            .order_by("-total_prs")
+            .filter(total_prs__gt=0)[:25]
         )
         context["pr_leaderboard"] = pr_leaderboard
 
@@ -609,6 +610,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
                 "reviewer__user__userprofile__github_url",
             )
             .annotate(total_reviews=Count("id"))
+            .filter(total_reviews__gt=0)
             .order_by("-total_reviews")[:25]
         )
         context["code_review_leaderboard"] = code_review_leaderboard
