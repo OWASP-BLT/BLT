@@ -16,7 +16,7 @@ from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
@@ -972,7 +972,6 @@ def stats_dashboard(request):
     return render(request, "stats_dashboard.html", {"stats": stats})
 
 
-@staff_member_required
 def sync_github_projects(request):
     if request.method == "POST":
         try:
