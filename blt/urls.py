@@ -91,6 +91,7 @@ from website.views.core import (
     stats_dashboard,
     submit_roadmap_pr,
     sync_github_projects,
+    test_sentry,
     view_pr_analysis,
     view_suggestions,
     vote_suggestions,
@@ -875,6 +876,7 @@ urlpatterns = [
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("test-sentry/", test_sentry, name="test_sentry"),
 ]
 
 if settings.DEBUG:

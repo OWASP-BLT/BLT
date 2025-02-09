@@ -923,6 +923,12 @@ def home(request):
     return render(request, "home.html", {"last_commit": ""})
 
 
+def test_sentry(request):
+    if request.user.is_superuser:
+        division_by_zero = 1 / 0  # This will raise a ZeroDivisionError
+    return HttpResponse("Test error sent to Sentry!")
+
+
 def handler404(request, exception):
     return render(request, "404.html", {}, status=404)
 

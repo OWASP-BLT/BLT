@@ -4,8 +4,12 @@ import sys
 
 import dj_database_url
 import environ
+
+# Initialize Sentry
+import sentry_sdk
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
+from sentry_sdk.integrations.django import DjangoIntegration
 
 environ.Env.read_env()
 
@@ -217,6 +221,18 @@ MEDIA_URL = "/media/"
 db_from_env = dj_database_url.config(conn_max_age=500)
 
 
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        send_default_pii=True,
+        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
+        profiles_sample_rate=1.0 if DEBUG else 0.2,
+        environment="development" if DEBUG else "production",
+        release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
+    )
+
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
@@ -264,18 +280,6 @@ if "DYNO" in os.environ:  # for Heroku
     GS_QUERYSTRING_AUTH = False
     GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
-
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-
-    sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
-        integrations=[DjangoIntegration()],
-        send_default_pii=True,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
-    )
 
 else:
     STORAGES = {
