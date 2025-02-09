@@ -1,0 +1,25 @@
+name: Auto Assign GitHub Copilot for Pull Requests Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-assign-copilot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign GitHub Copilot as reviewer
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.pulls.requestReviewers({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              reviewers: ["github-copilot"]
+            })
