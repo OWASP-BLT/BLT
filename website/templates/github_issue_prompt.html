@@ -54,13 +54,13 @@
               class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md futuristic-form show"
               onsubmit="return validateGithubIssueSubmit()">
             {% csrf_token %}
-            
             <!-- Description and URL -->
             <div class="w-full pb-12">
                 <p class="text-5xl font-semibold leading-7 text-gray-900">GENERATE GITHUB ISSUE</p>
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
-                        <label for="description" class="block text-2xl font-semibold leading-6 text-gray-900">
+                        <label for="description"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">
                             Detailed Description
                         </label>
                         <div class="mt-2">
@@ -72,10 +72,10 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-5">
-                        <label for="repository_url" class="block text-2xl font-semibold leading-6 text-gray-900">
+                        <label for="repository_url"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">
                             Enter GitHub Repository URL (Optional)
                         </label>
                         <div class="mt-2">
@@ -87,7 +87,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Submit Button -->
                 <div class="w-full mt-6 flex justify-end">
                     <button type="submit"
