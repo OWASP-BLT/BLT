@@ -63,7 +63,7 @@ class MySeleniumTests(LiveServerTestCase):
         email.send_keys("bugbugbug@bugbug.com")
         password1.send_keys("6:}jga,6mRKNUqMQ")
         password2.send_keys("6:}jga,6mRKNUqMQ")
-        captcha_input.send_keys("PASSED")  # Ensure this matches your test CAPTCHA logic
+        captcha_input.send_keys("PASSED")
 
         # Locate the signup button
         signup_button = self.selenium.find_element(By.NAME, "signup_button")
