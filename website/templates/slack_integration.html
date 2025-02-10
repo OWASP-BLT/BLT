@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Slack Integration{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="text-center mt-4">Slack Bot Integration</h2>
+    <p class="text-center">Connect our Slack bot to your workplace and streamline bug tracking.</p>
+
+    <div class="text-center my-4">
+        <a href="https://slack.com/oauth/v2/authorize?client_id=SLACK_CLIENT_ID&scope=commands" class="btn btn-primary">
+            Add to Slack
+        </a>
+    </div>
+
+    <h3>Available Commands</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Command</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for command in commands %}
+            <tr>
+                <td><code>{{ command.command }}</code></td>
+                <td>{{ command.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h3>How to Use</h3>
+    <p>After adding the bot to your Slack workspace, simply type one of the commands in any channel where the bot is present.</p>
+
+    <h3>Need Help?</h3>
+    <p>Contact our support team if you need assistance with the integration.</p>
+</div>
+{% endblock %}
