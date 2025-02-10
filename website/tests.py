@@ -1,5 +1,4 @@
 import os
-import time
 
 import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
@@ -8,7 +7,7 @@ from django.test import Client, LiveServerTestCase, TestCase
 from django.test.utils import override_settings
 from django.utils import timezone
 from selenium import webdriver
-from selenium.common.exceptions import ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -50,43 +49,47 @@ class MySeleniumTests(LiveServerTestCase):
 
     @override_settings(DEBUG=True)
     def test_signup(self):
-        base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
+        base_url = f"{self.live_server_url}/accounts/signup/"
         self.selenium.get(base_url)
 
         # Fill in the form fields
-        username = self.selenium.find_element("name", "username")
-        email = self.selenium.find_element("name", "email")
-        password1 = self.selenium.find_element("name", "password1")
-        password2 = self.selenium.find_element("name", "password2")
-        captcha = self.selenium.find_element("name", "captcha_1")
+        username = self.selenium.find_element(By.NAME, "username")
+        email = self.selenium.find_element(By.NAME, "email")
+        password1 = self.selenium.find_element(By.NAME, "password1")
+        password2 = self.selenium.find_element(By.NAME, "password2")
+        captcha_input = self.selenium.find_element(By.NAME, "captcha_1")
 
         username.send_keys("bugbugbug")
         email.send_keys("bugbugbug@bugbug.com")
         password1.send_keys("6:}jga,6mRKNUqMQ")
         password2.send_keys("6:}jga,6mRKNUqMQ")
-        captcha.send_keys("PASSED")
+        captcha_input.send_keys("PASSED")  # Ensure this matches your test CAPTCHA logic
 
-        # Find and scroll to the signup button
-        signup_button = self.selenium.find_element("name", "signup_button")
-        scroll_script = "arguments[0].scrollIntoView(true);"
-        self.selenium.execute_script(scroll_script, signup_button)
+        # Locate the signup button
+        signup_button = self.selenium.find_element(By.NAME, "signup_button")
 
-        # Wait for any animations to complete
-        time.sleep(1)
+        # Scroll the button into view
+        self.selenium.execute_script("arguments[0].scrollIntoView(true);", signup_button)
 
-        # Try clicking with JavaScript if regular click fails
+        # Wait for the button to be clickable
         try:
-            signup_button.click()
-        except ElementClickInterceptedException:
-            click_script = "arguments[0].click();"
-            self.selenium.execute_script(click_script, signup_button)
+            wait = WebDriverWait(self.selenium, 10)
+            wait.until(EC.element_to_be_clickable(signup_button))
+        except TimeoutException:
+            self.fail("Signup button was not clickable within the timeout period")
 
-        # Wait for and verify the result
-        body_locator = (By.TAG_NAME, "body")
-        wait = WebDriverWait(self.selenium, 30)
-        wait.until(EC.presence_of_element_located(body_locator))
+        # Click the button using JavaScript (to avoid interception issues)
+        self.selenium.execute_script("arguments[0].click();", signup_button)
 
-        body = self.selenium.find_element("tag name", "body")
+        # Wait for the result to load
+        try:
+            wait = WebDriverWait(self.selenium, 30)
+            wait.until(EC.text_to_be_present_in_element((By.TAG_NAME, "body"), "bugbugbug (0 Pts)"))
+        except TimeoutException:
+            self.fail("Expected text 'bugbugbug (0 Pts)' not found in the body")
+
+        # Verify the result
+        body = self.selenium.find_element(By.TAG_NAME, "body")
         self.assertIn("bugbugbug (0 Pts)", body.text)
 
     @override_settings(DEBUG=True)
