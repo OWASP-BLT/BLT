@@ -1509,15 +1509,36 @@ class OsshCommunity(models.Model):
 
 class OsshDiscussionChannel(models.Model):
     name = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
+    description = models.TextField(blank=True, null=True)
     source = models.CharField(max_length=100, help_text="Source API (Discord, Slack etc)")
     external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
     member_count = models.PositiveIntegerField(default=0)
-    invite_url = models.URLField(blank=True)
-    logo_url = models.URLField(blank=True)
+    invite_url = models.URLField(blank=True, null=True)
+    logo_url = models.URLField(blank=True, null=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="channels")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+
+class OsshArticle(models.Model):
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255)
+    author_profile_image = models.URLField(max_length=500, blank=True, null=True)  # Increased
+    description = models.TextField()
+    publication_date = models.DateTimeField()
+    source = models.CharField(max_length=255, help_text="Source API (DEV Community, LinkedIn etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
+    url = models.URLField(
+        max_length=1000, blank=True, null=True
+    )  # DEV.to urls often cross the default 200 character limit
+    tags = models.ManyToManyField(Tag, related_name="articles", blank=True)
+    cover_image = models.URLField(max_length=1000, blank=True, null=True)
+    reading_time_minutes = models.PositiveIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.source}"
