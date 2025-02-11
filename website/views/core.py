@@ -272,6 +272,9 @@ def check_status(request):
         if CHECK_SLACK_BOT:
             last_24h = timezone.now() - timedelta(hours=24)
 
+            # Get last activity
+            last_activity = SlackBotActivity.objects.order_by("-created").first()
+
             # Get bot activity metrics
             bot_metrics = {
                 "total_activities": SlackBotActivity.objects.count(),
@@ -282,6 +285,7 @@ def check_status(request):
                     else 0
                 ),
                 "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
+                "last_activity": last_activity.created if last_activity else None,
                 "recent_activities": list(
                     SlackBotActivity.objects.filter(created__gte=last_24h)
                     .values("activity_type", "workspace_name", "created", "success")
