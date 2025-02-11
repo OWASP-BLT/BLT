@@ -1026,7 +1026,7 @@ class SlackCallbackView(View):
             organization_id = int(organization_id)  # Convert to integer after validation
 
             # Exchange code for access token
-            token_data = self.exchange_code_for_token(code)
+            token_data = self.exchange_code_for_token(code, request)
 
             if not token_data or "access_token" not in token_data or "team" not in token_data:
                 logger.error(f"Invalid token data received from Slack: {token_data}")
