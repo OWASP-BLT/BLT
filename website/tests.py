@@ -96,61 +96,28 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
-
-        # Updated button click handling
-        login_button = self.selenium.find_element("name", "login_button")
-        self.selenium.execute_script("arguments[0].scrollIntoView(true);", login_button)
-        time.sleep(1)
-
-        try:
-            WebDriverWait(self.selenium, 10).until(EC.element_to_be_clickable((By.NAME, "login_button"))).click()
-        except ElementClickInterceptedException:
-            self.selenium.execute_script("arguments[0].click();", login_button)
-
+        self.selenium.find_element("name", "login_button").click()
+        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("bugbug (0 Pts)", body.text)
 
     @override_settings(DEBUG=True)
-    def test_post_bug_domain_url(self):
+    def test_post_bug_full_url(self):
         self.selenium.set_page_load_timeout(70)
-
-        # Login steps with fixed button handling
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "login"))).send_keys("bugbug")
+        self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
-
-        login_button = self.selenium.find_element("name", "login_button")
-        self.selenium.execute_script("arguments[0].scrollIntoView(true);", login_button)
-        time.sleep(1)
-        try:
-            WebDriverWait(self.selenium, 10).until(EC.element_to_be_clickable((By.NAME, "login_button"))).click()
-        except ElementClickInterceptedException:
-            self.selenium.execute_script("arguments[0].click();", login_button)
-
-        # Wait for login completion and continue with bug report
+        self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-
-        # Fill form fields
-        self.selenium.find_element("name", "url").send_keys("https://google.com")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")
+        self.selenium.find_element("name", "url").send_keys("https://blt.owasp.org/report/")
+        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-
-        # Handle file upload
         Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
+        # pass captacha if in test mode
         self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
-
-        # Handle report button with same pattern
-        report_button = self.selenium.find_element("name", "reportbug_button")
-        self.selenium.execute_script("arguments[0].scrollIntoView(true);", report_button)
-        time.sleep(1)
-        try:
-            WebDriverWait(self.selenium, 10).until(EC.element_to_be_clickable((By.NAME, "reportbug_button"))).click()
-        except ElementClickInterceptedException:
-            self.selenium.execute_script("arguments[0].click();", report_button)
-
-        # Verify results
+        self.selenium.find_element("name", "reportbug_button").click()
         self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
