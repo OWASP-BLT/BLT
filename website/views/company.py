@@ -11,7 +11,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, OuterRef, Prefetch, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -56,10 +56,22 @@ def get_email_domain(email):
 
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
-        # Allow public access - no authentication required
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to access this page.")
+            return redirect("/accounts/login/")
+
+        # Get organization and verify it exists
         organization = Organization.objects.filter(id=id).first()
         if not organization:
             messages.error(request, "Organization does not exist.")
+            return redirect("/")
+
+        # Check if user is admin or manager of the organization
+        is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+        if not is_member:
+            messages.error(request, "You do not have permission to access this organization's integrations.")
             return redirect("/")
 
         return func(self, request, id, *args, **kwargs)
@@ -990,24 +1002,37 @@ class AddSlackIntegrationView(View):
 
 class SlackCallbackView(View):
     def get(self, request, *args, **kwargs):
-        code = request.GET.get("code")
-        state = request.GET.get("state")
-
-        state_data = parse_qs(state)
-        organization_id = state_data.get("organization_id", [None])[0]
-
-        if not code or not organization_id:
-            return HttpResponseBadRequest("Invalid or missing parameters")
-
         try:
-            if not organization_id.isdigit():
+            # Extract parameters
+            code = request.GET.get("code")
+            state = request.GET.get("state")
+
+            if not code:
+                logger.error("Missing 'code' parameter in OAuth callback.")
+                return HttpResponseBadRequest("Missing 'code' parameter")
+
+            if not state:
+                logger.error("Missing 'state' parameter in OAuth callback.")
+                return HttpResponseBadRequest("Missing 'state' parameter")
+
+            # Safely parse state
+            state_data = parse_qs(state)
+            organization_id = state_data.get("organization_id", [None])[0]
+
+            if not organization_id or not organization_id.isdigit():
+                logger.error(f"Invalid organization_id received: {organization_id}")
                 return HttpResponseBadRequest("Invalid organization ID")
 
-            organization_id = int(organization_id)  # Safely cast to int after validation
+            organization_id = int(organization_id)  # Convert to integer after validation
 
-            # Exchange code for token and get team info
+            # Exchange code for access token
             token_data = self.exchange_code_for_token(code, request)
 
+            if not token_data or "access_token" not in token_data or "team" not in token_data:
+                logger.error(f"Invalid token data received from Slack: {token_data}")
+                return HttpResponseServerError("Failed to retrieve token from Slack")
+
+            # Store integration data in the database
             integration = Integration.objects.create(
                 organization_id=organization_id,
                 service_name=IntegrationServices.SLACK.value,
@@ -1018,12 +1043,13 @@ class SlackCallbackView(View):
                 workspace_name=token_data["team"]["id"],
             )
 
+            # Redirect to the organization's integration dashboard
             dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
             return redirect(dashboard_url)
 
         except Exception as e:
-            print(f"Error during Slack OAuth callback: {e}")
-            return HttpResponseServerError("An error occurred")
+            logger.exception(f"Error during Slack OAuth callback: {e}")
+            return HttpResponseServerError("An unexpected error occurred during Slack OAuth.")
 
     def exchange_code_for_token(self, code, request):
         """Exchanges OAuth code for Slack access token."""
