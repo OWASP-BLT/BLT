@@ -35,6 +35,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SlackBotActivity,
     SlackIntegration,
     Subscription,
     Suggestion,
@@ -529,6 +530,20 @@ class MessageAdmin(admin.ModelAdmin):
     date_hierarchy = "timestamp"
 
 
+class SlackBotActivityAdmin(admin.ModelAdmin):
+    list_display = (
+        "workspace_name",
+        "activity_type",
+        "user_id",
+        "success",
+        "created",
+    )
+    list_filter = ("activity_type", "success", "workspace_name")
+    search_fields = ("workspace_name", "user_id", "error_message")
+    readonly_fields = ("created",)
+    ordering = ("-created",)
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -569,3 +584,4 @@ admin.site.register(TrademarkOwner)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
+admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
