@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -224,7 +226,9 @@ class OrganizationAdmins(ImportExportModelAdmin):
 
     def get_url_icon(self, obj):
         if obj.url:
-            return mark_safe(f'<a href="{obj.url}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
+            # just return the domain part of the url
+            domain_part = urlparse(obj.url).netloc
+            return mark_safe(f'<a href="{domain_part}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
         return ""
 
     get_url_icon.short_description = " "
