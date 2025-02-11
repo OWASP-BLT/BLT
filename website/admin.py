@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -35,6 +37,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    SlackBotActivity,
     SlackIntegration,
     Subscription,
     Suggestion,
@@ -223,7 +226,9 @@ class OrganizationAdmins(ImportExportModelAdmin):
 
     def get_url_icon(self, obj):
         if obj.url:
-            return mark_safe(f'<a href="{obj.url}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
+            # just return the domain part of the url
+            domain_part = urlparse(obj.url).netloc
+            return mark_safe(f'<a href="{domain_part}" target="_blank"><i class="fas fa-external-link-alt"></i></a>')
         return ""
 
     get_url_icon.short_description = " "
@@ -529,6 +534,20 @@ class MessageAdmin(admin.ModelAdmin):
     date_hierarchy = "timestamp"
 
 
+class SlackBotActivityAdmin(admin.ModelAdmin):
+    list_display = (
+        "workspace_name",
+        "activity_type",
+        "user_id",
+        "success",
+        "created",
+    )
+    list_filter = ("activity_type", "success", "workspace_name")
+    search_fields = ("workspace_name", "user_id", "error_message")
+    readonly_fields = ("created",)
+    ordering = ("-created",)
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -569,3 +588,4 @@ admin.site.register(TrademarkOwner)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
+admin.site.register(SlackBotActivity, SlackBotActivityAdmin)

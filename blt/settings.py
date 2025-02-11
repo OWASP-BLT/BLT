@@ -344,29 +344,32 @@ ACCOUNT_LOGOUT_ON_GET = True
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-        "mail_admins": {
-            "class": "django.utils.log.AdminEmailHandler",
-        },
+    "formatters": {
+        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
     },
+    "handlers": {
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "verbose"},
+        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
+    },
+    "root": {"level": "INFO", "handlers": ["console"]},
     "loggers": {
-        "": {
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "website": {
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
-# disable logging unless critical
-
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": True,  # Disable all existing loggers
-#     "handlers": {},  # No handlers defined
-#     "loggers": {},  # No loggers defined
-# }
 
 
 USERS_AVATAR_PATH = "avatars"
