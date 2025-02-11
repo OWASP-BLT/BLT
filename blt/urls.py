@@ -1,3 +1,7 @@
+# Move social account imports to top
+from allauth.socialaccount.providers.facebook import views as facebook_views
+from allauth.socialaccount.providers.github import views as github_views
+from allauth.socialaccount.providers.google import views as google_views
 from captcha.views import captcha_refresh
 from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
@@ -52,6 +56,7 @@ from website.views.company import (
     OrganizationDashboardManageDomainsView,
     OrganizationDashboardManageRolesView,
     OrganizationDashboardTeamOverviewView,
+    OrganizationListView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -60,7 +65,7 @@ from website.views.company import (
     delete_prize,
     edit_prize,
 )
-from website.views.core import (  # chatbot_conversation,
+from website.views.core import (
     FacebookConnect,
     FacebookLogin,
     GithubConnect,
@@ -85,6 +90,8 @@ from website.views.core import (  # chatbot_conversation,
     sponsor_view,
     stats_dashboard,
     submit_roadmap_pr,
+    sync_github_projects,
+    test_sentry,
     view_pr_analysis,
     view_suggestions,
     vote_suggestions,
@@ -229,23 +236,9 @@ from website.views.user import (
     users_view,
 )
 
-favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
-
-router = routers.DefaultRouter()
-router.register(r"issues", IssueViewSet, basename="issues")
-router.register(r"userissues", UserIssueViewSet, basename="userissues")
-router.register(r"profile", UserProfileViewSet, basename="profile")
-router.register(r"domain", DomainViewSet, basename="domain")
-router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
-router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
-
-from allauth.socialaccount.providers.facebook import views as facebook_views
-from allauth.socialaccount.providers.github import views as github_views
-from allauth.socialaccount.providers.google import views as google_views
-from django.contrib import admin
-from django.urls import include, path
-
 admin.autodiscover()
+
+# Use the drf_yasg schema view
 schema_view = get_schema_view(
     openapi.Info(
         title="API",
@@ -258,6 +251,16 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+
+favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
+
+router = routers.DefaultRouter()
+router.register(r"issues", IssueViewSet, basename="issues")
+router.register(r"userissues", UserIssueViewSet, basename="userissues")
+router.register(r"profile", UserProfileViewSet, basename="profile")
+router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -767,7 +770,8 @@ urlpatterns = [
     ),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
-    path("organizations/", DomainListView.as_view(), name="domain_lists"),
+    path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path(
         "generate_bid_image/<int:bid_amount>/",
@@ -871,6 +875,8 @@ urlpatterns = [
     ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
+    path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("test-sentry/", test_sentry, name="test_sentry"),
 ]
 
 if settings.DEBUG:

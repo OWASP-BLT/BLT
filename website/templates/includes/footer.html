@@ -6,7 +6,7 @@
     <div class="max-w-screen-2xl mx-auto h-full flex items-center justify-between px-8">
         <!-- Left Section - Common Links -->
         <div class="flex items-center space-x-10">
-            <a href="{% url 'domain_lists' %}"
+            <a href="{% url 'domains' %}"
                class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
                 <i class="fas fa-sitemap text-2xl"></i>
                 <span>Organizations</span>
@@ -26,13 +26,17 @@
         <div class="flex items-center space-x-8">
             <span class="text-lg font-medium text-gray-600 dark:text-gray-300">v2.0</span>
             <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
-            <a href="https://github.com/OWASP-BLT/BLT"
-               target="_blank"
-               rel="noopener"
-               class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
-                <i class="fab fa-github text-2xl"></i>
-                <span>Source</span>
-            </a>
+            {% get_current_template as current_template %}
+            <!-- End debug output -->
+            {% if current_template %}
+                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
+                   target="_blank"
+                   rel="noopener"
+                   class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
+                    <i class="fas fa-edit text-2xl"></i>
+                    <span>Edit</span>
+                </a>
+            {% endif %}
             <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
                target="_blank"
                rel="noopener"

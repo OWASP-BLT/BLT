@@ -60,34 +60,49 @@
                                 </div>
                             </div>
                             <!-- Stats Section -->
-                            <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
-                                <div class="text-center">
-                                    <div class="text-gray-600">
-                                        <i class="fas fa-bug text-red-500"></i>
-                                        <div class="text-sm font-medium mt-1">{{ domain.open_issues.count }}</div>
-                                        <div class="text-xs text-gray-500">Open Issues</div>
+                            <div class="mt-4 grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-500">Issues</span>
+                                        <span class="text-sm font-medium text-gray-900">{{ domain.open_issues.count }}/{{ domain.closed_issues.count }}</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <div class="text-xs text-gray-500">Open/Closed</div>
                                     </div>
                                 </div>
-                                <div class="text-center">
-                                    <div class="text-gray-600">
-                                        <i class="fas fa-check-circle text-green-500"></i>
-                                        <div class="text-sm font-medium mt-1">{{ domain.closed_issues.count }}</div>
-                                        <div class="text-xs text-gray-500">Closed</div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-500">Clicks</span>
+                                        <span class="text-sm font-medium text-gray-900">{{ domain.clicks|default:"0" }}</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <div class="text-xs text-gray-500">Total Views</div>
                                     </div>
                                 </div>
-                                <div class="text-center">
-                                    <div class="text-gray-600">
-                                        <i class="fas fa-trophy text-yellow-500"></i>
-                                        <div class="text-sm font-medium mt-1">
-                                            {% if domain.top_tester %}
-                                                {{ domain.top_tester.username }}
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </div>
-                                        <div class="text-xs text-gray-500">Top Tester</div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-500">Top Tester</span>
+                                        <span class="text-sm font-medium text-gray-900">
+                                            {% with top_tester=domain.top_tester %}
+                                                {% if top_tester %}
+                                                    {{ top_tester.username }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            {% endwith %}
+                                        </span>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="mt-4 flex justify-between text-sm text-gray-500">
+                                <span>Created: {{ domain.created|date:"M d, Y" }}</span>
+                                {% if domain.is_active %}
+                                    <span class="text-green-600 font-medium">Active</span>
+                                {% else %}
+                                    <span class="text-red-600 font-medium">Inactive</span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
