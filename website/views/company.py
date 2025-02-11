@@ -56,10 +56,22 @@ def get_email_domain(email):
 
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
-        # Allow public access - no authentication required
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to access this page.")
+            return redirect("/accounts/login/")
+
+        # Get organization and verify it exists
         organization = Organization.objects.filter(id=id).first()
         if not organization:
             messages.error(request, "Organization does not exist.")
+            return redirect("/")
+
+        # Check if user is admin or manager of the organization
+        is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
+
+        if not is_member:
+            messages.error(request, "You do not have permission to access this organization's integrations.")
             return redirect("/")
 
         return func(self, request, id, *args, **kwargs)
