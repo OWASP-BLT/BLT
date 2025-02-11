@@ -23,6 +23,7 @@ from .models import (
     Issue,
     IssueScreenshot,
     Points,
+    Project,
     User,
     UserProfile,
 )
@@ -320,3 +321,23 @@ class LeaderboardTests(TestCase):
 
         # Check code review leaderboard
         self.assertContains(response, "Reviews: 1")  # Each user has 1 review
+
+
+class ProjectPageTest(TestCase):
+    """Test cases for project page functionality"""
+
+    def setUp(self):
+        """Set up test data"""
+        self.project = Project.objects.create(
+            name="Test Project", slug="test-project", description="A test project description"
+        )
+
+    def test_project_page_content(self):
+        """Test that project page loads and displays content correctly"""
+        url = reverse("projects_detail", kwargs={"slug": self.project.slug})
+        response = self.client.get(url)
+
+        # Check response
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.project.name)
+        self.assertContains(response, self.project.description)
