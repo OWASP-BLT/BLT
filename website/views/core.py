@@ -117,12 +117,12 @@ def check_status(request):
     """
     # Configuration flags
     CHECK_BITCOIN = False
-    CHECK_SENDGRID = False
-    CHECK_GITHUB = False
+    CHECK_SENDGRID = True
+    CHECK_GITHUB = True
     CHECK_OPENAI = False
     CHECK_MEMORY = True
-    CHECK_DATABASE = False
-    CHECK_REDIS = False
+    CHECK_DATABASE = True
+    CHECK_REDIS = True
     CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
