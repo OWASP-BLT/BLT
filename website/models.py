@@ -118,7 +118,7 @@ class OrganisationType(Enum):
 
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_organizations")
+    managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
@@ -131,7 +131,7 @@ class Organization(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
-    integrations = models.ManyToManyField(Integration, related_name="organizations")
+    integrations = models.ManyToManyField(Integration, related_name="organizations", blank=True)
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
@@ -169,6 +169,7 @@ class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
@@ -1395,6 +1396,33 @@ class Challenge(models.Model):
         return self.title
 
 
+class Room(models.Model):
+    ROOM_TYPES = [
+        ("project", "Project"),
+        ("bug", "Bug"),
+        ("org", "Organization"),
+        ("custom", "Custom"),
+    ]
+
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=20, choices=ROOM_TYPES)
+    custom_type = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    admin = models.ForeignKey(
+        User,
+        related_name="admin_rooms",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+    users = models.ManyToManyField(User, related_name="rooms", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class GitHubIssue(models.Model):
     ISSUE_TYPE_CHOICES = [
         ("issue", "Issue"),
@@ -1429,3 +1457,71 @@ class GitHubIssue(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+
+
+class BaconEarning(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tokens_earned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Tokens earned by user
+    timestamp = models.DateTimeField(auto_now_add=True)  # When the record was created
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tokens_earned} Tokens"
+
+
+class GitHubReview(models.Model):
+    """
+    Model to store reviews made by users on pull requests.
+    """
+
+    review_id = models.IntegerField(unique=True)
+    pull_request = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    reviewer = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="reviews_made",
+    )
+    body = models.TextField(null=True, blank=True)
+    state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
+    submitted_at = models.DateTimeField()
+    url = models.URLField()
+
+    def __str__(self):
+        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+
+
+class Kudos(models.Model):
+    """
+    Model to send kudos to team members.
+    """
+
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    link = models.URLField(blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name_plural = "Kudos"
+
+    def __str__(self):
+        return f"Kudos from {self.sender.username} to {self.receiver.username}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"

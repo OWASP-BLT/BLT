@@ -152,7 +152,7 @@ def vote_count(request, issue_pk):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+    if not os.environ.get("GITHUB_TOKEN"):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
@@ -184,7 +184,7 @@ def create_github_issue(request, id):
             response = requests.post(
                 url,
                 data=json.dumps(issue_data),
-                headers={"Authorization": f"token {os.environ.get('GITHUB_ACCESS_TOKEN')}"},
+                headers={"Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"},
             )
             if response.status_code == 201:
                 response_data = response.json()
@@ -1015,7 +1015,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             redirect_url = "/report"
 
-            if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
+            if domain.github and os.environ.get("GITHUB_TOKEN"):
                 import json
 
                 import requests
@@ -1048,7 +1048,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 r = requests.post(
                     url,
                     json.dumps(issue),
-                    headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+                    headers={"Authorization": "token " + os.environ.get("GITHUB_TOKEN")},
                 )
                 response = r.json()
                 try:

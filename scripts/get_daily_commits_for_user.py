@@ -7,7 +7,7 @@ import requests
 username = "USERNAME"  # GitHub username of the user
 repo = "REPOSITORY"  # Repository name
 owner = "OWNER"  # Owner of the repository, can be a user or an organization
-token = "YOUR_GITHUB_ACCESS_TOKEN"  # Personal Access Token (PAT) for authentication
+token = "YOUR_GITHUB_TOKEN"  # Personal Access Token (PAT) for authentication
 start_date = "2023-01-01"  # Start date in YYYY-MM-DD format
 end_date = "2023-01-31"  # End date in YYYY-MM-DD format
 csv_filename = "commit_data.csv"
