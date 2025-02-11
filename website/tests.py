@@ -22,6 +22,7 @@ from .models import (
     GitHubReview,
     Issue,
     IssueScreenshot,
+    Organization,
     Points,
     Project,
     User,
@@ -341,3 +342,42 @@ class ProjectPageTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.project.name)
         self.assertContains(response, self.project.description)
+
+
+class OrganizationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+        self.client.login(username="testuser", password="testpass123")
+
+    def test_create_and_list_organization(self):
+        # Test organization creation
+        org_name = "Test Organization"
+        org_url = "https://test-org.com"
+        org_data = {
+            "organization_name": org_name,
+            "organization_url": org_url,
+            "support_email": "support@test-org.com",
+            "twitter_url": "https://twitter.com/testorg",
+            "facebook_url": "https://facebook.com/testorg",
+            "email": "manager@test-org.com",
+        }
+
+        response = self.client.post(reverse("register_organization"), org_data)
+        # Should redirect after success
+        self.assertEqual(response.status_code, 302)
+
+        # Verify organization was created
+        org = Organization.objects.filter(name=org_name).first()
+        self.assertIsNotNone(org)
+        self.assertEqual(org.url, org_url)
+        self.assertEqual(org.email, "support@test-org.com")
+        self.assertEqual(org.twitter, "https://twitter.com/testorg")
+        self.assertEqual(org.facebook, "https://facebook.com/testorg")
+        self.assertEqual(org.admin, self.user)
+        self.assertTrue(org.is_active)
+
+        # Test organizations list page
+        response = self.client.get(reverse("organizations"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, org_name)
+        self.assertContains(response, org_url)
