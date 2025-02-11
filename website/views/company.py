@@ -1002,24 +1002,37 @@ class AddSlackIntegrationView(View):
 
 class SlackCallbackView(View):
     def get(self, request, *args, **kwargs):
-        code = request.GET.get("code")
-        state = request.GET.get("state")
-
-        state_data = parse_qs(state)
-        organization_id = state_data.get("organization_id", [None])[0]
-
-        if not code or not organization_id:
-            return HttpResponseBadRequest("Invalid or missing parameters")
-
         try:
-            if not organization_id.isdigit():
+            # Extract parameters
+            code = request.GET.get("code")
+            state = request.GET.get("state")
+
+            if not code:
+                logger.error("Missing 'code' parameter in OAuth callback.")
+                return HttpResponseBadRequest("Missing 'code' parameter")
+
+            if not state:
+                logger.error("Missing 'state' parameter in OAuth callback.")
+                return HttpResponseBadRequest("Missing 'state' parameter")
+
+            # Safely parse state
+            state_data = parse_qs(state)
+            organization_id = state_data.get("organization_id", [None])[0]
+
+            if not organization_id or not organization_id.isdigit():
+                logger.error(f"Invalid organization_id received: {organization_id}")
                 return HttpResponseBadRequest("Invalid organization ID")
 
-            organization_id = int(organization_id)  # Safely cast to int after validation
+            organization_id = int(organization_id)  # Convert to integer after validation
 
-            # Exchange code for token and get team info
-            token_data = self.exchange_code_for_token(code, request)
+            # Exchange code for access token
+            token_data = self.exchange_code_for_token(code)
 
+            if not token_data or "access_token" not in token_data or "team" not in token_data:
+                logger.error(f"Invalid token data received from Slack: {token_data}")
+                return HttpResponseServerError("Failed to retrieve token from Slack")
+
+            # Store integration data in the database
             integration = Integration.objects.create(
                 organization_id=organization_id,
                 service_name=IntegrationServices.SLACK.value,
@@ -1030,12 +1043,13 @@ class SlackCallbackView(View):
                 workspace_name=token_data["team"]["id"],
             )
 
+            # Redirect to the organization's integration dashboard
             dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
             return redirect(dashboard_url)
 
         except Exception as e:
-            print(f"Error during Slack OAuth callback: {e}")
-            return HttpResponseServerError("An error occurred")
+            logger.exception(f"Error during Slack OAuth callback: {e}")
+            return HttpResponseServerError("An unexpected error occurred during Slack OAuth.")
 
     def exchange_code_for_token(self, code, request):
         """Exchanges OAuth code for Slack access token."""
