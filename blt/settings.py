@@ -570,4 +570,15 @@ CHANNEL_LAYERS = {
     },
 }
 
+USER_CLEANUP_SETTINGS = {
+    "REMINDER_HOURS": 24,
+    "DELETE_HOURS": 48,
+    "PROTECTED_EMAIL_DOMAINS": [
+        "owasp.org",
+        DOMAIN_NAME,
+    ],
+    "BACKUP_ENABLED": True,
+    "BACKUP_PATH": os.path.join(MEDIA_ROOT, "user_backups"),
+}
+
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
