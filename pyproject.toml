@@ -61,6 +61,7 @@ channels-redis = "^4.2.1"
 aiohttp = "^3.11.12"
 drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
+slack-sdk = "^3.27.1"
 tld = "0.13"
 openai = "^1.61.1"
 
