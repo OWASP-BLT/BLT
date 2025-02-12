@@ -1670,20 +1670,22 @@ def generate_github_issue(description):
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
-            # model="gpt-4o-mini",
-            model="openai-o3-mini",
+            model="gpt-4o-mini",
             messages=[
                 {
-                    "role": "developer",
-                    "content": (
-                        "You are a helpful assistant that generates descriptions for GitHub issues. "
-                        "Return a JSON object containing 'title', 'description', and 'labels'. Example:\n"
-                        '{"title": "Bug in user login", "description": "Steps to reproduce the bug...", "labels": ["bug", "authentication"]}'
-                    ),
+                    "role": "system",
+                    "content": """You are a helpful assistant that analyzes bug reports. 
+                    Always respond with a valid JSON object in this exact format:
+                    {
+                        "title": "Brief bug title",
+                        "description": "Detailed bug description",
+                        "labels": ["bug", "other-relevant-labels"]
+                    }""",
                 },
-                {"role": "user", "content": f"Generate a detailed GitHub issue description for: {description}"},
+                {"role": "user", "content": f"Analyze this bug report and respond with a JSON object: {description}"},
             ],
-            reasoning_effort="medium",
+            temperature=0.7,
+            max_tokens=1000,
         )
 
         # Extract and parse the response
@@ -1691,10 +1693,14 @@ def generate_github_issue(description):
             issue_details_str = response.choices[0].message.content
             issue_details = json.loads(issue_details_str)  # Parse the JSON response
 
+            # Validate the response has all required fields
+            if not all(k in issue_details for k in ["title", "description", "labels"]):
+                return {"error": "Invalid response format from OpenAI"}
+
             return {
-                "title": issue_details.get("title", "Generated Issue Title"),
-                "description": issue_details.get("description", "No description provided."),
-                "labels": issue_details.get("labels", []),
+                "title": issue_details["title"],
+                "description": issue_details["description"],
+                "labels": issue_details["labels"],
             }
 
         return {"error": "No valid response from OpenAI"}
