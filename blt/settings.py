@@ -97,6 +97,9 @@ INSTALLED_APPS = (
     "channels",
 )
 
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
+
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -455,7 +458,7 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user:email"],
+        "SCOPE": ["user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
     "google": {
@@ -571,3 +574,4 @@ CHANNEL_LAYERS = {
 }
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
+SOCIALACCOUNT_STORE_TOKENS = True
