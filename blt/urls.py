@@ -98,6 +98,7 @@ from website.views.core import (
 )
 from website.views.issue import (
     AllIssuesView,
+    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -113,6 +114,7 @@ from website.views.issue import (
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
+    get_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -287,12 +289,13 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
+    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
     path(
@@ -877,6 +880,13 @@ urlpatterns = [
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
     path("test-sentry/", test_sentry, name="test_sentry"),
+    path(
+        "github-issue-prompt/",
+        TemplateView.as_view(template_name="github_issue_prompt.html"),
+        name="github_issue_prompt",
+    ),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path("get-github-issue/", get_github_issue, name="get_github_issue"),
 ]
 
 if settings.DEBUG:
