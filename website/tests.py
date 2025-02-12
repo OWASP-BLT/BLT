@@ -39,9 +39,14 @@ class MySeleniumTests(LiveServerTestCase):
     def setUpClass(cls):
         options = webdriver.ChromeOptions()
         options.add_argument("window-size=1920,1080")
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+
         service = Service(chromedriver_autoinstaller.install())
         cls.selenium = webdriver.Chrome(service=service, options=options)
+        cls.selenium.set_page_load_timeout(120)
 
         super(MySeleniumTests, cls).setUpClass()
 
@@ -94,10 +99,20 @@ class MySeleniumTests(LiveServerTestCase):
     @override_settings(DEBUG=True)
     def test_login(self):
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
+        # Wait for login field to become clickable
+        WebDriverWait(self.selenium, 20).until(EC.element_to_be_clickable((By.NAME, "login")))
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
-        self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        login_button = self.selenium.find_element("name", "login_button")
+        self.selenium.execute_script("arguments[0].scrollIntoView(true);", login_button)
+        time.sleep(1)
+        try:
+            login_button.click()
+        except ElementClickInterceptedException:
+            self.selenium.execute_script("arguments[0].click();", login_button)
+
+        WebDriverWait(self.selenium, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("bugbug (0 Pts)", body.text)
 

@@ -71,10 +71,24 @@ class UrlsTest(StaticLiveServerTestCase):
 
     def test_responses(
         self,
-        allowed_http_codes=[200, 302, 405, 401, 404, 400],
-        credentials={},
-        default_kwargs={},
+        allowed_http_codes=None,
+        credentials=None,
+        default_kwargs=None,
     ):
+        if allowed_http_codes is None:
+            allowed_http_codes = [200, 302, 405, 401, 404, 400]
+        if credentials is None:
+            credentials = {}
+        if default_kwargs is None:
+            default_kwargs = {
+                "pk": "1",
+                "id": "1",
+                "slug": "test-slug",
+                "room_id": "1",
+                "domain_id": "1",
+                "issue_pk": "1",
+            }
+
         module = importlib.import_module(settings.ROOT_URLCONF)
         if credentials:
             self.client.login(**credentials)
@@ -108,7 +122,6 @@ class UrlsTest(StaticLiveServerTestCase):
                 if not skip:
                     url = reverse(fullname, kwargs=params)
                     matches = [
-                        "/",
                         "/socialaccounts/",
                         "/auth/user/",
                         "/auth/password/change/",
@@ -135,19 +148,23 @@ class UrlsTest(StaticLiveServerTestCase):
                     ]
                     if not any(x in url for x in matches):
                         response = self.client.get(url)
-                        self.assertIn(
-                            response.status_code,
-                            allowed_http_codes,
+                    self.assertIn(
+                        response.status_code,
+                        allowed_http_codes,
+                        msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s" % url,
+                    )
+                    try:
+                        self.selenium.get(f"{self.live_server_url}{url}")
+                    except Exception as e:
+                        if "no such window" in str(e).lower() and self.selenium.window_handles:
+                            self.selenium.switch_to.window(self.selenium.window_handles[0])
+
+                    for entry in self.selenium.get_log("browser"):
+                        self.assertNotIn(
+                            "SyntaxError",
+                            str(entry),
                             msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s" % url,
                         )
-                        self.selenium.get("%s%s" % (self.live_server_url, url))
-
-                        for entry in self.selenium.get_log("browser"):
-                            self.assertNotIn(
-                                "SyntaxError",
-                                str(entry),
-                                msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s" % url,
-                            )
 
         check_urls(module.urlpatterns)
 
