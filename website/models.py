@@ -1286,7 +1286,7 @@ class Repo(models.Model):
     release_datetime = models.DateTimeField(null=True, blank=True)
     logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
-    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True, null=True)
+    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
     is_owasp_repo = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1316,7 +1316,7 @@ class Repo(models.Model):
         super(Repo, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.project.name}/{self.name}"
+        return f"{self.project.name}/{self.name}" if self.project else f"{self.name}"
 
 
 class ContributorStats(models.Model):
@@ -1526,7 +1526,7 @@ class OsshDiscussionChannel(models.Model):
 class OsshArticle(models.Model):
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
-    author_profile_image = models.URLField(max_length=500, blank=True, null=True)  # Increased
+    author_profile_image = models.URLField(max_length=500, blank=True, null=True)
     description = models.TextField()
     publication_date = models.DateTimeField()
     source = models.CharField(max_length=255, help_text="Source API (DEV Community, LinkedIn etc)")

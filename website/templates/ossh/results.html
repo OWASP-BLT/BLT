@@ -3,6 +3,59 @@
 {% block content %}
     <div class="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-900 to-black p-6 text-white relative">
         {% include "includes/sidenav.html" %}
-        <h1>Results page</h1>
+        <div class="w-full max-w-6xl mx-auto">
+            <h1 class="text-3xl font-bold mb-8">Results for {{ username }}</h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for repo in repos %}
+                    <div class="bg-gray-800 rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold">{{ repo.name }}</h2>
+                            {% if repo.logo_url %}
+                                <img src="{{ repo.logo_url }}"
+                                     alt="{{ repo.name }} logo"
+                                     class="w-10 h-10 rounded-full"
+                                     height="20"
+                                     width="20">
+                            {% endif %}
+                        </div>
+                        <p class="text-gray-400 mb-4">{{ repo.description }}</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">⭐</span>
+                                <span>{{ repo.stars }} stars</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">📊</span>
+                                <span>Relevance Score: {{ repo.relevance_score }}</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">🔗</span>
+                                <a href="{{ repo.repo_url }}"
+                                   target="_blank"
+                                   class="hover:text-blue-400">Repository Link</a>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">🌐</span>
+                                <a href="{{ repo.homepage_url }}"
+                                   target="_blank"
+                                   class="hover:text-blue-400">Homepage</a>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">📅</span>
+                                <span>Last updated: {{ repo.last_updated|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">📜</span>
+                                <span>License: {{ repo.license }}</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-400">
+                                <span class="mr-2">🌍</span>
+                                <span>Primary Language: {{ repo.primary_language }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 {% endblock content %}
