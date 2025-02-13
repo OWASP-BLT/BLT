@@ -1,5 +1,6 @@
 import ast
 import difflib
+import logging
 import os
 import re
 import time
@@ -11,6 +12,7 @@ import numpy as np
 # import openai
 import requests
 from bs4 import BeautifulSoup
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponseBadRequest
@@ -18,8 +20,10 @@ from django.shortcuts import redirect
 
 from .models import PRAnalysisReport
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 # openai.api_key = os.getenv("OPENAI_API_KEY")
-GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
+GITHUB_API_TOKEN = settings.GITHUB_TOKEN
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -465,3 +469,110 @@ def git_url_to_zip_url(git_url, branch="master"):
         return zip_url
     else:
         raise ValueError("Invalid .git URL provided")
+
+
+def fetch_github_user_data(username):
+    """Fetches relevant GitHub user data for recommendations."""
+    base_url = "https://api.github.com/users/"
+    repos_url = f"{base_url}{username}/repos"
+    starred_url = f"{base_url}{username}/starred"
+    events_url = f"{base_url}{username}/events"
+    headers = {"Authorization": f"token {GITHUB_API_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+    user_data = {}
+    try:
+        logging.info(f"Fetching user profile: {username}")
+        user_response = requests.get(f"{base_url}{username}", headers=headers)
+        if user_response.status_code == 200:
+            user_info = user_response.json()
+            user_data["profile"] = {
+                "username": user_info.get("login"),
+                "name": user_info.get("name"),
+                "bio": user_info.get("bio"),
+                "location": user_info.get("location"),
+                "followers": user_info.get("followers"),
+                "following": user_info.get("following"),
+                "avatar_url": user_info.get("avatar_url"),
+                "blog": user_info.get("blog"),
+                "company": user_info.get("company"),
+                "twitter": user_info.get("twitter_username"),
+                "public_repos": user_info.get("public_repos"),
+            }
+        else:
+            logging.error(f"Failed to fetch user profile: {user_response.status_code} {user_response.text}")
+
+        logging.info(f"Fetching repositories for {username}")
+        repos_response = requests.get(repos_url, headers=headers)
+        if repos_response.status_code == 200:
+            repos = repos_response.json()
+            user_data["repositories"] = [
+                {
+                    "name": repo["name"],
+                    "url": repo["html_url"],
+                    "language": repo["language"],
+                    "stars": repo["stargazers_count"],
+                    "forks": repo["forks_count"],
+                    "description": repo["description"],
+                    "topics": repo.get("topics", []),
+                }
+                for repo in repos
+            ]
+        else:
+            logging.error(f"Failed to fetch repositories: {repos_response.status_code} {repos_response.text}")
+
+        logging.info(f"Fetching starred repositories for {username}")
+        starred_response = requests.get(starred_url, headers=headers)
+        if starred_response.status_code == 200:
+            starred = starred_response.json()
+            user_data["starred_repos"] = [
+                {
+                    "name": repo["name"],
+                    "url": repo["html_url"],
+                    "language": repo["language"],
+                    "stars": repo["stargazers_count"],
+                }
+                for repo in starred
+            ]
+        else:
+            logging.error(
+                f"Failed to fetch starred repositories: {starred_response.status_code} {starred_response.text}"
+            )
+
+        logging.info(f"Fetching recent activity for {username}")
+        events_response = requests.get(events_url, headers=headers)
+        if events_response.status_code == 200:
+            events = events_response.json()
+            user_data["recent_activity"] = [
+                {
+                    "type": event["type"],
+                    "repo": event["repo"]["name"],
+                    "created_at": event["created_at"],
+                }
+                for event in events
+                if event["type"] in ["PushEvent", "PullRequestEvent", "IssuesEvent"]
+            ]
+        else:
+            logging.error(f"Failed to fetch recent activity: {events_response.status_code} {events_response.text}")
+
+        logging.info(f"Fetching language usage for {username}")
+        language_usage = {}
+        for repo in user_data.get("repositories", []):
+            repo_languages_url = f"https://api.github.com/repos/{username}/{repo['name']}/languages"
+            lang_response = requests.get(repo_languages_url, headers=headers)
+            if lang_response.status_code == 200:
+                lang_data = lang_response.json()
+                for lang, bytes_used in lang_data.items():
+                    language_usage[lang] = language_usage.get(lang, 0) + bytes_used
+            else:
+                logging.warning(f"Failed to fetch languages for {repo['name']}: {lang_response.status_code}")
+
+        user_data["top_languages"] = sorted(language_usage.items(), key=lambda x: x[1], reverse=True)
+
+        topics = [topic for repo in user_data.get("repositories", []) for topic in repo.get("topics", [])]
+        user_data["top_topics"] = list(set(topics))
+
+    except Exception as e:
+        logging.exception("An error occurred while fetching GitHub user data")
+        user_data["error"] = str(e)
+
+    return user_data

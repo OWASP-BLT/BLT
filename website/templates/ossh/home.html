@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="flex items-center justify-center min-h-screen bg-gradient-to-r from-gray-900 to-black p-6 text-white relative">
+        {% include "includes/sidenav.html" %}
+        <div class="w-full max-w-lg bg-gray-800 p-10 rounded-lg shadow-lg relative mt-28 border border-gray-700">
+            <div class="absolute -top-10 left-1/2 transform -translate-x-1/2">
+                <i class="fas fa-sparkles text-yellow-300 text-5xl animate-ping"></i>
+            </div>
+            <form method="post" class="relative z-10" action="{% url 'ossh_results' %}">
+                {% csrf_token %}
+                <div class="mb-6">
+                    <label for="github-username" class="block text-xl font-semibold">GitHub Username</label>
+                    <div class="relative mt-2">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-4">
+                            <i class="fas fa-hat-wizard text-yellow-300 text-2xl"></i>
+                        </span>
+                        <input type="text"
+                               name="github-username"
+                               id="github-username"
+                               class="pl-14 pr-4 py-4 block w-full text-lg shadow-md bg-gray-700 border border-gray-600 text-white rounded-md focus:ring-yellow-400 focus:border-yellow-400"
+                               placeholder="Enter your GitHub username">
+                    </div>
+                </div>
+                <div class="mt-8">
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center px-6 py-4 border border-transparent text-xl font-bold rounded-md shadow-md text-white bg-yellow-500 hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400 transform transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-paper-plane mr-3"></i> Submit
+                    </button>
+                </div>
+            </form>
+            <div class="absolute inset-0 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 opacity-0 hover:opacity-10 transition-opacity duration-500 z-0">
+            </div>
+        </div>
+    </div>
+{% endblock content %}
