@@ -64,7 +64,6 @@ drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
 slack-sdk = "^3.27.1"
 tld = "0.13"
-openai = "^1.62.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
