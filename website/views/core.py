@@ -21,11 +21,12 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -36,10 +37,13 @@ from django_redis import get_redis_connection
 
 from blt import settings
 from website.models import (
+    Activity,
     Badge,
     Domain,
+    Hunt,
     Issue,
     Organization,
+    Points,
     PRAnalysisReport,
     Project,
     Repo,
@@ -47,6 +51,7 @@ from website.models import (
     Suggestion,
     SuggestionVotes,
     Tag,
+    User,
     UserBadge,
     UserProfile,
     Wallet,
@@ -112,12 +117,12 @@ def check_status(request):
     """
     # Configuration flags
     CHECK_BITCOIN = False
-    CHECK_SENDGRID = False
-    CHECK_GITHUB = False
+    CHECK_SENDGRID = True
+    CHECK_GITHUB = True
     CHECK_OPENAI = False
     CHECK_MEMORY = True
-    CHECK_DATABASE = False
-    CHECK_REDIS = False
+    CHECK_DATABASE = True
+    CHECK_REDIS = True
     CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
@@ -267,6 +272,9 @@ def check_status(request):
         if CHECK_SLACK_BOT:
             last_24h = timezone.now() - timedelta(hours=24)
 
+            # Get last activity
+            last_activity = SlackBotActivity.objects.order_by("-created").first()
+
             # Get bot activity metrics
             bot_metrics = {
                 "total_activities": SlackBotActivity.objects.count(),
@@ -277,6 +285,7 @@ def check_status(request):
                     else 0
                 ),
                 "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
+                "last_activity": last_activity.created if last_activity else None,
                 "recent_activities": list(
                     SlackBotActivity.objects.filter(created__gte=last_24h)
                     .values("activity_type", "workspace_name", "created", "success")
@@ -918,9 +927,66 @@ def home(request):
     return render(request, "home.html", {"last_commit": ""})
 
 
+def test_sentry(request):
+    if request.user.is_superuser:
+        division_by_zero = 1 / 0  # This will raise a ZeroDivisionError
+    return HttpResponse("Test error sent to Sentry!")
+
+
 def handler404(request, exception):
     return render(request, "404.html", {}, status=404)
 
 
 def handler500(request, exception=None):
     return render(request, "500.html", {}, status=500)
+
+
+def stats_dashboard(request):
+    # Try to get stats from cache first
+    cache_key = "dashboard_stats"
+    stats = cache.get(cache_key)
+
+    if stats is None:
+        # If not in cache, compute stats with optimized queries
+        users = User.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+
+        issues = Issue.objects.aggregate(total=Count("id"), open=Count("id", filter=Q(status="open")))
+
+        domains = Domain.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+
+        organizations = Organization.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+
+        hunts = Hunt.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_published=True)))
+
+        # Combine all stats
+        stats = {
+            "users": {"total": users["total"], "active": users["active"]},
+            "issues": {"total": issues["total"], "open": issues["open"]},
+            "domains": {"total": domains["total"], "active": domains["active"]},
+            "organizations": {"total": organizations["total"], "active": organizations["active"]},
+            "hunts": {"total": hunts["total"], "active": hunts["active"]},
+            "points": {"total": Points.objects.aggregate(total=Sum("score"))["total"] or 0},
+            "projects": {"total": Project.objects.count()},
+            "activities": {
+                "total": Activity.objects.count(),
+                # Only fetch recent activities if needed for display
+                "recent": list(
+                    Activity.objects.order_by("-timestamp").values("id", "title", "description", "timestamp")[:5]
+                ),
+            },
+        }
+
+        # Cache the results for 5 minutes
+        cache.set(cache_key, stats, timeout=300)
+
+    return render(request, "stats_dashboard.html", {"stats": stats})
+
+
+def sync_github_projects(request):
+    if request.method == "POST":
+        try:
+            call_command("check_owasp_projects")
+            messages.success(request, "Successfully synced OWASP GitHub projects.")
+        except Exception as e:
+            messages.error(request, f"Error syncing OWASP GitHub projects: {str(e)}")
+    return redirect("stats_dashboard")

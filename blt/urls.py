@@ -1,3 +1,7 @@
+# Move social account imports to top
+from allauth.socialaccount.providers.facebook import views as facebook_views
+from allauth.socialaccount.providers.github import views as github_views
+from allauth.socialaccount.providers.google import views as google_views
 from captcha.views import captcha_refresh
 from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
@@ -52,6 +56,7 @@ from website.views.company import (
     OrganizationDashboardManageDomainsView,
     OrganizationDashboardManageRolesView,
     OrganizationDashboardTeamOverviewView,
+    OrganizationListView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -60,7 +65,7 @@ from website.views.company import (
     delete_prize,
     edit_prize,
 )
-from website.views.core import (  # chatbot_conversation,
+from website.views.core import (
     FacebookConnect,
     FacebookLogin,
     GithubConnect,
@@ -83,13 +88,17 @@ from website.views.core import (  # chatbot_conversation,
     set_vote_status,
     sitemap,
     sponsor_view,
+    stats_dashboard,
     submit_roadmap_pr,
+    sync_github_projects,
+    test_sentry,
     view_pr_analysis,
     view_suggestions,
     vote_suggestions,
 )
 from website.views.issue import (
     AllIssuesView,
+    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -105,6 +114,7 @@ from website.views.issue import (
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
+    get_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -135,6 +145,8 @@ from website.views.organization import (
     PreviousHunts,
     ReportedIpListView,
     ReportIpView,
+    RoomCreateView,
+    RoomsListView,
     ScoreboardView,
     TimeLogListAPIView,
     TimeLogListView,
@@ -149,11 +161,13 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_room,
     delete_time_entry,
     dislike_activity,
     feed,
     get_scoreboard,
     hunt_results,
+    join_room,
     like_activity,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -224,23 +238,9 @@ from website.views.user import (
     users_view,
 )
 
-favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
-
-router = routers.DefaultRouter()
-router.register(r"issues", IssueViewSet, basename="issues")
-router.register(r"userissues", UserIssueViewSet, basename="userissues")
-router.register(r"profile", UserProfileViewSet, basename="profile")
-router.register(r"domain", DomainViewSet, basename="domain")
-router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
-router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
-
-from allauth.socialaccount.providers.facebook import views as facebook_views
-from allauth.socialaccount.providers.github import views as github_views
-from allauth.socialaccount.providers.google import views as google_views
-from django.contrib import admin
-from django.urls import include, path
-
 admin.autodiscover()
+
+# Use the drf_yasg schema view
 schema_view = get_schema_view(
     openapi.Info(
         title="API",
@@ -253,6 +253,16 @@ schema_view = get_schema_view(
     public=True,
     permission_classes=(permissions.AllowAny,),
 )
+
+favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
+
+router = routers.DefaultRouter()
+router.register(r"issues", IssueViewSet, basename="issues")
+router.register(r"userissues", UserIssueViewSet, basename="userissues")
+router.register(r"profile", UserProfileViewSet, basename="profile")
+router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -279,15 +289,20 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
+    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
-    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_oauth_callback"),
+    path(
+        "oauth/slack/callback/",
+        SlackCallbackView.as_view(),
+        name="slack_oauth_callback",
+    ),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
@@ -758,7 +773,8 @@ urlpatterns = [
     ),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
-    path("organizations/", DomainListView.as_view(), name="domain_lists"),
+    path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path(
         "generate_bid_image/<int:bid_amount>/",
@@ -851,8 +867,26 @@ urlpatterns = [
     path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
-    path("batch-send-bacon-tokens/", batch_send_bacon_tokens_view, name="batch_send_bacon_tokens"),
+    path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
+    path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
+    path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
+    path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path(
+        "batch-send-bacon-tokens/",
+        batch_send_bacon_tokens_view,
+        name="batch_send_bacon_tokens",
+    ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
+    path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("test-sentry/", test_sentry, name="test_sentry"),
+    path(
+        "github-issue-prompt/",
+        TemplateView.as_view(template_name="github_issue_prompt.html"),
+        name="github_issue_prompt",
+    ),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path("get-github-issue/", get_github_issue, name="get_github_issue"),
 ]
 
 if settings.DEBUG:

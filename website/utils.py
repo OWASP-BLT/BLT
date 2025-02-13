@@ -19,10 +19,14 @@ from openai import OpenAI
 
 from .models import PRAnalysisReport
 
+
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
-GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+
+# openai.api_key = os.getenv("OPENAI_API_KEY")
+GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
+
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
