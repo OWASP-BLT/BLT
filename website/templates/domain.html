@@ -250,9 +250,25 @@
             <div>
                 <div class="organization-info flex flex-row justify-between">
                     <div class="one">
-                        <a href="{{ domain.url }}"
-                           class="font-bold text-[20px] capitalize"
-                           target="/new">{{ name }}</a>
+                        <div class="flex items-center gap-4">
+                            <a href="{{ domain.url }}"
+                               class="font-bold text-[20px] capitalize"
+                               target="/new">{{ name }}</a>
+                            {% if request.user.is_superuser %}
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'admin:website_domain_change' domain.id %}"
+                                       class="text-blue-600 hover:text-blue-800"
+                                       title="Edit Domain">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'admin:website_domain_delete' domain.id %}"
+                                       class="text-red-600 hover:text-red-800"
+                                       title="Delete Domain">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
                         {% if domain.email %}
                             <small class="uppercase flex flex-col text-[#909090]">
                                 <span class="blue">{{ domain.email|obfuscate_mailto }}</span>
@@ -263,23 +279,6 @@
                                 {% endif %}
                             </small>
                         {% endif %}
-                    </div>
-                    <div class="two flex flex-col w-[40%] items-center justify-between">
-                        <form action="{% url 'add_domain_to_organization' %}" method="post">
-                            {% if domain.organization %}
-                                {% csrf_token %}
-                                <input type="hidden" name="domain" value="{{ domain.id }}">
-                                <input type="text" name="organization" placeholder="Organization Name">
-                                <button type="submit"
-                                        class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
-                                    ➕ Add to Organization
-                                </button>
-                            {% endif %}
-                            <button type="submit"
-                                    class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
-                                ✉️ Subscribe to {{ name }}
-                            </button>
-                        </form>
                     </div>
                 </div>
                 <div class="text-2xl font-bold my-4">

@@ -252,6 +252,11 @@
                     <p>
                         <strong>Active Workspaces:</strong> {{ status.slack_bot.workspace_count }}
                     </p>
+                    {% if status.slack_bot.last_activity %}
+                        <p>
+                            <strong>Last Activity:</strong> {{ status.slack_bot.last_activity|timesince }} ago
+                        </p>
+                    {% endif %}
                 </div>
                 <div class="activity-types mt-4">
                     <h4 class="text-lg font-semibold mb-2">Activity Distribution</h4>
@@ -266,7 +271,6 @@
                             <thead>
                                 <tr>
                                     <th class="text-left">Type</th>
-                                    <th class="text-left">Workspace</th>
                                     <th class="text-left">Time</th>
                                     <th class="text-left">Status</th>
                                 </tr>
@@ -275,7 +279,6 @@
                                 {% for activity in status.slack_bot.recent_activities %}
                                     <tr>
                                         <td>{{ activity.activity_type|title }}</td>
-                                        <td>{{ activity.workspace_name|default:"Unknown" }}</td>
                                         <td>{{ activity.created|date:"M d, H:i" }}</td>
                                         <td>
                                             <span class="status-dot {% if activity.success %}green{% else %}red{% endif %}"></span>
