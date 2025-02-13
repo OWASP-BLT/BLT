@@ -18,7 +18,7 @@ from django.db.models import Count, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -29,7 +29,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 
 from blt import settings
-from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
+from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
     Activity,
     DailyStatusReport,
@@ -40,6 +40,7 @@ from website.models import (
     IssueScreenshot,
     Organization,
     OrganizationAdmin,
+    Room,
     Subscription,
     TimeLog,
     Trademark,
@@ -242,7 +243,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
 
 class DomainListView(ListView):
     model = Domain
-    paginate_by = 20
+    paginate_by = 100
     template_name = "domain_list.html"
 
     def get_context_data(self, **kwargs):
@@ -814,8 +815,8 @@ class CreateHunt(TemplateView):
                     start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                     end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 else:
-                    start_date = start_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
-                    end_date = end_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
+                    start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
                 hunt.prize_runner = Decimal(request.POST["prize_runner"])
@@ -1157,8 +1158,8 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
             start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
             end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         else:
-            start_date = start_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
-            end_date = end_date - (timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60)))
+            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         hunt.starts_on = start_date
         hunt.end_on = end_date
 
@@ -1745,3 +1746,68 @@ def checkIN_detail(request, report_id):
         "blockers": report.blockers,
     }
     return render(request, "sizzle/checkin_detail.html", context)
+
+
+class RoomsListView(ListView):
+    model = Room
+    template_name = "rooms_list.html"
+    context_object_name = "rooms"
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = RoomForm()
+        return context
+
+
+class RoomCreateView(CreateView):
+    model = Room
+    form_class = RoomForm
+    template_name = "room_form.html"
+    success_url = reverse_lazy("rooms_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["is_anonymous"] = self.request.user.is_anonymous
+        return kwargs
+
+    def form_valid(self, form):
+        if self.request.user.is_anonymous:
+            # Get or create session key
+            if not self.request.session.session_key:
+                self.request.session.create()
+            session_key = self.request.session.session_key
+            # Use last 4 characters of session key for anonymous username
+            anon_name = f"anon_{session_key[-4:]}"
+            form.instance.session_key = session_key
+        else:
+            form.instance.admin = self.request.user
+        return super().form_valid(form)
+
+
+def join_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+    # Ensure session key exists for anonymous users
+    if request.user.is_anonymous and not request.session.session_key:
+        request.session.create()
+    # Get messages ordered by timestamp
+    messages = room.messages.all().order_by("timestamp")
+    return render(request, "room.html", {"room": room, "messages": messages})
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def delete_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+
+    # Check if the user is the admin or the anonymous creator
+    is_admin = request.user.is_authenticated and room.admin == request.user
+    is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
+
+    if not (is_admin or is_anon_creator):
+        messages.error(request, "You don't have permission to delete this room.")
+        return redirect("rooms_list")
+
+    room.delete()
+    messages.success(request, "Room deleted successfully.")
+    return redirect("rooms_list")

@@ -63,6 +63,11 @@
         </div>
         <!-- New block to show tags with counts -->
         <div class="flex flex-wrap items-center justify-center gap-3 my-8">
+            <a href="?githubbers=true"
+               class="tag-link {% if githubbers %}active{% else %}inactive{% endif %}">
+                <i class="fab fa-github mr-2"></i>
+                <span>Githubbers</span>
+            </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
                    class="tag-link {% if tag_obj.name == tag %}active{% else %}inactive{% endif %}">

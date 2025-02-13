@@ -317,7 +317,7 @@ class UserProfileDetailView(DetailView):
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        user_points = Points.objects.filter(user=self.object)
+        user_points = Points.objects.filter(user=self.object).order_by("id")
         context["user_points"] = user_points
         context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
@@ -583,7 +583,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard()
+        context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
 
         # Get pull request leaderboard
         pr_leaderboard = (
@@ -767,7 +767,13 @@ def users_view(request, *args, **kwargs):
     )
 
     tag_name = request.GET.get("tag")
-    if tag_name:
+    show_githubbers = request.GET.get("githubbers") == "true"
+
+    if show_githubbers:
+        context["githubbers"] = True
+        context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
+        context["user_count"] = context["users"].count()
+    elif tag_name:
         if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
@@ -1052,7 +1058,7 @@ def assign_github_badge(user, action_title):
 #     if not signature:
 #         return False
 
-#     secret = bytes(os.environ.get("GITHUB_ACCESS_TOKEN", ""), "utf-8")
+#     secret = bytes(os.environ.get("GITHUB_TOKEN", ""), "utf-8")
 #     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
 #     computed_signature = f"sha256={computed_hmac.hexdigest()}"
 

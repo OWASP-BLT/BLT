@@ -36,3 +36,13 @@ def divide(value, arg):
         return int(value) / int(arg)
     except (ValueError, ZeroDivisionError):
         return None
+
+
+@register.simple_tag(takes_context=True)
+def get_current_template(context):
+    """
+    Returns the current template name from the template context
+    """
+    if hasattr(context, "template") and hasattr(context.template, "name"):
+        return context.template.name
+    return None

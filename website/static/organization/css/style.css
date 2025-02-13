@@ -19,6 +19,8 @@ body {
 .container  {
     display: flex;
     height: 100%;
+    width: 100%;
+    position: relative;
 }
 
 /* -------------- SIDEBAR -------------- */
@@ -31,6 +33,13 @@ body {
     border-right: 1px solid #F3F5F7;
     padding: 0 16px;
     overflow: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    background-color: white;
+    z-index: 50;
+    transition: transform 0.3s ease-in-out;
 }
 
 .sidebar__logo {
@@ -94,12 +103,28 @@ body {
     border-radius: 10px;
 }
 
+@media (max-width: 1024px) {
+    .sidebar {
+        transform: translateX(0);
+    }
+    
+    .sidebar.translate-x-[-100%] {
+        transform: translateX(-100%);
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+}
+
 /* -------------- MAIN CONTENT -------------- */
 .main-content {
     display: flex;
     flex-direction: column;
     width: 100%;
     overflow: auto;
+    margin-left: 240px; /* Same as sidebar width */
+    transition: margin-left 0.3s ease-in-out;
 }
 
 /* -------------- TOP CONTAINER -------------- */
@@ -109,6 +134,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 40;
 }
 
 /* -------------- SEARCH -------------- */
@@ -556,7 +585,8 @@ tr > td:first-child {
 
 @media(max-width: 600px) {
     .sidebar {
-        display: none;
+        width: 100%;
+        max-width: 300px;
     }
     
     .year-selector {
