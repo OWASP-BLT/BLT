@@ -17,7 +17,6 @@ django-gravatar2 = "^1.4.5"
 django-import-export = "^4.3.5"
 django-annoying = "^0.10.7"
 dj-rest-auth = "^5.0.2"
-openai = "^1.60.0"
 user-agents = "^2.2.0"
 whitenoise = "^6.9.0"
 
@@ -64,6 +63,7 @@ drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
 slack-sdk = "^3.27.1"
 tld = "0.13"
+openai = "^1.62.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
