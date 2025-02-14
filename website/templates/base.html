@@ -160,6 +160,16 @@
                     opacity: 1;
                 }
             }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
         </style>
         {% include "includes/header.html" %}
         <div class="w-full h-[100px]"></div>
@@ -227,22 +237,6 @@
                     }
                 }, 100); // Small delay to ensure DOM is ready
             });
-
-            // Move keyframes to CSS
-            document.head.insertAdjacentHTML('beforeend', `
-                <style>
-                    @keyframes slideOut {
-                        from {
-                            transform: translateX(0);
-                            opacity: 1;
-                        }
-                        to {
-                            transform: translateX(-100%);
-                            opacity: 0;
-                        }
-                    }
-</style>
-            `);
         </script>
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
@@ -270,30 +264,27 @@
         ga('send', 'pageview');
     </script>
     <script type="text/javascript">
-        $(".mbug").click(function () {
-            $(this).addClass("hidden-xs");
-            $(this).addClass("hidden-sm");
-            $(".mnav").removeClass("hidden-xs");
-            $(".mnav").removeClass("hidden-sm");
+    /* eslint-disable */
+    $(".mbug").click(function () {
+        $(this).addClass("hidden-xs").addClass("hidden-sm");
+        $(".mnav").removeClass("hidden-xs").removeClass("hidden-sm");
+    });
+    $(document).ready(function() {
+        $('button[name="test_files"]').on('click', function() {
+            $(this).parent().find('input[type=file]').click();
         });
-        $(function () {
-            $('button[name="test_files"]').on('click', function () {
-                $(this).parent().find('input[type=file]').click();
-            });
-            $('input[name="screenshot"]').on('change', function () {
-                var file = $(this).val().replace('C:\\fakepath\\', '');
-                $(this).parent().find('span').html(file);
-            });
-
-
-            {% if messages %}
-                {% for message in messages %}
-                $.notify("{{ message }}", {
+        $('input[name="screenshot"]').on('change', function() {
+            var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
+            $(this).parent().find('span').html(file);
+        });
+        {% if messages %}
+            {% for message in messages %}
+                $.notify("{{ message|escapejs }}", {
                     style: "custom",
-                    className: "{{message.level_tag }}",
+                    className: "{{ message.level_tag|escapejs }}",
                     autoHide: true,
                     autoHideDelay: 2000,
-                    clicktoHide: true,
+                    clickToHide: true,
                     position: "left bottom",
                     gap: 5,
                     elementSize: {
@@ -301,14 +292,13 @@
                         height: "auto"
                     }
                 });
-                setTimeout(function() {
-                    $('.notifyjs-wrapper').on('mouseenter', function() {
-                        $(this).fadeOut();
-                        });
-                    }, 100);
-                {% endfor %} 
-            {% endif %}
-        });
+            {% endfor %}
+            $('.notifyjs-wrapper').on('mouseenter', function() {
+                $(this).fadeOut();
+            });
+        {% endif %}
+    });
+    /* eslint-enable */
     </script>
     <script type="text/javascript">
         window._mfq = window._mfq || [];
@@ -358,7 +348,6 @@
         const closeButton = modal.querySelector('.close-button');
         const openCheckInButton = document.getElementById('openCheckIn');
         const checkInForm = document.getElementById('checkInForm');
-
         // Function to check if form was submitted today
         function isFormSubmittedToday() {
             const submittedDate = localStorage.getItem('formSubmittedDateCard');
@@ -389,7 +378,7 @@
         // Close modal when clicking outside the modal content
         modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
 
-        // Close modal on 'Esc' key press
+            
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
                 hideModal();

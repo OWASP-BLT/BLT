@@ -85,6 +85,7 @@ from website.views.core import (
     google_callback,
     home,
     robots_txt,
+    run_management_command,
     search,
     set_vote_status,
     sitemap,
@@ -881,6 +882,7 @@ urlpatterns = [
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("stats/run-command/", run_management_command, name="run_management_command"),
     path("test-sentry/", test_sentry, name="test_sentry"),
     path(
         "github-issue-prompt/",
