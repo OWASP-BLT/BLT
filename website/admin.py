@@ -37,6 +37,7 @@ from website.models import (
     PRAnalysisReport,
     Project,
     Repo,
+    Room,
     SlackBotActivity,
     SlackIntegration,
     Subscription,
@@ -548,6 +549,13 @@ class SlackBotActivityAdmin(admin.ModelAdmin):
     ordering = ("-created",)
 
 
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "type", "admin", "created_at")
+    list_filter = ("type", "created_at")
+    search_fields = ("name", "description", "admin__username")
+    date_hierarchy = "created_at"
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -589,3 +597,4 @@ admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
+admin.site.register(Room, RoomAdmin)
