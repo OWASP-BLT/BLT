@@ -4,6 +4,7 @@ import subprocess
 import tracemalloc
 import urllib
 from datetime import timedelta
+from urllib.parse import urlparse
 
 import psutil
 import requests
@@ -12,6 +13,7 @@ from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
@@ -990,3 +992,74 @@ def sync_github_projects(request):
         except Exception as e:
             messages.error(request, f"Error syncing OWASP GitHub projects: {str(e)}")
     return redirect("stats_dashboard")
+
+
+def check_owasp_compliance(request):
+    """View to check OWASP project compliance criteria"""
+    if request.method == "POST":
+        url = request.POST.get("url")
+        if not url:
+            messages.error(request, "URL is required")
+            return redirect("check_owasp_compliance")
+
+        try:
+            # Check GitHub compliance
+            parsed_url = urlparse(url)
+            is_github = parsed_url.netloc == "github.com"
+            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+
+            # Check website compliance
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Check for OWASP mention
+            content = soup.get_text().lower()
+            has_owasp_mention = "owasp" in content
+
+            # Check for project page link
+            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            has_project_link = len(owasp_links) > 0
+
+            # Check for up-to-date info
+            has_dates = bool(soup.find_all(["time", "date"]))
+
+            # Check vendor neutrality
+            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
+            has_paywall_indicators = any(term in content for term in paywall_terms)
+
+            # Compile recommendations
+            recommendations = []
+            if not is_owasp_org:
+                recommendations.append("Project should be hosted under the OWASP GitHub organization")
+            if not has_owasp_mention:
+                recommendations.append("Website should clearly state it is an OWASP project")
+            if not has_project_link:
+                recommendations.append("Website should link to the OWASP project page")
+            if has_paywall_indicators:
+                recommendations.append("Check if the project has features behind a paywall")
+
+            context = {
+                "url": url,
+                "github_compliance": {
+                    "github_hosted": is_github,
+                    "under_owasp_org": is_owasp_org,
+                },
+                "website_compliance": {
+                    "has_owasp_mention": has_owasp_mention,
+                    "has_project_link": has_project_link,
+                    "has_dates": has_dates,
+                },
+                "vendor_neutrality": {
+                    "possible_paywall": has_paywall_indicators,
+                },
+                "recommendations": recommendations,
+                "overall_status": "compliant" if not recommendations else "needs_improvement",
+            }
+
+            return render(request, "owasp_compliance_result.html", context)
+
+        except Exception as e:
+            messages.error(request, f"Error checking compliance: {str(e)}")
+            return redirect("check_owasp_compliance")
+
+    return render(request, "owasp_compliance_check.html")
