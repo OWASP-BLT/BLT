@@ -36,6 +36,7 @@ from website.models import (
     IP,
     Badge,
     Challenge,
+    Contributor,
     Domain,
     GitHubIssue,
     Hunt,
@@ -767,14 +768,22 @@ def users_view(request, *args, **kwargs):
         UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
     )
 
+    # Get contributors from database
+    context["contributors"] = Contributor.objects.all().order_by("-contributions")
+    context["contributors_count"] = context["contributors"].count()
+
     context["tags_with_counts"] = (
         Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
     )
 
     tag_name = request.GET.get("tag")
     show_githubbers = request.GET.get("githubbers") == "true"
+    show_contributors = request.GET.get("contributors") == "true"
 
-    if show_githubbers:
+    if show_contributors:
+        context["show_contributors"] = True
+        context["users"] = []
+    elif show_githubbers:
         context["githubbers"] = True
         context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
         context["user_count"] = context["users"].count()

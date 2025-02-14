@@ -186,38 +186,60 @@
         <script>
             // Auto-dismiss messages after 5 seconds
             document.addEventListener('DOMContentLoaded', function() {
-                const messages = document.querySelectorAll('.alert');
-                messages.forEach(function(message) {
-                    setTimeout(function() {
-                        message.style.animation = 'slideOut 0.5s ease-in forwards';
-                        setTimeout(function() {
-                            message.remove();
-                        }, 500);
-                    }, 5000);
-                });
+                // Wait for a small delay to ensure elements are rendered
+                setTimeout(function() {
+                    const messages = document.querySelectorAll('.alert');
+                    if (messages) {
+                        messages.forEach(function(message) {
+                            if (message) {
+                                setTimeout(function() {
+                                    if (message && message.style) {
+                                        message.style.animation = 'slideOut 0.5s ease-in forwards';
+                                        setTimeout(function() {
+                                            if (message && message.parentNode) {
+                                                message.remove();
+                                            }
+                                        }, 500);
+                                    }
+                                }, 5000);
+                            }
+                        });
 
-                // Handle manual close button
-                document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        const alert = this.parentElement;
-                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
-                        setTimeout(function() {
-                            alert.remove();
-                        }, 500);
-                    });
-                });
+                        // Handle manual close button
+                        document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
+                            if (closeBtn) {
+                                closeBtn.addEventListener('click', function() {
+                                    const alert = this.parentElement;
+                                    if (alert && alert.style) {
+                                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
+                                        setTimeout(function() {
+                                            if (alert && alert.parentNode) {
+                                                alert.remove();
+                                            }
+                                        }, 500);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }, 100); // Small delay to ensure DOM is ready
             });
 
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-            }
+            // Move keyframes to CSS
+            document.head.insertAdjacentHTML('beforeend', `
+                <style>
+                    @keyframes slideOut {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(-100%);
+                            opacity: 0;
+                        }
+                    }
+</style>
+            `);
         </script>
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

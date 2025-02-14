@@ -63,6 +63,12 @@
         </div>
         <!-- New block to show tags with counts -->
         <div class="flex flex-wrap items-center justify-center gap-3 my-8">
+            <a href="?contributors=true"
+               class="tag-link {% if show_contributors %}active{% else %}inactive{% endif %}">
+                <i class="fas fa-users mr-2"></i>
+                <span>OWASP Contributors</span>
+                <span class="tag-count">{{ contributors_count }}</span>
+            </a>
             <a href="?githubbers=true"
                class="tag-link {% if githubbers %}active{% else %}inactive{% endif %}">
                 <i class="fab fa-github mr-2"></i>
@@ -77,24 +83,71 @@
                 </a>
             {% endfor %}
         </div>
-        <div class="flex items-center justify-center flex-wrap gap-4 p-4">
-            {% for user in users %}
-                <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between border rounded-lg transition duration-200 shadow-lg hover:shadow-2xl">
-                    {% if user.user_avatar %}
-                        <img src="{{ user.user_avatar.url }}"
+        <div class="flex flex-wrap justify-center gap-4">
+            {% if show_contributors %}
+                {% for contributor in contributors %}
+                    <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between border rounded-lg transition duration-200 shadow-lg hover:shadow-2xl">
+                        <img src="{{ contributor.avatar_url }}"
                              class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                              width="100px"
                              height="100px"
-                             alt="{{ user.user.username }}'s avatar"
+                             alt="{{ contributor.name }}'s avatar"
                              onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                    {% elif user.github_url %}
-                        {% with github_username=user.github_url|cut:"https://github.com/"|cut:"/" %}
-                            <img src="https://github.com/{{ github_username }}.png"
+                        <div class="text-2xl font-bold text-gray-900">{{ contributor.name }}</div>
+                        <div class="text-purple-600 text-lg">{{ contributor.contributor_type }}</div>
+                        <p class="text-gray-600 text-center px-4">Contributions: {{ contributor.contributions }}</p>
+                        <div class="flex items-center justify-center gap-3 mt-2">
+                            <a href="{{ contributor.github_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-gray-600 hover:text-red-500 transition-colors">
+                                <i class="fab fa-github fa-lg"></i>
+                            </a>
+                        </div>
+                        <a href="{{ contributor.github_url }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="mt-4 px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors font-medium">
+                            View Profile
+                        </a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% for user in users %}
+                    <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between border rounded-lg transition duration-200 shadow-lg hover:shadow-2xl">
+                        {% if user.user_avatar %}
+                            <img src="{{ user.user_avatar.url }}"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                  width="100px"
                                  height="100px"
                                  alt="{{ user.user.username }}'s avatar"
                                  onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                        {% elif user.github_url %}
+                            {% with github_username=user.github_url|cut:"https://github.com/"|cut:"/" %}
+                                <img src="https://github.com/{{ github_username }}.png"
+                                     class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                                     width="100px"
+                                     height="100px"
+                                     alt="{{ user.user.username }}'s avatar"
+                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                            {% endwith %}
+                        {% else %}
+                            <img src="{% static 'images/dummy-user.png' %}"
+                                 class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                                 width="100px"
+                                 height="100px"
+                                 alt="user image" />
+                        {% endif %}
+                        <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
+                            <a href="{% url 'profile' slug=user.user.username %}"
+                               class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
+                        </div>
+                        <div class="text-purple-600 text-2xl">{{ user.role }}</div>
+                        {% if user.discounted_hourly_rate %}
+                            <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
+                                <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
+                                <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
+                            </p>
                         {% endwith %}
                     {% else %}
                         <img src="{% static 'images/dummy-user.png' %}"
