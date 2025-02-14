@@ -148,61 +148,44 @@
                                 <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
                                 <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
                             </p>
-                        {% endwith %}
-                    {% else %}
-                        <img src="{% static 'images/dummy-user.png' %}"
-                             class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
-                             width="100px"
-                             height="100px"
-                             alt="user image" />
-                    {% endif %}
-                    <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
+                        {% endif %}
+                        <div class="flex items-center justify-center gap-3 mt-2 w-auto h-5 text-gray-600 mt-7">
+                            {% if user.x_username %}
+                                <a href="{{ user.x_username }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <i class="fa-brands fa-x-twitter fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
+                                </a>
+                            {% endif %}
+                            {% if user.linkedin_url %}
+                                <a href="{{ user.linkedin_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <i class="fa-brands fa-linkedin fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
+                                </a>
+                            {% endif %}
+                            {% if user.github_url %}
+                                <a href="{{ user.github_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <i class="fa-brands fa-github fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
+                                </a>
+                            {% endif %}
+                            {% if user.website_url %}
+                                <a href="{{ user.website_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
+                                    <i class="fa-brands fa-dribbble fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
+                                </a>
+                            {% endif %}
+                        </div>
                         <a href="{% url 'profile' slug=user.user.username %}"
-                           class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
+                           class="w-[150px] h-[40px] rounded-md shadow-md bg-white text-red-500 flex justify-center items-center mt-10 no-underline hover:bg-red-500 hover:text-white font-bold transition duration-200 text-[15px]">
+                            More Info
+                        </a>
                     </div>
-                    <div class="text-purple-600 text-2xl">{{ user.role }}</div>
-                    {% if user.discounted_hourly_rate %}
-                        <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
-                            <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
-                            <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
-                        </p>
-                    {% endif %}
-                    <div class="flex items-center justify-center gap-3 mt-2 w-auto h-5 text-gray-600 mt-7">
-                        {% if user.x_username %}
-                            <a href="{{ user.x_username }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-x-twitter fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.linkedin_url %}
-                            <a href="{{ user.linkedin_url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-linkedin fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.github_url %}
-                            <a href="{{ user.github_url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-github fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.website_url %}
-                            <a href="{{ user.website_url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-dribbble fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'profile' slug=user.user.username %}"
-                       class="w-[150px] h-[40px] rounded-md shadow-md bg-white text-red-500 flex justify-center items-center mt-10 no-underline hover:bg-red-500 hover:text-white font-bold transition duration-200 text-[15px]">
-                        More Info
-                    </a>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
 {% endblock content %}
