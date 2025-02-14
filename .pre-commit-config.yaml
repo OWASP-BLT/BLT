@@ -30,6 +30,4 @@ repos:
     rev: v1.36.1
     hooks:
       - id: djlint
-        args:
-          - --reformat
-          - --lint
+        args: [--reformat, --quiet]

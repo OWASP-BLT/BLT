@@ -120,11 +120,15 @@
                 if (sidebarOpen) {
                     sidebar.classList.remove('-translate-x-full');
                     sidebar.classList.add('translate-x-0');
-                    mainContent.classList.add('lg:ml-[210px]');
+                    if (mainContent) {
+                        mainContent.classList.add('lg:ml-[210px]');
+                    }
                 } else {
                     sidebar.classList.add('-translate-x-full');
                     sidebar.classList.remove('translate-x-0');
-                    mainContent.classList.remove('lg:ml-[210px]');
+                    if (mainContent) {
+                        mainContent.classList.remove('lg:ml-[210px]');
+                    }
                 }
             });
         }
