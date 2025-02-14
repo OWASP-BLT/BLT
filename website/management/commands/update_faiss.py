@@ -1,12 +1,11 @@
 import os
 from pathlib import Path
 
-from django.core.management.base import BaseCommand
-
 from website.bot import embed_documents_and_save, is_api_key_valid, load_document, split_document
+from website.management.base import LoggedBaseCommand
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Update the FAISS database with new documents"
 
     def handle(self, *args, **kwargs):

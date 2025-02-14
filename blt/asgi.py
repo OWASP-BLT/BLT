@@ -1,7 +1,6 @@
 # asgi.py
 
 import os
-import tracemalloc
 
 import django
 
@@ -15,17 +14,17 @@ from django.urls import path
 
 from website.consumers import ChatConsumer, SimilarityConsumer
 
-tracemalloc.start()
-
-
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
         "websocket": AuthMiddlewareStack(
             URLRouter(
                 [
-                    path("ws/similarity/", SimilarityConsumer.as_asgi()),  # WebSocket URL
-                    path("ws/discussion-rooms/chat/<int:room_id>/", ChatConsumer.as_asgi()),
+                    path("ws/similarity/", SimilarityConsumer.as_asgi()),
+                    path(
+                        "ws/discussion-rooms/chat/<int:room_id>/",
+                        ChatConsumer.as_asgi(),
+                    ),
                 ]
             )
         ),
