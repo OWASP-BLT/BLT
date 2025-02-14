@@ -7,6 +7,7 @@ from datetime import timedelta
 from urllib.parse import urlparse
 
 import psutil
+import redis
 import requests
 import requests.exceptions
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
@@ -35,7 +36,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
-from django_redis import get_redis_connection
 
 from blt import settings
 from website.models import (
@@ -138,7 +138,14 @@ def check_status(request):
             "github": None if not CHECK_GITHUB else False,
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
-            "redis_stats": {} if not CHECK_REDIS else {},
+            "redis_stats": {
+                "status": "Not configured",
+                "version": None,
+                "connected_clients": None,
+                "used_memory_human": None,
+            }
+            if not CHECK_REDIS
+            else {},
             "slack_bot": {},
         }
 
@@ -180,7 +187,7 @@ def check_status(request):
 
         # SendGrid API check
         if CHECK_SENDGRID:
-            sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+            sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
             if sendgrid_api_key:
                 try:
                     print("Checking SendGrid API...")
@@ -264,11 +271,50 @@ def check_status(request):
         # Redis stats
         if CHECK_REDIS:
             print("Getting Redis stats...")
-            try:
-                redis_client = get_redis_connection("default")
-                status_data["redis_stats"] = redis_client.info()
-            except Exception as e:
-                print(f"Redis error or not supported: {e}")
+            redis_url = os.environ.get("REDISCLOUD_URL")
+
+            if redis_url:
+                try:
+                    # Parse Redis URL
+                    parsed_url = urlparse(redis_url)
+                    redis_host = parsed_url.hostname or "localhost"
+                    redis_port = parsed_url.port or 6379
+                    redis_password = parsed_url.password
+                    redis_db = 0  # Default database
+
+                    # Create Redis client
+                    redis_client = redis.Redis(
+                        host=redis_host,
+                        port=redis_port,
+                        password=redis_password,
+                        db=redis_db,
+                        socket_timeout=2.0,  # 2 second timeout
+                    )
+
+                    # Test connection and get info
+                    info = redis_client.info()
+                    status_data["redis_stats"] = {
+                        "status": "Connected",
+                        "version": info.get("redis_version"),
+                        "connected_clients": info.get("connected_clients"),
+                        "used_memory_human": info.get("used_memory_human"),
+                        "uptime_days": info.get("uptime_in_days"),
+                    }
+                except (redis.ConnectionError, redis.TimeoutError) as e:
+                    status_data["redis_stats"] = {
+                        "status": "Connection failed",
+                        "error": str(e),
+                    }
+                except Exception as e:
+                    status_data["redis_stats"] = {
+                        "status": "Error",
+                        "error": str(e),
+                    }
+            else:
+                status_data["redis_stats"] = {
+                    "status": "Not configured",
+                    "error": "REDISCLOUD_URL not set",
+                }
 
         # Slack bot activity metrics
         if CHECK_SLACK_BOT:
