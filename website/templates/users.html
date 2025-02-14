@@ -67,6 +67,7 @@
                class="tag-link {% if githubbers %}active{% else %}inactive{% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
+                {% if githubbers %}<span class="tag-count">{{ user_count }}</span>{% endif %}
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
@@ -79,37 +80,28 @@
         <div class="flex items-center justify-center flex-wrap gap-4 p-4">
             {% for user in users %}
                 <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between border rounded-lg transition duration-200 shadow-lg hover:shadow-2xl">
-                    {% if user.userprofile and user.userprofile.user_avatar %}
-                        <img src="{{ user.userprofile.user_avatar.url }}"
+                    {% if user.user_avatar %}
+                        <img src="{{ user.user_avatar.url }}"
                              class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                              width="100px"
                              height="100px"
                              alt="{{ user.user.username }}'s avatar"
                              onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                    {% else %}
-                        {% for account in user.socialaccount_set.all %}
-                            {% if account.extra_data.avatar_url %}
-                                <img src="{{ account.extra_data.avatar_url }}"
-                                     class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
-                                     width="100px"
-                                     height="100px"
-                                     alt="{{ user.username }}'s avatar"
-                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                            {% elif account.extra_data.picture %}
-                                <img src="{{ account.extra_data.picture }}"
-                                     class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
-                                     width="100px"
-                                     height="100px"
-                                     alt="{{ user.username }}'s avatar"
-                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                            {% endif %}
-                        {% empty %}
-                            <img src="{% static 'images/dummy-user.png' %}"
+                    {% elif user.github_url %}
+                        {% with github_username=user.github_url|cut:"https://github.com/"|cut:"/" %}
+                            <img src="https://github.com/{{ github_username }}.png"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                  width="100px"
                                  height="100px"
-                                 alt="user image" />
-                        {% endfor %}
+                                 alt="{{ user.user.username }}'s avatar"
+                                 onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                        {% endwith %}
+                    {% else %}
+                        <img src="{% static 'images/dummy-user.png' %}"
+                             class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                             width="100px"
+                             height="100px"
+                             alt="user image" />
                     {% endif %}
                     <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
                         <a href="{% url 'profile' slug=user.user.username %}"
