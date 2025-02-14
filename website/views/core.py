@@ -25,7 +25,7 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command
-from django.db import connection
+from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -44,6 +44,7 @@ from website.models import (
     Domain,
     Hunt,
     Issue,
+    ManagementCommandLog,
     Organization,
     Points,
     PRAnalysisReport,
@@ -147,17 +148,20 @@ def check_status(request):
             if not CHECK_REDIS
             else {},
             "slack_bot": {},
+            "management_commands": [],
         }
 
-        if CHECK_MEMORY:
-            status_data.update(
-                {
-                    "memory_info": psutil.virtual_memory()._asdict(),
-                    "top_memory_consumers": [],
-                    "memory_profiling": {},
-                    "memory_by_module": [],
-                }
+        # Get management command logs
+        command_logs = (
+            ManagementCommandLog.objects.values("command_name")
+            .distinct()
+            .annotate(
+                last_run=models.Max("last_run"), last_success=models.Max("success"), run_count=models.Max("run_count")
             )
+            .order_by("command_name")
+        )
+
+        status_data["management_commands"] = list(command_logs)
 
         # Bitcoin RPC check
         if CHECK_BITCOIN:

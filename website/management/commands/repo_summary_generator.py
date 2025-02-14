@@ -1,12 +1,12 @@
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 
+from website.management.base import LoggedBaseCommand
 from website.models import Repo
 from website.utils import ai_summary, markdown_to_text
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Fetches readme content of the repositories and generates and stores an AI summary."
 
     def handle(self, *args, **options):

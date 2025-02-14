@@ -220,19 +220,6 @@
                 </ul>
             </div>
         </div>
-        <!-- Memory Usage by Module -->
-        <div class="status-card">
-            <h3>Memory Usage by Module</h3>
-            <div class="memory-by-module">
-                <ul>
-                    {% for module, memory in status.memory_by_module %}
-                        <li>
-                            <strong>{{ module }}</strong>: {{ memory|filesizeformat }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
         <div class="status-card">
             <h3>Database Connection Count</h3>
             <p>{{ status.db_connection_count }}</p>
@@ -266,6 +253,44 @@
                             <strong>Uptime (days):</strong> {{ status.redis_stats.uptime_days }}
                         </li>
                     </ul>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Management Commands -->
+        <div class="status-card">
+            <h3>Management Commands</h3>
+            <div class="management-commands">
+                {% if status.management_commands %}
+                    <table class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th class="text-left">Command</th>
+                                <th class="text-left">Last Run</th>
+                                <th class="text-left">Status</th>
+                                <th class="text-left">Run Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for command in status.management_commands %}
+                                <tr>
+                                    <td>{{ command.command_name }}</td>
+                                    <td>{{ command.last_run|timesince }} ago</td>
+                                    <td>
+                                        <span class="{% if command.last_success %}text-green-600{% else %}text-red-600{% endif %}">
+                                            {% if command.last_success %}
+                                                Success
+                                            {% else %}
+                                                Failed
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ command.run_count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No management commands have been logged yet.</p>
                 {% endif %}
             </div>
         </div>

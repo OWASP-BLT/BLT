@@ -1527,3 +1527,17 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class ManagementCommandLog(models.Model):
+    command_name = models.CharField(max_length=255)
+    last_run = models.DateTimeField(auto_now=True)
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True, null=True)
+    run_count = models.IntegerField(default=0)
+
+    class Meta:
+        get_latest_by = "last_run"
+
+    def __str__(self):
+        return f"{self.command_name} (Last run: {self.last_run})"
