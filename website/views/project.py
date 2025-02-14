@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 import django_filters
 import requests
+import sentry_sdk
 from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -1280,6 +1281,7 @@ class RepoDetailView(DetailView):
                 )
 
             except requests.RequestException as e:
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -1288,6 +1290,8 @@ class RepoDetailView(DetailView):
                     status=503,
                 )
             except Exception as e:
+                # send to sentry
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {"status": "error", "message": "An unexpected error occurred."},
                     status=500,

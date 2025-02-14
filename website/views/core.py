@@ -10,6 +10,7 @@ import psutil
 import redis
 import requests
 import requests.exceptions
+import sentry_sdk
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
@@ -1126,3 +1127,15 @@ def check_owasp_compliance(request):
             return redirect("check_owasp_compliance")
 
     return render(request, "owasp_compliance_check.html")
+
+
+def run_management_command(request):
+    if request.method == "POST" and request.user.is_superuser:
+        command = request.POST.get("command")
+        try:
+            call_command(command)
+            messages.success(request, f"Successfully ran command: {command}")
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            messages.error(request, f"Error running command {command}")
+    return redirect("check_status")
