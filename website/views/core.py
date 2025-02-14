@@ -151,6 +151,16 @@ def check_status(request):
             "management_commands": [],
         }
 
+        if CHECK_MEMORY:
+            status_data.update(
+                {
+                    "memory_info": psutil.virtual_memory()._asdict(),
+                    "top_memory_consumers": [],
+                    "memory_profiling": {},
+                    "memory_by_module": [],
+                }
+            )
+
         # Get management command logs
         command_logs = (
             ManagementCommandLog.objects.values("command_name")

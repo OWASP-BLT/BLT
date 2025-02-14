@@ -1061,22 +1061,9 @@ def assign_github_badge(user, action_title):
         badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.create(user=user, badge=badge)
-            print(f"Assigned '{action_title}' badge to {user.username}")
-        else:
-            print(f"{user.username} already has the '{action_title}' badge.")
+
     except Badge.DoesNotExist:
         print(f"Badge '{action_title}' does not exist.")
-
-
-# def validate_signature(payload, signature):
-#     if not signature:
-#         return False
-
-#     secret = bytes(os.environ.get("GITHUB_TOKEN", ""), "utf-8")
-#     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
-#     computed_signature = f"sha256={computed_hmac.hexdigest()}"
-
-#     return hmac.compare_digest(computed_signature, signature)
 
 
 @method_decorator(login_required, name="dispatch")

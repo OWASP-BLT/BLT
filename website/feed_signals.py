@@ -32,7 +32,6 @@ def assign_first_action_badge(user, action_title):
 
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.get_or_create(user=user, badge=badge)
-            print(f"Assigned '{action_title}' badge to {user.username}")
 
 
 def create_activity(instance, action_type):
