@@ -8,7 +8,7 @@ class RepoListView(ListView):
     model = Repo
     template_name = "repo/repo_list.html"
     context_object_name = "repos"
-    paginate_by = 20
+    paginate_by = 100
 
     def get_queryset(self):
         queryset = Repo.objects.all()
@@ -53,4 +53,5 @@ class RepoListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_sort"] = self.request.GET.get("sort", "-created")
+        context["total_repos"] = Repo.objects.count()
         return context

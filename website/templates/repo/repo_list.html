@@ -4,7 +4,14 @@
 {% block content %}
     <div class="w-full px-4 py-8">
         <div class="max-w-[1920px] mx-auto">
-            <h1 class="text-3xl font-bold text-gray-900 mb-8">Repositories ({{ repos.count }})</h1>
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900">
+                    Repositories
+                    <span class="text-lg font-normal text-gray-600">
+                        (Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_repos }})
+                    </span>
+                </h1>
+            </div>
             <!-- Search Form -->
             <form method="get" class="mb-8">
                 <div class="flex gap-2">
