@@ -37,8 +37,12 @@
             <meta property="og:type" content="website" />
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
-        <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
-              rel="stylesheet">
+        {% if request.path == '/repo_list/' or '/repository/' in request.path or  request.path == '/projects/' %}
+            <!-- Repository pages use their own styling -->
+        {% else %}
+            <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
+                  rel="stylesheet">
+        {% endif %}
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
         <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
         <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}"
