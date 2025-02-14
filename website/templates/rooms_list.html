@@ -3,6 +3,18 @@
 {% block title %}
     Discussion Rooms
 {% endblock title %}
+{% block description %}
+    Join or create discussion rooms to collaborate with others on projects, bugs, and organizations.
+{% endblock description %}
+{% block keywords %}
+    discussion rooms, chat, collaboration, project discussion, bug discussion, organization discussion
+{% endblock keywords %}
+{% block og_title %}
+    Discussion Rooms - Collaborate and Chat
+{% endblock og_title %}
+{% block og_description %}
+    Join or create discussion rooms to collaborate with others on projects, bugs, and organizations. Real-time chat and discussion platform.
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -40,7 +52,7 @@
                                          stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    Created {{ room.created|naturaltime }}
+                                    Created {{ room.created_at|naturaltime }}
                                 </div>
                             </div>
                             {% if room.admin == request.user or room.session_key == request.session.session_key %}
