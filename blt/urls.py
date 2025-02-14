@@ -513,6 +513,8 @@ urlpatterns = [
     ),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    # link to index.html
+    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
