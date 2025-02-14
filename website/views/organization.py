@@ -1757,6 +1757,11 @@ class RoomsListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = RoomForm()
+
+        # Add last 3 messages for each room
+        for room in context["rooms"]:
+            room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
+
         return context
 
 
