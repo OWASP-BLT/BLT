@@ -258,17 +258,18 @@
         </div>
         <!-- Management Commands -->
         <div class="status-card">
+
             <h3>Management Commands</h3>
             <div class="management-commands">
                 {% if status.management_commands %}
                     <table class="min-w-full">
                         <thead>
                             <tr>
-                                <th class="text-left">Command</th>
-                                <th class="text-left">Last Run</th>
-                                <th class="text-left">Status</th>
-                                <th class="text-left">Run Count</th>
-                                <th class="text-left">Actions</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Command</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Run</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run Count</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -301,13 +302,78 @@
                                             </button>
                                         </form>
                                     </td>
+
                                 </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% else %}
-                    <p>No management commands have been logged yet.</p>
-                {% endif %}
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for command in status.management_commands %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ command.command_name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ command.last_run|timesince }} ago</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if command.last_success %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                                {% if command.last_success %}
+                                                    Success
+                                                {% else %}
+                                                    Failed
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ command.run_count }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {% if user.is_superuser %}
+                                                <form method="post"
+                                                      action="{% url 'run_management_command' %}"
+                                                      class="inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="command" value="{{ command.command_name }}">
+                                                    <button type="submit"
+                                                            class="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                            title="Run command">
+                                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-sm text-gray-500">No management commands have been logged yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Available Commands -->
+            <div>
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Available Commands</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {% for command in status.available_commands %}
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-900">{{ command.name }}</span>
+                                {% if user.is_superuser %}
+                                    <form method="post"
+                                          action="{% url 'run_management_command' %}"
+                                          class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="command" value="{{ command.name }}">
+                                        <button type="submit"
+                                                class="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                                title="Run command">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                            {% if command.help_text %}<p class="mt-1 text-sm text-gray-500">{{ command.help_text }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         </div>
         <!-- Slack Bot Activity -->

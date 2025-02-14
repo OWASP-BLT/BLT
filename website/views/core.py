@@ -25,7 +25,7 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.core.management import call_command
+from django.core.management import call_command, get_commands, load_command_class
 from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
@@ -150,6 +150,7 @@ def check_status(request):
             else {},
             "slack_bot": {},
             "management_commands": [],
+            "available_commands": [],
         }
 
         if CHECK_MEMORY:
@@ -168,14 +169,25 @@ def check_status(request):
             .distinct()
             .annotate(
                 last_run=models.Max("last_run"),
-                # Use boolean AND to determine if all runs were successful
                 last_success=models.ExpressionWrapper(models.Q(success=True), output_field=models.BooleanField()),
-                run_count=models.Max("run_count"),
+                run_count=models.Count("id"),
             )
             .order_by("command_name")
         )
 
         status_data["management_commands"] = list(command_logs)
+
+        # Get list of available management commands
+        available_commands = []
+        for name, app_name in get_commands().items():
+            command_class = load_command_class(app_name, name)
+            available_commands.append(
+                {
+                    "name": name,
+                    "help_text": getattr(command_class, "help", "").split("\n")[0],
+                }
+            )
+        status_data["available_commands"] = sorted(available_commands, key=lambda x: x["name"])
 
         # Bitcoin RPC check
         if CHECK_BITCOIN:

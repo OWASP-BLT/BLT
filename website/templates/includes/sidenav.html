@@ -1,11 +1,13 @@
 {% load static %}
+{% load i18n %}
+{% load custom_tags %}
 <!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <div class="sidebar fixed left-0 top-[64px] h-full bg-white border-r border-gray-200 w-[210px] transform -translate-x-full transition-transform duration-300 ease-in-out z-40">
     <style>
         .sidenav {
-            margin-top: 60px;
+            margin-top: 15px;
         }
         .no-scrollbar::-webkit-scrollbar {
             display: none;
@@ -605,6 +607,46 @@
                         <span>Terms</span>
                     </a>
                 </li>
+                <div class="my-4 border-t border-gray-300"></div>
+                <form action="{% url 'set_language' %}"
+                      method="post"
+                      class="flex items-center w-full">
+                    {% csrf_token %}
+                    <select name="language"
+                            onchange="this.form.submit()"
+                            class="bg-transparent w-full h-10 my-2 mx-3 border border-gray-300 rounded-md text-base font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        {% get_current_language as LANGUAGE_CODE %}
+                        {% get_available_languages as LANGUAGES %}
+                        {% for lang_code, lang_name in LANGUAGES %}
+                            <option value="{{ lang_code }}"
+                                    {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{{ lang_name }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+                <li class="mb-2">
+                    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
+                       target="_blank"
+                       rel="noopener"
+                       class="flex items-center w-full no-underline p-2">
+                        <div class="icon text-gray-700">
+                            <i class="fab fa-figma text-2xl"></i>
+                        </div>
+                        <span>Design</span>
+                    </a>
+                </li>
+                <li class="mb-2">
+                    {% get_current_template as current_template %}
+                    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
+                       target="_blank"
+                       rel="noopener"
+                       class="flex items-center w-full no-underline p-2">
+                        <div class="icon text-gray-700">
+                            <i class="fas fa-edit text-2xl"></i>
+                        </div>
+                        <span>Edit</span>
+                    </a>
+                </li>
+                <div class="my-8 border-t border-gray-300"></div>
                 <!-- Spacer at the bottom -->
                 <div class="spacer"></div>
             </ul>
