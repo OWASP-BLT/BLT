@@ -121,7 +121,7 @@ def check_status(request):
     CHECK_BITCOIN = False
     CHECK_SENDGRID = True
     CHECK_GITHUB = True
-    CHECK_OPENAI = False
+    CHECK_OPENAI = True
     CHECK_MEMORY = True
     CHECK_DATABASE = True
     CHECK_REDIS = True
