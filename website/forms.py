@@ -1,6 +1,9 @@
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from mdeditor.fields import MDTextFormField
 
 from website.models import Room
@@ -123,13 +126,33 @@ class GitHubURLForm(forms.Form):
 
 
 class SignupFormWithCaptcha(SignupForm, CaptchaForm):
-    def clean(self):
-        cleaned_data = super().clean()
-        return cleaned_data
+    hidden_email = forms.EmailField(
+        required=False,
+        widget=forms.HiddenInput(attrs={"autocomplete": "off", "tabindex": "-1", "style": "display:none;"}),
+    )
 
-    def save(self, request):
-        user = super().save(request)
-        return user
+    def clean_password1(self):
+        password = self.cleaned_data.get("password1")
+        if password:
+            try:
+                validate_password(password, user=None)
+            except ValidationError as e:
+                raise ValidationError(e.messages)
+        return password
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise ValidationError("Please enter a valid email address")
+        return email
+
+    def clean_hidden_email(self):
+        hidden_email = self.cleaned_data.get("hidden_email")
+        if hidden_email:
+            raise ValidationError("Bot submission detected")
+        return hidden_email
 
 
 class RoomForm(forms.ModelForm):

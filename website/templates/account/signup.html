@@ -36,6 +36,9 @@
     .captcha-reload:hover {
         background-color: #f3f4f6;
     }
+    .hidden-email-field {
+    display: none;
+    }
     </style>
     {% include "includes/sidenav.html" %}
     <div class="flex items-center w-[100%] h-[60vh] min-h-screen p-4 bg-gray-100 lg:justify-center">
@@ -81,6 +84,11 @@
                                class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
+                    <input type="email"
+                           name="hidden_email"
+                           tabindex="-1"
+                           class="hidden-email-field"
+                           autocomplete="off">
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
                             <label for="password" class="text-sm font-semibold text-gray-500">Password</label>
