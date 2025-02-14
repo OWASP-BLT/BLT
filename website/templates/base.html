@@ -156,6 +156,16 @@
                     opacity: 1;
                 }
             }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+            }
         </style>
         {% include "includes/header.html" %}
         <!-- Spacer div to fix spacing after header -->
@@ -271,10 +281,10 @@
                 const orgDropdown = document.getElementById('orgDropdown');
                 const orgSearchInput = document.getElementById('orgSearchInput');
                 const orgLogo = document.getElementById('orgLogo');
-                
+
                 // Initially hide the dropdown
                 orgDropdown.style.display = 'none';
-                
+
                 // Toggle dropdown on input click
                 orgSelect.addEventListener('click', function() {
                     orgDropdown.style.display = orgDropdown.style.display === 'none' ? 'block' : 'none';
@@ -282,15 +292,15 @@
                         orgSearchInput.focus();
                     }
                 });
-                
+
                 // Handle search functionality with API
                 let searchTimeout;
                 orgSearchInput.addEventListener('input', function(e) {
                     const searchTerm = e.target.value.toLowerCase();
-                    
+
                     // Clear the previous timeout
                     clearTimeout(searchTimeout);
-                    
+
                     // Set a new timeout to prevent too many API calls
                     searchTimeout = setTimeout(() => {
                         if (searchTerm.length > 0) {
@@ -302,12 +312,12 @@
                                     const allOrgsOption = orgList.firstElementChild;
                                     orgList.innerHTML = '';
                                     orgList.appendChild(allOrgsOption);
-                                    
+
                                     data.results.forEach(org => {
                                         const orgElement = document.createElement('a');
                                         orgElement.href = '#';
                                         orgElement.className = 'flex items-center p-3 hover:bg-gray-50 rounded-lg group';
-                                        
+
                                         const logoContainer = document.createElement('div');
                                         if (org.logo) {
                                             const logoImg = document.createElement('img');
@@ -321,24 +331,24 @@
                                             icon.className = 'fas fa-building text-gray-400';
                                             logoContainer.appendChild(icon);
                                         }
-                                        
+
                                         const infoContainer = document.createElement('div');
                                         infoContainer.className = 'ml-3 flex-grow';
                                         infoContainer.innerHTML = `
                                             <p class="font-medium text-gray-800">${org.name}</p>
                                             <p class="text-sm text-gray-500">${org.domains ? org.domains.length : 0} domains</p>
                                         `;
-                                        
+
                                         if (org.is_active) {
                                             const activeTag = document.createElement('span');
                                             activeTag.className = 'inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20';
                                             activeTag.textContent = 'Active';
                                             infoContainer.appendChild(activeTag);
                                         }
-                                        
+
                                         orgElement.appendChild(logoContainer);
                                         orgElement.appendChild(infoContainer);
-                                        
+
                                         // Add click handler
                                         orgElement.addEventListener('click', function(e) {
                                             e.preventDefault();
@@ -349,11 +359,11 @@
                                                 orgLogo.src = '{% static "img/default-org.png" %}';
                                             }
                                             orgDropdown.style.display = 'none';
-                                            
+
                                             window.location.href = `/organization/${org.id}/dashboard/analytics/`;
 
                                         });
-                                        
+
                                         orgList.appendChild(orgElement);
                                     });
                                 })
@@ -361,19 +371,19 @@
                         }
                     }, 300); // 300ms delay
                 });
-                
+
                 // Close dropdown when clicking outside
                 document.addEventListener('click', function(e) {
                     if (!orgSelect.contains(e.target) && !orgDropdown.contains(e.target)) {
                         orgDropdown.style.display = 'none';
                     }
                 });
-                
+
                 // Prevent dropdown from closing when clicking inside search input
                 orgSearchInput.addEventListener('click', function(e) {
                     e.stopPropagation();
                 });
-                
+
                 // Handle "All Organizations" option click
                 const allOrgsOption = document.querySelector('#orgDropdown .mt-2 a');
                 allOrgsOption.addEventListener('click', function(e) {
@@ -414,17 +424,6 @@
                     });
                 });
             });
-
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-            }
         </script>
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
@@ -452,30 +451,27 @@
         ga('send', 'pageview');
     </script>
     <script type="text/javascript">
-        $(".mbug").click(function () {
-            $(this).addClass("hidden-xs");
-            $(this).addClass("hidden-sm");
-            $(".mnav").removeClass("hidden-xs");
-            $(".mnav").removeClass("hidden-sm");
+    /* eslint-disable */
+    $(".mbug").click(function () {
+        $(this).addClass("hidden-xs").addClass("hidden-sm");
+        $(".mnav").removeClass("hidden-xs").removeClass("hidden-sm");
+    });
+    $(document).ready(function() {
+        $('button[name="test_files"]').on('click', function() {
+            $(this).parent().find('input[type=file]').click();
         });
-        $(function () {
-            $('button[name="test_files"]').on('click', function () {
-                $(this).parent().find('input[type=file]').click();
-            });
-            $('input[name="screenshot"]').on('change', function () {
-                var file = $(this).val().replace('C:\\fakepath\\', '');
-                $(this).parent().find('span').html(file);
-            });
-
-
-            {% if messages %}
-                {% for message in messages %}
-                $.notify("{{ message }}", {
+        $('input[name="screenshot"]').on('change', function() {
+            var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
+            $(this).parent().find('span').html(file);
+        });
+        {% if messages %}
+            {% for message in messages %}
+                $.notify("{{ message|escapejs }}", {
                     style: "custom",
-                    className: "{{message.level_tag }}",
+                    className: "{{ message.level_tag|escapejs }}",
                     autoHide: true,
                     autoHideDelay: 2000,
-                    clicktoHide: true,
+                    clickToHide: true,
                     position: "left bottom",
                     gap: 5,
                     elementSize: {
@@ -483,14 +479,13 @@
                         height: "auto"
                     }
                 });
-                setTimeout(function() {
-                    $('.notifyjs-wrapper').on('mouseenter', function() {
-                        $(this).fadeOut();
-                        });
-                    }, 100);
-                {% endfor %} 
-            {% endif %}
-        });
+            {% endfor %}
+            $('.notifyjs-wrapper').on('mouseenter', function() {
+                $(this).fadeOut();
+            });
+        {% endif %}
+    });
+    /* eslint-enable */
     </script>
     <script type="text/javascript">
         window._mfq = window._mfq || [];
@@ -571,7 +566,7 @@
         // Close modal when clicking outside the modal content
         modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
 
-        // Close modal on 'Esc' key press
+            
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
                 hideModal();

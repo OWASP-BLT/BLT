@@ -108,7 +108,7 @@ class UrlsTest(StaticLiveServerTestCase):
                 if not skip:
                     url = reverse(fullname, kwargs=params)
                     matches = [
-                        "/",
+                        "/static/",
                         "/socialaccounts/",
                         "/auth/user/",
                         "/auth/password/change/",
