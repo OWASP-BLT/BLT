@@ -762,6 +762,11 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
+    # Get total count of users with GitHub profiles
+    context["users_with_github_count"] = (
+        UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
+    )
+
     context["tags_with_counts"] = (
         Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
     )

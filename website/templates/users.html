@@ -67,7 +67,7 @@
                class="tag-link {% if githubbers %}active{% else %}inactive{% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
-                {% if githubbers %}<span class="tag-count">{{ user_count }}</span>{% endif %}
+                <span class="tag-count">{{ users_with_github_count }}</span>
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
@@ -108,10 +108,12 @@
                            class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
                     </div>
                     <div class="text-purple-600 text-2xl">{{ user.role }}</div>
-                    <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
-                        <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
-                        <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
-                    </p>
+                    {% if user.discounted_hourly_rate %}
+                        <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
+                            <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
+                            <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
+                        </p>
+                    {% endif %}
                     <div class="flex items-center justify-center gap-3 mt-2 w-auto h-5 text-gray-600 mt-7">
                         {% if user.x_username %}
                             <a href="{{ user.x_username }}"
