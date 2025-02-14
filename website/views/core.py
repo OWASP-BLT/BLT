@@ -156,7 +156,10 @@ def check_status(request):
             ManagementCommandLog.objects.values("command_name")
             .distinct()
             .annotate(
-                last_run=models.Max("last_run"), last_success=models.Max("success"), run_count=models.Max("run_count")
+                last_run=models.Max("last_run"),
+                # Use boolean AND to determine if all runs were successful
+                last_success=models.ExpressionWrapper(models.Q(success=True), output_field=models.BooleanField()),
+                run_count=models.Max("run_count"),
             )
             .order_by("command_name")
         )
