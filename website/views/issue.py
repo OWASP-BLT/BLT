@@ -1666,7 +1666,7 @@ def get_github_issue(request):
 
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
