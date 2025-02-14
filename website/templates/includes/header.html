@@ -140,7 +140,7 @@
                         data-drawer-toggle="logo-sidebar"
                         aria-controls="logo-sidebar"
                         type="button"
-                        class="inline-flex items-center justify-center p-3 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 hover:text-red-500 hover:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        class="inline-flex items-center justify-center p-3 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 text-red-500 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
                     <i class="fa fa-bars text-2xl"></i>
                 </button>
                 <!-- Logo -->
@@ -270,14 +270,12 @@
                                 <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                             </a>
                         </li>
-                        <li>
-                            <a href="{% env 'EXTENSION_URL' %}"
-                               target="_new"
-                               rel="noopener noreferrer">
-                                <i class="fa fa-chrome fa-fw"></i>
-                                {% trans "Add to chrome" %}
-                            </a>
-                        </li>
+                        {% if user.is_superuser %}
+                            <li>
+                                <a href="{% url 'admin:index' %}"
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                            </li>
+                        {% endif %}
                         <li>
                             <a href="{% url 'start_hunt' %}">
                                 <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
@@ -319,11 +317,11 @@
             <div class="flex items-center h-[80px]">
                 <div class="hidden lg:!flex h-[80px] justify-center items-center ">
                     <a href="{% url 'account_signup' %}"
-                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                       class="h-[38px] px-[25px] py-[9px] !bg-red-500 hover:!bg-red-600 hover:no-underline !text-white font-bold text-2xl mr-[20px] hover:text-white">
                     {% trans "Signup" %}</a>
                     <a href="{% url 'account_login' %}"
                        data-toggle="modal"
-                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
+                       class="h-[38px] px-[25px] py-[9px] !bg-red-500 hover:!bg-red-600 hover:no-underline !text-white font-bold text-2xl mr-[20px] hover:text-white">
                     {% trans "Login" %}</a>
                 </div>
                 <!-- Log in icon -->

@@ -24,7 +24,6 @@ from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
-from django.urls import reverse
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -118,7 +117,7 @@ class OrganisationType(Enum):
 
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_organizations")
+    managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
@@ -131,7 +130,7 @@ class Organization(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
-    integrations = models.ManyToManyField(Integration, related_name="organizations")
+    integrations = models.ManyToManyField(Integration, related_name="organizations", blank=True)
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
@@ -936,8 +935,6 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    # add languages
-    # add tags
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1273,6 +1270,7 @@ class Repo(models.Model):
     repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
+    closed_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)
     license = models.CharField(max_length=100, null=True, blank=True)
     last_commit_date = models.DateTimeField(null=True, blank=True)
@@ -1288,6 +1286,8 @@ class Repo(models.Model):
     logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
     contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    readme_content = models.TextField(null=True, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1510,3 +1510,32 @@ class Kudos(models.Model):
 
     def __str__(self):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"
+
+
+class ManagementCommandLog(models.Model):
+    command_name = models.CharField(max_length=255)
+    last_run = models.DateTimeField(auto_now=True)
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True, null=True)
+    run_count = models.IntegerField(default=0)
+
+    class Meta:
+        get_latest_by = "last_run"
+
+    def __str__(self):
+        return f"{self.command_name} (Last run: {self.last_run})"

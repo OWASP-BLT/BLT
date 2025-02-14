@@ -243,7 +243,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
 
 class DomainListView(ListView):
     model = Domain
-    paginate_by = 20
+    paginate_by = 100
     template_name = "domain_list.html"
 
     def get_context_data(self, **kwargs):
@@ -1757,6 +1757,11 @@ class RoomsListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["form"] = RoomForm()
+
+        # Add last 3 messages for each room
+        for room in context["rooms"]:
+            room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
+
         return context
 
 
@@ -1787,7 +1792,12 @@ class RoomCreateView(CreateView):
 
 def join_room(request, room_id):
     room = get_object_or_404(Room, id=room_id)
-    return render(request, "room.html", {"room": room})
+    # Ensure session key exists for anonymous users
+    if request.user.is_anonymous and not request.session.session_key:
+        request.session.create()
+    # Get messages ordered by timestamp
+    messages = room.messages.all().order_by("timestamp")
+    return render(request, "room.html", {"room": room, "messages": messages})
 
 
 @login_required(login_url="/accounts/login")

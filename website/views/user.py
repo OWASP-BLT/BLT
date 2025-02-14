@@ -36,6 +36,7 @@ from website.models import (
     IP,
     Badge,
     Challenge,
+    Contributor,
     Domain,
     GitHubIssue,
     Hunt,
@@ -317,7 +318,7 @@ class UserProfileDetailView(DetailView):
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        user_points = Points.objects.filter(user=self.object)
+        user_points = Points.objects.filter(user=self.object).order_by("id")
         context["user_points"] = user_points
         context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
@@ -583,7 +584,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard()
+        context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
 
         # Get pull request leaderboard
         pr_leaderboard = (
@@ -762,12 +763,31 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
+    # Get total count of users with GitHub profiles
+    context["users_with_github_count"] = (
+        UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
+    )
+
+    # Get contributors from database
+    context["contributors"] = Contributor.objects.all().order_by("-contributions")
+    context["contributors_count"] = context["contributors"].count()
+
     context["tags_with_counts"] = (
         Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
     )
 
     tag_name = request.GET.get("tag")
-    if tag_name:
+    show_githubbers = request.GET.get("githubbers") == "true"
+    show_contributors = request.GET.get("contributors") == "true"
+
+    if show_contributors:
+        context["show_contributors"] = True
+        context["users"] = []
+    elif show_githubbers:
+        context["githubbers"] = True
+        context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
+        context["user_count"] = context["users"].count()
+    elif tag_name:
         if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
@@ -1041,22 +1061,9 @@ def assign_github_badge(user, action_title):
         badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.create(user=user, badge=badge)
-            print(f"Assigned '{action_title}' badge to {user.username}")
-        else:
-            print(f"{user.username} already has the '{action_title}' badge.")
+
     except Badge.DoesNotExist:
         print(f"Badge '{action_title}' does not exist.")
-
-
-# def validate_signature(payload, signature):
-#     if not signature:
-#         return False
-
-#     secret = bytes(os.environ.get("GITHUB_TOKEN", ""), "utf-8")
-#     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
-#     computed_signature = f"sha256={computed_hmac.hexdigest()}"
-
-#     return hmac.compare_digest(computed_signature, signature)
 
 
 @method_decorator(login_required, name="dispatch")

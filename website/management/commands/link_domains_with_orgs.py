@@ -1,61 +1,101 @@
-from django.core.management.base import BaseCommand
-from django.db import transaction
-from django.utils.text import slugify
+import re
 
+from django.db import transaction
+
+from website.management.base import LoggedBaseCommand
 from website.models import Domain, Organization
 
 
-class Command(BaseCommand):
-    help = "Link Existing Domain instances to Organizations"
+class Command(LoggedBaseCommand):
+    help = "Clean URLs to just domains and set organizations active"
+
+    def clean_url(self, url):
+        if not url:
+            return ""
+
+        # Remove any whitespace
+        url = url.strip()
+
+        # Fix common issues with protocols
+        url = re.sub(r"https?://https?://", "https://", url)
+
+        # Extract domain using regex
+        # Match after protocol until first slash or end of string
+        domain_match = re.search(r"(?:https?://)?([^/\s]+)", url)
+        if domain_match:
+            domain = domain_match.group(1)
+            # Remove www.
+            domain = re.sub(r"^www\.", "", domain)
+            # Basic domain validation
+            if re.match(r"^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", domain):
+                return f"https://{domain}"
+        return ""
+
+    def clean_name(self, name):
+        # Extract domain from URL-like names
+        domain_match = re.search(r"(?:https?://)?([^/\s]+)", name)
+        if domain_match:
+            name = domain_match.group(1)
+        # Remove www and common TLDs
+        name = re.sub(r"^www\.", "", name)
+        name = re.sub(r"\.(com|org|net|edu)$", "", name)
+        # Convert to title case and limit length
+        return name.title()[:50]
 
     def handle(self, *args, **options):
-        with transaction.atomic():
-            domains = Domain.objects.select_for_update().filter(organization__isnull=True)
+        # Process all organizations
+        orgs = Organization.objects.all()
+        self.stdout.write(f"Processing {orgs.count()} organizations")
 
-            if not domains.exists():
-                self.stdout.write(self.style.SUCCESS("No unlinked domains found to process"))
-                return
+        for org in orgs:
+            try:
+                with transaction.atomic():
+                    # Clean URL
+                    old_url = org.url
+                    new_url = self.clean_url(old_url)
 
-            self.stdout.write(f"Found {domains.count()} domains to process")
+                    # Only update if we got a valid URL
+                    if new_url:
+                        if old_url != new_url:
+                            self.stdout.write(self.style.SUCCESS(f"Org: {old_url} -> {new_url}"))
+                            org.url = new_url
 
-            for domain in domains:
-                try:
-                    # Get domain name, clean it up
-                    domain_name = domain.name.strip() if domain.name else None
-                    if not domain_name:
-                        self.stdout.write(self.style.WARNING(f"Skipping domain {domain.id}: Empty name"))
-                        continue
+                        # Clean name if it looks like a URL
+                        if "/" in org.name or "." in org.name:
+                            old_name = org.name
+                            new_name = self.clean_name(old_name)
+                            if old_name != new_name:
+                                self.stdout.write(self.style.SUCCESS(f"Name: {old_name} -> {new_name}"))
+                                org.name = new_name
 
-                    # Create a clean version of the name for matching
-                    clean_name = slugify(domain_name)
+                        # Set active
+                        if not org.is_active:
+                            org.is_active = True
+                            self.stdout.write(f"Set {org.name} active")
 
-                    # Try to find existing organization by exact domain name
-                    org = Organization.objects.filter(name__iexact=domain_name).first()
+                        org.save()
 
-                    if org:
-                        self.stdout.write(f"Found existing organization: {org.name}")
-                    else:
-                        # Create new organization from domain
-                        try:
-                            org = Organization.objects.create(
-                                name=domain_name,
-                                url=domain.url or "",
-                                logo=domain.logo if hasattr(domain, "logo") else None,
-                                description=f"Organization for {domain_name}",
-                                slug=clean_name,
-                            )
-                            self.stdout.write(f"Created new organization: {org.name}")
-                        except Exception as org_error:
-                            self.stdout.write(self.style.ERROR(f"Failed to create org for {domain_name}: {org_error}"))
-                            continue
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error with org: {str(e)}"))
 
-                    # Link domain to organization
-                    domain.organization = org
-                    domain.save()
-                    self.stdout.write(f"Linked domain '{domain_name}' to organization '{org.name}'")
+        # Process all domains
+        domains = Domain.objects.all()
+        self.stdout.write(f"Processing {domains.count()} domains")
 
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f"Error processing domain {domain.id}: {str(e)}"))
-                    continue
+        for domain in domains:
+            try:
+                with transaction.atomic():
+                    # Clean URL
+                    old_url = domain.url
+                    new_url = self.clean_url(old_url)
 
-            self.stdout.write("Domain linking process completed")
+                    # Only update if we got a valid URL
+                    if new_url and old_url != new_url:
+                        self.stdout.write(self.style.SUCCESS(f"Domain: {old_url} -> {new_url}"))
+                        domain.url = new_url
+                        domain.save()
+
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error with domain: {str(e)}"))
+
+        self.stdout.write(self.style.SUCCESS("URL cleaning completed"))
