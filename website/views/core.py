@@ -906,6 +906,8 @@ def badge_list(request):
     badges = Badge.objects.annotate(user_count=Count("userbadge"))
     return render(request, "badges.html", {"badges": badges})
 
+def features_view(request):
+    return render(request, "features.html")
 
 def sponsor_view(request):
     from bitcash.network import NetworkAPI
