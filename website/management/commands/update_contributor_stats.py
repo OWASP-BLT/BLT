@@ -1,17 +1,16 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import pytz
 import requests
-from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 
+from website.management.base import LoggedBaseCommand
 from website.models import Contributor, ContributorStats, Repo
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Update contributor statistics with daily and monthly granularity"
 
     def add_arguments(self, parser):
@@ -40,7 +39,7 @@ class Command(BaseCommand):
         owner, repo_name = self.parse_github_url(repo.repo_url)
 
         # Calculate current month date range
-        today = datetime.now(pytz.UTC).date()
+        today = datetime.now().date()
         current_month_start = today.replace(day=1)  # First day of current month
 
         # Delete existing daily stats for current month

@@ -1,11 +1,8 @@
 import logging
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
-
-# from django.core import management
 from django.utils import timezone
-
-from website import management
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +13,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
-            management.call_command("update_github_issues")
-            management.call_command("fetch_contributor_stats")
-            management.call_command("check_keywords")
-            management.call_command("check_owasp_projects")
-            management.call_command("check_trademarks")
+            call_command("update_github_issues")
+            call_command("fetch_contributor_stats")
+            call_command("check_keywords")
+            call_command("check_owasp_projects")
+            call_command("check_trademarks")
         except Exception as e:
             logger.error(f"Error in daily tasks: {str(e)}")
             raise

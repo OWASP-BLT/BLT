@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load humanize %}
+{% providers_media_js %}
+{% load custom_tags %}
+{% block title %}
+    Create GitHub Issue
+{% endblock title %}
+{% block description %}
+    Describe the issue you want to create on GitHub. Provide details such as the issue title, description, and any relevant labels.
+{% endblock description %}
+{% block keywords %}
+    Create GitHub Issue, GitHub Issue, Issue Title, Issue Description, Issue Labels
+{% endblock keywords %}
+{% block og_title %}
+    Create GitHub Issue - Detailed Reporting
+{% endblock og_title %}
+{% block og_description %}
+    Efficiently create a GitHub issue by providing necessary details such as the issue title, description, and relevant labels.
+{% endblock og_description %}
+{% block style %}
+    <style>
+    .captcha-form img{
+        width: 100px;
+        margin-right: 10px;
+    }
+    .captcha-form input{
+        width: 100%;
+        border-width: 1px;
+        border-color: black;
+        padding: 10px;
+        font-size: 1.4rem;
+    }
+
+    @media (max-width:1130px) {
+        #issue-description-container{
+            flex-direction: column;
+        }
+        #issue-description-container div{
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 1514px) {
+        #files_manage{
+            width: 100%;
+            height: max-content;
+            justify-content: space-around;
+        }
+        #files_manage div{
+            margin-top: 20px;
+        }
+        #screenshot-container{
+            width: 73vw
+        }
+    }
+
+    .bottom-right {
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+    }
+
+    </style>
+{% endblock style %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="bg-[#F3F5F7] flex flex-col items-center">
+        <form id="githubIssueForm"
+              method='post'
+              action="{% url 'create_github_issue' %}"
+              enctype="multipart/form-data"
+              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md"
+              onsubmit="return validateGithubIssue()">
+            {% csrf_token %}
+            <div class="w-full pb-12">
+                <p class="text-5xl font-semibold leading-7 text-gray-900">CREATE GITHUB ISSUE</p>
+                <!-- Display success message if exists -->
+                {% if message %}
+                    <div id="success-message"
+                         class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4"
+                         role="alert">
+                        <span class="block sm:inline">{{ message }}</span>
+                    </div>
+                {% endif %}
+                <!-- Issue Title and Input -->
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-5">
+                        <label for="issue_title"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">Issue Title</label>
+                        <div class="mt-2">
+                            <input id="issue_title"
+                                   type="text"
+                                   name="issue_title"
+                                   maxlength="100"
+                                   required
+                                   placeholder="Short Title"
+                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   value="{{ issue_title }}" />
+                        </div>
+                    </div>
+                </div>
+                <!-- Issue Description Input -->
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-5 relative">
+                        <label for="description"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">
+                            Detailed Description
+                        </label>
+                        <div class="mt-2 relative">
+                            <textarea id="description"
+                                      name="description"
+                                      required
+                                      rows="15"
+                                      placeholder="Describe the issue in detail"
+                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"> {{description}}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <!-- Labels Input -->
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-5">
+                        <label for="labels"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">Labels</label>
+                        <div class="mt-2">
+                            <input id="labels"
+                                   type="text"
+                                   name="labels"
+                                   placeholder="Comma-separated labels"
+                                   class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   value="{{ labels }}" />
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <!-- Repository Selection or URL Input -->
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-5">
+                        <label for="repository"
+                               class="block text-2xl font-semibold leading-6 text-gray-900">
+                            Choose Repository or Enter URL
+                        </label>
+                        <div class="mt-2">
+                            <input id="repository_url"
+                                   type="text"
+                                   name="repository_url"
+                                   placeholder="Or enter repository URL"
+                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6"
+                                   value="{{ repository_url }}" />
+                        </div>
+                    </div>
+                </div>
+                <!-- Captcha -->
+                <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6 ">
+                    <div class="flex h-full justify-between items-center flex-col my-16 md:flex-row md:mt-0">
+                        <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
+                    </div>
+                    <div class="w-full flex justify-evenly md:justify-end">
+                        <button type="button"
+                                onclick="cancelForm()"
+                                class="text-md font-semibold leading-6 mr-10 text-gray-900">Cancel</button>
+                        <button type="submit"
+                                class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
+                            Create Issue
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock content %}
+{% block after_js %}
+    <script type="text/javascript">
+    function validateGithubIssue() {
+        const titleInput = document.getElementById('issue_title').value;
+        const descriptionInput = document.getElementById('description').value.trim();
+        const repository = document.getElementById('repository').value;
+        const repositoryUrl = document.getElementById('repository_url').value;
+
+        if (titleInput && descriptionInput && (repository || repositoryUrl)) {
+            return true;
+        } else {
+            alert("Please fill in all required fields.")
+            return false;
+        }
+    }
+
+    function generateAIDetails() {
+        const description = document.getElementById('description').value.trim();
+        const title = document.getElementById('issue_title').value;
+        const generateButton = document.getElementById('generate-ai-button');
+
+        if (!description) {
+            alert('Please enter a brief description first.');
+            return;
+        }
+
+        // Change button to loading state
+        generateButton.disabled = true;
+        generateButton.innerHTML = 'Loading...';
+
+        // AJAX request to send user input to backend
+        fetch('/api/generate-github-issue/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ title: title, description: description })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.issue_details) {
+                document.getElementById('description').value = data.issue_details;
+            } else {
+                alert('Failed to generate suggestions.');
+            }
+        })
+        .catch(error => console.error('Error:', error))
+        .finally(() => {
+            // Revert button to original state
+            generateButton.disabled = false;
+            generateButton.innerHTML = 'Generate with AI';
+        });
+    }
+
+    // Remove success message after 10 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        const successMessage = document.getElementById('success-message');
+        if (successMessage) {
+            setTimeout(() => {
+                successMessage.remove();
+            }, 10000);
+        }
+    });
+    </script>
+{% endblock after_js %}

@@ -6,15 +6,16 @@ from datetime import datetime
 import requests
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import IntegrityError, transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 
+from website.management.base import LoggedBaseCommand
 from website.models import Contributor, Organization, Project, Repo
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Automatically detects and imports new OWASP www-project repositories"
 
     def parse_date_safely(self, date_string):
