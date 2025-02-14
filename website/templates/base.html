@@ -37,8 +37,12 @@
             <meta property="og:type" content="website" />
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
-        <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
-              rel="stylesheet">
+        {% if request.path == '/repo_list/' or '/repository/' in request.path or  request.path == '/projects/' or '/project/' in request.path %}
+            <!-- Repository pages use their own styling -->
+        {% else %}
+            <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
+                  rel="stylesheet">
+        {% endif %}
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
         <link href="{% static 'css/lightbox.min.css' %}" rel="stylesheet">
         <link href="{% static 'vendor/font-awesome/css/font-awesome.min.css' %}"
@@ -168,94 +172,8 @@
             }
         </style>
         {% include "includes/header.html" %}
-        <!-- Spacer div to fix spacing after header -->
-        <div class="w-full h-[130px]"></div>
-        <!-- Organization and Project Selection -->
-        <div class="fixed top-[85px] left-0 right-0 bg-white border-b border-gray-300 shadow-sm z-40">
-            <div class="flex items-center space-x-4 p-3">
-                <div class="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-full overflow-hidden border border-gray-300">
-                    <img id="orgLogo"
-                         src="{% static 'img/default-org.png' %}"
-                         alt="Organization Logo"
-                         class="w-full h-full object-cover"
-                         width="32"
-                         height="32">
-                </div>
-                <div class="flex space-x-4">
-                    <div class="w-[200px]">
-                        <label for="orgSelect" class="block text-sm font-medium text-gray-700 mb-1">Organization</label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="orgSelect"
-                                   class="w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-red-500 focus:ring-red-500 cursor-pointer"
-                                   placeholder="All Organizations"
-                                   readonly
-                                   value="All">
-                            <div id="orgDropdown"
-                                 class="absolute z-10 w-[300px] mt-1 bg-white rounded-md shadow-lg max-h-[400px] overflow-auto border border-gray-200">
-                                <div class="p-2">
-                                    <div class="sticky top-0 bg-white p-2 border-b border-gray-200">
-                                        <input type="text"
-                                               id="orgSearchInput"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                                               placeholder="Search organizations...">
-                                    </div>
-                                    <div class="mt-2">
-                                        <a href="#"
-                                           class="flex items-center p-3 hover:bg-gray-50 rounded-lg group">
-                                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                <i class="fas fa-globe text-gray-400"></i>
-                                            </div>
-                                            <div class="ml-3">
-                                                <p class="font-medium text-gray-800">All Organizations</p>
-                                                <p class="text-sm text-gray-500">View all domains</p>
-                                            </div>
-                                        </a>
-                                        {% for org in organizations %}
-                                            <a href="#"
-                                               class="flex items-center p-3 hover:bg-gray-50 rounded-lg group">
-                                                {% if org.logo %}
-                                                    <img src="{{ org.logo.url }}"
-                                                         alt="{{ org.name }}"
-                                                         width="40"
-                                                         height="40"
-                                                         class="w-10 h-10 rounded-full object-cover">
-                                                {% else %}
-                                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                                        <i class="fas fa-building text-gray-400"></i>
-                                                    </div>
-                                                {% endif %}
-                                                <div class="ml-3 flex-grow">
-                                                    <p class="font-medium text-gray-800">{{ org.name }}</p>
-                                                    <p class="text-sm text-gray-500">{{ org.domains.count }} domains</p>
-                                                </div>
-                                                {% if org.is_active %}
-                                                    <span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Active</span>
-                                                {% endif %}
-                                            </a>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="w-[200px]">
-                        <label for="projectSelect"
-                               class="block text-sm font-medium text-gray-700 mb-1">Project</label>
-                        <div class="relative">
-                            <input type="text"
-                                   id="projectSelect"
-                                   class="w-full rounded-md border-gray-300 border-2 shadow-sm focus:border-red-500 focus:ring-red-500"
-                                   placeholder="All Projects"
-                                   value="All">
-                            <div id="projectDropdown"
-                                 class="hidden absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg max-h-60 overflow-auto border-2 border-gray-300">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="w-full h-[100px]"></div>
+        <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
             {% endblock content %}
@@ -274,155 +192,52 @@
             {% endblock edit_link %}
             {% include "includes/checkInModal.html" %}
         </main>
-        <!-- Add JavaScript for autocomplete -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const orgSelect = document.getElementById('orgSelect');
-                const orgDropdown = document.getElementById('orgDropdown');
-                const orgSearchInput = document.getElementById('orgSearchInput');
-                const orgLogo = document.getElementById('orgLogo');
 
-                // Initially hide the dropdown
-                orgDropdown.style.display = 'none';
-
-                // Toggle dropdown on input click
-                orgSelect.addEventListener('click', function() {
-                    orgDropdown.style.display = orgDropdown.style.display === 'none' ? 'block' : 'none';
-                    if (orgDropdown.style.display === 'block') {
-                        orgSearchInput.focus();
-                    }
-                });
-
-                // Handle search functionality with API
-                let searchTimeout;
-                orgSearchInput.addEventListener('input', function(e) {
-                    const searchTerm = e.target.value.toLowerCase();
-
-                    // Clear the previous timeout
-                    clearTimeout(searchTimeout);
-
-                    // Set a new timeout to prevent too many API calls
-                    searchTimeout = setTimeout(() => {
-                        if (searchTerm.length > 0) {
-                            fetch(`/api/v1/organizations/?search=${encodeURIComponent(searchTerm)}`)
-                                .then(response => response.json())
-                                .then(data => {
-                                    const orgList = document.querySelector('#orgDropdown .mt-2');
-                                    // Keep the "All Organizations" option
-                                    const allOrgsOption = orgList.firstElementChild;
-                                    orgList.innerHTML = '';
-                                    orgList.appendChild(allOrgsOption);
-
-                                    data.results.forEach(org => {
-                                        const orgElement = document.createElement('a');
-                                        orgElement.href = '#';
-                                        orgElement.className = 'flex items-center p-3 hover:bg-gray-50 rounded-lg group';
-
-                                        const logoContainer = document.createElement('div');
-                                        if (org.logo) {
-                                            const logoImg = document.createElement('img');
-                                            logoImg.src = org.logo;
-                                            logoImg.alt = `${org.name} logo`;
-                                            logoImg.className = 'w-10 h-10 rounded-full object-cover';
-                                            logoContainer.appendChild(logoImg);
-                                        } else {
-                                            logoContainer.className = 'w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center';
-                                            const icon = document.createElement('i');
-                                            icon.className = 'fas fa-building text-gray-400';
-                                            logoContainer.appendChild(icon);
-                                        }
-
-                                        const infoContainer = document.createElement('div');
-                                        infoContainer.className = 'ml-3 flex-grow';
-                                        infoContainer.innerHTML = `
-                                            <p class="font-medium text-gray-800">${org.name}</p>
-                                            <p class="text-sm text-gray-500">${org.domains ? org.domains.length : 0} domains</p>
-                                        `;
-
-                                        if (org.is_active) {
-                                            const activeTag = document.createElement('span');
-                                            activeTag.className = 'inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20';
-                                            activeTag.textContent = 'Active';
-                                            infoContainer.appendChild(activeTag);
-                                        }
-
-                                        orgElement.appendChild(logoContainer);
-                                        orgElement.appendChild(infoContainer);
-
-                                        // Add click handler
-                                        orgElement.addEventListener('click', function(e) {
-                                            e.preventDefault();
-                                            orgSelect.value = org.name;
-                                            if (org.logo) {
-                                                orgLogo.src = org.logo;
-                                            } else {
-                                                orgLogo.src = '{% static "img/default-org.png" %}';
-                                            }
-                                            orgDropdown.style.display = 'none';
-
-                                            window.location.href = `/organization/${org.id}/dashboard/analytics/`;
-
-                                        });
-
-                                        orgList.appendChild(orgElement);
-                                    });
-                                })
-                                .catch(error => console.error('Error:', error));
-                        }
-                    }, 300); // 300ms delay
-                });
-
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!orgSelect.contains(e.target) && !orgDropdown.contains(e.target)) {
-                        orgDropdown.style.display = 'none';
-                    }
-                });
-
-                // Prevent dropdown from closing when clicking inside search input
-                orgSearchInput.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-
-                // Handle "All Organizations" option click
-                const allOrgsOption = document.querySelector('#orgDropdown .mt-2 a');
-                allOrgsOption.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    orgSelect.value = 'All';
-                    orgLogo.src = '{% static "img/default-org.png" %}';
-                    orgDropdown.style.display = 'none';
-                });
-            });
-        </script>
         <div class="pb-[50px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
         {% include "includes/footer.html" %}
-        {% block scripts %}
-        {% endblock %}
+        {% block scripts %}{% endblock %}
         <script>
             // Auto-dismiss messages after 5 seconds
             document.addEventListener('DOMContentLoaded', function() {
-                const messages = document.querySelectorAll('.alert');
-                messages.forEach(function(message) {
-                    setTimeout(function() {
-                        message.style.animation = 'slideOut 0.5s ease-in forwards';
-                        setTimeout(function() {
-                            message.remove();
-                        }, 500);
-                    }, 5000);
-                });
+                // Wait for a small delay to ensure elements are rendered
+                setTimeout(function() {
+                    const messages = document.querySelectorAll('.alert');
+                    if (messages) {
+                        messages.forEach(function(message) {
+                            if (message) {
+                                setTimeout(function() {
+                                    if (message && message.style) {
+                                        message.style.animation = 'slideOut 0.5s ease-in forwards';
+                                        setTimeout(function() {
+                                            if (message && message.parentNode) {
+                                                message.remove();
+                                            }
+                                        }, 500);
+                                    }
+                                }, 5000);
+                            }
+                        });
 
-                // Handle manual close button
-                document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
-                    closeBtn.addEventListener('click', function() {
-                        const alert = this.parentElement;
-                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
-                        setTimeout(function() {
-                            alert.remove();
-                        }, 500);
-                    });
-                });
+                        // Handle manual close button
+                        document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
+                            if (closeBtn) {
+                                closeBtn.addEventListener('click', function() {
+                                    const alert = this.parentElement;
+                                    if (alert && alert.style) {
+                                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
+                                        setTimeout(function() {
+                                            if (alert && alert.parentNode) {
+                                                alert.remove();
+                                            }
+                                        }, 500);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }, 100); // Small delay to ensure DOM is ready
             });
         </script>
     </body>

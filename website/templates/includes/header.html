@@ -270,14 +270,12 @@
                                 <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                             </a>
                         </li>
-                        <li>
-                            <a href="{% env 'EXTENSION_URL' %}"
-                               target="_new"
-                               rel="noopener noreferrer">
-                                <i class="fa fa-chrome fa-fw"></i>
-                                {% trans "Add to chrome" %}
-                            </a>
-                        </li>
+                        {% if user.is_superuser %}
+                            <li>
+                                <a href="{% url 'admin:index' %}"
+                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                            </li>
+                        {% endif %}
                         <li>
                             <a href="{% url 'start_hunt' %}">
                                 <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}

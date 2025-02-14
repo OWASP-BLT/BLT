@@ -76,6 +76,7 @@ from website.views.core import (
     UploadCreate,
     add_suggestions,
     badge_list,
+    check_owasp_compliance,
     check_status,
     donate_view,
     facebook_callback,
@@ -196,6 +197,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.repo import RepoListView
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamChallenges,
@@ -885,8 +887,11 @@ urlpatterns = [
         TemplateView.as_view(template_name="github_issue_prompt.html"),
         name="github_issue_prompt",
     ),
+    path("owasp-compliance/", check_owasp_compliance, name="check_owasp_compliance"),
     path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
     path("get-github-issue/", get_github_issue, name="get_github_issue"),
+    # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
+    path("repo_list/", RepoListView.as_view(), name="repo_list"),
 ]
 
 if settings.DEBUG:

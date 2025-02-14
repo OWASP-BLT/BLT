@@ -1,12 +1,12 @@
 import re
 
-from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from website.management.base import LoggedBaseCommand
 from website.models import Domain, Organization
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Clean URLs to just domains and set organizations active"
 
     def clean_url(self, url):

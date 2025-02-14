@@ -152,7 +152,19 @@
                 {% endif %}
             </div>
         </div>
-        <!-- GitHub API Status -->
+        <div class="status-card">
+            <h3>OpenAI API</h3>
+            <div class="status-item">
+                <div class="status-dot {% if status.openai == None %}gray{% elif status.openai %}green{% else %}red{% endif %}"></div>
+                {% if status.openai == None %}
+                    <span>Status Unknown</span>
+                {% elif status.openai %}
+                    <span>Operational</span>
+                {% else %}
+                    <span>Not Operational</span>
+                {% endif %}
+            </div>
+        </div>
         <div class="status-card">
             <h3>GitHub API</h3>
             <div class="status-item">
@@ -167,7 +179,7 @@
             </div>
         </div>
         <!-- Memory Usage -->
-        <div class="status-card">
+        {% comment %} <div class="status-card">
             <h3>Memory Usage</h3>
             <div class="memory-info">
                 <p>
@@ -183,9 +195,9 @@
                     <strong>Free:</strong> {{ status.memory_info.free|filesizeformat }}
                 </p>
             </div>
-        </div>
+        </div> {% endcomment %}
         <!-- Memory Profiling -->
-        <div class="status-card">
+        {% comment %} <div class="status-card">
             <h3>Memory Profiling</h3>
             <p>
                 <strong>Current Usage:</strong> {{ status.memory_profiling.current|filesizeformat }}
@@ -193,7 +205,7 @@
             <p>
                 <strong>Peak Usage:</strong> {{ status.memory_profiling.peak|filesizeformat }}
             </p>
-        </div>
+        </div> {% endcomment %}
         <!-- Top Memory Consumers -->
         <div class="status-card">
             <h3>Top Memory Consumers</h3>
@@ -208,32 +220,79 @@
                 </ul>
             </div>
         </div>
-        <!-- Memory Usage by Module -->
-        <div class="status-card">
-            <h3>Memory Usage by Module</h3>
-            <div class="memory-by-module">
-                <ul>
-                    {% for module, memory in status.memory_by_module %}
-                        <li>
-                            <strong>{{ module }}</strong>: {{ memory|filesizeformat }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
         <div class="status-card">
             <h3>Database Connection Count</h3>
             <p>{{ status.db_connection_count }}</p>
         </div>
         <div class="status-card">
             <h3>Redis Stats</h3>
-            <ul>
-                {% for key, value in status.redis_stats.items %}
-                    <li>
-                        <strong>{{ key }}</strong>: {{ value }}
-                    </li>
-                {% endfor %}
-            </ul>
+            <div class="redis-status">
+                <p>
+                    <strong>Status:</strong>
+                    <span class="{% if status.redis_stats.status == 'Connected' %}text-green-600{% else %}text-red-600{% endif %}">
+                        {{ status.redis_stats.status }}
+                    </span>
+                </p>
+                {% if status.redis_stats.error %}
+                    <p class="text-red-600">
+                        <strong>Error:</strong> {{ status.redis_stats.error }}
+                    </p>
+                {% endif %}
+                {% if status.redis_stats.status == 'Connected' %}
+                    <ul class="mt-2">
+                        <li>
+                            <strong>Version:</strong> {{ status.redis_stats.version }}
+                        </li>
+                        <li>
+                            <strong>Connected Clients:</strong> {{ status.redis_stats.connected_clients }}
+                        </li>
+                        <li>
+                            <strong>Memory Usage:</strong> {{ status.redis_stats.used_memory_human }}
+                        </li>
+                        <li>
+                            <strong>Uptime (days):</strong> {{ status.redis_stats.uptime_days }}
+                        </li>
+                    </ul>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Management Commands -->
+        <div class="status-card">
+            <h3>Management Commands</h3>
+            <div class="management-commands">
+                {% if status.management_commands %}
+                    <table class="min-w-full">
+                        <thead>
+                            <tr>
+                                <th class="text-left">Command</th>
+                                <th class="text-left">Last Run</th>
+                                <th class="text-left">Status</th>
+                                <th class="text-left">Run Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for command in status.management_commands %}
+                                <tr>
+                                    <td>{{ command.command_name }}</td>
+                                    <td>{{ command.last_run|timesince }} ago</td>
+                                    <td>
+                                        <span class="{% if command.last_success %}text-green-600{% else %}text-red-600{% endif %}">
+                                            {% if command.last_success %}
+                                                Success
+                                            {% else %}
+                                                Failed
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ command.run_count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No management commands have been logged yet.</p>
+                {% endif %}
+            </div>
         </div>
         <!-- Slack Bot Activity -->
         <div class="status-card">
@@ -290,19 +349,6 @@
                         </table>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="status-card">
-            <h3>OpenAI API</h3>
-            <div class="status-item">
-                <div class="status-dot {% if status.openai == None %}gray{% elif status.openai %}green{% else %}red{% endif %}"></div>
-                {% if status.openai == None %}
-                    <span>Status Unknown</span>
-                {% elif status.openai %}
-                    <span>Operational</span>
-                {% else %}
-                    <span>Not Operational</span>
-                {% endif %}
             </div>
         </div>
     </div>

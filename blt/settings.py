@@ -162,6 +162,11 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
             ],
             "loaders": [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+            ]
+            if DEBUG
+            else [
                 (
                     "django.template.loaders.cached.Loader",
                     [
