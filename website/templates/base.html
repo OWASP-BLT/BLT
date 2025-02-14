@@ -37,7 +37,7 @@
             <meta property="og:type" content="website" />
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
-        {% if request.path == '/repo_list/' or '/repository/' in request.path or  request.path == '/projects/' %}
+        {% if request.path == '/repo_list/' or '/repository/' in request.path or  request.path == '/projects/' or '/project/' in request.path %}
             <!-- Repository pages use their own styling -->
         {% else %}
             <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
