@@ -861,7 +861,7 @@ urlpatterns = [
     path("teams/kick-member/", kick_member, name="kick_member"),
     path("teams/give-kudos/", give_kudos, name="give_kudos"),
     path(
-        "similarity-scan",
+        "similarity-scan/",
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
