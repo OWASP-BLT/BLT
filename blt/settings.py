@@ -4,8 +4,12 @@ import sys
 
 import dj_database_url
 import environ
+
+# Initialize Sentry
+import sentry_sdk
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
+from sentry_sdk.integrations.django import DjangoIntegration
 
 environ.Env.read_env()
 
@@ -90,7 +94,11 @@ INSTALLED_APPS = (
     "dj_rest_auth",
     "dj_rest_auth.registration",
     "storages",
+    "channels",
 )
+
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 
 MIDDLEWARE = (
@@ -154,6 +162,11 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
             ],
             "loaders": [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+            ]
+            if DEBUG
+            else [
                 (
                     "django.template.loaders.cached.Loader",
                     [
@@ -173,9 +186,9 @@ AUTHENTICATION_BACKENDS = (
 
 
 REST_AUTH = {"SESSION_LOGIN": False}
-CONN_MAX_AGE = None
+CONN_MAX_AGE = 0
 
-WSGI_APPLICATION = "blt.wsgi.application"
+# WSGI_APPLICATION = "blt.wsgi.application"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -216,6 +229,18 @@ MEDIA_URL = "/media/"
 db_from_env = dj_database_url.config(conn_max_age=500)
 
 
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        send_default_pii=True,
+        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
+        profiles_sample_rate=1.0 if DEBUG else 0.2,
+        environment="development" if DEBUG else "production",
+        release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
+    )
+
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
@@ -244,9 +269,7 @@ if "DYNO" in os.environ:  # for Heroku
     if not GOOGLE_CREDENTIALS:
         raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
 
-    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS)
-    )
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(json.loads(GOOGLE_CREDENTIALS))
 
     STORAGES = {
         "default": {
@@ -265,18 +288,6 @@ if "DYNO" in os.environ:  # for Heroku
     GS_QUERYSTRING_AUTH = False
     GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
-
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-
-    sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
-        integrations=[DjangoIntegration()],
-        send_default_pii=True,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
-    )
 
 else:
     STORAGES = {
@@ -306,13 +317,12 @@ DATABASES = {
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    print("using database url: ", db_from_env)
-    DATABASES["default"].update(db_from_env)
-
+    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -336,33 +346,38 @@ ABSOLUTE_URL_OVERRIDES = {
 }
 
 LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_ON_GET = True
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-        "mail_admins": {
-            "class": "django.utils.log.AdminEmailHandler",
-        },
+    "formatters": {
+        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
     },
+    "handlers": {
+        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "verbose"},
+        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
+    },
+    "root": {"level": "INFO", "handlers": ["console"]},
     "loggers": {
-        "": {
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "website": {
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
-# disable logging unless critical
-
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": True,  # Disable all existing loggers
-#     "handlers": {},  # No handlers defined
-#     "loggers": {},  # No loggers defined
-# }
 
 
 USERS_AVATAR_PATH = "avatars"
@@ -448,7 +463,7 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user:email"],
+        "SCOPE": ["user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
     "google": {
@@ -529,18 +544,6 @@ SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
 
 SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 
-STRIPE_LIVE_PUBLIC_KEY = os.environ.get("STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>")
-STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
-STRIPE_TEST_PUBLIC_KEY = os.environ.get(
-    "STRIPE_TEST_PUBLIC_KEY",
-    "pk_test_12345",
-)
-STRIPE_TEST_SECRET_KEY = os.environ.get(
-    "STRIPE_TEST_SECRET_KEY",
-    "sk_test_12345",
-)
-
-STRIPE_LIVE_MODE = False  # TODO: remove stripe
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 IS_TEST = False
@@ -574,3 +577,6 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
+SOCIALACCOUNT_STORE_TOKENS = True

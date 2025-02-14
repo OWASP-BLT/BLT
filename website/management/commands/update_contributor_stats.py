@@ -1,17 +1,16 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import pytz
 import requests
-from dateutil.relativedelta import relativedelta
 from django.conf import settings
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 
+from website.management.base import LoggedBaseCommand
 from website.models import Contributor, ContributorStats, Repo
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Update contributor statistics with daily and monthly granularity"
 
     def add_arguments(self, parser):
@@ -40,7 +39,7 @@ class Command(BaseCommand):
         owner, repo_name = self.parse_github_url(repo.repo_url)
 
         # Calculate current month date range
-        today = datetime.now(pytz.UTC).date()
+        today = datetime.now().date()
         current_month_start = today.replace(day=1)  # First day of current month
 
         # Delete existing daily stats for current month
@@ -63,9 +62,7 @@ class Command(BaseCommand):
     def delete_existing_daily_stats(self, repo, current_month_start):
         """Delete existing daily stats for the current month"""
         with transaction.atomic():
-            ContributorStats.objects.filter(
-                repo=repo, granularity="day", date__gte=current_month_start
-            ).delete()
+            ContributorStats.objects.filter(repo=repo, granularity="day", date__gte=current_month_start).delete()
 
     def fetch_contributor_stats(self, owner, repo_name, start_date, end_date):
         """Fetch contributor statistics using GitHub REST API"""
@@ -90,9 +87,7 @@ class Command(BaseCommand):
                     continue
 
                 if response.status_code != 200:
-                    self.stdout.write(
-                        self.style.WARNING(f"API error: {response.status_code} - {response.text}")
-                    )
+                    self.stdout.write(self.style.WARNING(f"API error: {response.status_code} - {response.text}"))
                     break
 
                 data = response.json()
@@ -124,9 +119,7 @@ class Command(BaseCommand):
 
             for commit in commits:
                 if commit.get("author") and commit.get("commit", {}).get("author", {}).get("date"):
-                    date = datetime.strptime(
-                        commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
-                    ).date()
+                    date = datetime.strptime(commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ").date()
                     login = commit["author"].get("login")
                     if login:
                         self.increment_stat(stats, date, login, "commits")
@@ -142,17 +135,13 @@ class Command(BaseCommand):
                         login = issue["user"]["login"]
 
                         # Handle issue creation
-                        created_date = datetime.strptime(
-                            issue["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                        ).date()
+                        created_date = datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                         if start_date <= created_date <= end_date:
                             self.increment_stat(stats, created_date, login, "issues_opened")
 
                         # Handle issue closure
                         if issue.get("closed_at"):
-                            closed_date = datetime.strptime(
-                                issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"
-                            ).date()
+                            closed_date = datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                             if start_date <= closed_date <= end_date:
                                 self.increment_stat(stats, closed_date, login, "issues_closed")
 
@@ -176,9 +165,7 @@ class Command(BaseCommand):
             for comment in comments:
                 if comment.get("user", {}).get("login"):
                     login = comment["user"]["login"]
-                    comment_date = datetime.strptime(
-                        comment["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                    ).date()
+                    comment_date = datetime.strptime(comment["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                     if start_date <= comment_date <= end_date:
                         self.increment_stat(stats, comment_date, login, "comments")
 
@@ -216,11 +203,7 @@ class Command(BaseCommand):
         owner, repo_name = self.parse_github_url(repo.repo_url)
 
         # Get the last monthly stat to know where to start from
-        last_monthly_stat = (
-            ContributorStats.objects.filter(repo=repo, granularity="month")
-            .order_by("-date")
-            .first()
-        )
+        last_monthly_stat = ContributorStats.objects.filter(repo=repo, granularity="month").order_by("-date").first()
 
         if last_monthly_stat:
             # Start from the month after the last stored monthly stat
@@ -236,15 +219,11 @@ class Command(BaseCommand):
                 response = requests.get(repo_api_url, headers=headers)
 
                 if response.status_code != 200:
-                    self.stdout.write(
-                        self.style.ERROR(f"Failed to fetch repo data: {response.text}")
-                    )
+                    self.stdout.write(self.style.ERROR(f"Failed to fetch repo data: {response.text}"))
                     return
 
                 repo_data = response.json()
-                repo_created_at = datetime.strptime(
-                    repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                ).date()
+                repo_created_at = datetime.strptime(repo_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
             except Exception as e:
                 self.stdout.write(self.style.ERROR(f"Error fetching repo creation date: {str(e)}"))
                 return
@@ -261,9 +240,7 @@ class Command(BaseCommand):
 
             self.stdout.write(f"Fetching stats for month: {current_month_start} to {month_end}")
 
-            monthly_stats = self.fetch_monthly_contributor_stats(
-                owner, repo_name, current_month_start, month_end
-            )
+            monthly_stats = self.fetch_monthly_contributor_stats(owner, repo_name, current_month_start, month_end)
 
             if monthly_stats:
                 self.store_monthly_stats(repo, current_month_start, monthly_stats)
@@ -293,9 +270,7 @@ class Command(BaseCommand):
                     continue
 
                 if response.status_code != 200:
-                    self.stdout.write(
-                        self.style.WARNING(f"API error: {response.status_code} - {response.text}")
-                    )
+                    self.stdout.write(self.style.WARNING(f"API error: {response.status_code} - {response.text}"))
                     break
 
                 data = response.json()
@@ -343,9 +318,7 @@ class Command(BaseCommand):
             # Process commits
             for commit in commits:
                 if commit.get("author") and commit.get("commit", {}).get("author", {}).get("date"):
-                    date = datetime.strptime(
-                        commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
-                    ).date()
+                    date = datetime.strptime(commit["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ").date()
                     if month_start <= date <= month_end:
                         login = commit["author"].get("login")
                         if login:
@@ -358,16 +331,12 @@ class Command(BaseCommand):
                     if not login:
                         continue
 
-                    created_date = datetime.strptime(
-                        issue["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                    ).date()
+                    created_date = datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                     if month_start <= created_date <= month_end:
                         self.increment_monthly_stat(monthly_stats, login, "issues_opened")
 
                     if issue.get("closed_at"):
-                        closed_date = datetime.strptime(
-                            issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"
-                        ).date()
+                        closed_date = datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ").date()
                         if month_start <= closed_date <= month_end:
                             self.increment_monthly_stat(monthly_stats, login, "issues_closed")
 
@@ -376,9 +345,7 @@ class Command(BaseCommand):
                 login = pr.get("user", {}).get("login")
                 if (
                     login
-                    and month_start
-                    <= datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").date()
-                    <= month_end
+                    and month_start <= datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ").date() <= month_end
                 ):
                     self.increment_monthly_stat(monthly_stats, login, "pull_requests")
 
@@ -415,9 +382,7 @@ class Command(BaseCommand):
         """Store monthly statistics in the database"""
         with transaction.atomic():
             # Delete existing monthly stat for this month if exists
-            ContributorStats.objects.filter(
-                repo=repo, granularity="month", date=month_start
-            ).delete()
+            ContributorStats.objects.filter(repo=repo, granularity="month", date=month_start).delete()
 
             # Create new monthly stats
             for login, stats in monthly_stats.items():

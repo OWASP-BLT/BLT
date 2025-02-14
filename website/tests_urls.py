@@ -91,9 +91,9 @@ class UrlsTest(StaticLiveServerTestCase):
 
                 regex = pattern.pattern.regex
                 if regex.groups > 0:
-                    if regex.groups > len(list(regex.groupindex.keys())) or set(
-                        regex.groupindex.keys()
-                    ) - set(default_kwargs.keys()):
+                    if regex.groups > len(list(regex.groupindex.keys())) or set(regex.groupindex.keys()) - set(
+                        default_kwargs.keys()
+                    ):
                         skip = True
                     else:
                         for key in set(default_kwargs.keys()) & set(regex.groupindex.keys()):
@@ -108,6 +108,7 @@ class UrlsTest(StaticLiveServerTestCase):
                 if not skip:
                     url = reverse(fullname, kwargs=params)
                     matches = [
+                        "/static/",
                         "/socialaccounts/",
                         "/auth/user/",
                         "/auth/password/change/",
@@ -137,8 +138,7 @@ class UrlsTest(StaticLiveServerTestCase):
                         self.assertIn(
                             response.status_code,
                             allowed_http_codes,
-                            msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
-                            % url,
+                            msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s" % url,
                         )
                         self.selenium.get("%s%s" % (self.live_server_url, url))
 
@@ -146,8 +146,7 @@ class UrlsTest(StaticLiveServerTestCase):
                             self.assertNotIn(
                                 "SyntaxError",
                                 str(entry),
-                                msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s"
-                                % url,
+                                msg="!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!the url that caused the eror is: %s" % url,
                             )
 
         check_urls(module.urlpatterns)

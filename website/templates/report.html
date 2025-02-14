@@ -34,7 +34,6 @@
         padding: 10px;
         font-size: 1.4rem;
     }
-
     @media (max-width:1130px) {
         #bug-description-container{
             flex-direction: column;
@@ -43,58 +42,73 @@
             width: 100%;
         }
     }
-
     @media (max-width: 1514px) {
         #files_manage{
             width: 100%;
             height: max-content;
             justify-content: space-around;
-            
         }
         #files_manage div{
             margin-top: 20px;
         }
         #screenshot-container{
-            width: 73vw
+            width: 73vw;
         }
     }
-
     .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
     }
-
+    @media (max-width: 768px) {
+        #duplicate-container .list-container {
+            width: 95% !important;
+        }
+        #duplicate-container .issue-description {
+            font-size: 1rem;
+        }
+        #duplicate-container .modal-content {
+            width: 90% !important;
+            margin-top: 2rem !important;
+        }
+    }
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div id="duplicate-container"
-         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10"
+         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10 bg-black bg-opacity-50"
          hidden>
-        <div class="flex flex-col w-full h-full bg-white items-center">
-            <div class="w-full h-[60px] flex bg-red-500 items-center">
+        <div class="flex flex-col w-full h-full items-center">
+            <div class="w-full flex bg-red-500 items-center justify-between p-4">
                 <button id="close-duplicate-container"
-                        class="flex top-[100px] w-[30px] h-[30px] bg-white justify-center item-center rounded-[50px] hover:bg-red-100 hover:shadow-md no-underline ml-5">
-                    <i class="text-red-500 scale-150 m-3 fa-sharp fa-solid fa-xmark cursor-pointer transition duration-200"></i>
+                        class="flex w-[30px] h-[30px] bg-white justify-center items-center rounded-full hover:bg-red-100 hover:shadow-md no-underline">
+                    <i class="text-red-500 scale-150 fa-sharp fa-solid fa-xmark cursor-pointer transition duration-200"></i>
                 </button>
-                <div class="w-[90%] flex items-center justify-center">
-                    <p class="text-5xl font-extrabold text-white">DUPLICATE ISSUES</p>
+                <div class="flex items-center">
+                    <p class="text-3xl font-bold text-white">DUPLICATE ISSUES</p>
                 </div>
+                <div class="w-[30px]"></div>
             </div>
-            <div class="w-[100%] flex justify-center mx-auto">
-                <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-md sm:p-8 border-gray-700">
+            <div class="w-full flex justify-center mx-auto">
+                <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-xl sm:p-8 border-gray-200 modal-content">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold leading-none text-red-500">Latest Issues</h3>
+                        <h3 class="text-xl font-bold text-red-500">Latest Issues</h3>
                         <a href=""
                            id="view_all"
-                           class="text-xl font-medium text-blue-600 hover:underline dark:text-blue-500">View all</a>
+                           class="text-lg font-medium text-blue-600 hover:underline">View all</a>
                     </div>
                     <div class="flow-root">
                         <ul role="list"
                             id="duplicate-list"
-                            class="max-h-[70vh] overflow-y-scroll">
+                            class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto">
                         </ul>
+                    </div>
+                    <div class="p-6 border-t border-gray-200 bg-gray-100 text-center">
+                        <button onclick="$('#duplicate-container').hide()"
+                                class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                            Close List
+                        </button>
                     </div>
                 </div>
             </div>
@@ -274,7 +288,7 @@
                                                         var img = new Image();
                                                         img.src = event.target.result;
 
-                                                        
+
                                                         var file = new File([blob], "pasted-image.png", {type: blob.type});
 
                                                         var dt = new DataTransfer();
@@ -291,7 +305,7 @@
                                                         // Replace the file input's FileList with the new one
                                                         file_input.files = dt.files;
                                                         file_input.dispatchEvent(new Event('change'));
-                                                        
+
                                                     };
                                                     reader.readAsDataURL(blob);
                                                 }
@@ -455,7 +469,7 @@
             let titleDiv = $("<div>").addClass("w-full h-10 flex justify-center rounded-t-lg p-2 bg-gray-500");
             let titleP = $("<p>").addClass("text-xl text-white font-bold").text(safeNameDisplay);
             let img = $("<img>").addClass("object-cover").attr("src", escapeHtml(src));
-    
+
             titleDiv.append(titleP);
             fileDiv.append(titleDiv).append(img);
             $("#files_manage").append(fileDiv);
@@ -545,7 +559,7 @@
             <div class="mt-2 flex flex-row items-center w-[70%]">
                 <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600" />
                 <button type="button" onclick="remove_email_container()">
-                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>   
+                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
                 </button>
             </div>
         `;

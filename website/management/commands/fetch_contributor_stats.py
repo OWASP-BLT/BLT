@@ -1,14 +1,11 @@
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
-
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 
+from website.management.base import LoggedBaseCommand
 from website.models import Contribution, Project
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Fetches and updates contributor statistics from GitHub"
 
     def add_arguments(self, parser):
@@ -34,8 +31,7 @@ class Command(BaseCommand):
         data_types = ["pulls", "issuesopen", "issuesclosed", "commits", "comments"]
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [
-                executor.submit(self.fetch_and_update_data, data_type, headers, owner, repo)
-                for data_type in data_types
+                executor.submit(self.fetch_and_update_data, data_type, headers, owner, repo) for data_type in data_types
             ]
             for future in futures:
                 future.result()  # Wait for all tasks to complete
@@ -57,9 +53,7 @@ class Command(BaseCommand):
         while url:
             response = requests.get(url, headers=headers)
             if response.status_code != 200:
-                self.stdout.write(
-                    self.style.ERROR(f"Error fetching {data_type}: {response.json()}")
-                )
+                self.stdout.write(self.style.ERROR(f"Error fetching {data_type}: {response.json()}"))
                 break
             data = response.json()
             if not data:
@@ -128,9 +122,7 @@ class Command(BaseCommand):
                         contribution_type="issue_closed",
                         github_id=str(item["id"]),
                         github_url=item["html_url"],
-                        created=datetime.strptime(
-                            item.get("closed_at") or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"
-                        ),
+                        created=datetime.strptime(item.get("closed_at") or item["created_at"], "%Y-%m-%dT%H:%M:%SZ"),
                         status="closed",
                         repository=project,
                     )
@@ -147,9 +139,7 @@ class Command(BaseCommand):
                         contribution_type="commit",
                         github_id=item["sha"],
                         github_url=item["html_url"],
-                        created=datetime.strptime(
-                            item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"
-                        ),
+                        created=datetime.strptime(item["commit"]["author"]["date"], "%Y-%m-%dT%H:%M:%SZ"),
                         repository=project,
                     )
                 )

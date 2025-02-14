@@ -11,14 +11,14 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Count, OuterRef, Prefetch, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from django.views.generic import View
+from django.views.generic import ListView, View
 from slack_bolt import App
 
 from website.models import (
@@ -40,7 +40,13 @@ from website.utils import is_valid_https_url, rebuild_safe_url
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
 
-restricted_domain = ["gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "proton.com"]
+restricted_domain = [
+    "gmail.com",
+    "hotmail.com",
+    "outlook.com",
+    "yahoo.com",
+    "proton.com",
+]
 
 
 def get_email_domain(email):
@@ -50,43 +56,32 @@ def get_email_domain(email):
 
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to access this page.")
+            return redirect("/accounts/login/")
+
+        # Get organization and verify it exists
         organization = Organization.objects.filter(id=id).first()
-
         if not organization:
-            return redirect("organization_view")
+            messages.error(request, "Organization does not exist.")
+            return redirect("/")
 
-        # Check if the user is the admin of the organization
-        if organization.admin == request.user:
-            return func(self, request, organization.id, *args, **kwargs)
+        # Check if user is admin or manager of the organization
+        is_member = organization.admin == request.user or organization.managers.filter(id=request.user.id).exists()
 
-        # Check if the user is a manager of the organization
-        if organization.managers.filter(id=request.user.id).exists():
-            return func(self, request, organization.id, *args, **kwargs)
+        if not is_member:
+            messages.error(request, "You do not have permission to access this organization's integrations.")
+            return redirect("/")
 
-        # Get all domains where the user is a manager
-        user_domains = Domain.objects.filter(managers=request.user)
-
-        # Check if any of these domains belong to the organization
-        if user_domains.filter(organization=organization).exists():
-            return func(self, request, organization.id, *args, **kwargs)
-
-        return redirect("organization_view")
+        return func(self, request, id, *args, **kwargs)
 
     return wrapper
 
 
 def check_organization_or_manager(func):
     def wrapper(self, request, *args, **kwargs):
-        user = request.user
-
-        if not user.is_authenticated:
-            return redirect("/accounts/login/")
-
-        # Check if the user is an admin or manager of any organization
-        if not Organization.objects.filter(Q(admin=user) | Q(managers=user)).exists():
-            messages.error(request, "You are not authorized to access this resource.")
-            return redirect("organization_view")
-
+        # Allow public access - no authentication required
         return func(self, request, *args, **kwargs)
 
     return wrapper
@@ -148,7 +143,8 @@ class RegisterOrganizationView(View):
 
         if user_domain in restricted_domain:
             messages.error(
-                request, "Login with organization email in order to create the organization."
+                request,
+                "Login with organization email in order to create the organization.",
             )
             return redirect("/")
 
@@ -165,9 +161,7 @@ class RegisterOrganizationView(View):
             organization_logo_file = organization_logo.name.split(".")[0]
             extension = organization_logo.name.split(".")[-1]
             organization_logo.name = f"{organization_logo_file[:99]}_{uuid.uuid4()}.{extension}"
-            logo_path = default_storage.save(
-                f"organization_logos/{organization_logo.name}", organization_logo
-            )
+            logo_path = default_storage.save(f"organization_logos/{organization_logo.name}", organization_logo)
         else:
             logo_path = None
 
@@ -210,23 +204,32 @@ class OrganizationDashboardAnalyticsView(View):
         6: "Design",
         7: "Server Down",
     }
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
 
     def get_general_info(self, organization):
-        total_organization_bugs = Issue.objects.filter(
-            domain__organization__id=organization
-        ).count()
+        total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
         total_domains = Domain.objects.filter(organization__id=organization).count()
         # Step 1: Retrieve all hunt IDs associated with the specified organization
-        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list(
-            "id", flat=True
-        )
+        hunt_ids = Hunt.objects.filter(domain__organization__id=organization).values_list("id", flat=True)
 
         # Step 2: Sum the rewarded values from issues that have a hunt_id in the hunt_ids list
-        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(
-            total_money=Sum("rewarded")
-        )["total_money"]
+        total_money_distributed = Issue.objects.filter(hunt_id__in=hunt_ids).aggregate(total_money=Sum("rewarded"))[
+            "total_money"
+        ]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         return {
@@ -238,9 +241,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_bug_report_type_piechart_data(self, organization):
         bug_report_type = (
-            Issue.objects.values("label")
-            .filter(domain__organization__id=organization)
-            .annotate(count=Count("label"))
+            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(count=Count("label"))
         )
         bug_report_type_labels = []
         bug_report_type_data = []
@@ -258,9 +259,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_reports_on_domain_piechart_data(self, organization):
         report_piechart = (
-            Issue.objects.values("url")
-            .filter(domain__organization__id=organization)
-            .annotate(count=Count("url"))
+            Issue.objects.values("url").filter(domain__organization__id=organization).annotate(count=Count("url"))
         )
 
         report_labels = []
@@ -352,23 +351,17 @@ class OrganizationDashboardAnalyticsView(View):
         if prev_week_issue_count == 0:
             percent_increase = this_week_issue_count * 100
         else:
-            percent_increase = (
-                (this_week_issue_count - prev_week_issue_count) / prev_week_issue_count
-            ) * 100
+            percent_increase = ((this_week_issue_count - prev_week_issue_count) / prev_week_issue_count) * 100
 
         return {
             "percent_increase": percent_increase,
-            "is_increasing": True
-            if (this_week_issue_count - prev_week_issue_count) >= 0
-            else False,
+            "is_increasing": (True if (this_week_issue_count - prev_week_issue_count) >= 0 else False),
             "this_week_issue_count": this_week_issue_count,
         }
 
     def get_spent_on_bugtypes(self, organization):
         spent_on_bugtypes = (
-            Issue.objects.values("label")
-            .filter(domain__organization__id=organization)
-            .annotate(spent=Sum("rewarded"))
+            Issue.objects.values("label").filter(domain__organization__id=organization).annotate(spent=Sum("rewarded"))
         )
         labels = list(self.labels.values())
         data = [0 for label in labels]  # make all labels spent 0 / init with 0
@@ -384,51 +377,70 @@ class OrganizationDashboardAnalyticsView(View):
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
+        # For authenticated users, show all organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
+
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
         context = {
             "organization": id,
             "organizations": organizations,
-            "organization_obj": Organization.objects.filter(id=id).first(),
+            "organization_obj": organization_obj,
             "total_info": self.get_general_info(id),
             "bug_report_type_piechart_data": self.get_bug_report_type_piechart_data(id),
             "reports_on_domain_piechart_data": self.get_reports_on_domain_piechart_data(id),
-            "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(
-                id
-            ),
+            "get_current_year_monthly_reported_bar_data": self.get_current_year_monthly_reported_bar_data(id),
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
-            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(
-                id, True
-            ),
+            "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
         }
-        self.get_spent_on_bugtypes(id)
         return render(request, "organization/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
-
-        slack_integration = (
-            SlackIntegration.objects.filter(
-                integration__organization_id=id,
-                integration__service_name=IntegrationServices.SLACK.value,
+        # For authenticated users, show organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
             )
-            .select_related("integration")
-            .first()
-        )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
 
-        context = {"organization": id, "slack_integration": slack_integration}
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        # Get slack integration if it exists
+        slack_integration = SlackIntegration.objects.filter(
+            integration__organization_id=id,
+            integration__service_name=IntegrationServices.SLACK.value,
+        ).first()
+
+        context = {
+            "organization": id,
+            "organizations": organizations,
+            "organization_obj": organization_obj,
+            "slack_integration": slack_integration,
+        }
         return render(request, "organization/organization_integrations.html", context=context)
 
 
@@ -438,11 +450,16 @@ class OrganizationDashboardTeamOverviewView(View):
         sort_field = request.GET.get("sort", "date")
         sort_direction = request.GET.get("direction", "desc")
 
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
+        # For authenticated users, show organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
 
         organization_obj = Organization.objects.filter(id=id).first()
 
@@ -469,9 +486,9 @@ class OrganizationDashboardTeamOverviewView(View):
                 data.append(
                     {
                         "username": report.user.username,
-                        "avatar_url": report.user.userprofile.user_avatar.url
-                        if report.user.userprofile.user_avatar
-                        else None,
+                        "avatar_url": (
+                            report.user.userprofile.user_avatar.url if report.user.userprofile.user_avatar else None
+                        ),
                         "date": report.date.strftime("%B %d, %Y"),
                         "previous_work": report.previous_work,
                         "next_plan": report.next_plan,
@@ -493,9 +510,7 @@ class OrganizationDashboardTeamOverviewView(View):
         }
 
         if sort_field in sort_mapping:
-            daily_status_reports = daily_status_reports.order_by(
-                f"{sort_prefix}{sort_mapping[sort_field]}"
-            )
+            daily_status_reports = daily_status_reports.order_by(f"{sort_prefix}{sort_mapping[sort_field]}")
 
         context = {
             "organization": id,
@@ -513,19 +528,25 @@ class OrganizationDashboardTeamOverviewView(View):
 class OrganizationDashboardManageBugsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
+        # For authenticated users, show all organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
 
+        # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
-        # get all domains of this organization
-        domains = Domain.objects.filter(organization_id=id)
-
-        # get all issues where the url is in the domains in descending order
-        issues = Issue.objects.filter(domain__in=domains).order_by("-created")
+        # Get all issues for this organization, ordered by creation date
+        issues = Issue.objects.filter(domain__organization_id=id).order_by("-created")
 
         context = {
             "organization": id,
@@ -539,22 +560,30 @@ class OrganizationDashboardManageBugsView(View):
 class OrganizationDashboardManageDomainsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        domains = (
-            Domain.objects.values("id", "name", "url", "logo")
-            .filter(organization__id=id)
-            .order_by("modified")
-        )
+        # Get domains for this organization
+        domains = Domain.objects.values("id", "name", "url", "logo").filter(organization__id=id).order_by("modified")
 
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
+        # For authenticated users, show organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
+
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
         context = {
             "organization": id,
             "organizations": organizations,
-            "organization_obj": Organization.objects.filter(id=id).first(),
+            "organization_obj": organization_obj,
             "domains": domains,
         }
 
@@ -630,9 +659,7 @@ class AddDomainView(View):
         managers_list = request.POST.getlist("user")
         organization_obj = Organization.objects.get(id=id)
 
-        domain_exist = Domain.objects.filter(
-            Q(name=domain_data["name"]) | Q(url=domain_data["url"])
-        ).exists()
+        domain_exist = Domain.objects.filter(Q(name=domain_data["name"]) | Q(url=domain_data["url"])).exists()
 
         if domain_exist:
             messages.error(request, "Domain name or url already exist.")
@@ -664,7 +691,8 @@ class AddDomainView(View):
             manager_email_domain = domain_manager_email.split("@")[-1]
             if not domain.endswith(f".{manager_email_domain}") and domain != manager_email_domain:
                 messages.error(
-                    request, f"Manager: {domain_manager_email} does not match domain email."
+                    request,
+                    f"Manager: {domain_manager_email} does not match domain email.",
                 )
                 return redirect("add_domain", id=id)
 
@@ -692,10 +720,7 @@ class AddDomainView(View):
             messages.error(request, "Facebook url should contain facebook.com")
             return redirect("add_domain", id=id)
         if domain_data["twitter"]:
-            if (
-                "twitter.com" not in domain_data["twitter"]
-                and "x.com" not in domain_data["twitter"]
-            ):
+            if "twitter.com" not in domain_data["twitter"] and "x.com" not in domain_data["twitter"]:
                 messages.error(request, "Twitter url should contain twitter.com or x.com")
             return redirect("add_domain", id=id)
         if domain_data["github"] and "github.com" not in domain_data["github"]:
@@ -779,12 +804,10 @@ class AddDomainView(View):
 
         for domain_manager_email in managers_list:
             manager_email_domain = domain_manager_email.split("@")[-1]
-            if (
-                not domain_name.endswith(f".{manager_email_domain}")
-                and domain_name != manager_email_domain
-            ):
+            if not domain_name.endswith(f".{manager_email_domain}") and domain_name != manager_email_domain:
                 messages.error(
-                    request, f"Manager: {domain_manager_email} does not match domain email."
+                    request,
+                    f"Manager: {domain_manager_email} does not match domain email.",
                 )
                 return redirect("edit_domain", id=id, domain_id=domain_id)
 
@@ -808,10 +831,7 @@ class AddDomainView(View):
             messages.error(request, "Facebook url should contain facebook.com")
             return redirect("edit_domain", id=id, domain_id=domain_id)
         if domain_data["twitter"]:
-            if (
-                "twitter.com" not in domain_data["twitter"]
-                and "x.com" not in domain_data["twitter"]
-            ):
+            if "twitter.com" not in domain_data["twitter"] and "x.com" not in domain_data["twitter"]:
                 messages.error(request, "Twitter url should contain twitter.com or x.com")
                 return redirect("edit_domain", id=id, domain_id=domain_id)
         if domain_data["github"] and "github.com" not in domain_data["github"]:
@@ -870,12 +890,13 @@ class AddSlackIntegrationView(View):
                     "slack_integration": slack_integration,
                     "channels": channels_list,
                     "hours": hours,
+                    "welcome_message": slack_integration.welcome_message,
                 },
             )
 
         # Redirect to Slack OAuth flow if no integration exists
-        client_id = os.getenv("SLACK_CLIENT_ID")
-        scopes = "channels:read,chat:write,groups:read,channels:join"
+        client_id = os.getenv("SLACK_ID_CLIENT")
+        scopes = "channels:read,chat:write,groups:read,channels:join,im:write,users:read,team:read,commands"
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
         redirect_uri = f"{scheme}://{host}/oauth/slack/callback"
@@ -921,6 +942,7 @@ class AddSlackIntegrationView(View):
             "default_channel": request.POST.get("target_channel"),
             "daily_sizzle_timelogs_status": request.POST.get("daily_sizzle_timelogs_status"),
             "daily_sizzle_timelogs_hour": request.POST.get("daily_sizzle_timelogs_hour"),
+            "welcome_message": request.POST.get("welcome_message"),  # Add this
         }
         slack_integration = (
             SlackIntegration.objects.filter(
@@ -934,12 +956,12 @@ class AddSlackIntegrationView(View):
         if slack_integration:
             app = App(token=slack_integration.bot_access_token)
             if slack_data["default_channel"]:
-                slack_integration.default_channel_id = self.get_channel_id(
-                    app, slack_data["default_channel"]
-                )
+                slack_integration.default_channel_id = self.get_channel_id(app, slack_data["default_channel"])
                 slack_integration.default_channel_name = slack_data["default_channel"]
             slack_integration.daily_updates = bool(slack_data["daily_sizzle_timelogs_status"])
             slack_integration.daily_update_time = slack_data["daily_sizzle_timelogs_hour"]
+            # Add welcome message
+            slack_integration.welcome_message = slack_data["welcome_message"]
             slack_integration.save()
 
         return redirect("organization_manage_integrations", id=id)
@@ -980,48 +1002,64 @@ class AddSlackIntegrationView(View):
 
 class SlackCallbackView(View):
     def get(self, request, *args, **kwargs):
-        code = request.GET.get("code")
-        state = request.GET.get("state")
-
-        state_data = parse_qs(state)
-        organization_id = state_data.get("organization_id", [None])[0]
-
-        if not code or not organization_id:
-            return HttpResponseBadRequest("Invalid or missing parameters")
-
         try:
-            if not organization_id.isdigit():
+            # Extract parameters
+            code = request.GET.get("code")
+            state = request.GET.get("state")
+
+            if not code:
+                logger.error("Missing 'code' parameter in OAuth callback.")
+                return HttpResponseBadRequest("Missing 'code' parameter")
+
+            if not state:
+                logger.error("Missing 'state' parameter in OAuth callback.")
+                return HttpResponseBadRequest("Missing 'state' parameter")
+
+            # Safely parse state
+            state_data = parse_qs(state)
+            organization_id = state_data.get("organization_id", [None])[0]
+
+            if not organization_id or not organization_id.isdigit():
+                logger.error(f"Invalid organization_id received: {organization_id}")
                 return HttpResponseBadRequest("Invalid organization ID")
 
-            organization_id = int(organization_id)  # Safely cast to int after validation
+            organization_id = int(organization_id)  # Convert to integer after validation
 
-            # Exchange code for token
-            access_token = self.exchange_code_for_token(code, request)
+            # Exchange code for access token
+            token_data = self.exchange_code_for_token(code, request)
 
+            if not token_data or "access_token" not in token_data or "team" not in token_data:
+                logger.error(f"Invalid token data received from Slack: {token_data}")
+                return HttpResponseServerError("Failed to retrieve token from Slack")
+
+            # Store integration data in the database
             integration = Integration.objects.create(
                 organization_id=organization_id,
                 service_name=IntegrationServices.SLACK.value,
             )
             SlackIntegration.objects.create(
                 integration=integration,
-                bot_access_token=access_token,
+                bot_access_token=token_data["access_token"],
+                workspace_name=token_data["team"]["id"],
             )
 
+            # Redirect to the organization's integration dashboard
             dashboard_url = reverse("organization_manage_integrations", args=[organization_id])
             return redirect(dashboard_url)
 
         except Exception as e:
-            print(f"Error during Slack OAuth callback: {e}")
-            return HttpResponseServerError("An error occurred")
+            logger.exception(f"Error during Slack OAuth callback: {e}")
+            return HttpResponseServerError("An unexpected error occurred during Slack OAuth.")
 
     def exchange_code_for_token(self, code, request):
         """Exchanges OAuth code for Slack access token."""
-        client_id = os.getenv("SLACK_CLIENT_ID")
-        client_secret = os.getenv("SLACK_CLIENT_SECRET")
+        client_id = os.getenv("SLACK_ID_CLIENT")
+        client_secret = os.getenv("SLACK_SECRET_CLIENT")
         host = request.get_host()
         scheme = request.META.get("HTTP_X_FORWARDED_PROTO", request.scheme)
         redirect_uri = os.environ.get(
-            "OAUTH_REDIRECT_URL", f"{request.scheme}://{request.get_host()}/oauth/slack/callback"
+            "OAUTH_REDIRECT_URL",
+            f"{request.scheme}://{request.get_host()}/oauth/slack/callback",
         )
 
         url = "https://slack.com/api/oauth.v2.access"
@@ -1036,7 +1074,7 @@ class SlackCallbackView(View):
         token_data = response.json()
 
         if token_data.get("ok"):
-            return token_data["access_token"]
+            return token_data  # Return the full token data instead of just the access token
         else:
             raise Exception(f"Error exchanging code for token: {token_data.get('error')}")
 
@@ -1083,18 +1121,16 @@ class DomainView(View):
         if not domain:
             raise Http404("Domain not found")
 
-        total_money_distributed = Issue.objects.filter(domain__id=domain["id"]).aggregate(
-            total_money=Sum("rewarded")
-        )["total_money"]
+        total_money_distributed = Issue.objects.filter(domain__id=domain["id"]).aggregate(total_money=Sum("rewarded"))[
+            "total_money"
+        ]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
         # Query the database for the exact domain
         total_bug_reported = Issue.objects.filter(domain__id=domain["id"]).count()
         total_bug_accepted = Issue.objects.filter(domain__id=domain["id"], verified=True).count()
 
-        is_domain_manager = Domain.objects.filter(
-            Q(id=domain["id"]) & Q(managers__in=[request.user])
-        ).exists()
+        is_domain_manager = Domain.objects.filter(Q(id=domain["id"]) & Q(managers__in=[request.user])).exists()
         if is_domain_manager:
             latest_issues = (
                 Issue.objects.values(
@@ -1160,18 +1196,16 @@ class DomainView(View):
         first_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("created").first()
         last_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("-created").first()
 
-        ongoing_bughunts = Hunt.objects.filter(domain__id=domain["id"]).annotate(
-            total_prize=Sum("huntprize__value")
-        )[:3]
+        ongoing_bughunts = Hunt.objects.filter(domain__id=domain["id"]).annotate(total_prize=Sum("huntprize__value"))[
+            :3
+        ]
         context = {
             **domain,
             "total_money_distributed": total_money_distributed,
             "total_bug_reported": total_bug_reported,
             "total_bug_accepted": total_bug_accepted,
             "latest_issues": cleaned_issues,
-            "monthly_activity_chart": json.dumps(
-                self.get_current_year_monthly_reported_bar_data(domain["id"])
-            ),
+            "monthly_activity_chart": json.dumps(self.get_current_year_monthly_reported_bar_data(domain["id"])),
             "top_testers": top_testers,
             "first_bug": first_bug,
             "last_bug": last_bug,
@@ -1184,50 +1218,64 @@ class DomainView(View):
 class OrganizationDashboardManageRolesView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
-
-        organization_url = Organization.objects.filter(id=id).first().url
-        parsed_url = urlparse(organization_url).netloc
-        organization_domain = parsed_url.replace("www.", "")
-        organization_users = User.objects.filter(email__endswith=f"@{organization_domain}").values(
-            "id", "username", "email"
-        )
-
-        # Convert organization_users QuerySet to list of dicts
-        organization_users_list = list(organization_users)
-
-        domains = Domain.objects.filter(
-            Q(organization__id=id)
-            & (Q(organization__managers__in=[request.user]) | Q(organization__admin=request.user))
-            | Q(managers=request.user)
-        ).distinct()
-
-        domains_data = []
-        for domain in domains:
-            _id = domain.id
-            name = domain.name
-            organization_admin = domain.organization.admin
-            # Convert managers QuerySet to list of dicts
-            managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
-            domains_data.append(
-                {
-                    "id": _id,
-                    "name": name,
-                    "managers": managers,
-                    "organization_admin": organization_admin,
-                }
+        # For authenticated users, show organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
             )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
+
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
+
+        # Get organization domain and users only if authenticated
+        if request.user.is_authenticated:
+            organization_url = organization_obj.url
+            parsed_url = urlparse(organization_url).netloc
+            organization_domain = parsed_url.replace("www.", "")
+            organization_users = User.objects.filter(email__endswith=f"@{organization_domain}").values(
+                "id", "username", "email"
+            )
+            organization_users_list = list(organization_users)
+
+            domains = Domain.objects.filter(
+                Q(organization__id=id)
+                & (Q(organization__managers__in=[request.user]) | Q(organization__admin=request.user))
+                | Q(managers=request.user)
+            ).distinct()
+
+            domains_data = []
+            for domain in domains:
+                _id = domain.id
+                name = domain.name
+                organization_admin = domain.organization.admin
+                managers = list(domain.managers.values("id", "username", "userprofile__user_avatar"))
+                domains_data.append(
+                    {
+                        "id": _id,
+                        "name": name,
+                        "managers": managers,
+                        "organization_admin": organization_admin,
+                    }
+                )
+        else:
+            # For unauthenticated users, show empty lists
+            organization_users_list = []
+            domains_data = []
 
         context = {
             "organization": id,
-            "organization_obj": Organization.objects.filter(id=id).first(),
-            "organizations": list(organizations),  # Convert companies QuerySet to list of dicts
+            "organization_obj": organization_obj,
+            "organizations": list(organizations),
             "domains": domains_data,
-            "organization_users": organization_users_list,  # Use the converted list
+            "organization_users": organization_users_list,
         }
 
         return render(request, "organization/organization_manage_roles.html", context)
@@ -1258,7 +1306,10 @@ class OrganizationDashboardManageRolesView(View):
             if user_email_domain == organization_domain:
                 domain.managers.add(manager.id)
             else:
-                messages.error(request, f"Manager: {manager.email} does not match domain email.")
+                messages.error(
+                    request,
+                    f"Manager: {domain_manager_email} does not match domain email.",
+                )
                 return redirect("organization_manage_roles", id)
 
         messages.success(request, "successfully added the managers")
@@ -1363,9 +1414,7 @@ class ShowBughuntView(View):
 
         # bughunt prizes
         rewards = HuntPrize.objects.filter(hunt_id=hunt_obj.id)
-        winners_count = {
-            reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards
-        }
+        winners_count = {reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards}
 
         # check winner have for this bughunt
         winners = Winner.objects.filter(hunt_id=hunt_obj.id).select_related("prize")
@@ -1554,11 +1603,22 @@ class AddHuntView(View):
 class OrganizationDashboardManageBughuntView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
-        organizations = (
-            Organization.objects.values("name", "id")
-            .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
-            .distinct()
-        )
+        # For authenticated users, show all organizations they have access to
+        if request.user.is_authenticated:
+            organizations = (
+                Organization.objects.values("name", "id")
+                .filter(Q(managers__in=[request.user]) | Q(admin=request.user))
+                .distinct()
+            )
+        else:
+            # For unauthenticated users, don't show organization list
+            organizations = []
+
+        # Get the organization object
+        organization_obj = Organization.objects.filter(id=id).first()
+        if not organization_obj:
+            messages.error(request, "Organization does not exist")
+            return redirect("home")
 
         query = Hunt.objects.values(
             "id",
@@ -1584,7 +1644,7 @@ class OrganizationDashboardManageBughuntView(View):
 
         context = {
             "organization": id,
-            "organization_obj": Organization.objects.filter(id=id).first(),
+            "organization_obj": organization_obj,
             "organizations": organizations,
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
@@ -1617,12 +1677,8 @@ def edit_prize(request, prize_id, organization_id):
     data = json.loads(request.body)
     prize.name = data.get("prize_name", prize.name)
     prize.value = data.get("cash_value", prize.value)
-    prize.no_of_eligible_projects = data.get(
-        "number_of_winning_projects", prize.no_of_eligible_projects
-    )
-    prize.valid_submissions_eligible = data.get(
-        "every_valid_submissions", prize.valid_submissions_eligible
-    )
+    prize.no_of_eligible_projects = data.get("number_of_winning_projects", prize.no_of_eligible_projects)
+    prize.valid_submissions_eligible = data.get("every_valid_submissions", prize.valid_submissions_eligible)
     prize.description = data.get("prize_description", prize.description)
     prize.save()
 
@@ -1638,7 +1694,10 @@ def accept_bug(request, issue_id, reward_id=None):
             issue.rewarded = 0
             issue.save()
             Winner(
-                hunt_id=issue.hunt.id, prize_id=None, winner_id=issue.user.id, prize_amount=0
+                hunt_id=issue.hunt.id,
+                prize_id=None,
+                winner_id=issue.user.id,
+                prize_amount=0,
             ).save()
         else:
             reward = get_object_or_404(HuntPrize, id=reward_id)
@@ -1665,7 +1724,10 @@ def delete_manager(request, manager_id, domain_id):
         if not (request.user == domain.organization.admin):
             # return error with not permission msg
             return JsonResponse(
-                {"success": False, "message": "You do not have permission to delete this manager."},
+                {
+                    "success": False,
+                    "message": "You do not have permission to delete this manager.",
+                },
                 status=403,
             )
 
@@ -1679,3 +1741,39 @@ def delete_manager(request, manager_id, domain_id):
         return JsonResponse({"success": False, "message": "Domain not found."})
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "User not found."})
+
+
+class OrganizationListView(ListView):
+    model = Organization
+    template_name = "organization/organization_list.html"
+    context_object_name = "organizations"
+    paginate_by = 100
+
+    def get_queryset(self):
+        # Get organizations with domain stats
+        return (
+            Organization.objects.filter(is_active=True)
+            .prefetch_related(
+                "domain_set",
+                "domain_set__issue_set",
+                Prefetch(
+                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.annotate(issue_count=Count("id")).order_by("-issue_count"),
+                    to_attr="top_testers_list",
+                ),
+            )
+            .order_by("name")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["total_organizations"] = Organization.objects.filter(is_active=True).count()
+        return context

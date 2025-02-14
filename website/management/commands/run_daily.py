@@ -1,8 +1,7 @@
 import logging
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
-
-# from django.core import management
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -14,10 +13,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
-
-            # Add commands to be executed daily
-            # management.call_command('daily_command1')
-            # management.call_command('daily_command2')
+            call_command("update_github_issues")
+            call_command("fetch_contributor_stats")
+            call_command("check_keywords")
+            call_command("check_owasp_projects")
+            call_command("check_trademarks")
         except Exception as e:
             logger.error(f"Error in daily tasks: {str(e)}")
             raise

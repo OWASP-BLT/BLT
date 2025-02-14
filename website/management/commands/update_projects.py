@@ -1,12 +1,12 @@
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
+from website.management.base import LoggedBaseCommand
 from website.models import Project
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Update projects with their contributors and latest release from GitHub"
 
     def add_arguments(self, parser):
@@ -67,15 +67,9 @@ class Command(BaseCommand):
                         return 0
 
                 project.open_issues = get_issue_count(repo_name, "type:issue+state:open", headers)
-                project.closed_issues = get_issue_count(
-                    repo_name, "type:issue+state:closed", headers
-                )
-                project.open_pull_requests = get_issue_count(
-                    repo_name, "type:pr+state:open", headers
-                )
-                project.closed_pull_requests = get_issue_count(
-                    repo_name, "type:pr+state:closed", headers
-                )
+                project.closed_issues = get_issue_count(repo_name, "type:issue+state:closed", headers)
+                project.open_pull_requests = get_issue_count(repo_name, "type:pr+state:open", headers)
+                project.closed_pull_requests = get_issue_count(repo_name, "type:pr+state:closed", headers)
 
                 # Fetch latest release
                 url = f"https://api.github.com/repos/{repo_name}/releases/latest"
@@ -85,11 +79,7 @@ class Command(BaseCommand):
                     project.release_name = release_data.get("name") or release_data.get("tag_name")
                     project.release_datetime = parse_datetime(release_data.get("published_at"))
                 else:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f"No releases found for {repo_name}: {response.status_code}"
-                        )
-                    )
+                    self.stdout.write(self.style.WARNING(f"No releases found for {repo_name}: {response.status_code}"))
 
                 page = 1
                 commit_count = 0
@@ -100,15 +90,11 @@ class Command(BaseCommand):
                         contributors_data = response.json()
                         if not contributors_data:
                             break
-                        commit_count += sum(
-                            contributor.get("contributions", 0) for contributor in contributors_data
-                        )
+                        commit_count += sum(contributor.get("contributions", 0) for contributor in contributors_data)
                         page += 1
                     else:
                         self.stdout.write(
-                            self.style.WARNING(
-                                f"Failed to fetch contributors for {repo_name}: {response.status_code}"
-                            )
+                            self.style.WARNING(f"Failed to fetch contributors for {repo_name}: {response.status_code}")
                         )
                         break
                 project.commit_count = commit_count
@@ -116,9 +102,7 @@ class Command(BaseCommand):
 
             else:
                 self.stdout.write(
-                    self.style.WARNING(
-                        f"Failed to fetch repository data for {repo_name}: {response.status_code}"
-                    )
+                    self.style.WARNING(f"Failed to fetch repository data for {repo_name}: {response.status_code}")
                 )
                 continue  # Skip to next project
 

@@ -3,10 +3,10 @@ from datetime import timedelta
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from django.core.management.base import BaseCommand
 from django.db import models
 from django.utils.timezone import now
 
+from website.management.base import LoggedBaseCommand
 from website.models import Organization
 
 
@@ -53,7 +53,7 @@ def send_email_alert(organization, results_count):
     send_mail(subject, message, from_email, recipient_list)
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Check for trademark updates and send notifications if new trademarks are found."
 
     def handle(self, *args, **options):
@@ -86,9 +86,7 @@ class Command(BaseCommand):
                     f"The last trademark check date for {organization.name} is updated to {organization.trademark_check_date}"
                 )
                 organization.save()
-                self.stdout.write(
-                    f"Initialized data for {organization.name}: Count = {organization.trademark_count}"
-                )
+                self.stdout.write(f"Initialized data for {organization.name}: Count = {organization.trademark_count}")
             else:
                 self.stderr.write(f"Failed to fetch trademark data for {organization.name}.")
 
@@ -111,9 +109,7 @@ class Command(BaseCommand):
         if response_data:
             new_trademark_count = response_data.get("count", 0)
             if new_trademark_count > organization.trademark_count:
-                self.stdout.write(
-                    f"New trademarks found for {organization.name}: {new_trademark_count}"
-                )
+                self.stdout.write(f"New trademarks found for {organization.name}: {new_trademark_count}")
                 organization.trademark_count = new_trademark_count
                 organization.trademark_check_date = now()
                 organization.save()
