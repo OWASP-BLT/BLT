@@ -24,7 +24,6 @@ from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.template.defaultfilters import slugify
-from django.urls import reverse
 from django.utils import timezone
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
@@ -936,8 +935,6 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    # add languages
-    # add tags
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1273,6 +1270,7 @@ class Repo(models.Model):
     repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
+    closed_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)
     license = models.CharField(max_length=100, null=True, blank=True)
     last_commit_date = models.DateTimeField(null=True, blank=True)

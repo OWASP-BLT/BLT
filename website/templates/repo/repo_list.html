@@ -4,7 +4,7 @@
 {% block content %}
     <div class="w-full px-4 py-8">
         <div class="max-w-[1920px] mx-auto">
-            <h1 class="text-3xl font-bold text-gray-900 mb-8">Repositories</h1>
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Repositories ({{ repos.count }})</h1>
             <!-- Search Form -->
             <form method="get" class="mb-8">
                 <div class="flex gap-2">
@@ -100,6 +100,20 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
+                                <a href="?sort={% if current_sort == 'closed_pull_requests' %}-{% endif %}closed_pull_requests{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
+                                   class="group inline-flex items-center">
+                                    Closed PRs
+                                    <span class="ml-2">
+                                        {% if current_sort == 'closed_pull_requests' %}
+                                            ↑
+                                        {% elif current_sort == '-closed_pull_requests' %}
+                                            ↓
+                                        {% endif %}
+                                    </span>
+                                </a>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">
                                 <a href="?sort={% if current_sort == 'contributor_count' %}-{% endif %}contributor_count{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}"
                                    class="group inline-flex items-center">
                                     Contributors
@@ -156,12 +170,13 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.stars }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.forks }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.open_issues }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.closed_pull_requests }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.contributor_count }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ repo.last_updated|date:"M d, Y" }}</td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">No repositories found.</td>
+                                <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">No repositories found.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
