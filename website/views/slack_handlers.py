@@ -1950,7 +1950,7 @@ def get_event_overview(workspace_client, user_id, search_term, activity, team_id
                         }
 
                         for event in events_to_show:
-                            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+                            event_text = f"*{event['name']}*\n📅 {event['dates']}\n"
                             if event.get("optional-text"):
                                 event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
                             if event.get("url"):
@@ -2005,7 +2005,7 @@ def get_event_overview(workspace_client, user_id, search_term, activity, team_id
                         events_to_show = category["events"][:2]
 
                         for event in events_to_show:
-                            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+                            event_text = f"*{event['name']}*\n📅 {event['dates']}\n"
                             if event.get("optional-text"):
                                 event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
                             if event.get("url"):
@@ -2099,7 +2099,7 @@ def handle_event_pagination(action, body, client):
 
         # Add event blocks
         for event in events_to_show:
-            event_text = f"*{event['name']}*\n" f"📅 {event['dates']}\n"
+            event_text = f"*{event['name']}*\n📅 {event['dates']}\n"
             if event.get("optional-text"):
                 event_text += f"ℹ️ {event['optional-text'][:150]}...\n"
             if event.get("url"):

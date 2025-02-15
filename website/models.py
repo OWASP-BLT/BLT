@@ -1341,7 +1341,7 @@ class ContributorStats(models.Model):
         unique_together = ("contributor", "repo", "date", "granularity")
 
     def __str__(self):
-        return f"{self.contributor.name} in {self.repo.name} " f"on {self.date} [{self.granularity}]"
+        return f"{self.contributor.name} in {self.repo.name} on {self.date} [{self.granularity}]"
 
 
 class SlackBotActivity(models.Model):

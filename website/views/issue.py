@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
@@ -13,6 +14,7 @@ from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
@@ -22,6 +24,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import DatabaseError
 from django.db.models import Count, Prefetch, Q, Sum
 from django.db.transaction import atomic
 from django.dispatch import receiver
@@ -39,6 +42,7 @@ from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -71,6 +75,9 @@ from website.utils import (
     rebuild_safe_url,
     safe_redirect_request,
 )
+
+# Add logger configuration
+logger = logging.getLogger(__name__)
 
 
 @login_required(login_url="/accounts/login")
@@ -1719,3 +1726,78 @@ def remove_user_from_issue(request, id):
     except Issue.DoesNotExist:
         messages.error(request, "Issue not found")
         return safe_redirect_request(request)
+
+
+# Add the login view function
+def login_view(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        try:
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect("home")
+            else:
+                return render(request, "login.html", {"error": "Invalid credentials"})
+        except DatabaseError as e:
+            logger.error(f"Database error during login: {e}")
+            return render(request, "login.html", {"error": "Database error. Please try again later."})
+    return render(request, "login.html")
+
+
+def status_view(request):
+    """View to display system status information."""
+    try:
+        # Get system status info
+        open_issues = Issue.objects.filter(status="open").count()
+        closed_issues = Issue.objects.filter(status="closed").count()
+        total_users = User.objects.count()
+
+        status_info = {
+            "status": "ok",
+            "open_issues": open_issues,
+            "closed_issues": closed_issues,
+            "total_users": total_users,
+            "system_health": "operational",
+        }
+        return render(request, "status_page.html", status_info)
+    except DatabaseError as e:
+        logger.error(f"Database error in status view: {str(e)}")
+        return render(
+            request,
+            "status_page.html",
+            {"error": "Database error. Please try again later.", "status": "error"},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error in status view: {str(e)}")
+        return render(
+            request,
+            "status_page.html",
+            {"error": "An unexpected error occurred.", "status": "error"},
+        )
+
+
+@require_POST
+@csrf_exempt  # Only if needed for external webhook calls
+def sendgrid_webhook(request):
+    """Handle incoming SendGrid webhook events."""
+    try:
+        logger.info("Received SendGrid webhook")
+        webhook_data = json.loads(request.body)
+
+        # Validate webhook data
+        if not isinstance(webhook_data, dict):
+            raise ValueError("Invalid webhook data format")
+
+        # Process webhook data here
+        return HttpResponse(status=200)
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in webhook: {str(e)}")
+        return HttpResponse("Invalid JSON", status=400)
+    except ValueError as e:
+        logger.error(f"Validation error in webhook: {str(e)}")
+        return HttpResponse("Invalid data format", status=400)
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
+        return HttpResponse("Internal server error", status=500)

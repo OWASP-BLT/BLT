@@ -984,7 +984,7 @@ def submit_roadmap_pr(request):
 
         if "error" in pr_data or "error" in roadmap_data:
             return JsonResponse(
-                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
+                {"error": (f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}")},
                 status=500,
             )
 

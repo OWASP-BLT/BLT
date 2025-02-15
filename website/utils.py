@@ -282,7 +282,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
 
         except openai.RateLimitError as e:
             # If rate-limiting error occurs, wait and retry
-            print(f"Rate-limiting error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            print(f"Rate-limiting error encountered: {e}. Retrying in {2**attempt} seconds.")
             time.sleep(2**attempt)  # Exponential backoff
 
         except Exception as e:

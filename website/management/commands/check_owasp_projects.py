@@ -91,7 +91,7 @@ class Command(LoggedBaseCommand):
                     counter = 1
                     while Project.objects.filter(slug=project_slug).exists():
                         suffix = f"-{counter}"
-                        project_slug = f"{base_slug[:50-len(suffix)]}{suffix}"
+                        project_slug = f"{base_slug[: 50 - len(suffix)]}{suffix}"
                         counter += 1
 
                     # Validate and set default values for required fields
@@ -243,13 +243,15 @@ class Command(LoggedBaseCommand):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):  # Rate limit or forbidden
-                        self.stderr.write(self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"))
+                        self.stderr.write(
+                            self.style.WARNING(f"Rate limit hit for {url}. Attempt {i + 1}/{max_retries}")
+                        )
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
+                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i + 1}/{max_retries}")
                     )
                     time.sleep(delay)
                     continue
@@ -370,13 +372,15 @@ class Command(LoggedBaseCommand):
                 try:
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code in (403, 429):
-                        self.stderr.write(self.style.WARNING(f"Rate limit hit for {url}. Attempt {i+1}/{max_retries}"))
+                        self.stderr.write(
+                            self.style.WARNING(f"Rate limit hit for {url}. Attempt {i + 1}/{max_retries}")
+                        )
                         time.sleep(delay)
                         continue
                     return response
                 except requests.exceptions.RequestException as e:
                     self.stderr.write(
-                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i+1}/{max_retries}")
+                        self.style.WARNING(f"Request failed for {url}: {str(e)}. Attempt {i + 1}/{max_retries}")
                     )
                     time.sleep(delay)
                     continue
