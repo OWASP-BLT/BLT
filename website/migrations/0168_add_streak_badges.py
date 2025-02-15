@@ -70,9 +70,6 @@ def add_badge_icons(apps, schema_editor):
             with open(media_icon_path, "rb") as f:
                 badge.icon.save(os.path.basename(media_icon_path), File(f), save=True)
                 badge.save()
-                print(f"Updated icon for {badge_data['title']}")
-        else:
-            print(f"Image not found for {badge_data['title']} at {static_icon_path}")
 
 
 class Migration(migrations.Migration):

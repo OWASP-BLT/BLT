@@ -1,12 +1,12 @@
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
+from website.management.base import LoggedBaseCommand
 from website.models import Project
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Update projects with their contributors and latest release from GitHub"
 
     def add_arguments(self, parser):

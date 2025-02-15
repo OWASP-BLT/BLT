@@ -457,6 +457,45 @@
                 <div class="profile-rate">{{ user.userprofile.discounted_hourly_rate }}</div>
                 <hr>
             {% endif %}
+            <!-- Social Links Section -->
+            <div class="social-links mt-4">
+                <div class="font-bold mb-3">Social Links</div>
+                <div class="flex flex-col gap-2">
+                    {% if user.userprofile.github_url %}
+                        <a href="{{ user.userprofile.github_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fab fa-github text-xl"></i>
+                            <span>GitHub</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.x_username %}
+                        <a href="https://x.com/{{ user.userprofile.x_username }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fab fa-x-twitter text-xl"></i>
+                            <span>X (Twitter)</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.linkedin_url %}
+                        <a href="{{ user.userprofile.linkedin_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fab fa-linkedin text-xl"></i>
+                            <span>LinkedIn</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.website_url %}
+                        <a href="{{ user.userprofile.website_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-globe text-xl"></i>
+                            <span>Website</span>
+                        </a>
+                    {% endif %}
+                </div>
+                <hr class="mt-4">
+            </div>
             <div>
                 <div class="font-bold mb-3 mt-1">
                     Recent Activity

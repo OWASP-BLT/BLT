@@ -77,7 +77,7 @@ jobs:
 
   code-ql:
     name: Run CodeQL
-    needs: pre-commit
+    needs: setup
     runs-on: ubuntu-latest
     permissions:
       security-events: write
@@ -142,7 +142,7 @@ jobs:
 
   test:
     name: Run Tests
-    needs: code-ql
+    needs: setup
     runs-on: ubuntu-latest
     permissions:
       issues: write

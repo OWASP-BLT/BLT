@@ -5,15 +5,16 @@ import time
 import requests
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import IntegrityError, models, transaction
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 
+from website.management.base import LoggedBaseCommand
 from website.models import Contributor, Organization, Project, Repo, Tag
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Upload project and repository details from a CSV file."
 
     def add_arguments(self, parser):

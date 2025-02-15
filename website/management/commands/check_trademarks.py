@@ -3,10 +3,10 @@ from datetime import timedelta
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from django.core.management.base import BaseCommand
 from django.db import models
 from django.utils.timezone import now
 
+from website.management.base import LoggedBaseCommand
 from website.models import Organization
 
 
@@ -53,7 +53,7 @@ def send_email_alert(organization, results_count):
     send_mail(subject, message, from_email, recipient_list)
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Check for trademark updates and send notifications if new trademarks are found."
 
     def handle(self, *args, **options):

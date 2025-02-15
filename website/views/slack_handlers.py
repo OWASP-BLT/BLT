@@ -12,8 +12,8 @@ import yaml
 from django.db.models import Count, Sum
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from slack import WebClient
 from slack_sdk.errors import SlackApiError
+from slack_sdk.web import WebClient
 
 from website.models import Domain, Hunt, Issue, Project, SlackBotActivity, SlackIntegration, User
 

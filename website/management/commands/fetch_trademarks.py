@@ -2,13 +2,13 @@ import time
 
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from website.management.base import LoggedBaseCommand
 from website.models import Organization, Trademark, TrademarkOwner
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Fetch trademark information for organizations and store it in the database"
 
     def handle(self, *args, **kwargs):

@@ -1,9 +1,9 @@
 import datetime
 
-from django.core.management.base import BaseCommand
+from website.management.base import LoggedBaseCommand
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Monthly Email"
 
     def handle(self, *args, **options):
