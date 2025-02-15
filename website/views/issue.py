@@ -357,13 +357,13 @@ def delete_issue(request, id):
             messages.success(request, "Issue deleted")
             if tokenauth:
                 return JsonResponse("Deleted", safe=False)
-            return redirect("issues")  # Changed to use named URL 'issues'
+            return redirect("/")  # Changed to use named URL 'issues'
         else:
             messages.error(request, "You don't have permission to delete this issue")
-            return redirect("issues")  # Changed to use named URL 'issues'
+            return redirect("/")  # Changed to use named URL 'issues'
     except Issue.DoesNotExist:
         messages.error(request, "Issue not found")
-        return redirect("issues")  # Changed to use named URL 'issues'
+        return redirect("/")  # Changed to use named URL 'issues'
 
 
 def remove_user_from_issue(request, id):
