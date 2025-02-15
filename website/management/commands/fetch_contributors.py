@@ -3,12 +3,12 @@ import time
 import requests
 from django.conf import settings
 from django.core.exceptions import MultipleObjectsReturned
-from django.core.management.base import BaseCommand
 
+from website.management.base import LoggedBaseCommand
 from website.models import Contributor, Project
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Fetch contributors for a specified project from GitHub"
 
     def add_arguments(self, parser):

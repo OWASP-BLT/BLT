@@ -76,6 +76,7 @@ from website.views.core import (
     UploadCreate,
     add_suggestions,
     badge_list,
+    check_owasp_compliance,
     check_status,
     donate_view,
     facebook_callback,
@@ -84,6 +85,7 @@ from website.views.core import (
     google_callback,
     home,
     robots_txt,
+    run_management_command,
     search,
     set_vote_status,
     sitemap,
@@ -98,6 +100,7 @@ from website.views.core import (
 )
 from website.views.issue import (
     AllIssuesView,
+    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -113,6 +116,7 @@ from website.views.issue import (
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
+    get_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -194,6 +198,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.repo import RepoListView
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamChallenges,
@@ -287,12 +292,13 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
+    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
     path(
@@ -507,6 +513,8 @@ urlpatterns = [
     ),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    # link to index.html
+    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -876,7 +884,18 @@ urlpatterns = [
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("stats/run-command/", run_management_command, name="run_management_command"),
     path("test-sentry/", test_sentry, name="test_sentry"),
+    path(
+        "github-issue-prompt/",
+        TemplateView.as_view(template_name="github_issue_prompt.html"),
+        name="github_issue_prompt",
+    ),
+    path("owasp-compliance/", check_owasp_compliance, name="check_owasp_compliance"),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path("get-github-issue/", get_github_issue, name="get_github_issue"),
+    # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
+    path("repo_list/", RepoListView.as_view(), name="repo_list"),
 ]
 
 if settings.DEBUG:

@@ -4,9 +4,9 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from website.management.base import LoggedBaseCommand
 from website.models import Activity, Badge, Domain, Hunt, Issue, Organization, Points, Project, Repo, Tag, UserBadge
 
 
@@ -47,7 +47,7 @@ def random_sentence(word_count=6):
     return " ".join(random.choice(words) for _ in range(word_count))
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Generate sample data for testing"
 
     def clear_existing_data(self):

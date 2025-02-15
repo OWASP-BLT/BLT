@@ -4,14 +4,18 @@ import subprocess
 import tracemalloc
 import urllib
 from datetime import timedelta
+from urllib.parse import urlparse
 
 import psutil
+import redis
 import requests
 import requests.exceptions
+import sentry_sdk
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
@@ -21,8 +25,8 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.core.management import call_command
-from django.db import connection
+from django.core.management import call_command, get_commands, load_command_class
+from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -33,7 +37,6 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
-from django_redis import get_redis_connection
 
 from blt import settings
 from website.models import (
@@ -42,6 +45,7 @@ from website.models import (
     Domain,
     Hunt,
     Issue,
+    ManagementCommandLog,
     Organization,
     Points,
     PRAnalysisReport,
@@ -119,7 +123,7 @@ def check_status(request):
     CHECK_BITCOIN = False
     CHECK_SENDGRID = True
     CHECK_GITHUB = True
-    CHECK_OPENAI = False
+    CHECK_OPENAI = True
     CHECK_MEMORY = True
     CHECK_DATABASE = True
     CHECK_REDIS = True
@@ -136,8 +140,17 @@ def check_status(request):
             "github": None if not CHECK_GITHUB else False,
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
-            "redis_stats": {} if not CHECK_REDIS else {},
+            "redis_stats": {
+                "status": "Not configured",
+                "version": None,
+                "connected_clients": None,
+                "used_memory_human": None,
+            }
+            if not CHECK_REDIS
+            else {},
             "slack_bot": {},
+            "management_commands": [],
+            "available_commands": [],
         }
 
         if CHECK_MEMORY:
@@ -149,6 +162,32 @@ def check_status(request):
                     "memory_by_module": [],
                 }
             )
+
+        # Get management command logs
+        command_logs = (
+            ManagementCommandLog.objects.values("command_name")
+            .distinct()
+            .annotate(
+                last_run=models.Max("last_run"),
+                last_success=models.ExpressionWrapper(models.Q(success=True), output_field=models.BooleanField()),
+                run_count=models.Count("id"),
+            )
+            .order_by("command_name")
+        )
+
+        status_data["management_commands"] = list(command_logs)
+
+        # Get list of available management commands
+        available_commands = []
+        for name, app_name in get_commands().items():
+            command_class = load_command_class(app_name, name)
+            available_commands.append(
+                {
+                    "name": name,
+                    "help_text": getattr(command_class, "help", "").split("\n")[0],
+                }
+            )
+        status_data["available_commands"] = sorted(available_commands, key=lambda x: x["name"])
 
         # Bitcoin RPC check
         if CHECK_BITCOIN:
@@ -178,7 +217,7 @@ def check_status(request):
 
         # SendGrid API check
         if CHECK_SENDGRID:
-            sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+            sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
             if sendgrid_api_key:
                 try:
                     print("Checking SendGrid API...")
@@ -262,11 +301,50 @@ def check_status(request):
         # Redis stats
         if CHECK_REDIS:
             print("Getting Redis stats...")
-            try:
-                redis_client = get_redis_connection("default")
-                status_data["redis_stats"] = redis_client.info()
-            except Exception as e:
-                print(f"Redis error or not supported: {e}")
+            redis_url = os.environ.get("REDISCLOUD_URL")
+
+            if redis_url:
+                try:
+                    # Parse Redis URL
+                    parsed_url = urlparse(redis_url)
+                    redis_host = parsed_url.hostname or "localhost"
+                    redis_port = parsed_url.port or 6379
+                    redis_password = parsed_url.password
+                    redis_db = 0  # Default database
+
+                    # Create Redis client
+                    redis_client = redis.Redis(
+                        host=redis_host,
+                        port=redis_port,
+                        password=redis_password,
+                        db=redis_db,
+                        socket_timeout=2.0,  # 2 second timeout
+                    )
+
+                    # Test connection and get info
+                    info = redis_client.info()
+                    status_data["redis_stats"] = {
+                        "status": "Connected",
+                        "version": info.get("redis_version"),
+                        "connected_clients": info.get("connected_clients"),
+                        "used_memory_human": info.get("used_memory_human"),
+                        "uptime_days": info.get("uptime_in_days"),
+                    }
+                except (redis.ConnectionError, redis.TimeoutError) as e:
+                    status_data["redis_stats"] = {
+                        "status": "Connection failed",
+                        "error": str(e),
+                    }
+                except Exception as e:
+                    status_data["redis_stats"] = {
+                        "status": "Error",
+                        "error": str(e),
+                    }
+            else:
+                status_data["redis_stats"] = {
+                    "status": "Not configured",
+                    "error": "REDISCLOUD_URL not set",
+                }
 
         # Slack bot activity metrics
         if CHECK_SLACK_BOT:
@@ -990,3 +1068,86 @@ def sync_github_projects(request):
         except Exception as e:
             messages.error(request, f"Error syncing OWASP GitHub projects: {str(e)}")
     return redirect("stats_dashboard")
+
+
+def check_owasp_compliance(request):
+    """View to check OWASP project compliance criteria"""
+    if request.method == "POST":
+        url = request.POST.get("url")
+        if not url:
+            messages.error(request, "URL is required")
+            return redirect("check_owasp_compliance")
+
+        try:
+            # Check GitHub compliance
+            parsed_url = urlparse(url)
+            is_github = parsed_url.netloc == "github.com"
+            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+
+            # Check website compliance
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Check for OWASP mention
+            content = soup.get_text().lower()
+            has_owasp_mention = "owasp" in content
+
+            # Check for project page link
+            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            has_project_link = len(owasp_links) > 0
+
+            # Check for up-to-date info
+            has_dates = bool(soup.find_all(["time", "date"]))
+
+            # Check vendor neutrality
+            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
+            has_paywall_indicators = any(term in content for term in paywall_terms)
+
+            # Compile recommendations
+            recommendations = []
+            if not is_owasp_org:
+                recommendations.append("Project should be hosted under the OWASP GitHub organization")
+            if not has_owasp_mention:
+                recommendations.append("Website should clearly state it is an OWASP project")
+            if not has_project_link:
+                recommendations.append("Website should link to the OWASP project page")
+            if has_paywall_indicators:
+                recommendations.append("Check if the project has features behind a paywall")
+
+            context = {
+                "url": url,
+                "github_compliance": {
+                    "github_hosted": is_github,
+                    "under_owasp_org": is_owasp_org,
+                },
+                "website_compliance": {
+                    "has_owasp_mention": has_owasp_mention,
+                    "has_project_link": has_project_link,
+                    "has_dates": has_dates,
+                },
+                "vendor_neutrality": {
+                    "possible_paywall": has_paywall_indicators,
+                },
+                "recommendations": recommendations,
+                "overall_status": "compliant" if not recommendations else "needs_improvement",
+            }
+
+            return render(request, "owasp_compliance_result.html", context)
+
+        except Exception as e:
+            messages.error(request, f"Error checking compliance: {str(e)}")
+            return redirect("check_owasp_compliance")
+
+    return render(request, "owasp_compliance_check.html")
+
+
+def run_management_command(request):
+    if request.method == "POST" and request.user.is_superuser:
+        command = request.POST.get("command")
+        try:
+            call_command(command)
+            messages.success(request, f"Successfully ran command: {command}")
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+            messages.error(request, f"Error running command {command}")
+    return redirect("check_status")
