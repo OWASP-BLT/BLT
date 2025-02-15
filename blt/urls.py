@@ -100,6 +100,7 @@ from website.views.core import (
 )
 from website.views.issue import (
     AllIssuesView,
+    ContributeView,
     GithubIssueView,
     IssueCreate,
     IssueEdit,
@@ -661,7 +662,7 @@ urlpatterns = [
     ),
     re_path(
         r"^contribute/$",
-        TemplateView.as_view(template_name="contribute.html"),
+        ContributeView.as_view(),
         name="contribution_guidelines",
     ),
     path("select_contribution/", select_contribution, name="select_contribution"),
