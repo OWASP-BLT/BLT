@@ -38,7 +38,7 @@ from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -243,60 +243,66 @@ def resolve(request, id):
 def UpdateIssue(request):
     if not request.POST.get("issue_pk"):
         return HttpResponse("Missing issue ID")
-    issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
     try:
+        issue = get_object_or_404(Issue, pk=request.POST.get("issue_pk"))
         tokenauth = False
         if "token" in request.POST:
-            for token in Token.objects.all():
-                if request.POST["token"] == token.key:
-                    request.user = User.objects.get(id=token.user_id)
-                    tokenauth = True
-                    break
-    except:
-        tokenauth = False
-    if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
-        if request.POST.get("action") == "close":
-            issue.status = "closed"
-            issue.closed_by = request.user
-            issue.closed_date = datetime.now()
+            try:
+                token = Token.objects.get(key=request.POST["token"])
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
+            except Token.DoesNotExist:
+                pass
 
-            msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
-                {
-                    "domain": issue.domain.name,
-                    "name": issue.user.username if issue.user else "Anonymous",
-                    "id": issue.id,
-                    "username": request.user.username,
-                    "action": "closed",
-                },
-            )
-            subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
+        if not (request.method == "POST" and (request.user.is_superuser or request.user == issue.user)):
+            return HttpResponse("Unauthorized", status=403)
 
-        elif request.POST.get("action") == "open":
-            issue.status = "open"
-            issue.closed_by = None
-            issue.closed_date = None
-            msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
-                {
-                    "domain": issue.domain.name,
-                    "name": issue.domain.email.split("@")[0],
-                    "id": issue.id,
-                    "username": request.user.username,
-                    "action": "opened",
-                },
-            )
-            subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
+        if request.method == "POST" and request.user.is_superuser or (issue is not None and request.user == issue.user):
+            if request.POST.get("action") == "close":
+                issue.status = "closed"
+                issue.closed_by = request.user
+                issue.closed_date = datetime.now()
 
-        mailer = settings.EMAIL_TO_STRING
-        email_to = issue.user.email
-        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
-        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
-        issue.save()
-        return HttpResponse("Updated")
+                msg_plain = msg_html = render_to_string(
+                    "email/bug_updated.txt",
+                    {
+                        "domain": issue.domain.name,
+                        "name": issue.user.username if issue.user else "Anonymous",
+                        "id": issue.id,
+                        "username": request.user.username,
+                        "action": "closed",
+                    },
+                )
+                subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
 
-    elif request.method == "POST":
-        return HttpResponse("invalid")
+            elif request.POST.get("action") == "open":
+                issue.status = "open"
+                issue.closed_by = None
+                issue.closed_date = None
+                msg_plain = msg_html = render_to_string(
+                    "email/bug_updated.txt",
+                    {
+                        "domain": issue.domain.name,
+                        "name": issue.domain.email.split("@")[0],
+                        "id": issue.id,
+                        "username": request.user.username,
+                        "action": "opened",
+                    },
+                )
+                subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
+
+            mailer = settings.EMAIL_TO_STRING
+            email_to = issue.user.email
+            send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
+            send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
+            issue.save()
+            return HttpResponse("Updated")
+
+        elif request.method == "POST":
+            return HttpResponse("invalid")
+
+    except Exception as e:
+        return HttpResponse(f"Error: {e}", status=500)
 
 
 def newhome(request, template="new_home.html"):
@@ -336,57 +342,42 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@csrf_protect
+@login_required(login_url="/accounts/login")
 def delete_issue(request, id):
     try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
+        issue = Issue.objects.get(id=id)
         tokenauth = False
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
-        issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
-    return redirect("/")
-
-
-def remove_user_from_issue(request, id):
-    tokenauth = False
-    try:
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
+        # Handle API token authentication for POST requests
+        if request.method == "POST" and "token" in request.POST:
+            try:
+                token = Token.objects.get(key=request.POST["token"])
                 request.user = User.objects.get(id=token.user_id)
                 tokenauth = True
-    except:
-        pass
+            except Token.DoesNotExist:
+                pass
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user:
-        issue.remove_user()
-        # Remove user from corresponding activity object that was created
-        issue_activity = Activity.objects.filter(
-            content_type=ContentType.objects.get_for_model(Issue), object_id=id
-        ).first()
-        # Have to define a default anonymous user since the not null constraint fails
-        anonymous_user = User.objects.get_or_create(username="anonymous")[0]
-        issue_activity.user = anonymous_user
-        issue_activity.save()
-        messages.success(request, "User removed from the issue")
-        if tokenauth:
-            return JsonResponse("User removed from the issue", safe=False)
+        # Check if user has permission to delete
+        if request.user.is_superuser or request.user == issue.user or tokenauth:
+            # Delete screenshots first
+            screenshots = issue.screenshots.all()
+            for screenshot in screenshots:
+                screenshot.delete()
+
+            # Delete the issue
+            issue.delete()
+            messages.success(request, "Issue deleted successfully")
+
+            if tokenauth:
+                return JsonResponse("Deleted", safe=False)
+            return redirect("/")  # Redirect to issues list
         else:
-            return safe_redirect_request(request)
-    else:
-        messages.error(request, "Permission denied")
-        return safe_redirect_request(request)
+            messages.error(request, "You don't have permission to delete this issue")
+            return redirect("/")
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue not found")
+        return redirect("/")
 
 
 def search_issues(request, template="search.html"):
@@ -733,53 +724,33 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        # print("processing post for ip address: ", get_client_ip(self.request))
         try:
+            if not self.request.body:
+                return super(IssueCreate, self).get_initial()
+
             json_data = json.loads(self.request.body)
-            if not self.request.GET._mutable:
-                self.request.POST._mutable = True
-            self.request.POST["url"] = json_data["url"]
-            self.request.POST["description"] = json_data["description"]
-            self.request.POST["markdown_description"] = json_data["markdown_description"]
-            self.request.POST["file"] = json_data["file"]
-            self.request.POST["label"] = json_data["label"]
-            self.request.POST["token"] = json_data["token"]
-            self.request.POST["type"] = json_data["type"]
-            self.request.POST["cve_id"] = json_data["cve_id"]
-            self.request.POST["cve_score"] = json_data["cve_score"]
+            if not isinstance(json_data, dict):
+                raise ValueError("Invalid JSON data")
 
-            if self.request.POST.get("file"):
-                if isinstance(self.request.POST.get("file"), six.string_types):
-                    import imghdr
+            # Sanitize and validate input
+            allowed_fields = [
+                "url",
+                "description",
+                "markdown_description",
+                "file",
+                "label",
+                "token",
+                "type",
+                "cve_id",
+                "cve_score",
+            ]
 
-                    data = "data:image/" + self.request.POST.get("type") + ";base64," + self.request.POST.get("file")
-                    data = data.replace(" ", "")
-                    data += "=" * ((4 - len(data) % 4) % 4)
-                    if "data:" in data and ";base64," in data:
-                        header, data = data.split(";base64,")
-
-                    try:
-                        decoded_file = base64.b64decode(data)
-                    except TypeError:
-                        TypeError("invalid_image")
-
-                    file_name = str(uuid.uuid4())[:12]
-                    extension = imghdr.what(file_name, decoded_file)
-                    extension = "jpg" if extension == "jpeg" else extension
-                    file_extension = extension
-
-                    complete_file_name = "%s.%s" % (
-                        file_name,
-                        file_extension,
-                    )
-
-                    self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
-        except:
-            tokenauth = False
-        initial = super(IssueCreate, self).get_initial()
-        if self.request.POST.get("screenshot-hash"):
-            initial["screenshot"] = "uploads\/" + self.request.POST.get("screenshot-hash") + ".png"
-        return initial
+            for field in allowed_fields:
+                if field in json_data:
+                    self.request.POST[field] = json_data[field]
+        except Exception as e:
+            print(f"Error in get_initial: {e}")
+            return super(IssueCreate, self).get_initial()
 
     def post(self, request, *args, **kwargs):
         # print("processing post for ip address: ", get_client_ip(request))
@@ -1709,3 +1680,42 @@ def generate_github_issue(description):
         return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
     except Exception as e:
         return {"error": "There's a problem with OpenAI", "details": str(e)}
+
+
+@login_required(login_url="/accounts/login")
+def remove_user_from_issue(request, id):
+    if request.method != "POST":
+        return HttpResponse("Method not allowed", status=405)
+
+    try:
+        issue = get_object_or_404(Issue, id=id)
+        tokenauth = False
+
+        if "token" in request.POST:
+            try:
+                token = Token.objects.get(key=request.POST["token"])
+                request.user = User.objects.get(id=token.user_id)
+                tokenauth = True
+            except Token.DoesNotExist:
+                pass
+
+        if request.user.is_superuser or request.user == issue.user:
+            issue.remove_user()
+            # Remove user from corresponding activity object that was created
+            issue_activity = Activity.objects.filter(
+                content_type=ContentType.objects.get_for_model(Issue), object_id=id
+            ).first()
+            # Have to define a default anonymous user since the not null constraint fails
+            anonymous_user = User.objects.get_or_create(username="anonymous")[0]
+            issue_activity.user = anonymous_user
+            issue_activity.save()
+            messages.success(request, "User removed from the issue")
+            if tokenauth:
+                return JsonResponse("User removed from the issue", safe=False)
+            return safe_redirect_request(request)
+        else:
+            messages.error(request, "Permission denied")
+            return safe_redirect_request(request)
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue not found")
+        return safe_redirect_request(request)
