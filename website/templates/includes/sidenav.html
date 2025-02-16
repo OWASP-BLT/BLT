@@ -146,6 +146,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/repo_list/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'repo_list' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/repo_listrepos/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fab fa-github fa-lg"></i>
+                            </div>
+                            <span>Repositories</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/bidding/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'BiddingData' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/bidding/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
