@@ -8,7 +8,9 @@ from urllib.parse import urlparse, urlsplit, urlunparse
 
 import markdown
 import numpy as np
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -21,7 +23,6 @@ from .models import PRAnalysisReport
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -225,10 +226,10 @@ def analyze_pr_content(pr_data, roadmap_data):
     ### Roadmap Data:
     {roadmap_data}
     """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 def save_analysis_report(pr_link, issue_link, analysis):
@@ -277,7 +278,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
             #     }
             # }
             # Extract the embedding from the response
-            embedding = response["data"][0]["embedding"]
+            embedding = response.data[0].embedding
             return np.array(embedding)
 
         except openai.RateLimitError as e:
