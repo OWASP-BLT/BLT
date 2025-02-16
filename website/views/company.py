@@ -118,7 +118,7 @@ def Organization_view(request, *args, **kwargs):
     # Get the organization to redirect to
     organization = user_organizations.first() or organizations_with_user_domains.first()
 
-    return redirect("organization_analytics", id=organization.id)
+    return redirect("organization_detail", slug=organization.slug)
 
 
 class RegisterOrganizationView(View):
@@ -190,7 +190,7 @@ class RegisterOrganizationView(View):
             return render(request, "organization/register_organization.html")
 
         messages.success(request, "organization registered successfully.")
-        return redirect("organization_analytics", id=organization.id)
+        return redirect("organization_detail", slug=organization.slug)
 
 
 class OrganizationDashboardAnalyticsView(View):

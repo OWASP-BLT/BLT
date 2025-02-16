@@ -94,10 +94,12 @@ from website.views.core import (
     stats_dashboard,
     submit_roadmap_pr,
     sync_github_projects,
+    template_list,
     test_sentry,
     view_pr_analysis,
     view_suggestions,
     vote_suggestions,
+    website_stats,
 )
 from website.views.issue import (
     AllIssuesView,
@@ -145,6 +147,7 @@ from website.views.organization import (
     Joinorganization,
     ListHunts,
     OngoingHunts,
+    OrganizationDetailView,
     OrganizationSettings,
     PreviousHunts,
     ReportedIpListView,
@@ -586,9 +589,10 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
-    path("status/", check_status, name="check_status"),
-    path("status/run-command/", run_management_command, name="run_management_command"),
-    path("status/commands/", management_commands, name="management_commands"),
+    re_path(r"^status/$", check_status, name="check_status"),
+    re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
+    re_path(r"^status/commands/$", management_commands, name="management_commands"),
+    re_path(r"^website_stats/$", website_stats, name="website_stats"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
@@ -890,6 +894,7 @@ urlpatterns = [
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
     path("stats/run-command/", run_management_command, name="run_management_command"),
     path("test-sentry/", test_sentry, name="test_sentry"),
+    path("template_list/", template_list, name="template_list"),
     path(
         "github-issue-prompt/",
         TemplateView.as_view(template_name="github_issue_prompt.html"),
@@ -900,6 +905,7 @@ urlpatterns = [
     path("get-github-issue/", get_github_issue, name="get_github_issue"),
     # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
+    path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
 ]
 
 if settings.DEBUG:

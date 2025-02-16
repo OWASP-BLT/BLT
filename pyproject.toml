@@ -66,6 +66,7 @@ tld = "0.13"
 openai = "^1.62.0"
 async-timeout = "^4.0.3"
 
+
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 isort = "^5.13.2"
@@ -75,6 +76,8 @@ selenium = "^4.28.1"
 webdriver-manager = "^4.0.2"
 chromedriver-autoinstaller = "^0.6.4"
 django-debug-toolbar = "^4.4.6"
+django-livereload-server = "^0.5.1"
+watchfiles = "^1.0.4"
 
 [tool.isort]
 known_first_party = ["blt"]
@@ -84,6 +87,10 @@ profile = "black"
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
 
 [tool.ruff.lint]
 # This is a temporary ignore list to address on a PR per category basis after the initial run.

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% load static %}
+{% load gravatar %}
+{% block title %}{{ organization.name }} - Organization Details{% endblock %}
+{% block description %}
+    View organization details, including name, description, domains, and team information.
+{% endblock %}
+{% block keywords %}organization details, {{ organization.name }}, team information, domains{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Header Section -->
+            <div class="relative h-48 bg-gradient-to-r from-[#e74c3c] to-red-700">
+                <div class="absolute bottom-0 left-0 right-0 px-6 py-4">
+                    <div class="flex items-center space-x-4">
+                        {% if organization.logo %}
+                            <img src="{{ MEDIA_URL }}{{ organization.logo }}"
+                                 alt="{{ organization.name }} logo"
+                                 width="96"
+                                 height="96"
+                                 class="w-24 h-24 rounded-full border-4 border-white object-cover">
+                        {% else %}
+                            <div class="w-24 h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-building text-4xl text-gray-400"></i>
+                            </div>
+                        {% endif %}
+                        <div class="text-white">
+                            <h1 class="text-3xl font-bold">{{ organization.name }}</h1>
+                            {% if organization.url %}
+                                <a href="{{ organization.url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="text-white/80 hover:text-white flex items-center space-x-2 mt-1">
+                                    <i class="fas fa-globe"></i>
+                                    <span>{{ organization.url }}</span>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Content Section -->
+            <div class="p-6">
+                <!-- Contact Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                        <div class="space-y-3">
+                            {% if organization.email %}
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-envelope text-[#e74c3c]"></i>
+                                    <a href="mailto:{{ organization.email }}"
+                                       class="text-gray-600 hover:text-[#e74c3c]">{{ organization.email }}</a>
+                                </div>
+                            {% endif %}
+                            {% if organization.twitter %}
+                                <div class="flex items-center space-x-3">
+                                    <i class="fab fa-twitter text-[#e74c3c]"></i>
+                                    <a href="https://twitter.com/{{ organization.twitter }}"
+                                       target="_blank"
+                                       class="text-gray-600 hover:text-[#e74c3c]">@{{ organization.twitter }}</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Organization Details</h2>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <i class="fas fa-calendar text-[#e74c3c]"></i>
+                                <span class="text-gray-600">Joined {{ organization.created|date:"F j, Y" }}</span>
+                            </div>
+                            {% if organization.description %}
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-info-circle text-[#e74c3c] mt-1"></i>
+                                    <p class="text-gray-600">{{ organization.description }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Statistics -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Domains</h3>
+                            <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.domain_set.count }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
+                            <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.members.count }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">Total Points</h3>
+                            <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.team_points }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Domains List -->
+                {% if organization.domain_set.all %}
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Domains</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {% for domain in organization.domain_set.all %}
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <h3 class="font-semibold text-gray-900">{{ domain.name }}</h3>
+                                            {% if domain.url %}
+                                                <a href="{{ domain.url }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="text-sm text-gray-600 hover:text-[#e74c3c]">
+                                                    {{ domain.url }}
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                        <a href="{% url 'domain' slug=domain.name %}"
+                                           class="text-[#e74c3c] hover:text-red-700">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Activity Timeline -->
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Activity Timeline</h2>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-[#e74c3c] flex items-center justify-center">
+                                <i class="fas fa-plus text-white"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-600">Organization Created</p>
+                                <p class="text-sm text-gray-500">{{ organization.created|date:"F j, Y" }}</p>
+                            </div>
+                        </div>
+                        {% if organization.modified %}
+                            <div class="flex items-center space-x-3">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-[#e74c3c] flex items-center justify-center">
+                                    <i class="fas fa-edit text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="text-gray-600">Last Modified</p>
+                                    <p class="text-sm text-gray-500">{{ organization.modified|date:"F j, Y" }}</p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

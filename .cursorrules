@@ -7,3 +7,4 @@
 use tailwind only
 for anything with color, make it the red color we use which is #e74c3c
 
+always use poetry and not pip
