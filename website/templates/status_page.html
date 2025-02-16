@@ -220,21 +220,25 @@
     <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('activityChart').getContext('2d');
+    const dates = JSON.parse('{{ chart_data.dates|escapejs }}');
+    const teamJoins = JSON.parse('{{ chart_data.team_joins|escapejs }}');
+    const commands = JSON.parse('{{ chart_data.commands|escapejs }}');
+
     const chart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: {{ chart_data.dates|safe }},
+            labels: dates,
             datasets: [
                 {
                     label: 'Team Joins',
-                    data: {{ chart_data.team_joins|safe }},
+                    data: teamJoins,
                     backgroundColor: '#e74c3c',
                     borderColor: '#c0392b',
                     borderWidth: 1
                 },
                 {
                     label: 'Commands',
-                    data: {{ chart_data.commands|safe }},
+                    data: commands,
                     backgroundColor: '#e74c3c80',
                     borderColor: '#c0392b80',
                     borderWidth: 1

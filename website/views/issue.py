@@ -35,6 +35,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.templatetags.static import static
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
@@ -55,6 +56,7 @@ from website.models import (
     Bid,
     ContentType,
     Domain,
+    GitHubIssue,
     Hunt,
     Issue,
     IssueScreenshot,
@@ -66,6 +68,7 @@ from website.models import (
 from website.utils import (
     get_client_ip,
     get_email_from_domain,
+    gravatar_url,
     image_validator,
     is_valid_https_url,
     rebuild_safe_url,
@@ -1156,6 +1159,29 @@ class AllIssuesView(ListView):
         context["activity_screenshots"] = {}
         for activity in self.activities:
             context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
+
+        # Add top users data
+        top_users = (
+            User.objects.annotate(points=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True)))
+            .filter(points__gt=0)
+            .order_by("-points")[:5]
+        )
+
+        context["top_users"] = [
+            {
+                "username": user.username,
+                "points": user.points,
+                "avatar_url": (
+                    user.userprofile.avatar.url
+                    if hasattr(user, "userprofile") and user.userprofile.avatar
+                    else (user.socialaccount_set.first().get_avatar_url() if user.socialaccount_set.exists() else None)
+                    or (gravatar_url(user.email) if user.email else None)
+                    or static("images/dummy-user.png")
+                ),
+            }
+            for user in top_users
+        ]
+
         return context
 
 
@@ -1277,13 +1303,16 @@ class IssueView(DetailView):
     def get_context_data(self, **kwargs):
         # print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
+
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
             context["browser_family"] = user_agent.browser.family
             context["browser_version"] = user_agent.browser.version_string
             context["os_family"] = user_agent.os.family
             context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
+        context["total_score"] = list(
             Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
         )[0]
 
@@ -1748,3 +1777,54 @@ def contribute(request):
     else:
         good_first_issues = []
     return {"good_first_issues": good_first_issues}
+
+
+class GitHubIssuesView(ListView):
+    model = GitHubIssue
+    template_name = "github_issue.html"  # List view template
+    context_object_name = "issues"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = GitHubIssue.objects.all()
+
+        # Filter by type (issue/pr)
+        issue_type = self.request.GET.get("type")
+        if issue_type and issue_type != "all":
+            queryset = queryset.filter(type=issue_type)
+
+        # Filter by state (open/closed)
+        state = self.request.GET.get("state")
+        if state and state != "all":
+            queryset = queryset.filter(state=state)
+
+        return queryset.order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add counts for filtering
+        context["total_count"] = GitHubIssue.objects.count()
+        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
+        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
+
+        # Add current filter states
+        context["current_type"] = self.request.GET.get("type", "all")
+        context["current_state"] = self.request.GET.get("state", "all")
+
+        return context
+
+
+class GitHubIssueDetailView(DetailView):
+    model = GitHubIssue
+    template_name = "github_issue_detail.html"
+    context_object_name = "issue"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        issue = self.get_object()
+
+        # Add any additional context needed for the detail view
+        context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
+
+        return context

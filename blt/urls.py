@@ -105,6 +105,7 @@ from website.views.core import (
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
+    GitHubIssuesView,
     GithubIssueView,
     IssueCreate,
     IssueEdit,
@@ -908,6 +909,8 @@ urlpatterns = [
     # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    # GitHub Issues
+    path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
 ]
 
 if settings.DEBUG:

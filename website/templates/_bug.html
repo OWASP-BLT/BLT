@@ -1,224 +1,191 @@
 {% load gravatar %}
 {% load static %}
 {% load custom_tags %}
-<div class="flex flex-col p-5 bg-white m-1 w-full h-[300px] rounded-[2.5rem] border-[#e8e8e8] border-2">
-    <div class="bg-red font-medium font-['Inter'] text-[#656565] flex flex-row items-center gap-[0.8rem]">
-        {% if bug.user.userprofile.avatar %}
-            <img src="{{ bug.user.userprofile.avatar }}"
-                 width="30"
-                 height="30"
-                 class="h-[30px] object-cover rounded-full"
-                 loading="lazy"
-                 alt="user avatar">
-        {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
-            <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}"
-                 width="30"
-                 height="30"
-                 class="h-[30px] object-cover rounded-full"
-                 loading="lazy"
-                 alt="user avatar">
-        {% elif bug.user.email %}
-            <img src="{% gravatar_url bug.user.email 30 %}"
-                 width="30"
-                 height="30"
-                 class="h-[30px] object-cover  rounded-full"
-                 loading="lazy"
-                 alt="user avatar">
-        {% else %}
-            <img src="{% static 'images/dummy-user.png' %}"
-                 width="30"
-                 height="30"
-                 class="h-[30px] object-cover rounded-full"
-                 loading="lazy"
-                 alt="user avatar">
-        {% endif %}
-        {% if bug.user.username is not None %}
-            <a href="{% url 'profile' slug=bug.user.username %}"
-               class="whitespace-nowrap overflow-clip">{{ bug.user }}</a>
-        {% else %}
-            <span class="whitespace-nowrap overflow-clip">Anonymous</span>
-        {% endif %}
-        <div class="bug-type bg-[#0097ED] border-[#005AAD] ms-auto me-2 border-[1px] tracking-wider px-3 py-[1px] rounded-full font-['Nunito_Sans'] font-bold text-lg text-white">
-            {{ bug.get_label_display }}
+<div class="flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+    <!-- Header with user info and label -->
+    <div class="p-4 flex items-center gap-3 border-b border-gray-100">
+        <!-- User Avatar -->
+        <div class="flex-shrink-0">
+            {% if bug.user.userprofile.avatar %}
+                <img src="{{ bug.user.userprofile.avatar }}"
+                     class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                     loading="lazy"
+                     alt="{{ bug.user.username }}'s avatar"
+                     width="32"
+                     height="32">
+            {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
+                <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}"
+                     class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                     loading="lazy"
+                     alt="{{ bug.user.username }}'s avatar"
+                     width="32"
+                     height="32">
+            {% elif bug.user.email %}
+                <img src="{% gravatar_url bug.user.email 32 %}"
+                     class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                     loading="lazy"
+                     alt="{{ bug.user.username }}'s avatar"
+                     width="32"
+                     height="32">
+            {% else %}
+                <img src="{% static 'images/dummy-user.png' %}"
+                     class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                     loading="lazy"
+                     alt="Default avatar"
+                     width="32"
+                     height="32">
+            {% endif %}
+        </div>
+        <!-- User Info -->
+        <div class="flex-1 min-w-0">
+            {% if bug.user.username is not None %}
+                <a href="{% url 'profile' slug=bug.user.username %}"
+                   class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                    {{ bug.user }}
+                </a>
+            {% else %}
+                <span class="text-sm font-medium text-gray-900">Anonymous</span>
+            {% endif %}
+            <p class="text-xs text-gray-500">{{ bug.created|timesince }} ago</p>
+        </div>
+        <!-- Label -->
+        <div class="flex-shrink-0">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#e74c3c] bg-opacity-10 text-[#e74c3c] border border-[#e74c3c] border-opacity-20">
+                {{ bug.get_label_display }}
+            </span>
         </div>
     </div>
-    <div class="py-2 h-[100%] font-['Barlow'] font-medium text-[#774343] text-3xl leading-10 overflow-hidden">
-        <a href="{% url 'issue_view' slug=bug.id %}">{{ bug.description|truncatechars:100 }}</a>
+    <!-- Bug Description -->
+    <div class="p-4 flex-1">
+        <a href="{% url 'issue_view' slug=bug.id %}"
+           class="block text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors line-clamp-3">
+            {{ bug.description|truncatechars:150 }}
+        </a>
     </div>
-    {% if bug.screenshot %}
-        <div class="h-[160px] flex flex-row justify-between px-3 my-2">
-            <img class="h-[100%] w-[200px] object-contain"
-                 src="{{ bug.screenshot.url }}"
-                 alt="bug screenshot"
-                 width="200px"
-                 height="100%">
-        </div>
-    {% else %}
-        <div class="h-[160px] flex flex-row justify-between my-2">
-            {% for bug_key, bug_screenshots in bugs_screenshots.items %}
-                {% if bug == bug_key %}
-                    {% if bug_screenshots %}
-                        {% if bug_screenshots|length == 1 %}
-                            <img class="bug-img h-[100%] w-[200px] object-contain"
-                                 src="{{ bug_screenshots.0.image.url }}"
-                                 alt="bug screenshot"
-                                 width="200px"
-                                 height="100%">
-                        {% else %}
-                            <div class="flex flex-row items-center gap-2">
-                                <button class="py-4" id="prev-btn">
-                                    <i class="fa fa-angle-left fa-2x"></i>
-                                </button>
-                                <div class="flex flex-row items-center w-[200px] gap-10">
-                                    <img id="screenshot"
-                                         class="h-[160px] w-[200px] object-cover"
+    <!-- Screenshot -->
+    {% if bug.screenshot or bugs_screenshots %}
+        <div class="border-t border-gray-100">
+            {% if bug.screenshot %}
+                <a href="{% url 'issue_view' slug=bug.id %}"
+                   class="block aspect-video bg-gray-100">
+                    <img src="{{ bug.screenshot.url }}"
+                         alt="Bug Screenshot"
+                         class="max-w-full h-auto"
+                         width="800"
+                         height="600">
+                </a>
+            {% else %}
+                {% for bug_key, bug_screenshots in bugs_screenshots.items %}
+                    {% if bug == bug_key and bug_screenshots %}
+                        <div class="relative aspect-video bg-gray-100">
+                            {% if bug_screenshots|length == 1 %}
+                                <a href="{% url 'issue_view' slug=bug.id %}" class="block h-full">
+                                    <img src="{{ bug_screenshots.0.image.url }}"
+                                         alt="Bug Screenshot"
+                                         class="max-w-full h-auto"
+                                         width="800"
+                                         height="600">
+                                </a>
+                            {% else %}
+                                <div class="relative h-full">
+                                    <img id="screenshot-{{ bug.id }}"
                                          src="{{ bug_screenshots.0.image.url }}"
-                                         alt="bug screenshot"
-                                         width="200px"
-                                         height="100%">
+                                         alt="Bug Screenshot"
+                                         class="max-w-full h-auto"
+                                         width="800"
+                                         height="600">
+                                    <!-- Navigation Buttons -->
+                                    <button onclick="prevImage({{ bug.id }})"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button onclick="nextImage({{ bug.id }})"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
                                 </div>
-                                <button class="py-4" id="next-btn">
-                                    <i class="fa fa-angle-right fa-2x" aria-hidden="true"></i>
-                                </button>
-                            </div>
-                            <script>
-                            var currentIndex = 0;
-                            var bugScreenshots = [
-                                {% for screenshot in bug_screenshots %}
-                                    "{{ screenshot.image.url }}",
-                                {% endfor %}
-                            ];
-                            var screenshotElement = document.getElementById("screenshot");
-                            var prevButton = document.getElementById("prev-btn");
-                            var nextButton = document.getElementById("next-btn");
-        
-                            function updateButtons() {
-                                prevButton.disabled = currentIndex === 0;
-                                nextButton.disabled = currentIndex === bugScreenshots.length - 1;
-                            }
-        
-                            updateButtons();
-        
-                            document.getElementById("next-btn").addEventListener("click", function() {
-                                if (currentIndex < bugScreenshots.length - 1) {
-                                    currentIndex++;
-                                    screenshotElement.src = bugScreenshots[currentIndex];
-                                    updateButtons();
-                                }
-                            });
-        
-                            document.getElementById("prev-btn").addEventListener("click", function() {
-                                if (currentIndex > 0) {
-                                    currentIndex--;
-                                    screenshotElement.src = bugScreenshots[currentIndex];
-                                    updateButtons();
-                                }
-                            });
-                            </script>
-                        {% endif %}
+                                <script>
+                                    // Store the screenshots for this bug
+                                    window.bugScreenshots = window.bugScreenshots || {};
+                                    window.bugScreenshots[{{ bug.id }}] = [
+                                        {% for screenshot in bug_screenshots %}
+                                            "{{ screenshot.image.url }}",
+                                        {% endfor %}
+                                    ];
+                                    window.currentIndex = window.currentIndex || {};
+                                    window.currentIndex[{{ bug.id }}] = 0;
+
+                                    function prevImage(bugId) {
+                                        if (window.currentIndex[bugId] > 0) {
+                                            window.currentIndex[bugId]--;
+                                            document.getElementById(`screenshot-${bugId}`).src = window.bugScreenshots[bugId][window.currentIndex[bugId]];
+                                        }
+                                    }
+
+                                    function nextImage(bugId) {
+                                        if (window.currentIndex[bugId] < window.bugScreenshots[bugId].length - 1) {
+                                            window.currentIndex[bugId]++;
+                                            document.getElementById(`screenshot-${bugId}`).src = window.bugScreenshots[bugId][window.currentIndex[bugId]];
+                                        }
+                                    }
+                                </script>
+                            {% endif %}
+                        </div>
                     {% endif %}
-                {% endif %}
-            {% endfor %}
+                {% endfor %}
+            {% endif %}
         </div>
     {% endif %}
-    <!-- Voting and Twitter Share Button in Flex Flow -->
-    <div class="flex flex-row justify-between items-center h-[45px]">
-        <!-- Voting buttons -->
-        <div class="flex flex-row items-center">
-            <button {% if not user.is_authenticated %}disabled{% endif %}
-                    onclick="like_unlike_handler(event,{{ bug.id }})">
-                <svg id="likeSvg{{ bug.id }}"
-                     class="scale-125 m-3"
-                     width="23"
-                     height="23"
-                     viewBox="0 0 23 23"
-                     fill="none"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7.46692 9.45723V18.6604" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round">
-                    </path>
-                    <path d="M16.0815 18.6604H7.46693H3.78564V9.4572H7.46693L12.2485 3.87867C12.7023 3.34933 13.4161 3.12177 14.0925 3.29086L14.1362 3.3018C15.3711 3.61052 15.9274 5.04941 15.2214 6.10849L12.9889 9.4572H17.1859C18.3474 9.4572 19.2186 10.5198 18.9908 11.6588L17.8864 17.1807C17.7143 18.0411 16.9589 18.6604 16.0815 18.6604Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round">
-                    </path>
-                </svg>
-            </button>
-            <span id="likes_count">0</span>
-            {% with user_issue_upvoted_list=user.userprofile.issue_upvoted.all %}
-                {% if user_issue_upvoted_list and bug in user_issue_upvoted_list %}
-                    <script>
-                    $(document).ready(function () {
-                        $('#likeSvg{{bug.id}}').find('path').attr('fill', '#a11010');
-                        getVoteCount({{bug.id}});
-                    });
-                    </script>
-                {% endif %}
-            {% endwith %}
-            <button {% if not user.is_authenticated %}disabled{% endif %}
-                    onclick="dislike_handler(event,{{ bug.id }})">
-                <svg id="dislikeSvg{{ bug.id }}"
-                     class="scale-125 m-3"
-                     width="23"
-                     height="23"
-                     viewBox="0 0 23 23"
-                     fill="none"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M 7.467 12.439 L 7.467 3.236" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M 16.081 3.236 L 7.467 3.236 L 3.786 3.236 L 3.786 12.439 L 7.467 12.439 L 12.249 18.018 C 12.702 18.547 13.416 18.774 14.093 18.605 L 14.136 18.594 C 15.371 18.286 15.927 16.847 15.221 15.788 L 12.989 12.439 L 17.186 12.439 C 18.347 12.439 19.219 11.376 18.991 10.237 L 17.886 4.716 C 17.714 3.855 16.959 3.236 16.081 3.236 Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-            </button>
-            <span id="dislikes_count">0</span>
-            {% with user_issue_downvoted_list=user.userprofile.issue_downvoted.all %}
-                {% if user_issue_downvoted_list and bug in user_issue_downvoted_list %}
-                    <script>
-                    $(document).ready(function () {
-                        $('#dislikeSvg{{bug.id}}').find('path').attr('fill', '#a11010');
-                        getVoteCount({{bug.id}});
-                    });
-                    </script>
-                {% endif %}
-            {% endwith %}
-            <button {% if not user.is_authenticated %}disabled{% endif %}
-                    onclick="flag_unflag_handler(event,{{ bug.id }})">
-                <svg id="flagSvg{{ bug.id }}"
-                     class="scale-125 m-3 "
-                     width="23"
-                     height="23"
-                     viewBox="0 0 23 23"
-                     fill="none"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M4.06152 19.5808V13.1385V3.93531" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
-                    <path d="M4.06152 3.93531H18.7867L14.1851 8.53692L18.7867 13.1385H4.06152" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-            </button>
-            {% if user.is_superuser %}
-                <a href="{% url 'delete_issue' id=bug.id %}">del</a> |
-                <a href="{% url 'admin:website_issue_change' object_id=bug.id %}">edit</a>
-            {% endif %}
-            {% with user_issue_flagged_list=user.userprofile.issue_flaged.all %}
-                {% if user_issue_flagged_list and bug in user_issue_flagged_list %}
-                    <script>
-                        $(document).ready(function () {
-                            $('#flagSvg{{bug.id}}').find('path').attr('fill', '#a11010');
-                        });
-                    </script>
-                {% endif %}
-            {% endwith %}
+    <!-- Footer -->
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+        <div class="flex justify-between items-center">
+            <!-- Actions -->
+            <div class="flex items-center space-x-4">
+                <!-- Like -->
+                <button onclick="like_unlike_handler(event, {{ bug.id }})"
+                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                    <svg id="likeSvg{{ bug.id }}"
+                         class="w-5 h-5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
+                        </path>
+                    </svg>
+                </button>
+                <!-- Dislike -->
+                <button onclick="dislike_handler(event, {{ bug.id }})"
+                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                    <svg id="dislikeSvg{{ bug.id }}"
+                         class="w-5 h-5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3">
+                        </path>
+                    </svg>
+                </button>
+                <!-- Flag -->
+                <button onclick="flag_unflag_handler(event, {{ bug.id }})"
+                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                    <svg id="flagSvg{{ bug.id }}"
+                         class="w-5 h-5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+            <!-- View Details -->
+            <a href="{{ bug.get_absolute_url }}"
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:text-[#e74c3c] hover:border-[#e74c3c] transition-colors">
+                View Details
+            </a>
         </div>
-        <!-- Twitter Share Button -->
-        <a target="_blank"
-           href="https://twitter.com/intent/tweet?text=Bug Found on @{{ bug.domain_title }} - {{ bug.description }} Report: https://{% env 'FQDN' %}/issue/{{ bug.id }}"
-           class="w-fit flex items-center px-2 h-14 rounded-xl font-extrabold hover:text-red-500 hover:bg-gray-100 m-0 ml-5"
-           rel="noopener noreferrer">
-            <svg class="scale-125"
-                 width="23"
-                 height="23"
-                 viewBox="0 0 23 23"
-                 fill="none"
-                 xmlns="http://www.w3.org/2000/svg">
-                <path d="M19.3375 5.77593C19.3375 7.30077 18.1014 8.5369 16.5765 8.5369C15.0516 8.5369 13.8156 7.30077 13.8156 5.77593C13.8156 4.2511 15.0516 3.01497 16.5765 3.01497C18.1014 3.01497 19.3375 4.2511 19.3375 5.77593Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" />
-                <path d="M8.00513 10.0626L14.1051 7.0126" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" />
-                <path d="M8.29475 11.2979C8.29475 12.8227 7.05863 14.0588 5.53379 14.0588C4.00896 14.0588 2.77283 12.8227 2.77283 11.2979C2.77283 9.77298 4.00896 8.5369 5.53379 8.5369C7.05863 8.5369 8.29475 9.77298 8.29475 11.2979Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" />
-                <path d="M14.1071 15.5846L8.01294 12.5375" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" />
-                <path d="M19.3375 16.8198C19.3375 18.3447 18.1014 19.5808 16.5765 19.5808C15.0516 19.5808 13.8156 18.3447 13.8156 16.8198C13.8156 15.2949 15.0516 14.0588 16.5765 14.0588C18.1014 14.0588 19.3375 15.2949 19.3375 16.8198Z" stroke="#8C0000" stroke-opacity="0.74" stroke-width="1.65658" />
-            </svg>
-        </a>
     </div>
 </div>

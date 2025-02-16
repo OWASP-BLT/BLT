@@ -396,9 +396,6 @@ def check_status(request):
 
             status_data["slack_bot"] = bot_metrics
 
-        # Cache the results
-        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
-
         # Get the date range for the last 30 days
         end_date = timezone.now()
         start_date = end_date - timedelta(days=30)
@@ -432,24 +429,35 @@ def check_status(request):
             current_date += timedelta(days=1)
 
         # Fill in missing dates with zero counts
-        chart_data = {
-            "dates": [date.strftime("%Y-%m-%d") for date in date_range],
-            "team_joins": [0] * len(date_range),
-            "commands": [0] * len(date_range),
-        }
+        dates = [date.strftime("%Y-%m-%d") for date in date_range]
+        team_joins_counts = [0] * len(date_range)
+        commands_counts = [0] * len(date_range)
 
         # Map the actual data to the date range
         for i, date in enumerate(date_range):
             for join in team_joins_data:
                 if join["date"] == date:
-                    chart_data["team_joins"][i] = join["count"]
+                    team_joins_counts[i] = join["count"]
             for cmd in commands_data:
                 if cmd["date"] == date:
-                    chart_data["commands"][i] = cmd["count"]
+                    commands_counts[i] = cmd["count"]
+
+        # Store the data in a format that can be safely serialized to JSON
+        chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
 
         status_data["chart_data"] = chart_data
 
-    return render(request, "status_page.html", {"status": status_data})
+        # Cache the results
+        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
+
+    # Prepare the chart data for the template
+    template_chart_data = {
+        "dates": json.dumps(status_data["chart_data"]["dates"]),
+        "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
+        "commands": json.dumps(status_data["chart_data"]["commands"]),
+    }
+
+    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
 
 def github_callback(request):

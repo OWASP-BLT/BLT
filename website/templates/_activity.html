@@ -1,110 +1,144 @@
 {% load gravatar %}
 {% load static %}
-<style>
-    .truncate-450 {
-      display: none;
-    }
-  
-    @media only screen and (max-width: 500px) {
-      .truncate-450 {
-        display: inline;
-      }
-      .truncate-100 {
-        display: none;
-      }
-    }
-</style>
-<div class="list-group-item activity-strip overflow-hidden">
-    <div class="activity-strip-section">
-        {% if activity.user.userprofile.avatar %}
-            <img src="{{ activity.user.userprofile.avatar }}"
-                 width="100"
-                 height="100"
-                 class="img-responsive img-rounded"
-                 loading="lazy"
-                 alt="user avatar">
-        {% elif activity.user.socialaccount_set.all.0.get_avatar_url %}
-            <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}"
-                 width="100"
-                 height="100"
-                 class="img-responsive img-rounded"
-                 loading="lazy"
-                 alt="user avatar">
-        {% elif activity.user.email %}
-            <img src="{% gravatar_url activity.user.email 100 %}"
-                 width="100"
-                 height="100"
-                 class="img-responsive img-rounded"
-                 loading="lazy"
-                 alt="user avatar">
-        {% else %}
-            <img src="{% static 'images/dummy-user.png' %}"
-                 width="100"
-                 height="100"
-                 class="img-responsive img-rounded"
-                 loading="lazy"
-                 alt="user avatar">
-        {% endif %}
-        <div class="info">
-            <div class="flex overflow-hidden gap-3">
-                <a href="{% url 'domain' slug=activity.domain_name %}">
-                    <img src="https://www.{{ activity.domain_name }}/favicon.ico"
-                         onerror="this.onerror=null; this.style.display='none';"
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+    <!-- Header with user info -->
+    <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center space-x-3">
+            <!-- User Avatar -->
+            <div class="flex-shrink-0">
+                {% if activity.user.userprofile.avatar %}
+                    <img src="{{ activity.user.userprofile.avatar }}"
+                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
                          loading="lazy"
-                         class="h-[30px] w-[30px]"
-                         alt="domain icon"
-                         width="30px"
-                         height="30px">
-                </a>
-                {% if activity.status == "open" %}
-                    <span class="label label-success text-capitalize !leading-loose">{{ activity.status }}</span>
+                         alt="{{ activity.user.username }}'s avatar"
+                         width="40"
+                         height="40">
+                {% elif activity.user.socialaccount_set.all.0.get_avatar_url %}
+                    <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}"
+                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="{{ activity.user.username }}'s avatar"
+                         width="40"
+                         height="40">
+                {% elif activity.user.email %}
+                    <img src="{% gravatar_url activity.user.email 100 %}"
+                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="{{ activity.user.username }}'s avatar"
+                         width="40"
+                         height="40">
                 {% else %}
-                    <span class="label label-danger text-capitalize !leading-loose">{{ activity.status }}</span>
+                    <img src="{% static 'images/dummy-user.png' %}"
+                         class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="Default avatar"
+                         width="40"
+                         height="40">
                 {% endif %}
-                <span class="label label-info !leading-loose">{{ activity.get_label_display }}</span>
             </div>
-            <a href="{{ activity.get_absolute_url }}">
-                <span class="truncate-450">{{ activity.description|truncatechars:60 }}</span>
-                <span class="truncate-100">{{ activity.description|truncatechars:100 }}</span>
-            </a>
-            <div class="small">
-                <a href="{{ activity.user.get_absolute_url }}"
-                   data-toggle="popover"
-                   data-tag="{{ activity.user.userprofile.get_title_display }}">
-                    {{ activity.user|default:"Anonymous" }}
-                </a>
-                found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> {{ activity.created|timesince }}
-                ago
+            <!-- User and Domain Info -->
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                    <a href="{{ activity.user.get_absolute_url }}"
+                       class="text-sm font-semibold text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                        {{ activity.user|default:"Anonymous" }}
+                    </a>
+                    <span class="text-sm text-gray-400">•</span>
+                    <a href="{% url 'domain' slug=activity.domain_name %}"
+                       class="text-sm text-gray-600 hover:text-[#e74c3c] transition-colors truncate">
+                        {{ activity.domain_title }}
+                    </a>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">{{ activity.created|timesince }} ago</p>
             </div>
-            <div>
-                <a href="{{ activity.url }}" target="_blank">{{ activity.url }}</a>
-            </div>
-            <a class="whitespace-nowrap"
-               href="{{ activity.get_absolute_url }}#comments">
-                {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
-            </a>
         </div>
     </div>
-    <div class="activity-screenshot">
-        {% for screenshot_activity,screenshot in activity_screenshots.items %}
-            {% if activity == screenshot_activity %}
-                <a href="{{ activity.get_absolute_url }}">
-                    <img src="{{ screenshot.image.url }}"
+    <!-- Issue Content -->
+    <div class="flex-1 p-4">
+        <!-- Domain Icon and Description -->
+        <div class="flex items-start space-x-3 mb-4">
+            <a href="{% url 'domain' slug=activity.domain_name %}"
+               class="flex-shrink-0">
+                <img src="https://www.{{ activity.domain_name }}/favicon.ico"
+                     onerror="this.onerror=null; this.style.display='none';"
+                     loading="lazy"
+                     class="w-6 h-6 rounded shadow-sm"
+                     alt="{{ activity.domain_name }} icon"
+                     width="24"
+                     height="24">
+            </a>
+            <a href="{{ activity.get_absolute_url }}"
+               class="flex-1 text-base font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                {{ activity.description|truncatechars:150 }}
+            </a>
+        </div>
+        <!-- URL -->
+        <a href="{{ activity.url }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-sm text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block mb-4">
+            {{ activity.url|truncatechars:60 }}
+        </a>
+        <!-- Status and Type Labels -->
+        <div class="flex items-center space-x-2 mt-auto">
+            {% if activity.status == "open" %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                    {{ activity.status }}
+                </span>
+            {% else %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                    {{ activity.status }}
+                </span>
+            {% endif %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#e74c3c] bg-opacity-10 text-[#e74c3c] border border-[#e74c3c] border-opacity-20">
+                {{ activity.get_label_display }}
+            </span>
+        </div>
+    </div>
+    <!-- Screenshot -->
+    {% if activity.screenshot or activity_screenshots %}
+        <div class="border-t border-gray-200">
+            {% for screenshot_activity,screenshot in activity_screenshots.items %}
+                {% if activity == screenshot_activity %}
+                    <a href="{{ activity.get_absolute_url }}" class="block aspect-video">
+                        <img src="{{ screenshot.image.url }}"
+                             loading="lazy"
+                             alt="Issue screenshot"
+                             class="w-full h-full object-cover"
+                             width="100%"
+                             height="100%">
+                    </a>
+                {% endif %}
+            {% endfor %}
+            {% if activity.screenshot %}
+                <a href="{{ activity.get_absolute_url }}" class="block aspect-video">
+                    <img src="{{ activity.screenshot.url }}"
                          loading="lazy"
-                         alt="screenshot"
+                         alt="Issue screenshot"
+                         class="w-full h-full object-cover"
                          width="100%"
                          height="100%">
                 </a>
             {% endif %}
-        {% endfor %}
-        {% if activity.screenshot %}
-            <a href="{{ activity.get_absolute_url }}">
-                <img src="{{ activity.screenshot.url }}"
-                     loading="lazy"
-                     alt="screenshot"
-                     width="100%"
-                     height="100%">
+        </div>
+    {% endif %}
+    <!-- Footer -->
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="flex justify-between items-center">
+            <!-- Comments -->
+            <a href="{{ activity.get_absolute_url }}#comments"
+               class="text-sm text-gray-500 hover:text-[#e74c3c]">
+                {% if activity.comments.all|length > 0 %}
+                    {{ activity.comments.all|length }} comment{{ activity.comments.all|length|pluralize }}
+                {% else %}
+                    Add comment
+                {% endif %}
             </a>
-        {% endif %}
+            <!-- View Details -->
+            <a href="{{ activity.get_absolute_url }}"
+               class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-[#e74c3c]">
+                View Details
+            </a>
+        </div>
     </div>
 </div>

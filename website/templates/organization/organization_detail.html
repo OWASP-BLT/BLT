@@ -105,7 +105,14 @@
                 <!-- Top Projects -->
                 {% if top_projects %}
                     <div class="mb-8">
-                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Projects</h2>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">Top Projects</h2>
+                            <button onclick="syncGithubProjects()"
+                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                <i class="fas fa-sync-alt mr-2"></i>
+                                Sync Projects
+                            </button>
+                        </div>
                         <div class="grid grid-cols-1 gap-4">
                             {% for project_data in top_projects %}
                                 <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
@@ -207,4 +214,37 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block after_js %}
+    <script>
+function syncGithubProjects() {
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Syncing...';
+
+    fetch('/stats/sync-github-projects/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to sync projects. Please try again.');
+            button.disabled = false;
+            button.innerHTML = originalContent;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while syncing projects.');
+        button.disabled = false;
+        button.innerHTML = originalContent;
+    });
+}
+    </script>
 {% endblock %}
