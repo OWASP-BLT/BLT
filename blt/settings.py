@@ -354,22 +354,31 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "simple": {"format": "%(levelname)s %(message)s"},
     },
     "handlers": {
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",  # Explicitly use stdout
+        },
         "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {
+        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "handlers": ["console"],
+    },
     "loggers": {
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "django.server": {
             "handlers": ["console"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "website": {
             "handlers": ["console"],
