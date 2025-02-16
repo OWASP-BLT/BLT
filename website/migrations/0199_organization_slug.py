@@ -7,9 +7,10 @@ from django.utils.text import slugify
 def generate_unique_slugs(apps, schema_editor):
     Organization = apps.get_model("website", "Organization")
     # Keep track of used slugs to ensure uniqueness
-    used_slugs = set()
+    used_slugs = set(Organization.objects.exclude(slug="").values_list("slug", flat=True))
 
-    for org in Organization.objects.all():
+    # Only process organizations without slugs
+    for org in Organization.objects.filter(slug=""):
         base_slug = slugify(org.name)
         slug = base_slug
         counter = 1
