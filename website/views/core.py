@@ -1475,6 +1475,8 @@ def template_list(request):
 
 def is_admin_url(path):
     """Check if a URL path is an admin URL"""
+    if not path:  # Handle None or empty paths
+        return False
     admin_url = settings.ADMIN_URL.strip("/")
     return path.startswith(f"/{admin_url}/") or admin_url in path
 
