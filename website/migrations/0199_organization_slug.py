@@ -28,9 +28,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Drop the problematic index if it exists.
+        # Drop the problematic index with CASCADE so that any references are also removed.
         migrations.RunSQL(
-            sql="DROP INDEX IF EXISTS website_organization_slug_334d1fac_like;",
+            sql="""
+            DO $$
+            BEGIN
+              IF EXISTS (
+                  SELECT 1 FROM pg_class WHERE relname = 'website_organization_slug_334d1fac_like'
+              ) THEN
+                  EXECUTE 'DROP INDEX website_organization_slug_334d1fac_like CASCADE';
+              END IF;
+            END $$;
+            """,
             reverse_sql="",
         ),
         migrations.AddField(
@@ -43,7 +52,33 @@ class Migration(migrations.Migration):
             reverse_slug_generation,
             elidable=False,
         ),
-        # Let Django create the unique constraint/index automatically.
+        # Set the column as NOT NULL and add a unique constraint.
+        migrations.RunSQL(
+            sql="""
+            DO $$ 
+            BEGIN
+                ALTER TABLE website_organization 
+                ALTER COLUMN slug SET NOT NULL;
+                
+                IF NOT EXISTS (
+                    SELECT 1 
+                    FROM pg_constraint 
+                    WHERE conname = 'website_organization_slug_unique'
+                ) THEN
+                    ALTER TABLE website_organization 
+                    ADD CONSTRAINT website_organization_slug_unique 
+                    UNIQUE (slug);
+                END IF;
+            END $$;
+            """,
+            reverse_sql="""
+            ALTER TABLE website_organization 
+            ALTER COLUMN slug DROP NOT NULL;
+            ALTER TABLE website_organization 
+            DROP CONSTRAINT IF EXISTS website_organization_slug_unique;
+            """,
+        ),
+        # Finally, update the Django model to match.
         migrations.AlterField(
             model_name="organization",
             name="slug",
