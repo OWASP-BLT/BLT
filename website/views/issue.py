@@ -23,7 +23,6 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
-from django.db.transaction import atomic
 from django.dispatch import receiver
 from django.http import (
     Http404,
@@ -64,14 +63,7 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import (
-    get_client_ip,
-    get_email_from_domain,
-    image_validator,
-    is_valid_https_url,
-    rebuild_safe_url,
-    safe_redirect_request,
-)
+from website.utils import get_client_ip, get_email_from_domain, is_valid_https_url, safe_redirect_request
 
 
 @login_required(login_url="/accounts/login")
@@ -339,23 +331,39 @@ def newhome(request, template="new_home.html"):
 
 def delete_issue(request, id):
     try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
-        tokenauth = False
+        issue = Issue.objects.get(id=id)
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue not found")
+        return redirect("/")
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
-        issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
+    # Check for token authentication
+    tokenauth = False
+    if request.method == "POST":
+        token_key = request.POST.get("token")
+        if token_key:
+            try:
+                token = Token.objects.get(key=token_key)
+                request.user = token.user
+                tokenauth = True
+            except Token.DoesNotExist:
+                pass
+
+    # Check if user has permission to delete
+    if request.user.is_authenticated and (request.user.is_superuser or request.user == issue.user or tokenauth):
+        try:
+            screenshots = issue.screenshots.all()
+            for screenshot in screenshots:
+                screenshot.delete()
+            issue.delete()
+            messages.success(request, "Issue deleted")
+
+            if tokenauth:
+                return JsonResponse("Deleted", safe=False)
+        except Exception as e:
+            messages.error(request, f"Error deleting issue: {str(e)}")
+    else:
+        messages.error(request, "You don't have permission to delete this issue")
+
     return redirect("/")
 
 
@@ -783,303 +791,69 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        # print("processing post for ip address: ", get_client_ip(request))
-        url = request.POST.get("url").replace("www.", "").replace("https://", "")
+        url = request.POST.get("url", "").strip()
+        if url:
+            url = url.replace("www.", "").replace("https://", "").replace("http://", "")
 
         request.POST._mutable = True
         request.POST.update(url=url)
         request.POST._mutable = False
 
-        if not settings.IS_TEST:
+        if not settings.IS_TEST and url:
             try:
+                # Skip validation for specific cases
                 if settings.DOMAIN_NAME in url:
-                    print("Web site exists")
-
-                elif request.POST["label"] == "7":
                     pass
-
+                elif request.POST.get("label") == "7":  # Special label case
+                    pass
                 else:
                     full_url = "https://" + url
                     if is_valid_https_url(full_url):
-                        safe_url = rebuild_safe_url(full_url)
                         try:
-                            response = requests.get(safe_url, timeout=5)
+                            # Add timeout and handle connection errors
+                            response = requests.get(
+                                full_url,
+                                timeout=5,
+                                verify=False,  # Skip SSL verification
+                                headers={"User-Agent": "Mozilla/5.0"},  # Add user agent
+                            )
                             if response.status_code == 200:
-                                print("Web site exists")
+                                pass
                             else:
-                                raise Exception
-                        except Exception:
-                            raise Exception
+                                messages.warning(request, f"Warning: Site returned status code {response.status_code}")
+                        except requests.exceptions.RequestException as e:
+                            # Log the error but don't block submission
+                            print(f"URL validation warning: {str(e)}")
+                            messages.warning(request, "Warning: Could not verify site availability. Proceeding anyway.")
                     else:
-                        raise Exception
-            except:
-                # TODO: it could be that the site is down so we can consider logging this differently
-                messages.error(request, "Domain does not exist")
+                        messages.error(request, "Invalid URL format")
+                        return self.form_invalid(self.get_form())
 
-                captcha_form = CaptchaForm(request.POST)
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": captcha_form},
-                )
+            except Exception as e:
+                print(f"URL validation error: {str(e)}")
+                messages.warning(request, "Warning: Could not verify site availability. Proceeding anyway.")
 
-        screenshot = request.FILES.get("screenshots")
-        if not screenshot:
+        # Validate screenshot
+        screenshots = request.FILES.getlist("screenshots")
+        if not screenshots and not request.POST.get("screenshot-hash"):
             messages.error(request, "Screenshot is required")
-            captcha_form = CaptchaForm(request.POST)
-            return render(
-                request,
-                "report.html",
-                {"form": self.get_form(), "captcha_form": captcha_form},
-            )
+            return self.form_invalid(self.get_form())
 
-        try:
-            img = Image.open(screenshot)
-            img.verify()
-        except (IOError, ValueError):
-            messages.error(request, "Invalid image file.")
-            captcha_form = CaptchaForm(request.POST)
-            return render(
-                request,
-                "report.html",
-                {"form": self.get_form(), "captcha_form": captcha_form},
-            )
+        for screenshot in screenshots:
+            try:
+                img = Image.open(screenshot)
+                img.verify()
+            except (IOError, ValueError):
+                messages.error(request, "Invalid image file")
+                return self.form_invalid(self.get_form())
 
         return super().post(request, *args, **kwargs)
 
-    def form_valid(self, form):
-        # print(
-        #     "processing form_valid in IssueCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
-        reporter_ip = get_client_ip(self.request)
-        form.instance.reporter_ip_address = reporter_ip
-
-        limit = 50 if self.request.user.is_authenticated else 30
-        today = now().date()
-        recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
-
-        if recent_issues_count >= limit:
-            messages.error(self.request, "You have reached your issue creation limit for today.")
-            return render(self.request, "report.html", {"form": self.get_form()})
-        form.instance.reporter_ip_address = reporter_ip
-
-        @atomic
-        def create_issue(self, form):
-            # Validate screenshots first before any database operations
-            if len(self.request.FILES.getlist("screenshots")) == 0 and not self.request.POST.get("screenshot-hash"):
-                messages.error(self.request, "Screenshot is needed!")
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                )
-
-            if len(self.request.FILES.getlist("screenshots")) > 5:
-                messages.error(self.request, "Max limit of 5 images!")
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                )
-
-            for screenshot in self.request.FILES.getlist("screenshots"):
-                img_valid = image_validator(screenshot)
-                if img_valid is not True:
-                    messages.error(self.request, img_valid)
-                    return render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    )
-
-            tokenauth = False
-            obj = form.save(commit=False)
-            report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
-
-            if report_anonymous:
-                obj.user = None
-            elif self.request.user.is_authenticated:
-                obj.user = self.request.user
-            else:
-                for token in Token.objects.all():
-                    if self.request.POST.get("token") == token.key:
-                        obj.user = User.objects.get(id=token.user_id)
-                        tokenauth = True
-
-            captcha_form = CaptchaForm(self.request.POST)
-            if not captcha_form.is_valid() and not settings.TESTING:
-                messages.error(self.request, "Invalid Captcha!")
-                return render(
-                    self.request,
-                    "report.html",
-                    {"form": self.get_form(), "captcha_form": captcha_form},
-                )
-
-            parsed_url = urlparse(obj.url)
-            clean_domain = parsed_url.netloc
-            domain = Domain.objects.filter(url=clean_domain).first()
-            domain_exists = False if domain is None else True
-
-            if not domain_exists:
-                domain = Domain.objects.filter(name=clean_domain).first()
-                if domain is None:
-                    domain = Domain.objects.create(name=clean_domain, url=clean_domain)
-                    domain.save()
-
-            hunt = self.request.POST.get("hunt", None)
-            if hunt is not None and hunt != "None":
-                hunt = Hunt.objects.filter(id=hunt).first()
-                obj.hunt = hunt
-
-            obj_screenshots = IssueScreenshot.objects.filter(issue_id=obj.id)
-            screenshot_text = ""
-            for screenshot in obj_screenshots:
-                screenshot_text += "![0](" + screenshot.image.url + ") "
-
-            obj.domain = domain
-            obj.cve_score = obj.get_cve_score()
-            obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
-            obj.save()
-
-            if not domain_exists and (self.request.user.is_authenticated or tokenauth):
-                Points.objects.create(
-                    user=self.request.user,
-                    domain=domain,
-                    score=1,
-                    reason="Domain added",
-                )
-                messages.success(self.request, "Domain added! + 1")
-
-            if self.request.POST.get("screenshot-hash"):
-                reopen = default_storage.open(
-                    "uploads\/" + self.request.POST.get("screenshot-hash") + ".png",
-                    "rb",
-                )
-                django_file = File(reopen)
-                obj.screenshot.save(
-                    self.request.POST.get("screenshot-hash") + ".png",
-                    django_file,
-                    save=True,
-                )
-
-            # Save screenshots
-            for screenshot in self.request.FILES.getlist("screenshots"):
-                filename = screenshot.name
-                extension = filename.split(".")[-1]
-                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
-
-            # Handle team members
-            team_members_id = [
-                member["id"]
-                for member in User.objects.values("id").filter(email__in=self.request.POST.getlist("team_members"))
-            ] + [self.request.user.id]
-            team_members_id = [member_id for member_id in team_members_id if member_id is not None]
-            obj.team_members.set(team_members_id)
-
-            obj.save()
-
-            if not report_anonymous:
-                if self.request.user.is_authenticated:
-                    total_issues = Issue.objects.filter(user=self.request.user).count()
-                    user_prof = UserProfile.objects.get(user=self.request.user)
-                    if total_issues <= 10:
-                        user_prof.title = 1
-                    elif total_issues <= 50:
-                        user_prof.title = 2
-                    elif total_issues <= 200:
-                        user_prof.title = 3
-                    else:
-                        user_prof.title = 4
-
-                    user_prof.save()
-
-                if tokenauth:
-                    total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
-                    user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
-                    if total_issues <= 10:
-                        user_prof.title = 1
-                    elif total_issues <= 50:
-                        user_prof.title = 2
-                    elif total_issues <= 200:
-                        user_prof.title = 3
-                    else:
-                        user_prof.title = 4
-
-                    user_prof.save()
-
-            redirect_url = "/report"
-
-            if domain.github and os.environ.get("GITHUB_TOKEN"):
-                import json
-
-                import requests
-                from giturlparse import parse
-
-                github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
-                p = parse(github_url)
-
-                url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
-
-                if not obj.user:
-                    the_user = "Anonymous"
-                else:
-                    the_user = obj.user
-                issue = {
-                    "title": obj.description,
-                    "body": obj.markdown_description
-                    + "\n\n"
-                    + screenshot_text
-                    + "https://"
-                    + settings.FQDN
-                    + "/issue/"
-                    + str(obj.id)
-                    + " found by "
-                    + str(the_user)
-                    + " at url: "
-                    + obj.url,
-                    "labels": ["bug", settings.PROJECT_NAME_LOWER],
-                }
-                r = requests.post(
-                    url,
-                    json.dumps(issue),
-                    headers={"Authorization": "token " + os.environ.get("GITHUB_TOKEN")},
-                )
-                response = r.json()
-                try:
-                    obj.github_url = response["html_url"]
-                except Exception as e:
-                    send_mail(
-                        "Error in github issue creation for " + str(domain.name) + ", check your github settings",
-                        "Error in github issue creation, check your github settings\n"
-                        + " your current settings are: "
-                        + str(domain.github)
-                        + " and the error is: "
-                        + str(e),
-                        settings.EMAIL_TO_STRING,
-                        [domain.email],
-                        fail_silently=True,
-                    )
-                    pass
-                obj.save()
-
-            if not (self.request.user.is_authenticated or tokenauth):
-                self.request.session["issue"] = obj.id
-                self.request.session["created"] = domain_exists
-                self.request.session["domain"] = domain.id
-                messages.success(self.request, "Bug added!")
-                return HttpResponseRedirect("/")
-
-            if tokenauth:
-                self.process_issue(User.objects.get(id=token.user_id), obj, domain_exists, domain, True)
-                return JsonResponse("Created", safe=False)
-            else:
-                self.process_issue(self.request.user, obj, domain_exists, domain)
-                return HttpResponseRedirect("/")
-
-        return create_issue(self, form)
+    def form_invalid(self, form):
+        """Handle invalid form data"""
+        context = self.get_context_data(form=form)
+        context["captcha_form"] = CaptchaForm(self.request.POST)
+        return render(self.request, "report.html", context)
 
     def get_context_data(self, **kwargs):
         # if self.request is a get, clear out the form data
@@ -1155,6 +929,7 @@ class AllIssuesView(ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+
         try:
             activities_paginated = paginator.page(page)
         except PageNotAnInteger:
