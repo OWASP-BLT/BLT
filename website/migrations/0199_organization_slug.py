@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Drop the problematic index using a DO block to conditionally drop it.
+        # Drop the problematic index if it exists.
         migrations.RunSQL(
             sql="""
             DO $$
@@ -49,11 +49,7 @@ class Migration(migrations.Migration):
               END IF;
             END $$;
             """,
-            reverse_sql="""
-            -- Optionally, recreate the index if needed:
-            CREATE INDEX website_organization_slug_334d1fac_like
-            ON website_organization (slug text_pattern_ops);
-            """,
+            reverse_sql="",  # Do not re-create the index on reverse.
         ),
         migrations.AddField(
             model_name="organization",
