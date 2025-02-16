@@ -38,12 +38,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="organization",
             name="slug",
-            field=models.SlugField(blank=True, null=True),
+            field=models.SlugField(blank=True, null=True, max_length=255),
         ),
         migrations.RunPython(generate_unique_slugs, reverse_slug_generation),
         migrations.AlterField(
             model_name="organization",
             name="slug",
-            field=models.SlugField(unique=True),
+            field=models.SlugField(unique=True, max_length=255),
         ),
     ]
