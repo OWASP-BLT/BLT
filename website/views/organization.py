@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -31,6 +31,7 @@ from rest_framework.authtoken.models import Token
 from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
+    IP,
     Activity,
     DailyStatusReport,
     Domain,
@@ -833,7 +834,7 @@ class CreateHunt(TemplateView):
                 hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
                 hunt.end_on = end_date
                 hunt.name = request.POST["name"]
-                hunt.description = request.POST["content"]
+                hunt.description = form.cleaned_data["content"]
                 wallet.withdraw(total_amount)
                 wallet.save()
                 try:
@@ -1856,5 +1857,70 @@ class OrganizationDetailView(DetailView):
         # Sort by total PRs and get top 10
         top_projects.sort(key=lambda x: x["total_prs"], reverse=True)
         context["top_projects"] = top_projects[:10]
+
+        return context
+
+
+class OrganizationListView(ListView):
+    model = Organization
+    template_name = "organization/organization_list.html"
+    context_object_name = "organizations"
+    paginate_by = 100
+
+    def get_queryset(self):
+        # Get organizations with domain stats
+        return (
+            Organization.objects.filter(is_active=True)
+            .prefetch_related(
+                "domain_set",
+                "domain_set__issue_set",
+                Prefetch(
+                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.annotate(issue_count=Count("id")).order_by("-issue_count"),
+                    to_attr="top_testers_list",
+                ),
+            )
+            .order_by("name")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["total_organizations"] = Organization.objects.filter(is_active=True).count()
+
+        # Get recently viewed organizations based on IP model
+        recent_org_paths = (
+            IP.objects.filter(path__startswith="/organization/", created__gte=timezone.now() - timedelta(days=30))
+            .values("path")
+            .annotate(last_visit=models.Max("created"))
+            .order_by("-last_visit")[:5]
+        )
+
+        # Extract organization slugs from paths and get the organizations
+        recent_org_slugs = [
+            path["path"].split("/")[-1] for path in recent_org_paths if len(path["path"].split("/")) > 2
+        ]
+        context["recently_viewed"] = Organization.objects.filter(slug__in=recent_org_slugs)
+
+        # Get most popular organizations based on IP visit count
+        popular_org_paths = (
+            IP.objects.filter(path__startswith="/organization/")
+            .values("path")
+            .annotate(visit_count=models.Count("id"))
+            .order_by("-visit_count")[:5]
+        )
+
+        # Extract organization slugs from paths and get the organizations
+        popular_org_slugs = [
+            path["path"].split("/")[-1] for path in popular_org_paths if len(path["path"].split("/")) > 2
+        ]
+        context["most_popular"] = Organization.objects.filter(slug__in=popular_org_slugs)
 
         return context
