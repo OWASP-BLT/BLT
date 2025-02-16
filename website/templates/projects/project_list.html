@@ -28,10 +28,12 @@
                     <h3 class="text-sm font-medium text-gray-500">Total Repositories</h3>
                     <p class="text-2xl font-bold text-gray-900">{{ total_repos }}</p>
                 </div>
-                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
-                    <h3 class="text-sm font-medium text-gray-500">Filtered Results</h3>
-                    <p class="text-2xl font-bold text-gray-900">{{ filtered_count }}</p>
-                </div>
+                {% if filtered_count is not None %}
+                    <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-500">Filtered Results</h3>
+                        <p class="text-2xl font-bold text-gray-900">{{ filtered_count }}</p>
+                    </div>
+                {% endif %}
                 {% if user.is_authenticated %}
                     <button type="button"
                             onclick="openAddProjectModal()"
