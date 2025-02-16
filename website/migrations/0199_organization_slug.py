@@ -6,12 +6,15 @@ from django.utils.text import slugify
 
 def generate_unique_slugs(apps, schema_editor):
     Organization = apps.get_model("website", "Organization")
-    # Keep track of used slugs to ensure uniqueness
-    used_slugs = set(Organization.objects.exclude(slug="").values_list("slug", flat=True))
+    # Get existing slugs
+    used_slugs = set(Organization.objects.exclude(slug__isnull=True).values_list("slug", flat=True))
 
-    # Only process organizations without slugs
-    for org in Organization.objects.filter(slug=""):
+    # Process all organizations without a slug (null or empty)
+    for org in Organization.objects.filter(slug__isnull=True):
         base_slug = slugify(org.name)
+        if not base_slug:
+            base_slug = f"org-{org.id}"
+
         slug = base_slug
         counter = 1
 
@@ -27,7 +30,7 @@ def generate_unique_slugs(apps, schema_editor):
 
 def reverse_slug_generation(apps, schema_editor):
     Organization = apps.get_model("website", "Organization")
-    Organization.objects.all().update(slug="")
+    Organization.objects.all().update(slug=None)
 
 
 class Migration(migrations.Migration):
@@ -39,12 +42,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="organization",
             name="slug",
-            field=models.SlugField(blank=True, null=True, max_length=255),
+            field=models.SlugField(null=True, blank=True, max_length=255),
         ),
-        migrations.RunPython(generate_unique_slugs, reverse_slug_generation),
+        migrations.RunPython(
+            generate_unique_slugs,
+            reverse_slug_generation,
+            elidable=False,
+        ),
         migrations.AlterField(
             model_name="organization",
             name="slug",
-            field=models.SlugField(unique=True, max_length=255),
+            field=models.SlugField(unique=True, max_length=255, null=False, blank=False),
         ),
     ]
