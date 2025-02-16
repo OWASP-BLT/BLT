@@ -33,19 +33,19 @@
                     </h1>
                     <!-- Filter Pills -->
                     <div class="flex flex-wrap gap-2">
-                        <a href="{% url 'list_view' %}"
+                        <a href="{% url 'all_activity' %}"
                            class="inline-flex items-center px-3 py-1 rounded-full text-sm {% if not label and not user %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors">
                             All Issues
                         </a>
                         {% if label %}
-                            <a href="{% url 'list_view' %}?label={{ label }}"
+                            <a href="{% url 'all_activity' %}?label={{ label }}"
                                class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
                                 {{ label }}
                                 <span class="ml-1.5">×</span>
                             </a>
                         {% endif %}
                         {% if user %}
-                            <a href="{% url 'list_view' %}?user={{ user }}"
+                            <a href="{% url 'all_activity' %}?user={{ user }}"
                                class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-[#e74c3c] text-white">
                                 {{ user }}
                                 <span class="ml-1.5">×</span>
