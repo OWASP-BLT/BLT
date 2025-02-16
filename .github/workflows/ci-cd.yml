@@ -12,6 +12,7 @@ on:
 
 env:
   FORCE_COLOR: 1
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
 
 concurrency:
   cancel-in-progress: true
@@ -43,15 +44,18 @@ jobs:
 
       - name: Get Poetry cache directory
         id: poetry-cache
-        run: |
-          echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
+        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
       
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.POETRY_CACHE_DIR }}
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
+            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
             ${{ runner.os }}-poetry-
 
       - name: Print memory usage
@@ -167,19 +171,6 @@ jobs:
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
-      - name: Upload debug artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-artifacts-python
-          path: |
-            ./logs
-            ./screenshots
-            ./reports
-          retention-days: 5
-
-      - name: Print memory usage
-        run: free -h
 
   docker-test:
     runs-on: ubuntu-latest
