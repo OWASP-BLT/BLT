@@ -262,7 +262,11 @@ class ProjectRepoFilter(django_filters.FilterSet):
         fields = ["search", "repo_type", "sort", "order"]
 
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
+        if value:
+            return queryset.filter(
+                Q(project__name__icontains=value) | Q(name__icontains=value)
+            ).distinct()
+        return queryset
 
     def filter_repo_type(self, queryset, name, value):
         if value == "main":
@@ -298,11 +302,18 @@ class ProjectView(FilterView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        search_query = self.request.GET.get("search", "")
         organization_id = self.request.GET.get("organization")
 
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) | Q(project__name__icontains=search_query)
+            )
+
         if organization_id:
-            queryset = queryset.filter(project__organization_id=organization_id)
-        return queryset.select_related("project").prefetch_related("tags", "contributor")
+            queryset = queryset.filter(organization_id=organization_id)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -319,15 +330,34 @@ class ProjectView(FilterView):
         # Add counts
         context["total_projects"] = Project.objects.count()
         context["total_repos"] = Repo.objects.count()
-        context["filtered_count"] = context["repos"].count()
 
         # Group repos by project
-        projects = {}
+        projects_map = {}
         for repo in context["repos"]:
-            if repo.project not in projects:
-                projects[repo.project] = []
-            projects[repo.project].append(repo)
-        context["projects"] = projects
+            if repo.project not in projects_map:
+                projects_map[repo.project] = []
+            projects_map[repo.project].append(repo)
+
+        project_list = list(projects_map.keys())
+        page = self.request.GET.get("page", 1)
+        paginator = Paginator(project_list, 10)
+        try:
+            projects_page = paginator.page(page)
+        except PageNotAnInteger:
+            projects_page = paginator.page(1)
+        except EmptyPage:
+            projects_page = paginator.page(paginator.num_pages)
+
+        # Build a new limited map for the paged projects
+        paged_projects = {}
+        for p in projects_page:
+            paged_projects[p] = projects_map[p]
+
+        context["projects"] = paged_projects
+        context["page_obj"] = projects_page
+        context["paginator"] = paginator
+        context["is_paginated"] = projects_page.has_other_pages()
+        context["filtered_count"] = len(project_list)
 
         return context
 
