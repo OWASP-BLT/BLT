@@ -124,8 +124,29 @@
                                 <div class="flex items-center gap-4 text-sm text-gray-500">
                                     <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
                                     {% if issue.closed_at %}<span>Closed: {{ issue.closed_at|date:"M d, Y" }}</span>{% endif %}
-                                    {% if issue.repo %}<span>Repo: {{ issue.repo.name }}</span>{% endif %}
-                                    {% if issue.user_profile %}<span>By: {{ issue.user_profile.user.username }}</span>{% endif %}
+                                    {% if issue.repo %}
+                                        <span>Repo:
+                                            <a href="{{ issue.repo.repo_url }}"
+                                               target="_blank"
+                                               class="hover:text-[#e74c3c]">{{ issue.repo.name }}</a>
+                                        </span>
+                                    {% endif %}
+                                    {% if issue.user_profile %}
+                                        <span>By:
+                                            {% if issue.user_profile.github_url %}
+                                                <a href="{{ issue.user_profile.github_url }}"
+                                                   target="_blank"
+                                                   class="hover:text-[#e74c3c]">
+                                                    {{ issue.user_profile.user.username }}
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'profile' issue.user_profile.user.username %}"
+                                                   class="hover:text-[#e74c3c]">
+                                                    {{ issue.user_profile.user.username }}
+                                                </a>
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
