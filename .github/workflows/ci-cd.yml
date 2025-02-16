@@ -12,6 +12,7 @@ on:
 
 env:
   FORCE_COLOR: 1
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
 
 concurrency:
   cancel-in-progress: true
@@ -48,9 +49,13 @@ jobs:
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.POETRY_CACHE_DIR }}
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
+            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
             ${{ runner.os }}-poetry-
 
       - name: Print memory usage
