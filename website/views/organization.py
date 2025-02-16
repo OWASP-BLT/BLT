@@ -1807,8 +1807,8 @@ def join_room(request, room_id):
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
     # Get messages ordered by timestamp
-    messages = room.messages.all().order_by("timestamp")
-    return render(request, "room.html", {"room": room, "messages": messages})
+    room_messages = room.messages.all().order_by("timestamp")
+    return render(request, "room.html", {"room": room, "room_messages": room_messages})
 
 
 @login_required(login_url="/accounts/login")
