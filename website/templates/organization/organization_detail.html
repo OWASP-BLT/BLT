@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% load gravatar %}
+{% load humanize %}
 {% block title %}{{ organization.name }} - Organization Details{% endblock %}
 {% block description %}
     View organization details, including name, description, domains, and team information.
@@ -101,6 +102,53 @@
                         </div>
                     </div>
                 </div>
+                <!-- Top Projects -->
+                {% if top_projects %}
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Projects</h2>
+                        <div class="grid grid-cols-1 gap-4">
+                            {% for project_data in top_projects %}
+                                <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex items-center space-x-3">
+                                                {% if project_data.project.logo %}
+                                                    <img src="{{ project_data.project.logo.url }}"
+                                                         alt="{{ project_data.project.name }} logo"
+                                                         width="32"
+                                                         height="32"
+                                                         class="w-8 h-8 rounded-full object-cover">
+                                                {% else %}
+                                                    <div class="w-8 h-8 rounded-full bg-[#e74c3c] flex items-center justify-center">
+                                                        <i class="fas fa-code text-white"></i>
+                                                    </div>
+                                                {% endif %}
+                                                <div>
+                                                    <h3 class="font-semibold text-gray-900">{{ project_data.project.name }}</h3>
+                                                    <p class="text-sm text-gray-600 line-clamp-2">{{ project_data.project.description }}</p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-3 flex items-center space-x-6">
+                                                <div class="flex items-center space-x-2">
+                                                    <i class="fas fa-code-branch text-[#e74c3c]"></i>
+                                                    <span class="text-sm text-gray-600">{{ project_data.total_prs|intcomma }} Pull Requests</span>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <i class="fas fa-users text-[#e74c3c]"></i>
+                                                    <span class="text-sm text-gray-600">{{ project_data.total_contributors|intcomma }} Contributors</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'project_detail' slug=project_data.project.slug %}"
+                                           class="text-[#e74c3c] hover:text-red-700">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
                 <!-- Domains List -->
                 {% if organization.domain_set.all %}
                     <div class="mb-8">

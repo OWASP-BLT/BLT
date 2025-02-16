@@ -27,7 +27,7 @@
               content="{{ object.description|truncatechars:100 }}" />
     {% endif %}
     <meta property="og:description"
-          content="{{ object.markdown_description|escapejs }}" />
+          content="{% block og_description %}{{ object.markdown_description|escapejs }}{% endblock og_description %}" />
     <meta name="keywords"
           content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy{% endblock keywords %}">
     <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">

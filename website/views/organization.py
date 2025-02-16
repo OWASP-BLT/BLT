@@ -1837,5 +1837,24 @@ class OrganizationDetailView(DetailView):
         return Organization.objects.filter(is_active=True).prefetch_related(
             "domain_set",
             "managers",
-            "user_profiles",  # This is the related name from UserProfile model
+            "user_profiles",
+            "projects",
+            "projects__repos",
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organization = self.get_object()
+
+        # Get top 10 projects based on total pull requests
+        top_projects = []
+        for project in organization.projects.all():
+            total_prs = sum(repo.open_pull_requests + repo.closed_pull_requests for repo in project.repos.all())
+            total_contributors = sum(repo.contributor_count for repo in project.repos.all())
+            top_projects.append({"project": project, "total_prs": total_prs, "total_contributors": total_contributors})
+
+        # Sort by total PRs and get top 10
+        top_projects.sort(key=lambda x: x["total_prs"], reverse=True)
+        context["top_projects"] = top_projects[:10]
+
+        return context

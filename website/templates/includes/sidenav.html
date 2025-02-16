@@ -209,7 +209,7 @@
                     <li class="mb-2 {% if request.path == '/deletions/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'deletions' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/deletions/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
-                            <div class="icon text-red-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-trash-alt fa-lg"></i>
                             </div>
                             <span>Takedowns</span>
@@ -218,7 +218,7 @@
                     <li class="mb-2 {% if request.path == '/badges/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'badges' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/badges/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
-                            <div class="icon text-red-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-certificate fa-lg"></i>
                             </div>
                             <span>Badges</span>
@@ -297,7 +297,7 @@
                     <li class="mb-2 {% if request.path == '/features/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'features' %}"
                            class="flex items-center w-full text-black no-underline p-2 {% if '/features/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
-                            <div class="icon text-purple-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fa-solid fa-gear fa-lg"></i>
                             </div>
                             <span>Features</span>
@@ -377,7 +377,7 @@
                     <li class="mb-2 {% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'bltv' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/bltv/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                            <div class="icon text-red-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-tv fa-lg"></i>
                             </div>
                             <span>BLTV</span>
@@ -386,7 +386,7 @@
                     <li class="mb-2 {% if request.path == '/gsoc/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'gsoc' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/gsoc/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                            <div class="icon text-red-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-sun-o fa-lg"></i>
                             </div>
                             <span>GSOC</span>
@@ -395,7 +395,7 @@
                     <li class="mb-2 {% if '/submit-roadmap-pr/' in request.path %}bg-gray-200{% endif %}">
                         <a href="{% url 'submit-roadmap-pr' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/submit-roadmap-pr/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                            <div class="icon text-red-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-code-branch fa-lg"></i>
                             </div>
                             <span>Submit PR for review</span>
@@ -404,7 +404,7 @@
                     <li class="mb-2 {% if '/github-issue-prompt/' in request.path %}bg-gray-200{% endif %}">
                         <a href="{% url 'github_issue_prompt' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/github-issue-prompt/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                            <div class="icon text-red-500">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-code-branch fa-lg"></i>
                             </div>
                             <span>Create an Issue</span>
@@ -449,7 +449,7 @@
                     <a href="https://owasp.org/slack/invite"
                        target="_blank"
                        class="flex items-center w-full no-underline p-2 {% if '/slack' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                        <div class="icon text-red-500">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fab fa-slack fa-lg"></i>
                         </div>
                         <span>Slack</span>
@@ -592,7 +592,7 @@
                 <li class="mb-2 {% if request.path == '/terms/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'terms' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/terms' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
-                        <div class="icon text-gray-700">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fas fa-file-contract fa-lg"></i>
                         </div>
                         <span>Terms</span>
