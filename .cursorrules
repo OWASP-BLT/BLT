@@ -3,3 +3,7 @@
         "website/urls.py": "blt/urls.py"
     },
 } 
+
+use tailwind only
+for anything with color, make it the red color we use which is #e74c3c
+

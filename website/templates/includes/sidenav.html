@@ -600,9 +600,8 @@
                 </li>
                 <div class="my-4 border-t border-gray-300"></div>
                 <form action="{% url 'set_language' %}"
-                  method="post"
-                  class="flex items-center w-full"
-                >
+                      method="post"
+                      class="flex items-center w-full">
                     {% csrf_token %}
                     <select name="language"
                             onchange="this.form.submit()"
@@ -616,12 +615,10 @@
                     </select>
                 </form>
                 <li class="mb-2">
-                    <a 
-                        href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
-                        target="_blank"
-                        rel="noopener"
-                        class="flex items-center w-full no-underline p-2"
-                    >
+                    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
+                       target="_blank"
+                       rel="noopener"
+                       class="flex items-center w-full no-underline p-2">
                         <div class="icon text-gray-700">
                             <i class="fab fa-figma text-2xl"></i>
                         </div>
@@ -629,12 +626,11 @@
                     </a>
                 </li>
                 <li class="mb-2">
-                    <a
-                        href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
-                        target="_blank"
-                        rel="noopener"
-                        class="flex items-center w-full no-underline p-2"
-                    >
+                    {% get_current_template as current_template %}
+                    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
+                       target="_blank"
+                       rel="noopener"
+                       class="flex items-center w-full no-underline p-2">
                         <div class="icon text-gray-700">
                             <i class="fas fa-edit text-2xl"></i>
                         </div>

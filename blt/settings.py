@@ -304,8 +304,8 @@ else:
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
-    if DEBUG:
-        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # if DEBUG:
+    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -354,22 +354,31 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "simple": {"format": "%(levelname)s %(message)s"},
     },
     "handlers": {
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",  # Explicitly use stdout
+        },
         "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {
+        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "handlers": ["console"],
+    },
     "loggers": {
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "django.server": {
             "handlers": ["console"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "website": {
             "handlers": ["console"],
@@ -577,6 +586,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True

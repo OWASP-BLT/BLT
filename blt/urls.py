@@ -84,6 +84,7 @@ from website.views.core import (
     github_callback,
     google_callback,
     home,
+    management_commands,
     robots_txt,
     run_management_command,
     search,
@@ -100,6 +101,7 @@ from website.views.core import (
 )
 from website.views.issue import (
     AllIssuesView,
+    ContributeView,
     GithubIssueView,
     IssueCreate,
     IssueEdit,
@@ -513,6 +515,8 @@ urlpatterns = [
     ),
     re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    # link to index.html
+    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -582,7 +586,9 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
-    re_path(r"status/", check_status, name="check_status"),
+    path("status/", check_status, name="check_status"),
+    path("status/run-command/", run_management_command, name="run_management_command"),
+    path("status/commands/", management_commands, name="management_commands"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
@@ -659,7 +665,7 @@ urlpatterns = [
     ),
     re_path(
         r"^contribute/$",
-        TemplateView.as_view(template_name="contribute.html"),
+        ContributeView.as_view(),
         name="contribution_guidelines",
     ),
     path("select_contribution/", select_contribution, name="select_contribution"),

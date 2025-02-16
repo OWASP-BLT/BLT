@@ -37,7 +37,7 @@
             <meta property="og:type" content="website" />
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
-        {% if request.path == '/repo_list/' or '/repository/' in request.path or  request.path == '/projects/' or '/project/' in request.path %}
+        {% if request.path == '/repo_list/' or '/repository/' in request.path or  request.path == '/projects/' or '/project/' in request.path or request.path == '/status/commands/' or request.path == '/status/' %}
             <!-- Repository pages use their own styling -->
         {% else %}
             <link href="{% static 'vendor/bootstrap/css/bootstrap.css' %}"
@@ -91,86 +91,6 @@
         {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
-        <style>
-            .bottom-right {
-                position: absolute;
-                bottom: 10px;
-                right: 15px;
-            }
-
-            .messages {
-                position: fixed;
-                bottom: 20px;
-                left: 20px;
-                z-index: 1000;
-                max-width: 400px;
-                width: 100%;
-            }
-
-            .alert {
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                margin-bottom: 10px;
-                padding: 15px;
-                position: relative;
-                animation: slideIn 0.5s ease-out;
-                border-left: 4px solid;
-            }
-
-            .alert-success {
-                border-left-color: #48bb78;
-            }
-
-            .alert-error {
-                border-left-color: #f56565;
-            }
-
-            .alert-warning {
-                border-left-color: #ed8936;
-            }
-
-            .alert-info {
-                border-left-color: #4299e1;
-            }
-
-            .alert .close {
-                position: absolute;
-                right: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                background: none;
-                border: none;
-                font-size: 18px;
-                cursor: pointer;
-                opacity: 0.5;
-            }
-
-            .alert .close:hover {
-                opacity: 1;
-            }
-
-            @keyframes slideIn {
-                from {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-                to {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-            }
-        </style>
         {% include "includes/header.html" %}
         <div class="w-full h-[100px]"></div>
         <!-- Main content starts here -->
@@ -179,17 +99,6 @@
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
-            {% block edit_link %}
-                <div class="bottom-right">
-                    v1.5
-                    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/base.html">
-                        <i class="fab fa-github"></i>
-                    </a>
-                    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209&t=pqxWpF3hcYxjEDrs-1">
-                        <i class="fab fa-figma"></i>
-                    </a>
-                </div>
-            {% endblock edit_link %}
             {% include "includes/checkInModal.html" %}
         </main>
         <div class="pb-[50px]">
@@ -238,6 +147,74 @@
                 }, 100); // Small delay to ensure DOM is ready
             });
         </script>
+        {% block extra_js %}{% endblock %}
+        <script>
+        // Message handling
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to create a dismissible message
+            function createMessage(content, type = 'info', duration = 5000) {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = `fixed top-4 right-4 z-50 max-w-md transform transition-transform duration-300 ease-in-out translate-x-0`;
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `mb-4 p-4 rounded-lg flex items-center justify-between ${
+                    type === 'success' ? 'bg-green-100 text-green-700' :
+                    type === 'error' ? 'bg-red-100 text-red-700' :
+                    type === 'warning' ? 'bg-yellow-100 text-yellow-700' :
+                    'bg-blue-100 text-blue-700'
+                }`;
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'flex-grow mr-3';
+                textDiv.textContent = content;
+                
+                const closeButton = document.createElement('button');
+                closeButton.className = 'text-gray-500 hover:text-gray-700 focus:outline-none';
+                closeButton.innerHTML = '×';
+                closeButton.onclick = () => {
+                    messageContainer.classList.add('translate-x-full');
+                    setTimeout(() => messageContainer.remove(), 300);
+                };
+                
+                messageDiv.appendChild(textDiv);
+                messageDiv.appendChild(closeButton);
+                messageContainer.appendChild(messageDiv);
+                document.body.appendChild(messageContainer);
+                
+                // Auto-hide after duration
+                if (duration > 0) {
+                    setTimeout(() => {
+                        messageContainer.classList.add('translate-x-full');
+                        setTimeout(() => messageContainer.remove(), 300);
+                    }, duration);
+                }
+                
+                return messageContainer;
+            }
+            
+            // Make the function globally available
+            window.createMessage = createMessage;
+            
+            // Handle Django messages on page load
+            const messages = document.querySelectorAll('[data-message]');
+            messages.forEach(message => {
+                const content = message.getAttribute('data-message');
+                const type = message.getAttribute('data-message-type') || 'info';
+                createMessage(content, type);
+                message.remove();
+            });
+        });
+        </script>
+        <div class="messages-container fixed bottom-5 left-5 z-50 max-w-md">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500 {% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500 {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500 {% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
+                        <div class="flex-grow mr-3">{{ message }}</div>
+                        <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
     </body>
     <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'js/ui.js' %}"></script>
@@ -277,26 +254,6 @@
             var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
             $(this).parent().find('span').html(file);
         });
-        {% if messages %}
-            {% for message in messages %}
-                $.notify("{{ message|escapejs }}", {
-                    style: "custom",
-                    className: "{{ message.level_tag|escapejs }}",
-                    autoHide: true,
-                    autoHideDelay: 2000,
-                    clickToHide: true,
-                    position: "left bottom",
-                    gap: 5,
-                    elementSize: {
-                        width: "auto",
-                        height: "auto"
-                    }
-                });
-            {% endfor %}
-            $('.notifyjs-wrapper').on('mouseenter', function() {
-                $(this).fadeOut();
-            });
-        {% endif %}
     });
     /* eslint-enable */
     </script>
