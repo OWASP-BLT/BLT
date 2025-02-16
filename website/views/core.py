@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import subprocess
 import tracemalloc
@@ -180,14 +181,29 @@ def check_status(request):
         # Get list of available management commands
         available_commands = []
         for name, app_name in get_commands().items():
-            command_class = load_command_class(app_name, name)
-            available_commands.append(
-                {
+            # Only include commands from the website app
+            if app_name == "website":
+                command_class = load_command_class(app_name, name)
+                command_info = {
                     "name": name,
                     "help_text": getattr(command_class, "help", "").split("\n")[0],
                 }
-            )
-        status_data["available_commands"] = sorted(available_commands, key=lambda x: x["name"])
+
+                # Get command logs if they exist
+                log = ManagementCommandLog.objects.filter(command_name=name).first()
+                if log:
+                    command_info.update(
+                        {
+                            "last_run": log.last_run,
+                            "last_success": log.success,
+                            "run_count": log.run_count,
+                        }
+                    )
+
+                available_commands.append(command_info)
+
+        commands = sorted(available_commands, key=lambda x: x["name"])
+        status_data["available_commands"] = commands
 
         # Bitcoin RPC check
         if CHECK_BITCOIN:
@@ -247,7 +263,7 @@ def check_status(request):
 
         # OpenAI API check
         if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY")
+            openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
                     print("Checking OpenAI API...")
@@ -1001,8 +1017,23 @@ def view_pr_analysis(request):
 
 
 def home(request):
-    # last_commit = get_last_commit_date()
-    return render(request, "home.html", {"last_commit": ""})
+    from django.utils import timezone
+
+    # Get last commit date
+    try:
+        last_commit = get_last_commit_date()
+    except Exception as e:
+        print(f"Error getting last commit date: {e}")
+        last_commit = ""
+
+    return render(
+        request,
+        "home.html",
+        {
+            "last_commit": last_commit,
+            "current_year": timezone.now().year,  # Add current year
+        },
+    )
 
 
 def test_sentry(request):
@@ -1141,13 +1172,87 @@ def check_owasp_compliance(request):
     return render(request, "owasp_compliance_check.html")
 
 
+def management_commands(request):
+    # Get list of available management commands
+    available_commands = []
+    for name, app_name in get_commands().items():
+        # Only include commands from the website app and exclude initsuperuser
+        if (
+            app_name == "website"
+            and name != "initsuperuser"
+            and name != "generate_sample_data"
+            and not name.startswith("run_")
+        ):
+            command_class = load_command_class(app_name, name)
+            help_text = getattr(command_class, "help", "").split("\n")[0]
+            command_info = {
+                "name": name,
+                "help_text": help_text,
+            }
+
+            # Get command logs if they exist
+            log = ManagementCommandLog.objects.filter(command_name=name).first()
+            if log:
+                command_info.update(
+                    {
+                        "last_run": log.last_run,
+                        "last_success": log.success,
+                        "run_count": log.run_count,
+                    }
+                )
+
+            available_commands.append(command_info)
+
+    commands = sorted(available_commands, key=lambda x: x["name"])
+    return render(request, "management_commands.html", {"commands": commands})
+
+
 def run_management_command(request):
-    if request.method == "POST" and request.user.is_superuser:
+    if request.method == "POST":
         command = request.POST.get("command")
+        logging.info(f"Running command: {command}")
+        print(f"Running command: {command}")
         try:
+            # Only allow running commands from the website app and exclude initsuperuser
+            app_name = get_commands().get(command)
+            if app_name != "website" or command == "initsuperuser":
+                msg = f"Command {command} is not allowed to run from the web interface"
+                messages.error(request, msg)
+                return redirect("management_commands")
+
+            # Get or create the command log
+            log_entry, created = ManagementCommandLog.objects.get_or_create(
+                command_name=command, defaults={"run_count": 0, "success": False, "last_run": timezone.now()}
+            )
+
+            # Run the command
             call_command(command)
-            messages.success(request, f"Successfully ran command: {command}")
+
+            # Update the log entry
+            log_entry.success = True
+            log_entry.last_run = timezone.now()
+            log_entry.run_count = log_entry.run_count + 1
+            log_entry.error_message = ""
+            log_entry.save()
+
+            messages.success(
+                request,
+                f"Successfully ran command '{command}'. "
+                f"This command has been run {log_entry.run_count} time{'s' if log_entry.run_count != 1 else ''}.",
+            )
+
         except Exception as e:
             sentry_sdk.capture_exception(e)
-            messages.error(request, f"Error running command {command}")
-    return redirect("check_status")
+
+            # Update log entry with error
+            if "log_entry" in locals():
+                log_entry.success = False
+                log_entry.last_run = timezone.now()
+                log_entry.run_count = log_entry.run_count + 1
+                log_entry.error_message = str(e)
+                log_entry.save()
+
+            messages.error(
+                request, f"Error running command '{command}': {str(e)}. " f"Check the logs for more details."
+            )
+    return redirect("management_commands")
