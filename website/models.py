@@ -1429,7 +1429,7 @@ class GitHubIssue(models.Model):
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.IntegerField(unique=True)
+    issue_id = models.BigIntegerField(unique=True)
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)

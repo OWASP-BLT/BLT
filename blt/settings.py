@@ -304,8 +304,8 @@ else:
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
-    if DEBUG:
-        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # if DEBUG:
+    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -586,6 +586,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
