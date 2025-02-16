@@ -39,6 +39,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # First drop the problematic index if it exists
+        migrations.RunSQL(
+            sql=("DROP INDEX IF EXISTS " "website_organization_slug_334d1fac_like;"),
+            reverse_sql="",
+        ),
         migrations.AddField(
             model_name="organization",
             name="slug",
@@ -54,7 +59,8 @@ class Migration(migrations.Migration):
             sql="""
             ALTER TABLE website_organization 
             ALTER COLUMN slug SET NOT NULL,
-            ADD CONSTRAINT website_organization_slug_unique UNIQUE (slug);
+            ADD CONSTRAINT IF NOT EXISTS website_organization_slug_unique 
+                UNIQUE (slug);
             """,
             reverse_sql="""
             ALTER TABLE website_organization 
