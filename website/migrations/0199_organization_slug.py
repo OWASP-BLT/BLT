@@ -57,14 +57,26 @@ class Migration(migrations.Migration):
         # First ensure the column is non-null and unique at the database level
         migrations.RunSQL(
             sql="""
-            ALTER TABLE website_organization 
-            ALTER COLUMN slug SET NOT NULL,
-            ADD CONSTRAINT IF NOT EXISTS website_organization_slug_unique 
-                UNIQUE (slug);
+            DO $$ 
+            BEGIN
+                ALTER TABLE website_organization 
+                ALTER COLUMN slug SET NOT NULL;
+                
+                IF NOT EXISTS (
+                    SELECT 1 
+                    FROM pg_constraint 
+                    WHERE conname = 'website_organization_slug_unique'
+                ) THEN
+                    ALTER TABLE website_organization 
+                    ADD CONSTRAINT website_organization_slug_unique 
+                    UNIQUE (slug);
+                END IF;
+            END $$;
             """,
             reverse_sql="""
             ALTER TABLE website_organization 
-            ALTER COLUMN slug DROP NOT NULL,
+            ALTER COLUMN slug DROP NOT NULL;
+            ALTER TABLE website_organization 
             DROP CONSTRAINT IF EXISTS website_organization_slug_unique;
             """,
         ),
