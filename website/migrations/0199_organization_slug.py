@@ -49,15 +49,23 @@ class Migration(migrations.Migration):
             reverse_slug_generation,
             elidable=False,
         ),
+        # First ensure the column is non-null and unique at the database level
         migrations.RunSQL(
-            # Try to drop the index if it exists (this is safe even if it doesn't exist)
-            "DROP INDEX IF EXISTS website_organization_slug_334d1fac_like;",
-            # No reverse SQL needed since we're just ensuring the index doesn't exist
-            None,
+            sql="""
+            ALTER TABLE website_organization 
+            ALTER COLUMN slug SET NOT NULL,
+            ADD CONSTRAINT website_organization_slug_unique UNIQUE (slug);
+            """,
+            reverse_sql="""
+            ALTER TABLE website_organization 
+            ALTER COLUMN slug DROP NOT NULL,
+            DROP CONSTRAINT IF EXISTS website_organization_slug_unique;
+            """,
         ),
+        # Then update the Django model to match
         migrations.AlterField(
             model_name="organization",
             name="slug",
-            field=models.SlugField(unique=True, max_length=255, null=False, blank=False),
+            field=models.SlugField(unique=True, max_length=255),
         ),
     ]
