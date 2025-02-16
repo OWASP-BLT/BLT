@@ -43,8 +43,7 @@ jobs:
 
       - name: Get Poetry cache directory
         id: poetry-cache
-        run: |
-          echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
+        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
       
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
@@ -167,19 +166,6 @@ jobs:
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
-      - name: Upload debug artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: debug-artifacts-python
-          path: |
-            ./logs
-            ./screenshots
-            ./reports
-          retention-days: 5
-
-      - name: Print memory usage
-        run: free -h
 
   docker-test:
     runs-on: ubuntu-latest
