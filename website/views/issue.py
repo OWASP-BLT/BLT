@@ -1712,14 +1712,15 @@ def contribute(request):
     return {"good_first_issues": good_first_issues}
 
 
+@method_decorator(login_required, name="dispatch")
 class GitHubIssuesView(ListView):
     model = GitHubIssue
-    template_name = "github_issue.html"  # List view template
+    template_name = "github_issues.html"
     context_object_name = "issues"
     paginate_by = 20
 
     def get_queryset(self):
-        queryset = GitHubIssue.objects.all()
+        queryset = GitHubIssue.objects.all().order_by("-created_at")
 
         # Filter by type (issue/pr)
         issue_type = self.request.GET.get("type")
@@ -1731,7 +1732,7 @@ class GitHubIssuesView(ListView):
         if state and state != "all":
             queryset = queryset.filter(state=state)
 
-        return queryset.order_by("-created_at")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1740,6 +1741,8 @@ class GitHubIssuesView(ListView):
         context["total_count"] = GitHubIssue.objects.count()
         context["open_count"] = GitHubIssue.objects.filter(state="open").count()
         context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
+        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
+        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
 
         # Add current filter states
         context["current_type"] = self.request.GET.get("type", "all")

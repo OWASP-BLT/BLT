@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}
-    GitHub Issues
-{% endblock title %}
+{% block title %}GitHub Issues - {{ block.super }}{% endblock %}
 {% block description %}
     Browse through all GitHub issues and pull requests
 {% endblock description %}
@@ -16,49 +14,70 @@
     Explore all GitHub issues and pull requests. Track progress and contribute to open source.
 {% endblock og_description %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
-    <div class="p-6 lg:p-8">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-4">GitHub Issues</h1>
-                <div class="flex items-center space-x-3">
-                    <p class="text-gray-600">Total: {{ total_count }}</p>
-                    <span class="text-gray-300">|</span>
-                    <p class="text-gray-600">Open: {{ open_count }}</p>
-                    <span class="text-gray-300">|</span>
-                    <p class="text-gray-600">Closed: {{ closed_count }}</p>
-                </div>
+    <div class="container mx-auto px-4 py-8">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Total</h3>
+                <p class="text-2xl font-bold">{{ total_count }}</p>
             </div>
-            <!-- Filters -->
-            <div class="mt-4 sm:mt-0 flex items-center space-x-4">
-                <select id="type-filter"
-                        class="rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c]">
-                    <option value="all" {% if not type %}selected{% endif %}>All Types</option>
-                    <option value="issue" {% if type == 'issue' %}selected{% endif %}>Issues</option>
-                    <option value="pull_request"
-                            {% if type == 'pull_request' %}selected{% endif %}>Pull Requests</option>
-                </select>
-                <select id="state-filter"
-                        class="rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c]">
-                    <option value="all" {% if not state %}selected{% endif %}>All States</option>
-                    <option value="open" {% if state == 'open' %}selected{% endif %}>Open</option>
-                    <option value="closed" {% if state == 'closed' %}selected{% endif %}>Closed</option>
-                </select>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Open</h3>
+                <p class="text-2xl font-bold text-green-600">{{ open_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Closed</h3>
+                <p class="text-2xl font-bold text-gray-600">{{ closed_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Pull Requests</h3>
+                <p class="text-2xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Issues</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ issue_count }}</p>
             </div>
         </div>
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-4 mb-8">
+            <form method="get" class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <select name="type"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                        <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
+                        <option value="issue" {% if current_type == 'issue' %}selected{% endif %}>Issues Only</option>
+                        <option value="pull_request"
+                                {% if current_type == 'pull_request' %}selected{% endif %}>Pull Requests Only</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <select name="state"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                        <option value="all" {% if current_state == 'all' %}selected{% endif %}>All States</option>
+                        <option value="open" {% if current_state == 'open' %}selected{% endif %}>Open</option>
+                        <option value="closed" {% if current_state == 'closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit"
+                            class="bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
         <!-- Issues List -->
-        <div class="bg-white rounded-lg shadow">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
             <div class="divide-y divide-gray-200">
                 {% for issue in issues %}
                     <div class="p-6 hover:bg-gray-50 transition-colors">
-                        <div class="flex items-start space-x-4">
-                            <!-- Type & State Indicator -->
-                            <div class="flex-shrink-0">
+                        <div class="flex items-start gap-4">
+                            <!-- Type Badge -->
+                            <div class="shrink-0">
                                 {% if issue.type == 'pull_request' %}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                        PR
-                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#e74c3c] text-white">PR</span>
                                 {% else %}
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         Issue
@@ -66,108 +85,63 @@
                                 {% endif %}
                             </div>
                             <!-- Content -->
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center space-x-2">
-                                    <a href="{{ issue.url }}"
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       class="text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
-                                        {{ issue.title }}
-                                    </a>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-lg font-medium">
+                                        <a href="{{ issue.url }}" target="_blank" class="hover:text-[#e74c3c]">{{ issue.title }}</a>
+                                    </h3>
+                                    <!-- State Badge -->
                                     {% if issue.state == 'open' %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             Open
                                         </span>
                                     {% else %}
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                             Closed
                                         </span>
                                     {% endif %}
-                                </div>
-                                {% if issue.body %}<p class="mt-1 text-sm text-gray-600 line-clamp-2">{{ issue.body }}</p>{% endif %}
-                                <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                                    {% if issue.repo %}
-                                        <a href="{{ issue.repo.repo_url }}"
-                                           target="_blank"
-                                           rel="noopener noreferrer"
-                                           class="hover:text-[#e74c3c] transition-colors">{{ issue.repo.name }}</a>
+                                    {% if issue.is_merged %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            Merged
+                                        </span>
                                     {% endif %}
-                                    <span>Created {{ issue.created_at|timesince }} ago</span>
-                                    {% if issue.closed_at %}<span>Closed {{ issue.closed_at|timesince }} ago</span>{% endif %}
+                                </div>
+                                {% if issue.body %}<p class="text-gray-600 mb-2 line-clamp-2">{{ issue.body }}</p>{% endif %}
+                                <div class="flex items-center gap-4 text-sm text-gray-500">
+                                    <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
+                                    {% if issue.closed_at %}<span>Closed: {{ issue.closed_at|date:"M d, Y" }}</span>{% endif %}
+                                    {% if issue.repo %}<span>Repo: {{ issue.repo.name }}</span>{% endif %}
+                                    {% if issue.user_profile %}<span>By: {{ issue.user_profile.user.username }}</span>{% endif %}
                                 </div>
                             </div>
                         </div>
                     </div>
                 {% empty %}
-                    <div class="p-6 text-center text-gray-500">
-                        <p>No GitHub issues found matching your criteria.</p>
-                    </div>
+                    <div class="p-6 text-center text-gray-500">No issues found matching your criteria.</div>
                 {% endfor %}
             </div>
         </div>
         <!-- Pagination -->
         {% if is_paginated %}
             <div class="mt-8 flex justify-center">
-                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                     aria-label="Pagination">
+                <nav class="inline-flex rounded-md shadow">
                     {% if page_obj.has_previous %}
-                        <a href="?page=1{% if type %}&type={{ type }}{% endif %}{% if state %}&state={{ state }}{% endif %}"
-                           class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                            First
+                        <a href="?page={{ page_obj.previous_page_number }}{% if current_type != 'all' %}&type={{ current_type }}{% endif %}{% if current_state != 'all' %}&state={{ current_state }}{% endif %}"
+                           class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Previous
                         </a>
                     {% endif %}
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if num == page_obj.number %}
-                            <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
-                                {{ num }}
-                            </span>
-                        {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
-                            <a href="?page={{ num }}{% if type %}&type={{ type }}{% endif %}{% if state %}&state={{ state }}{% endif %}"
-                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                {{ num }}
-                            </a>
-                        {% endif %}
-                    {% endfor %}
+                    <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
                     {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.paginator.num_pages }}{% if type %}&type={{ type }}{% endif %}{% if state %}&state={{ state }}{% endif %}"
-                           class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                            Last
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_type != 'all' %}&type={{ current_type }}{% endif %}{% if current_state != 'all' %}&state={{ current_state }}{% endif %}"
+                           class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Next
                         </a>
                     {% endif %}
                 </nav>
             </div>
         {% endif %}
     </div>
-    <!-- JavaScript for filters -->
-    <script>
-        document.getElementById('type-filter').addEventListener('change', function() {
-            updateFilters();
-        });
-
-        document.getElementById('state-filter').addEventListener('change', function() {
-            updateFilters();
-        });
-
-        function updateFilters() {
-            const type = document.getElementById('type-filter').value;
-            const state = document.getElementById('state-filter').value;
-            
-            let url = new URL(window.location.href);
-            url.searchParams.delete('page');
-            
-            if (type !== 'all') {
-                url.searchParams.set('type', type);
-            } else {
-                url.searchParams.delete('type');
-            }
-            
-            if (state !== 'all') {
-                url.searchParams.set('state', state);
-            } else {
-                url.searchParams.delete('state');
-            }
-            
-            window.location.href = url.toString();
-        }
-    </script>
-{% endblock content %}
+{% endblock %}
