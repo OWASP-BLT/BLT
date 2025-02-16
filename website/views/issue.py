@@ -35,7 +35,6 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.templatetags.static import static
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
@@ -68,7 +67,6 @@ from website.models import (
 from website.utils import (
     get_client_ip,
     get_email_from_domain,
-    gravatar_url,
     image_validator,
     is_valid_https_url,
     rebuild_safe_url,
@@ -1121,6 +1119,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
             Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
         )
 
+        # Add top users data
+        top_users = (
+            User.objects.annotate(
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+            )
+            .filter(issue_count__gt=0)
+            .order_by("-issue_count")[:10]
+        )
+        context["top_users"] = top_users
+
         return context
 
 
@@ -1162,25 +1170,13 @@ class AllIssuesView(ListView):
 
         # Add top users data
         top_users = (
-            User.objects.annotate(points=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True)))
-            .filter(points__gt=0)
-            .order_by("-points")[:5]
+            User.objects.annotate(
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+            )
+            .filter(issue_count__gt=0)
+            .order_by("-issue_count")[:10]
         )
-
-        context["top_users"] = [
-            {
-                "username": user.username,
-                "points": user.points,
-                "avatar_url": (
-                    user.userprofile.avatar.url
-                    if hasattr(user, "userprofile") and user.userprofile.avatar
-                    else (user.socialaccount_set.first().get_avatar_url() if user.socialaccount_set.exists() else None)
-                    or (gravatar_url(user.email) if user.email else None)
-                    or static("images/dummy-user.png")
-                ),
-            }
-            for user in top_users
-        ]
+        context["top_users"] = top_users
 
         return context
 
