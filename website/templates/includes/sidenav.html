@@ -294,6 +294,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/features/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'features' %}"
+                           class="flex items-center w-full text-black no-underline p-2 {% if '/features/' in request.path %} text-black {% else %} hover:text-red-500 text-black {% endif %}">
+                            <div class="icon text-purple-500">
+                                <i class="fa-solid fa-gear fa-lg"></i>
+                            </div>
+                            <span>Features</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/sponsor/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'sponsor' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/sponsor/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
