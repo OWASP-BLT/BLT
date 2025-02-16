@@ -10,7 +10,7 @@ import markdown
 import numpy as np
 from openai import OpenAI
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -21,10 +21,6 @@ from openai import OpenAI
 
 from .models import PRAnalysisReport
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
-
-
-# openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
 
 

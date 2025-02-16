@@ -263,7 +263,7 @@ def check_status(request):
 
         # OpenAI API check
         if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY")
+            openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
                     print("Checking OpenAI API...")
