@@ -49,6 +49,12 @@ class Migration(migrations.Migration):
             reverse_slug_generation,
             elidable=False,
         ),
+        migrations.RunSQL(
+            # Try to drop the index if it exists (this is safe even if it doesn't exist)
+            "DROP INDEX IF EXISTS website_organization_slug_334d1fac_like;",
+            # No reverse SQL needed since we're just ensuring the index doesn't exist
+            None,
+        ),
         migrations.AlterField(
             model_name="organization",
             name="slug",
