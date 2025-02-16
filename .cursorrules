@@ -1,3 +1,4 @@
+when using cursor rules, always start with random emoji
 {
     "urlModules": {
         "website/urls.py": "blt/urls.py"

@@ -399,6 +399,56 @@ def check_status(request):
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
+        # Get the date range for the last 30 days
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=30)
+
+        # Get daily counts for team joins and commands
+        team_joins = (
+            SlackBotActivity.objects.filter(activity_type="team_join", created__gte=start_date, created__lte=end_date)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        commands = (
+            SlackBotActivity.objects.filter(activity_type="command", created__gte=start_date, created__lte=end_date)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        # Convert querysets to lists for the template
+        team_joins_data = list(team_joins)
+        commands_data = list(commands)
+
+        # Create a complete date range with zero counts for missing dates
+        date_range = []
+        current_date = start_date.date()
+        while current_date <= end_date.date():
+            date_range.append(current_date)
+            current_date += timedelta(days=1)
+
+        # Fill in missing dates with zero counts
+        chart_data = {
+            "dates": [date.strftime("%Y-%m-%d") for date in date_range],
+            "team_joins": [0] * len(date_range),
+            "commands": [0] * len(date_range),
+        }
+
+        # Map the actual data to the date range
+        for i, date in enumerate(date_range):
+            for join in team_joins_data:
+                if join["date"] == date:
+                    chart_data["team_joins"][i] = join["count"]
+            for cmd in commands_data:
+                if cmd["date"] == date:
+                    chart_data["commands"][i] = cmd["count"]
+
+        status_data["chart_data"] = chart_data
+
     return render(request, "status_page.html", {"status": status_data})
 
 
