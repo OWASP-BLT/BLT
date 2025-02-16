@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Cache pre-commit hooks
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -43,10 +43,11 @@ jobs:
 
       - name: Get Poetry cache directory
         id: poetry-cache
-        run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
+        run: |
+          echo "dir=$(poetry config cache-dir)" >> $GITHUB_OUTPUT
       
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.POETRY_CACHE_DIR }}
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
@@ -131,11 +132,13 @@ jobs:
         with:
           languages: ${{ steps.set-matrix.outputs.languages }}
 
-      - uses: github/codeql-action/autobuild@v2
+      - uses: github/codeql-action/autobuild@v3
         if: ${{ steps.set-matrix.outputs.languages != '' }}
 
-      - uses: github/codeql-action/analyze@v2
+      - uses: github/codeql-action/analyze@v3
         if: ${{ steps.set-matrix.outputs.languages != '' }}
+        with:
+          category: "/language:${{ matrix.language }}"
 
       - name: Print memory usage
         run: free -h
@@ -164,6 +167,17 @@ jobs:
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+      - name: Upload debug artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-artifacts-python
+          path: |
+            ./logs
+            ./screenshots
+            ./reports
+          retention-days: 5
+
       - name: Print memory usage
         run: free -h
 
@@ -171,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker
         run: |
