@@ -100,7 +100,7 @@
                 {% if bug.domain.organization %}
                     <p class="text-xs text-gray-500 mt-1">
                         Organization:
-                        <a href="{% url 'organization' bug.domain.organization.slug %}"
+                        <a href="{% url 'organization_detail' bug.domain.organization.slug %}"
                            class="text-[#e74c3c] hover:underline">{{ bug.domain.organization.name }}</a>
                     </p>
                 {% endif %}
