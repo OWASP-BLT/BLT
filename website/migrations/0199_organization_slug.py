@@ -2,6 +2,23 @@ from django.db import migrations, models
 from django.utils.text import slugify
 
 
+def drop_index_if_exists(apps, schema_editor):
+    # Only run on PostgreSQL
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(
+            """
+            DO $$
+            BEGIN
+              IF EXISTS (
+                  SELECT 1 FROM pg_class WHERE relname = 'website_organization_slug_334d1fac_like'
+              ) THEN
+                  EXECUTE 'DROP INDEX website_organization_slug_334d1fac_like CASCADE';
+              END IF;
+            END $$;
+        """
+        )
+
+
 def generate_unique_slugs(apps, schema_editor):
     Organization = apps.get_model("website", "Organization")
     used_slugs = set(Organization.objects.exclude(slug__isnull=True).values_list("slug", flat=True))
@@ -28,21 +45,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Drop any leftover problematic index.
-        migrations.RunSQL(
-            sql="""
-            DO $$
-            BEGIN
-              IF EXISTS (
-                  SELECT 1 FROM pg_class WHERE relname = 'website_organization_slug_334d1fac_like'
-              ) THEN
-                  EXECUTE 'DROP INDEX website_organization_slug_334d1fac_like CASCADE';
-              END IF;
-            END $$;
-            """,
-            reverse_sql="",
+        # Drop any leftover problematic index using a Python function
+        migrations.RunPython(
+            drop_index_if_exists,
+            reverse_code=migrations.RunPython.noop,
         ),
-        # Add the slug field without unique=True
+        # Add the slug field without unique=True initially
         migrations.AddField(
             model_name="organization",
             name="slug",
