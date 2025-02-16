@@ -568,10 +568,6 @@ def submit_pr(request):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        # print(
-        #     "processing form_valid IssueBaseCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -595,56 +591,19 @@ class IssueBaseCreate(object):
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
-        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
+        Points.objects.create(user=self.request.user, issue=obj, score=score)
+
+        messages.success(self.request, "Bug added successfully!")
+        return HttpResponseRedirect(obj.get_absolute_url())
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        # print("processing process_issue for ip address: ", get_client_ip(self.request))
-        p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
+        Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
-
-        # Twitter posting code removed as we no longer use Twitter integration
-        # try:
-        #     auth = tweepy.Client(
-        #         settings.BEARER_TOKEN,
-        #         settings.APP_KEY,
-        #         settings.APP_KEY_SECRET,
-        #         settings.ACCESS_TOKEN,
-        #         settings.ACCESS_TOKEN_SECRET,
-        #     )
-
-        #     blt_url = "https://%s/issue/%d" % (
-        #         settings.DOMAIN_NAME,
-        #         obj.id,
-        #     )
-        #     domain_name = domain.get_name
-        #     twitter_account = (
-        #         "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
-        #     )
-
-        #     issue_title = obj.description + " " if not obj.is_hidden else ""
-
-        #     message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
-        #         twitter_account,
-        #         issue_title,
-        #         domain_name,
-        #         user.username,
-        #         settings.PROJECT_NAME,
-        #         blt_url,
-        #     )
-
-        #     auth.create_tweet(text=message)
-
-        # except (
-        #     TypeError,
-        #     tweepy.errors.HTTPException,
-        #     tweepy.errors.TweepyException,
-        # ) as e:
-        #     print(e)
 
         if created:
             try:
                 email_to = get_email_from_domain(domain)
-            except:
+            except Exception:
                 email_to = "support@" + domain.name
 
             domain.email = email_to
@@ -662,16 +621,16 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
-
         else:
             email_to = domain.email
             try:
                 name = email_to.split("@")[0]
-            except:
+            except Exception:
                 email_to = "support@" + domain.name
                 name = "support"
                 domain.email = email_to
                 domain.save()
+
             if not tokenauth:
                 msg_plain = render_to_string(
                     "email/bug_added.txt",
@@ -734,7 +693,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        # print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -783,7 +741,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        # print("processing post for ip address: ", get_client_ip(request))
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
@@ -848,10 +805,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # print(
-        #     "processing form_valid in IssueCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -1087,9 +1040,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST = {}
             self.request.GET = {}
 
-        # print(
-        #     "processing get_context_data for ip address: ", get_client_ip(self.request)
-        # )
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
@@ -1250,8 +1200,6 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        # print("getting issue id: ", self.kwargs["slug"])
-        # print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -1265,9 +1213,6 @@ class IssueView(DetailView):
         ipdetails.path = request.path
         ipdetails.agent = request.META["HTTP_USER_AGENT"]
         ipdetails.referer = request.META.get("HTTP_REFERER", None)
-
-        # print("IP Address: ", ipdetails.address)
-        # print("Issue Number: ", ipdetails.issuenumber)
 
         try:
             if self.request.user.is_authenticated:
@@ -1285,19 +1230,11 @@ class IssueView(DetailView):
                 except Exception as e:
                     print(e)
                     pass  # pass this temporarly to avoid error
-                    # messages.error(self.request, "That issue was not found 2." + str(e))
-                    # ipdetails.save()
-                    # self.object.views = (self.object.views or 0) + 1
-                    # self.object.save()
         except Exception as e:
             pass  # pass this temporarly to avoid error
-            # print(e)
-            # messages.error(self.request, "That issue was not found 1." + str(e))
-            # return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        # print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
 
         if self.object.user_agent:
