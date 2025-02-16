@@ -8,13 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationSummaryMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import (
-    DirectoryLoader,
-    Docx2txtLoader,
-    PyPDFLoader,
-    TextLoader,
-    UnstructuredMarkdownLoader,
-)
+from langchain_community.document_loaders import DirectoryLoader, Docx2txtLoader, PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -48,7 +42,7 @@ def load_document(file_path):
         ".pdf": PyPDFLoader,
         ".docx": Docx2txtLoader,
         ".txt": TextLoader,
-        ".md": UnstructuredMarkdownLoader,
+        ".md": TextLoader,
     }
 
     file_path = Path(file_path)

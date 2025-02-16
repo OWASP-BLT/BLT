@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Website Statistics{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="text-2xl text-gray-600 dark:text-gray-400">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Web Traffic</h2>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Last 30 days</div>
+                    </div>
+                </div>
+                {% if web_stats.date %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if web_stats.status == 'danger' %} bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 {% elif web_stats.status == 'warning' %} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 {% else %} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 {% endif %}">
+                        {{ web_stats.date|timesince }} ago
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                        No data
+                    </span>
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="block font-medium">Total Views</span>
+                    <span>{{ web_stats.total_views|intcomma }}</span>
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="block font-medium">Unique Visitors</span>
+                    <span>{{ web_stats.unique_visitors|intcomma }}</span>
+                </div>
+            </div>
+            <div class="w-full h-64">
+                <canvas id="trafficChart"></canvas>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Total Views: {{ total_views }}</h2>
+        </div>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="p-6">
+                <h2 class="text-xl font-semibold mb-4">URL Statistics ({{ web_stats.total_urls|default:0 }} URLs)</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Path</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">View Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for url in url_info %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.path }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_count }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if total_views > 0 %}
+                                        {% widthratio url.view_count total_views 100 as percentage %}
+                                        {{ percentage|floatformat:1 }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No URL statistics available</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    
+    const data = {
+        labels: {{ web_stats.dates|safe }},
+        datasets: [{
+            label: 'Daily Views',
+            data: {{ web_stats.views|safe }},
+            borderColor: '#e74c3c',
+            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#e74c3c'
+        }]
+    };
+
+    const config = {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#e74c3c',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 7,
+                        color: '#718096'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        color: '#718096'
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    };
+
+    new Chart(ctx, config);
+});
+    </script>
+{% endblock %}

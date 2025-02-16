@@ -23,7 +23,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-from django.views.generic import FormView, ListView, TemplateView, View
+from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -343,7 +343,12 @@ class Joinorganization(TemplateView):
             admin.organization = organization
             admin.is_active = True
             admin.save()
-            return JsonResponse({"status": "Success"})
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                }
+            )
             # company.subscription =
         elif paymentType == "card":
             organization = Organization()
@@ -359,7 +364,12 @@ class Joinorganization(TemplateView):
             admin.organization = organization
             admin.is_active = True
             admin.save()
-            return JsonResponse({"status": "Success"})
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                }
+            )
         else:
             return JsonResponse({"status": "There was some error"})
 
@@ -1816,3 +1826,16 @@ def delete_room(request, room_id):
     room.delete()
     messages.success(request, "Room deleted successfully.")
     return redirect("rooms_list")
+
+
+class OrganizationDetailView(DetailView):
+    model = Organization
+    template_name = "organization/organization_detail.html"
+    context_object_name = "organization"
+
+    def get_queryset(self):
+        return Organization.objects.filter(is_active=True).prefetch_related(
+            "domain_set",
+            "managers",
+            "user_profiles",  # This is the related name from UserProfile model
+        )

@@ -97,6 +97,9 @@ INSTALLED_APPS = (
     "channels",
 )
 
+if DEBUG:
+    INSTALLED_APPS += ("livereload",)
+
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
@@ -115,6 +118,10 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
+
+if DEBUG:
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -304,8 +311,8 @@ else:
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
-    if DEBUG:
-        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # if DEBUG:
+    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -586,6 +593,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True

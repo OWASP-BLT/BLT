@@ -1709,3 +1709,42 @@ def generate_github_issue(description):
         return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
     except Exception as e:
         return {"error": "There's a problem with OpenAI", "details": str(e)}
+
+
+class ContributeView(TemplateView):
+    template_name = "contribute.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        extra_context = contribute(self.request)
+        if not isinstance(extra_context, dict):
+            extra_context = {}
+        context.update(extra_context)
+        return context
+
+
+def contribute(request):
+    url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+    params = {"labels": "good first issue", "state": "open", "per_page": 10}
+    r = requests.get(url, params=params)
+    good_first_issues = []
+    if r.status_code == 200:
+        issues = r.json()
+        for issue in issues:
+            try:
+                created_at = datetime.strptime(issue.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
+            except Exception:
+                created_at = None
+            good_first_issues.append(
+                {
+                    "id": issue.get("id"),
+                    "title": issue.get("title"),
+                    "url": issue.get("html_url"),
+                    "repository": issue.get("repository_url"),
+                    "created_at": created_at,
+                    "labels": [label.get("name") for label in issue.get("labels", [])],
+                }
+            )
+    else:
+        good_first_issues = []
+    return {"good_first_issues": good_first_issues}

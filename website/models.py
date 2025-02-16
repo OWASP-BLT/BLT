@@ -23,8 +23,8 @@ from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from django.template.defaultfilters import slugify
 from django.utils import timezone
+from django.utils.text import slugify
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
@@ -119,6 +119,7 @@ class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
     name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
@@ -142,6 +143,20 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Generate initial slug from name
+            self.slug = slugify(self.name)
+
+            # If the slug exists, append a number until we find a unique one
+            original_slug = self.slug
+            counter = 1
+            while Organization.objects.filter(slug=self.slug).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+
+        super().save(*args, **kwargs)
 
 
 class JoinRequest(models.Model):
@@ -1429,7 +1444,7 @@ class GitHubIssue(models.Model):
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.IntegerField(unique=True)
+    issue_id = models.BigIntegerField(unique=True)
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)

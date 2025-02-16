@@ -20,7 +20,7 @@
     <style>
     /* Dashboard Styles */
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
         color: #fff;
         border-radius: 12px;
         padding: 20px;
@@ -53,6 +53,11 @@
         display: flex;
         align-items: center;
     }
+    .stat-total {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin-top: 5px;
+    }
     .stat-count span {
         margin-left: 10px;
         font-size: 1.25rem;
@@ -67,13 +72,22 @@
         height: 60px;
         margin-top: 20px;
     }
-
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-12 text-center">System Statistics Dashboard</h1>
+        <h1 class="text-4xl font-bold mb-6 text-center">System Statistics Dashboard</h1>
+        <!-- Time Period Selector -->
+        <div class="flex flex-wrap gap-2 items-center justify-center bg-white p-4 rounded-lg shadow-sm mb-8">
+            <span class="text-gray-700 font-medium">Time Period:</span>
+            {% for option in period_options %}
+                <a href="?period={{ option.value }}"
+                   class="px-4 py-2 rounded-md text-sm font-medium {% if period == option.value %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors duration-200">
+                    {{ option.label }}
+                </a>
+            {% endfor %}
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {% for stat in stats %}
                 <div class="stat-card">
@@ -92,6 +106,7 @@
                                 </span>
                             {% endif %}
                         </div>
+                        <div class="stat-total">Total: {{ stat.total_count|intcomma }}</div>
                         {% if stat.history and stat.dates %}
                             <div class="chart-container">
                                 <canvas id="chart-{{ forloop.counter }}"
@@ -109,46 +124,71 @@
     {% block extra_js %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.sparkline').forEach(function(canvas) {
-            const values = JSON.parse(canvas.dataset.values);
-            const dates = JSON.parse(canvas.dataset.dates);
-            const ctx = canvas.getContext('2d');
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.sparkline').forEach(function(canvas) {
+                const values = JSON.parse(canvas.dataset.values);
+                const dates = JSON.parse(canvas.dataset.dates);
+                const ctx = canvas.getContext('2d');
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        data: values,
-                        borderColor: 'rgba(255, 255, 255, 0.7)',
-                        borderWidth: 2,
-                        fill: false,
-                        pointRadius: 0,
-                        tension: 0.4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false },
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            data: values,
+                            borderColor: 'rgba(255, 255, 255, 0.7)',
+                            borderWidth: 2,
+                            fill: true,
+                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            pointRadius: 0,
+                            tension: 0.4,
+                        }]
                     },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false },
-                    },
-                    elements: {
-                        line: {
-                            borderCapStyle: 'round',
-                            borderJoinStyle: 'round',
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    },
+                                    label: function(context) {
+                                        return 'Count: ' + context.raw;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: false,
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: { 
+                                display: false,
+                                beginAtZero: true,
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
                         }
                     }
-                }
+                });
             });
         });
-    });
         </script>
     {% endblock extra_js %}
 {% endblock content %}

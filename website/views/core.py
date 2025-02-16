@@ -4,7 +4,7 @@ import os
 import subprocess
 import tracemalloc
 import urllib
-from datetime import timedelta
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import psutil
@@ -41,6 +41,7 @@ from django.views.generic import TemplateView, View
 
 from blt import settings
 from website.models import (
+    IP,
     Activity,
     Badge,
     Domain,
@@ -263,7 +264,7 @@ def check_status(request):
 
         # OpenAI API check
         if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY")
+            openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
                     print("Checking OpenAI API...")
@@ -811,7 +812,7 @@ class UploadCreate(View):
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
-    def get_historical_counts(self, model):
+    def get_historical_counts(self, model, start_date=None):
         date_field_map = {
             "Issue": "created",
             "UserProfile": "created",
@@ -844,8 +845,13 @@ class StatsDetailView(TemplateView):
         counts = []
 
         try:
+            queryset = model.objects.all()
+            if start_date:
+                filter_kwargs = {f"{date_field}__gte": start_date}
+                queryset = queryset.filter(**filter_kwargs)
+
             date_counts = (
-                model.objects.annotate(date=TruncDate(date_field))
+                queryset.annotate(date=TruncDate(date_field))
                 .values("date")
                 .annotate(count=Count("id"))
                 .order_by("date")
@@ -860,8 +866,22 @@ class StatsDetailView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        stats_data = []
 
+        # Get period from request, default to 30 days
+        period = self.request.GET.get("period", "30")
+
+        # Calculate start date based on period
+        today = timezone.now()
+        if period == "ytd":
+            start_date = today.replace(month=1, day=1)
+        else:
+            try:
+                days = int(period)
+                start_date = today - timedelta(days=days)
+            except ValueError:
+                start_date = today - timedelta(days=30)
+
+        stats_data = []
         known_icons = {
             "Issue": "fas fa-bug",
             "User": "fas fa-users",
@@ -898,14 +918,18 @@ class StatsDetailView(TemplateView):
             model_name = model.__name__
 
             try:
-                dates, counts = self.get_historical_counts(model)
+                dates, counts = self.get_historical_counts(model, start_date)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
+
+                # Get filtered count and total count
                 total_count = model.objects.count()
+                filtered_count = counts[-1] if counts else 0
 
                 stats_data.append(
                     {
                         "label": model_name,
-                        "count": total_count,
+                        "count": filtered_count,
+                        "total_count": total_count,
                         "icon": known_icons.get(model_name, "fas fa-database"),
                         "history": json.dumps(counts),
                         "dates": json.dumps(dates),
@@ -915,7 +939,21 @@ class StatsDetailView(TemplateView):
             except Exception:
                 continue
 
-        context["stats"] = sorted(stats_data, key=lambda x: x["count"], reverse=True)
+        context.update(
+            {
+                "stats": sorted(stats_data, key=lambda x: x["count"], reverse=True),
+                "period": period,
+                "period_options": [
+                    {"value": "1", "label": "1 Day"},
+                    {"value": "7", "label": "1 Week"},
+                    {"value": "30", "label": "1 Month"},
+                    {"value": "90", "label": "3 Months"},
+                    {"value": "ytd", "label": "Year to Date"},
+                    {"value": "365", "label": "1 Year"},
+                    {"value": "1825", "label": "5 Years"},
+                ],
+            }
+        )
         return context
 
 
@@ -1055,44 +1093,113 @@ def handler500(request, exception=None):
 
 
 def stats_dashboard(request):
-    # Try to get stats from cache first
-    cache_key = "dashboard_stats"
+    # Get the time period from request, default to 30 days
+    period = request.GET.get("period", "30")
+
+    # Define time periods in days
+    period_map = {
+        "1": 1,  # 1 day
+        "7": 7,  # 1 week
+        "30": 30,  # 1 month
+        "90": 90,  # 3 months
+        "ytd": "ytd",  # Year to date
+        "365": 365,  # 1 year
+        "1825": 1825,  # 5 years
+    }
+
+    days = period_map.get(period, 30)
+
+    # Calculate the date range
+    end_date = timezone.now()
+    if days == "ytd":
+        start_date = end_date.replace(month=1, day=1)
+    else:
+        start_date = end_date - timedelta(days=days)
+
+    # Try to get stats from cache with period-specific key
+    cache_key = f"dashboard_stats_{period}"
     stats = cache.get(cache_key)
 
     if stats is None:
-        # If not in cache, compute stats with optimized queries
-        users = User.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+        # If not in cache, compute stats with optimized queries and date filtering
+        users = User.objects.filter(date_joined__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_active=True))
+        )
+        total_users = User.objects.count()
 
-        issues = Issue.objects.aggregate(total=Count("id"), open=Count("id", filter=Q(status="open")))
+        issues = Issue.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), open=Count("id", filter=Q(status="open"))
+        )
+        total_issues = Issue.objects.count()
 
-        domains = Domain.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+        domains = Domain.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_active=True))
+        )
+        total_domains = Domain.objects.count()
 
-        organizations = Organization.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_active=True)))
+        organizations = Organization.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_active=True))
+        )
+        total_organizations = Organization.objects.count()
 
-        hunts = Hunt.objects.aggregate(total=Count("id"), active=Count("id", filter=Q(is_published=True)))
+        hunts = Hunt.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_published=True))
+        )
+        total_hunts = Hunt.objects.count()
+
+        points = Points.objects.filter(created__gte=start_date).aggregate(total=Sum("score"))["total"] or 0
+        total_points = Points.objects.aggregate(total=Sum("score"))["total"] or 0
+
+        projects = Project.objects.filter(created__gte=start_date).count()
+        total_projects = Project.objects.count()
+
+        activities = Activity.objects.filter(timestamp__gte=start_date).count()
+        total_activities = Activity.objects.count()
+
+        recent_activities = (
+            Activity.objects.filter(timestamp__gte=start_date)
+            .order_by("-timestamp")
+            .values("id", "title", "description", "timestamp")[:5]
+        )
 
         # Combine all stats
         stats = {
-            "users": {"total": users["total"], "active": users["active"]},
-            "issues": {"total": issues["total"], "open": issues["open"]},
-            "domains": {"total": domains["total"], "active": domains["active"]},
-            "organizations": {"total": organizations["total"], "active": organizations["active"]},
-            "hunts": {"total": hunts["total"], "active": hunts["active"]},
-            "points": {"total": Points.objects.aggregate(total=Sum("score"))["total"] or 0},
-            "projects": {"total": Project.objects.count()},
+            "users": {"total": users["total"], "active": users["active"], "total_all_time": total_users},
+            "issues": {"total": issues["total"], "open": issues["open"], "total_all_time": total_issues},
+            "domains": {"total": domains["total"], "active": domains["active"], "total_all_time": total_domains},
+            "organizations": {
+                "total": organizations["total"],
+                "active": organizations["active"],
+                "total_all_time": total_organizations,
+            },
+            "hunts": {"total": hunts["total"], "active": hunts["active"], "total_all_time": total_hunts},
+            "points": {"total": points, "total_all_time": total_points},
+            "projects": {"total": projects, "total_all_time": total_projects},
             "activities": {
-                "total": Activity.objects.count(),
-                # Only fetch recent activities if needed for display
-                "recent": list(
-                    Activity.objects.order_by("-timestamp").values("id", "title", "description", "timestamp")[:5]
-                ),
+                "total": activities,
+                "total_all_time": total_activities,
+                "recent": list(recent_activities),
             },
         }
 
         # Cache the results for 5 minutes
         cache.set(cache_key, stats, timeout=300)
 
-    return render(request, "stats_dashboard.html", {"stats": stats})
+    context = {
+        "stats": stats,
+        "period": period,
+        "period_options": [
+            {"value": "1", "label": "1 Day"},
+            {"value": "7", "label": "1 Week"},
+            {"value": "30", "label": "1 Month"},
+            {"value": "90", "label": "3 Months"},
+            {"value": "ytd", "label": "Year to Date"},
+            {"value": "365", "label": "1 Year"},
+            {"value": "1825", "label": "5 Years"},
+        ],
+    }
+
+    return render(request, "stats_dashboard.html", context)
 
 
 def sync_github_projects(request):
@@ -1260,3 +1367,242 @@ def run_management_command(request):
                 request, f"Error running command '{command}': {str(e)}. " f"Check the logs for more details."
             )
     return redirect("management_commands")
+
+
+def template_list(request):
+    from django.db.models import Sum
+    from django.urls import URLPattern, URLResolver, get_resolver
+
+    def get_templates_from_dir(directory):
+        templates = []
+        for template_name in os.listdir(directory):
+            if template_name.endswith(".html"):
+                template_path = os.path.join(directory, template_name)
+
+                # Get last modified time
+                modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
+
+                # Get view count from IP table
+                view_count = (
+                    IP.objects.filter(
+                        Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
+                    ).aggregate(total_views=Sum("count"))["total_views"]
+                    or 0
+                )
+
+                # Get GitHub URL
+                github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
+
+                # Check if template has a matching URL pattern
+                template_url = None
+                resolver = get_resolver()
+
+                def check_urlpatterns(urlpatterns, template_name):
+                    for pattern in urlpatterns:
+                        if isinstance(pattern, URLResolver):
+                            match = check_urlpatterns(pattern.url_patterns, template_name)
+                            if match:
+                                return match
+                        elif isinstance(pattern, URLPattern):
+                            if hasattr(pattern.callback, "view_class"):
+                                view = pattern.callback.view_class
+                                if hasattr(view, "template_name") and view.template_name == template_name:
+                                    return pattern.pattern
+                            elif hasattr(pattern.callback, "__closure__") and pattern.callback.__closure__:
+                                for cell in pattern.callback.__closure__:
+                                    if isinstance(cell.cell_contents, str) and cell.cell_contents.endswith(
+                                        template_name
+                                    ):
+                                        return pattern.pattern
+                    return None
+
+                url_pattern = check_urlpatterns(resolver.url_patterns, template_name)
+                if url_pattern:
+                    template_url = "/" + str(url_pattern).lstrip("^").rstrip("$")
+                    if template_url.endswith("/"):
+                        template_url = template_url[:-1]
+
+                templates.append(
+                    {
+                        "name": template_name,
+                        "path": template_path,
+                        "url": template_url,
+                        "modified": modified_time,
+                        "views": view_count,
+                        "github_url": github_url,
+                    }
+                )
+        return templates
+
+    template_dirs = []
+    main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
+
+    if os.path.exists(main_template_dir):
+        template_dirs.append({"name": "Main Templates", "templates": get_templates_from_dir(main_template_dir)})
+
+    for subdir in os.listdir(main_template_dir):
+        subdir_path = os.path.join(main_template_dir, subdir)
+        if os.path.isdir(subdir_path) and not subdir.startswith("__"):
+            template_dirs.append(
+                {"name": f"{subdir.title()} Templates", "templates": get_templates_from_dir(subdir_path)}
+            )
+
+    total_templates = sum(len(dir["templates"]) for dir in template_dirs)
+
+    sort = request.GET.get("sort", "name")
+    direction = request.GET.get("dir", "asc")
+
+    def get_sort_key(template):
+        if sort == "name":
+            return template["name"].lower()
+        elif sort == "modified":
+            return template["modified"]
+        elif sort == "view_count":
+            return template["views"]
+        return template["name"].lower()
+
+    for dir in template_dirs:
+        dir["templates"].sort(key=get_sort_key, reverse=(direction == "desc"))
+
+    return render(
+        request,
+        "template_list.html",
+        {
+            "template_dirs": template_dirs,
+            "total_templates": total_templates,
+            "sort": sort,
+            "direction": direction,
+            "base_dir": main_template_dir + "/",  # Add trailing slash to ensure clean path cutting
+        },
+    )
+
+
+def is_admin_url(path):
+    """Check if a URL path is an admin URL"""
+    if not path:  # Handle None or empty paths
+        return False
+    admin_url = settings.ADMIN_URL.strip("/")
+    return path.startswith(f"/{admin_url}/") or admin_url in path
+
+
+def website_stats(request):
+    """View to show view counts for each URL route"""
+    import json
+    from collections import defaultdict
+    from datetime import timedelta
+
+    from django.db.models import Sum
+    from django.urls import get_resolver
+    from django.utils import timezone
+
+    # Get all URL patterns
+    resolver = get_resolver()
+    url_patterns = resolver.url_patterns
+
+    # Dictionary to store view counts
+    view_stats = defaultdict(int)
+
+    # Get admin URL for filtering
+    admin_url = settings.ADMIN_URL.strip("/")
+
+    # Get all IP records and group by path, excluding admin URLs
+    ip_records = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .values("path")
+        .annotate(total_views=Sum("count"))
+        .order_by("-total_views")
+    )
+
+    # Map paths to their view counts
+    for record in ip_records:
+        path = record["path"]
+        if not is_admin_url(path):  # Additional check for admin URLs
+            view_stats[path] = record["total_views"]
+
+    # Get last 30 days of traffic data, excluding admin URLs
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    daily_views = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .filter(created__gte=thirty_days_ago)
+        .values("created__date")
+        .annotate(daily_count=Sum("count"))
+        .order_by("created__date")
+    )
+
+    # Prepare chart data
+    dates = []
+    views = []
+    for day in daily_views:
+        dates.append(day["created__date"].strftime("%Y-%m-%d"))
+        views.append(day["daily_count"])
+
+    # Get unique visitors (unique IPs), excluding admin URLs
+    unique_visitors = IP.objects.exclude(path__startswith=f"/{admin_url}/").values("address").distinct().count()
+
+    total_views = sum(view_stats.values())
+
+    # Calculate traffic status
+    if len(views) >= 2:
+        last_day = views[-1] if views else 0
+        prev_day = views[-2] if len(views) > 1 else 0
+        if last_day < prev_day * 0.5:  # More than 50% drop
+            status = "danger"
+        elif last_day < prev_day * 0.8:  # More than 20% drop
+            status = "warning"
+        else:
+            status = "normal"
+    else:
+        status = "normal"
+
+    # Collect URL pattern info
+    url_info = []
+
+    def process_patterns(patterns, parent_path=""):
+        for pattern in patterns:
+            if hasattr(pattern, "url_patterns"):
+                # This is a URL resolver (includes), process its patterns
+                process_patterns(pattern.url_patterns, parent_path + str(pattern.pattern))
+            else:
+                # This is a URL pattern
+                full_path = parent_path + str(pattern.pattern)
+
+                # Skip admin URLs
+                if is_admin_url(full_path):
+                    continue
+
+                view_name = (
+                    pattern.callback.__name__ if hasattr(pattern.callback, "__name__") else str(pattern.callback)
+                )
+                if hasattr(pattern.callback, "view_class"):
+                    view_name = pattern.callback.view_class.__name__
+
+                # Get view count for this path
+                view_count = 0
+                for path, count in view_stats.items():
+                    if path and path.strip("/") and full_path.strip("/"):
+                        if path.strip("/").endswith(full_path.strip("/")) or full_path.strip("/").endswith(
+                            path.strip("/")
+                        ):
+                            view_count += count
+
+                url_info.append({"path": full_path, "view_name": view_name, "view_count": view_count})
+
+    process_patterns(url_patterns)
+
+    # Sort by view count descending
+    url_info.sort(key=lambda x: x["view_count"], reverse=True)
+
+    # Web traffic stats
+    web_stats = {
+        "dates": json.dumps(dates),
+        "views": json.dumps(views),
+        "total_views": total_views,
+        "unique_visitors": unique_visitors,
+        "date": timezone.now(),
+        "status": status,
+        "total_urls": len(url_info),  # Add total URL count
+    }
+
+    context = {"url_info": url_info, "total_views": total_views, "web_stats": web_stats}
+
+    return render(request, "website_stats.html", context)
