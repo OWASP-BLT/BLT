@@ -86,6 +86,29 @@
                                        class="text-gray-600 hover:text-[#e74c3c]">@{{ organization.twitter }}</a>
                                 </div>
                             {% endif %}
+                            <!-- Address Information -->
+                            {% if organization.address_line_1 %}
+                                <div class="mt-4">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Address</h3>
+                                    <div class="space-y-1 text-gray-600">
+                                        <p>{{ organization.address_line_1 }}</p>
+                                        {% if organization.address_line_2 %}<p>{{ organization.address_line_2 }}</p>{% endif %}
+                                        <p>
+                                            {% if organization.city %}{{ organization.city }}{% endif %}
+                                            {% if organization.state %}, {{ organization.state }}{% endif %}
+                                            {% if organization.postal_code %}{{ organization.postal_code }}{% endif %}
+                                        </p>
+                                        {% if organization.country %}<p>{{ organization.country }}</p>{% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- Map -->
+                            {% if organization.latitude and organization.longitude %}
+                                <div class="mt-4">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
+                                    <div id="org-map" class="h-64 w-full rounded-lg shadow-md"></div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     <div>
@@ -278,4 +301,28 @@ function syncGithubProjects() {
     });
 }
     </script>
+    <!-- Add Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    {% if organization.latitude and organization.longitude %}
+        <script>
+            // Initialize the map
+            const map = L.map('org-map').setView([{{ organization.latitude }}, {{ organization.longitude }}], 13);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add a marker for the organization's location
+            const marker = L.marker([{{ organization.latitude }}, {{ organization.longitude }}])
+                .addTo(map)
+                .bindPopup("{{ organization.name }}");
+            
+            // Open the popup by default
+            marker.openPopup();
+        </script>
+    {% endif %}
 {% endblock %}

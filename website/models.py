@@ -141,6 +141,28 @@ class Organization(models.Model):
         default=OrganisationType.ORGANIZATION.value,
     )
 
+    # Address fields
+    address_line_1 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="The primary address of the organization"
+    )
+    address_line_2 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Additional address details (optional)"
+    )
+    city = models.CharField(
+        max_length=100, blank=True, null=True, help_text="The city where the organization is located"
+    )
+    state = models.CharField(max_length=100, blank=True, null=True, help_text="The state or region of the organization")
+    country = models.CharField(max_length=100, blank=True, null=True, help_text="The country of the organization")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, help_text="ZIP code or postal code")
+
+    # Geographical coordinates
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The latitude coordinate"
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
+    )
+
     def __str__(self):
         return self.name
 
