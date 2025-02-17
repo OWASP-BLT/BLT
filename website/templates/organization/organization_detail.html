@@ -86,26 +86,39 @@
                                        class="text-gray-600 hover:text-[#e74c3c]">@{{ organization.twitter }}</a>
                                 </div>
                             {% endif %}
-                            <!-- Address Information -->
-                            {% if organization.address_line_1 %}
+                            <!-- Location Information -->
+                            {% if organization.country or organization.address_line_1 %}
                                 <div class="mt-4">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Address</h3>
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
                                     <div class="space-y-1 text-gray-600">
-                                        <p>{{ organization.address_line_1 }}</p>
-                                        {% if organization.address_line_2 %}<p>{{ organization.address_line_2 }}</p>{% endif %}
-                                        <p>
-                                            {% if organization.city %}{{ organization.city }}{% endif %}
-                                            {% if organization.state %}, {{ organization.state }}{% endif %}
-                                            {% if organization.postal_code %}{{ organization.postal_code }}{% endif %}
-                                        </p>
-                                        {% if organization.country %}<p>{{ organization.country }}</p>{% endif %}
+                                        {% if organization.country %}
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-globe text-[#e74c3c]"></i>
+                                                <span>{{ organization.country }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if organization.address_line_1 %}
+                                            <div class="mt-2">
+                                                <div class="flex items-start space-x-2">
+                                                    <i class="fas fa-map-marker-alt text-[#e74c3c] mt-1"></i>
+                                                    <div>
+                                                        <p>{{ organization.address_line_1 }}</p>
+                                                        {% if organization.address_line_2 %}<p>{{ organization.address_line_2 }}</p>{% endif %}
+                                                        <p>
+                                                            {% if organization.city %}{{ organization.city }}{% endif %}
+                                                            {% if organization.state %}, {{ organization.state }}{% endif %}
+                                                            {% if organization.postal_code %}{{ organization.postal_code }}{% endif %}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             {% endif %}
                             <!-- Map -->
                             {% if organization.latitude and organization.longitude %}
                                 <div class="mt-4">
-                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
                                     <div id="org-map" class="h-64 w-full rounded-lg shadow-md"></div>
                                 </div>
                             {% endif %}
@@ -137,7 +150,14 @@
                     </div>
                     <div class="bg-gray-50 rounded-lg p-6">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
+                            <div class="flex items-center space-x-3">
+                                <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
+                                <a href="{% url 'join_organization' organization.slug %}"
+                                   class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                    <i class="fas fa-user-plus mr-1"></i>
+                                    Join Team
+                                </a>
+                            </div>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.members.count }}</span>
                         </div>
                     </div>
