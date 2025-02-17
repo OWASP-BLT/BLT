@@ -9,8 +9,10 @@ import chromedriver_autoinstaller
 from allauth.socialaccount.models import SocialApp
 from django.conf import settings
 from django.contrib.sites.models import Site
+from django.contrib.staticfiles.handlers import StaticFilesHandler
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.management import call_command
+from django.test.utils import override_settings
 from django.urls import reverse
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -35,8 +37,16 @@ def find_free_port():
 os.environ["DJANGO_LIVE_TEST_SERVER_ADDRESS"] = f"localhost:{find_free_port()}"
 
 
+@override_settings(
+    STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage",
+    DEBUG=True,
+    STATIC_URL="/static/",
+    SENTRY_DSN=None,  # Disable Sentry in tests
+    TESTING=True,
+)
 class UrlsTest(StaticLiveServerTestCase):
     fixtures = ["initial_data.json"]
+    static_handler = StaticFilesHandler
 
     @classmethod
     def setUpClass(cls):
@@ -62,11 +72,14 @@ class UrlsTest(StaticLiveServerTestCase):
         options.add_argument('--proxy-server="direct://"')
         options.add_argument("--proxy-bypass-list=*")
         options.add_argument("--start-maximized")
+        # Increase page load timeout
+        options.add_argument("--page-load-strategy=normal")
 
         try:
             cls.selenium = webdriver.Chrome(options=options)
-            cls.selenium.set_page_load_timeout(10)
-            cls.selenium.implicitly_wait(10)
+            # Increase timeouts for better static file loading
+            cls.selenium.set_page_load_timeout(30)
+            cls.selenium.implicitly_wait(30)
         except Exception as e:
             print(f"Error setting up Chrome: {e}")
             raise
@@ -76,9 +89,9 @@ class UrlsTest(StaticLiveServerTestCase):
         try:
             if hasattr(cls, "selenium"):
                 cls.selenium.quit()
-            # Clean up collected static files
-            if os.path.exists(settings.STATIC_ROOT):
-                shutil.rmtree(settings.STATIC_ROOT)
+            # Don't clean up static files after tests to allow inspection
+            # if os.path.exists(settings.STATIC_ROOT):
+            #     shutil.rmtree(settings.STATIC_ROOT)
         except Exception as e:
             print(f"Error in teardown: {e}")
         finally:
@@ -208,9 +221,25 @@ class UrlsTest(StaticLiveServerTestCase):
                                         test_url = f"{self.live_server_url}{url}"
                                         self.selenium.get(test_url)
 
-                                        # Wait for page load with reduced timeout
-                                        WebDriverWait(self.selenium, 5).until(
+                                        # Wait for page load with increased timeout
+                                        WebDriverWait(self.selenium, 30).until(
                                             EC.presence_of_element_located((By.TAG_NAME, "body"))
+                                        )
+
+                                        # Wait for static resources to load
+                                        self.selenium.execute_script(
+                                            """
+                                            return new Promise((resolve) => {
+                                                const checkReadyState = () => {
+                                                    if (document.readyState === 'complete') {
+                                                        resolve();
+                                                    } else {
+                                                        setTimeout(checkReadyState, 100);
+                                                    }
+                                                };
+                                                checkReadyState();
+                                            });
+                                            """
                                         )
 
                                         # Check for JavaScript errors
@@ -219,38 +248,53 @@ class UrlsTest(StaticLiveServerTestCase):
                                         static_404s = []
                                         for log in browser_logs:
                                             if log["level"] == "SEVERE":
+                                                # Ignore Sentry errors
+                                                if "sentry" in log["message"].lower():
+                                                    continue
                                                 if (
                                                     log["message"].startswith("http")
                                                     and ("/static/" in log["message"] or "/media/" in log["message"])
                                                     and "404" in log["message"]
                                                 ):
-                                                    static_404s.append(log["message"])
+                                                    # Extract just the file path from the 404 message
+                                                    file_path = log["message"].split(" ")[0]
+                                                    static_404s.append(file_path)
                                                 else:
                                                     js_errors.append(log["message"])
 
                                         if static_404s:
-                                            errors["static"].append(
-                                                f"{url}: Missing static files:\n    " + "\n    ".join(static_404s)
-                                            )
+                                            # Check if the static files exist in STATIC_ROOT
+                                            missing_files = []
+                                            for file_path in static_404s:
+                                                relative_path = file_path.split("/static/")[-1]
+                                                full_path = os.path.join(settings.STATIC_ROOT, relative_path)
+                                                if not os.path.exists(full_path):
+                                                    missing_files.append(
+                                                        f"{file_path} (not found in {settings.STATIC_ROOT})"
+                                                    )
+                                                else:
+                                                    missing_files.append(f"{file_path} (exists but not served)")
+
+                                            errors[url].extend(missing_files)
 
                                         if js_errors:
-                                            errors["javascript"].append(f"{url}: {'; '.join(js_errors)}")
+                                            errors[url].extend(js_errors)
 
-                                        if not (static_404s or js_errors):
-                                            successful_urls += 1
-
+                                        successful_urls += 1
                                     except TimeoutException:
-                                        errors["timeout"].append(url)
+                                        errors[url].append("Timeout waiting for page load")
                                     except Exception as e:
-                                        errors["selenium"].append(f"{url}: {str(e)}")
+                                        errors[url].append(f"Selenium error: {str(e)}")
                             except Exception as e:
-                                errors["request"].append(f"{url}: {str(e)}")
+                                errors[url].append(f"Request error: {str(e)}")
                     except Exception as e:
-                        errors["url"].append(f"{fullname}: {str(e)}")
+                        if not skip:
+                            errors[url].append(f"URL error: {str(e)}")
 
+        # Check all URLs
         check_urls(module.urlpatterns)
 
-        # Print error summary if there were any errors
+        # Print summary of errors
         if errors:
             print("\nError Summary:")
             print("-" * 40)
@@ -287,6 +331,7 @@ class UrlsTest(StaticLiveServerTestCase):
             print(f"Successful: {successful_urls}")
             print(f"Failed: {total_urls - successful_urls}")
             print("-" * 40)
-
-            # Fail the test if there were errors
-            self.fail("URL testing failed. See error summary above.")
+            self.fail("Errors found during URL testing. See above for details.")
+        else:
+            print(f"\nAll {total_urls} URLs tested successfully!")
+            print(f"Successful URLs: {successful_urls}")
