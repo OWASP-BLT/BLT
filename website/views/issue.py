@@ -339,24 +339,28 @@ def newhome(request, template="new_home.html"):
 
 def delete_issue(request, id):
     try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
+        issue = Issue.objects.get(id=id)
         tokenauth = False
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
-        issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
-    return redirect("/")
+        if request.method == "POST" and request.POST.get("token"):
+            token = Token.objects.get(key=request.POST.get("token"))
+            request.user = token.user
+            tokenauth = True
+
+        if request.user.is_superuser or request.user == issue.user or tokenauth:
+            screenshots = issue.screenshots.all()
+            for screenshot in screenshots:
+                screenshot.delete()
+            issue.delete()
+            messages.success(request, "Issue deleted")
+            return JsonResponse("Deleted", safe=False) if tokenauth else redirect("/")
+
+        messages.error(request, "You don't have permission to delete this issue")
+        return redirect("/")
+
+    except Issue.DoesNotExist:
+        messages.error(request, "Issue not found")
+        return redirect("/")
 
 
 def remove_user_from_issue(request, id):
