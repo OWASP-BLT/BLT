@@ -1161,7 +1161,7 @@ def home(request):
 
 def test_sentry(request):
     if request.user.is_superuser:
-        division_by_zero = 1 / 0  # This will raise a ZeroDivisionError
+        1 / 0  # This will raise a ZeroDivisionError
     return HttpResponse("Test error sent to Sentry!")
 
 
@@ -1572,7 +1572,7 @@ def website_stats(request):
     from collections import defaultdict
     from datetime import timedelta
 
-    from django.db.models import Count, Sum
+    from django.db.models import Sum
     from django.urls import get_resolver
     from django.utils import timezone
 
@@ -1640,7 +1640,7 @@ def website_stats(request):
         IP.objects.exclude(path__startswith=f"/{admin_url}/")
         .exclude(agent__isnull=True)
         .values("agent")
-        .annotate(total_count=Count("id"))
+        .annotate(total_count=Sum("count"), last_request=models.Max("created"))
         .order_by("-total_count")[:50]
     )
 

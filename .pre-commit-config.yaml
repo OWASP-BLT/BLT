@@ -33,3 +33,16 @@ repos:
         args:
           - --reformat
           - --lint
+
+  - repo: local
+    hooks:
+      - id: django-test
+        name: Django Tests
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        verbose: true
+
+fail_fast: true
