@@ -692,10 +692,9 @@ class ScoreboardView(ListView):
     model = Domain
     template_name = "scoreboard.html"
     paginate_by = 20
+    context_object_name = "scoreboard"
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-
+    def get_queryset(self):
         sort_by = self.request.GET.get("sort_by", "open_issues_count")
         sort_order = self.request.GET.get("sort_order", "desc")
 
@@ -704,22 +703,13 @@ class ScoreboardView(ListView):
         else:
             sort_by = f"-{sort_by}"
 
-        annotated_domains = Domain.objects.annotate(
+        return Domain.objects.annotate(
             open_issues_count=Count("issue", filter=Q(issue__status="open")),
             closed_issues_count=Count("issue", filter=Q(issue__status="closed")),
         ).order_by(sort_by)
 
-        paginator = Paginator(annotated_domains, self.paginate_by)
-        page = self.request.GET.get("page")
-
-        try:
-            scoreboard_paginated = paginator.page(page)
-        except PageNotAnInteger:
-            scoreboard_paginated = paginator.page(1)
-        except EmptyPage:
-            scoreboard_paginated = paginator.page(paginator.num_pages)
-
-        context["scoreboard"] = scoreboard_paginated
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
         context["user"] = self.request.GET.get("user")
         context["sort_by"] = self.request.GET.get("sort_by", "open_issues_count")
         context["sort_order"] = self.request.GET.get("sort_order", "desc")
