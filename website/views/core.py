@@ -396,10 +396,68 @@ def check_status(request):
 
             status_data["slack_bot"] = bot_metrics
 
+        # Get the date range for the last 30 days
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=30)
+
+        # Get daily counts for team joins and commands
+        team_joins = (
+            SlackBotActivity.objects.filter(activity_type="team_join", created__gte=start_date, created__lte=end_date)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        commands = (
+            SlackBotActivity.objects.filter(activity_type="command", created__gte=start_date, created__lte=end_date)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        # Convert querysets to lists for the template
+        team_joins_data = list(team_joins)
+        commands_data = list(commands)
+
+        # Create a complete date range with zero counts for missing dates
+        date_range = []
+        current_date = start_date.date()
+        while current_date <= end_date.date():
+            date_range.append(current_date)
+            current_date += timedelta(days=1)
+
+        # Fill in missing dates with zero counts
+        dates = [date.strftime("%Y-%m-%d") for date in date_range]
+        team_joins_counts = [0] * len(date_range)
+        commands_counts = [0] * len(date_range)
+
+        # Map the actual data to the date range
+        for i, date in enumerate(date_range):
+            for join in team_joins_data:
+                if join["date"] == date:
+                    team_joins_counts[i] = join["count"]
+            for cmd in commands_data:
+                if cmd["date"] == date:
+                    commands_counts[i] = cmd["count"]
+
+        # Store the data in a format that can be safely serialized to JSON
+        chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
+
+        status_data["chart_data"] = chart_data
+
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
-    return render(request, "status_page.html", {"status": status_data})
+    # Prepare the chart data for the template
+    template_chart_data = {
+        "dates": json.dumps(status_data["chart_data"]["dates"]),
+        "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
+        "commands": json.dumps(status_data["chart_data"]["commands"]),
+    }
+
+    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
 
 def github_callback(request):
@@ -973,6 +1031,10 @@ def badge_list(request):
     return render(request, "badges.html", {"badges": badges})
 
 
+def features_view(request):
+    return render(request, "features.html")
+
+
 def sponsor_view(request):
     from bitcash.network import NetworkAPI
 
@@ -1022,29 +1084,52 @@ def get_last_commit_date():
 
 def submit_roadmap_pr(request):
     if request.method == "POST":
-        pr_link = request.POST.get("pr_link")
-        issue_link = request.POST.get("issue_link")
+        pr_link = request.POST.get("pr_link", "").strip()
+        issue_link = request.POST.get("issue_link", "").strip()
 
         if not pr_link or not issue_link:
             return JsonResponse({"error": "Both PR and issue links are required."}, status=400)
 
-        pr_parts = pr_link.split("/")
-        issue_parts = issue_link.split("/")
-        owner, repo = pr_parts[3], pr_parts[4]
-        pr_number, issue_number = pr_parts[-1], issue_parts[-1]
+        # Validate GitHub URLs
+        if not (pr_link.startswith("https://github.com/") and issue_link.startswith("https://github.com/")):
+            return JsonResponse({"error": "Invalid GitHub URLs. Both URLs must be from github.com"}, status=400)
 
-        pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
-        roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+        try:
+            pr_parts = pr_link.split("/")
+            issue_parts = issue_link.split("/")
 
-        if "error" in pr_data or "error" in roadmap_data:
-            return JsonResponse(
-                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
-                status=500,
-            )
+            # Validate URL parts length
+            if len(pr_parts) < 7 or len(issue_parts) < 7:
+                return JsonResponse({"error": "Invalid GitHub URL format"}, status=400)
 
-        analysis = analyze_pr_content(pr_data, roadmap_data)
-        save_analysis_report(pr_link, issue_link, analysis)
-        return JsonResponse({"message": "PR submitted successfully"})
+            # Extract owner and repo from PR URL
+            owner, repo = pr_parts[3], pr_parts[4]
+
+            # Extract PR and issue numbers
+            pr_number = pr_parts[-1]
+            issue_number = issue_parts[-1]
+
+            # Validate that we have numeric IDs
+            if not (pr_number.isdigit() and issue_number.isdigit()):
+                return JsonResponse({"error": "Invalid PR or issue number format"}, status=400)
+
+            pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
+            roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+
+            if "error" in pr_data or "error" in roadmap_data:
+                return JsonResponse(
+                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    status=500,
+                )
+
+            analysis = analyze_pr_content(pr_data, roadmap_data)
+            save_analysis_report(pr_link, issue_link, analysis)
+            return JsonResponse({"message": "PR submitted successfully"})
+
+        except (IndexError, ValueError) as e:
+            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 

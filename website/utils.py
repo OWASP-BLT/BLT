@@ -1,5 +1,6 @@
 import ast
 import difflib
+import hashlib
 import os
 import re
 import time
@@ -496,3 +497,10 @@ def ai_summary(text):
         return summary
     except Exception as e:
         return f"Error generating summary: {str(e)}"
+
+
+def gravatar_url(email, size=80):
+    """Generate Gravatar URL for a given email."""
+    email = email.lower().encode("utf-8")
+    gravatar_hash = hashlib.md5(email).hexdigest()
+    return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"

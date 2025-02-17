@@ -56,7 +56,6 @@ from website.views.company import (
     OrganizationDashboardManageDomainsView,
     OrganizationDashboardManageRolesView,
     OrganizationDashboardTeamOverviewView,
-    OrganizationListView,
     RegisterOrganizationView,
     ShowBughuntView,
     SlackCallbackView,
@@ -80,6 +79,7 @@ from website.views.core import (
     check_status,
     donate_view,
     facebook_callback,
+    features_view,
     find_key,
     github_callback,
     google_callback,
@@ -104,6 +104,7 @@ from website.views.core import (
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
+    GitHubIssuesView,
     GithubIssueView,
     IssueCreate,
     IssueEdit,
@@ -148,6 +149,7 @@ from website.views.organization import (
     ListHunts,
     OngoingHunts,
     OrganizationDetailView,
+    OrganizationListView,
     OrganizationSettings,
     PreviousHunts,
     ReportedIpListView,
@@ -784,6 +786,7 @@ urlpatterns = [
         delete_manager,
         name="delete_manager",
     ),
+    path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),
@@ -869,7 +872,7 @@ urlpatterns = [
     path("teams/kick-member/", kick_member, name="kick_member"),
     path("teams/give-kudos/", give_kudos, name="give_kudos"),
     path(
-        "similarity-scan",
+        "similarity-scan/",
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
@@ -877,7 +880,7 @@ urlpatterns = [
     path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
     path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
     path("challenges/", UserChallengeListView.as_view(), name="user_challenges"),
-    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
+    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
     path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
@@ -906,6 +909,8 @@ urlpatterns = [
     # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    # GitHub Issues
+    path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
 ]
 
 if settings.DEBUG:

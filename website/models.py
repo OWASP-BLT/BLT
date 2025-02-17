@@ -141,6 +141,28 @@ class Organization(models.Model):
         default=OrganisationType.ORGANIZATION.value,
     )
 
+    # Address fields
+    address_line_1 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="The primary address of the organization"
+    )
+    address_line_2 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Additional address details (optional)"
+    )
+    city = models.CharField(
+        max_length=100, blank=True, null=True, help_text="The city where the organization is located"
+    )
+    state = models.CharField(max_length=100, blank=True, null=True, help_text="The state or region of the organization")
+    country = models.CharField(max_length=100, blank=True, null=True, help_text="The country of the organization")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, help_text="ZIP code or postal code")
+
+    # Geographical coordinates
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The latitude coordinate"
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
+    )
+
     def __str__(self):
         return self.name
 
@@ -1472,6 +1494,60 @@ class GitHubIssue(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+
+    def get_comments(self):
+        """
+        Fetches comments for this GitHub issue using the GitHub API.
+        Returns a list of comment dictionaries containing:
+        - id: The comment ID
+        - body: The comment text
+        - user: The username of the commenter
+        - created_at: When the comment was created
+        - updated_at: When the comment was last updated
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for comments
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            response.raise_for_status()
+            comments = response.json()
+
+            # Format the comments
+            formatted_comments = []
+            for comment in comments:
+                formatted_comments.append(
+                    {
+                        "id": comment["id"],
+                        "body": comment["body"],
+                        "user": comment["user"]["login"],
+                        "created_at": comment["created_at"],
+                        "updated_at": comment["updated_at"],
+                        "avatar_url": comment["user"]["avatar_url"],
+                        "html_url": comment["html_url"],
+                    }
+                )
+
+            return formatted_comments
+        except (requests.exceptions.RequestException, KeyError) as e:
+            # Log the error but don't raise it to avoid breaking the site
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+            return []
 
 
 class BaconEarning(models.Model):
