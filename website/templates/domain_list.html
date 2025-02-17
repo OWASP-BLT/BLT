@@ -53,10 +53,16 @@
     <div class="main">
         {% for objects in domain %}
             <div class="container">
-                <img src="{{ objects.get_logo }}"
-                     alt="{{ objects.name }}"
-                     width="100"
-                     height="100">
+                {% if objects.get_logo and objects.get_logo != "None" %}
+                    <img src="{{ objects.get_logo }}"
+                         alt="{{ objects.name }}"
+                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                         width="100"
+                         height="100">
+                {% endif %}
+                <div class="{% if objects.get_logo and objects.get_logo != 'None' %}hidden{% endif %} w-[100px] h-[100px] rounded bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">
+                    {{ objects.name|slice:":1"|upper }}
+                </div>
                 <a href="{{ objects.get_absolute_url }}">{{ objects.name }}</a>
             </div>
         {% endfor %}

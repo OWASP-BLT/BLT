@@ -11,6 +11,10 @@
 {% endblock style %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
+    <!-- Add jQuery UI CSS and JS -->
+    <link rel="stylesheet"
+          href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <form role="form"
           action="{% url 'hunt' %}"
