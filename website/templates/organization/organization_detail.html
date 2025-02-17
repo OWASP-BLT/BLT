@@ -10,6 +10,29 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="mb-4 flex items-center space-x-2 text-sm text-gray-500">
+            <a href="{% url 'organizations' %}" class="hover:text-[#e74c3c]">
+                <i class="fas fa-building"></i>
+                Organizations
+            </a>
+            <span class="text-gray-400">/</span>
+            <span class="text-gray-700">{{ organization.name }}</span>
+            {% if user.is_staff %}
+                <div class="ml-auto flex items-center space-x-2">
+                    <a href="{% url 'admin:website_organization_change' organization.id %}"
+                       class="text-[#e74c3c] hover:text-red-700"
+                       title="Edit in Admin">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'admin:website_organization_delete' organization.id %}"
+                       class="text-[#e74c3c] hover:text-red-700"
+                       title="Delete in Admin">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            {% endif %}
+        </nav>
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header Section -->
             <div class="relative h-48 bg-gradient-to-r from-[#e74c3c] to-red-700">
