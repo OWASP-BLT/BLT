@@ -306,7 +306,8 @@ class Joinorganization(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         wallet, created = Wallet.objects.get_or_create(user=request.user)
-        context = {"wallet": wallet}
+        organization_name = request.GET.get("organization", "")
+        context = {"wallet": wallet, "organization_name": organization_name}
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
@@ -1081,14 +1082,21 @@ def trademark_detailview(request, slug):
     trademark_available_response = requests.get(trademark_available_url, headers=headers)
     ta_data = trademark_available_response.json()
 
-    if ta_data[0]["available"] == "no":
+    if trademark_available_response.status_code == 429:
+        error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+
+    if not isinstance(ta_data, list) or len(ta_data) == 0:
+        error_message = "Invalid response from USPTO API."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+
+    if ta_data[0].get("available") == "no":
         trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
         ts_data = trademark_search_response.json()
-        context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
-
+        context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
-        context = {"available": ta_data[0]["available"]}
+        context = {"available": ta_data[0].get("available"), "query": slug}
 
     return render(request, "trademark_detailview.html", context)
 

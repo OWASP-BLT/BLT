@@ -152,9 +152,9 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
                                 <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
-                                <a href="{% url 'join_organization' organization.slug %}"
-                                   class="inline-flex items-center px-3 py-1 text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
-                                    <i class="fas fa-user-plus mr-1"></i>
+                                <a href="{% url 'join' %}?organization={{ organization.name|urlencode }}"
+                                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                    <i class="fas fa-user-plus mr-2"></i>
                                     Join Team
                                 </a>
                             </div>
