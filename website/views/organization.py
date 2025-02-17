@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
+from venv import logger
 
 import requests
 from bs4 import BeautifulSoup
@@ -15,7 +16,6 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
-from django.db.models.functions import ExtractMonth
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -237,8 +237,8 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
             hunt.result_published = True
             hunt.save()
             context["winner"] = winner
-        context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+        context["hunt"] = hunt
+        context["issues"] = issues
         return render(request, template, context)
 
 
@@ -596,6 +596,10 @@ class DomainDetailView(ListView):
         domain = get_object_or_404(Domain, name=self.kwargs["slug"])
         context["domain"] = domain
 
+        # Get view count
+        view_count = IP.objects.filter(path=self.request.path).count()
+        context["view_count"] = view_count
+
         parsed_url = urlparse("http://" + self.kwargs["slug"])
         name = parsed_url.netloc.split(".")[-2:][0].title()
         context["name"] = name
@@ -616,17 +620,14 @@ class DomainDetailView(ListView):
             trademarks = Trademark.objects.filter(organization=organization)
             context["trademarks"] = trademarks
 
-        open_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
-            .filter(status="open", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-        )
+        open_issues = Issue.objects.filter(
+            domain__name__contains=self.kwargs["slug"], status="open", hunt=None
+        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
 
-        closed_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
-            .filter(status="closed", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-        )
+        closed_issues = Issue.objects.filter(
+            domain__name__contains=self.kwargs["slug"], status="closed", hunt=None
+        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
@@ -652,38 +653,42 @@ class DomainDetailView(ListView):
         context["opened"] = openissue_paginated
         context["closed_net"] = closed_issues
         context["closed"] = closeissue_paginated
+
         context["leaderboard"] = (
             User.objects.filter(issue__url__contains=self.kwargs["slug"])
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
+
         context["current_month"] = datetime.now().month
-        context["domain_graph"] = (
-            Issue.objects.filter(domain=context["domain"], hunt=None)
-            .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
-            )
-            .annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
+
+        context["domain_graph"] = Issue.objects.filter(
+            domain=context["domain"],
+            hunt=None,
+            created__month__gte=(datetime.now().month - 6),
+            created__month__lte=datetime.now().month,
+        ).order_by()
+
         for i in range(0, 7):
             context["bug_type_" + str(i)] = Issue.objects.filter(domain=context["domain"], hunt=None, label=str(i))
+
         context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
+
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
             .order_by()
         )
+
         context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:3]
+        )[:3]
+
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
             context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
+
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
@@ -1835,17 +1840,24 @@ class OrganizationDetailView(DetailView):
     context_object_name = "organization"
 
     def get_queryset(self):
-        return Organization.objects.filter(is_active=True).prefetch_related(
+        return Organization.objects.prefetch_related(
             "domain_set",
-            "managers",
-            "user_profiles",
-            "projects",
-            "projects__repos",
+            "domain_set__issue_set",
+            Prefetch(
+                "domain_set__issue_set",
+                queryset=Issue.objects.filter(status="open"),
+                to_attr="open_issues_list",
+            ),
+            Prefetch(
+                "domain_set__issue_set",
+                queryset=Issue.objects.filter(status="closed"),
+                to_attr="closed_issues_list",
+            ),
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        organization = self.get_object()
+        organization = self.object
 
         # Get top 10 projects based on total pull requests
         top_projects = []
@@ -1857,6 +1869,25 @@ class OrganizationDetailView(DetailView):
         # Sort by total PRs and get top 10
         top_projects.sort(key=lambda x: x["total_prs"], reverse=True)
         context["top_projects"] = top_projects[:10]
+        # Get all domains for this organization
+        domains = organization.domain_set.all()
+
+        # Calculate statistics
+        total_open_issues = sum(len(domain.open_issues_list) for domain in domains)
+        total_closed_issues = sum(len(domain.closed_issues_list) for domain in domains)
+
+        # Get view count
+        view_count = IP.objects.filter(path=self.request.path).count()
+
+        context.update(
+            {
+                "total_domains": domains.count(),
+                "total_open_issues": total_open_issues,
+                "total_closed_issues": total_closed_issues,
+                "total_issues": total_open_issues + total_closed_issues,
+                "view_count": view_count,
+            }
+        )
 
         return context
 
@@ -1868,59 +1899,48 @@ class OrganizationListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        # Get organizations with domain stats
-        return (
-            Organization.objects.filter(is_active=True)
-            .prefetch_related(
-                "domain_set",
-                "domain_set__issue_set",
-                Prefetch(
-                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
-                ),
-                Prefetch(
-                    "domain_set__issue_set",
-                    queryset=Issue.objects.filter(status="closed"),
-                    to_attr="closed_issues_list",
-                ),
-                Prefetch(
-                    "domain_set__issue_set",
-                    queryset=Issue.objects.annotate(issue_count=Count("id")).order_by("-issue_count"),
-                    to_attr="top_testers_list",
-                ),
-            )
-            .order_by("name")
-        )
+        # Get organizations with domain and project stats
+        return Organization.objects.annotate(
+            domain_count=Count("domain", distinct=True),
+            issue_count=Count("domain__issue", distinct=True),
+            project_count=Count("projects", distinct=True),
+        ).order_by("-created")
 
     def get_context_data(self, **kwargs):
+        logger.info("get_context_data")
         context = super().get_context_data(**kwargs)
-        context["total_organizations"] = Organization.objects.filter(is_active=True).count()
+        logger.error(context)
 
-        # Get recently viewed organizations based on IP model
-        recent_org_paths = (
-            IP.objects.filter(path__startswith="/organization/", created__gte=timezone.now() - timedelta(days=30))
-            .values("path")
-            .annotate(last_visit=models.Max("created"))
-            .order_by("-last_visit")[:5]
-        )
+        # Get recently viewed organizations based on IP table
+        recently_viewed_paths = IP.objects.filter(path__startswith="/organization/").order_by("-created")[:5]
+        logger.error(recently_viewed_paths)
 
-        # Extract organization slugs from paths and get the organizations
-        recent_org_slugs = [
-            path["path"].split("/")[-1] for path in recent_org_paths if len(path["path"].split("/")) > 2
-        ]
-        context["recently_viewed"] = Organization.objects.filter(slug__in=recent_org_slugs)
+        # Extract organization slugs from paths and get unique organizations
+        recently_viewed_slugs = []
+        recently_viewed_orgs = []
 
-        # Get most popular organizations based on IP visit count
-        popular_org_paths = (
-            IP.objects.filter(path__startswith="/organization/")
-            .values("path")
-            .annotate(visit_count=models.Count("id"))
-            .order_by("-visit_count")[:5]
-        )
+        for ip in recently_viewed_paths:
+            # Extract slug from path (format: /organization/slug-name)
+            try:
+                slug = ip.path.split("/")[2]
+                if slug not in recently_viewed_slugs:
+                    recently_viewed_slugs.append(slug)
+                    org = Organization.objects.filter(slug=slug).first()
+                    if org:
+                        recently_viewed_orgs.append(org)
+            except IndexError:
+                continue
 
-        # Extract organization slugs from paths and get the organizations
-        popular_org_slugs = [
-            path["path"].split("/")[-1] for path in popular_org_paths if len(path["path"].split("/")) > 2
-        ]
-        context["most_popular"] = Organization.objects.filter(slug__in=popular_org_slugs)
+        context["recently_viewed"] = recently_viewed_orgs
+
+        # Get most popular organizations based on path counts in IP table
+        popular_orgs = []
+        for org in Organization.objects.all():
+            view_count = IP.objects.filter(path__startswith=f"/organization/{org.slug}/").count()
+            popular_orgs.append((org, view_count))
+
+        # Sort by view count and get top 5
+        popular_orgs.sort(key=lambda x: x[1], reverse=True)
+        context["most_popular"] = [org for org, count in popular_orgs[:5]]
 
         return context
