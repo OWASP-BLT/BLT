@@ -1084,29 +1084,52 @@ def get_last_commit_date():
 
 def submit_roadmap_pr(request):
     if request.method == "POST":
-        pr_link = request.POST.get("pr_link")
-        issue_link = request.POST.get("issue_link")
+        pr_link = request.POST.get("pr_link", "").strip()
+        issue_link = request.POST.get("issue_link", "").strip()
 
         if not pr_link or not issue_link:
             return JsonResponse({"error": "Both PR and issue links are required."}, status=400)
 
-        pr_parts = pr_link.split("/")
-        issue_parts = issue_link.split("/")
-        owner, repo = pr_parts[3], pr_parts[4]
-        pr_number, issue_number = pr_parts[-1], issue_parts[-1]
+        # Validate GitHub URLs
+        if not (pr_link.startswith("https://github.com/") and issue_link.startswith("https://github.com/")):
+            return JsonResponse({"error": "Invalid GitHub URLs. Both URLs must be from github.com"}, status=400)
 
-        pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
-        roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+        try:
+            pr_parts = pr_link.split("/")
+            issue_parts = issue_link.split("/")
 
-        if "error" in pr_data or "error" in roadmap_data:
-            return JsonResponse(
-                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
-                status=500,
-            )
+            # Validate URL parts length
+            if len(pr_parts) < 7 or len(issue_parts) < 7:
+                return JsonResponse({"error": "Invalid GitHub URL format"}, status=400)
 
-        analysis = analyze_pr_content(pr_data, roadmap_data)
-        save_analysis_report(pr_link, issue_link, analysis)
-        return JsonResponse({"message": "PR submitted successfully"})
+            # Extract owner and repo from PR URL
+            owner, repo = pr_parts[3], pr_parts[4]
+
+            # Extract PR and issue numbers
+            pr_number = pr_parts[-1]
+            issue_number = issue_parts[-1]
+
+            # Validate that we have numeric IDs
+            if not (pr_number.isdigit() and issue_number.isdigit()):
+                return JsonResponse({"error": "Invalid PR or issue number format"}, status=400)
+
+            pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
+            roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+
+            if "error" in pr_data or "error" in roadmap_data:
+                return JsonResponse(
+                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    status=500,
+                )
+
+            analysis = analyze_pr_content(pr_data, roadmap_data)
+            save_analysis_report(pr_link, issue_link, analysis)
+            return JsonResponse({"message": "PR submitted successfully"})
+
+        except (IndexError, ValueError) as e:
+            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 
