@@ -4,7 +4,6 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
-from venv import logger
 
 import requests
 from bs4 import BeautifulSoup
@@ -28,7 +27,6 @@ from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from blt import settings
 from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
     IP,
@@ -45,7 +43,6 @@ from website.models import (
     Subscription,
     TimeLog,
     Trademark,
-    User,
     UserBadge,
     Wallet,
     Winner,
@@ -1899,48 +1896,51 @@ class OrganizationListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        # Get organizations with domain and project stats
-        return Organization.objects.annotate(
-            domain_count=Count("domain", distinct=True),
-            issue_count=Count("domain__issue", distinct=True),
-            project_count=Count("projects", distinct=True),
-        ).order_by("-created")
+        # Optimize query with select_related and prefetch_related
+        return (
+            Organization.objects.prefetch_related("domain_set", "projects", "projects__repos")
+            .annotate(
+                domain_count=Count("domain", distinct=True),
+                issue_count=Count("domain__issue", distinct=True),
+                project_count=Count("projects", distinct=True),
+                repo_count=Count("projects__repos", distinct=True),
+            )
+            .order_by("-created")
+        )
 
     def get_context_data(self, **kwargs):
-        logger.info("get_context_data")
         context = super().get_context_data(**kwargs)
-        logger.error(context)
 
-        # Get recently viewed organizations based on IP table
-        recently_viewed_paths = IP.objects.filter(path__startswith="/organization/").order_by("-created")[:5]
-        logger.error(recently_viewed_paths)
+        # Get recently viewed organizations efficiently using a single query
+        recent_org_paths = (
+            IP.objects.filter(
+                path__startswith="/organization/",
+                path__regex=r"^/organization/[^/]+/$",  # Only match exact organization paths
+            )
+            .exclude(
+                path="/organizations/"  # Exclude the main organizations list page
+            )
+            .order_by("-created")
+            .values_list("path", flat=True)
+            .distinct()[:5]
+        )
 
-        # Extract organization slugs from paths and get unique organizations
-        recently_viewed_slugs = []
-        recently_viewed_orgs = []
+        # Extract slugs and get organizations in a single query
+        slugs = [path.split("/")[2] for path in recent_org_paths if len(path.split("/")) > 2]
+        recently_viewed = Organization.objects.filter(slug__in=slugs).prefetch_related("domain_set")[:5]
 
-        for ip in recently_viewed_paths:
-            # Extract slug from path (format: /organization/slug-name)
-            try:
-                slug = ip.path.split("/")[2]
-                if slug not in recently_viewed_slugs:
-                    recently_viewed_slugs.append(slug)
-                    org = Organization.objects.filter(slug=slug).first()
-                    if org:
-                        recently_viewed_orgs.append(org)
-            except IndexError:
-                continue
+        context["recently_viewed"] = recently_viewed
 
-        context["recently_viewed"] = recently_viewed_orgs
+        # Get most popular organizations by counting their view paths
+        org_views = {}
+        for org in self.get_queryset():
+            view_count = IP.objects.filter(path=f"/organization/{org.slug}/").count()
+            org_views[org.pk] = view_count
 
-        # Get most popular organizations based on path counts in IP table
-        popular_orgs = []
-        for org in Organization.objects.all():
-            view_count = IP.objects.filter(path__startswith=f"/organization/{org.slug}/").count()
-            popular_orgs.append((org, view_count))
+        # Sort organizations by view count
+        most_popular = sorted(self.get_queryset(), key=lambda x: org_views.get(x.pk, 0), reverse=True)[:5]
 
-        # Sort by view count and get top 5
-        popular_orgs.sort(key=lambda x: x[1], reverse=True)
-        context["most_popular"] = [org for org, count in popular_orgs[:5]]
+        context["most_popular"] = most_popular
+        context["total_organizations"] = Organization.objects.count()
 
         return context
