@@ -680,7 +680,7 @@ class DomainDetailView(ListView):
 
         context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[:3]
+        )
 
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
@@ -1898,13 +1898,28 @@ class OrganizationListView(ListView):
     def get_queryset(self):
         # Optimize query with select_related and prefetch_related
         return (
-            Organization.objects.prefetch_related("domain_set", "projects", "projects__repos")
+            Organization.objects.prefetch_related(
+                "domain_set",
+                "projects",
+                "projects__repos",
+                Prefetch(
+                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+            )
             .annotate(
                 domain_count=Count("domain", distinct=True),
-                issue_count=Count("domain__issue", distinct=True),
+                total_issues=Count("domain__issue", distinct=True),
+                open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
+                closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
                 repo_count=Count("projects__repos", distinct=True),
             )
+            .select_related("admin")
             .order_by("-created")
         )
 
@@ -1927,20 +1942,32 @@ class OrganizationListView(ListView):
 
         # Extract slugs and get organizations in a single query
         slugs = [path.split("/")[2] for path in recent_org_paths if len(path.split("/")) > 2]
-        recently_viewed = Organization.objects.filter(slug__in=slugs).prefetch_related("domain_set")[:5]
+        recently_viewed = (
+            Organization.objects.filter(slug__in=slugs).prefetch_related("domain_set").order_by("-created")[:5]
+        )
 
         context["recently_viewed"] = recently_viewed
 
         # Get most popular organizations by counting their view paths
-        org_views = {}
+        orgs_with_views = []
         for org in self.get_queryset():
             view_count = IP.objects.filter(path=f"/organization/{org.slug}/").count()
-            org_views[org.pk] = view_count
+            orgs_with_views.append((org, view_count))
 
-        # Sort organizations by view count
-        most_popular = sorted(self.get_queryset(), key=lambda x: org_views.get(x.pk, 0), reverse=True)[:5]
-
+        # Sort by view count and get top 5
+        most_popular = [org for org, _ in sorted(orgs_with_views, key=lambda x: x[1], reverse=True)[:5]]
         context["most_popular"] = most_popular
+
+        # Get total count using cached queryset
         context["total_organizations"] = Organization.objects.count()
+
+        # Add top testers for each domain
+        for org in context["organizations"]:
+            for domain in org.domain_set.all():
+                domain.top_testers = (
+                    User.objects.filter(issue__domain=domain)
+                    .annotate(issue_count=Count("issue"))
+                    .order_by("-issue_count")[:1]
+                )
 
         return context

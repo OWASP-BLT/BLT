@@ -64,7 +64,7 @@
                                             <span class="text-xs text-gray-600">Domains</span>
                                         </div>
                                         <div class="text-center">
-                                            <span class="block text-lg font-bold text-[#e74c3c]">{{ org.issue_count }}</span>
+                                            <span class="block text-lg font-bold text-[#e74c3c]">{{ org.total_issues }}</span>
                                             <span class="text-xs text-gray-600">Issues</span>
                                         </div>
                                         <div class="text-center">
@@ -124,12 +124,12 @@
                                                         {% endif %}
                                                     </span>
                                                 </span>
-                                                {% with top_tester=domain.top_testers_list|first %}
+                                                {% with top_tester=domain.top_testers|first %}
                                                     {% if top_tester %}
                                                         <span class="flex items-center text-gray-500 group relative"
                                                               title="Top Tester">
                                                             <i class="fas fa-trophy text-xs mr-1"></i>
-                                                            {{ top_tester.user.username }}
+                                                            {{ top_tester.username }}
                                                             <span class="hidden group-hover:block absolute -top-8 left-1/2 transform -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded">
                                                                 Top Tester ({{ top_tester.issue_count }} issues)
                                                             </span>
