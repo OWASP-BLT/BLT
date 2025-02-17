@@ -77,16 +77,26 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-6 text-center">System Statistics Dashboard</h1>
-        <!-- Time Period Selector -->
-        <div class="flex flex-wrap gap-2 items-center justify-center bg-white p-4 rounded-lg shadow-sm mb-8">
-            <span class="text-gray-700 font-medium">Time Period:</span>
-            {% for option in period_options %}
-                <a href="?period={{ option.value }}"
-                   class="px-4 py-2 rounded-md text-sm font-medium {% if period == option.value %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors duration-200">
-                    {{ option.label }}
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Statistics</h2>
+            <div class="flex gap-4">
+                <a href="?period=7"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    7 Days
                 </a>
-            {% endfor %}
+                <a href="?period=30"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    30 Days
+                </a>
+                <a href="?period=90"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    90 Days
+                </a>
+                <a href="?period=ytd"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    YTD
+                </a>
+            </div>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {% for stat in stats %}
@@ -124,22 +134,40 @@
     {% block extra_js %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // Store chart instances globally
+        window.chartInstances = window.chartInstances || {};
+
+        function destroyCharts() {
+            // Destroy all existing chart instances
+            Object.values(window.chartInstances).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
+                }
+            });
+            window.chartInstances = {};
+        }
+
+        function initializeCharts() {
+            // First destroy any existing charts
+            destroyCharts();
+
+            // Initialize new charts
             document.querySelectorAll('.sparkline').forEach(function(canvas) {
                 const values = JSON.parse(canvas.dataset.values);
                 const dates = JSON.parse(canvas.dataset.dates);
                 const ctx = canvas.getContext('2d');
 
-                new Chart(ctx, {
+                // Create new chart instance and store it
+                window.chartInstances[canvas.id] = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: dates,
                         datasets: [{
                             data: values,
-                            borderColor: 'rgba(255, 255, 255, 0.7)',
+                            borderColor: 'rgba(231, 76, 60, 0.7)',
                             borderWidth: 2,
                             fill: true,
-                            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
                             pointRadius: 0,
                             tension: 0.4,
                         }]
@@ -188,7 +216,13 @@
                     }
                 });
             });
-        });
+        }
+
+        // Initialize charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeCharts);
+
+        // Clean up charts when navigating away
+        window.addEventListener('beforeunload', destroyCharts);
         </script>
     {% endblock extra_js %}
 {% endblock content %}

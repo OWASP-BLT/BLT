@@ -1712,7 +1712,6 @@ def contribute(request):
     return {"good_first_issues": good_first_issues}
 
 
-@method_decorator(login_required, name="dispatch")
 class GitHubIssuesView(ListView):
     model = GitHubIssue
     template_name = "github_issues.html"

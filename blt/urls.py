@@ -518,7 +518,7 @@ urlpatterns = [
         InviteFriendApiViewset.as_view(),
         name="api_invite_friend",
     ),
-    re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
+    path("scoreboard/", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     # link to index.html
     re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
