@@ -192,9 +192,8 @@
     </button>
 {% endif %}
 {% if request.user.is_superuser or request.user == object.user %}
-    <button 
-        onclick="deleteIssue({{ object.id }})"
-        class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4">
+    <button onclick="deleteIssue({{ object.id }})"
+            class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4">
         <div class="flex flex-row gap-2 items-center">
             <span class="max-sm:text-[12px]">Delete</span>
             <i class="fa-solid fa-trash text-[13px]"></i>
@@ -212,7 +211,6 @@
         {% endif %}
     </button>
 {% endif %}
-
 <script>
 function deleteIssue(issueId) {
     if (!confirm('Are you sure you want to delete this issue?')) {

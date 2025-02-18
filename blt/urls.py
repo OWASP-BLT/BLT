@@ -535,7 +535,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
-    path('delete_issue/<str:id>/', ensure_csrf_cookie(delete_issue), name='delete_issue'),
+    path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,

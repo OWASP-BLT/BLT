@@ -342,7 +342,7 @@ def newhome(request, template="new_home.html"):
 @require_POST
 def delete_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
-    
+
     # Check permissions
     if not (request.user.is_superuser or request.user == issue.user):
         return HttpResponse("Permission denied", status=403)
@@ -356,7 +356,7 @@ def delete_issue(request, id):
     except Issue.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
     except PermissionError:
-        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403) 
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
 
 def remove_user_from_issue(request, id):
