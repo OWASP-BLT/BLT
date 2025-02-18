@@ -862,7 +862,7 @@ urlpatterns = [
     path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
     path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
-    path("teams/overview", TeamOverview.as_view(), name="team_overview"),
+    path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),
     path("teams/create-team/", create_team, name="create_team"),
     path("teams/join-requests/", join_requests, name="join_requests"),

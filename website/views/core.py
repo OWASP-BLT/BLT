@@ -1161,7 +1161,7 @@ def home(request):
 
 def test_sentry(request):
     if request.user.is_superuser:
-        division_by_zero = 1 / 0  # This will raise a ZeroDivisionError
+        1 / 0  # This will raise a ZeroDivisionError
     return HttpResponse("Test error sent to Sentry!")
 
 
@@ -1635,6 +1635,24 @@ def website_stats(request):
     else:
         status = "normal"
 
+    # Get top 50 user agents
+    user_agents = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .exclude(agent__isnull=True)
+        .values("agent")
+        .annotate(total_count=Sum("count"), last_request=models.Max("created"))
+        .order_by("-total_count")[:50]
+    )
+
+    # Count unique user agents
+    unique_agents_count = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .exclude(agent__isnull=True)
+        .values("agent")
+        .distinct()
+        .count()
+    )
+
     # Collect URL pattern info
     url_info = []
 
@@ -1684,6 +1702,12 @@ def website_stats(request):
         "total_urls": len(url_info),  # Add total URL count
     }
 
-    context = {"url_info": url_info, "total_views": total_views, "web_stats": web_stats}
+    context = {
+        "url_info": url_info,
+        "total_views": total_views,
+        "web_stats": web_stats,
+        "user_agents": user_agents,
+        "unique_agents_count": unique_agents_count,
+    }
 
     return render(request, "website_stats.html", context)
