@@ -39,6 +39,7 @@ from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -337,26 +338,25 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@login_required
+@require_POST
 def delete_issue(request, id):
-    try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
-        tokenauth = False
+    issue = get_object_or_404(Issue, id=id)
+    
+    # Check permissions
+    if not (request.user.is_superuser or request.user == issue.user):
+        return HttpResponse("Permission denied", status=403)
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
+    try:
+        # Delete screenshots and issue
+        issue.screenshots.all().delete()
         issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
-    return redirect("/")
+        messages.success(request, "Issue deleted successfully")
+        return JsonResponse({"status": "success"})
+    except Issue.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+    except PermissionError:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403) 
 
 
 def remove_user_from_issue(request, id):
