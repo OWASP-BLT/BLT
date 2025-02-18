@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8 max-w-[95%]">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-[#e74c3c]">Template Files</h1>
+            <span class="text-lg font-medium text-gray-600">
+                {{ total_templates }} template
+                {% if total_templates != 1 %}s{% endif %}
+            </span>
+        </div>
+        {% for dir in template_dirs %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ dir.name }}</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=name{% if sort == 'name' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center hover:text-[#e74c3c]">
+                                        Template
+                                        {% if sort == 'name' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=path{% if sort == 'path' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center hover:text-[#e74c3c]">
+                                        Path
+                                        {% if sort == 'path' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=url{% if sort == 'url' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center hover:text-[#e74c3c]">
+                                        URL
+                                        {% if sort == 'url' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=modified{% if sort == 'modified' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center hover:text-[#e74c3c]">
+                                        Last Modified
+                                        {% if sort == 'modified' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="w-20 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=view_count{% if sort == 'view_count' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center justify-center hover:text-[#e74c3c]">
+                                        Views
+                                        {% if sort == 'view_count' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="w-32 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for template in dir.templates %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 text-sm text-gray-900 truncate">{{ template.name }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 group-hover:whitespace-normal truncate hover:whitespace-normal">
+                                        {{ template.path|cut:base_dir }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 group-hover:whitespace-normal truncate hover:whitespace-normal">
+                                        {% if template.url %}
+                                            <a href="{{ template.url }}" class="text-[#e74c3c] hover:text-[#c0392b]">{{ template.url }}</a>
+                                        {% else %}
+                                            <span class="text-gray-400 italic">No matching URL</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500">{{ template.modified|date:"Y-m-d H:i" }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 text-center">{{ template.views|default:0 }}</td>
+                                    <td class="px-6 py-4 text-sm whitespace-nowrap">
+                                        <a href="{{ template.github_url }}"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:text-[#c0392b] inline-flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                            </svg>
+                                            View on GitHub
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

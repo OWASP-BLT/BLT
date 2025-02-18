@@ -1,5 +1,6 @@
 import ast
 import difflib
+import hashlib
 import os
 import re
 import time
@@ -8,7 +9,9 @@ from urllib.parse import urlparse, urlsplit, urlunparse
 
 import markdown
 import numpy as np
-import openai
+from openai import OpenAI
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
@@ -19,11 +22,6 @@ from openai import OpenAI
 
 from .models import PRAnalysisReport
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# openai.api_key = os.getenv("OPENAI_API_KEY")
 GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
 
 
@@ -225,10 +223,10 @@ def analyze_pr_content(pr_data, roadmap_data):
     ### Roadmap Data:
     {roadmap_data}
     """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 def save_analysis_report(pr_link, issue_link, analysis):
@@ -277,7 +275,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
             #     }
             # }
             # Extract the embedding from the response
-            embedding = response["data"][0]["embedding"]
+            embedding = response.data[0].embedding
             return np.array(embedding)
 
         except openai.RateLimitError as e:
@@ -486,7 +484,7 @@ def ai_summary(text):
         prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following readme content: {text}"
 
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": prompt},
@@ -499,3 +497,10 @@ def ai_summary(text):
         return summary
     except Exception as e:
         return f"Error generating summary: {str(e)}"
+
+
+def gravatar_url(email, size=80):
+    """Generate Gravatar URL for a given email."""
+    email = email.lower().encode("utf-8")
+    gravatar_hash = hashlib.md5(email).hexdigest()
+    return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"

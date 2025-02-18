@@ -17,10 +17,10 @@
           content="{% block og_title %}{{ object.description }}{% endblock og_title %}" />
     {% for screenshot in screenshots %}
         <meta property="og:image"
-              content="https://{% env 'FQDN' %}{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
+              content="{% block og_image %}{{ screenshot.image.url }}{% endblock og_image %}" />
     {% endfor %}
     <meta property="og:description"
-          content="{{ object.markdown_description|escapejs }}" />
+          content="{% block og_description %}{{ object.markdown_description|escapejs }}{% endblock og_description %}" />
     <meta name="keywords"
           content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug, tracking, organization, easy{% endblock keywords %}">
     <link rel="canonical" href="https://{% env 'FQDN' %}/issue/{{ object.id }}">

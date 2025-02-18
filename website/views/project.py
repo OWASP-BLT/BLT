@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 import django_filters
 import requests
+import sentry_sdk
 from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -261,7 +262,13 @@ class ProjectRepoFilter(django_filters.FilterSet):
         fields = ["search", "repo_type", "sort", "order"]
 
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
+        return queryset.filter(
+            Q(project__name__icontains=value)
+            | Q(name__icontains=value)
+            | Q(primary_language__icontains=value)
+            | Q(ai_summary__icontains=value)
+            | Q(readme_content__icontains=value)
+        )
 
     def filter_repo_type(self, queryset, name, value):
         if value == "main":
@@ -1280,6 +1287,7 @@ class RepoDetailView(DetailView):
                 )
 
             except requests.RequestException as e:
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -1288,6 +1296,8 @@ class RepoDetailView(DetailView):
                     status=503,
                 )
             except Exception as e:
+                # send to sentry
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {"status": "error", "message": "An unexpected error occurred."},
                     status=500,

@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}Features - OWASP BLT{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-6 bg-secondary ">
+        <h1 class="text-3xl font-bold mb-4 text-center">BLT Features</h1>
+        <p class="text-gray-600 mb-6 text-center">
+            Explore the key features of OWASP BLT, designed to enhance bug tracking and security collaboration.
+        </p>
+        <div class="container mx-auto px-4 py-6 m-2 ">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <!-- 1. Activity feed -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/activity-feed.png' %}"
+                         alt="feed"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Activity Feed</h2>
+                    <p class="text-gray-600 my-2">
+                        Provides real-time updates on recent activities within the platform, including new bug reports, comments, and status changes.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on:2024-11-24</p>
+                    <div class="flex justify-between mt-8 ">
+                        <a href="/feed/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Feed</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/2931"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 2. Issues (Bugs) -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/report-bug.png' %}"
+                         alt="issues"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-44 object-cover">
+                    <h2 class="text-xl font-semibold">Issues (Bugs)</h2>
+                    <p class="text-gray-600 my-2">
+                        Allows users to view, report, and manage software bugs. Users can submit detailed bug reports, track their status, and collaborate with others to resolve them.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2016-09-03</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/issues/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Manage Issues</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/commit/59d29ea96342c48d78b4529dab46841911b20f39"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                    </div>
+                </div>
+                <!-- 3. Sizzle (Time Tracking) -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/sizzle.png' %}"
+                         alt="sizzle"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Sizzle (Time Tracking)</h2>
+                    <p class="text-gray-600 my-2">
+                        A time tracking tool integrated into the platform to monitor the time spent on various tasks and issues, aiding in project management and productivity analysis.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on:2024-08-25</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/sizzle/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Track Time</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/2678"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 4. Scoreboard -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/scoreboard.png' %}"
+                         alt="scoreboard"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Scoreboard</h2>
+                    <p class="text-gray-600 my-2">
+                        The OWASP BLT Scoreboard allows users to track and compare domain performance by viewing open and closed issues, email events, and top testers for each domain.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on:2017-01-29</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/scoreboard/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Scores</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/commit/5c658854cc4be25082ce573a1ba1eb9fba101b60"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                    </div>
+                </div>
+                <!-- 5. Bug Bounties -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/bug-bounty.png' %}"
+                         alt="bug Bounties"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Bug Bounties</h2>
+                    <p class="text-gray-600 my-2">
+                        Enables organizations to offer rewards for identifying and reporting specific vulnerabilities, encouraging proactive security assessments.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on:2016-09-04</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/hunt/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Bounties</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/commit/e428258ea7214994f239d8fc73712fe6a2e784c2"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                    </div>
+                </div>
+                <!-- 6. Trademark Search -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/trademark.png' %}"
+                         alt="trademarks"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Trademark Search</h2>
+                    <p class="text-gray-600 my-2">
+                        Provides a tool to search for registered trademarks, assisting in ensuring that project names and branding do not infringe on existing trademarks.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on:2024-03-01</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/trademarks/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Search Trademarks</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/1858"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 7. Bid on Issues -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/bid.png' %}"
+                         alt="bid"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Bid on Issues</h2>
+                    <p class="text-gray-600 my-2">
+                        Allows developers to bid on resolving reported issues, creating a marketplace for bug fixes and feature implementations.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on:2024-05-12</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/bidding/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Bids</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/2085"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 8. Tomato (Funding) -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/funding.png' %}"
+                         alt="funding"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Tomato (Funding)</h2>
+                    <p class="text-gray-600 my-2">
+                        A funding mechanism to support projects and contributors, possibly through donations or sponsorships, promoting sustained development efforts.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2024-07-11</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/blt-tomato/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Funding</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/2410"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 9. BACON (Coin) -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'images/bacon.png' %}"
+                         alt="bacon coin"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">BACON (Coin)</h2>
+                    <p class="text-gray-600 my-2">
+                        An internal currency or reward system to incentivize contributions and participation within the platform.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2 years ago</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/bacon/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Coins</a>
+                        <a href="https://github.com/OWASP-BLT/BLT-Bacon"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Repo</a>
+                    </div>
+                </div>
+                <!-- 10. Leaderboard -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/leaderboard.png' %}"
+                         alt="leaderboard_global"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Leaderboard</h2>
+                    <p class="text-gray-600 my-2">
+                        Ranks users based on their contributions, fostering a competitive environment to encourage active participation.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2016-11-17</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/leaderboard/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Leaders</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/commit/63c841c9b3e64652a6b1659036bb1d442802a445"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                    </div>
+                </div>
+                <!-- 11. Contributors -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/contributors.png' %}"
+                         alt="contributors"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Contributors</h2>
+                    <p class="text-gray-600 my-2">
+                        Lists individuals who have contributed to the platform, acknowledging their efforts and promoting community recognition.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2023-03-25</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/contributors/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Contributors</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/1183"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 12. Sponsorships -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/sponsor.png' %}"
+                         alt="sponsor "
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Sponsorships</h2>
+                    <p class="text-gray-600 my-2">
+                        Provides opportunities for organizations to sponsor the platform or specific projects, supporting ongoing development and maintenance.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2023-08-23</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/sponsor/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Sponsors</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/1387"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 13. Donations -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/donate.png' %}"
+                         alt="donate"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Donations</h2>
+                    <p class="text-gray-600 my-2">
+                        Allows individuals and organizations to donate funds to support the platform's operations and development initiatives.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2024-11-28</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/donate/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Donate</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/2925"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 14. BLTV -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/bltv.png' %}"
+                         alt="BLTV"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">BLTV</h2>
+                    <p class="text-gray-600 my-2">
+                        A media feature, possibly offering video content related to the platform, such as tutorials, webinars, or promotional materials.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2024-03-04</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/bltv/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view BLTV</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/commit/956f733899c688c8bd3e9e69ee63ca33b872a0d5"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 15. suggestions -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/suggestions.png' %}"
+                         alt="suggestion"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Suggetions</h2>
+                    <p class="text-gray-600 my-2">
+                        Encourages users to submit ideas and feedback to improve the platform, fostering community-driven development.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2024-07-28</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/suggestion/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Suggetions</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/2443"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 16. steak based point system  -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/steak.png' %}"
+                         alt="steak"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">steak based point system</h2>
+                    <p class="text-gray-600 my-2">
+                        A streak-based point system is a gamification strategy that rewards users for consecutive successful actions, encouraging consistent engagement.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2024-12-24</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/profile/{{ user.username }}"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view steak</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/3043"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 17. rooms  -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/rooms.png' %}"
+                         alt="rooms"
+                         width="200"
+                         height="100"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">Discussion Rooms</h2>
+                    <p class="text-gray-600 my-2">
+                        The OWASP BLT Discussion Rooms feature provides a platform for real-time text communication among users.it allows users to create and delete chat rooms, facilitating instant collaboration and information sharing within the community.
+                    </p>
+                    <p class="text-gray-500 text-sm">Added on: 2025-02-09</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/discussion-rooms/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view rooms</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/3272"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+                <!-- 18. similarity-scan -->
+                <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px]">
+                    <img src="{% static 'img/features/similarity-scan.png' %}"
+                         alt="similarity_scan"
+                         height="100"
+                         width="200"
+                         class="rounded-md mb-3 w-full h-48 object-cover">
+                    <h2 class="text-xl font-semibold">similarity-scan</h2>
+                    <p class="text-gray-600 my-2">check a similar issues on the github repo</p>
+                    <p class="text-gray-500 text-sm">Added on: 2024-12-21</p>
+                    <div class="flex justify-between mt-4">
+                        <a href="/similarity-scan/"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view scan</a>
+                        <a href="https://github.com/OWASP-BLT/BLT/pull/3043"
+                           class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

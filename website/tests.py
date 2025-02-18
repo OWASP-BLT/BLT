@@ -6,6 +6,7 @@ from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, LiveServerTestCase, TestCase
 from django.test.utils import override_settings
+from django.urls import reverse
 from django.utils import timezone
 from selenium import webdriver
 from selenium.common.exceptions import ElementClickInterceptedException
@@ -37,13 +38,29 @@ class MySeleniumTests(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        options = webdriver.ChromeOptions()
-        options.add_argument("window-size=1920,1080")
-        options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
-        service = Service(chromedriver_autoinstaller.install())
-        cls.selenium = webdriver.Chrome(service=service, options=options)
-
         super(MySeleniumTests, cls).setUpClass()
+
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless=new")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--window-size=1920,1080")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-dev-tools")
+        options.add_argument("--remote-debugging-pipe")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("useAutomationExtension", False)
+        options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+
+        try:
+            service = Service(chromedriver_autoinstaller.install())
+            cls.selenium = webdriver.Chrome(service=service, options=options)
+            cls.selenium.set_page_load_timeout(30)
+            cls.selenium.implicitly_wait(30)
+        except Exception as e:
+            print(f"Error setting up Chrome: {e}")
+            raise
 
     @classmethod
     def tearDownClass(cls):
@@ -176,32 +193,6 @@ class HideImage(TestCase):
                 self.assertFalse(True, "files rename failed")
 
 
-# from django.contrib.messages import get_messages
-from django.test import TestCase
-from django.urls import reverse
-
-# from .models import Project
-
-
-# class ProjectListViewTests(TestCase):
-#     def test_add_project_with_branch_url(self):
-#         url = reverse("project_list")
-#         github_url = (
-#             "https://github.com/OWASP/www-project-top-10-infrastructure-security-risks/tree/main"
-#         )
-#         response = self.client.post(url, {"github_url": github_url})
-
-#         # Check if the response is a redirect to the project list
-#         self.assertRedirects(response, url)
-
-#         # Check if the appropriate success message is displayed
-#         messages = list(get_messages(response.wsgi_request))
-#         self.assertTrue(any("Project added successfully." in str(message) for message in messages))
-
-#         # Ensure the project was created
-#         self.assertTrue(Project.objects.filter(github_url=github_url).exists())
-
-
 class RemoveUserFromIssueTest(TestCase):
     def setUp(self):
         # Create a user, an anonymous user, and an issue
@@ -222,7 +213,7 @@ class RemoveUserFromIssueTest(TestCase):
         self.client.login(username="testuser", password="password")
 
         url = reverse("remove_user_from_issue", args=[self.issue.id])
-        response = self.client.post(url, follow=True)
+        self.client.post(url, follow=True)  # Remove unused response variable
 
         self.issue.refresh_from_db()
         self.activity.refresh_from_db()
@@ -335,7 +326,7 @@ class ProjectPageTest(TestCase):
 
     def test_project_page_content(self):
         """Test that project page loads and displays content correctly"""
-        url = reverse("projects_detail", kwargs={"slug": self.project.slug})
+        url = reverse("project_detail", kwargs={"slug": self.project.slug})
         response = self.client.get(url)
 
         # Check response

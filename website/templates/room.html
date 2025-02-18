@@ -14,7 +14,7 @@
         </div>
         <div id="log-history"
              class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
-            {% for message in messages %}
+            {% for message in room_messages %}
                 <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm">
                     <div class="flex justify-between items-center">
                         <strong>{{ message.username }}</strong>
