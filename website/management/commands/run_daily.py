@@ -1,5 +1,4 @@
 import logging
-
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -18,6 +17,7 @@ class Command(BaseCommand):
             call_command("check_keywords")
             call_command("check_owasp_projects")
             call_command("check_trademarks")
+            call_command("checkin_reminder_notification")
         except Exception as e:
             logger.error(f"Error in daily tasks: {str(e)}")
             raise

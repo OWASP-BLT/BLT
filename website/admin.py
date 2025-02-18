@@ -29,6 +29,7 @@ from website.models import (
     IssueScreenshot,
     Message,
     Monitor,
+    Notification,
     Organization,
     OrganizationAdmin,
     Payment,
@@ -591,6 +592,7 @@ admin.site.register(SlackIntegration)
 admin.site.register(Activity)
 admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
+admin.site.register(Notification)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
