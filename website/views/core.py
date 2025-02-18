@@ -1,17 +1,22 @@
 import json
+import logging
 import os
 import subprocess
 import tracemalloc
 import urllib
-from datetime import timedelta
+from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
 import psutil
+import redis
 import requests
 import requests.exceptions
+import sentry_sdk
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
@@ -21,25 +26,30 @@ from django.core.cache import cache
 from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from django.db import connection
+from django.core.management import call_command, get_commands, load_command_class
+from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
-from django_redis import get_redis_connection
 
 from blt import settings
 from website.models import (
+    IP,
+    Activity,
     Badge,
     Domain,
+    Hunt,
     Issue,
+    ManagementCommandLog,
     Organization,
+    Points,
     PRAnalysisReport,
     Project,
     Repo,
@@ -47,6 +57,7 @@ from website.models import (
     Suggestion,
     SuggestionVotes,
     Tag,
+    User,
     UserBadge,
     UserProfile,
     Wallet,
@@ -112,12 +123,12 @@ def check_status(request):
     """
     # Configuration flags
     CHECK_BITCOIN = False
-    CHECK_SENDGRID = False
-    CHECK_GITHUB = False
-    CHECK_OPENAI = False
+    CHECK_SENDGRID = True
+    CHECK_GITHUB = True
+    CHECK_OPENAI = True
     CHECK_MEMORY = True
-    CHECK_DATABASE = False
-    CHECK_REDIS = False
+    CHECK_DATABASE = True
+    CHECK_REDIS = True
     CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
@@ -131,8 +142,17 @@ def check_status(request):
             "github": None if not CHECK_GITHUB else False,
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
-            "redis_stats": {} if not CHECK_REDIS else {},
+            "redis_stats": {
+                "status": "Not configured",
+                "version": None,
+                "connected_clients": None,
+                "used_memory_human": None,
+            }
+            if not CHECK_REDIS
+            else {},
             "slack_bot": {},
+            "management_commands": [],
+            "available_commands": [],
         }
 
         if CHECK_MEMORY:
@@ -144,6 +164,47 @@ def check_status(request):
                     "memory_by_module": [],
                 }
             )
+
+        # Get management command logs
+        command_logs = (
+            ManagementCommandLog.objects.values("command_name")
+            .distinct()
+            .annotate(
+                last_run=models.Max("last_run"),
+                last_success=models.ExpressionWrapper(models.Q(success=True), output_field=models.BooleanField()),
+                run_count=models.Count("id"),
+            )
+            .order_by("command_name")
+        )
+
+        status_data["management_commands"] = list(command_logs)
+
+        # Get list of available management commands
+        available_commands = []
+        for name, app_name in get_commands().items():
+            # Only include commands from the website app
+            if app_name == "website":
+                command_class = load_command_class(app_name, name)
+                command_info = {
+                    "name": name,
+                    "help_text": getattr(command_class, "help", "").split("\n")[0],
+                }
+
+                # Get command logs if they exist
+                log = ManagementCommandLog.objects.filter(command_name=name).first()
+                if log:
+                    command_info.update(
+                        {
+                            "last_run": log.last_run,
+                            "last_success": log.success,
+                            "run_count": log.run_count,
+                        }
+                    )
+
+                available_commands.append(command_info)
+
+        commands = sorted(available_commands, key=lambda x: x["name"])
+        status_data["available_commands"] = commands
 
         # Bitcoin RPC check
         if CHECK_BITCOIN:
@@ -173,7 +234,7 @@ def check_status(request):
 
         # SendGrid API check
         if CHECK_SENDGRID:
-            sendgrid_api_key = os.getenv("SENDGRID_API_KEY")
+            sendgrid_api_key = os.getenv("SENDGRID_PASSWORD")
             if sendgrid_api_key:
                 try:
                     print("Checking SendGrid API...")
@@ -203,7 +264,7 @@ def check_status(request):
 
         # OpenAI API check
         if CHECK_OPENAI:
-            openai_api_key = os.getenv("OPENAI_API_KEY")
+            openai_api_key = os.getenv("OPENAI_API_KEY", "sk-proj-1234567890")
             if openai_api_key:
                 try:
                     print("Checking OpenAI API...")
@@ -257,15 +318,57 @@ def check_status(request):
         # Redis stats
         if CHECK_REDIS:
             print("Getting Redis stats...")
-            try:
-                redis_client = get_redis_connection("default")
-                status_data["redis_stats"] = redis_client.info()
-            except Exception as e:
-                print(f"Redis error or not supported: {e}")
+            redis_url = os.environ.get("REDISCLOUD_URL")
+
+            if redis_url:
+                try:
+                    # Parse Redis URL
+                    parsed_url = urlparse(redis_url)
+                    redis_host = parsed_url.hostname or "localhost"
+                    redis_port = parsed_url.port or 6379
+                    redis_password = parsed_url.password
+                    redis_db = 0  # Default database
+
+                    # Create Redis client
+                    redis_client = redis.Redis(
+                        host=redis_host,
+                        port=redis_port,
+                        password=redis_password,
+                        db=redis_db,
+                        socket_timeout=2.0,  # 2 second timeout
+                    )
+
+                    # Test connection and get info
+                    info = redis_client.info()
+                    status_data["redis_stats"] = {
+                        "status": "Connected",
+                        "version": info.get("redis_version"),
+                        "connected_clients": info.get("connected_clients"),
+                        "used_memory_human": info.get("used_memory_human"),
+                        "uptime_days": info.get("uptime_in_days"),
+                    }
+                except (redis.ConnectionError, redis.TimeoutError) as e:
+                    status_data["redis_stats"] = {
+                        "status": "Connection failed",
+                        "error": str(e),
+                    }
+                except Exception as e:
+                    status_data["redis_stats"] = {
+                        "status": "Error",
+                        "error": str(e),
+                    }
+            else:
+                status_data["redis_stats"] = {
+                    "status": "Not configured",
+                    "error": "REDISCLOUD_URL not set",
+                }
 
         # Slack bot activity metrics
         if CHECK_SLACK_BOT:
             last_24h = timezone.now() - timedelta(hours=24)
+
+            # Get last activity
+            last_activity = SlackBotActivity.objects.order_by("-created").first()
 
             # Get bot activity metrics
             bot_metrics = {
@@ -277,6 +380,7 @@ def check_status(request):
                     else 0
                 ),
                 "workspace_count": SlackBotActivity.objects.values("workspace_id").distinct().count(),
+                "last_activity": last_activity.created if last_activity else None,
                 "recent_activities": list(
                     SlackBotActivity.objects.filter(created__gte=last_24h)
                     .values("activity_type", "workspace_name", "created", "success")
@@ -292,10 +396,68 @@ def check_status(request):
 
             status_data["slack_bot"] = bot_metrics
 
+        # Get the date range for the last 30 days
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=30)
+
+        # Get daily counts for team joins and commands
+        team_joins = (
+            SlackBotActivity.objects.filter(activity_type="team_join", created__gte=start_date, created__lte=end_date)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        commands = (
+            SlackBotActivity.objects.filter(activity_type="command", created__gte=start_date, created__lte=end_date)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        # Convert querysets to lists for the template
+        team_joins_data = list(team_joins)
+        commands_data = list(commands)
+
+        # Create a complete date range with zero counts for missing dates
+        date_range = []
+        current_date = start_date.date()
+        while current_date <= end_date.date():
+            date_range.append(current_date)
+            current_date += timedelta(days=1)
+
+        # Fill in missing dates with zero counts
+        dates = [date.strftime("%Y-%m-%d") for date in date_range]
+        team_joins_counts = [0] * len(date_range)
+        commands_counts = [0] * len(date_range)
+
+        # Map the actual data to the date range
+        for i, date in enumerate(date_range):
+            for join in team_joins_data:
+                if join["date"] == date:
+                    team_joins_counts[i] = join["count"]
+            for cmd in commands_data:
+                if cmd["date"] == date:
+                    commands_counts[i] = cmd["count"]
+
+        # Store the data in a format that can be safely serialized to JSON
+        chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
+
+        status_data["chart_data"] = chart_data
+
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
-    return render(request, "status_page.html", {"status": status_data})
+    # Prepare the chart data for the template
+    template_chart_data = {
+        "dates": json.dumps(status_data["chart_data"]["dates"]),
+        "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
+        "commands": json.dumps(status_data["chart_data"]["commands"]),
+    }
+
+    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
 
 def github_callback(request):
@@ -708,7 +870,7 @@ class UploadCreate(View):
 class StatsDetailView(TemplateView):
     template_name = "stats.html"
 
-    def get_historical_counts(self, model):
+    def get_historical_counts(self, model, start_date=None):
         date_field_map = {
             "Issue": "created",
             "UserProfile": "created",
@@ -741,8 +903,13 @@ class StatsDetailView(TemplateView):
         counts = []
 
         try:
+            queryset = model.objects.all()
+            if start_date:
+                filter_kwargs = {f"{date_field}__gte": start_date}
+                queryset = queryset.filter(**filter_kwargs)
+
             date_counts = (
-                model.objects.annotate(date=TruncDate(date_field))
+                queryset.annotate(date=TruncDate(date_field))
                 .values("date")
                 .annotate(count=Count("id"))
                 .order_by("date")
@@ -757,8 +924,22 @@ class StatsDetailView(TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        stats_data = []
 
+        # Get period from request, default to 30 days
+        period = self.request.GET.get("period", "30")
+
+        # Calculate start date based on period
+        today = timezone.now()
+        if period == "ytd":
+            start_date = today.replace(month=1, day=1)
+        else:
+            try:
+                days = int(period)
+                start_date = today - timedelta(days=days)
+            except ValueError:
+                start_date = today - timedelta(days=30)
+
+        stats_data = []
         known_icons = {
             "Issue": "fas fa-bug",
             "User": "fas fa-users",
@@ -795,14 +976,18 @@ class StatsDetailView(TemplateView):
             model_name = model.__name__
 
             try:
-                dates, counts = self.get_historical_counts(model)
+                dates, counts = self.get_historical_counts(model, start_date)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
+
+                # Get filtered count and total count
                 total_count = model.objects.count()
+                filtered_count = counts[-1] if counts else 0
 
                 stats_data.append(
                     {
                         "label": model_name,
-                        "count": total_count,
+                        "count": filtered_count,
+                        "total_count": total_count,
                         "icon": known_icons.get(model_name, "fas fa-database"),
                         "history": json.dumps(counts),
                         "dates": json.dumps(dates),
@@ -812,7 +997,21 @@ class StatsDetailView(TemplateView):
             except Exception:
                 continue
 
-        context["stats"] = sorted(stats_data, key=lambda x: x["count"], reverse=True)
+        context.update(
+            {
+                "stats": sorted(stats_data, key=lambda x: x["count"], reverse=True),
+                "period": period,
+                "period_options": [
+                    {"value": "1", "label": "1 Day"},
+                    {"value": "7", "label": "1 Week"},
+                    {"value": "30", "label": "1 Month"},
+                    {"value": "90", "label": "3 Months"},
+                    {"value": "ytd", "label": "Year to Date"},
+                    {"value": "365", "label": "1 Year"},
+                    {"value": "1825", "label": "5 Years"},
+                ],
+            }
+        )
         return context
 
 
@@ -830,6 +1029,10 @@ def badge_list(request):
     badges = Badge.objects.all()
     badges = Badge.objects.annotate(user_count=Count("userbadge"))
     return render(request, "badges.html", {"badges": badges})
+
+
+def features_view(request):
+    return render(request, "features.html")
 
 
 def sponsor_view(request):
@@ -881,29 +1084,52 @@ def get_last_commit_date():
 
 def submit_roadmap_pr(request):
     if request.method == "POST":
-        pr_link = request.POST.get("pr_link")
-        issue_link = request.POST.get("issue_link")
+        pr_link = request.POST.get("pr_link", "").strip()
+        issue_link = request.POST.get("issue_link", "").strip()
 
         if not pr_link or not issue_link:
             return JsonResponse({"error": "Both PR and issue links are required."}, status=400)
 
-        pr_parts = pr_link.split("/")
-        issue_parts = issue_link.split("/")
-        owner, repo = pr_parts[3], pr_parts[4]
-        pr_number, issue_number = pr_parts[-1], issue_parts[-1]
+        # Validate GitHub URLs
+        if not (pr_link.startswith("https://github.com/") and issue_link.startswith("https://github.com/")):
+            return JsonResponse({"error": "Invalid GitHub URLs. Both URLs must be from github.com"}, status=400)
 
-        pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
-        roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+        try:
+            pr_parts = pr_link.split("/")
+            issue_parts = issue_link.split("/")
 
-        if "error" in pr_data or "error" in roadmap_data:
-            return JsonResponse(
-                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
-                status=500,
-            )
+            # Validate URL parts length
+            if len(pr_parts) < 7 or len(issue_parts) < 7:
+                return JsonResponse({"error": "Invalid GitHub URL format"}, status=400)
 
-        analysis = analyze_pr_content(pr_data, roadmap_data)
-        save_analysis_report(pr_link, issue_link, analysis)
-        return JsonResponse({"message": "PR submitted successfully"})
+            # Extract owner and repo from PR URL
+            owner, repo = pr_parts[3], pr_parts[4]
+
+            # Extract PR and issue numbers
+            pr_number = pr_parts[-1]
+            issue_number = issue_parts[-1]
+
+            # Validate that we have numeric IDs
+            if not (pr_number.isdigit() and issue_number.isdigit()):
+                return JsonResponse({"error": "Invalid PR or issue number format"}, status=400)
+
+            pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
+            roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+
+            if "error" in pr_data or "error" in roadmap_data:
+                return JsonResponse(
+                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    status=500,
+                )
+
+            analysis = analyze_pr_content(pr_data, roadmap_data)
+            save_analysis_report(pr_link, issue_link, analysis)
+            return JsonResponse({"message": "PR submitted successfully"})
+
+        except (IndexError, ValueError) as e:
+            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 
@@ -914,8 +1140,29 @@ def view_pr_analysis(request):
 
 
 def home(request):
-    # last_commit = get_last_commit_date()
-    return render(request, "home.html", {"last_commit": ""})
+    from django.utils import timezone
+
+    # Get last commit date
+    try:
+        last_commit = get_last_commit_date()
+    except Exception as e:
+        print(f"Error getting last commit date: {e}")
+        last_commit = ""
+
+    return render(
+        request,
+        "home.html",
+        {
+            "last_commit": last_commit,
+            "current_year": timezone.now().year,  # Add current year
+        },
+    )
+
+
+def test_sentry(request):
+    if request.user.is_superuser:
+        1 / 0  # This will raise a ZeroDivisionError
+    return HttpResponse("Test error sent to Sentry!")
 
 
 def handler404(request, exception):
@@ -924,3 +1171,543 @@ def handler404(request, exception):
 
 def handler500(request, exception=None):
     return render(request, "500.html", {}, status=500)
+
+
+def stats_dashboard(request):
+    # Get the time period from request, default to 30 days
+    period = request.GET.get("period", "30")
+
+    # Define time periods in days
+    period_map = {
+        "1": 1,  # 1 day
+        "7": 7,  # 1 week
+        "30": 30,  # 1 month
+        "90": 90,  # 3 months
+        "ytd": "ytd",  # Year to date
+        "365": 365,  # 1 year
+        "1825": 1825,  # 5 years
+    }
+
+    days = period_map.get(period, 30)
+
+    # Calculate the date range
+    end_date = timezone.now()
+    if days == "ytd":
+        start_date = end_date.replace(month=1, day=1)
+    else:
+        start_date = end_date - timedelta(days=days)
+
+    # Try to get stats from cache with period-specific key
+    cache_key = f"dashboard_stats_{period}"
+    stats = cache.get(cache_key)
+
+    if stats is None:
+        # If not in cache, compute stats with optimized queries and date filtering
+        users = User.objects.filter(date_joined__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_active=True))
+        )
+        total_users = User.objects.count()
+
+        issues = Issue.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), open=Count("id", filter=Q(status="open"))
+        )
+        total_issues = Issue.objects.count()
+
+        domains = Domain.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_active=True))
+        )
+        total_domains = Domain.objects.count()
+
+        organizations = Organization.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_active=True))
+        )
+        total_organizations = Organization.objects.count()
+
+        hunts = Hunt.objects.filter(created__gte=start_date).aggregate(
+            total=Count("id"), active=Count("id", filter=Q(is_published=True))
+        )
+        total_hunts = Hunt.objects.count()
+
+        points = Points.objects.filter(created__gte=start_date).aggregate(total=Sum("score"))["total"] or 0
+        total_points = Points.objects.aggregate(total=Sum("score"))["total"] or 0
+
+        projects = Project.objects.filter(created__gte=start_date).count()
+        total_projects = Project.objects.count()
+
+        activities = Activity.objects.filter(timestamp__gte=start_date).count()
+        total_activities = Activity.objects.count()
+
+        recent_activities = (
+            Activity.objects.filter(timestamp__gte=start_date)
+            .order_by("-timestamp")
+            .values("id", "title", "description", "timestamp")[:5]
+        )
+
+        # Combine all stats
+        stats = {
+            "users": {"total": users["total"], "active": users["active"], "total_all_time": total_users},
+            "issues": {"total": issues["total"], "open": issues["open"], "total_all_time": total_issues},
+            "domains": {"total": domains["total"], "active": domains["active"], "total_all_time": total_domains},
+            "organizations": {
+                "total": organizations["total"],
+                "active": organizations["active"],
+                "total_all_time": total_organizations,
+            },
+            "hunts": {"total": hunts["total"], "active": hunts["active"], "total_all_time": total_hunts},
+            "points": {"total": points, "total_all_time": total_points},
+            "projects": {"total": projects, "total_all_time": total_projects},
+            "activities": {
+                "total": activities,
+                "total_all_time": total_activities,
+                "recent": list(recent_activities),
+            },
+        }
+
+        # Cache the results for 5 minutes
+        cache.set(cache_key, stats, timeout=300)
+
+    context = {
+        "stats": stats,
+        "period": period,
+        "period_options": [
+            {"value": "1", "label": "1 Day"},
+            {"value": "7", "label": "1 Week"},
+            {"value": "30", "label": "1 Month"},
+            {"value": "90", "label": "3 Months"},
+            {"value": "ytd", "label": "Year to Date"},
+            {"value": "365", "label": "1 Year"},
+            {"value": "1825", "label": "5 Years"},
+        ],
+    }
+
+    return render(request, "stats_dashboard.html", context)
+
+
+def sync_github_projects(request):
+    if request.method == "POST":
+        try:
+            call_command("check_owasp_projects")
+            messages.success(request, "Successfully synced OWASP GitHub projects.")
+        except Exception as e:
+            messages.error(request, f"Error syncing OWASP GitHub projects: {str(e)}")
+    return redirect("stats_dashboard")
+
+
+def check_owasp_compliance(request):
+    """View to check OWASP project compliance criteria"""
+    if request.method == "POST":
+        url = request.POST.get("url")
+        if not url:
+            messages.error(request, "URL is required")
+            return redirect("check_owasp_compliance")
+
+        try:
+            # Check GitHub compliance
+            parsed_url = urlparse(url)
+            is_github = parsed_url.netloc == "github.com"
+            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+
+            # Check website compliance
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Check for OWASP mention
+            content = soup.get_text().lower()
+            has_owasp_mention = "owasp" in content
+
+            # Check for project page link
+            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            has_project_link = len(owasp_links) > 0
+
+            # Check for up-to-date info
+            has_dates = bool(soup.find_all(["time", "date"]))
+
+            # Check vendor neutrality
+            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
+            has_paywall_indicators = any(term in content for term in paywall_terms)
+
+            # Compile recommendations
+            recommendations = []
+            if not is_owasp_org:
+                recommendations.append("Project should be hosted under the OWASP GitHub organization")
+            if not has_owasp_mention:
+                recommendations.append("Website should clearly state it is an OWASP project")
+            if not has_project_link:
+                recommendations.append("Website should link to the OWASP project page")
+            if has_paywall_indicators:
+                recommendations.append("Check if the project has features behind a paywall")
+
+            context = {
+                "url": url,
+                "github_compliance": {
+                    "github_hosted": is_github,
+                    "under_owasp_org": is_owasp_org,
+                },
+                "website_compliance": {
+                    "has_owasp_mention": has_owasp_mention,
+                    "has_project_link": has_project_link,
+                    "has_dates": has_dates,
+                },
+                "vendor_neutrality": {
+                    "possible_paywall": has_paywall_indicators,
+                },
+                "recommendations": recommendations,
+                "overall_status": "compliant" if not recommendations else "needs_improvement",
+            }
+
+            return render(request, "owasp_compliance_result.html", context)
+
+        except Exception as e:
+            messages.error(request, f"Error checking compliance: {str(e)}")
+            return redirect("check_owasp_compliance")
+
+    return render(request, "owasp_compliance_check.html")
+
+
+def management_commands(request):
+    # Get list of available management commands
+    available_commands = []
+    for name, app_name in get_commands().items():
+        # Only include commands from the website app and exclude initsuperuser
+        if (
+            app_name == "website"
+            and name != "initsuperuser"
+            and name != "generate_sample_data"
+            and not name.startswith("run_")
+        ):
+            command_class = load_command_class(app_name, name)
+            help_text = getattr(command_class, "help", "").split("\n")[0]
+            command_info = {
+                "name": name,
+                "help_text": help_text,
+            }
+
+            # Get command logs if they exist
+            log = ManagementCommandLog.objects.filter(command_name=name).first()
+            if log:
+                command_info.update(
+                    {
+                        "last_run": log.last_run,
+                        "last_success": log.success,
+                        "run_count": log.run_count,
+                    }
+                )
+
+            available_commands.append(command_info)
+
+    commands = sorted(available_commands, key=lambda x: x["name"])
+    return render(request, "management_commands.html", {"commands": commands})
+
+
+def run_management_command(request):
+    if request.method == "POST":
+        command = request.POST.get("command")
+        logging.info(f"Running command: {command}")
+        print(f"Running command: {command}")
+        try:
+            # Only allow running commands from the website app and exclude initsuperuser
+            app_name = get_commands().get(command)
+            if app_name != "website" or command == "initsuperuser":
+                msg = f"Command {command} is not allowed to run from the web interface"
+                messages.error(request, msg)
+                return redirect("management_commands")
+
+            # Get or create the command log
+            log_entry, created = ManagementCommandLog.objects.get_or_create(
+                command_name=command, defaults={"run_count": 0, "success": False, "last_run": timezone.now()}
+            )
+
+            # Run the command
+            call_command(command)
+
+            # Update the log entry
+            log_entry.success = True
+            log_entry.last_run = timezone.now()
+            log_entry.run_count = log_entry.run_count + 1
+            log_entry.error_message = ""
+            log_entry.save()
+
+            messages.success(
+                request,
+                f"Successfully ran command '{command}'. "
+                f"This command has been run {log_entry.run_count} time{'s' if log_entry.run_count != 1 else ''}.",
+            )
+
+        except Exception as e:
+            sentry_sdk.capture_exception(e)
+
+            # Update log entry with error
+            if "log_entry" in locals():
+                log_entry.success = False
+                log_entry.last_run = timezone.now()
+                log_entry.run_count = log_entry.run_count + 1
+                log_entry.error_message = str(e)
+                log_entry.save()
+
+            messages.error(
+                request, f"Error running command '{command}': {str(e)}. " f"Check the logs for more details."
+            )
+    return redirect("management_commands")
+
+
+def template_list(request):
+    from django.db.models import Sum
+    from django.urls import URLPattern, URLResolver, get_resolver
+
+    def get_templates_from_dir(directory):
+        templates = []
+        for template_name in os.listdir(directory):
+            if template_name.endswith(".html"):
+                template_path = os.path.join(directory, template_name)
+
+                # Get last modified time
+                modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
+
+                # Get view count from IP table
+                view_count = (
+                    IP.objects.filter(
+                        Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
+                    ).aggregate(total_views=Sum("count"))["total_views"]
+                    or 0
+                )
+
+                # Get GitHub URL
+                github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
+
+                # Check if template has a matching URL pattern
+                template_url = None
+                resolver = get_resolver()
+
+                def check_urlpatterns(urlpatterns, template_name):
+                    for pattern in urlpatterns:
+                        if isinstance(pattern, URLResolver):
+                            match = check_urlpatterns(pattern.url_patterns, template_name)
+                            if match:
+                                return match
+                        elif isinstance(pattern, URLPattern):
+                            if hasattr(pattern.callback, "view_class"):
+                                view = pattern.callback.view_class
+                                if hasattr(view, "template_name") and view.template_name == template_name:
+                                    return pattern.pattern
+                            elif hasattr(pattern.callback, "__closure__") and pattern.callback.__closure__:
+                                for cell in pattern.callback.__closure__:
+                                    if isinstance(cell.cell_contents, str) and cell.cell_contents.endswith(
+                                        template_name
+                                    ):
+                                        return pattern.pattern
+                    return None
+
+                url_pattern = check_urlpatterns(resolver.url_patterns, template_name)
+                if url_pattern:
+                    template_url = "/" + str(url_pattern).lstrip("^").rstrip("$")
+                    if template_url.endswith("/"):
+                        template_url = template_url[:-1]
+
+                templates.append(
+                    {
+                        "name": template_name,
+                        "path": template_path,
+                        "url": template_url,
+                        "modified": modified_time,
+                        "views": view_count,
+                        "github_url": github_url,
+                    }
+                )
+        return templates
+
+    template_dirs = []
+    main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
+
+    if os.path.exists(main_template_dir):
+        template_dirs.append({"name": "Main Templates", "templates": get_templates_from_dir(main_template_dir)})
+
+    for subdir in os.listdir(main_template_dir):
+        subdir_path = os.path.join(main_template_dir, subdir)
+        if os.path.isdir(subdir_path) and not subdir.startswith("__"):
+            template_dirs.append(
+                {"name": f"{subdir.title()} Templates", "templates": get_templates_from_dir(subdir_path)}
+            )
+
+    total_templates = sum(len(dir["templates"]) for dir in template_dirs)
+
+    sort = request.GET.get("sort", "name")
+    direction = request.GET.get("dir", "asc")
+
+    def get_sort_key(template):
+        if sort == "name":
+            return template["name"].lower()
+        elif sort == "modified":
+            return template["modified"]
+        elif sort == "view_count":
+            return template["views"]
+        return template["name"].lower()
+
+    for dir in template_dirs:
+        dir["templates"].sort(key=get_sort_key, reverse=(direction == "desc"))
+
+    return render(
+        request,
+        "template_list.html",
+        {
+            "template_dirs": template_dirs,
+            "total_templates": total_templates,
+            "sort": sort,
+            "direction": direction,
+            "base_dir": main_template_dir + "/",  # Add trailing slash to ensure clean path cutting
+        },
+    )
+
+
+def is_admin_url(path):
+    """Check if a URL path is an admin URL"""
+    if not path:  # Handle None or empty paths
+        return False
+    admin_url = settings.ADMIN_URL.strip("/")
+    return path.startswith(f"/{admin_url}/") or admin_url in path
+
+
+def website_stats(request):
+    """View to show view counts for each URL route"""
+    import json
+    from collections import defaultdict
+    from datetime import timedelta
+
+    from django.db.models import Sum
+    from django.urls import get_resolver
+    from django.utils import timezone
+
+    # Get all URL patterns
+    resolver = get_resolver()
+    url_patterns = resolver.url_patterns
+
+    # Dictionary to store view counts
+    view_stats = defaultdict(int)
+
+    # Get admin URL for filtering
+    admin_url = settings.ADMIN_URL.strip("/")
+
+    # Get all IP records and group by path, excluding admin URLs
+    ip_records = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .values("path")
+        .annotate(total_views=Sum("count"))
+        .order_by("-total_views")
+    )
+
+    # Map paths to their view counts
+    for record in ip_records:
+        path = record["path"]
+        if not is_admin_url(path):  # Additional check for admin URLs
+            view_stats[path] = record["total_views"]
+
+    # Get last 30 days of traffic data, excluding admin URLs
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    daily_views = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .filter(created__gte=thirty_days_ago)
+        .values("created__date")
+        .annotate(daily_count=Sum("count"))
+        .order_by("created__date")
+    )
+
+    # Prepare chart data
+    dates = []
+    views = []
+    for day in daily_views:
+        dates.append(day["created__date"].strftime("%Y-%m-%d"))
+        views.append(day["daily_count"])
+
+    # Get unique visitors (unique IPs), excluding admin URLs
+    unique_visitors = IP.objects.exclude(path__startswith=f"/{admin_url}/").values("address").distinct().count()
+
+    total_views = sum(view_stats.values())
+
+    # Calculate traffic status
+    if len(views) >= 2:
+        last_day = views[-1] if views else 0
+        prev_day = views[-2] if len(views) > 1 else 0
+        if last_day < prev_day * 0.5:  # More than 50% drop
+            status = "danger"
+        elif last_day < prev_day * 0.8:  # More than 20% drop
+            status = "warning"
+        else:
+            status = "normal"
+    else:
+        status = "normal"
+
+    # Get top 50 user agents
+    user_agents = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .exclude(agent__isnull=True)
+        .values("agent")
+        .annotate(total_count=Sum("count"), last_request=models.Max("created"))
+        .order_by("-total_count")[:50]
+    )
+
+    # Count unique user agents
+    unique_agents_count = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .exclude(agent__isnull=True)
+        .values("agent")
+        .distinct()
+        .count()
+    )
+
+    # Collect URL pattern info
+    url_info = []
+
+    def process_patterns(patterns, parent_path=""):
+        for pattern in patterns:
+            if hasattr(pattern, "url_patterns"):
+                # This is a URL resolver (includes), process its patterns
+                process_patterns(pattern.url_patterns, parent_path + str(pattern.pattern))
+            else:
+                # This is a URL pattern
+                full_path = parent_path + str(pattern.pattern)
+
+                # Skip admin URLs
+                if is_admin_url(full_path):
+                    continue
+
+                view_name = (
+                    pattern.callback.__name__ if hasattr(pattern.callback, "__name__") else str(pattern.callback)
+                )
+                if hasattr(pattern.callback, "view_class"):
+                    view_name = pattern.callback.view_class.__name__
+
+                # Get view count for this path
+                view_count = 0
+                for path, count in view_stats.items():
+                    if path and path.strip("/") and full_path.strip("/"):
+                        if path.strip("/").endswith(full_path.strip("/")) or full_path.strip("/").endswith(
+                            path.strip("/")
+                        ):
+                            view_count += count
+
+                url_info.append({"path": full_path, "view_name": view_name, "view_count": view_count})
+
+    process_patterns(url_patterns)
+
+    # Sort by view count descending
+    url_info.sort(key=lambda x: x["view_count"], reverse=True)
+
+    # Web traffic stats
+    web_stats = {
+        "dates": json.dumps(dates),
+        "views": json.dumps(views),
+        "total_views": total_views,
+        "unique_visitors": unique_visitors,
+        "date": timezone.now(),
+        "status": status,
+        "total_urls": len(url_info),  # Add total URL count
+    }
+
+    context = {
+        "url_info": url_info,
+        "total_views": total_views,
+        "web_stats": web_stats,
+        "user_agents": user_agents,
+        "unique_agents_count": unique_agents_count,
+    }
+
+    return render(request, "website_stats.html", context)

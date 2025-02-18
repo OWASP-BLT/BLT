@@ -23,9 +23,8 @@ from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from django.template.defaultfilters import slugify
-from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
@@ -118,8 +117,9 @@ class OrganisationType(Enum):
 
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(User, related_name="user_organizations")
+    managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
     name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
@@ -131,7 +131,7 @@ class Organization(models.Model):
     subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
-    integrations = models.ManyToManyField(Integration, related_name="organizations")
+    integrations = models.ManyToManyField(Integration, related_name="organizations", blank=True)
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
@@ -141,8 +141,44 @@ class Organization(models.Model):
         default=OrganisationType.ORGANIZATION.value,
     )
 
+    # Address fields
+    address_line_1 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="The primary address of the organization"
+    )
+    address_line_2 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Additional address details (optional)"
+    )
+    city = models.CharField(
+        max_length=100, blank=True, null=True, help_text="The city where the organization is located"
+    )
+    state = models.CharField(max_length=100, blank=True, null=True, help_text="The state or region of the organization")
+    country = models.CharField(max_length=100, blank=True, null=True, help_text="The country of the organization")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, help_text="ZIP code or postal code")
+
+    # Geographical coordinates
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The latitude coordinate"
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
+    )
+
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Generate initial slug from name
+            self.slug = slugify(self.name)
+
+            # If the slug exists, append a number until we find a unique one
+            original_slug = self.slug
+            counter = 1
+            while Organization.objects.filter(slug=self.slug).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+
+        super().save(*args, **kwargs)
 
 
 class JoinRequest(models.Model):
@@ -169,6 +205,7 @@ class Domain(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __unicode__(self):
         return self.name
@@ -939,8 +976,6 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    # add languages
-    # add tags
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1276,6 +1311,7 @@ class Repo(models.Model):
     repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
+    closed_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)
     license = models.CharField(max_length=100, null=True, blank=True)
     last_commit_date = models.DateTimeField(null=True, blank=True)
@@ -1291,6 +1327,8 @@ class Repo(models.Model):
     logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
     contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    readme_content = models.TextField(null=True, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1399,13 +1437,40 @@ class Challenge(models.Model):
         return self.title
 
 
+class Room(models.Model):
+    ROOM_TYPES = [
+        ("project", "Project"),
+        ("bug", "Bug"),
+        ("org", "Organization"),
+        ("custom", "Custom"),
+    ]
+
+    name = models.CharField(max_length=255)
+    type = models.CharField(max_length=20, choices=ROOM_TYPES)
+    custom_type = models.CharField(max_length=255, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    admin = models.ForeignKey(
+        User,
+        related_name="admin_rooms",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+    users = models.ManyToManyField(User, related_name="rooms", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+
 class GitHubIssue(models.Model):
     ISSUE_TYPE_CHOICES = [
         ("issue", "Issue"),
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.IntegerField(unique=True)
+    issue_id = models.BigIntegerField(unique=True)
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)
@@ -1433,3 +1498,139 @@ class GitHubIssue(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+
+    def get_comments(self):
+        """
+        Fetches comments for this GitHub issue using the GitHub API.
+        Returns a list of comment dictionaries containing:
+        - id: The comment ID
+        - body: The comment text
+        - user: The username of the commenter
+        - created_at: When the comment was created
+        - updated_at: When the comment was last updated
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for comments
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            response.raise_for_status()
+            comments = response.json()
+
+            # Format the comments
+            formatted_comments = []
+            for comment in comments:
+                formatted_comments.append(
+                    {
+                        "id": comment["id"],
+                        "body": comment["body"],
+                        "user": comment["user"]["login"],
+                        "created_at": comment["created_at"],
+                        "updated_at": comment["updated_at"],
+                        "avatar_url": comment["user"]["avatar_url"],
+                        "html_url": comment["html_url"],
+                    }
+                )
+
+            return formatted_comments
+        except (requests.exceptions.RequestException, KeyError) as e:
+            # Log the error but don't raise it to avoid breaking the site
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+            return []
+
+
+class BaconEarning(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tokens_earned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Tokens earned by user
+    timestamp = models.DateTimeField(auto_now_add=True)  # When the record was created
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tokens_earned} Tokens"
+
+
+class GitHubReview(models.Model):
+    """
+    Model to store reviews made by users on pull requests.
+    """
+
+    review_id = models.IntegerField(unique=True)
+    pull_request = models.ForeignKey(
+        GitHubIssue,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    reviewer = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="reviews_made",
+    )
+    body = models.TextField(null=True, blank=True)
+    state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
+    submitted_at = models.DateTimeField()
+    url = models.URLField()
+
+    def __str__(self):
+        return f"Review #{self.review_id} by {self.reviewer.user.username} on PR #{self.pull_request.issue_id}"
+
+
+class Kudos(models.Model):
+    """
+    Model to send kudos to team members.
+    """
+
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
+    timestamp = models.DateTimeField(auto_now_add=True)
+    link = models.URLField(blank=True, null=True)
+    comment = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        verbose_name_plural = "Kudos"
+
+    def __str__(self):
+        return f"Kudos from {self.sender.username} to {self.receiver.username}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"
+
+
+class ManagementCommandLog(models.Model):
+    command_name = models.CharField(max_length=255)
+    last_run = models.DateTimeField(auto_now=True)
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True, null=True)
+    run_count = models.IntegerField(default=0)
+
+    class Meta:
+        get_latest_by = "last_run"
+
+    def __str__(self):
+        return f"{self.command_name} (Last run: {self.last_run})"

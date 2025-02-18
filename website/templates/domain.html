@@ -250,9 +250,25 @@
             <div>
                 <div class="organization-info flex flex-row justify-between">
                     <div class="one">
-                        <a href="{{ domain.url }}"
-                           class="font-bold text-[20px] capitalize"
-                           target="/new">{{ name }}</a>
+                        <div class="flex items-center gap-4">
+                            <a href="{{ domain.url }}"
+                               class="font-bold text-[20px] capitalize"
+                               target="/new">{{ name }}</a>
+                            {% if request.user.is_superuser %}
+                                <div class="flex items-center gap-2">
+                                    <a href="{% url 'admin:website_domain_change' domain.id %}"
+                                       class="text-blue-600 hover:text-blue-800"
+                                       title="Edit Domain">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'admin:website_domain_delete' domain.id %}"
+                                       class="text-red-600 hover:text-red-800"
+                                       title="Delete Domain">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
                         {% if domain.email %}
                             <small class="uppercase flex flex-col text-[#909090]">
                                 <span class="blue">{{ domain.email|obfuscate_mailto }}</span>
@@ -263,23 +279,6 @@
                                 {% endif %}
                             </small>
                         {% endif %}
-                    </div>
-                    <div class="two flex flex-col w-[40%] items-center justify-between">
-                        <form action="{% url 'add_domain_to_organization' %}" method="post">
-                            {% if domain.organization %}
-                                {% csrf_token %}
-                                <input type="hidden" name="domain" value="{{ domain.id }}">
-                                <input type="text" name="organization" placeholder="Organization Name">
-                                <button type="submit"
-                                        class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
-                                    ➕ Add to Organization
-                                </button>
-                            {% endif %}
-                            <button type="submit"
-                                    class="bg-[#E5F2FE] font-['Poppins'] font-bold rounded-2xl p-3 m-2">
-                                ✉️ Subscribe to {{ name }}
-                            </button>
-                        </form>
                     </div>
                 </div>
                 <div class="text-2xl font-bold my-4">
@@ -323,6 +322,9 @@
                     <button class="mr-3">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
                     </button>
+                    <button class="mr-3">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👀 {% trans "Views" %} {{ view_count }}</div>
+                    </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
                     <div id="trademark-container" class="p-4">
@@ -336,62 +338,83 @@
                             </span>
                         </div>
                         <div class="trademark-scroll">
-                            {% for trademark in trademarks %}
-                                <div class="trademark-item">
-                                    <h2>
-                                        <i class="fas fa-search icon"></i>
-                                        {{ trademark.keyword }}
-                                    </h2>
-                                    <div class="trademark-details">
-                                        <div>
-                                            <i class="fas fa-id-card icon"></i>
-                                            <strong>Reg No.:</strong> {{ trademark.registration_number | default:"N/A" }}
+                            {% if trademarks|length > 0 %}
+                                {% for trademark in trademarks %}
+                                    <div class="trademark-item">
+                                        <h2>
+                                            <i class="fas fa-search icon"></i>
+                                            {{ trademark.keyword }}
+                                        </h2>
+                                        <div class="trademark-details">
+                                            <div>
+                                                <i class="fas fa-id-card icon"></i>
+                                                <strong>Reg No.:</strong> {{ trademark.registration_number | default:"N/A" }}
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-hashtag icon"></i>
+                                                <strong>Serial Number:</strong> {{ trademark.serial_number }}
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-calendar-alt icon"></i>
+                                                <strong>Filing Date:</strong> {{ trademark.filing_date | default:"N/A" }}
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-calendar-check icon"></i>
+                                                <strong>Reg Date:</strong> {{ trademark.registration_date | default:"N/A" }}
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-history icon"></i>
+                                                <strong>Status Date:</strong> {{ trademark.status_date | default:"N/A" }}
+                                            </div>
+                                            <div>
+                                                <i class="fas fa-tag icon"></i>
+                                                <strong>Status:</strong>
+                                                <span class="status-badge {% if 'Live' in trademark.status_label %}status-live{% elif 'Dead' in trademark.status_label %}status-dead{% endif %}">
+                                                    {{ trademark.status_label }}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <i class="fas fa-hashtag icon"></i>
-                                            <strong>Serial Number:</strong> {{ trademark.serial_number }}
-                                        </div>
-                                        <div>
-                                            <i class="fas fa-calendar-alt icon"></i>
-                                            <strong>Filing Date:</strong> {{ trademark.filing_date | default:"N/A" }}
-                                        </div>
-                                        <div>
-                                            <i class="fas fa-calendar-check icon"></i>
-                                            <strong>Reg Date:</strong> {{ trademark.registration_date | default:"N/A" }}
-                                        </div>
-                                        <div>
-                                            <i class="fas fa-history icon"></i>
-                                            <strong>Status Date:</strong> {{ trademark.status_date | default:"N/A" }}
-                                        </div>
-                                        <div>
-                                            <i class="fas fa-tag icon"></i>
-                                            <strong>Status:</strong>
-                                            <span class="status-badge {% if 'Live' in trademark.status_label %}status-live{% elif 'Dead' in trademark.status_label %}status-dead{% endif %}">
-                                                {{ trademark.status_label }}
-                                            </span>
-                                        </div>
+                                        <p>
+                                            <i class="fas fa-info-circle icon"></i>
+                                            <strong>Description:</strong> {{ trademark.description }}
+                                        </p>
+                                        {% if trademark.owners %}
+                                            <div class="owners-list">
+                                                <strong><i class="fas fa-users icon"></i> Owners:</strong>
+                                                <ul>
+                                                    {% for owner in trademark.owners.all %}
+                                                        <li>
+                                                            {% if owner.name %}{{ owner.name }}{% endif %}
+                                                            {% if owner.city %}, {{ owner.city }}{% endif %}
+                                                            {% if owner.state %}, {{ owner.state }}{% endif %}
+                                                            {% if owner.country %}, {{ owner.country }}{% endif %}
+                                                        </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            </div>
+                                        {% endif %}
                                     </div>
-                                    <p>
-                                        <i class="fas fa-info-circle icon"></i>
-                                        <strong>Description:</strong> {{ trademark.description }}
-                                    </p>
-                                    {% if trademark.owners %}
-                                        <div class="owners-list">
-                                            <strong><i class="fas fa-users icon"></i> Owners:</strong>
-                                            <ul>
-                                                {% for owner in trademark.owners.all %}
-                                                    <li>
-                                                        {% if owner.name %}{{ owner.name }}{% endif %}
-                                                        {% if owner.city %}, {{ owner.city }}{% endif %}
-                                                        {% if owner.state %}, {{ owner.state }}{% endif %}
-                                                        {% if owner.country %}, {{ owner.country }}{% endif %}
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
-                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <div class="p-6 text-center">
+                                    <p class="text-gray-600 mb-4">No trademark results found for {{ name }}</p>
+                                    <a href="{% url 'trademark_search' %}"
+                                       class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-opacity-90 transition-colors">
+                                        <i class="fas fa-search mr-2"></i>
+                                        Search Trademarks
+                                    </a>
                                 </div>
-                            {% endfor %}
+                            {% endif %}
+                            {% if trademarks|length > 0 %}
+                                <div class="mt-4 p-4 bg-green-50 rounded-lg">
+                                    <p class="text-green-700">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        Found {{ trademarks|length }} trademark
+                                        {% if trademarks|length != 1 %}s{% endif %}
+                                        for {{ name }}
+                                    </p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

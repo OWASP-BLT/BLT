@@ -332,7 +332,8 @@
                                     {% endif %}
                                     <div class="flex-1">
                                         <h3 class="text-3xl font-bold text-indigo-800">
-                                            <a href="{{ organization.absolute_url }}" class="hover:text-blue-600">{{ organization.name }}</a>
+                                            <a href="/organization/{{ organization.slug }}"
+                                               class="hover:text-blue-600">{{ organization.name }}</a>
                                         </h3>
                                         {% if organization.description %}
                                             <p class="text-gray-700 mt-2 text-md">{{ organization.description|truncatechars:150 }}</p>

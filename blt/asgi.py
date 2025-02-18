@@ -1,7 +1,6 @@
 # asgi.py
 
 import os
-import tracemalloc
 
 import django
 
@@ -13,9 +12,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from django.urls import path
 
-tracemalloc.start()
-
-from website import consumers  # You will define a consumer for handling WebSockets
+from website.consumers import ChatConsumer, SimilarityConsumer
 
 application = ProtocolTypeRouter(
     {
@@ -23,7 +20,11 @@ application = ProtocolTypeRouter(
         "websocket": AuthMiddlewareStack(
             URLRouter(
                 [
-                    path("ws/similarity/", consumers.SimilarityConsumer.as_asgi()),  # WebSocket URL
+                    path("ws/similarity/", SimilarityConsumer.as_asgi()),
+                    path(
+                        "ws/discussion-rooms/chat/<int:room_id>/",
+                        ChatConsumer.as_asgi(),
+                    ),
                 ]
             )
         ),

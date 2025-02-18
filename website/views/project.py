@@ -11,11 +11,13 @@ from urllib.parse import urlparse
 
 import django_filters
 import requests
+import sentry_sdk
 from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
@@ -25,7 +27,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView
 from django_filters.views import FilterView
@@ -40,7 +42,7 @@ from website.utils import admin_required
 
 
 def blt_tomato(request):
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).parent.parent
     json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
 
     try:
@@ -49,14 +51,22 @@ def blt_tomato(request):
     except Exception:
         data = []
 
+    processed_projects = []
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
 
         funding_link = funding_links[0] if funding_links else "#"
-        project["funding_hyperlinks"] = funding_link
+        processed_projects.append(
+            {
+                "project_name": project.get("project_name"),
+                "repo_url": project.get("repo_url"),
+                "funding_hyperlinks": funding_link,
+                "funding_details": project.get("funding_details"),
+            }
+        )
 
-    return render(request, "blt_tomato.html", {"projects": data})
+    return render(request, "blt_tomato.html", {"projects": processed_projects})
 
 
 @user_passes_test(admin_required)
@@ -252,7 +262,13 @@ class ProjectRepoFilter(django_filters.FilterSet):
         fields = ["search", "repo_type", "sort", "order"]
 
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
+        return queryset.filter(
+            Q(project__name__icontains=value)
+            | Q(name__icontains=value)
+            | Q(primary_language__icontains=value)
+            | Q(ai_summary__icontains=value)
+            | Q(readme_content__icontains=value)
+        )
 
     def filter_repo_type(self, queryset, name, value):
         if value == "main":
@@ -1283,6 +1299,7 @@ class RepoDetailView(DetailView):
                 )
 
             except requests.RequestException as e:
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -1291,6 +1308,8 @@ class RepoDetailView(DetailView):
                     status=503,
                 )
             except Exception as e:
+                # send to sentry
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {"status": "error", "message": "An unexpected error occurred."},
                     status=500,

@@ -31,7 +31,7 @@
                             <h1 class="text-3xl font-bold text-gray-900">{{ repo.name }}</h1>
                             <div class="flex items-center gap-3 mt-2">
                                 <!-- the  -->
-                                <a href="{% url 'projects_detail' repo.project.slug %}"
+                                <a href="{% url 'project_detail' repo.project.slug %}"
                                    class="text-red-600 hover:text-red-700 flex items-center gap-1">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
@@ -91,6 +91,27 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+            <div class="mt-6 p-4 rounded-lg">
+                <div class="flex items-center mb-4">
+                    <!-- AI Summary Icon -->
+                    <svg class="w-6 h-6 text-red-500 mr-2"
+                         fill="currentColor"
+                         viewBox="0 0 20 20">
+                        <path d="M10 2a6 6 0 00-6 6c0 2.42 1.14 4.08 2.29 5.12.38.33.71.6.95.93.22.29.35.61.37 1.01.02.41.34.74.75.74h4.68c.41 0 .73-.33.75-.74.02-.4.15-.72.37-1.01.24-.33.57-.6.95-.93C14.86 12.08 16 10.42 16 8a6 6 0 00-6-6zM7 17a1 1 0 000 2h6a1 1 0 000-2H7z" />
+                    </svg>
+                    <h3 class="text-xl font-bold text-gray-900">AI Summary</h3>
+                </div>
+                <div class="bg-white rounded-lg overflow-x-auto">
+                    <article class="prose prose-red max-w-none text-black">
+                        <!-- Summary -->
+                        {% if repo.ai_summary %}
+                            {{ repo.ai_summary }}
+                        {% else %}
+                            <p class="text-gray-600 italic">AI summary unavailable for this repo.</p>
+                        {% endif %}
+                    </article>
                 </div>
             </div>
             <!-- Repository Type & Metadata -->

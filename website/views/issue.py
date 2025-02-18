@@ -10,6 +10,7 @@ import requests
 import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
+from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -34,11 +35,13 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
+from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from user_agents import parse
@@ -52,6 +55,7 @@ from website.models import (
     Bid,
     ContentType,
     Domain,
+    GitHubIssue,
     Hunt,
     Issue,
     IssueScreenshot,
@@ -152,7 +156,7 @@ def vote_count(request, issue_pk):
 def create_github_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
     screenshot_all = IssueScreenshot.objects.filter(issue=issue)
-    if not os.environ.get("GITHUB_ACCESS_TOKEN"):
+    if not os.environ.get("GITHUB_TOKEN"):
         return JsonResponse({"status": "Failed", "status_reason": "GitHub Access Token is missing"})
     if issue.github_url:
         return JsonResponse(
@@ -184,7 +188,7 @@ def create_github_issue(request, id):
             response = requests.post(
                 url,
                 data=json.dumps(issue_data),
-                headers={"Authorization": f"token {os.environ.get('GITHUB_ACCESS_TOKEN')}"},
+                headers={"Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"},
             )
             if response.status_code == 201:
                 response_data = response.json()
@@ -564,10 +568,6 @@ def submit_pr(request):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        # print(
-        #     "processing form_valid IssueBaseCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -591,56 +591,19 @@ class IssueBaseCreate(object):
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
-        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
+        Points.objects.create(user=self.request.user, issue=obj, score=score)
+
+        messages.success(self.request, "Bug added successfully!")
+        return HttpResponseRedirect(obj.get_absolute_url())
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        # print("processing process_issue for ip address: ", get_client_ip(self.request))
-        p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
+        Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
-
-        # Twitter posting code removed as we no longer use Twitter integration
-        # try:
-        #     auth = tweepy.Client(
-        #         settings.BEARER_TOKEN,
-        #         settings.APP_KEY,
-        #         settings.APP_KEY_SECRET,
-        #         settings.ACCESS_TOKEN,
-        #         settings.ACCESS_TOKEN_SECRET,
-        #     )
-
-        #     blt_url = "https://%s/issue/%d" % (
-        #         settings.DOMAIN_NAME,
-        #         obj.id,
-        #     )
-        #     domain_name = domain.get_name
-        #     twitter_account = (
-        #         "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
-        #     )
-
-        #     issue_title = obj.description + " " if not obj.is_hidden else ""
-
-        #     message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
-        #         twitter_account,
-        #         issue_title,
-        #         domain_name,
-        #         user.username,
-        #         settings.PROJECT_NAME,
-        #         blt_url,
-        #     )
-
-        #     auth.create_tweet(text=message)
-
-        # except (
-        #     TypeError,
-        #     tweepy.errors.HTTPException,
-        #     tweepy.errors.TweepyException,
-        # ) as e:
-        #     print(e)
 
         if created:
             try:
                 email_to = get_email_from_domain(domain)
-            except:
+            except Exception:
                 email_to = "support@" + domain.name
 
             domain.email = email_to
@@ -658,16 +621,16 @@ class IssueBaseCreate(object):
                 [email_to],
                 html_message=msg_html,
             )
-
         else:
             email_to = domain.email
             try:
                 name = email_to.split("@")[0]
-            except:
+            except Exception:
                 email_to = "support@" + domain.name
                 name = "support"
                 domain.email = email_to
                 domain.save()
+
             if not tokenauth:
                 msg_plain = render_to_string(
                     "email/bug_added.txt",
@@ -730,7 +693,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        # print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -779,7 +741,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        # print("processing post for ip address: ", get_client_ip(request))
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
@@ -844,10 +805,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # print(
-        #     "processing form_valid in IssueCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -1008,7 +965,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
             redirect_url = "/report"
 
-            if domain.github and os.environ.get("GITHUB_ACCESS_TOKEN"):
+            if domain.github and os.environ.get("GITHUB_TOKEN"):
                 import json
 
                 import requests
@@ -1041,7 +998,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 r = requests.post(
                     url,
                     json.dumps(issue),
-                    headers={"Authorization": "token " + os.environ.get("GITHUB_ACCESS_TOKEN")},
+                    headers={"Authorization": "token " + os.environ.get("GITHUB_TOKEN")},
                 )
                 response = r.json()
                 try:
@@ -1083,9 +1040,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST = {}
             self.request.GET = {}
 
-        # print(
-        #     "processing get_context_data for ip address: ", get_client_ip(self.request)
-        # )
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
@@ -1114,6 +1068,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context["top_domains"] = (
             Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
         )
+
+        # Add top users data
+        top_users = (
+            User.objects.annotate(
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+            )
+            .filter(issue_count__gt=0)
+            .order_by("-issue_count")[:10]
+        )
+        context["top_users"] = top_users
 
         return context
 
@@ -1153,6 +1117,17 @@ class AllIssuesView(ListView):
         context["activity_screenshots"] = {}
         for activity in self.activities:
             context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
+
+        # Add top users data
+        top_users = (
+            User.objects.annotate(
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+            )
+            .filter(issue_count__gt=0)
+            .order_by("-issue_count")[:10]
+        )
+        context["top_users"] = top_users
+
         return context
 
 
@@ -1225,8 +1200,6 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        # print("getting issue id: ", self.kwargs["slug"])
-        # print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -1240,9 +1213,6 @@ class IssueView(DetailView):
         ipdetails.path = request.path
         ipdetails.agent = request.META["HTTP_USER_AGENT"]
         ipdetails.referer = request.META.get("HTTP_REFERER", None)
-
-        # print("IP Address: ", ipdetails.address)
-        # print("Issue Number: ", ipdetails.issuenumber)
 
         try:
             if self.request.user.is_authenticated:
@@ -1260,27 +1230,22 @@ class IssueView(DetailView):
                 except Exception as e:
                     print(e)
                     pass  # pass this temporarly to avoid error
-                    # messages.error(self.request, "That issue was not found 2." + str(e))
-                    # ipdetails.save()
-                    # self.object.views = (self.object.views or 0) + 1
-                    # self.object.save()
         except Exception as e:
             pass  # pass this temporarly to avoid error
-            # print(e)
-            # messages.error(self.request, "That issue was not found 1." + str(e))
-            # return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        # print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
+
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
             context["browser_family"] = user_agent.browser.family
             context["browser_version"] = user_agent.browser.version_string
             context["os_family"] = user_agent.os.family
             context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
+        context["total_score"] = list(
             Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
         )[0]
 
@@ -1583,3 +1548,218 @@ def flag_issue(request, issue_pk):
 
 def select_bid(request):
     return render(request, "bid_selection.html")
+
+
+@method_decorator(login_required, name="dispatch")
+class GithubIssueView(TemplateView):
+    template_name = "github_issue.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if the user has a GitHub social token
+        has_github_token = SocialToken.objects.filter(account__user=request.user, account__provider="github").exists()
+
+        # Redirect to social connections if no token is found
+        if not has_github_token:
+            return redirect("/accounts/social/connections/")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Retrieve data from form
+        title = request.POST.get("issue_title")
+        description = request.POST.get("description")
+
+        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
+        labels = request.POST.get("labels")
+        labels_list = [label.strip() for label in labels.split(",")] if labels else []
+        try:
+            access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
+        except SocialToken.DoesNotExist:
+            print("Access token not found")
+            return redirect("github_login")
+
+        token = access_token.token
+        # Create GitHub issue
+        issue = self.create_github_issue(repository, title, description, token, labels_list)
+
+        if "id" in issue:
+            success_message = f"Issue successfully created: #{issue['number']} - {issue['title']}"
+            return render(request, "github_issue.html", {"message": success_message})
+        else:
+            return render(request, "github_issue.html", {"error": issue.get("message"), "form_data": request.POST})
+
+    def create_github_issue(self, repo, title, description, access_token, labels_list):
+        url = f"https://api.github.com/repos/{repo}/issues"
+        headers = {"Authorization": f"token {access_token}", "Accept": "application/vnd.github.v3+json"}
+        data = {"title": title, "body": description, "labels": labels_list}
+        response = requests.post(url, json=data, headers=headers)
+        return response.json()
+
+
+@login_required(login_url="/accounts/login")
+def get_github_issue(request):
+    if request.method == "POST":
+        description = request.POST.get("description")
+        repository_url = request.POST.get("repository_url")
+
+        if not description:
+            return JsonResponse({"error": "Description is required"}, status=400)
+
+        # Call the generate_github_issue function
+        issue_details = generate_github_issue(description)
+
+        if "error" in issue_details:
+            return JsonResponse({"error": "There's a problem with AI"}, status=500)
+
+        # Render the github_issue.html page with the generated issue details
+        return render(
+            request,
+            "github_issue.html",
+            {
+                "issue_title": issue_details.get("title", ""),
+                "description": issue_details.get("description", ""),
+                "labels": ", ".join(issue_details.get("labels", [])),
+                "repository_url": repository_url,
+            },
+        )
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+def generate_github_issue(description):
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+
+        # Call the OpenAI API with the gpt-4o-mini model
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are a helpful assistant that analyzes bug reports. 
+                    Always respond with a valid JSON object in this exact format:
+                    {
+                        "title": "Brief bug title",
+                        "description": "Detailed bug description",
+                        "labels": ["bug", "other-relevant-labels"]
+                    }""",
+                },
+                {"role": "user", "content": f"Analyze this bug report and respond with a JSON object: {description}"},
+            ],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+
+        # Extract and parse the response
+        if response.choices and response.choices[0].message:
+            issue_details_str = response.choices[0].message.content
+            issue_details = json.loads(issue_details_str)  # Parse the JSON response
+
+            # Validate the response has all required fields
+            if not all(k in issue_details for k in ["title", "description", "labels"]):
+                return {"error": "Invalid response format from OpenAI"}
+
+            return {
+                "title": issue_details["title"],
+                "description": issue_details["description"],
+                "labels": issue_details["labels"],
+            }
+
+        return {"error": "No valid response from OpenAI"}
+
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
+    except Exception as e:
+        return {"error": "There's a problem with OpenAI", "details": str(e)}
+
+
+class ContributeView(TemplateView):
+    template_name = "contribute.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        extra_context = contribute(self.request)
+        if not isinstance(extra_context, dict):
+            extra_context = {}
+        context.update(extra_context)
+        return context
+
+
+def contribute(request):
+    url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+    params = {"labels": "good first issue", "state": "open", "per_page": 10}
+    r = requests.get(url, params=params)
+    good_first_issues = []
+    if r.status_code == 200:
+        issues = r.json()
+        for issue in issues:
+            try:
+                created_at = datetime.strptime(issue.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
+            except Exception:
+                created_at = None
+            good_first_issues.append(
+                {
+                    "id": issue.get("id"),
+                    "title": issue.get("title"),
+                    "url": issue.get("html_url"),
+                    "repository": issue.get("repository_url"),
+                    "created_at": created_at,
+                    "labels": [label.get("name") for label in issue.get("labels", [])],
+                }
+            )
+    else:
+        good_first_issues = []
+    return {"good_first_issues": good_first_issues}
+
+
+class GitHubIssuesView(ListView):
+    model = GitHubIssue
+    template_name = "github_issues.html"
+    context_object_name = "issues"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = GitHubIssue.objects.all().order_by("-created_at")
+
+        # Filter by type (issue/pr)
+        issue_type = self.request.GET.get("type")
+        if issue_type and issue_type != "all":
+            queryset = queryset.filter(type=issue_type)
+
+        # Filter by state (open/closed)
+        state = self.request.GET.get("state")
+        if state and state != "all":
+            queryset = queryset.filter(state=state)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add counts for filtering
+        context["total_count"] = GitHubIssue.objects.count()
+        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
+        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
+        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
+        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
+
+        # Add current filter states
+        context["current_type"] = self.request.GET.get("type", "all")
+        context["current_state"] = self.request.GET.get("state", "all")
+
+        return context
+
+
+class GitHubIssueDetailView(DetailView):
+    model = GitHubIssue
+    template_name = "github_issue_detail.html"
+    context_object_name = "issue"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        issue = self.get_object()
+
+        # Add any additional context needed for the detail view
+        context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
+
+        return context

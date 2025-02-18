@@ -1,25 +1,29 @@
 import ast
 import difflib
+import hashlib
 import os
 import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
+import markdown
 import numpy as np
+from openai import OpenAI
 
-# import openai
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 import requests
 from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from openai import OpenAI
 
 from .models import PRAnalysisReport
 
-# openai.api_key = os.getenv("OPENAI_API_KEY")
-GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+GITHUB_API_TOKEN = os.getenv("GITHUB_TOKEN")
+
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -219,10 +223,10 @@ def analyze_pr_content(pr_data, roadmap_data):
     ### Roadmap Data:
     {roadmap_data}
     """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 def save_analysis_report(pr_link, issue_link, analysis):
@@ -271,7 +275,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
             #     }
             # }
             # Extract the embedding from the response
-            embedding = response["data"][0]["embedding"]
+            embedding = response.data[0].embedding
             return np.array(embedding)
 
         except openai.RateLimitError as e:
@@ -465,3 +469,38 @@ def git_url_to_zip_url(git_url, branch="master"):
         return zip_url
     else:
         raise ValueError("Invalid .git URL provided")
+
+
+def markdown_to_text(markdown_content):
+    """Convert Markdown to plain text."""
+    html_content = markdown.markdown(markdown_content)
+    text_content = BeautifulSoup(html_content, "html.parser").get_text()
+    return text_content
+
+
+def ai_summary(text):
+    """Generate an AI-driven summary using OpenAI's GPT"""
+    try:
+        prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following readme content: {text}"
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=150,
+            temperature=0.5,
+        )
+
+        summary = response.choices[0].message.content.strip()
+        return summary
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"
+
+
+def gravatar_url(email, size=80):
+    """Generate Gravatar URL for a given email."""
+    email = email.lower().encode("utf-8")
+    gravatar_hash = hashlib.md5(email).hexdigest()
+    return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"

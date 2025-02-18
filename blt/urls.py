@@ -1,3 +1,8 @@
+# Move social account imports to top
+from allauth.socialaccount.providers.facebook import views as facebook_views
+from allauth.socialaccount.providers.github import views as github_views
+from allauth.socialaccount.providers.google import views as google_views
+from captcha.views import captcha_refresh
 from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
 from django.conf import settings
@@ -35,6 +40,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
@@ -58,7 +64,7 @@ from website.views.company import (
     delete_prize,
     edit_prize,
 )
-from website.views.core import (  # chatbot_conversation,
+from website.views.core import (
     FacebookConnect,
     FacebookLogin,
     GithubConnect,
@@ -69,25 +75,37 @@ from website.views.core import (  # chatbot_conversation,
     UploadCreate,
     add_suggestions,
     badge_list,
+    check_owasp_compliance,
     check_status,
     donate_view,
     facebook_callback,
+    features_view,
     find_key,
     github_callback,
     google_callback,
     home,
+    management_commands,
     robots_txt,
+    run_management_command,
     search,
     set_vote_status,
     sitemap,
     sponsor_view,
+    stats_dashboard,
     submit_roadmap_pr,
+    sync_github_projects,
+    template_list,
+    test_sentry,
     view_pr_analysis,
     view_suggestions,
     vote_suggestions,
+    website_stats,
 )
 from website.views.issue import (
     AllIssuesView,
+    ContributeView,
+    GitHubIssuesView,
+    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -103,6 +121,7 @@ from website.views.issue import (
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
+    get_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -129,10 +148,14 @@ from website.views.organization import (
     Joinorganization,
     ListHunts,
     OngoingHunts,
+    OrganizationDetailView,
+    OrganizationListView,
     OrganizationSettings,
     PreviousHunts,
     ReportedIpListView,
     ReportIpView,
+    RoomCreateView,
+    RoomsListView,
     ScoreboardView,
     TimeLogListAPIView,
     TimeLogListView,
@@ -147,11 +170,13 @@ from website.views.organization import (
     approve_activity,
     checkIN,
     checkIN_detail,
+    delete_room,
     delete_time_entry,
     dislike_activity,
     feed,
     get_scoreboard,
     hunt_results,
+    join_room,
     like_activity,
     organization_dashboard,
     organization_dashboard_domain_detail,
@@ -180,6 +205,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.repo import RepoListView
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamChallenges,
@@ -188,6 +214,7 @@ from website.views.teams import (
     add_member,
     create_team,
     delete_team,
+    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -221,23 +248,9 @@ from website.views.user import (
     users_view,
 )
 
-favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
-
-router = routers.DefaultRouter()
-router.register(r"issues", IssueViewSet, basename="issues")
-router.register(r"userissues", UserIssueViewSet, basename="userissues")
-router.register(r"profile", UserProfileViewSet, basename="profile")
-router.register(r"domain", DomainViewSet, basename="domain")
-router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
-router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
-
-from allauth.socialaccount.providers.facebook import views as facebook_views
-from allauth.socialaccount.providers.github import views as github_views
-from allauth.socialaccount.providers.google import views as google_views
-from django.contrib import admin
-from django.urls import include, path
-
 admin.autodiscover()
+
+# Use the drf_yasg schema view
 schema_view = get_schema_view(
     openapi.Info(
         title="API",
@@ -251,6 +264,16 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
+
+router = routers.DefaultRouter()
+router.register(r"issues", IssueViewSet, basename="issues")
+router.register(r"userissues", UserIssueViewSet, basename="userissues")
+router.register(r"profile", UserProfileViewSet, basename="profile")
+router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
+
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
@@ -263,6 +286,7 @@ urlpatterns = [
     ),
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
+    path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
@@ -275,15 +299,20 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
+    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
-    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_oauth_callback"),
+    path(
+        "oauth/slack/callback/",
+        SlackCallbackView.as_view(),
+        name="slack_oauth_callback",
+    ),
     path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
@@ -489,8 +518,10 @@ urlpatterns = [
         InviteFriendApiViewset.as_view(),
         name="api_invite_friend",
     ),
-    re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
+    path("scoreboard/", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    # link to index.html
+    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -560,7 +591,10 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
-    re_path(r"status/", check_status, name="check_status"),
+    re_path(r"^status/$", check_status, name="check_status"),
+    re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
+    re_path(r"^status/commands/$", management_commands, name="management_commands"),
+    re_path(r"^website_stats/$", website_stats, name="website_stats"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
@@ -637,7 +671,7 @@ urlpatterns = [
     ),
     re_path(
         r"^contribute/$",
-        TemplateView.as_view(template_name="contribute.html"),
+        ContributeView.as_view(),
         name="contribution_guidelines",
     ),
     path("select_contribution/", select_contribution, name="select_contribution"),
@@ -752,9 +786,11 @@ urlpatterns = [
         delete_manager,
         name="delete_manager",
     ),
+    path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
-    path("organizations/", DomainListView.as_view(), name="domain_lists"),
+    path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path(
         "generate_bid_image/<int:bid_amount>/",
@@ -826,7 +862,7 @@ urlpatterns = [
     path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
     path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
     # gamification related urls
-    path("teams/overview", TeamOverview.as_view(), name="team_overview"),
+    path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
     path("teams/search-users/", search_users, name="search_users"),
     path("teams/create-team/", create_team, name="create_team"),
     path("teams/join-requests/", join_requests, name="join_requests"),
@@ -834,8 +870,9 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
+    path("teams/give-kudos/", give_kudos, name="give_kudos"),
     path(
-        "similarity-scan",
+        "similarity-scan/",
         TemplateView.as_view(template_name="similarity.html"),
         name="similarity_scan",
     ),
@@ -843,9 +880,37 @@ urlpatterns = [
     path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
     path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
     path("challenges/", UserChallengeListView.as_view(), name="user_challenges"),
-    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="projects_detail"),
+    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
     path("slack/events", slack_events, name="slack_events"),
     path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
+    path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
+    path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
+    path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
+    path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path(
+        "batch-send-bacon-tokens/",
+        batch_send_bacon_tokens_view,
+        name="batch_send_bacon_tokens",
+    ),
+    path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
+    path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("stats/run-command/", run_management_command, name="run_management_command"),
+    path("test-sentry/", test_sentry, name="test_sentry"),
+    path("template_list/", template_list, name="template_list"),
+    path(
+        "github-issue-prompt/",
+        TemplateView.as_view(template_name="github_issue_prompt.html"),
+        name="github_issue_prompt",
+    ),
+    path("owasp-compliance/", check_owasp_compliance, name="check_owasp_compliance"),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path("get-github-issue/", get_github_issue, name="get_github_issue"),
+    # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
+    path("repo_list/", RepoListView.as_view(), name="repo_list"),
+    path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    # GitHub Issues
+    path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
 ]
 
 if settings.DEBUG:

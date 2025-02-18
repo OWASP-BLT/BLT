@@ -1,12 +1,12 @@
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.utils.dateparse import parse_datetime
 
+from website.management.base import LoggedBaseCommand
 from website.models import Project
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Update projects with their contributors and latest release from GitHub"
 
     def add_arguments(self, parser):
@@ -19,9 +19,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         project_id = kwargs.get("project_id")
         if project_id:
-            projects = Project.objects.filter(id=project_id).prefetch_related("contributors")
+            projects = Project.objects.filter(id=project_id).prefetch_related("contributor")
         else:
-            projects = Project.objects.prefetch_related("contributors").all()
+            projects = Project.objects.prefetch_related("contributor").all()
 
         headers = {
             "Authorization": f"token {settings.GITHUB_TOKEN}",
