@@ -30,17 +30,21 @@
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900">{{ repo.name }}</h1>
                             <div class="flex items-center gap-3 mt-2">
-                                <!-- the  -->
-                                <a href="{% url 'project_detail' repo.project.slug %}"
-                                   class="text-red-600 hover:text-red-700 flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-                                    </svg>
-                                    Back to {{ repo.project.name }}
-                                </a>
-                                {% if repo.project.organization %}
-                                    <span class="text-gray-400">|</span>
-                                    <div class="text-gray-600 hover:text-gray-800">organization : {{ repo.project.organization.name }}</div>
+                                {% if repo.project %}
+                                    <a href="{% url 'project_detail' repo.project.slug %}"
+                                       class="inline-flex items-center px-3 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                        Part of {{ repo.project.name }}
+                                    </a>
+                                    {% if repo.project.organization %}
+                                        <span class="text-gray-400">•</span>
+                                        <a href="{% url 'organization_detail' repo.project.organization.slug %}"
+                                           class="text-[#e74c3c] hover:text-[#c0392b]">
+                                            {{ repo.project.organization.name }}
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>

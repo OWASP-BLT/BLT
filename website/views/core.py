@@ -500,7 +500,7 @@ def search(request, template="search.html"):
     stype = request.GET.get("type", "all")
     context = None
     if query is None:
-        return render(request, template)
+        return render(request, template, {"request": request})
     query = query.strip()
 
     if stype == "all":
@@ -516,6 +516,7 @@ def search(request, template="search.html"):
         projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "organizations": organizations,
@@ -535,6 +536,7 @@ def search(request, template="search.html"):
 
     elif stype == "issues":
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
@@ -543,6 +545,7 @@ def search(request, template="search.html"):
         }
     elif stype == "domains":
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
@@ -556,6 +559,7 @@ def search(request, template="search.html"):
         for userprofile in users:
             userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "users": users,

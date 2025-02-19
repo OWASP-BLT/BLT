@@ -112,10 +112,12 @@ class RepoDetailView(DetailView):
                             }
                         )
                     except Exception as e:
+                        # Convert the error to a string and return a proper JSON response
+                        error_message = str(e)
                         return JsonResponse(
                             {
                                 "status": "error",
-                                "message": str(e),
+                                "message": f"Failed to generate AI summary: {error_message}",
                             },
                             status=500,
                         )
@@ -128,10 +130,12 @@ class RepoDetailView(DetailView):
                         status=400,
                     )
             except Exception as e:
+                # Convert the error to a string and return a proper JSON response
+                error_message = str(e)
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": str(e),
+                        "message": f"An unexpected error occurred: {error_message}",
                     },
                     status=500,
                 )
