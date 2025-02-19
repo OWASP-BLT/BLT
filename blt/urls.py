@@ -104,6 +104,7 @@ from website.views.core import (
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
+    GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
     IssueCreate,
@@ -911,6 +912,7 @@ urlpatterns = [
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
     # GitHub Issues
+    path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
 ]
 
