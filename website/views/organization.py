@@ -1808,7 +1808,7 @@ def join_room(request, room_id):
         request.session.create()
     # Get messages ordered by timestamp
     room_messages = room.messages.all().order_by("timestamp")
-    return render(request, "room.html", {"room": room, "room_messages": room_messages})
+    return render(request, "join_room.html", {"room": room, "room_messages": room_messages})
 
 
 @login_required(login_url="/accounts/login")

@@ -1578,7 +1578,7 @@ def flag_issue(request, issue_pk):
     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
     context["object"] = issue
     context["flags"] = total_flag_votes
-    return render(request, "_flags.html", context)
+    return render(request, "includes/_flags.html", context)
 
 
 def select_bid(request):

@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import subprocess
 import tracemalloc
 import urllib
@@ -12,11 +13,13 @@ import redis
 import requests
 import requests.exceptions
 import sentry_sdk
+from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
+from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
@@ -39,7 +42,6 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 from django.views.generic import TemplateView, View
 
-from blt import settings
 from website.models import (
     IP,
     Activity,
@@ -116,7 +118,7 @@ DAILY_REQUEST_LIMIT = 10
 vector_store = None
 
 
-def check_status(request):
+def status_page(request):
     """
     Status check function with configurable components.
     Enable/disable specific checks using the CONFIG constants.
@@ -142,14 +144,16 @@ def check_status(request):
             "github": None if not CHECK_GITHUB else False,
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
-            "redis_stats": {
-                "status": "Not configured",
-                "version": None,
-                "connected_clients": None,
-                "used_memory_human": None,
-            }
-            if not CHECK_REDIS
-            else {},
+            "redis_stats": (
+                {
+                    "status": "Not configured",
+                    "version": None,
+                    "connected_clients": None,
+                    "used_memory_human": None,
+                }
+                if not CHECK_REDIS
+                else {}
+            ),
             "slack_bot": {},
             "management_commands": [],
             "available_commands": [],
@@ -504,12 +508,10 @@ def search(request, template="search.html"):
         organizations = Organization.objects.filter(name__icontains=query)
         issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )[0:20]
+        )
         domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
         users = (
-            UserProfile.objects.filter(Q(user__username__icontains=query))
-            .annotate(total_score=Sum("user__points__score"))
-            .order_by("-total_score")[0:20]
+            User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-total_points")[0:20]
         )
         projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
@@ -1294,37 +1296,50 @@ def sync_github_projects(request):
 
 
 def check_owasp_compliance(request):
-    """View to check OWASP project compliance criteria"""
+    """
+    View to check OWASP project compliance with guidelines.
+    Combines form and results in a single template.
+    """
     if request.method == "POST":
-        url = request.POST.get("url")
+        url = request.POST.get("url", "").strip()
         if not url:
-            messages.error(request, "URL is required")
+            messages.error(request, "Please provide a valid URL")
             return redirect("check_owasp_compliance")
 
         try:
-            # Check GitHub compliance
-            parsed_url = urlparse(url)
-            is_github = parsed_url.netloc == "github.com"
-            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+            # Parse URL to determine if it's a GitHub repository
+            is_github = "github.com" in url.lower()
+            is_owasp_org = "github.com/owasp" in url.lower()
 
-            # Check website compliance
-            response = requests.get(url, timeout=10)
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            # Check for OWASP mention
+            # Fetch and analyze website content
+            response = requests.get(url, timeout=10, verify=False)
+            soup = BeautifulSoup(response.text.lower(), "html.parser")
             content = soup.get_text().lower()
+
+            # Check for OWASP mentions and links
             has_owasp_mention = "owasp" in content
+            has_project_link = any(
+                "owasp.org/www-project-" in link.get("href", "").lower() for link in soup.find_all("a")
+            )
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
-            has_project_link = len(owasp_links) > 0
+            # Check for dates to determine if content is up-to-date
+            date_patterns = [
+                r"\b\d{4}-\d{2}-\d{2}\b",  # YYYY-MM-DD
+                r"\b\d{2}/\d{2}/\d{4}\b",  # DD/MM/YYYY
+                r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2},? \d{4}\b",  # Month DD, YYYY
+            ]
+            has_dates = any(re.search(pattern, content, re.IGNORECASE) for pattern in date_patterns)
 
-            # Check for up-to-date info
-            has_dates = bool(soup.find_all(["time", "date"]))
-
-            # Check vendor neutrality
-            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
-            has_paywall_indicators = any(term in content for term in paywall_terms)
+            # Check for potential paywall indicators
+            paywall_indicators = [
+                "premium",
+                "subscription",
+                "upgrade to",
+                "paid version",
+                "enterprise plan",
+                "pro version",
+            ]
+            has_paywall_indicators = any(indicator in content for indicator in paywall_indicators)
 
             # Compile recommendations
             recommendations = []
@@ -1355,13 +1370,14 @@ def check_owasp_compliance(request):
                 "overall_status": "compliant" if not recommendations else "needs_improvement",
             }
 
-            return render(request, "owasp_compliance_result.html", context)
+            return render(request, "check_owasp_compliance.html", context)
 
+        except requests.RequestException as e:
+            messages.error(request, f"Error accessing the URL: {str(e)}. Please check if the URL is accessible.")
         except Exception as e:
-            messages.error(request, f"Error checking compliance: {str(e)}")
-            return redirect("check_owasp_compliance")
+            messages.error(request, f"Error checking compliance: {str(e)}. Please try again.")
 
-    return render(request, "owasp_compliance_check.html")
+    return render(request, "check_owasp_compliance.html")
 
 
 def management_commands(request):
@@ -1474,27 +1490,88 @@ def template_list(request):
                 # Get GitHub URL
                 github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
 
-                # Check if template has a matching URL pattern
+                # Check template contents for sidenav and base.html extension
+                has_sidenav = False
+                extends_base = False
+                has_style_tags = False
+                with open(template_path, "r") as f:
+                    content = f.read()
+                    if '{% include "includes/sidenav.html" %}' in content:
+                        has_sidenav = True
+                    if '{% extends "base.html" %}' in content:
+                        extends_base = True
+                    if "<style" in content:
+                        has_style_tags = True
+
+                # Check if template has a URL
                 template_url = None
                 resolver = get_resolver()
 
                 def check_urlpatterns(urlpatterns, template_name):
+                    # Get template name without .html extension for comparison
+                    template_base_name = template_name.replace(".html", "")
+
                     for pattern in urlpatterns:
                         if isinstance(pattern, URLResolver):
                             match = check_urlpatterns(pattern.url_patterns, template_name)
                             if match:
                                 return match
                         elif isinstance(pattern, URLPattern):
+                            # Get pattern path and name for comparison
+                            pattern_path = str(pattern.pattern) if pattern.pattern else ""
+                            pattern_name = getattr(pattern, "name", "")
+
+                            # Check class-based views
                             if hasattr(pattern.callback, "view_class"):
-                                view = pattern.callback.view_class
-                                if hasattr(view, "template_name") and view.template_name == template_name:
+                                view_class = pattern.callback.view_class
+                                pattern_path = str(pattern.pattern) if pattern.pattern else ""
+                                pattern_name = getattr(pattern, "name", "")
+
+                                # Check template_name attribute
+                                if hasattr(view_class, "template_name"):
+                                    view_template = view_class.template_name
+                                    if view_template == template_name or view_template == template_base_name:
+                                        return pattern.pattern
+
+                                # Check if pattern path or name matches template name
+                                path_match = pattern_path == template_base_name
+                                path_replace_match = (
+                                    pattern_path and pattern_path.replace("-", "_") == template_base_name
+                                )
+                                name_match = pattern_name == template_base_name
+                                name_replace_match = (
+                                    pattern_name and pattern_name.replace("-", "_") == template_base_name
+                                )
+
+                                if path_match or path_replace_match or name_match or name_replace_match:
                                     return pattern.pattern
+
+                            # Check function-based views
+                            elif hasattr(pattern.callback, "__code__"):
+                                func_code = pattern.callback.__code__
+                                pattern_path = str(pattern.pattern) if pattern.pattern else ""
+                                pattern_name = getattr(pattern, "name", "")
+
+                                if (
+                                    template_name in func_code.co_names
+                                    or template_base_name in func_code.co_names
+                                    or pattern.callback.__name__ == template_base_name
+                                    or pattern_path == template_base_name
+                                    or (pattern_path and pattern_path.replace("-", "_") == template_base_name)
+                                    or pattern_name == template_base_name
+                                    or (pattern_name and pattern_name.replace("-", "_") == template_base_name)
+                                ):
+                                    return pattern.pattern
+
+                            # Check closure-based views
                             elif hasattr(pattern.callback, "__closure__") and pattern.callback.__closure__:
                                 for cell in pattern.callback.__closure__:
-                                    if isinstance(cell.cell_contents, str) and cell.cell_contents.endswith(
-                                        template_name
-                                    ):
-                                        return pattern.pattern
+                                    if isinstance(cell.cell_contents, str):
+                                        matches_template = cell.cell_contents.endswith(
+                                            template_name
+                                        ) or cell.cell_contents.endswith(template_base_name)
+                                        if matches_template:
+                                            return pattern.pattern
                     return None
 
                 url_pattern = check_urlpatterns(resolver.url_patterns, template_name)
@@ -1511,6 +1588,9 @@ def template_list(request):
                         "modified": modified_time,
                         "views": view_count,
                         "github_url": github_url,
+                        "has_sidenav": has_sidenav,
+                        "extends_base": extends_base,
+                        "has_style_tags": has_style_tags,
                     }
                 )
         return templates
@@ -1528,22 +1608,16 @@ def template_list(request):
                 {"name": f"{subdir.title()} Templates", "templates": get_templates_from_dir(subdir_path)}
             )
 
+    # Calculate total templates
     total_templates = sum(len(dir["templates"]) for dir in template_dirs)
 
+    # Get sort parameters
     sort = request.GET.get("sort", "name")
     direction = request.GET.get("dir", "asc")
 
-    def get_sort_key(template):
-        if sort == "name":
-            return template["name"].lower()
-        elif sort == "modified":
-            return template["modified"]
-        elif sort == "view_count":
-            return template["views"]
-        return template["name"].lower()
-
+    # Sort templates in each directory
     for dir in template_dirs:
-        dir["templates"].sort(key=get_sort_key, reverse=(direction == "desc"))
+        dir["templates"].sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
 
     return render(
         request,
@@ -1553,7 +1627,7 @@ def template_list(request):
             "total_templates": total_templates,
             "sort": sort,
             "direction": direction,
-            "base_dir": main_template_dir + "/",  # Add trailing slash to ensure clean path cutting
+            "base_dir": settings.BASE_DIR,
         },
     )
 
@@ -1711,3 +1785,10 @@ def website_stats(request):
     }
 
     return render(request, "website_stats.html", context)
+
+
+class CustomSocialAccountDisconnectView(BaseSocialAccountDisconnectView):
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SocialAccount.objects.none()
+        return super().get_queryset()

@@ -77,6 +77,18 @@
     .chat-Zindex {
         z-index: 9999;
     }
+    #mobile-search {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 40;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    #mobile-search.active {
+        display: block;
+    }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -134,7 +146,7 @@
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
+<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
@@ -144,105 +156,53 @@
                         data-drawer-toggle="logo-sidebar"
                         aria-controls="logo-sidebar"
                         type="button"
-                        class="inline-flex items-center justify-center p-3 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 text-red-500 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    <i class="fa fa-bars text-2xl"></i>
+                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 text-red-500 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <i class="fa fa-bars text-xl"></i>
                 </button>
                 <!-- Logo -->
-                <a href="{% url 'home' %}"
-                   class="flex flex-col ms-6 md:me-24 items-start">
+                <a href="{% url 'home' %}" class="flex ms-4 md:me-24">
                     <img src="{% static 'img/owasp-blt-logo.svg' %}"
-                         class="max-w-[100px] lg:max-w-[200px]"
+                         class="h-8 sm:h-10 md:h-12 lg:h-14 w-auto"
                          alt="OWASP BLT Logo"
-                         width="100%"
-                         height="100%">
+                         width="56"
+                         height="56">
                 </a>
             </div>
             <!-- Search Bar -->
-            <div class="column items-center gap-2 overflow-hidden flex lg:w-[auto] lg:h-[auto]">
+            <div class="flex-1 max-w-xl mx-4 hidden sm:block">
                 <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
-                        <i class="lg:!flex hidden fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"></i>
+                        <i class="fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"></i>
                         <input type="hidden" name="type" id="filter-type" value="all">
-                        <!-- Search Input -->
                         <input type="text"
                                name="query"
                                id="query-input"
                                placeholder="Search..."
-                               class="text-lg lg:ps-12 w-[70px] lg:w-[300px] h-12 placeholder:text-lg placeholder-gray-400 bg-transparent outline-none p-4 transition-all duration-200 focus:w-[350px] text-gray-700">
-                        <div class="relative">
-                            <!-- Dropdown Button -->
-                            <button id="organizations-btn"
-                                    type="button"
-                                    class="flex items-center text-base h-12 bg-transparent p-4 font-medium text-gray-700 outline-none border-l-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
-                                <i id="selected-icon" class="fas fa-search mr-2 text-red-500"></i>
-                                <span id="selected-filter">{% trans "All" %}</span>
-                                <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
-                            </button>
-                            <!-- Dropdown Menu -->
-                            <div id="organizations-dropdown"
-                                 class="hidden absolute bg-white border-2 border-red-500 rounded-lg shadow-lg mt-2 w-48 z-50 right-0 top-full overflow-hidden">
-                                <div class="py-1">
-                                    <!-- Default All category-->
-                                    <a href="#"
-                                       data-value="all"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-search mr-3 text-red-500"></i> {% trans "All" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="organizations"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-building mr-3 text-red-500"></i> {% trans "Organizations" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="projects"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-box mr-3 text-red-500"></i> {% trans "Projects" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="repos"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-folder mr-3 text-red-500"></i> {% trans "Repos" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="users"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-user-friends mr-3 text-red-500"></i> {% trans "Users" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="issues"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-exclamation-circle mr-3 text-red-500"></i> {% trans "Issues" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="domains"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-globe mr-3 text-red-500"></i> {% trans "Domains" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="labels"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-tag mr-3 text-red-500"></i> {% trans "Labels" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="tags"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fa-solid fa-tag mr-3 text-red-500"></i> {% trans "Tags" %}
-                                    </a>
-                                    <a href="#"
-                                       data-value="languages"
-                                       class="filter-option flex items-center px-4 py-2.5 hover:bg-red-50 text-sm text-gray-700 transition-colors duration-150">
-                                        <i class="fas fa-language mr-3 text-red-500"></i> {% trans "Languages" %}
-                                    </a>
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent outline-none">
+                        {% with request.resolver_match.url_name as url_name %}
+                            {% if url_name != 'home' %}
+                                <div class="relative border-l-2 border-red-500">
+                                    <button id="organizations-btn"
+                                            type="button"
+                                            class="flex items-center h-full px-4 text-gray-700 hover:bg-red-50 transition-colors duration-200">
+                                        <i id="selected-icon" class="fas fa-search mr-2 text-red-500"></i>
+                                        <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
+                                        <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
+                                    </button>
                                 </div>
-                            </div>
-                        </div>
+                            {% endif %}
+                        {% endwith %}
                     </form>
                 </div>
             </div>
+            <!-- Mobile Search Button -->
+            <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
+                <i class="fa fa-search text-xl"></i>
+            </button>
             {% if request.user.is_authenticated %}
-                <li class="h-[80px] flex justify-center items-center ">
+                <div class="h-[80px] flex justify-center items-center">
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
@@ -261,81 +221,100 @@
                         {% else %}
                             {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
                         {% endif %}
-                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                        <i class="fa fa-caret-down text-red-500"></i>
-                    </span>
-                </button>
-                <!-- Dropdown for User Avatar -->
-                <div id="dropdownMenu"
-                     class="z-50 hidden absolute bg-white top-32 right-5">
-                    <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
-                        <li>
-                            <a href="{% url 'account_profile' %}">
-                                <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                            </a>
-                        </li>
-                        {% if user.is_superuser %}
+                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
+                            <span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+                            <i class="fa fa-caret-down text-red-500"></i>
+                        </span>
+                    </button>
+                    <!-- Dropdown for User Avatar -->
+                    <div id="dropdownMenu"
+                         class="z-50 hidden absolute bg-white top-32 right-5">
+                        <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
                             <li>
-                                <a href="{% url 'admin:index' %}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                                <a href="{% url 'account_profile' %}">
+                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                                </a>
                             </li>
-                        {% endif %}
-                        <li>
-                            <a href="{% url 'start_hunt' %}">
-                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'social' %}">
-                                <i class="fa fa-share fa-fw"></i>
-                                {% trans "Social" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'account_change_password' %}">
-                                <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'invite' %}">
-                                <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'organization_view' %}">
-                                <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
-                            </a>
-                        </li>
-                        <!-- divider -->
-                        <li class="border my-4 -mx-8"></li>
-                        <li>
-                            <a href="{% url 'account_logout' %}">
-                                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                            </a>
-                        </li>
-                    </ul>
+                            {% if user.is_superuser %}
+                                <li>
+                                    <a href="{% url 'admin:index' %}"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                                </li>
+                            {% endif %}
+                            <li>
+                                <a href="{% url 'start_hunt' %}">
+                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'social' %}">
+                                    <i class="fa fa-share fa-fw"></i>
+                                    {% trans "Social" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'account_change_password' %}">
+                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'invite' %}">
+                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization_view' %}">
+                                    <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
+                                </a>
+                            </li>
+                            <!-- divider -->
+                            <li class="border my-4 -mx-8"></li>
+                            <li>
+                                <a href="{% url 'account_logout' %}">
+                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </li>
-        {% else %}
-            <!-- Sign up and Log in Buttons -->
-            <div class="flex items-center h-[80px]">
-                <div class="hidden lg:!flex h-[80px] justify-center items-center gap-4">
-                    <a href="{% url 'account_signup' %}"
-                       class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    {% trans "Signup" %}</a>
-                    <a href="{% url 'account_login' %}"
-                       data-toggle="modal"
-                       class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    {% trans "Login" %}</a>
+            {% else %}
+                <!-- Sign up and Log in Buttons -->
+                <div class="flex items-center h-[80px]">
+                    <div class="hidden lg:!flex h-[80px] justify-center items-center gap-4">
+                        <a href="{% url 'account_signup' %}"
+                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        {% trans "Signup" %}</a>
+                        <a href="{% url 'account_login' %}"
+                           data-toggle="modal"
+                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        {% trans "Login" %}</a>
+                    </div>
+                    <!-- Log in icon -->
+                    <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
+                        <i class="fa fa-user !text-4xl text-red-500"></i>
+                    </a>
                 </div>
-                <!-- Log in icon -->
-                <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
-                    <i class="fa fa-user !text-5xl text-red-500"></i>
-                </a>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
-</div>
+    <!-- Mobile Search Bar - Moved inside nav -->
+    <div id="mobile-search"
+         class="hidden sm:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
+        <form action="{% url 'search' %}" method="get" class="flex items-center">
+            <div class="relative flex-1">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
+                <input type="text"
+                       name="query"
+                       placeholder="Search..."
+                       class="w-full pl-10 pr-4 py-3 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400">
+                <input type="hidden" name="type" id="mobile-filter-type" value="all">
+            </div>
+            <button type="submit"
+                    class="ml-2 p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <i class="fa fa-search"></i>
+            </button>
+        </form>
+    </div>
 </nav>
 <div class="bg-gray-100 chat-Zindex">
     <div id="chatbot" class="chatbot">
@@ -561,4 +540,11 @@
             }
         });
     });
+</script>
+<script>
+function toggleMobileSearch() {
+    const mobileSearch = document.getElementById('mobile-search');
+    mobileSearch.classList.toggle('hidden');
+    mobileSearch.classList.toggle('active');
+}
 </script>
