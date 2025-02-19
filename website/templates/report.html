@@ -308,89 +308,90 @@
                              class="w-[75%] ml-6 md:ml-0 flex items-end mt-6 flex-wrap min-h-[180px]"></div>
                     </div>
                 </div>
-            </div>
-            <div>
-                <div class="cve_id">
-                    <label for="cve_id">CVE ID</label>
-                    <input class="mt-4  ml-2 w-100 rounded border-2"
-                           type="text"
-                           placeholder="CVE-XXXX-XXXX..."
-                           id="cve_id_input"
-                           name="cve_id"
-                           min="13"
-                           max="16">
+                <div>
+                    <div class="cve_id">
+                        <label for="cve_id">CVE ID</label>
+                        <input class="mt-4  ml-2 w-100 rounded border-2"
+                               type="text"
+                               placeholder="CVE-XXXX-XXXX..."
+                               id="cve_id_input"
+                               name="cve_id"
+                               min="13"
+                               max="16">
+                    </div>
+                    <button type="button" onclick="validateCVE()">Validate</button>
                 </div>
-                <button type="button" onclick="validateCVE()">Validate</button>
-            </div>
-            <div id="bug-description-container"
-                 class="w-[100%] flex justify-between md:pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
-                <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
-                <div class="w-1/2 pl-10 mt-5">
-                    <div class="flex w-full items-center justify-between">
-                        <h2 class="text-2xl font-semibold leading-7 text-gray-900">{% trans "ADD TEAM MEMBERS" %}</h2>
-                        <button onclick="add_email_container()"
-                                type="button"
-                                class="w-[70px] h-[30px] mt-5 text-lg md:text-2xl md:w-[120px] md:h-[40px] md:mt-10 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
-                            {% trans "Add Email" %}
+                <div id="bug-description-container"
+                     class="w-[100%] flex justify-between md:pr-10 flex-wrap border-b border-gray-900/10 pb-10 my-10">
+                    <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
+                    <div class="w-1/2 pl-10 mt-5">
+                        <div class="flex w-full items-center justify-between">
+                            <h2 class="text-2xl font-semibold leading-7 text-gray-900">{% trans "ADD TEAM MEMBERS" %}</h2>
+                            <button onclick="add_email_container()"
+                                    type="button"
+                                    class="w-[70px] h-[30px] mt-5 text-lg md:text-2xl md:w-[120px] md:h-[40px] md:mt-10 bg-red-500 text-white font-bold rounded-md hover:bg-red-600 transition-all">
+                                {% trans "Add Email" %}
+                            </button>
+                        </div>
+                        <p class="mt-4 text-xl leading-6 text-gray-600">{% trans "Team members should be bughunts users" %}.</p>
+                        <div class="mt-10 overflow-y-scroll" id="email-container">
+                            <label for="team_members"
+                                   class="block text-2l font-medium leading-6 text-gray-900">
+                                {% trans "Email address" %}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6 ">
+                    <div class="flex h-full justify-between items-center flex-col my-16 md:flex-row md:mt-0">
+                        <label class="w-full ml-5 flex items-center text-2xl border-2 border-gray-200 rounded px-10">
+                            <input id="report_anonymous"
+                                   type="checkbox"
+                                   name="report_anonymous"
+                                   class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                            <label for="report_anonymous"
+                                   class="w-full text-center ml-4 mt-6 text-2xl font-medium text-gray-900">
+                                {% trans "Report Anonymously" %}
+                            </label>
+                        </label>
+                        <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
+                    </div>
+                    <div class="w-full flex justify-evenly md:justify-end">
+                        <button type="button"
+                                onclick="cancelForm()"
+                                class="text-md font-semibold leading-6 mr-10 text-gray-900">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit"
+                                name="reportbug_button"
+                                class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
+                            {% trans "Report" %}
                         </button>
                     </div>
-                    <p class="mt-4 text-xl leading-6 text-gray-600">{% trans "Team members should be bughunts users" %}.</p>
-                    <div class="mt-10 overflow-y-scroll" id="email-container">
-                        <label for="team_members"
-                               class="block text-2l font-medium leading-6 text-gray-900">
-                            {% trans "Email address" %}
-                        </label>
-                    </div>
                 </div>
             </div>
-            <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6 ">
-                <div class="flex h-full justify-between items-center flex-col my-16 md:flex-row md:mt-0">
-                    <label class="w-full ml-5 flex items-center text-2xl border-2 border-gray-200 rounded px-10">
-                        <input id="report_anonymous"
-                               type="checkbox"
-                               name="report_anonymous"
-                               class="w-7 h-7 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                        <label for="report_anonymous"
-                               class="w-full text-center ml-4 mt-6 text-2xl font-medium text-gray-900">
-                            {% trans "Report Anonymously" %}
-                        </label>
-                    </label>
-                    <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
-                </div>
-                <div class="w-full flex justify-evenly md:justify-end">
-                    <button type="button"
-                            onclick="cancelForm()"
-                            class="text-md font-semibold leading-6 mr-10 text-gray-900">{% trans "Cancel" %}</button>
-                    <button type="submit"
-                            name="reportbug_button"
-                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500">
-                        {% trans "Report" %}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-<div id="image-preview-wrapper"
-     class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50"
-     hidden>
-    <div class="bg-red-500 fixed w-[60%] h-[60%]">
-        <img src=""
-             alt="image"
-             class="w-full h-full"
-             id="image-preview"
-             width="100%"
-             height="100%">
+        </form>
     </div>
-</div>
-<div class="bottom-right">
-    <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/report.html">
-        <i class="fab fa-github"></i>
-    </a>
-    <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=421%3A5&t=pqxWpF3hcYxjEDrs-1">
-        <i class="fab fa-figma"></i>
-    </a>
-</div>
+    <div id="image-preview-wrapper"
+         class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50"
+         hidden>
+        <div class="bg-red-500 fixed w-[60%] h-[60%]">
+            <img src=""
+                 alt="image"
+                 class="w-full h-full"
+                 id="image-preview"
+                 width="100%"
+                 height="100%">
+        </div>
+    </div>
+    <div class="bottom-right">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/report.html">
+            <i class="fab fa-github"></i>
+        </a>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=421%3A5&t=pqxWpF3hcYxjEDrs-1">
+            <i class="fab fa-figma"></i>
+        </a>
+    </div>
 {% endblock content %}
 {% block after_js %}
     <script type="text/javascript">
