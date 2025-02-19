@@ -510,9 +510,7 @@ def search(request, template="search.html"):
             Q(is_hidden=True) & ~Q(user_id=request.user.id)
         )
         domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-        users = (
-            User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-total_points")[0:20]
-        )
+        users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
         projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         context = {
@@ -527,8 +525,13 @@ def search(request, template="search.html"):
             "repos": repos,
         }
 
-        for userprofile in users:
-            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+        # Get badges for each user
+        for user in users:
+            user.badges = UserBadge.objects.filter(user=user)
+            # Ensure user has a username for profile URL
+            user.username = user.username
+
+        # Get domain URLs for organizations
         for org in organizations:
             d = Domain.objects.filter(organization=org).first()
             if d:
