@@ -3,7 +3,7 @@ import time
 
 import requests
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
@@ -23,6 +23,11 @@ class RepoListView(ListView):
 
     def get_queryset(self):
         queryset = Repo.objects.all()
+
+        # Handle language filter
+        language = self.request.GET.get("language")
+        if language:
+            queryset = queryset.filter(primary_language=language)
 
         # Get sort parameter from URL
         sort_by = self.request.GET.get("sort", "-created")
@@ -65,6 +70,20 @@ class RepoListView(ListView):
         context = super().get_context_data(**kwargs)
         context["current_sort"] = self.request.GET.get("sort", "-created")
         context["total_repos"] = Repo.objects.count()
+
+        # Get language counts
+        language_counts = (
+            Repo.objects.exclude(primary_language__isnull=True)
+            .exclude(primary_language="")
+            .values("primary_language")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        context["languages"] = language_counts
+
+        # Get current language filter
+        context["current_language"] = self.request.GET.get("language")
+
         return context
 
 

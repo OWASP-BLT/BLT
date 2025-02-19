@@ -1144,6 +1144,8 @@ def view_pr_analysis(request):
 def home(request):
     from django.utils import timezone
 
+    from website.models import Repo
+
     # Get last commit date
     try:
         last_commit = get_last_commit_date()
@@ -1151,12 +1153,18 @@ def home(request):
         print(f"Error getting last commit date: {e}")
         last_commit = ""
 
+    # Get latest repositories and total count
+    latest_repos = Repo.objects.order_by("-created")[:5]
+    total_repos = Repo.objects.count()
+
     return render(
         request,
         "home.html",
         {
             "last_commit": last_commit,
-            "current_year": timezone.now().year,  # Add current year
+            "current_year": timezone.now().year,
+            "latest_repos": latest_repos,
+            "total_repos": total_repos,
         },
     )
 
