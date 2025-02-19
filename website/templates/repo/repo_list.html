@@ -12,20 +12,41 @@
                     </span>
                 </h1>
             </div>
-            <!-- Search Form -->
-            <form method="get" class="mb-8">
-                <div class="flex gap-2">
-                    <input type="text"
-                           name="q"
-                           class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                           placeholder="Search repositories..."
-                           value="{{ request.GET.q }}">
-                    <button type="submit"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Search
-                    </button>
-                </div>
-            </form>
+            <!-- Search and Add Repo Forms -->
+            <div class="flex gap-4 mb-8">
+                <!-- Search Form -->
+                <form method="get" class="flex-1">
+                    <div class="flex gap-2">
+                        <input type="text"
+                               name="q"
+                               class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                               placeholder="Search repositories..."
+                               value="{{ request.GET.q }}">
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            Search
+                        </button>
+                    </div>
+                </form>
+                <!-- Add Repository Form -->
+                <form method="post" class="flex-1" id="addRepoForm">
+                    {% csrf_token %}
+                    <div class="flex gap-2">
+                        <input type="text"
+                               name="repo_url"
+                               class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                               placeholder="Enter GitHub repository URL..."
+                               required>
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                            Add Repository
+                        </button>
+                    </div>
+                </form>
+            </div>
             <!-- Repository Table -->
             <div class="overflow-x-auto bg-white shadow-md rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -229,4 +250,66 @@
         </div>
     </div>
 {% endblock %}
-{% block extra_js %}<script>// Add any additional JavaScript for enhanced interactivity here</script>{% endblock %}
+{% block extra_js %}
+    <script>
+document.getElementById('addRepoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalButtonText = submitButton.innerHTML;
+    
+    try {
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Adding...
+        `;
+        
+        const response = await fetch('{% url "add_repo" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: new URLSearchParams(new FormData(form))
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to add repository');
+        }
+        
+        // Show success message
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        successMessage.textContent = 'Repository added successfully!';
+        document.body.appendChild(successMessage);
+        
+        // Refresh the page after 1 second
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+        
+    } catch (error) {
+        // Show error message
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        errorMessage.textContent = error.message;
+        document.body.appendChild(errorMessage);
+        
+        // Remove error message after 5 seconds
+        setTimeout(() => {
+            errorMessage.remove();
+        }, 5000);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonText;
+    }
+});
+    </script>
+{% endblock %}

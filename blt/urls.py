@@ -205,7 +205,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
-from website.views.repo import RepoListView
+from website.views.repo import RepoListView, add_repo
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamChallenges,
@@ -908,6 +908,7 @@ urlpatterns = [
     path("get-github-issue/", get_github_issue, name="get_github_issue"),
     # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
+    path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
     # GitHub Issues
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),

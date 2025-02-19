@@ -1292,7 +1292,7 @@ def verify_file_upload(sender, instance, **kwargs):
 
 
 class Repo(models.Model):
-    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
