@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% load gravatar %}
 {% load static %}
+{% block title %}
+    {{ user.username }}'s Profile
+{% endblock title %}
+{% block description %}
+    Explore the detailed profile of {{ user.username }}. View their activity, reported bugs, social tags, badges, and other profile information.
+{% endblock description %}
+{% block keywords %}
+    {{ user.username }}'s Profile, User Activity, Reported Bugs, Social Tags, Badges, User Details, User Profile
+{% endblock keywords %}
+{% block og_title %}
+    {{ user.username }}'s Profile - User Activity and Details
+{% endblock og_title %}
+{% block og_description %}
+    Access {{ user.username }}'s profile to see detailed information on their activity, bugs reported, social tags, badges, and more. Engage with their profile and stay connected.
+{% endblock og_description %}
 {% load custom_tags %}
 {% load i18n %}
 {% block head %}
@@ -269,6 +284,33 @@
         color: #ff5722;
         font-weight: bold;
     }
+    .shine-effect {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shine 2s infinite;
+    }
+
+    @keyframes shine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .bg-[#f4f4f4] {
+        margin: 0.5rem 0;
+        border: 1px solid #e2e8f0;
+    }
+    .text-lg {
+        font-size: 1.125rem; 
+    }
+    .text-sm {
+        font-size: 0.875rem;
+    }
+    .bg-gray-100 {
+        background-color: #f7fafc;
+    }
     </style>
 {% endblock style %}
 {% block content %}
@@ -304,20 +346,93 @@
                     </form>
                 {% endif %}
             </div>
-            <div class="flex items-center justify-between w-[17vw] max-sm:w-[70vw]">
-                <span class="text-[25px] font-['Poppins']">{{ my_score|default:0 }} <span class="text-[19px] text-[#909090]">{% trans "POINTS" %}</span></span>
-                {% if request.user != user and request.user.is_authenticated %}
-                    <span class="text-[25px]">●</span>
-                    {% if request.user.email in followers_list %}
-                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                                onclick="followUser()"
-                                name="{{ user }}">{% trans "Unfollow" %}</button>
-                    {% else %}
-                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl follow_unfollow"
-                                onclick="followUser()"
-                                name="{{ user }}">{% trans "Follow" %}</button>
-                    {% endif %}
-                {% endif %}
+            <div class="flex flex-col items-center lg:items-start text-center lg:text-left bg-[#f7fafc] text-[#2d3748] p-5 rounded-lg shadow-sm w-[22vw] max-sm:w-full  gap-4 cursor-pointer">
+                <!-- Points Section -->
+                <div class="score-container flex items-center justify-center bg-[#f7fafc] text-[#1a202c] p-4 rounded-md shadow-sm w-full transition-transform transform hover:scale-105">
+                    <i class="fa fa-star text-yellow-500 mr-2"></i>
+                    <span class="text-[36px] font-bold text-yellow-500">{{ my_score|default:0 }}</span>
+                    <span class="text-[14px] text-[#4a5568] ml-2">{% trans "POINTS" %}</span>
+                    <i class="fa fa-chevron-down ml-2 transition-transform duration-200"
+                       id="accordion-toggle"></i>
+                </div>
+                <!-- Accordion Content -->
+                <div class="accordion-content hidden p-2 mt-4 rounded-md justify-center">
+                    <table class="min-w-full rounded-lg">
+                        <thead class="bg-[#4a5568] text-white">
+                            <tr>
+                                <th class="py-3 px-4 text-left">Score</th>
+                                <th class="py-3 px-4 text-left">Reason</th>
+                                <th class="py-3 px-4 text-left">Created</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-[#1a202c]">
+                            {% for point in user_points %}
+                                <tr class="border-b border-[#edf2f7]">
+                                    <td class="py-2 px-4 text-yellow-500 font-bold text-center">+ {{ point.score }}</td>
+                                    <td class="py-2 px-4">
+                                        {% if point.issue %}
+                                            <span>Issue created</span>
+                                        {% elif point.domain %}
+                                            <span>Domain added</span>
+                                        {% elif point.reason %}
+                                            <span>{{ point.reason }}</span>
+                                        {% else %}
+                                            <p class="mt-2 text-gray-500">No reason provided</p>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-2 px-4 text-md">{{ point.created|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="3" class="py-2 px-4 text-center text-[#4a5568]">No points available.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Streak Section -->
+                <div class="flex flex-col items-center lg:items-start bg-[#f7fafc] text-[#2d3748] p-4 rounded-md shadow-sm w-full">
+                    <h4 class="text-[16px] font-semibold uppercase tracking-wide mb-2">
+                        <i class="fa fa-fire text-red-500"></i> Streak Details
+                    </h4>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-70 w-full mb-3">
+                    <!-- Current Streak -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-bolt mr-2 text-red-500"></i> Current Streak:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.current_streak|default:"0" }}</span>
+                    </div>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
+                    <!-- Longest Streak -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2 transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-trophy mr-2 text-red-500"></i> Longest Streak:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.longest_streak|default:"0" }}</span>
+                    </div>
+                    <hr class="border-t-[1px] border-[#e2e8f0] opacity-50 w-full mb-2">
+                    <!-- Last Sizzle Check-in -->
+                    <div class="flex items-center justify-between w-full text-[14px] font-medium transition-transform transform hover:scale-105">
+                        <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> Last Sizzle Check-in:</span>
+                        <span class="font-bold text-red-500">{{ user.userprofile.last_check_in|default:"N/A" }}</span>
+                    </div>
+                    <div class="my-8 p-4 rounded-lg w-full">
+                        <div class="flex items-center justify-between mb-2 font-medium">
+                            <span>Streak Progress</span>
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-trophy text-yellow-500"></i>
+                                <span class="font-bold">{{ base_milestone }}/{{ next_milestone }}</span>
+                            </div>
+                        </div>
+                        <div class="relative w-full bg-gradient-to-r from-gray-100 to-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-700 to-red-600 rounded-full transition-all duration-500 ease-out animate-pulse"
+                                 style="width: {% widthratio base_milestone next_milestone 100 %}%">
+                                <div class="absolute inset-0 bg-white/20 shine-effect"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between mt-1">
+                            <span class="text-md text-gray-500">Current</span>
+                            <span class="text-md text-gray-500">Next Milestone</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!--add a link here to edit the profile /profile/edit -->
             {% if request.user == user %}
@@ -342,6 +457,45 @@
                 <div class="profile-rate">{{ user.userprofile.discounted_hourly_rate }}</div>
                 <hr>
             {% endif %}
+            <!-- Social Links Section -->
+            <div class="social-links mt-4">
+                <div class="font-bold mb-3">Social Links</div>
+                <div class="flex flex-col gap-2">
+                    {% if user.userprofile.github_url %}
+                        <a href="{{ user.userprofile.github_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fab fa-github text-xl"></i>
+                            <span>GitHub</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.x_username %}
+                        <a href="https://x.com/{{ user.userprofile.x_username }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fab fa-x-twitter text-xl"></i>
+                            <span>X (Twitter)</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.linkedin_url %}
+                        <a href="{{ user.userprofile.linkedin_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fab fa-linkedin text-xl"></i>
+                            <span>LinkedIn</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.website_url %}
+                        <a href="{{ user.userprofile.website_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-globe text-xl"></i>
+                            <span>Website</span>
+                        </a>
+                    {% endif %}
+                </div>
+                <hr class="mt-4">
+            </div>
             <div>
                 <div class="font-bold mb-3 mt-1">
                     Recent Activity
@@ -497,6 +651,9 @@
                     <button class="mr-3" onclick="openBookmarkModal();">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">📑 {% trans "Bookmarks" %} {{ bookmarks|length }}</div>
                     </button>
+                    <button class="mr-3" onclick="openKudosModal();">
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🌟 Kudos {{ user.kudos_received.count }}</div>
+                    </button>
                     <button class="mr-3">
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👁️ {% trans "Profile Views" %} {{ user.userprofile.visit_count }}</div>
                     </button>
@@ -558,7 +715,7 @@
                     </div>
                 </div>
                 <div class="font-bold mb-3 mt-4 flex justify-between items-center">
-                    <span>Badges</span>
+                    <span>Badges <a href="/badges" title="View Badges" class="text-info"><i class="fas fa-info-circle"></i></a></span>
                     {% if is_mentor %}
                         <button id="add-badge-button"
                                 class="btn btn-primary px-4 py-2 rounded-md bg-blue-500 hover:bg-blue-600 text-white">
@@ -585,6 +742,162 @@
                     {% empty %}
                         <p class="col-span-full text-center text-gray-500">No badges awarded yet.</p>
                     {% endfor %}
+                </div>
+                <!--  Pull Requests Section -->
+                <div class="my-6 mr-5">
+                    {% if repos_with_prs %}
+                        <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                    Overall Pull Requests <i class="fas fa-code-branch text-blue-500"></i>
+                                </h2>
+                            </div>
+                            <div class="flex justify-between items-center gap-0">
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-purple-100 text-purple-700 font-semibold flex-grow">
+                                    <i class="fas fa-check-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ overall_stats.merged_count }}</div>
+                                        <div class="text-md font-normal">Merged</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
+                                    <i class="fas fa-exclamation-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ overall_stats.open_count }}</div>
+                                        <div class="text-md font-normal">Open</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-red-100 text-red-700 font-semibold flex-grow">
+                                    <i class="fas fa-times-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ overall_stats.closed_count }}</div>
+                                        <div class="text-md font-normal">Closed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
+                                <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.user_rank }}
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            {% for repo_name, repo_data in repos_with_prs.items %}
+                                <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                                    <div class="bg-gray-50 p-4 border-b border-gray-200">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                                <i class="fas fa-book text-gray-600"></i>
+                                                <a href="{{ repo_data.repo_url }}"
+                                                   class="text-blue-600 font-bold text-2xl hover:underline">{{ repo_name }}</a>
+                                            </h3>
+                                            <div class="flex gap-3 text-md">
+                                                <span class="flex items-center gap-1 text-purple-700 font-bold">
+                                                    <i class="fas fa-check-circle text-xl"></i> {{ repo_data.stats.merged_count }}
+                                                </span>
+                                                <span class="flex items-center gap-1 text-yellow-700 font-bold">
+                                                    <i class="fas fa-exclamation-circle text-xl"></i> {{ repo_data.stats.open_count }}
+                                                </span>
+                                                <span class="flex items-center gap-1 text-red-700 font-bold">
+                                                    <i class="fas fa-times-circle text-xl"></i> {{ repo_data.stats.closed_count }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                        {% for pr in repo_data.pull_requests %}
+                                            <div class="flex justify-between items-center p-4 hover:bg-gray-50">
+                                                <a href="{{ pr.url }}" class="text-blue-600 font-medium hover:underline">{{ pr.title }}</a>
+                                                <span class="flex items-center gap-2 px-3 py-1 rounded-sm text-sm font-medium {% if pr.is_merged %} bg-purple-100 text-purple-700 {% elif pr.state == 'open' %} bg-yellow-100 text-yellow-700 {% else %} bg-red-100 text-red-700 {% endif %} text-lg">
+                                                    {% if pr.is_merged %}
+                                                        <i class="fas fa-check-circle text-lg"></i>
+                                                    {% elif pr.state == 'open' %}
+                                                        <i class="fas fa-exclamation-circle text-lg"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-lg"></i>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Reviewed Pull Requests Section -->
+                <div class="my-6 mr-5">
+                    {% if prs_grouped %}
+                        <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                    Reviewed Pull Requests <i class="fas fa-code-review text-blue-500"></i>
+                                    <span class="text-lg font-normal">(Total: {{ total_pr_reviews }})</span>
+                                </h2>
+                            </div>
+                            <!-- Status Counts -->
+                            <div class="flex justify-between items-center gap-0 mb-4">
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-purple-100 text-purple-700 font-semibold flex-grow">
+                                    <i class="fas fa-check-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ reviewed_stats.merged_count }}</div>
+                                        <div class="text-md font-normal">Merged</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
+                                    <i class="fas fa-exclamation-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ reviewed_stats.open_count }}</div>
+                                        <div class="text-md font-normal">Open</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-red-100 text-red-700 font-semibold flex-grow">
+                                    <i class="fas fa-times-circle text-3xl"></i>
+                                    <div>
+                                        <div class="text-2xl font-bold text-center">{{ reviewed_stats.closed_count }}</div>
+                                        <div class="text-md font-normal">Closed</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
+                                <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.review_rank }}
+                            </div>
+                            <!-- PR List Grouped by Repo -->
+                            <div class="space-y-6">
+                                {% for repo_name, prs in prs_grouped.items %}
+                                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                                        <div class="bg-gray-50 p-4 border-b border-gray-200">
+                                            <h3 class="text-lg font-semibold">
+                                                <a href="https://github.com/{{ repo_name }}"
+                                                   target="_blank"
+                                                   class="text-blue-600 hover:underline">{{ repo_name }}</a>
+                                            </h3>
+                                        </div>
+                                        <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                            {% for pr in prs %}
+                                                <div class="flex justify-between items-center p-4 hover:bg-gray-50">
+                                                    <a href="{{ pr.html_url }}"
+                                                       target="_blank"
+                                                       class="text-blue-600 hover:underline">
+                                                        #{{ pr.number }} - {{ pr.title|truncatechars:40 }}
+                                                    </a>
+                                                    <span class="flex items-center gap-2 px-3 py-1 rounded-md text-sm {% if pr.merged %} bg-purple-100 text-purple-700 {% elif pr.state == 'open' %} bg-yellow-100 text-yellow-700 {% else %} bg-red-100 text-red-700 {% endif %}">
+                                                        {% if pr.merged %}
+                                                            <i class="fas fa-check-circle"></i> Merged
+                                                        {% elif pr.state == 'open' %}
+                                                            <i class="fas fa-code-pull-request"></i> Open
+                                                        {% else %}
+                                                            <i class="fas fa-times-circle"></i> Closed
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No reviewed pull requests found yet.</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -791,6 +1104,88 @@
             </form>
         </div>
     </div>
+    <!-- Kudos modal -->
+    <div id="Kudos"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3>Kudos Received:</h3>
+                                    <br>
+                                    <p class="text-xl">
+                                        <table class="table-auto w-full border-spacing-52">
+                                            <tbody>
+                                                {% for k in user.kudos_received.all %}
+                                                    <tr class="shadow-lg m-3 w-full rounded">
+                                                        <td>
+                                                            {% if k.sender.userprofile.avatar %}
+                                                                <img src="{{ k.sender.userprofile.avatar }}"
+                                                                     height="50"
+                                                                     width="50"
+                                                                     alt="{{ k.sender.username }}">
+                                                            {% else %}
+                                                                <img src="{% gravatar_url k.sender.email 50 %}"
+                                                                     height="50"
+                                                                     width="50"
+                                                                     alt="{{ k.sender.username }}">
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <a href="{% url 'profile' slug=k.sender.username %}">{{ k.sender.username }}</a>
+                                                        </td>
+                                                        <td>{{ k.timestamp }}</td>
+                                                        {% if k.link %}
+                                                            <td>
+                                                                <a href="{{ k.link }}" target="_blank" rel="noopener noreferrer">Link</a>
+                                                            </td>
+                                                        {% endif %}
+                                                        {% if k.comment %}
+                                                            <td>
+                                                                <button type="button"
+                                                                        class="toggle-comment"
+                                                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                                                    <i class="fas fa-comment-dots"></i> View Comment
+                                                                </button>
+                                                                <div class="hidden mt-2 text-sm text-gray-600">{{ k.comment }}</div>
+                                                            </td>
+                                                        {% endif %}
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-kudos">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script defer>
+            var closeKudos = document.getElementById("close-kudos");
+            var openKudos = document.getElementById("Kudos");
+            closeKudos.addEventListener("click", ()=>{
+                openKudos.style.display="none";
+            });
+            function openKudosModal(){
+                openKudos.style.cssText = "display:block !important;";
+            }
+    </script>
     <script>
         // Assign Badge Modal Logic
         const addBadgeButton = document.getElementById("add-badge-button");
@@ -838,6 +1233,16 @@
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script>
+        document.querySelector('.score-container').addEventListener('click', function() {
+            var accordion = document.querySelector('.accordion-content');
+            var arrow = document.querySelector('#accordion-toggle');
+            
+            accordion.classList.toggle('hidden'); // Toggles the visibility of the accordion
+            arrow.classList.toggle('fa-chevron-down'); // Changes the arrow to point down
+            arrow.classList.toggle('fa-chevron-up'); // Changes the arrow to point up
+        });
+    </script>
     <script>
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [],

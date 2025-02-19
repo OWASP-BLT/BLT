@@ -1,7 +1,21 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
 {% block title %}
-    invite friend
+    Invite a Friend
 {% endblock title %}
+{% block description %}
+    Invite a friend to join the site and earn 2 points. Share your referral link or send an invitation via email.
+{% endblock description %}
+{% block keywords %}
+    Invite Friend, Earn Points, Referral Link, Send Invitation, Share and Earn, Join Site
+{% endblock keywords %}
+{% block og_title %}
+    Invite a Friend - Earn Points for Referrals
+{% endblock og_title %}
+{% block og_description %}
+    Invite a friend to join the site and earn 2 points. Share your referral link or send an invitation via email.
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <style>
@@ -55,4 +69,4 @@
         alert("Copied to clipboard: " + copyText.value);
     }
     </script>
-{% endblock content %}
+{% endblock after_js %}

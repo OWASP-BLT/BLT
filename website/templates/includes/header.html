@@ -6,10 +6,23 @@
 {% load i18n %}
 {% load custom_tags %}
 <link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 <style>
     a {
         color: black;
+    }
+    @media (min-width: 700px) {
+        #selected-filter {
+            display: inline;
+        }
+    }
+    @media (max-width: 699px) {
+        #selected-filter {
+            display: none;
+        }
+        #organizations-btn {
+            padding: 0.1rem;
+        }
     }
     .chatbot {
         display: none;
@@ -64,9 +77,22 @@
     .chat-Zindex {
         z-index: 9999;
     }
+    #mobile-search {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 40;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    #mobile-search.active {
+        display: block;
+    }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        
         const desktopDropdownButton = document.getElementById('dropdownButton');
         const desktopDropdownMenu = document.getElementById('dropdownMenu');
 
@@ -93,66 +119,90 @@
                 }
             });
         }
+
+        // Add sidebar toggle functionality
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('#page-wrapper');
+        let sidebarOpen = false;
+
+        if (hamburgerButton && sidebar) {
+            hamburgerButton.addEventListener('click', () => {
+                sidebarOpen = !sidebarOpen;
+                if (sidebarOpen) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    if (mainContent) {
+                        mainContent.classList.add('lg:ml-[210px]');
+                    }
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                    if (mainContent) {
+                        mainContent.classList.remove('lg:ml-[210px]');
+                    }
+                }
+            });
+        }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4 ">
+<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
-                <!-- Ham Menu -->
+                <!-- Ham Menu section -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
                         data-drawer-toggle="logo-sidebar"
                         aria-controls="logo-sidebar"
                         type="button"
-                        class="inline-flex items-center p-2 text-sm text-gray-500 rounded-lg lg:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600">
-                    <svg class="w-8 h-8"
-                         aria-hidden="true"
-                         fill="currentColor"
-                         viewBox="0 0 20 20"
-                         xmlns="http://www.w3.org/2000/svg">
-                        <path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z">
-                        </path>
-                    </svg>
+                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 text-red-500 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <i class="fa fa-bars text-xl"></i>
                 </button>
                 <!-- Logo -->
-                <a href="{% url 'home' %}"
-                   class="flex flex-col ms-2 md:me-24 items-start">
-                    <img src="{% logo 'TRANSPARENT' %}"
-                         class="max-w-[100px] lg:max-w-[200px]"
-                         alt="Bug Bounty Logo"
-                         width="100%"
-                         height="100%">
-                    <p class="inline-block text-base lg:text-xl mb-0 ml-1">
-                        <span class="font-bold text-[#e11d48]">B</span>ugs, <span class="font-bold text-[#e11d48]">B</span>ounties, and <span class="font-bold text-[#e11d48]">B</span>eyond...
-                    </p>
+                <a href="{% url 'home' %}" class="flex ms-4 md:me-24">
+                    <img src="{% static 'img/owasp-blt-logo.svg' %}"
+                         class="h-8 sm:h-10 md:h-12 lg:h-14 w-auto"
+                         alt="OWASP BLT Logo"
+                         width="56"
+                         height="56">
                 </a>
             </div>
-            <!-- Search Bar  -->
-            <div class="column items-center gap-2 overflow-hidden flex lg:w-[auto] lg:h-[auto]">
-                <div class="relative flex items-center rounded-2xl overflow-hidden bg-[#ededed] lg:!px-[34px]">
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-xl mx-4 hidden sm:block">
+                <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
-                        <i class="lg:!flex hidden fa fa-search absolute left-4 text-[#9CA3AF] z-10 my-auto"></i>
-                        <!-- Search Input -->
+                        <i class="fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"></i>
+                        <input type="hidden" name="type" id="filter-type" value="all">
                         <input type="text"
                                name="query"
-                               placeholder="Search"
-                               class="text-xl lg:text-base lg:ps-9 lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#EDEDED] outline-none p-5 font-semibold rounded-l-2xl">
-                        <select name="category"
-                                class="text-xl lg:text-base lg:scale-[1.4] w-[70px] lg:w-auto h-16 placeholder-[#9CA3AF] bg-[#ededed] outline-none p-5 font-semibold rounded-r-2xl text-[#9CA3AF]">
-                            <option value="organizations">{% trans "Organizations" %}</option>
-                            <option value="projects">{% trans "Projects" %}</option>
-                            <option value="users">{% trans "Users" %}</option>
-                            <option value="tags">{% trans "Tags" %}</option>
-                            <option value="languages">{% trans "Languages" %}</option>
-                        </select>
+                               id="query-input"
+                               placeholder="Search..."
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent outline-none">
+                        {% with request.resolver_match.url_name as url_name %}
+                            {% if url_name != 'home' %}
+                                <div class="relative border-l-2 border-red-500">
+                                    <button id="organizations-btn"
+                                            type="button"
+                                            class="flex items-center h-full px-4 text-gray-700 hover:bg-red-50 transition-colors duration-200">
+                                        <i id="selected-icon" class="fas fa-search mr-2 text-red-500"></i>
+                                        <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
+                                        <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        {% endwith %}
                     </form>
                 </div>
             </div>
+            <!-- Mobile Search Button -->
+            <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
+                <i class="fa fa-search text-xl"></i>
+            </button>
             {% if request.user.is_authenticated %}
-                <li class="h-[80px] flex justify-center items-center ">
+                <div class="h-[80px] flex justify-center items-center">
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
@@ -171,83 +221,100 @@
                         {% else %}
                             {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
                         {% endif %}
-                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap"><span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                        <i class="fa fa-caret-down text-red-500"></i>
-                    </span>
-                </button>
-                <!-- Dropdown for User Avatar -->
-                <div id="dropdownMenu"
-                     class="z-50 hidden absolute bg-white top-32 right-5">
-                    <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
-                        <li>
-                            <a href="{% url 'account_profile' %}">
-                                <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% env 'EXTENSION_URL' %}"
-                               target="_new"
-                               rel="noopener noreferrer">
-                                <i class="fa fa-chrome fa-fw"></i>
-                                {% trans "Add to chrome" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'start_hunt' %}">
-                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'social' %}">
-                                <i class="fa fa-share fa-fw"></i>
-                                {% trans "Social" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'account_change_password' %}">
-                                <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'invite' %}">
-                                <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'company_view' %}">
-                                <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
-                            </a>
-                        </li>
-                        <!-- divider -->
-                        <li class="border my-4 -mx-8"></li>
-                        <li>
-                            <a href="{% url 'account_logout' %}">
-                                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                            </a>
-                        </li>
-                    </ul>
+                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
+                            <span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+                            <i class="fa fa-caret-down text-red-500"></i>
+                        </span>
+                    </button>
+                    <!-- Dropdown for User Avatar -->
+                    <div id="dropdownMenu"
+                         class="z-50 hidden absolute bg-white top-32 right-5">
+                        <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                            <li>
+                                <a href="{% url 'account_profile' %}">
+                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
+                                </a>
+                            </li>
+                            {% if user.is_superuser %}
+                                <li>
+                                    <a href="{% url 'admin:index' %}"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                                </li>
+                            {% endif %}
+                            <li>
+                                <a href="{% url 'start_hunt' %}">
+                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'social' %}">
+                                    <i class="fa fa-share fa-fw"></i>
+                                    {% trans "Social" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'account_change_password' %}">
+                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'invite' %}">
+                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization_view' %}">
+                                    <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
+                                </a>
+                            </li>
+                            <!-- divider -->
+                            <li class="border my-4 -mx-8"></li>
+                            <li>
+                                <a href="{% url 'account_logout' %}">
+                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </li>
-        {% else %}
-            <!-- Sign up and Log in Buttons -->
-            <div class="flex items-center h-[80px]">
-                <div class="hidden lg:!flex h-[80px] justify-center items-center ">
-                    <a href="{% url 'account_signup' %}"
-                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
-                    {% trans "Signup" %}</a>
-                    <a href="{% url 'account_login' %}"
-                       data-toggle="modal"
-                       class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
-                    {% trans "Login" %}</a>
+            {% else %}
+                <!-- Sign up and Log in Buttons -->
+                <div class="flex items-center h-[80px]">
+                    <div class="hidden lg:!flex h-[80px] justify-center items-center gap-4">
+                        <a href="{% url 'account_signup' %}"
+                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        {% trans "Signup" %}</a>
+                        <a href="{% url 'account_login' %}"
+                           data-toggle="modal"
+                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                        {% trans "Login" %}</a>
+                    </div>
+                    <!-- Log in icon -->
+                    <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
+                        <i class="fa fa-user !text-4xl text-red-500"></i>
+                    </a>
                 </div>
-                <!-- Log in icon -->
-                <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
-                    <i class="fa fa-user !text-5xl text-red-500"></i>
-                </a>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
-</div>
+    <!-- Mobile Search Bar - Moved inside nav -->
+    <div id="mobile-search"
+         class="hidden sm:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
+        <form action="{% url 'search' %}" method="get" class="flex items-center">
+            <div class="relative flex-1">
+                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
+                <input type="text"
+                       name="query"
+                       placeholder="Search..."
+                       class="w-full pl-10 pr-4 py-3 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400">
+                <input type="hidden" name="type" id="mobile-filter-type" value="all">
+            </div>
+            <button type="submit"
+                    class="ml-2 p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <i class="fa fa-search"></i>
+            </button>
+        </form>
+    </div>
 </nav>
 <div class="bg-gray-100 chat-Zindex">
     <div id="chatbot" class="chatbot">
@@ -295,6 +362,90 @@
         </svg>
     </div>
 </div>
+<!--Script for Dropdown button-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const organizationsBtn = document.getElementById("organizations-btn");
+        const organizationsDropdown = document.getElementById("organizations-dropdown");
+        const queryInput = document.getElementById("query-input");
+        
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+        
+        // Set initial values from URL parameters if they exist
+        const savedQuery = getUrlParameter('query');
+        const savedType = getUrlParameter('type');
+        
+        if (savedQuery) {
+            queryInput.value = savedQuery;
+        }
+        
+        if (savedType) {
+            // Find the matching filter option
+            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
+            if (matchingOption) {
+                const iconElement = matchingOption.querySelector('i');
+                const textContent = matchingOption.textContent.trim();
+                
+                // Update the button display
+                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
+                document.getElementById('selected-filter').textContent = textContent;
+                document.getElementById('filter-type').value = savedType;
+            }
+        }
+
+        if (organizationsBtn && organizationsDropdown) {
+            organizationsBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isHidden = organizationsDropdown.classList.toggle('hidden');
+                            
+                if (!isHidden) {
+                    const btnRect = organizationsBtn.getBoundingClientRect();
+                    Object.assign(organizationsDropdown.style, {
+                        position: 'fixed',
+                        top: `${btnRect.bottom}px`,
+                        left: `${btnRect.left}px`,
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
+                    });
+                } else {
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+                    organizationsDropdown.classList.add('hidden');
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+        } else {
+            console.error('Required elements not found!');
+        }
+        
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function (e) {
+                e.preventDefault();
+                const iconElement = this.querySelector('i');
+                const textContent = this.textContent.trim();
+                const filterValue = this.getAttribute('data-value');
+
+                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
+                document.getElementById('selected-filter').textContent = textContent;
+                document.getElementById('filter-type').value = filterValue;
+
+                organizationsDropdown.classList.add('hidden');
+                organizationsDropdown.style.display = 'none';
+            });
+        });
+    });
+</script>
 <script>
     document.getElementById('chatIcon').addEventListener('click', function() {
         document.getElementById('chatbot').style.display = 'block';
@@ -389,4 +540,11 @@
             }
         });
     });
+</script>
+<script>
+function toggleMobileSearch() {
+    const mobileSearch = document.getElementById('mobile-search');
+    mobileSearch.classList.toggle('hidden');
+    mobileSearch.classList.toggle('active');
+}
 </script>

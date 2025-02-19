@@ -5,67 +5,68 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from urllib.parse import urlparse
 
-import humanize
 import requests
-import stripe
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-from django.db.models import Count, Q, Sum
-from django.db.models.functions import ExtractMonth
+from django.db.models import Count, Prefetch, Q, Sum
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-from django.views.generic import FormView, ListView, TemplateView, View
+from django.views.generic import DetailView, FormView, ListView, TemplateView, View
 from django.views.generic.edit import CreateView
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 
-from blt import settings
-from website.forms import CaptchaForm, HuntForm, IpReportForm, UserProfileForm
+from website.forms import CaptchaForm, HuntForm, IpReportForm, RoomForm, UserProfileForm
 from website.models import (
+    IP,
     Activity,
-    Company,
-    CompanyAdmin,
     DailyStatusReport,
     Domain,
     Hunt,
     IpReport,
     Issue,
     IssueScreenshot,
+    Organization,
+    OrganizationAdmin,
+    Room,
     Subscription,
     TimeLog,
-    User,
+    Trademark,
+    UserBadge,
     Wallet,
     Winner,
 )
+from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
 
-def add_domain_to_company(request):
+def add_domain_to_organization(request):
     if request.method == "POST":
         domain = request.POST.get("domain")
         domain = Domain.objects.get(id=domain)
-        company_name = request.POST.get("company")
-        company = Company.objects.filter(name=company_name).first()
+        organization_name = request.POST.get("organization")
+        organization = Organization.objects.filter(name=organization_name).first()
 
-        if not company:
+        if not organization:
             url = domain.url
             if not url.startswith(("http://", "https://")):
                 url = "http://" + url
             response = requests.get(url)
             soup = BeautifulSoup(response.text, "html.parser")
-            if company_name in soup.get_text():
-                company = Company.objects.create(name=company_name)
-                domain.company = company
+            if organization_name in soup.get_text():
+                organization = Organization.objects.create(name=organization_name)
+                domain.organization = organization
                 domain.save()
                 messages.success(request, "Organization added successfully")
                 return redirect("domain", slug=domain.url)
@@ -73,7 +74,7 @@ def add_domain_to_company(request):
                 messages.error(request, "Organization not found in the domain")
                 return redirect("domain", slug=domain.url)
         else:
-            domain.company = company
+            domain.organization = organization
             domain.save()
             messages.success(request, "Organization added successfully")
             return redirect("domain", slug=domain.url)
@@ -82,12 +83,12 @@ def add_domain_to_company(request):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard(request, template="index_company.html"):
+def organization_dashboard(request, template="index_organization.html"):
     try:
-        company_admin = CompanyAdmin.objects.get(user=request.user)
-        if not company_admin.is_active:
+        organization_admin = OrganizationAdmin.objects.get(user=request.user)
+        if not organization_admin.is_active:
             return HttpResponseRedirect("/")
-        hunts = Hunt.objects.filter(is_published=True, domain=company_admin.domain)
+        hunts = Hunt.objects.filter(is_published=True, domain=organization_admin.domain)
         upcoming_hunt = []
         ongoing_hunt = []
         previous_hunt = []
@@ -109,35 +110,33 @@ def company_dashboard(request, template="index_company.html"):
 
 
 @login_required(login_url="/accounts/login")
-def admin_company_dashboard(request, template="admin_dashboard_company.html"):
+def admin_organization_dashboard(request, template="admin_dashboard_organization.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
             return HttpResponseRedirect("/")
-        company = Company.objects.all()
-        context = {"companys": company}
+        organization = Organization.objects.all()
+        context = {"organizations": organization}
         return render(request, template, context)
     else:
         return redirect("/")
 
 
 @login_required(login_url="/accounts/login")
-def admin_company_dashboard_detail(request, pk, template="admin_dashboard_company_detail.html"):
+def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_organization_detail.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
             return HttpResponseRedirect("/")
-        company = get_object_or_404(Company, pk=pk)
-        return render(request, template, {"company": company})
+        organization = get_object_or_404(Organization, pk=pk)
+        return render(request, template, {"organization": organization})
     else:
         return redirect("/")
 
 
 def weekly_report(request):
     domains = Domain.objects.all()
-    report_data = [
-        "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your company!"
-    ]
+    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
     try:
         for domain in domains:
             open_issues = domain.open_issues
@@ -146,8 +145,8 @@ def weekly_report(request):
             issues = Issue.objects.filter(domain=domain)
             email = domain.email
             report_data.append(
-                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your company!"
-                f"\n\nCompany Name: {domain.name}"
+                "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"
+                f"\n\norganization Name: {domain.name}"
                 f"Open issues: {open_issues.count()}"
                 f"Closed issues: {closed_issues.count()}"
                 f"Total issues: {total_issues}"
@@ -156,9 +155,7 @@ def weekly_report(request):
                 description = issue.description
                 views = issue.views
                 label = issue.get_label_display()
-                report_data.append(
-                    f"\n Description: {description} \n Views: {views} \n Labels: {label} \n"
-                )
+                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
 
         report_string = "".join(report_data)
         send_mail(
@@ -175,17 +172,13 @@ def weekly_report(request):
 
 
 @login_required(login_url="/accounts/login")
-def company_hunt_results(request, pk, template="company_hunt_results.html"):
+def organization_hunt_results(request, pk, template="organization_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
-    issues = Issue.objects.filter(hunt=hunt).exclude(
-        Q(is_hidden=True) & ~Q(user_id=request.user.id)
-    )
+    issues = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
     context = {}
     if request.method == "GET":
         context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
+        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
         if hunt.result_published:
             context["winner"] = Winner.objects.get(hunt=hunt)
         return render(request, template, context)
@@ -234,44 +227,21 @@ def company_hunt_results(request, pk, template="company_hunt_results.html"):
                 if index == 4:
                     break
                 index = index + 1
-            total_amount = (
-                Decimal(hunt.prize_winner)
-                + Decimal(hunt.prize_runner)
-                + Decimal(hunt.prize_second_runner)
-            )
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            balance = stripe.Balance.retrieve()
-            if balance.available[0].amount > total_amount * 100:
-                if winner.winner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.winner)
-                    wallet.deposit(hunt.prize_winner)
-                    wallet.save()
-                if winner.runner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.runner)
-                    wallet.deposit(hunt.prize_runner)
-                    wallet.save()
-                if winner.second_runner:
-                    wallet, created = Wallet.objects.get_or_create(user=winner.second_runner)
-                    wallet.deposit(hunt.prize_second_runner)
-                    wallet.save()
+            total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
             winner.prize_distributed = True
             winner.hunt = hunt
             winner.save()
             hunt.result_published = True
             hunt.save()
             context["winner"] = winner
-        context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )
+        context["hunt"] = hunt
+        context["issues"] = issues
         return render(request, template, context)
 
 
 class DomainListView(ListView):
     model = Domain
-    paginate_by = 20
+    paginate_by = 100
     template_name = "domain_list.html"
 
     def get_context_data(self, **kwargs):
@@ -313,36 +283,37 @@ def subscribe_to_domains(request, pk):
 
 class DomainList(TemplateView):
     model = Domain
-    template_name = "company_domain_lists.html"
+    template_name = "organization_domain_lists.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = self.model.objects.filter(company=domain_admin.company)
+            domain = self.model.objects.filter(organization=domain_admin.organization)
         else:
             domain = self.model.objects.filter(pk=domain_admin.domain.pk)
         context = {"domains": domain}
         return render(request, self.template_name, context)
 
 
-class JoinCompany(TemplateView):
-    model = Company
+class Joinorganization(TemplateView):
+    model = Organization
     template_name = "join.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         wallet, created = Wallet.objects.get_or_create(user=request.user)
-        context = {"wallet": wallet}
+        organization_name = request.GET.get("organization", "")
+        context = {"wallet": wallet, "organization_name": organization_name}
         return render(request, self.template_name, context)
 
     def post(self, request, *args, **kwargs):
-        name = request.POST["company"]
+        name = request.POST["organization"]
         try:
-            company_exists = Company.objects.get(name=name)
+            organization_exists = Organization.objects.get(name=name)
             return JsonResponse({"status": "There was some error"})
         except:
             pass
@@ -358,45 +329,46 @@ class JoinCompany(TemplateView):
             if wallet.current_balance < sub.charge_per_month:
                 return JsonResponse({"error": "insufficient balance in Wallet"})
             wallet.withdraw(sub.charge_per_month)
-            company = Company()
-            company.admin = request.user
-            company.name = name
-            company.url = url
-            company.email = email
-            company.subscription = sub
-            company.save()
-            admin = CompanyAdmin()
+            organization = Organization()
+            organization.admin = request.user
+            organization.name = name
+            organization.url = url
+            organization.email = email
+            organization.subscription = sub
+            organization.save()
+            admin = OrganizationAdmin()
             admin.user = request.user
             admin.role = 0
-            admin.company = company
+            admin.organization = organization
             admin.is_active = True
             admin.save()
-            return JsonResponse({"status": "Success"})
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                }
+            )
             # company.subscription =
         elif paymentType == "card":
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            charge = stripe.Charge.create(
-                amount=int(Decimal(sub.charge_per_month) * 100),
-                currency="usd",
-                description="Example charge",
-                source=request.POST["stripeToken"],
-            )
-            company = Company()
-            company.admin = request.user
-            company.name = name
-            company.url = url
-            company.email = email
-            company.subscription = sub
-            company.save()
-            admin = CompanyAdmin()
+            organization = Organization()
+            organization.admin = request.user
+            organization.name = name
+            organization.url = url
+            organization.email = email
+            organization.subscription = sub
+            organization.save()
+            admin = OrganizationAdmin()
             admin.user = request.user
             admin.role = 0
-            admin.company = company
+            admin.organization = organization
             admin.is_active = True
             admin.save()
-            return JsonResponse({"status": "Success"})
+            return JsonResponse(
+                {
+                    "status": "Success",
+                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                }
+            )
         else:
             return JsonResponse({"status": "There was some error"})
 
@@ -477,7 +449,7 @@ class DraftHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:
@@ -498,7 +470,7 @@ class UpcomingHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
 
@@ -524,7 +496,7 @@ class OngoingHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:
@@ -549,7 +521,7 @@ class PreviousHunts(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             if domain_admin.role == 0:
@@ -577,27 +549,23 @@ class PreviousHunts(TemplateView):
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
-class CompanySettings(TemplateView):
-    model = CompanyAdmin
+class OrganizationSettings(TemplateView):
+    model = OrganizationAdmin
     fields = ["user", "domain", "role", "is_active"]
-    template_name = "company_settings.html"
+    template_name = "organization_settings.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             domain_admins = []
-            domain_list = Domain.objects.filter(company=domain_admin.company)
+            domain_list = Domain.objects.filter(organization=domain_admin.organization)
             if domain_admin.role == 0:
-                domain_admins = CompanyAdmin.objects.filter(
-                    company=domain_admin.company, is_active=True
-                )
+                domain_admins = OrganizationAdmin.objects.filter(organization=domain_admin.organization, is_active=True)
             else:
-                domain_admins = CompanyAdmin.objects.filter(
-                    domain=domain_admin.domain, is_active=True
-                )
+                domain_admins = OrganizationAdmin.objects.filter(domain=domain_admin.domain, is_active=True)
             context = {
                 "admins": domain_admins,
                 "user": domain_admin,
@@ -626,23 +594,40 @@ class DomainDetailView(ListView):
         domain = get_object_or_404(Domain, name=self.kwargs["slug"])
         context["domain"] = domain
 
+        # Get view count
+        view_count = IP.objects.filter(path=self.request.path).count()
+        context["view_count"] = view_count
+
         parsed_url = urlparse("http://" + self.kwargs["slug"])
+        name = parsed_url.netloc.split(".")[-2:][0].title()
+        context["name"] = name
 
-        open_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
-            .filter(status="open", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-        )
+        # Fetch the related organization
+        organization = domain.organization
+        if organization is None:
+            organizations = Organization.objects.filter(name__iexact=domain.get_name)
+            if organizations.exists():
+                organization = organizations.first()
+            else:
+                organization = None
 
-        closed_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"])
-            .filter(status="closed", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-        )
+        context["organization"] = organization
+
+        if organization:
+            # Fetch related trademarks for the organization
+            trademarks = Trademark.objects.filter(organization=organization)
+            context["trademarks"] = trademarks
+
+        open_issues = Issue.objects.filter(
+            domain__name__contains=self.kwargs["slug"], status="open", hunt=None
+        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+
+        closed_issues = Issue.objects.filter(
+            domain__name__contains=self.kwargs["slug"], status="closed", hunt=None
+        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        context["name"] = parsed_url.netloc.split(".")[-2:][0].title()
 
         paginator = Paginator(open_issues, 3)
         page = self.request.GET.get("open")
@@ -666,42 +651,42 @@ class DomainDetailView(ListView):
         context["opened"] = openissue_paginated
         context["closed_net"] = closed_issues
         context["closed"] = closeissue_paginated
+
         context["leaderboard"] = (
             User.objects.filter(issue__url__contains=self.kwargs["slug"])
             .annotate(total=Count("issue"))
             .order_by("-total")
         )
+
         context["current_month"] = datetime.now().month
-        context["domain_graph"] = (
-            Issue.objects.filter(domain=context["domain"], hunt=None)
-            .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
-            )
-            .annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
+
+        context["domain_graph"] = Issue.objects.filter(
+            domain=context["domain"],
+            hunt=None,
+            created__month__gte=(datetime.now().month - 6),
+            created__month__lte=datetime.now().month,
+        ).order_by()
+
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                domain=context["domain"], hunt=None, label=str(i)
-            )
+            context["bug_type_" + str(i)] = Issue.objects.filter(domain=context["domain"], hunt=None, label=str(i))
+
         context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
+
         context["pie_chart"] = (
             Issue.objects.filter(domain=context["domain"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
             .order_by()
         )
+
         context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:3]
+        )
+
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity.pk
-            ).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
+
         context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
 
         return context
@@ -711,10 +696,9 @@ class ScoreboardView(ListView):
     model = Domain
     template_name = "scoreboard.html"
     paginate_by = 20
+    context_object_name = "scoreboard"
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-
+    def get_queryset(self):
         sort_by = self.request.GET.get("sort_by", "open_issues_count")
         sort_order = self.request.GET.get("sort_order", "desc")
 
@@ -723,22 +707,13 @@ class ScoreboardView(ListView):
         else:
             sort_by = f"-{sort_by}"
 
-        annotated_domains = Domain.objects.annotate(
+        return Domain.objects.annotate(
             open_issues_count=Count("issue", filter=Q(issue__status="open")),
             closed_issues_count=Count("issue", filter=Q(issue__status="closed")),
         ).order_by(sort_by)
 
-        paginator = Paginator(annotated_domains, self.paginate_by)
-        page = self.request.GET.get("page")
-
-        try:
-            scoreboard_paginated = paginator.page(page)
-        except PageNotAnInteger:
-            scoreboard_paginated = paginator.page(1)
-        except EmptyPage:
-            scoreboard_paginated = paginator.page(paginator.num_pages)
-
-        context["scoreboard"] = scoreboard_paginated
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
         context["user"] = self.request.GET.get("user")
         context["sort_by"] = self.request.GET.get("sort_by", "open_issues_count")
         context["sort_order"] = self.request.GET.get("sort_order", "desc")
@@ -788,12 +763,12 @@ class CreateHunt(TemplateView):
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             domain = []
             if domain_admin.role == 0:
-                domain = Domain.objects.filter(company=domain_admin.company)
+                domain = Domain.objects.filter(organization=domain_admin.organization)
             else:
                 domain = Domain.objects.filter(pk=domain_admin.domain.pk)
 
@@ -805,13 +780,10 @@ class CreateHunt(TemplateView):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         try:
-            domain_admin = CompanyAdmin.objects.get(user=request.user)
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
             if (
                 domain_admin.role == 1
-                and (
-                    str(domain_admin.domain.pk)
-                    == ((request.POST["domain"]).split("-"))[0].replace(" ", "")
-                )
+                and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
             ) or domain_admin.role == 0:
                 wallet, created = Wallet.objects.get_or_create(user=request.user)
                 total_amount = (
@@ -822,9 +794,7 @@ class CreateHunt(TemplateView):
                 if total_amount > wallet.current_balance:
                     return HttpResponse("failed")
                 hunt = Hunt()
-                hunt.domain = Domain.objects.get(
-                    pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-                )
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 data = {}
                 data["content"] = request.POST["content"]
                 data["start_date"] = request.POST["start_date"]
@@ -837,9 +807,7 @@ class CreateHunt(TemplateView):
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
                         return HttpResponse("failed")
-                hunt.domain = Domain.objects.get(
-                    pk=(request.POST["domain"]).split("-")[0].replace(" ", "")
-                )
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 tzsign = 1
                 offset = request.POST["tzoffset"]
                 if int(offset) < 0:
@@ -848,26 +816,18 @@ class CreateHunt(TemplateView):
                 start_date = form.cleaned_data["start_date"]
                 end_date = form.cleaned_data["end_date"]
                 if tzsign > 0:
-                    start_date = start_date + timedelta(
-                        hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-                    )
-                    end_date = end_date + timedelta(
-                        hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-                    )
+                    start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 else:
-                    start_date = start_date - (
-                        timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-                    )
-                    end_date = end_date - (
-                        timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-                    )
+                    start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
                 hunt.prize_runner = Decimal(request.POST["prize_runner"])
                 hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
                 hunt.end_on = end_date
                 hunt.name = request.POST["name"]
-                hunt.description = request.POST["content"]
+                hunt.description = form.cleaned_data["content"]
                 wallet.withdraw(total_amount)
                 wallet.save()
                 try:
@@ -899,26 +859,28 @@ def user_sizzle_report(request, username):
         total_duration = sum((log.duration for log in logs if log.duration), timedelta())
 
         total_duration_seconds = total_duration.total_seconds()
-        formatted_duration = (
-            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
-        )
+        formatted_duration = f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
 
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
         start_time = first_log.start_time.strftime("%I:%M %p")
+        end_time = first_log.end_time.strftime("%I:%M %p")
         formatted_date = first_log.created.strftime("%d %B %Y")
 
         day_data = {
             "issue_title": issue_title,
             "duration": formatted_duration,
             "start_time": start_time,
+            "end_time": end_time,
             "date": formatted_date,
         }
 
         response_data.append(day_data)
 
     return render(
-        request, "sizzle/user_sizzle_report.html", {"response_data": response_data, "user": user}
+        request,
+        "sizzle/user_sizzle_report.html",
+        {"response_data": response_data, "user": user},
     )
 
 
@@ -933,7 +895,9 @@ def sizzle_daily_log(request):
             previous_work = request.POST.get("previous_work")
             next_plan = request.POST.get("next_plan")
             blockers = request.POST.get("blockers")
-            print(previous_work, next_plan, blockers)
+            goal_accomplished = request.POST.get("goal_accomplished") == "on"
+            current_mood = request.POST.get("feeling")
+            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -941,10 +905,17 @@ def sizzle_daily_log(request):
                 previous_work=previous_work,
                 next_plan=next_plan,
                 blockers=blockers,
+                goal_accomplished=goal_accomplished,
+                current_mood=current_mood,
             )
 
             messages.success(request, "Daily status report submitted successfully.")
-            return redirect("sizzle")
+            return JsonResponse(
+                {
+                    "success": "true",
+                    "message": "Daily status report submitted successfully.",
+                }
+            )
 
     except Exception as e:
         messages.error(request, f"An error occurred: {e}")
@@ -960,10 +931,10 @@ def TimeLogListView(request):
 
     # print the all details of the active time log
     token, created = Token.objects.get_or_create(user=request.user)
-    organizations_list_queryset = Company.objects.all().values("url", "name")
+    organizations_list_queryset = Organization.objects.all().values("url", "name")
     organizations_list = list(organizations_list_queryset)
     organization_url = None
-    if active_time_log:
+    if active_time_log and active_time_log.organization:
         organization_url = active_time_log.organization.url
     return render(
         request,
@@ -997,9 +968,7 @@ def TimeLogListAPIView(request):
     if not start_date or not end_date:
         return JsonResponse({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
 
-    time_logs = TimeLog.objects.filter(
-        user=request.user, created__range=[start_date, end_date]
-    ).order_by("created")
+    time_logs = TimeLog.objects.filter(user=request.user, created__range=[start_date, end_date]).order_by("created")
 
     grouped_logs = defaultdict(list)
     for log in time_logs:
@@ -1012,9 +981,7 @@ def TimeLogListAPIView(request):
         total_duration = sum((log.duration for log in logs if log.duration), timedelta())
 
         total_duration_seconds = total_duration.total_seconds()
-        formatted_duration = (
-            f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
-        )
+        formatted_duration = f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
 
         issue_title = get_github_issue_title(first_log.github_issue_url)
 
@@ -1041,9 +1008,7 @@ def sizzle_docs(request):
 def sizzle(request):
     # Aggregate leaderboard data: username and total_duration
     leaderboard_qs = (
-        TimeLog.objects.values("user__username")
-        .annotate(total_duration=Sum("duration"))
-        .order_by("-total_duration")
+        TimeLog.objects.values("user__username").annotate(total_duration=Sum("duration")).order_by("-total_duration")
     )
 
     # Process leaderboard to include formatted_duration
@@ -1066,13 +1031,11 @@ def sizzle(request):
         last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
 
         if last_data:
-            all_data = TimeLog.objects.filter(
-                user=request.user, created__date=last_data.created.date()
-            ).order_by("created")
-
-            total_duration = sum(
-                (entry.duration for entry in all_data if entry.duration), timedelta()
+            all_data = TimeLog.objects.filter(user=request.user, created__date=last_data.created.date()).order_by(
+                "created"
             )
+
+            total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
 
             formatted_duration = format_timedelta(total_duration)
 
@@ -1091,7 +1054,9 @@ def sizzle(request):
             }
 
     return render(
-        request, "sizzle/sizzle.html", {"sizzle_data": sizzle_data, "leaderboard": leaderboard}
+        request,
+        "sizzle/sizzle.html",
+        {"sizzle_data": sizzle_data, "leaderboard": leaderboard},
     )
 
 
@@ -1099,9 +1064,7 @@ def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
 
-    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
-        slug
-    )
+    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (slug)
     headers = {
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
@@ -1109,16 +1072,21 @@ def trademark_detailview(request, slug):
     trademark_available_response = requests.get(trademark_available_url, headers=headers)
     ta_data = trademark_available_response.json()
 
-    if ta_data[0]["available"] == "no":
-        trademark_search_url = (
-            "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
-        )
+    if trademark_available_response.status_code == 429:
+        error_message = "You have exceeded the rate limit for USPTO API requests. Please try again later."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+
+    if not isinstance(ta_data, list) or len(ta_data) == 0:
+        error_message = "Invalid response from USPTO API."
+        return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
+
+    if ta_data[0].get("available") == "no":
+        trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
         trademark_search_response = requests.get(trademark_search_url, headers=headers)
         ts_data = trademark_search_response.json()
-        context = {"count": ts_data["count"], "items": ts_data["items"], "query": slug}
-
+        context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
-        context = {"available": ta_data[0]["available"]}
+        context = {"available": ta_data[0].get("available"), "query": slug}
 
     return render(request, "trademark_detailview.html", context)
 
@@ -1137,7 +1105,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
         hunt_active = False
         hunt_completed = False
-        time_remaining = humanize.naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
+        time_remaining = naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
     elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
         hunt_active = False
         hunt_completed = True
@@ -1157,10 +1125,10 @@ def view_hunt(request, pk, template="view_hunt.html"):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_edit.html"):
+def organization_dashboard_hunt_edit(request, pk, template="organization_dashboard_hunt_edit.html"):
     if request.method == "GET":
         hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
             return HttpResponseRedirect("/")
         if domain_admin.role == 1:
@@ -1168,7 +1136,7 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
                 return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = Domain.objects.filter(company=domain_admin.company)
+            domain = Domain.objects.filter(organization=domain_admin.organization)
         else:
             domain = Domain.objects.filter(pk=domain_admin.domain.pk)
         initial = {"content": hunt.description}
@@ -1183,7 +1151,7 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
         if not form.is_valid():
             return HttpResponse("failed")
         hunt = get_object_or_404(Hunt, pk=pk)
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
             return HttpResponse("failed")
         if domain_admin.role == 1:
@@ -1198,19 +1166,11 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         if tzsign > 0:
-            start_date = start_date + timedelta(
-                hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-            )
-            end_date = end_date + timedelta(
-                hours=int(int(offset) / 60), minutes=int(int(offset) % 60)
-            )
+            start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         else:
-            start_date = start_date - (
-                timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            )
-            end_date = end_date - (
-                timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
-            )
+            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         hunt.starts_on = start_date
         hunt.end_on = end_date
 
@@ -1226,7 +1186,7 @@ def company_dashboard_hunt_edit(request, pk, template="company_dashboard_hunt_ed
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_hunt_detail(request, pk, template="company_dashboard_hunt_detail.html"):
+def organization_dashboard_hunt_detail(request, pk, template="organization_dashboard_hunt_detail.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     return render(request, template, {"hunt": hunt})
 
@@ -1238,9 +1198,9 @@ def hunt_results(request, pk, template="hunt_results.html"):
 
 
 @login_required(login_url="/accounts/login")
-def company_dashboard_domain_detail(request, pk, template="company_dashboard_domain_detail.html"):
+def organization_dashboard_domain_detail(request, pk, template="organization_dashboard_domain_detail.html"):
     user = request.user
-    domain_admin = CompanyAdmin.objects.get(user=request.user)
+    domain_admin = OrganizationAdmin.objects.get(user=request.user)
     try:
         if (Domain.objects.get(pk=pk)) == domain_admin.domain:
             if not user.is_active:
@@ -1256,9 +1216,9 @@ def company_dashboard_domain_detail(request, pk, template="company_dashboard_dom
 @login_required(login_url="/accounts/login")
 def add_or_update_domain(request):
     if request.method == "POST":
-        company_admin = CompanyAdmin.objects.get(user=request.user)
-        subscription = company_admin.company.subscription
-        count_domain = Domain.objects.filter(company=company_admin.company).count()
+        organization_admin = OrganizationAdmin.objects.get(user=request.user)
+        subscription = organization_admin.organization.subscription
+        count_domain = Domain.objects.filter(organization=organization_admin.organization).count()
         try:
             try:
                 domain_pk = request.POST["id"]
@@ -1276,7 +1236,7 @@ def add_or_update_domain(request):
                 if count_domain == subscription.number_of_domains:
                     return HttpResponse("Domains Reached Limit")
                 else:
-                    if company_admin.role == 0:
+                    if organization_admin.role == 0:
                         domain = Domain()
                         domain.name = request.POST["name"]
                         domain.url = request.POST["url"]
@@ -1286,7 +1246,7 @@ def add_or_update_domain(request):
                             domain.logo = request.FILES["logo"]
                         except:
                             pass
-                        domain.company = company_admin.company
+                        domain.organization = organization_admin.organization
                         domain.save()
                         return HttpResponse("Domain Created")
                     else:
@@ -1296,49 +1256,49 @@ def add_or_update_domain(request):
 
 
 @login_required(login_url="/accounts/login")
-def add_or_update_company(request):
+def add_or_update_organization(request):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
             return HttpResponseRedirect("/")
         if request.method == "POST":
             domain_pk = request.POST["id"]
-            company = Company.objects.get(pk=domain_pk)
-            user = company.admin
+            organization = Organization.objects.get(pk=domain_pk)
+            user = organization.admin
             if user != User.objects.get(email=request.POST["admin"]):
                 try:
-                    admin = CompanyAdmin.objects.get(user=user, company=company)
+                    admin = OrganizationAdmin.objects.get(user=user, organization=organization)
                     admin.user = User.objects.get(email=request.POST["admin"])
                     admin.save()
                 except:
-                    admin = CompanyAdmin()
+                    admin = OrganizationAdmin()
                     admin.user = User.objects.get(email=request.POST["admin"])
                     admin.role = 0
-                    admin.company = company
+                    admin.organization = organization
                     admin.is_active = True
                     admin.save()
-            company.name = request.POST["name"]
-            company.email = request.POST["email"]
-            company.url = request.POST["url"]
-            company.admin = User.objects.get(email=request.POST["admin"])
-            company.github = request.POST["github"]
+            organization.name = request.POST["name"]
+            organization.email = request.POST["email"]
+            organization.url = request.POST["url"]
+            organization.admin = User.objects.get(email=request.POST["admin"])
+            organization.github = request.POST["github"]
             try:
                 is_verified = request.POST["verify"]
                 if is_verified == "on":
-                    company.is_active = True
+                    organization.is_active = True
                 else:
-                    company.is_active = False
+                    organization.is_active = False
             except:
-                company.is_active = False
+                organization.is_active = False
             try:
-                company.subscription = Subscription.objects.get(name=request.POST["subscription"])
+                organization.subscription = Subscription.objects.get(name=request.POST["subscription"])
             except:
                 pass
             try:
-                company.logo = request.FILES["logo"]
+                organization.logo = request.FILES["logo"]
             except:
                 pass
-            company.save()
+            organization.save()
             return HttpResponse("success")
 
         else:
@@ -1350,15 +1310,15 @@ def add_or_update_company(request):
 @login_required(login_url="/accounts/login")
 def add_role(request):
     if request.method == "POST":
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if domain_admin.role == 0 and domain_admin.is_active:
             email = request.POST["email"]
             user = User.objects.get(email=email)
             if request.user == user:
                 return HttpResponse("success")
             try:
-                admin = CompanyAdmin.objects.get(user=user)
-                if admin.company == domain_admin.company:
+                admin = OrganizationAdmin.objects.get(user=user)
+                if admin.organization == domain_admin.organization:
                     admin.is_active = True
                     admin.save()
                     return HttpResponse("success")
@@ -1366,10 +1326,10 @@ def add_role(request):
                     return HttpResponse("already admin of another domain")
             except:
                 try:
-                    admin = CompanyAdmin()
+                    admin = OrganizationAdmin()
                     admin.user = user
                     admin.role = 1
-                    admin.company = domain_admin.company
+                    admin.organization = domain_admin.organization
                     admin.is_active = True
                     admin.save()
                     return HttpResponse("success")
@@ -1384,14 +1344,14 @@ def add_role(request):
 @login_required(login_url="/accounts/login")
 def update_role(request):
     if request.method == "POST":
-        domain_admin = CompanyAdmin.objects.get(user=request.user)
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if domain_admin.role == 0 and domain_admin.is_active:
             for key, value in request.POST.items():
                 if key.startswith("user@"):
                     user = User.objects.get(username=value)
-                    if domain_admin.company.admin == request.user:
+                    if domain_admin.organization.admin == request.user:
                         pass
-                    domain_admin = CompanyAdmin.objects.get(user=user)
+                    domain_admin = OrganizationAdmin.objects.get(user=user)
                     if request.POST["role@" + value] != "9":
                         domain_admin.role = request.POST["role@" + value]
                     elif request.POST["role@" + value] == "9":
@@ -1406,9 +1366,9 @@ def update_role(request):
             for key, value in request.POST.items():
                 if key.startswith("user@"):
                     user = User.objects.get(username=value)
-                    if domain_admin.company.admin == request.user:
+                    if domain_admin.organization.admin == request.user:
                         pass
-                    domain_admin = CompanyAdmin.objects.get(user=user)
+                    domain_admin = OrganizationAdmin.objects.get(user=user)
                     if request.POST["role@" + value] == "1":
                         domain_admin.role = request.POST["role@" + value]
                     elif request.POST["role@" + value] == "9":
@@ -1454,9 +1414,7 @@ def get_scoreboard(request):
         domain = paginator.page(1)
     except EmptyPage:
         domain = paginator.page(paginator.num_pages)
-    return HttpResponse(
-        json.dumps(domain.object_list, default=str), content_type="application/json"
-    )
+    return HttpResponse(json.dumps(domain.object_list, default=str), content_type="application/json")
 
 
 @require_POST
@@ -1543,9 +1501,7 @@ class ReportIpView(FormView):
         reporter_ip = get_client_ip(self.request)
         limit = 50 if self.request.user.is_authenticated else 30
         today = now().date()
-        recent_reports_count = IpReport.objects.filter(
-            reporter_ip_address=reporter_ip, created=today
-        ).count()
+        recent_reports_count = IpReport.objects.filter(reporter_ip_address=reporter_ip, created=today).count()
 
         if recent_reports_count >= limit:
             messages.error(self.request, "You have reached the daily limit for IP reports.")
@@ -1590,11 +1546,426 @@ def feed(request):
     # Determine if pagination is required
     is_paginated = page_obj.has_other_pages()
 
+    # Check if the user has the mentor badge
+    if request.user.is_authenticated:
+        is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
+    else:
+        is_mentor = False
+
     return render(
         request,
         "feed.html",
         {
             "page_obj": page_obj,
             "is_paginated": is_paginated,  # Pass this flag to the template
+            "is_mentor": is_mentor,  # Add is_mentor to the context
         },
     )
+
+
+@login_required
+@require_POST
+def like_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+    else:
+        activity.likes.add(user)
+        activity.like_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception:
+            return JsonResponse({"success": False})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def dislike_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    if activity.likes.filter(id=user.id).exists():
+        activity.likes.remove(user)
+        activity.like_count -= 1
+
+    if activity.dislikes.filter(id=user.id).exists():
+        activity.dislikes.remove(user)
+        activity.dislike_count -= 1
+    else:
+        activity.dislikes.add(user)
+        activity.dislike_count += 1
+
+    activity.save()
+
+    # Check if the activity meets the approval criteria
+    if activity.like_count >= 3 and activity.dislike_count < 3 and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+        except Exception:
+            return JsonResponse({"success": False})
+
+    return JsonResponse(
+        {
+            "success": True,
+            "like_count": activity.like_count,
+            "dislike_count": activity.dislike_count,
+        }
+    )
+
+
+@login_required
+@require_POST
+def approve_activity(request, id):
+    activity = get_object_or_404(Activity, id=id)
+    user = request.user
+
+    # Check if the user has the "Mentor" badge
+    if UserBadge.objects.filter(user=user, badge__title="Mentor").exists() and not activity.is_approved:
+        activity.is_approved = True
+        activity.save()
+
+        # Trigger posting on BlueSky
+        blue_sky_service = BlueSkyService()
+        try:
+            activity.post_to_bluesky(blue_sky_service)
+            return JsonResponse({"success": True, "is_approved": activity.is_approved})
+        except Exception:
+            return JsonResponse({"success": False})
+    else:
+        return JsonResponse({"success": False, "error": "Not authorized"})
+
+
+def truncate_text(text, length=15):
+    return text if len(text) <= length else text[:length] + "..."
+
+
+@login_required
+def add_sizzle_checkIN(request):
+    # Fetch yesterday's report
+    yesterday = now().date() - timedelta(days=1)
+    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
+
+    return render(
+        request,
+        "sizzle/add_sizzle_checkin.html",
+        {"yesterday_report": yesterday_report},
+    )
+
+
+def checkIN(request):
+    from datetime import date
+
+    # Find the most recent date that has data
+    last_report = DailyStatusReport.objects.order_by("-date").first()
+    if last_report:
+        default_start_date = last_report.date
+        default_end_date = last_report.date
+    else:
+        # If no data at all, fallback to today
+        default_start_date = date.today()
+        default_end_date = date.today()
+
+    start_date_str = request.GET.get("start_date")
+    end_date_str = request.GET.get("end_date")
+
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = default_start_date
+            end_date = default_end_date
+    else:
+        # No date range provided, use the default (most recent date with data)
+        start_date = default_start_date
+        end_date = default_end_date
+
+    reports = (
+        DailyStatusReport.objects.filter(date__range=(start_date, end_date))
+        .select_related("user")
+        .order_by("date", "created")
+    )
+
+    data = []
+    for r in reports:
+        data.append(
+            {
+                "id": r.id,
+                "username": r.user.username,
+                "previous_work": truncate_text(r.previous_work),
+                "next_plan": truncate_text(r.next_plan),
+                "blockers": truncate_text(r.blockers),
+                "goal_accomplished": r.goal_accomplished,  # Add this line
+                "current_mood": r.current_mood,  # Add this line
+                "date": r.date.strftime("%d %B %Y"),
+            }
+        )
+
+    # Return JSON if AJAX
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(data, safe=False)
+
+    # Render template with initial data if needed
+    return render(
+        request,
+        "sizzle/checkin.html",
+        {
+            "data": data,
+            "default_start_date": default_start_date.isoformat(),
+            "default_end_date": default_end_date.isoformat(),
+        },
+    )
+
+
+def checkIN_detail(request, report_id):
+    report = get_object_or_404(DailyStatusReport, pk=report_id)
+    context = {
+        "username": report.user.username,
+        "date": report.date.strftime("%d %B %Y"),
+        "previous_work": report.previous_work,
+        "next_plan": report.next_plan,
+        "blockers": report.blockers,
+    }
+    return render(request, "sizzle/checkin_detail.html", context)
+
+
+class RoomsListView(ListView):
+    model = Room
+    template_name = "rooms_list.html"
+    context_object_name = "rooms"
+    paginate_by = 10
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form"] = RoomForm()
+
+        # Add last 3 messages for each room
+        for room in context["rooms"]:
+            room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
+
+        return context
+
+
+class RoomCreateView(CreateView):
+    model = Room
+    form_class = RoomForm
+    template_name = "room_form.html"
+    success_url = reverse_lazy("rooms_list")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["is_anonymous"] = self.request.user.is_anonymous
+        return kwargs
+
+    def form_valid(self, form):
+        if self.request.user.is_anonymous:
+            # Get or create session key
+            if not self.request.session.session_key:
+                self.request.session.create()
+            session_key = self.request.session.session_key
+            # Use last 4 characters of session key for anonymous username
+            anon_name = f"anon_{session_key[-4:]}"
+            form.instance.session_key = session_key
+        else:
+            form.instance.admin = self.request.user
+        return super().form_valid(form)
+
+
+def join_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+    # Ensure session key exists for anonymous users
+    if request.user.is_anonymous and not request.session.session_key:
+        request.session.create()
+    # Get messages ordered by timestamp
+    room_messages = room.messages.all().order_by("timestamp")
+    return render(request, "join_room.html", {"room": room, "room_messages": room_messages})
+
+
+@login_required(login_url="/accounts/login")
+@require_POST
+def delete_room(request, room_id):
+    room = get_object_or_404(Room, id=room_id)
+
+    # Check if the user is the admin or the anonymous creator
+    is_admin = request.user.is_authenticated and room.admin == request.user
+    is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
+
+    if not (is_admin or is_anon_creator):
+        messages.error(request, "You don't have permission to delete this room.")
+        return redirect("rooms_list")
+
+    room.delete()
+    messages.success(request, "Room deleted successfully.")
+    return redirect("rooms_list")
+
+
+class OrganizationDetailView(DetailView):
+    model = Organization
+    template_name = "organization/organization_detail.html"
+    context_object_name = "organization"
+
+    def get_queryset(self):
+        return Organization.objects.prefetch_related(
+            "domain_set",
+            "domain_set__issue_set",
+            Prefetch(
+                "domain_set__issue_set",
+                queryset=Issue.objects.filter(status="open"),
+                to_attr="open_issues_list",
+            ),
+            Prefetch(
+                "domain_set__issue_set",
+                queryset=Issue.objects.filter(status="closed"),
+                to_attr="closed_issues_list",
+            ),
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        organization = self.object
+
+        # Get top 10 projects based on total pull requests
+        top_projects = []
+        for project in organization.projects.all():
+            total_prs = sum(repo.open_pull_requests + repo.closed_pull_requests for repo in project.repos.all())
+            total_contributors = sum(repo.contributor_count for repo in project.repos.all())
+            top_projects.append({"project": project, "total_prs": total_prs, "total_contributors": total_contributors})
+
+        # Sort by total PRs and get top 10
+        top_projects.sort(key=lambda x: x["total_prs"], reverse=True)
+        context["top_projects"] = top_projects[:10]
+        # Get all domains for this organization
+        domains = organization.domain_set.all()
+
+        # Calculate statistics
+        total_open_issues = sum(len(domain.open_issues_list) for domain in domains)
+        total_closed_issues = sum(len(domain.closed_issues_list) for domain in domains)
+
+        # Get view count
+        view_count = IP.objects.filter(path=self.request.path).count()
+
+        context.update(
+            {
+                "total_domains": domains.count(),
+                "total_open_issues": total_open_issues,
+                "total_closed_issues": total_closed_issues,
+                "total_issues": total_open_issues + total_closed_issues,
+                "view_count": view_count,
+            }
+        )
+
+        return context
+
+
+class OrganizationListView(ListView):
+    model = Organization
+    template_name = "organization/organization_list.html"
+    context_object_name = "organizations"
+    paginate_by = 100
+
+    def get_queryset(self):
+        # Optimize query with select_related and prefetch_related
+        return (
+            Organization.objects.prefetch_related(
+                "domain_set",
+                "projects",
+                "projects__repos",
+                Prefetch(
+                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+            )
+            .annotate(
+                domain_count=Count("domain", distinct=True),
+                total_issues=Count("domain__issue", distinct=True),
+                open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
+                closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
+                project_count=Count("projects", distinct=True),
+                repo_count=Count("projects__repos", distinct=True),
+            )
+            .select_related("admin")
+            .order_by("-created")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get recently viewed organizations efficiently using a single query
+        recent_org_paths = (
+            IP.objects.filter(
+                path__startswith="/organization/",
+                path__regex=r"^/organization/[^/]+/$",  # Only match exact organization paths
+            )
+            .exclude(
+                path="/organizations/"  # Exclude the main organizations list page
+            )
+            .order_by("-created")
+            .values_list("path", flat=True)
+            .distinct()[:5]
+        )
+
+        # Extract slugs and get organizations in a single query
+        slugs = [path.split("/")[2] for path in recent_org_paths if len(path.split("/")) > 2]
+        recently_viewed = (
+            Organization.objects.filter(slug__in=slugs).prefetch_related("domain_set").order_by("-created")[:5]
+        )
+
+        context["recently_viewed"] = recently_viewed
+
+        # Get most popular organizations by counting their view paths
+        orgs_with_views = []
+        for org in self.get_queryset():
+            view_count = IP.objects.filter(path=f"/organization/{org.slug}/").count()
+            orgs_with_views.append((org, view_count))
+
+        # Sort by view count and get top 5
+        most_popular = [org for org, _ in sorted(orgs_with_views, key=lambda x: x[1], reverse=True)[:5]]
+        context["most_popular"] = most_popular
+
+        # Get total count using cached queryset
+        context["total_organizations"] = Organization.objects.count()
+
+        # Add top testers for each domain
+        for org in context["organizations"]:
+            for domain in org.domain_set.all():
+                domain.top_testers = (
+                    User.objects.filter(issue__domain=domain)
+                    .annotate(issue_count=Count("issue"))
+                    .order_by("-issue_count")[:1]
+                )
+
+        return context

@@ -1,16 +1,58 @@
 {% extends "base.html" %}
-{% block title %}
-    Home - Bug Logging Tool
-{% endblock title %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}Home - Bug Logging Tool{% endblock %}
+{% block description %}
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+{% endblock %}
+{% block keywords %}
+    Bug Logging Tool, OWASP, security, bug reporting, rewards, open source, community, web security, contributions
+{% endblock %}
+{% block og_title %}Home - Bug Logging Tool{% endblock %}
+{% block og_description %}
+    Welcome to OWASP {% env 'PROJECT_NAME' %}, a platform to report bugs, earn rewards, and help secure the web through community-driven collaboration.
+{% endblock %}
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
     <!-- Main Content -->
-    <div>
+    <div class="relative">
+        <!-- Repository Widget -->
+        <div class="absolute top-4 right-4 w-80 bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+            <div class="p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Latest Repositories</h3>
+                    <span class="text-sm text-gray-500">({{ total_repos }} total)</span>
+                </div>
+                <div class="space-y-3">
+                    {% for repo in latest_repos %}
+                        <div class="flex items-center justify-between">
+                            <a href="{% url 'repo_detail' repo.slug %}"
+                               class="text-sm hover:text-[#e74c3c] truncate max-w-[180px]">{{ repo.name }}</a>
+                            <span class="text-xs text-gray-500">{{ repo.primary_language|default:"-" }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="flex justify-between mt-4 pt-3 border-t border-gray-100">
+                    <a href="{% url 'repo_list' %}"
+                       class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
+                    <a href="{% url 'repo_list' %}"
+                       class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium flex items-center">
+                        <svg class="w-4 h-4 mr-1"
+                             viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor">
+                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                        Add Repo
+                    </a>
+                </div>
+            </div>
+        </div>
         <!-- Hero Section -->
         <section class="text-center py-16 ">
             <h1 class="text-5xl font-bold mb-4">Welcome to OWASP BLT</h1>
-            <p class="text-xl mb-8">Making the World Wide Web a Safer Place</p>
+            <p class="text-xl mb-8">Making the Internet a Safer Place</p>
             <a href="{% url 'report' %}"
                class="bg-white text-red-500 font-semibold py-3 px-6 rounded-full shadow-lg">
                 <i class="fas fa-flag"></i> Report a Bug
@@ -46,7 +88,7 @@
             <div class="max-w-4xl mx-auto text-center">
                 <h2 class="text-3xl font-bold mb-6">About OWASP BLT</h2>
                 <p class="mb-4">
-                    OWASP BLT (Bug Logging Tool) is an open-source platform dedicated to making the internet safer through community-driven bug reporting and collaboration.
+                    OWASP BLT (Bugs Logs Tools) is an open-source platform dedicated to making the internet safer through community-driven bug reporting, collaboration, tools and rewards.
                     Users can report bugs, track issues, and collaborate with organizations to enhance security measures.
                 </p>
                 <p class="mb-4">

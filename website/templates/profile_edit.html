@@ -1,4 +1,20 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Edit Profile | {{ user.username }}
+{% endblock title %}
+{% block description %}
+    Update your profile information including username, email, avatar, domain, and other details. Ensure your profile is up-to-date and accurate.
+{% endblock description %}
+{% block keywords %}
+    Edit Profile, Update Profile Information, Username, Email, Avatar, Domain, Profile Details
+{% endblock keywords %}
+{% block og_title %}
+    Edit Profile - Update Your Information
+{% endblock og_title %}
+{% block og_description %}
+    Edit your profile to keep your information current. Update your username, email, avatar, domain, and other personal details.
+{% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto mt-16">
@@ -225,7 +241,7 @@
         <div class="mt-8 border-t pt-6">
             <h3 class="text-lg font-semibold text-red-600">Danger Zone</h3>
             <div class="mt-4">
-                <form action="{% url 'delete' %}"
+                <form action="{% url 'user_deletion' %}"
                       method="post"
                       onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.');">
                     {% csrf_token %}

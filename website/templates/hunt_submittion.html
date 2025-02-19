@@ -1,5 +1,20 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
+{% block title %}
+    Report a Bug
+{% endblock title %}
+{% block description %}
+    Report a bug by providing the website URL, detailed description, and category. Upload a screenshot to help with the bug resolution process.
+{% endblock description %}
+{% block keywords %}
+    Report a Bug, Bug Reporting, Website URL, Bug Description, Bug Category, Upload Screenshot
+{% endblock keywords %}
+{% block og_title %}
+    Report a Bug - Help Improve Software Quality
+{% endblock og_title %}
+{% block og_description %}
+    Report a bug by providing the necessary details such as website URL, description, and category. Upload a screenshot to aid in the bug resolution process.
+{% endblock og_description %}
 {% load custom_tags %}
 {% load gravatar %}
 {% load socialaccount %}

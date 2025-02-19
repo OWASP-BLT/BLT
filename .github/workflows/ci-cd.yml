@@ -12,6 +12,7 @@ on:
 
 env:
   FORCE_COLOR: 1
+  POETRY_CACHE_DIR: ~/.cache/pypoetry
 
 concurrency:
   cancel-in-progress: true
@@ -29,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Cache pre-commit hooks
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -46,12 +47,19 @@ jobs:
         run: echo "POETRY_CACHE_DIR=$(poetry config cache-dir)" >> $GITHUB_ENV
       
       - name: Cache Poetry dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: ${{ env.POETRY_CACHE_DIR }}
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
+            ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-
             ${{ runner.os }}-poetry-
+
+      - name: Print memory usage
+        run: free -h
 
   pre-commit:
     name: Run pre-commit
@@ -69,21 +77,19 @@ jobs:
           python-version: 3.11.2
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
+      - name: Print memory usage
+        run: free -h
 
   code-ql:
     name: Run CodeQL
-    needs: pre-commit
+    needs: setup
     runs-on: ubuntu-latest
     permissions:
       security-events: write
       actions: read
       contents: read
-    strategy:
-      fail-fast: true
-      matrix:
-        language: ['none']  # Default to none, will be updated based on changes
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
@@ -108,33 +114,42 @@ jobs:
       - name: Set languages matrix
         id: set-matrix
         run: |
-          languages=()
-          if [[ "${{ steps.changes.outputs.python }}" == 'true' ]]; then
-            languages+=("python")
+          languages=""
+          if [[ "${{ steps.changes.outputs.python }}" == "true" ]]; then
+            languages="python"
           fi
-          if [[ "${{ steps.changes.outputs.javascript }}" == 'true' ]]; then
-            languages+=("javascript")
+          if [[ "${{ steps.changes.outputs.javascript }}" == "true" ]]; then
+            if [[ -n "$languages" ]]; then
+              languages="$languages,javascript"
+            else
+              languages="javascript"
+            fi
           fi
-          if [ ${#languages[@]} -eq 0 ]; then
+          if [[ -z "$languages" ]]; then
             echo "No relevant file changes detected, skipping CodeQL"
             exit 0
           fi
-          echo "languages=${languages[@]}" >> $GITHUB_OUTPUT
+          echo "languages=$languages" >> $GITHUB_OUTPUT
 
-      - uses: github/codeql-action/init@v2
-        if: steps.set-matrix.outputs.languages
+      - uses: github/codeql-action/init@v3
+        if: ${{ steps.set-matrix.outputs.languages != '' }}
         with:
           languages: ${{ steps.set-matrix.outputs.languages }}
 
-      - uses: github/codeql-action/autobuild@v2
-        if: steps.set-matrix.outputs.languages
+      - uses: github/codeql-action/autobuild@v3
+        if: ${{ steps.set-matrix.outputs.languages != '' }}
 
-      - uses: github/codeql-action/analyze@v2 
-        if: steps.set-matrix.outputs.languages
+      - uses: github/codeql-action/analyze@v3
+        if: ${{ steps.set-matrix.outputs.languages != '' }}
+        with:
+          category: "/language:${{ matrix.language }}"
+
+      - name: Print memory usage
+        run: free -h
 
   test:
     name: Run Tests
-    needs: code-ql
+    needs: setup
     runs-on: ubuntu-latest
     permissions:
       issues: write
@@ -142,12 +157,51 @@ jobs:
       contents: write
       actions: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.11.2
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb chromium-browser chromium-chromedriver
       - run: pip install poetry
-      - run: poetry install
+      - run: poetry lock
+      - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
+
+  docker-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        run: |
+          docker --version
+          # Install docker-compose
+          curl -sSL https://github.com/docker/compose/releases/download/v2.17.0/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Build Docker image
+        run: |
+          docker build -t my-app .
+
+      - name: Run Docker container
+        run: |
+          docker run -d --name my-container my-app
+
+      - run: docker exec my-container pip install poetry
+      - run: docker exec my-container poetry lock
+      - run: docker exec my-container poetry install --without dev --no-interaction
+
+      - name: Clean up
+        run: |
+          docker stop my-container
+          docker rm my-container
+
+      - name: Print memory usage
+        run: free -h

@@ -1,4 +1,9 @@
-from dj_rest_auth.registration.views import SocialAccountDisconnectView, SocialAccountListView
+# Move social account imports to top
+from allauth.socialaccount.providers.facebook import views as facebook_views
+from allauth.socialaccount.providers.github import views as github_views
+from allauth.socialaccount.providers.google import views as google_views
+from captcha.views import captcha_refresh
+from dj_rest_auth.registration.views import SocialAccountListView
 from dj_rest_auth.views import PasswordResetConfirmView
 from django.conf import settings
 from django.conf.urls import include
@@ -6,7 +11,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import path, re_path
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
 from drf_yasg import openapi
@@ -14,20 +19,18 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 import comments.views
-from blt import settings
-from company.views import ShowBughuntView, SlackCallbackView
 from website.api.views import (
     ActivityLogViewSet,
     AuthApiViewset,
     BugHuntApiViewset,
     BugHuntApiViewsetV2,
-    CompanyViewSet,
     DomainViewSet,
     FlagIssueApiView,
     InviteFriendApiViewset,
     IssueViewSet,
     LeaderboardApiViewSet,
     LikeIssueApiView,
+    OrganizationViewSet,
     ProjectViewSet,
     StatsApiViewset,
     TagApiViewset,
@@ -36,7 +39,32 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
+from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.company import (
+    AddDomainView,
+    AddHuntView,
+    AddSlackIntegrationView,
+    DomainView,
+    EndBughuntView,
+    Organization_view,
+    OrganizationDashboardAnalyticsView,
+    OrganizationDashboardIntegrations,
+    OrganizationDashboardManageBughuntView,
+    OrganizationDashboardManageBugsView,
+    OrganizationDashboardManageDomainsView,
+    OrganizationDashboardManageRolesView,
+    OrganizationDashboardTeamOverviewView,
+    RegisterOrganizationView,
+    ShowBughuntView,
+    SlackCallbackView,
+    accept_bug,
+    delete_manager,
+    delete_prize,
+    edit_prize,
+)
 from website.views.core import (
+    CustomSocialAccountDisconnectView,
     FacebookConnect,
     FacebookLogin,
     GithubConnect,
@@ -46,24 +74,39 @@ from website.views.core import (
     StatsDetailView,
     UploadCreate,
     add_suggestions,
-    chatbot_conversation,
-    check_status,
+    badge_list,
+    check_owasp_compliance,
     donate_view,
     facebook_callback,
+    features_view,
     find_key,
     github_callback,
     google_callback,
     home,
+    management_commands,
     robots_txt,
+    run_management_command,
     search,
     set_vote_status,
     sitemap,
     sponsor_view,
+    stats_dashboard,
+    status_page,
+    submit_roadmap_pr,
+    sync_github_projects,
+    template_list,
+    test_sentry,
+    view_pr_analysis,
     view_suggestions,
     vote_suggestions,
+    website_stats,
 )
 from website.views.issue import (
     AllIssuesView,
+    ContributeView,
+    GitHubIssueDetailView,
+    GitHubIssuesView,
+    GithubIssueView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -71,14 +114,15 @@ from website.views.issue import (
     SpecificIssuesView,
     UpdateIssue,
     change_bid_status,
-    comment_on_issue,
+    comment_on_content,
     create_github_issue,
-    delete_comment,
+    delete_content_comment,
     delete_issue,
     dislike_issue,
     fetch_current_bid,
     flag_issue,
     generate_bid_image,
+    get_github_issue,
     get_unique_issues,
     issue_count,
     like_issue,
@@ -91,11 +135,10 @@ from website.views.issue import (
     submit_bug,
     submit_pr,
     unsave_issue,
-    update_comment,
+    update_content_comment,
     vote_count,
 )
 from website.views.organization import (
-    CompanySettings,
     CreateHunt,
     DomainDetailView,
     DomainList,
@@ -103,31 +146,44 @@ from website.views.organization import (
     DraftHunts,
     HuntCreate,
     InboundParseWebhookView,
-    JoinCompany,
+    Joinorganization,
     ListHunts,
     OngoingHunts,
+    OrganizationDetailView,
+    OrganizationListView,
+    OrganizationSettings,
     PreviousHunts,
     ReportedIpListView,
     ReportIpView,
+    RoomCreateView,
+    RoomsListView,
     ScoreboardView,
     TimeLogListAPIView,
     TimeLogListView,
     UpcomingHunts,
-    add_domain_to_company,
-    add_or_update_company,
+    add_domain_to_organization,
     add_or_update_domain,
+    add_or_update_organization,
     add_role,
-    admin_company_dashboard,
-    admin_company_dashboard_detail,
-    company_dashboard,
-    company_dashboard_domain_detail,
-    company_dashboard_hunt_detail,
-    company_dashboard_hunt_edit,
-    company_hunt_results,
+    add_sizzle_checkIN,
+    admin_organization_dashboard,
+    admin_organization_dashboard_detail,
+    approve_activity,
+    checkIN,
+    checkIN_detail,
+    delete_room,
     delete_time_entry,
+    dislike_activity,
     feed,
     get_scoreboard,
     hunt_results,
+    join_room,
+    like_activity,
+    organization_dashboard,
+    organization_dashboard_domain_detail,
+    organization_dashboard_hunt_detail,
+    organization_dashboard_hunt_edit,
+    organization_hunt_results,
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
@@ -141,11 +197,29 @@ from website.views.organization import (
 )
 from website.views.project import (
     ProjectBadgeView,
-    ProjectDetailView,
-    ProjectListView,
+    ProjectsDetailView,
+    ProjectView,
+    RepoBadgeView,
+    RepoDetailView,
     blt_tomato,
+    create_project,
     distribute_bacon,
     select_contribution,
+)
+from website.views.repo import RepoListView, add_repo
+from website.views.slack_handlers import slack_commands, slack_events
+from website.views.teams import (
+    TeamChallenges,
+    TeamLeaderboard,
+    TeamOverview,
+    add_member,
+    create_team,
+    delete_team,
+    give_kudos,
+    join_requests,
+    kick_member,
+    leave_team,
+    search_users,
 )
 from website.views.user import (
     CustomObtainAuthToken,
@@ -153,45 +227,31 @@ from website.views.user import (
     GlobalLeaderboardView,
     InviteCreate,
     SpecificMonthLeaderboardView,
+    UserChallengeListView,
     UserDeleteView,
     UserProfileDetailsView,
     UserProfileDetailView,
-    addbalance,
     assign_badge,
+    badge_user_list,
     contributors,
     contributors_view,
     create_wallet,
     deletions,
     follow_user,
     get_score,
+    github_webhook,
     invite_friend,
     profile,
     profile_edit,
     referral_signup,
-    stripe_connected,
     update_bch_address,
     user_dashboard,
     users_view,
-    withdraw,
 )
 
-favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
-
-router = routers.DefaultRouter()
-router.register(r"issues", IssueViewSet, basename="issues")
-router.register(r"userissues", UserIssueViewSet, basename="userissues")
-router.register(r"profile", UserProfileViewSet, basename="profile")
-router.register(r"domain", DomainViewSet, basename="domain")
-router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
-router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
-
-from allauth.socialaccount.providers.facebook import views as facebook_views
-from allauth.socialaccount.providers.github import views as github_views
-from allauth.socialaccount.providers.google import views as google_views
-from django.contrib import admin
-from django.urls import include, path
-
 admin.autodiscover()
+
+# Use the drf_yasg schema view
 schema_view = get_schema_view(
     openapi.Info(
         title="API",
@@ -205,18 +265,29 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+favicon_view = RedirectView.as_view(url="/static/favicon.ico", permanent=True)
+
+router = routers.DefaultRouter()
+router.register(r"issues", IssueViewSet, basename="issues")
+router.register(r"userissues", UserIssueViewSet, basename="userissues")
+router.register(r"profile", UserProfileViewSet, basename="profile")
+router.register(r"domain", DomainViewSet, basename="domain")
+router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
+router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
+
 handler404 = "website.views.core.handler404"
-handler500 = "website.views.core.handler500"
 
 urlpatterns = [
+    path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path(
-        "api/v1/companies/",
-        CompanyViewSet.as_view({"get": "list", "post": "create"}),
-        name="company",
+        "api/v1/organizations/",
+        OrganizationViewSet.as_view({"get": "list", "post": "create"}),
+        name="organization",
     ),
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
+    path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
     path("captcha/", include("captcha.urls")),
     re_path(r"^auth/registration/", include("dj_rest_auth.registration.urls")),
     path(
@@ -227,24 +298,34 @@ urlpatterns = [
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("accounts/", include("allauth.urls")),
-    path("accounts/delete/", UserDeleteView.as_view(), name="delete"),
+    path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
+    path("auth/github/url/", github_views.oauth2_login),
+    path("auth/google/", GoogleLogin.as_view(), name="google_login"),
     path("accounts/google/login/callback/", google_callback, name="google_callback"),
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
-    re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
     path("auth/github/url/", github_views.oauth2_login),
-    path("oauth/slack/callback/", SlackCallbackView.as_view(), name="slack_callback"),
+    path(
+        "oauth/slack/callback/",
+        SlackCallbackView.as_view(),
+        name="slack_oauth_callback",
+    ),
+    path("slack/commands/", slack_commands, name="slack_commands"),
     path("auth/google/url/", google_views.oauth2_login),
     path("auth/facebook/url/", facebook_views.oauth2_callback),
     path("socialaccounts/", SocialAccountListView.as_view(), name="social_account_list"),
-    path("add_domain_to_company/", add_domain_to_company, name="add_domain_to_company"),
+    path(
+        "add_domain_to_organization/",
+        add_domain_to_organization,
+        name="add_domain_to_organization",
+    ),
     path(
         "socialaccounts/<int:pk>/disconnect/",
-        SocialAccountDisconnectView.as_view(),
+        CustomSocialAccountDisconnectView.as_view(),
         name="social_account_disconnect",
     ),
     re_path(
@@ -260,45 +341,34 @@ urlpatterns = [
     re_path(r"^redoc/$", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     re_path(r"^issues/$", newhome, name="issues"),
     re_path(
-        r"^dashboard/company/$",
-        company_dashboard,
-        name="company_dashboard_home",
+        r"^dashboard/organization/$",
+        organization_dashboard,
+        name="organization_dashboard_home",
     ),
     re_path(
-        r"^dashboard/user/profile/addbalance$",
-        addbalance,
-        name="addbalance",
-    ),
-    re_path(r"^dashboard/user/profile/withdraw$", withdraw, name="withdraw"),
-    re_path(
-        r"^dashboard/user/stripe/connected/(?P<username>[^/]+)/$",
-        stripe_connected,
-        name="stripe_connected",
+        r"^dashboard/admin/organization$",
+        admin_organization_dashboard,
+        name="admin_organization_dashboard",
     ),
     re_path(
-        r"^dashboard/admin/company$",
-        admin_company_dashboard,
-        name="admin_company_dashboard",
+        r"^dashboard/admin/organization/addorupdate$",
+        add_or_update_organization,
+        name="add_or_update_organization",
     ),
     re_path(
-        r"^dashboard/admin/company/addorupdate$",
-        add_or_update_company,
-        name="add_or_update_company",
-    ),
-    re_path(
-        r"^dashboard/company/domain/addorupdate$",
+        r"^dashboard/organization/domain/addorupdate$",
         add_or_update_domain,
         name="add_or_update_domain",
     ),
     path(
-        "dashboard/company/domain/<int:pk>/",
-        company_dashboard_domain_detail,
-        name="company_dashboard_domain_detail",
+        "dashboard/organization/domain/<int:pk>/",
+        organization_dashboard_domain_detail,
+        name="organization_dashboard_domain_detail",
     ),
     path(
-        "dashboard/company/hunt/<int:pk>/",
-        company_dashboard_hunt_detail,
-        name="company_dashboard_hunt_detail",
+        "dashboard/organization/hunt/<int:pk>/",
+        organization_dashboard_hunt_detail,
+        name="organization_dashboard_hunt_detail",
     ),
     path("dashboard/user/hunt/<int:pk>/", view_hunt, name="view_hunt"),
     path(
@@ -312,52 +382,60 @@ urlpatterns = [
         name="hunt_results",
     ),
     path(
-        "dashboard/company/hunt/<int:pk>/edit",
-        company_dashboard_hunt_edit,
-        name="company_dashboard_hunt_edit",
+        "dashboard/organization/hunt/<int:pk>/edit",
+        organization_dashboard_hunt_edit,
+        name="organization_dashboard_hunt_edit",
     ),
     path(
-        "dashboard/admin/company/<int:pk>/",
-        admin_company_dashboard_detail,
-        name="admin_company_dashboard_detail",
+        "dashboard/admin/organization/<int:pk>/",
+        admin_organization_dashboard_detail,
+        name="admin_organization_dashboard_detail",
     ),
-    re_path(r"^dashboard/company/hunt/create$", CreateHunt.as_view(), name="create_hunt"),
-    path("hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"),
-    re_path(r"^dashboard/company/hunt/drafts$", DraftHunts.as_view(), name="draft_hunts"),
     re_path(
-        r"^dashboard/company/hunt/upcoming$",
+        r"^dashboard/organization/hunt/create$",
+        CreateHunt.as_view(),
+        name="create_hunt",
+    ),
+    path("hunt/<int:pk>", ShowBughuntView.as_view(), name="show_bughunt"),
+    re_path(
+        r"^dashboard/organization/hunt/drafts$",
+        DraftHunts.as_view(),
+        name="draft_hunts",
+    ),
+    re_path(
+        r"^dashboard/organization/hunt/upcoming$",
         UpcomingHunts.as_view(),
         name="upcoming_hunts",
     ),
     re_path(
-        r"^dashboard/company/hunt/previous$",
+        r"^dashboard/organization/hunt/previous$",
         PreviousHunts.as_view(),
         name="previous_hunts",
     ),
     path(
-        "dashboard/company/hunt/previous/<int:pk>/",
-        company_hunt_results,
-        name="company_hunt_results",
+        "dashboard/organization/hunt/previous/<int:pk>/",
+        organization_hunt_results,
+        name="organization_hunt_results",
     ),
     re_path(
-        r"^dashboard/company/hunt/ongoing$",
+        r"^dashboard/organization/hunt/ongoing$",
         OngoingHunts.as_view(),
         name="ongoing_hunts",
     ),
-    re_path(r"^dashboard/company/domains$", DomainList.as_view(), name="domain_list"),
+    re_path(r"^dashboard/organization/domains$", DomainList.as_view(), name="domain_list"),
     re_path(
-        r"^dashboard/company/settings$",
-        CompanySettings.as_view(),
-        name="company-settings",
+        r"^dashboard/organization/settings$",
+        OrganizationSettings.as_view(),
+        name="organization-settings",
     ),
-    re_path(r"^join$", JoinCompany.as_view(), name="join"),
+    re_path(r"^join$", Joinorganization.as_view(), name="join"),
     re_path(
-        r"^dashboard/company/settings/role/update$",
+        r"^dashboard/organization/settings/role/update$",
         update_role,
         name="update-role",
     ),
     re_path(
-        r"^dashboard/company/settings/role/add$",
+        r"^dashboard/organization/settings/role/add$",
         add_role,
         name="add-role",
     ),
@@ -376,7 +454,11 @@ urlpatterns = [
     ),
     re_path(r"^flag_issue/(?P<issue_pk>\d+)/$", flag_issue, name="flag_issue"),
     re_path(r"^resolve/(?P<id>\w+)/$", resolve, name="resolve"),
-    re_path(r"^create_github_issue/(?P<id>\w+)/$", create_github_issue, name="create_github_issue"),
+    re_path(
+        r"^create_github_issue/(?P<id>\w+)/$",
+        create_github_issue,
+        name="create_github_issue",
+    ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
@@ -392,19 +474,20 @@ urlpatterns = [
     ),
     re_path(r"^issue/edit/$", IssueEdit, name="edit_issue"),
     re_path(r"^issue/update/$", UpdateIssue, name="update_issue"),
+    # comment on content
     path(
-        "issue/<str:issue_pk>/comment/",
-        comment_on_issue,
-        name="comment_on_issue",
+        "content/<str:content_pk>/comment/",
+        comment_on_content,
+        name="comment_on_content",
     ),
-    # UPDATE COMMENT
+    # update comment
     path(
-        "issue/<str:issue_pk>/comment/update/<str:comment_pk>/",
-        update_comment,
-        name="update_comment",
+        "content/<str:content_pk>/comment/update/<str:comment_pk>/",
+        update_content_comment,
+        name="update_content_comment",
     ),
-    # delete_comment
-    path("issue2/comment/delete/", delete_comment, name="delete_comment"),
+    # delete comment
+    path("content/comment/delete/", delete_content_comment, name="delete_content_comment"),
     re_path(r"^issue/(?P<slug>\w+)/$", IssueView.as_view(), name="issue_view"),
     re_path(r"^follow/(?P<user>[^/]+)/", follow_user, name="follow_user"),
     re_path(r"^all_activity/$", AllIssuesView.as_view(), name="all_activity"),
@@ -436,8 +519,10 @@ urlpatterns = [
         InviteFriendApiViewset.as_view(),
         name="api_invite_friend",
     ),
-    re_path(r"^scoreboard/$", ScoreboardView.as_view(), name="scoreboard"),
+    path("scoreboard/", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
+    # link to index.html
+    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -451,7 +536,7 @@ urlpatterns = [
         name="find_key",
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
-    re_path(r"^delete_issue/(?P<id>\w+)/$", delete_issue, name="delete_issue"),
+    path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,
@@ -462,6 +547,16 @@ urlpatterns = [
         r"^sitemap/$",
         sitemap,
         name="sitemap",
+    ),
+    re_path(
+        r"^badges/$",
+        badge_list,
+        name="badges",
+    ),
+    re_path(
+        r"^badges/(?P<badge_id>\d+)/users/$",
+        badge_user_list,
+        name="badge_user_list",
     ),
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
@@ -475,7 +570,7 @@ urlpatterns = [
         TemplateView.as_view(template_name="coming_soon.html"),
         name="googleplayapp",
     ),
-    re_path(r"^projects/$", ProjectListView.as_view(), name="project_list"),
+    re_path(r"^projects/$", ProjectView.as_view(), name="project_list"),
     re_path(r"^apps/$", TemplateView.as_view(template_name="apps.html"), name="apps"),
     re_path(
         r"^deletions/$",
@@ -497,7 +592,10 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
-    re_path(r"status/", check_status, name="check_status"),
+    re_path(r"^status_page/$", status_page, name="status_page"),
+    re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
+    re_path(r"^status/commands/$", management_commands, name="management_commands"),
+    path(r"website_stats/", website_stats, name="website_stats"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
     re_path(r"^comment/autocomplete/$", comments.views.autocomplete, name="autocomplete"),
@@ -525,8 +623,9 @@ urlpatterns = [
     re_path(r"^api/v1/createwallet/$", create_wallet, name="create_wallet"),
     re_path(r"^api/v1/count/$", issue_count, name="api_count"),
     re_path(r"^api/v1/contributors/$", contributors, name="api_contributor"),
-    path("project/<slug:slug>/", ProjectDetailView.as_view(), name="project_view"),
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
+    path("repos/<slug:slug>/badge/", RepoBadgeView.as_view(), name="repo-badge"),
+    path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
@@ -573,7 +672,7 @@ urlpatterns = [
     ),
     re_path(
         r"^contribute/$",
-        TemplateView.as_view(template_name="contribute.html"),
+        ContributeView.as_view(),
         name="contribution_guidelines",
     ),
     path("select_contribution/", select_contribution, name="select_contribution"),
@@ -582,19 +681,123 @@ urlpatterns = [
         distribute_bacon,
         name="distribute_bacon",
     ),
+    path("activity/like/<int:id>/", like_activity, name="like_activity"),
+    path("activity/dislike/<int:id>/", dislike_activity, name="dislike_activity"),
+    path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
-    # re_path(r"^tellme/", include("tellme.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
     path("robots.txt", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     # users
     path("users/", users_view, name="users"),
-    path("company/", include("company.urls")),
+    # company specific urls :
+    path(
+        "organization/",
+        RegisterOrganizationView.as_view(),
+        name="register_organization",
+    ),
+    path("organization/dashboard/", Organization_view, name="organization_view"),
+    path(
+        "organization/<int:id>/dashboard/analytics/",
+        OrganizationDashboardAnalyticsView.as_view(),
+        name="organization_analytics",
+    ),
+    path(
+        "organization/<int:id>/dashboard/integrations/",
+        OrganizationDashboardIntegrations.as_view(),
+        name="organization_manage_integrations",
+    ),
+    path(
+        "organization/<int:id>/dashboard/bugs/",
+        OrganizationDashboardManageBugsView.as_view(),
+        name="organization_manage_bugs",
+    ),
+    path(
+        "organization/<int:id>/dashboard/team-overview/",
+        OrganizationDashboardTeamOverviewView.as_view(),
+        name="organization_team_overview",
+    ),
+    path(
+        "organization/<int:id>/dashboard/domains/",
+        OrganizationDashboardManageDomainsView.as_view(),
+        name="organization_manage_domains",
+    ),
+    path(
+        "organization/<int:id>/dashboard/roles/",
+        OrganizationDashboardManageRolesView.as_view(),
+        name="organization_manage_roles",
+    ),
+    path(
+        "organization/<int:id>/dashboard/bughunts/",
+        OrganizationDashboardManageBughuntView.as_view(),
+        name="organization_manage_bughunts",
+    ),
+    path(
+        "organization/dashboard/end_bughunt/<int:pk>",
+        EndBughuntView.as_view(),
+        name="end_bughunt",
+    ),
+    path(
+        "organization/<int:id>/dashboard/add_bughunt/",
+        AddHuntView.as_view(),
+        name="add_bughunt",
+    ),
+    path(
+        "organization/<int:id>/dashboard/add_domain/",
+        AddDomainView.as_view(),
+        name="add_domain",
+    ),
+    path(
+        "organization/<int:id>/dashboard/add_slack_integration/",
+        AddSlackIntegrationView.as_view(),
+        name="add_slack_integration",
+    ),
+    path(
+        "organization/<int:id>/dashboard/edit_domain/<int:domain_id>/",
+        AddDomainView.as_view(),
+        name="edit_domain",
+    ),
+    path(
+        "organization/domain/<int:pk>/",
+        login_required(DomainView.as_view()),
+        name="view_domain",
+    ),
+    path(
+        "organization/delete_prize/<int:prize_id>/<int:organization_id>",
+        delete_prize,
+        name="delete_prize",
+    ),
+    path(
+        "organization/edit_prize/<int:prize_id>/<int:organization_id>",
+        edit_prize,
+        name="edit_prize",
+    ),
+    path(
+        "organization/accept_bug/<int:issue_id>/<str:reward_id>/",
+        accept_bug,
+        name="accept_bug",
+    ),
+    path(
+        "organization/accept_bug/<int:issue_id>/<str:no_reward>/",
+        accept_bug,
+        name="accept_bug_no_reward",
+    ),
+    path(
+        "organization/delete_manager/<int:manager_id>/<int:domain_id>/",
+        delete_manager,
+        name="delete_manager",
+    ),
+    path("features/", features_view, name="features"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
-    path("companies/", DomainListView.as_view(), name="domain_lists"),
+    path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
-    path("generate_bid_image/<int:bid_amount>/", generate_bid_image, name="generate_bid_image"),
+    path(
+        "generate_bid_image/<int:bid_amount>/",
+        generate_bid_image,
+        name="generate_bid_image",
+    ),
     path("bidding/", SaveBiddingData, name="BiddingData"),
     path("select_bid/", select_bid, name="select_bid"),
     path("get_unique_issues/", get_unique_issues, name="get_unique_issues"),
@@ -607,7 +810,7 @@ urlpatterns = [
     path("suggestion/vote/", vote_suggestions, name="vote_suggestions"),
     path("suggestion/set-vote-status/", set_vote_status, name="set_vote_status"),
     re_path(
-        r"^trademarks/query=(?P<slug>[\w\s\W]+)",
+        r"^trademarks/query=(?P<slug>[\w\s\W]+)$",
         trademark_detailview,
         name="trademark_detailview",
     ),
@@ -616,28 +819,101 @@ urlpatterns = [
         update_bch_address,
         name="update_bch_address",
     ),
-    path("api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"),
+    # path(
+    #     "api/chatbot/conversation/", chatbot_conversation, name="chatbot_conversation"
+    # ),
     path("blt-tomato/", blt_tomato, name="blt-tomato"),
     path(
         "api/v1/projects/",
         ProjectViewSet.as_view({"get": "list", "post": "create", "patch": "update"}),
         name="projects_api",
     ),
-    path("auth/delete", AuthApiViewset.as_view({"delete": "delete"}), name="auth-delete-api"),
-    path("api/v1/tags", TagApiViewset.as_view({"get": "list", "post": "create"}), name="tags-api"),
+    path(
+        "auth/delete",
+        AuthApiViewset.as_view({"delete": "delete"}),
+        name="auth-delete-api",
+    ),
+    path(
+        "api/v1/tags",
+        TagApiViewset.as_view({"get": "list", "post": "create"}),
+        name="tags-api",
+    ),
     path("sizzle/", sizzle, name="sizzle"),
+    path("check-in/", checkIN, name="checkIN"),
+    path("add-sizzle-checkin/", add_sizzle_checkIN, name="add_sizzle_checkin"),
+    path("check-in/<int:report_id>/", checkIN_detail, name="checkIN_detail"),
     path("sizzle-docs/", sizzle_docs, name="sizzle-docs"),
     path("api/timelogsreport/", TimeLogListAPIView, name="timelogsreport"),
     path("time-logs/", TimeLogListView, name="time_logs"),
     path("sizzle-daily-log/", sizzle_daily_log, name="sizzle_daily_log"),
-    path("blog/", include("blog.urls")),
     path(
         "user-sizzle-report/<str:username>/",
         user_sizzle_report,
         name="user_sizzle_report",
     ),
+    path("submit-roadmap-pr/", submit_roadmap_pr, name="submit-roadmap-pr"),
+    path("view-pr-analysis/", view_pr_analysis, name="view_pr_analysis"),
     path("delete_time_entry/", delete_time_entry, name="delete_time_entry"),
     path("assign-badge/<str:username>/", assign_badge, name="assign_badge"),
+    path("github-webhook/", github_webhook, name="github-webhook"),
+    # blog urls
+    path("blog/", PostListView.as_view(), name="post_list"),
+    path("blog/new/", PostCreateView.as_view(), name="post_form"),
+    path("blog/<slug:slug>/", PostDetailView.as_view(), name="post_detail"),
+    path("blog/<slug:slug>/edit/", PostUpdateView.as_view(), name="post_update"),
+    path("blog/<slug:slug>/delete/", PostDeleteView.as_view(), name="post_delete"),
+    # gamification related urls
+    path("teams/overview/", TeamOverview.as_view(), name="team_overview"),
+    path("teams/search-users/", search_users, name="search_users"),
+    path("teams/create-team/", create_team, name="create_team"),
+    path("teams/join-requests/", join_requests, name="join_requests"),
+    path("teams/add-member/", add_member, name="add_member"),
+    path("teams/delete-team/", delete_team, name="delete_team"),
+    path("teams/leave-team/", leave_team, name="leave_team"),
+    path("teams/kick-member/", kick_member, name="kick_member"),
+    path("teams/give-kudos/", give_kudos, name="give_kudos"),
+    path(
+        "similarity_scan/",
+        TemplateView.as_view(template_name="similarity_scan.html"),
+        name="similarity_scan",
+    ),
+    path("projects/create/", create_project, name="create_project"),
+    path("teams/challenges/", TeamChallenges.as_view(), name="team_challenges"),
+    path("teams/leaderboard/", TeamLeaderboard.as_view(), name="team_leaderboard"),
+    path("user_challenges/", UserChallengeListView.as_view(), name="user_challenges"),
+    path("project/<slug:slug>/", ProjectsDetailView.as_view(), name="project_detail"),
+    path("slack/events", slack_events, name="slack_events"),
+    path("owasp/", TemplateView.as_view(template_name="owasp.html"), name="owasp"),
+    path("discussion-rooms/", RoomsListView.as_view(), name="rooms_list"),
+    path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
+    path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
+    path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path(
+        "batch-send-bacon-tokens/",
+        batch_send_bacon_tokens_view,
+        name="batch_send_bacon_tokens",
+    ),
+    path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
+    path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
+    path("stats/run-command/", run_management_command, name="run_management_command"),
+    path("test-sentry/", test_sentry, name="test_sentry"),
+    path("template_list/", template_list, name="template_list"),
+    path(
+        "github-issue-prompt/",
+        TemplateView.as_view(template_name="github_issue_prompt.html"),
+        name="github_issue_prompt",
+    ),
+    path("check_owasp_compliance/", check_owasp_compliance, name="check_owasp_compliance"),
+    path("create-github-issue/", GithubIssueView.as_view(), name="create_github_issue"),
+    path("get-github-issue/", get_github_issue, name="get_github_issue"),
+    # path("api/v1/owasp-compliance/", views.OwaspComplianceChecker.as_view(), name="owasp-compliance-check"),
+    path("repo_list/", RepoListView.as_view(), name="repo_list"),
+    path("add_repo", add_repo, name="add_repo"),
+    path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    # GitHub Issues
+    path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
+    path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
 ]
 
 if settings.DEBUG:

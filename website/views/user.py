@@ -1,10 +1,11 @@
 import json
+import logging
 import os
+from collections import defaultdict
 from datetime import datetime, timezone
-from decimal import Decimal
+from urllib.parse import urlparse
 
 import requests
-import stripe
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -14,20 +15,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
-from django.http import (
-    Http404,
-    HttpResponse,
-    HttpResponseNotFound,
-    HttpResponseRedirect,
-    JsonResponse,
-)
+from django.http import Http404, HttpResponse, HttpResponseNotFound, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -38,13 +35,15 @@ from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
     Badge,
+    Challenge,
+    Contributor,
     Domain,
+    GitHubIssue,
     Hunt,
     InviteFriend,
     Issue,
     IssueScreenshot,
     Monitor,
-    Payment,
     Points,
     Tag,
     User,
@@ -53,6 +52,8 @@ from website.models import (
     Wallet,
 )
 from website.utils import is_valid_https_url, rebuild_safe_url
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(user_signed_up)
@@ -77,31 +78,31 @@ def update_bch_address(request):
         if selected_crypto and new_address:
             try:
                 user_profile = request.user.userprofile
-                match selected_crypto:
-                    case "Bitcoin":
-                        user_profile.btc_address = new_address
-                    case "Ethereum":
-                        user_profile.eth_address = new_address
-                    case "BitcoinCash":
-                        user_profile.bch_address = new_address
-                    case _:
-                        messages.error(request, f"Invalid crypto selected: {selected_crypto}")
-                        return redirect(reverse("profile", args=[request.user.username]))
+                if selected_crypto == "Bitcoin":
+                    user_profile.btc_address = new_address
+                elif selected_crypto == "Ethereum":
+                    user_profile.eth_address = new_address
+                elif selected_crypto == "BitcoinCash":
+                    user_profile.bch_address = new_address
+                else:
+                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                    return redirect(reverse("profile", args=[request.user.username]))
                 user_profile.save()
                 messages.success(request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
                 messages.error(request, f"Failed to update {selected_crypto} Address.")
         else:
-            messages.error(request, f"Please provide a valid {selected_crypto}  Address.")
+            messages.error(request, f"Please provide a valid {selected_crypto} Address.")
     else:
         messages.error(request, "Invalid request method.")
 
-    username = request.user.username if request.user.username else "default_username"
-    return redirect(reverse("profile", args=[username]))
+        username = request.user.username if request.user.username else "default_username"
+        return redirect(reverse("profile", args=[username]))
 
 
 @login_required
 def profile_edit(request):
+    Tag.objects.get_or_create(name="GSOC")
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
@@ -191,6 +192,90 @@ class InviteCreate(TemplateView):
         return render(request, "invite.html", context)
 
 
+def get_github_stats(user_profile):
+    # Get all PRs with repo info
+    user_prs = (
+        GitHubIssue.objects.filter(
+            Q(user_profile=user_profile) | Q(reviews__reviewer=user_profile), type="pull_request"
+        )
+        .select_related("repo")
+        .distinct()
+        .order_by("-created_at")
+    )
+
+    # Calculate reviewed PRs
+    reviewed_count = GitHubIssue.objects.filter(
+        reviews__reviewer=user_profile,
+    ).count()
+
+    print(f"Total PRs found: {user_prs.count()}")
+
+    # Overall stats
+    merged_count = user_prs.filter(is_merged=True).count()
+    open_count = user_prs.filter(state="open").count()
+    closed_count = user_prs.filter(state="closed", is_merged=False).count()
+
+    users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
+    contributor_count = users_with_github.count()
+
+    # Group PRs by repo
+    repos_with_prs = {}
+    for pr in user_prs:
+        repo_name = pr.repo.name if pr.repo else "Other"
+        repo_id = pr.repo.id if pr.repo else None
+        repo_url = pr.repo.repo_url if pr.repo else None
+
+        repos_with_prs.setdefault(
+            repo_name,
+            {
+                "repo_name": repo_name,
+                "repo_id": repo_id,
+                "repo_url": repo_url,
+                "pull_requests": [],
+                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0, "reviewed_count": 0},
+            },
+        )
+
+        repos_with_prs[repo_name]["pull_requests"].append(pr)
+
+        # Track authored vs reviewed contributions
+        if pr.user_profile == user_profile:
+            if pr.is_merged:
+                repos_with_prs[repo_name]["stats"]["merged_count"] += 1
+            elif pr.state == "open":
+                repos_with_prs[repo_name]["stats"]["open_count"] += 1
+            elif pr.state == "closed" and not pr.is_merged:
+                repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+        elif pr.reviews.filter(reviewer=user_profile).exists():
+            repos_with_prs[repo_name]["stats"]["reviewed_count"] += 1
+
+    # Get review ranking
+    all_reviewers = (
+        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        .filter(review_count__gt=0)
+        .order_by("-review_count")
+    )
+
+    review_rank = None
+    total_reviewers = all_reviewers.count()
+    for i, reviewer in enumerate(all_reviewers, 1):
+        if reviewer.id == user_profile.id:
+            review_rank = f"#{i} out of {total_reviewers}"
+            break
+
+    return {
+        "overall_stats": {
+            "merged_count": merged_count,
+            "open_count": open_count,
+            "closed_count": closed_count,
+            "reviewed_count": reviewed_count,
+            "user_rank": f"#{user_profile.contribution_rank} out of {contributor_count}",
+            "review_rank": review_rank,
+        },
+        "repos_with_prs": repos_with_prs,
+    }
+
+
 class UserProfileDetailView(DetailView):
     model = get_user_model()
     slug_field = "username"
@@ -216,29 +301,35 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        milestones = [7, 15, 30, 100, 180, 365]
+        base_milestone = 0
+        next_milestone = 0
+        for milestone in milestones:
+            if user.userprofile.current_streak >= milestone:
+                base_milestone = milestone
+            elif user.userprofile.current_streak < milestone:
+                next_milestone = milestone
+                break
+        context["base_milestone"] = base_milestone
+        context["next_milestone"] = next_milestone
         # Fetch badges
         user_badges = UserBadge.objects.filter(user=user).select_related("badge")
-
         context["user_badges"] = user_badges  # Add badges to context
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
-        )[0]
+        user_points = Points.objects.filter(user=self.object).order_by("id")
+        context["user_points"] = user_points
+        context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
-            Domain.objects.filter(issue__user=self.object)
-            .annotate(total=Count("issue"))
-            .order_by("-total")
+            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
         )
         context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:3]
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity.pk
-            ).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
         context["profile_form"] = UserProfileForm()
         context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
         context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
@@ -258,9 +349,7 @@ class UserProfileDetailView(DetailView):
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                user=self.object, hunt=None, label=str(i)
-            )
+            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -274,15 +363,76 @@ class UserProfileDetailView(DetailView):
             arr.append(User.objects.get(username=str(userprofile.user)))
         context["following"] = arr
 
-        context["followers_list"] = [
-            str(prof.user.email) for prof in user.userprofile.follower.all()
-        ]
+        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         # tags
-        context["user_related_tags"] = (
-            UserProfile.objects.filter(user=self.object).first().tags.all()
-        )
+        context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
+        # pull request info
+        stats = get_github_stats(user.userprofile)
+        context.update(
+            {
+                "overall_stats": stats["overall_stats"],
+                "repos_with_prs": stats["repos_with_prs"],
+            }
+        )
+
+        context["prs_grouped"] = None
+        context["total_pr_reviews"] = 0
+
+        if user.userprofile.github_url:
+            try:
+                parsed_url = urlparse(user.userprofile.github_url)
+                path_parts = parsed_url.path.strip("/").split("/")
+                if path_parts:
+                    github_username = path_parts[0]
+                    headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"} if settings.GITHUB_TOKEN else {}
+                    reviewed_prs_response = requests.get(
+                        f"https://api.github.com/search/issues?q=type:pr+reviewed-by:{github_username}",
+                        headers=headers,
+                        timeout=5,
+                    )
+                    if reviewed_prs_response.status_code == 200:
+                        reviewed_prs = reviewed_prs_response.json().get("items", [])
+                        prs_grouped = defaultdict(list)
+                        reviewed_stats = {"merged_count": 0, "open_count": 0, "closed_count": 0}
+
+                        for pr in reviewed_prs:
+                            repo_name = pr["repository_url"].split("/")[-1]
+                            is_merged = pr.get("pull_request", {}).get("merged_at") is not None
+                            state = pr["state"]
+
+                            # Update counts
+                            if is_merged:
+                                reviewed_stats["merged_count"] += 1
+                            elif state == "open":
+                                reviewed_stats["open_count"] += 1
+                            else:
+                                reviewed_stats["closed_count"] += 1
+
+                            # Add to grouped PRs
+                            prs_grouped[repo_name].append(
+                                {
+                                    "html_url": pr["html_url"],
+                                    "number": pr["number"],
+                                    "title": pr["title"],
+                                    "state": state,
+                                    "merged": is_merged,
+                                    "created_at": pr["created_at"],
+                                }
+                            )
+
+                        context.update(
+                            {
+                                "prs_grouped": dict(prs_grouped),
+                                "reviewed_stats": reviewed_stats,
+                                "total_pr_reviews": len(reviewed_prs),
+                            }
+                        )
+
+            except Exception as e:
+                logger.error(f"Error fetching GitHub PRs: {str(e)}")
+
         return context
 
     @method_decorator(login_required)
@@ -322,9 +472,7 @@ class UserProfileDetailsView(DetailView):
             Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
         )[0]
         context["websites"] = (
-            Domain.objects.filter(issue__user=self.object)
-            .annotate(total=Count("issue"))
-            .order_by("-total")
+            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -349,9 +497,9 @@ class UserProfileDetailsView(DetailView):
         )
         context["total_bugs"] = Issue.objects.filter(user=self.object).count()
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                user=self.object, hunt=None, label=str(i)
-            ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i)).exclude(
+                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+            )
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -365,9 +513,7 @@ class UserProfileDetailsView(DetailView):
             arr.append(User.objects.get(username=str(userprofile.user)))
         context["following"] = arr
 
-        context["followers_list"] = [
-            str(prof.user.email) for prof in user.userprofile.follower.all()
-        ]
+        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         return context
 
@@ -405,9 +551,7 @@ class LeaderboardBase:
         """
         leaderboard which includes current month users scores
         """
-        return self.get_leaderboard(
-            month=int(datetime.now().month), year=int(datetime.now().year), api=api
-        )
+        return self.get_leaderboard(month=int(datetime.now().month), year=int(datetime.now().year), api=api)
 
     def monthly_year_leaderboard(self, year, api=False):
         """
@@ -440,7 +584,34 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard()
+        context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
+
+        # Get pull request leaderboard
+        pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+            .values(
+                "user_profile__user__username",
+                "user_profile__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_prs=Count("id"))
+            .order_by("-total_prs")[:10]
+        )
+        context["pr_leaderboard"] = pr_leaderboard
+
+        # Get Reviewed Pull Request Leaderboard
+        reviewed_pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request")
+            .values(
+                "reviews__reviewer__user__username",
+                "reviews__reviewer__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_reviews=Count("id"))
+            .order_by("-total_reviews")[:10]
+        )
+        context["code_review_leaderboard"] = reviewed_pr_leaderboard
+
         return context
 
 
@@ -592,145 +763,44 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
-    context["user_related_tags"] = Tag.objects.filter(userprofile__isnull=False).distinct()
+    # Get total count of users with GitHub profiles
+    context["users_with_github_count"] = (
+        UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
+    )
 
-    context["tags"] = Tag.objects.all()
+    # Get contributors from database
+    context["contributors"] = Contributor.objects.all().order_by("-contributions")
+    context["contributors_count"] = context["contributors"].count()
+
+    context["tags_with_counts"] = (
+        Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
+    )
 
     tag_name = request.GET.get("tag")
-    if tag_name:
-        if context["user_related_tags"].filter(name=tag_name).exists():
+    show_githubbers = request.GET.get("githubbers") == "true"
+    show_contributors = request.GET.get("contributors") == "true"
+
+    if show_contributors:
+        context["show_contributors"] = True
+        context["users"] = []
+    elif show_githubbers:
+        context["githubbers"] = True
+        context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
+        context["user_count"] = context["users"].count()
+    elif tag_name:
+        if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
+            context["user_count"] = context["users"].count()
         else:
-            context["users"] = UserProfile.objects.none()  # No users if the tag isn't found
+            context["users"] = UserProfile.objects.none()
+            context["user_count"] = 0
     else:
         context["tag"] = "BLT Contributors"
         context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+        context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
-
-
-@login_required(login_url="/accounts/login")
-def stripe_connected(request, username):
-    user = User.objects.get(username=username)
-    wallet, created = Wallet.objects.get_or_create(user=user)
-    from django.conf import settings
-
-    stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-    account = stripe.Account.retrieve(wallet.account_id)
-    if account.payouts_enabled:
-        payment = Payment.objects.get(wallet=wallet, active=True)
-        balance = stripe.Balance.retrieve()
-        if balance.available[0].amount > payment.value * 100:
-            stripe.Transfer.create(
-                amount=payment.value * 100,
-                currency="usd",
-                destination="000123456789",
-                transfer_group="ORDER_95",
-            )
-            wallet.withdraw(Decimal(request.POST["amount"]))
-            wallet.save()
-            payment.active = False
-            payment.save()
-            return HttpResponseRedirect("/dashboard/user/profile/" + username)
-        else:
-            return HttpResponse("ERROR")
-    else:
-        wallet.account_id = None
-        wallet.save()
-    return HttpResponse("error")
-
-
-@login_required(login_url="/accounts/login")
-def addbalance(request):
-    if request.method == "POST":
-        if request.user.is_authenticated:
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            charge = stripe.Charge.create(
-                amount=int(Decimal(request.POST["amount"]) * 100),
-                currency="usd",
-                description="Example charge",
-                source=request.POST["stripeToken"],
-            )
-            wallet.deposit(request.POST["amount"])
-        return HttpResponse("success")
-
-
-@login_required(login_url="/accounts/login")
-def withdraw(request):
-    if request.method == "POST":
-        if request.user.is_authenticated:
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            if wallet.current_balance < Decimal(request.POST["amount"]):
-                return HttpResponse("msg : amount greater than wallet balance")
-            else:
-                amount = Decimal(request.POST["amount"])
-            payments = Payment.objects.filter(wallet=wallet)
-            for payment in payments:
-                payment.active = False
-            payment = Payment()
-            payment.wallet = wallet
-            payment.value = Decimal(request.POST["amount"])
-            payment.save()
-            from django.conf import settings
-
-            stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
-            if wallet.account_id:
-                account = stripe.Account.retrieve(wallet.account_id)
-                if account.payouts_enabled:
-                    balance = stripe.Balance.retrieve()
-                    if balance.available[0].amount > payment.value * 100:
-                        stripe.Transfer.create(
-                            amount=Decimal(request.POST["amount"]) * 100,
-                            currency="usd",
-                            destination=wallet.account_id,
-                            transfer_group="ORDER_95",
-                        )
-                        wallet.withdraw(Decimal(request.POST["amount"]))
-                        wallet.save()
-                        payment.active = False
-                        payment.save()
-                        return HttpResponseRedirect(
-                            "/dashboard/user/profile/" + request.user.username
-                        )
-                    else:
-                        return HttpResponse("INSUFFICIENT BALANCE")
-                else:
-                    wallet.account_id = None
-                    wallet.save()
-                    account = stripe.Account.create(
-                        type="express",
-                    )
-                    wallet.account_id = account.id
-                    wallet.save()
-                    account_links = stripe.AccountLink.create(
-                        account=account,
-                        return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                        + request.user.username,
-                        refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                        + request.user.username,
-                        type="account_onboarding",
-                    )
-                    return JsonResponse({"redirect": account_links.url, "status": "success"})
-            else:
-                account = stripe.Account.create(
-                    type="express",
-                )
-                wallet.account_id = account.id
-                wallet.save()
-                account_links = stripe.AccountLink.create(
-                    account=account,
-                    return_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/stripe/connected/"
-                    + request.user.username,
-                    refresh_url=f"http://{settings.DOMAIN_NAME}:{settings.PORT}/dashboard/user/profile/"
-                    + request.user.username,
-                    type="account_onboarding",
-                )
-                return JsonResponse({"redirect": account_links.url, "status": "success"})
-        return JsonResponse({"status": "error"})
 
 
 def contributors(request):
@@ -758,9 +828,7 @@ def create_tokens(request):
 def get_score(request):
     users = []
     temp_users = (
-        User.objects.annotate(total_score=Sum("points__score"))
-        .order_by("-total_score")
-        .filter(total_score__gt=0)
+        User.objects.annotate(total_score=Sum("points__score")).order_by("-total_score").filter(total_score__gt=0)
     )
     rank_user = 1
     for each in temp_users.all():
@@ -790,12 +858,8 @@ def follow_user(request, user):
                 flag = 1
         if flag != 1:
             request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string(
-                "email/follow_user.txt", {"follower": request.user, "followed": userx}
-            )
-            msg_html = render_to_string(
-                "email/follow_user.txt", {"follower": request.user, "followed": userx}
-            )
+            msg_plain = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
+            msg_html = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
 
             send_mail(
                 "You got a new follower!!",
@@ -874,3 +938,152 @@ def assign_badge(request, username):
     UserBadge.objects.create(user=user, badge=badge, awarded_by=request.user, reason=reason)
     messages.success(request, f"{badge.title} badge assigned to {user.username}.")
     return redirect("profile", slug=username)
+
+
+def badge_user_list(request, badge_id):
+    badge = get_object_or_404(Badge, id=badge_id)
+
+    profiles = (
+        UserProfile.objects.filter(user__userbadge__badge=badge)
+        .select_related("user")
+        .distinct()
+        .annotate(awarded_at=F("user__userbadge__awarded_at"))
+    )
+
+    return render(
+        request,
+        "badge_user_list.html",
+        {
+            "badge": badge,
+            "profiles": profiles,
+        },
+    )
+
+
+@csrf_exempt
+def github_webhook(request):
+    if request.method == "POST":
+        # Validate GitHub signature
+        # this doesn't seem to work?
+        # signature = request.headers.get("X-Hub-Signature-256")
+        # if not validate_signature(request.body, signature):
+        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+
+        payload = json.loads(request.body)
+        event_type = request.headers.get("X-GitHub-Event", "")
+
+        event_handlers = {
+            "pull_request": handle_pull_request_event,
+            "push": handle_push_event,
+            "pull_request_review": handle_review_event,
+            "issues": handle_issue_event,
+            "status": handle_status_event,
+            "fork": handle_fork_event,
+            "create": handle_create_event,
+        }
+
+        handler = event_handlers.get(event_type)
+        if handler:
+            return handler(payload)
+        else:
+            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
+
+
+def handle_pull_request_event(payload):
+    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
+        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
+        if pr_user_profile:
+            pr_user_instance = pr_user_profile.user
+            assign_github_badge(pr_user_instance, "First PR Merged")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_push_event(payload):
+    pusher_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    if pusher_profile:
+        pusher_user = pusher_profile.user
+        if payload.get("commits"):
+            assign_github_badge(pusher_user, "First Commit")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_review_event(payload):
+    reviewer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    if reviewer_profile:
+        reviewer_user = reviewer_profile.user
+        assign_github_badge(reviewer_user, "First Code Review")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_issue_event(payload):
+    print("issue closed")
+    if payload["action"] == "closed":
+        closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+        if closer_profile:
+            closer_user = closer_profile.user
+            assign_github_badge(closer_user, "First Issue Closed")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_status_event(payload):
+    user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    if user_profile:
+        user = user_profile.user
+        build_status = payload["state"]
+        if build_status == "success":
+            assign_github_badge(user, "First CI Build Passed")
+        elif build_status == "failure":
+            assign_github_badge(user, "First CI Build Failed")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_fork_event(payload):
+    user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    if user_profile:
+        user = user_profile.user
+        assign_github_badge(user, "First Fork Created")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_create_event(payload):
+    if payload["ref_type"] == "branch":
+        user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+        if user_profile:
+            user = user_profile.user
+            assign_github_badge(user, "First Branch Created")
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def assign_github_badge(user, action_title):
+    try:
+        badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
+        if not UserBadge.objects.filter(user=user, badge=badge).exists():
+            UserBadge.objects.create(user=user, badge=badge)
+
+    except Badge.DoesNotExist:
+        print(f"Badge '{action_title}' does not exist.")
+
+
+@method_decorator(login_required, name="dispatch")
+class UserChallengeListView(View):
+    """View to display all challenges and handle updates inline."""
+
+    def get(self, request):
+        challenges = Challenge.objects.filter(challenge_type="single")  # All single-user challenges
+        user_challenges = challenges.filter(participants=request.user)  # Challenges the user is participating in
+
+        for challenge in challenges:
+            if challenge in user_challenges:
+                # If the user is participating, show their progress
+                challenge.progress = challenge.progress
+            else:
+                # If the user is not participating, set progress to 0
+                challenge.progress = 0
+
+        return render(
+            request,
+            "user_challenges.html",
+            {"challenges": challenges, "user_challenges": user_challenges},
+        )

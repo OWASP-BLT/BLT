@@ -1,30 +1,25 @@
-"""
-Django settings for gettingstarted project, on Heroku. For more info, see:
-https://github.com/heroku/heroku-django-template
-For more information on this file, see
-https://docs.djangoproject.com/en/1.8/topics/settings/
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.8/ref/settings/
-"""
-
-# from google.oauth2 import service_account
 import json
 import os
 import sys
 
 import dj_database_url
 import environ
+
+# Initialize Sentry
+import sentry_sdk
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
+from sentry_sdk.integrations.django import DjangoIntegration
 
-# reading .env file
 environ.Env.read_env()
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 env = environ.Env()
 env_file = os.path.join(BASE_DIR, ".env")
 environ.Env.read_env(env_file)
+
+print(f"Reading .env file from {env_file}")
+print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
@@ -34,44 +29,40 @@ PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
 FQDN = "blt.owasp.org"
 DOMAIN_NAME_PREVIOUS = os.environ.get("DOMAIN_NAME_PREVIOUS", "BLT")
-# else:
-#     # Default values if hostname does not match
-#     PROJECT_NAME = os.environ.get("PROJECT_NAME", "BLT")
-#     DOMAIN_NAME = os.environ.get("DOMAIN_NAME", "127.0.0.1")
-#     FQDN = "www." + DOMAIN_NAME
 
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
 
 ADMIN_URL = os.environ.get("ADMIN_URL", "admin")
 PORT = os.environ.get("PORT", "8000")
-DEFAULT_FROM_EMAIL = os.environ.get("FROM_EMAIL", "test@localhost")
-SERVER_EMAIL = os.environ.get("FROM_EMAIL", "test@localhost")
+DEFAULT_FROM_EMAIL = os.environ.get("FROM_EMAIL", "blt-support@owasp.org")
+SERVER_EMAIL = os.environ.get("FROM_EMAIL", "blt-support@owasp.org")
 
 
 EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
-BLOG_URL = os.environ.get("BLOG_URL", "https://owasp.org/www-project-bug-logging-tool/")
+BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
-TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp")
+TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
-EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT")
+EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
-
-# SECURITY WARNING: change this before deploying to production!
 SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
 
-# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 TESTING = sys.argv[1:2] == ["test"]
 
 SITE_ID = 1
-# Application definition
+
+# Scout settings
+SCOUT_MONITOR = True
+SCOUT_KEY = os.environ.get("SCOUT_KEY")
+SCOUT_NAME = PROJECT_NAME
+
 
 INSTALLED_APPS = (
+    # "scout_apm.django",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -81,7 +72,6 @@ INSTALLED_APPS = (
     "django.contrib.sites",
     "django.contrib.humanize",
     "website",
-    "company",
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
@@ -96,19 +86,22 @@ INSTALLED_APPS = (
     "rest_framework",
     "django_filters",
     "rest_framework.authtoken",
-    # "django_cron",
     "mdeditor",
-    # "bootstrap_datepicker_plus",
     "tz_detect",
-    # "tellme",
     "star_ratings",
     "drf_yasg",
     "captcha",
     "dj_rest_auth",
     "dj_rest_auth.registration",
-    "blog",
     "storages",
+    "channels",
 )
+
+if DEBUG:
+    INSTALLED_APPS += ("livereload",)
+
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 
 MIDDLEWARE = (
@@ -126,6 +119,11 @@ MIDDLEWARE = (
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
 
+if DEBUG:
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+
+BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
+BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
 
 if DEBUG and not TESTING:
@@ -171,6 +169,11 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
             ],
             "loaders": [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+            ]
+            if DEBUG
+            else [
                 (
                     "django.template.loaders.cached.Loader",
                     [
@@ -188,33 +191,11 @@ AUTHENTICATION_BACKENDS = (
     "allauth.account.auth_backends.AuthenticationBackend",
 )
 
-# SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-
-# CACHES = {
-#    'default': {
-#        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
-#        'LOCATION': 'cache_table',
-#    }
-# }
-
 
 REST_AUTH = {"SESSION_LOGIN": False}
-CONN_MAX_AGE = None
+CONN_MAX_AGE = 0
 
-WSGI_APPLICATION = "blt.wsgi.application"
-
-# Database
-# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-    }
-}
-
-# Password validation
-# https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
+# WSGI_APPLICATION = "blt.wsgi.application"
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -231,8 +212,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-# https://docs.djangoproject.com/en/1.8/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
@@ -254,22 +233,29 @@ LANGUAGES = (
 
 MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
-# Update database configuration with $DATABASE_URL.
 db_from_env = dj_database_url.config(conn_max_age=500)
-DATABASES["default"].update(db_from_env)
+
+
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        send_default_pii=True,
+        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
+        profiles_sample_rate=1.0 if DEBUG else 0.2,
+        environment="development" if DEBUG else "production",
+        release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
+    )
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
-# python -m smtpd -n -c DebuggingServer localhost:1025
-# if DEBUG:
-#    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
 
-# these settings are only for production / Heroku
-if "DYNO" in os.environ:
-    print("database url detected in settings")
+if "DYNO" in os.environ:  # for Heroku
     DEBUG = False
     EMAIL_HOST = "smtp.sendgrid.net"
     EMAIL_HOST_USER = os.environ.get("SENDGRID_USERNAME", "blank")
@@ -279,35 +265,18 @@ if "DYNO" in os.environ:
     if not TESTING:
         SECURE_SSL_REDIRECT = True
 
-    import logging
+    # import logging
 
-    logging.basicConfig(level=logging.DEBUG)
-    # GS_ACCESS_KEY_ID = os.environ.get("GS_ACCESS_KEY_ID", "blank")
-    # GS_SECRET_ACCESS_KEY = os.environ.get("GS_SECRET_ACCESS_KEY", "blank")
-    # GOOGLE_APPLICATION_CREDENTIALS = "/app/google-credentials.json"
+    # logging.basicConfig(level=logging.DEBUG)
 
     GS_BUCKET_NAME = "bhfiles"
-    # DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-
-    # GS_CREDENTIALS = None
-
-    # # Ensure credentials file is valid
-    # try:
-    #     GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    #         GOOGLE_APPLICATION_CREDENTIALS
-    #     )
-    #     print("Google Cloud Storage credentials loaded successfully.")
-    # except Exception as e:
-    #     print(f"Error loading Google Cloud Storage credentials: {e}")
 
     GOOGLE_CREDENTIALS = os.getenv("GOOGLE_CREDENTIALS")
 
     if not GOOGLE_CREDENTIALS:
         raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
 
-    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS)
-    )
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(json.loads(GOOGLE_CREDENTIALS))
 
     STORAGES = {
         "default": {
@@ -326,19 +295,6 @@ if "DYNO" in os.environ:
     GS_QUERYSTRING_AUTH = False
     GS_DEFAULT_ACL = None
     MEDIA_URL = "https://bhfiles.storage.googleapis.com/"
-    # add debugging info for google storage
-
-    import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
-
-    sentry_sdk.init(
-        dsn=os.environ.get("SENTRY_DSN", "https://key.ingest.sentry.io/project"),
-        integrations=[DjangoIntegration()],
-        send_default_pii=True,
-        traces_sample_rate=1.0,
-        profiles_sample_rate=1.0,
-        release=os.environ.get("HEROKU_RELEASE_VERSION", default=""),
-    )
 
 else:
     STORAGES = {
@@ -350,24 +306,33 @@ else:
         },
     }
     DEFAULT_FILE_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
-    # DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
-    print("no database url detected in settings, using sqlite")
     if not TESTING:
         DEBUG = True
 
-# local dev needs to set SMTP backend or fail at startup
-if DEBUG:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # use this to debug emails locally
+    # python -m smtpd -n -c DebuggingServer localhost:1025
+    # if DEBUG:
+    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+    }
+}
+
+if not db_from_env:
+    print("no database url detected in settings, using sqlite")
+else:
+    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
-
-# Honor the 'X-Forwarded-Proto' header for request.is_secure()
+ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# Allow all host headers
 ALLOWED_HOSTS = [
     "." + DOMAIN_NAME,
     "127.0.0.1",
@@ -377,46 +342,60 @@ ALLOWED_HOSTS = [
     "." + DOMAIN_NAME_PREVIOUS,
 ]
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"
 
-# Extra places for collectstatic to find static files.
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, "website", "static"),
-    os.path.join(BASE_DIR, "company", "static"),
-)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "website", "static"),)
 
 ABSOLUTE_URL_OVERRIDES = {
     "auth.user": lambda u: "/profile/%s/" % u.username,
 }
 
-# Simplified static file serving.
-# https://warehouse.python.org/project/whitenoise/
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
-
 LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+ACCOUNT_LOGOUT_ON_GET = True
 
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "simple": {"format": "%(levelname)s %(message)s"},
+    },
     "handlers": {
         "console": {
+            "level": "DEBUG",
             "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
-        "mail_admins": {
-            "class": "django.utils.log.AdminEmailHandler",
-        },
+        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
+    },
+    "root": {
+        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "handlers": ["console"],
     },
     "loggers": {
-        "": {
+        "django": {
+            "handlers": ["console", "mail_admins"],
+            "level": "INFO",
+            "propagate": True,  # Changed to True to show in root logger
+        },
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,  # Changed to True to show in root logger
+        },
+        "website": {
             "handlers": ["console"],
             "level": "DEBUG",
+            "propagate": True,
         },
     },
 }
+
+
 USERS_AVATAR_PATH = "avatars"
 AVATAR_PATH = os.path.join(MEDIA_ROOT, USERS_AVATAR_PATH)
 
@@ -453,12 +432,31 @@ else:
     else:
         CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+if DEBUG or TESTING:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
     }
-}
+else:
+    # temp to check memory usage
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
+    }
+
+    # CACHES = {
+    #     "default": {
+    #         "BACKEND": "django_redis.cache.RedisCache",
+    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
+    #         "OPTIONS": {
+    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+    #         },
+    #     }
+    # }
 
 if DEBUG or TESTING:
     anon_throttle = 100000
@@ -481,7 +479,7 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user:email"],
+        "SCOPE": ["user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
     "google": {
@@ -562,46 +560,19 @@ SUPERUSER_PASSWORD = env("SUPERUSER_PASSWORD", default="admin@123")
 
 SUPERUSERS = ((SUPERUSER_USERNAME, SUPERUSER_EMAIL, SUPERUSER_PASSWORD),)
 
-STRIPE_LIVE_PUBLIC_KEY = os.environ.get("STRIPE_LIVE_PUBLIC_KEY", "<your publishable key>")
-STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY", "<your secret key>")
-STRIPE_TEST_PUBLIC_KEY = os.environ.get(
-    "STRIPE_TEST_PUBLIC_KEY",
-    "pk_test_12345",
-)
-STRIPE_TEST_SECRET_KEY = os.environ.get(
-    "STRIPE_TEST_SECRET_KEY",
-    "sk_test_12345",
-)
-STRIPE_LIVE_MODE = False  # Change to True in production
-
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
-# CALLBACK_URL_FOR_GITHUB = os.environ.get(
-#     "CALLBACK_URL_FOR_GITHUB", default="https://www." + DOMAIN_NAME +"/")
-
-# CALLBACK_URL_FOR_GOOGLE = os.environ.get(
-#     "CALLBACK_URL_FOR_GOOGLE", default="https://www." + DOMAIN_NAME +"/")
-
-# CALLBACK_URL_FOR_FACEBOOK = os.environ.get(
-#     "CALLBACK_URL_FOR_FACEBOOK", default="https://www." + DOMAIN_NAME +"/")
-
-
-# allow captcha bypass during test
 IS_TEST = False
 if "test" in sys.argv:
     CAPTCHA_TEST_MODE = True
     IS_TEST = True
 
-
-# Twitter
-
+# Twitter API - we can remove these - update names to have twitter_x or bluesky_x
 BEARER_TOKEN = os.environ.get("BEARER_TOKEN")
 APP_KEY = os.environ.get("APP_KEY")
 APP_KEY_SECRET = os.environ.get("APP_KEY_SECRET")
 ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN")
 ACCESS_TOKEN_SECRET = os.environ.get("ACCESS_TOKEN_SECRET")
-
-# USPTO
 
 USPTO_API = os.environ.get("USPTO_API")
 
@@ -610,3 +581,24 @@ BITCOIN_RPC_USER = os.environ.get("BITCOIN_RPC_USER", "yourusername")
 BITCOIN_RPC_PASSWORD = os.environ.get("BITCOIN_RPC_PASSWORD", "yourpassword")
 BITCOIN_RPC_HOST = os.environ.get("BITCOIN_RPC_HOST", "localhost")
 BITCOIN_RPC_PORT = os.environ.get("BITCOIN_RPC_PORT", "8332")
+
+ASGI_APPLICATION = "blt.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("REDISCLOUD_URL")],
+            # "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
+
+ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
+SOCIALACCOUNT_STORE_TOKENS = True

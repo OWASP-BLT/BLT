@@ -1,0 +1,180 @@
+{% load gravatar %}
+{% load static %}
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+    <!-- Header with user info -->
+    <div class="p-4 border-b border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <!-- User Avatar -->
+                <div class="flex-shrink-0">
+                    {% if activity.user.userprofile.avatar %}
+                        <img src="{{ activity.user.userprofile.avatar }}"
+                             class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                             loading="lazy"
+                             alt="{{ activity.user.username }}'s avatar"
+                             width="40"
+                             height="40">
+                    {% elif activity.user.socialaccount_set.all.0.get_avatar_url %}
+                        <img src="{{ activity.user.socialaccount_set.all.0.get_avatar_url }}"
+                             class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                             loading="lazy"
+                             alt="{{ activity.user.username }}'s avatar"
+                             width="40"
+                             height="40">
+                    {% elif activity.user.email %}
+                        <img src="{% gravatar_url activity.user.email 100 %}"
+                             class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                             loading="lazy"
+                             alt="{{ activity.user.username }}'s avatar"
+                             width="40"
+                             height="40">
+                    {% else %}
+                        <img src="{% static 'images/dummy-user.png' %}"
+                             class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-100"
+                             loading="lazy"
+                             alt="Default avatar"
+                             width="40"
+                             height="40">
+                    {% endif %}
+                </div>
+                <!-- User and Domain Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center space-x-2">
+                        <a href="{{ activity.user.get_absolute_url }}"
+                           class="text-sm font-semibold text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                            {{ activity.user|default:"Anonymous" }}
+                        </a>
+                        <span class="text-sm text-gray-400">•</span>
+                        <a href="{% url 'domain' slug=activity.domain_name %}"
+                           class="text-sm text-gray-600 hover:text-[#e74c3c] transition-colors truncate">
+                            {{ activity.domain_title }}
+                        </a>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-0.5">{{ activity.created|timesince }} ago</p>
+                </div>
+            </div>
+            <!-- Admin Controls -->
+            {% if request.user.is_superuser or request.user == activity.user %}
+                <div class="flex items-center space-x-2">
+                    <a href="{% url 'admin:website_issue_change' activity.id %}"
+                       class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-[#e74c3c] hover:bg-[#e74c3c] hover:bg-opacity-10 transition-colors">
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                    </a>
+                    <a href="{% url 'admin:website_issue_delete' activity.id %}"
+                       class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-red-600 hover:bg-red-100 transition-colors">
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <!-- Issue Content -->
+    <div class="flex-1 p-4">
+        <!-- Domain Icon and Description -->
+        <div class="flex items-start space-x-3 mb-4">
+            <div class="flex-shrink-0 w-6 h-6">
+                <img src="https://www.google.com/s2/favicons?domain={{ activity.domain_name }}&sz=32"
+                     loading="lazy"
+                     class="w-6 h-6 rounded shadow-sm"
+                     alt="{{ activity.domain_name }} icon"
+                     width="24"
+                     height="24">
+            </div>
+            <div class="flex-1">
+                <a href="{{ activity.get_absolute_url }}"
+                   class="text-base font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                    {{ activity.description|truncatechars:150 }}
+                </a>
+                {% if activity.domain.organization %}
+                    <p class="text-sm text-gray-500 mt-1">
+                        Organization:
+                        <a href="{% url 'organization_detail' activity.domain.organization.slug %}"
+                           class="text-[#e74c3c] hover:underline">{{ activity.domain.organization.name }}</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        <!-- URL -->
+        <a href="{{ activity.url }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="text-sm text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block mb-4">
+            {{ activity.url|truncatechars:60 }}
+        </a>
+        <!-- Status and Type Labels -->
+        <div class="flex items-center space-x-2 mt-auto">
+            {% if activity.status == "open" %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                    {{ activity.status }}
+                </span>
+            {% else %}
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                    {{ activity.status }}
+                </span>
+            {% endif %}
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#e74c3c] bg-opacity-10 text-[#e74c3c] border border-[#e74c3c] border-opacity-20">
+                {{ activity.get_label_display }}
+            </span>
+        </div>
+    </div>
+    <!-- Screenshot -->
+    {% if activity.screenshot or activity_screenshots %}
+        <div class="border-t border-gray-200">
+            <div class="relative w-full h-48">
+                {% for screenshot_activity,screenshot in activity_screenshots.items %}
+                    {% if activity == screenshot_activity %}
+                        <a href="{{ activity.get_absolute_url }}" class="block w-full h-full">
+                            <img src="{{ screenshot.image.url }}"
+                                 loading="lazy"
+                                 alt="Issue screenshot"
+                                 class="w-full h-full object-contain bg-gray-50"
+                                 width="100%"
+                                 height="100%">
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if activity.screenshot %}
+                    <a href="{{ activity.get_absolute_url }}" class="block w-full h-full">
+                        <img src="{{ activity.screenshot.url }}"
+                             loading="lazy"
+                             alt="Issue screenshot"
+                             class="w-full h-full object-contain bg-gray-50"
+                             width="100%"
+                             height="100%">
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+    <!-- Footer -->
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
+        <div class="flex justify-between items-center">
+            <!-- Comments -->
+            <a href="{{ activity.get_absolute_url }}#comments"
+               class="text-sm text-gray-500 hover:text-[#e74c3c]">
+                {% if activity.comments.all|length > 0 %}
+                    {{ activity.comments.all|length }} comment{{ activity.comments.all|length|pluralize }}
+                {% else %}
+                    Add comment
+                {% endif %}
+            </a>
+            <!-- View Details -->
+            <a href="{{ activity.get_absolute_url }}"
+               class="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:text-[#e74c3c]">
+                View Details
+            </a>
+        </div>
+    </div>
+</div>

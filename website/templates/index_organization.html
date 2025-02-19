@@ -1,0 +1,84 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+{% block content %}
+    <section>
+        {% include "includes/organization_sidenav.html" %}
+    </section>
+    <div>
+        <div class="col_3">
+            <h3 class="text-left blank1">Ongoing Hunt</h3>
+            {% if ongoing_hunt %}
+                {% for hunt in ongoing_hunt %}
+                    <div class="col-md-3 widget widget1">
+                        <div class="r3_counter_box">
+                            <i class="fa fa-mail-forward"></i>
+                            <div class="stats">
+                                <h5>{{ hunt.url }}</h5>
+                                <div class="hunt">
+                                    <p>
+                                        {{ hunt.prize }}<span>$</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+            </br>
+            no ongoing hunts !
+        {% endif %}
+    </div>
+</div>
+<div>
+    <div class="col_3">
+        <h3 class="text-left blank1">Upcoming Hunt</h3>
+        {% if upcoming_hunts %}
+            {% for hunt in upcoming_hunts %}
+                <div class="col-md-3 widget widget1">
+                    <div class="r3_counter_box">
+                        <i class="fa fa-mail-forward"></i>
+                        <div class="stats">
+                            <h5>{{ hunt.url }}</h5>
+                            <div class="hunt">
+                                <p>
+                                    {{ hunt.prize }}<span>$</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+        </br>
+        no upcoming hunts !
+    {% endif %}
+    <div class="clearfix"></div>
+</div>
+</div>
+<div>
+    <div class="col_3">
+        <h3 class="text-left blank1">Previous Hunt</h3>
+        {% if previous_hunt %}
+            {% for hunt in previous_hunt %}
+                <div class="col-md-3 widget widget1">
+                    <div class="r3_counter_box">
+                        <i class="fa fa-mail-forward"></i>
+                        <div class="stats">
+                            <h5>{{ hunt.url }}</h5>
+                            <div class="hunt">
+                                <p>
+                                    {{ hunt.prize }}<span>$</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+        </br>
+        no previous hunts !
+    {% endif %}
+    <div class="clearfix"></div>
+</div>
+</div>
+{% endblock content %}
