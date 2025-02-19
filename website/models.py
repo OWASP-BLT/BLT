@@ -1300,6 +1300,7 @@ class Repo(models.Model):
     homepage_url = models.URLField(null=True, blank=True)
     is_main = models.BooleanField(default=False)
     is_wiki = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)  # New field for archived status
     stars = models.IntegerField(default=0)
     forks = models.IntegerField(default=0)
     open_issues = models.IntegerField(default=0)

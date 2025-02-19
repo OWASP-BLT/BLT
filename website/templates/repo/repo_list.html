@@ -203,14 +203,24 @@
                                             <div class="flex items-center space-x-2">
                                                 <a href="{% url 'repo_detail' repo.slug %}"
                                                    class="text-indigo-600 hover:text-indigo-900">{{ repo.name }}</a>
-                                                <a href="{{ repo.repo_url }}"
-                                                   target="_blank"
-                                                   class="text-gray-400 hover:text-gray-600"
-                                                   title="View on GitHub">
-                                                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M10 6v2H5v11h11v-5h2v6a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h6zm11-3v8h-2V6.413l-7.293 7.293-1.414-1.414L17.586 5H13V3h8z" />
-                                                    </svg>
-                                                </a>
+                                                <div class="flex items-center gap-2">
+                                                    <a href="{{ repo.repo_url }}"
+                                                       target="_blank"
+                                                       class="text-gray-400 hover:text-gray-600"
+                                                       title="View on GitHub">
+                                                        <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M10 6v2H5v11h11v-5h2v6a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h6zm11-3v8h-2V6.413l-7.293 7.293-1.414-1.414L17.586 5H13V3h8z" />
+                                                        </svg>
+                                                    </a>
+                                                    {% if repo.is_archived %}
+                                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0h8v12H6V4z" clip-rule="evenodd" />
+                                                            </svg>
+                                                            Archived
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4">

@@ -149,6 +149,14 @@
                             Standard Repository
                         </span>
                     {% endif %}
+                    {% if repo.is_archived %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                            <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0h8v12H6V4z" clip-rule="evenodd" />
+                            </svg>
+                            Archived
+                        </span>
+                    {% endif %}
                     <div class="flex items-center gap-2 relative">
                         <span class="text-gray-500">Tags:</span>
                         {% for tag in repo.tags.all %}

@@ -100,16 +100,25 @@ class RepoDetailView(DetailView):
             try:
                 # Generate new AI summary from readme content
                 if repo.readme_content:
-                    new_summary = ai_summary(markdown_to_text(repo.readme_content))
-                    repo.ai_summary = new_summary
-                    repo.save()
-                    return JsonResponse(
-                        {
-                            "status": "success",
-                            "message": "AI summary regenerated successfully",
-                            "data": {"ai_summary": new_summary},
-                        }
-                    )
+                    try:
+                        new_summary = ai_summary(markdown_to_text(repo.readme_content))
+                        repo.ai_summary = new_summary
+                        repo.save()
+                        return JsonResponse(
+                            {
+                                "status": "success",
+                                "message": "AI summary regenerated successfully",
+                                "data": {"ai_summary": new_summary},
+                            }
+                        )
+                    except Exception as e:
+                        return JsonResponse(
+                            {
+                                "status": "error",
+                                "message": str(e),
+                            },
+                            status=500,
+                        )
                 else:
                     return JsonResponse(
                         {
@@ -122,7 +131,7 @@ class RepoDetailView(DetailView):
                 return JsonResponse(
                     {
                         "status": "error",
-                        "message": f"Error generating AI summary: {str(e)}",
+                        "message": str(e),
                     },
                     status=500,
                 )
@@ -302,6 +311,7 @@ def add_repo(request):
             release_name=release_name,
             release_datetime=(parse_datetime(release_datetime) if release_datetime else None),
             open_pull_requests=open_pull_requests,
+            is_archived=repo_data.get("archived", False),
         )
 
         # Try to fetch and generate AI summary from README
