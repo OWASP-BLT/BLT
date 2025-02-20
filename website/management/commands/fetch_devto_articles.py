@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 from django.utils.timezone import make_aware
 
-from website.models import OsshArticles, Tag
+from website.models import OsshArticle, Tag
 
 # ANSI escape codes for colors
 COLOR_RED = "\033[91m"
@@ -51,7 +51,7 @@ class Command(BaseCommand):
                         url = article.get("url")
                         cover_image = article.get("cover_image")
                         reading_time_minutes = article.get("reading_time_minutes")
-                        ossh_article, created = OsshArticles.objects.update_or_create(
+                        ossh_article, created = OsshArticle.objects.update_or_create(
                             external_id=external_id,
                             defaults={
                                 "title": title,
