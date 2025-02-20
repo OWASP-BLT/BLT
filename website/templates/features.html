@@ -27,25 +27,47 @@
             </p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <!-- similarity-scan -->
+            <!-- PR reviews -->
             <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
-                <img src="{% static 'img/features/similarity-scan.png' %}"
-                     alt="similarity_scan"
+                <img src="{% static 'img/features/pr-review.png' %}"
+                     alt="PR_review"
                      height="100"
                      width="200"
                      class="rounded-md mb-3 w-full h-52 object-contain">
                 <div class="flex items-center gap-2 mb-2">
-                    <h2 class="text-xl font-semibold">similarity-scan</h2>
+                    <h2 class="text-xl font-semibold">Automated PR Review</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
                 <p class="text-gray-600 mb-2">
-                    Compare GitHub repositories for function, model, and method similarities using AI and traditional methods. Receive detailed similarity scores and reports.
+                    This feature enables users to submit a GitHub pull request (PR) link and a roadmap document (as a GitHub issue link). The system will analyze the PR using AI and return a detailed report based on predefined metrics.
                 </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2024-12-21</p>
+                <p class="text-gray-500 text-sm mb-4">Added on: 2024-12-19</p>
                 <div class="flex justify-between mt-auto">
-                    <a href="/similarity-scan/"
-                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view scan</a>
-                    <a href="https://github.com/OWASP-BLT/BLT/pull/3134"
+                    <a href="/submit-roadmap-pr/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">submit PR for Review</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/pull/3132"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                </div>
+            </div>
+            <!-- Chat Bot -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/chat-bot.png' %}"
+                     alt="chat_bot"
+                     height="100"
+                     width="200"
+                     class="rounded-md mb-3 w-full h-52 object-contain">
+                <div class="flex items-center gap-2 mb-2">
+                    <h2 class="text-xl font-semibold">Chat Bot</h2>
+                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
+                </div>
+                <p class="text-gray-600 mb-2">
+                    The Chat Bot feature in OWASP BLT is an AI-powered virtual assistant that provides real-time support, answers user queries, and assists with bug reporting and issue tracking.
+                </p>
+                <p class="text-gray-500 text-sm mb-4">Added on: 2024-06-30</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Chat with Bot</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/pull/2254"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
                 </div>
             </div>
@@ -71,29 +93,7 @@
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
                 </div>
             </div>
-            <!-- PR reviews -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
-                <img src="{% static 'img/features/pr-review.png' %}"
-                     alt="PR_review"
-                     height="100"
-                     width="200"
-                     class="rounded-md mb-3 w-full h-52 object-contain">
-                <div class="flex items-center gap-2 mb-2">
-                    <h2 class="text-xl font-semibold">Automated pr review</h2>
-                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
-                </div>
-                <p class="text-gray-600 mb-2">
-                    This feature enables users to submit a GitHub pull request (PR) link and a roadmap document (as a GitHub issue link). The system will analyze the PR using AI and return a detailed report based on predefined metrics.
-                </p>
-                <p class="text-gray-500 text-sm mb-4">Added on: 2024-12-19</p>
-                <div class="flex justify-between mt-auto">
-                    <a href="/submit-roadmap-pr/"
-                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">submit PR for Review</a>
-                    <a href="https://github.com/OWASP-BLT/BLT/pull/3132"
-                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
-                </div>
-            </div>
-            <!-- AI-Powered Project Summary -->
+            <!-- AI-Powered Project Summary  Generator-->
             <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/ai-summary.png' %}"
                      alt="ai_summary"
@@ -101,7 +101,7 @@
                      width="200"
                      class="rounded-md mb-3 w-full h-52 object-contain">
                 <div class="flex items-center gap-2 mb-2">
-                    <h2 class="text-xl font-semibold">AI-Powered Project Summary</h2>
+                    <h2 class="text-xl font-semibold">Project Summary Generator</h2>
                     <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
                 </div>
                 <p class="text-gray-600 mb-2">
@@ -112,6 +112,28 @@
                     <a href="/projects/"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">show projects summary</a>
                     <a href="https://github.com/OWASP-BLT/BLT/pull/3255"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
+                </div>
+            </div>
+            <!-- similarity-scan -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/similarity-scan.png' %}"
+                     alt="similarity_scan"
+                     height="100"
+                     width="200"
+                     class="rounded-md mb-3 w-full h-52 object-contain">
+                <div class="flex items-center gap-2 mb-2">
+                    <h2 class="text-xl font-semibold">Similarity-scan</h2>
+                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse">AI</span>
+                </div>
+                <p class="text-gray-600 mb-2">
+                    Compare GitHub repositories for function, model, and method similarities using AI and traditional methods. Receive detailed similarity scores and reports.
+                </p>
+                <p class="text-gray-500 text-sm mb-4">Added on: 2024-12-21</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/similarity-scan/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view scan</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/pull/3134"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
                 </div>
             </div>
@@ -688,7 +710,7 @@
             <!-- invite referrals  -->
             <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/referral.png' %}"
-                     alt="referra"
+                     alt="referral"
                      width="200"
                      height="100"
                      class="rounded-md mb-3 w-full h-56 object-contain">
@@ -702,6 +724,120 @@
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Invite Organisations</a>
                     <a href="https://github.com/OWASP-BLT/BLT/commit/11124b2079d05640c8c2e43ae7c20f89110ddeec"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                </div>
+            </div>
+            <!-- Sitemap  -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/sitemap.png' %}"
+                     alt="sitemap"
+                     width="200"
+                     height="100"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">SiteMap</h2>
+                <p class="text-gray-600 my-2">
+                    Provides a visual representation of the website's structure, helping users navigate and understand the layout of the site
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2024-05-04</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/sitemap/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View SiteMap</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/commit/709366b9280b11ad1221d4fbce14208919d9c47d"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                </div>
+            </div>
+            <!-- BLT Project stats  -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/blt-stat.png' %}"
+                     alt="blt-stat"
+                     width="200"
+                     height="100"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">Stats</h2>
+                <p class="text-gray-600 my-2">
+                    Displays various statistics related to the platform, such as user activity, bug reports, and other key metrics to track performance and engagement.
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2016-09-11</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/stats/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Stat</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/commit/ecb6e183e96545dd6f5419a8cd13531df397f8dd"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                </div>
+            </div>
+            <!-- Stat Dashboard  -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/stats-dashboard.png' %}"
+                     alt="stat_dashboard"
+                     width="200"
+                     height="100"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">Stats Dashboard</h2>
+                <p class="text-gray-600 my-2">
+                    Offers a comprehensive dashboard with detailed statistics and visualizations, allowing users to monitor and analyze platform activity and performance.
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2025-02-09</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/stats-dashboard/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Dashboard</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/commit/1e09bfebb72d226413da3d2f9f641c4f8fbadb3d"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                </div>
+            </div>
+            <!-- Template List  -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/template-list.png' %}"
+                     alt="template_list"
+                     width="200"
+                     height="100"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">Template List</h2>
+                <p class="text-gray-600 my-2">
+                    The Template List feature in OWASP BLT provides a curated collection of templates for various project types, offering users a starting point for creating new projects and enhancing productivity.
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2025-02-16</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/template_list/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Template List</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/commit/6b3bffbe5687b124d4a7dc46adca6156545beccd"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                </div>
+            </div>
+            <!-- website Stat  -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/web-stats.png' %}"
+                     alt="web_Stats"
+                     width="200"
+                     height="100"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">WebSite Stats</h2>
+                <p class="text-gray-600 my-2">
+                    Provides detailed statistics about the website's performance, including traffic, user engagement, and other key metrics.
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2025-02-16</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/website_stats/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"> View Website Stat</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/commit/6b3bffbe5687b124d4a7dc46adca6156545beccd"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Commit</a>
+                </div>
+            </div>
+            <!-- Gsoc  -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'images/gsoc.png' %}"
+                     alt="gsoc"
+                     width="200"
+                     height="100"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">Gsoc</h2>
+                <p class="text-gray-600 my-2">
+                    The Google Summer of Code (GSoC) is a global program that offers students stipends to write code for open-source projects. OWASP BLT participates in GSoC to mentor students and help them contribute to the platform.
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2024-11-11</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/gsoc/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">participate</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/pull/2890"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
                 </div>
             </div>
         </div>
