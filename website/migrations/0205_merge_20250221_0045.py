@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0204_ossharticle_osshcommunity_osshdiscussionchannel_and_more"),
         ("website", "0204_remove_organization_unique_organization_slug_and_more"),
