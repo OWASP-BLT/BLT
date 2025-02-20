@@ -195,6 +195,15 @@ from website.views.organization import (
     view_hunt,
     weekly_report,
 )
+from website.views.ossh import (
+    get_github_data,
+    get_recommended_articles,
+    get_recommended_communities,
+    get_recommended_discussion_channels,
+    get_recommended_repos,
+    ossh_home,
+    ossh_results,
+)
 from website.views.project import (
     ProjectBadgeView,
     ProjectsDetailView,
@@ -894,6 +903,17 @@ urlpatterns = [
         name="batch_send_bacon_tokens",
     ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
+    path("open-source-sorting-hat/", ossh_home, name="ossh_home"),
+    path("open-source-sorting-hat/results", ossh_results, name="ossh_results"),
+    path("get-github-data/", get_github_data, name="get_github_data"),
+    path("get-recommended-repos/", get_recommended_repos, name="get_recommended_repos"),
+    path("get-recommended-communities/", get_recommended_communities, name="get_recommended_communities"),
+    path(
+        "get-recommended-discussion-channels/",
+        get_recommended_discussion_channels,
+        name="get_recommended_discussion_channels",
+    ),
+    path("get-recommended-articles/", get_recommended_articles, name="get_recommended_articles"),
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
     path("stats/run-command/", run_management_command, name="run_management_command"),
