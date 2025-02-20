@@ -757,7 +757,8 @@ def vote_suggestions(request):
     except json.JSONDecodeError:
         return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+        print(f"Unexpected error in vote_suggestions: {e}", exc_info=True)
+        return JsonResponse({"success": False, "error": "An unexpected error occurred"}, status=500)
 
 
 @login_required
