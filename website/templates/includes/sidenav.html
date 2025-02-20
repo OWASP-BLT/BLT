@@ -401,6 +401,15 @@
                             <span>BLTV</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/open-source-sorting-hat/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'ossh_home' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/open-source-sorting-hat/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hat-wizard fa-lg"></i>
+                            </div>
+                            <span>Open Source Sorting Hat</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/gsoc/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'gsoc' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/gsoc/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">

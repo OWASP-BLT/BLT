@@ -22,7 +22,7 @@ class RepoListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        queryset = Repo.objects.all()
+        queryset = Repo.objects.filter(is_owasp_repo=True)
 
         # Handle language filter
         language = self.request.GET.get("language")

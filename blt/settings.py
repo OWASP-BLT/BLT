@@ -23,6 +23,7 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
 
 PROJECT_NAME = "BLT"
