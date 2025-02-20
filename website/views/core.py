@@ -30,7 +30,7 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
-from django.db import connection, models
+from django.db import connection, models, transaction
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -719,74 +719,70 @@ def search(request, template="search.html"):
 
 @login_required
 def vote_suggestions(request):
-    if request.method == "POST":
-        user = request.userblt_tomato
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+
+    try:
         data = json.loads(request.body)
         suggestion_id = data.get("suggestion_id")
+        up_vote = data.get("up_vote", False)
+        down_vote = data.get("down_vote", False)
+
         suggestion = Suggestion.objects.get(id=suggestion_id)
-        up_vote = data.get("up_vote")
-        down_vote = data.get("down_vote")
-        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
-        if not voted:
-            up_vote = True if up_vote else False
-            down_vote = True if down_vote else False
 
-            if up_vote or down_vote:
-                voted = SuggestionVotes.objects.create(
-                    user=user,
-                    suggestion=suggestion,
-                    up_vote=up_vote,
-                    down_vote=down_vote,
-                )
+        with transaction.atomic():
+            vote, created = SuggestionVotes.objects.get_or_create(user=request.user, suggestion=suggestion)
 
-                if up_vote:
-                    suggestion.up_votes += 1
-                if down_vote:
-                    suggestion.down_votes += 1
-        else:
-            if not up_vote:
-                suggestion.up_votes -= 1
-            if down_vote is False:
-                suggestion.down_votes -= 1
+            old_up_vote = vote.up_vote
+            old_down_vote = vote.down_vote
 
-            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+            if not up_vote and not down_vote:
+                vote.delete()
+            else:
+                vote.up_vote = up_vote
+                vote.down_vote = down_vote
+                vote.save()
 
-            if up_vote:
-                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, up_vote=True, down_vote=False)
-                suggestion.up_votes += 1
-
-            if down_vote:
-                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, down_vote=True, up_vote=False)
-                suggestion.down_votes += 1
+            if old_up_vote != up_vote:
+                suggestion.up_votes += 1 if up_vote else -1
+            if old_down_vote != down_vote:
+                suggestion.down_votes += 1 if down_vote else -1
 
             suggestion.save()
 
-        response = {
-            "success": True,
-            "up_vote": suggestion.up_votes,
-            "down_vote": suggestion.down_votes,
-        }
-        return JsonResponse(response)
+        return JsonResponse({"success": True, "up_vote": suggestion.up_votes, "down_vote": suggestion.down_votes})
 
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
+    except Suggestion.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 @login_required
 def set_vote_status(request):
     if request.method == "POST":
         user = request.user
-        data = json.loads(request.body)
-        id = data.get("id")
         try:
-            suggestion = Suggestion.objects.get(id=id)
+            data = json.loads(request.body)
+            id = data.get("id")
+
+            # Ensure the id is a valid integer
+            if not id or not str(id).isdigit():
+                return JsonResponse({"success": False, "error": f"ID = {id} is invalid."}, status=400)
+
+            suggestion = Suggestion.objects.get(id=int(id))
+
+            up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
+            down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
+
+            return JsonResponse({"up_vote": up_vote, "down_vote": down_vote})
+
         except Suggestion.DoesNotExist:
             return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
-
-        up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
-        down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
-
-        response = {"up_vote": up_vote, "down_vote": down_vote}
-        return JsonResponse(response)
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
 
     return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
 

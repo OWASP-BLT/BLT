@@ -194,19 +194,19 @@
                             <div class="vote-buttons">
                                 <button type="button"
                                         class="vote-button"
-                                        onclick="upvote(event)"
-                                        id="upvote---{{ suggestion.suggestion_id }}">
-                                    ↑ <span class="vote-count" id="up_vote-{{ suggestion.suggestion_id }}">{{ suggestion.up_votes }}</span>
+                                        data-vote-type="up"
+                                        data-suggestion-id="{{ suggestion.id }}">
+                                    ↑ <span class="vote-count">{{ suggestion.up_votes }}</span>
                                 </button>
                                 <button type="button"
                                         class="vote-button"
-                                        onclick="downvote(event)"
-                                        id="downvote---{{ suggestion.suggestion_id }}">
-                                    ↓ <span class="vote-count" id="down_vote-{{ suggestion.suggestion_id }}">{{ suggestion.down_votes }}</span>
+                                        data-vote-type="down"
+                                        data-suggestion-id="{{ suggestion.id }}">
+                                    ↓ <span class="vote-count">{{ suggestion.down_votes }}</span>
                                 </button>
                             </div>
                         </div>
-                        <p hidden id="suggestion-id---{{ suggestion.suggestion_id }}">{{ suggestion.suggestion_id }}</p>
+                        <p hidden id="suggestion-id---{{ suggestion.id }}">{{ suggestion.id }}</p>
                     </li>
                 {% endfor %}
             </ul>
@@ -235,107 +235,88 @@
         </div>
     </div>
     <script>
-    window.onload = function() {
-        setvote();
-    };
+    function initializeVoting() {
+        document.querySelectorAll('.vote-button').forEach(button => {
+            button.addEventListener('click', handleVote);
+        });
 
-    function setvote() {
-        document.querySelectorAll('p[id^="suggestion-id-"]').forEach(function(element) {
-            const id = element.id.split('---')[1];
-            const upvoteBtn = document.getElementById(`upvote---${id}`);
-            const downvoteBtn = document.getElementById(`downvote---${id}`);
-            
-            fetch('/suggestion/set-vote-status/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify({id: id}),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if(data.up_vote) {
-                    upvoteBtn.classList.add('active');
-                } else if(data.down_vote) {
-                    downvoteBtn.classList.add('active');
-                }
-            })
-            .catch(error => console.error('Error:', error));
+        document.querySelectorAll('.vote-button').forEach(button => {
+            const suggestionId = button.dataset.suggestionId;
+            if (suggestionId) {
+                fetchVoteStatus(suggestionId);
+            }
         });
     }
 
-    function upvote(event) {
-        handleVote(event, true);
-    }
-
-    function downvote(event) {
-        handleVote(event, false);
-    }
-
-    function handleVote(event, isUpvote) {
-        const button = event.target.closest('button');
-        const id = button.id.split('---')[1];
-        
-        const upvoteBtn = document.getElementById(`upvote---${id}`);
-        const downvoteBtn = document.getElementById(`downvote---${id}`);
-        const upvotesLabel = document.getElementById(`up_vote-${id}`);
-        const downvotesLabel = document.getElementById(`down_vote-${id}`);
-
-        if (!upvoteBtn || !downvoteBtn || !upvotesLabel || !downvotesLabel) {
-            console.error('Element not found for id:', id);
-            return;
-        }
-
-        let upVote = false;
-        let downVote = false;
-
-        if (isUpvote) {
-            if (upvoteBtn.classList.contains('active')) {
-                upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
-                upvoteBtn.classList.remove('active');
-            } else {
-                upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) + 1;
-                upvoteBtn.classList.add('active');
-                upVote = true;
-
-                if (downvoteBtn.classList.contains('active')) {
-                    downvoteBtn.classList.remove('active');
-                    downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
-                }
-            }
-        } else {
-            if (downvoteBtn.classList.contains('active')) {
-                downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) - 1;
-                downvoteBtn.classList.remove('active');
-            } else {
-                downvotesLabel.innerHTML = parseInt(downvotesLabel.innerHTML) + 1;
-                downvoteBtn.classList.add('active');
-                downVote = true;
-
-                if (upvoteBtn.classList.contains('active')) {
-                    upvoteBtn.classList.remove('active');
-                    upvotesLabel.innerHTML = parseInt(upvotesLabel.innerHTML) - 1;
-                }
-            }
-        }
-
-        fetch('/suggestion/vote/', {
+    function fetchVoteStatus(suggestionId) {
+        fetch('/suggestion/set-vote-status/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: JSON.stringify({ 
-                suggestion_id: id, 
-                up_vote: upVote, 
-                down_vote: downVote 
-            }),
+            body: JSON.stringify({id: suggestionId}),
         })
         .then(response => response.json())
-        .then(data => console.log('Vote saved:', data.votes))
-        .catch(error => console.error('Error:', error));
+        .then(data => {
+            const upButton = document.querySelector(`.vote-button[data-vote-type="up"][data-suggestion-id="${suggestionId}"]`);
+            const downButton = document.querySelector(`.vote-button[data-vote-type="down"][data-suggestion-id="${suggestionId}"]`);
+            
+            if (data.up_vote) {
+                upButton?.classList.add('active');
+            } else if (data.down_vote) {
+                downButton?.classList.add('active');
+            }
+        })
+        .catch(error => console.error('Error fetching vote status:', error));
     }
+
+    function handleVote(event) {
+        const button = event.currentTarget;
+        const suggestionId = button.dataset.suggestionId;
+        const voteType = button.dataset.voteType;
+        
+        if (!suggestionId || !voteType) {
+        console.error('Missing required data attributes');
+        return;
+    }
+
+    const upButton = document.querySelector(`.vote-button[data-vote-type="up"][data-suggestion-id="${suggestionId}"]`);
+    const downButton = document.querySelector(`.vote-button[data-vote-type="down"][data-suggestion-id="${suggestionId}"]`);
+    
+    const isUpvote = voteType === 'up';
+    const wasActive = button.classList.contains('active');
+
+    const upVote = isUpvote ? !wasActive : false;
+    const downVote = !isUpvote ? !wasActive : false;
+
+    fetch('/suggestion/vote/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+            suggestion_id: suggestionId,
+            up_vote: upVote,
+            down_vote: downVote
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            upButton.querySelector('.vote-count').textContent = data.up_vote;
+            downButton.querySelector('.vote-count').textContent = data.down_vote;
+
+            upButton.classList.toggle('active', upVote);
+            downButton.classList.toggle('active', downVote);
+        }
+    })
+    .catch(error => console.error('Error submitting vote:', error));
+}
+
+document.addEventListener('DOMContentLoaded', initializeVoting);
+
 
     function getCookie(name) {
         const value = `; ${document.cookie}`;
