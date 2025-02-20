@@ -372,7 +372,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return Message.objects.create(
                 room=room, user=user, username=username, content=message, session_key=session_key
             )
-        except Exception:
+        except Exception as e:
             return None
 
     @database_sync_to_async
@@ -380,25 +380,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Deletes a message if it exists and belongs to the user in the room."""
         try:
             message_object = Message.objects.filter(id=message_id, username=username, room=room_id).first()
-            
+
             if message_object:
                 rows_deleted, _ = message_object.delete()
                 return rows_deleted > 0  # True if deleted, False otherwise
             return False
-        except Exception:
+        except Exception as e:
             return False  # Handle unexpected errors gracefully
-
 
     async def receive(self, text_data):
         """Handles incoming WebSocket messages, including sending and deleting chat messages."""
-        
+
         if not self.connected:
-            await self.send(json.dumps({"type": "error", "code": "not_connected", "message": "Not connected to chat"}))
+            await self.send(
+                text_data=json.dumps(
+                    {"type": "error", "code": "not_connected", "message": "Not connected to chat room"}
+                )
+            )
             return
 
         try:
             data = json.loads(text_data)
-            message_type = data.get("type", "")
+            message_type = data.get("type", "message")
 
             # Handle new messages
             if message_type == "message":
@@ -406,11 +409,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 username = data.get("username", "Anonymous")
 
                 if not message:
-                    await self.send(json.dumps({"type": "error", "code": "invalid_message", "message": "Message cannot be empty"}))
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "invalid_message", "message": "Message cannot be empty"}
+                        )
+                    )
                     return
 
                 if len(message) > 1000:
-                    await self.send(json.dumps({"type": "error", "code": "message_too_long", "message": "Max 1000 chars"}))
+                    await self.send(
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "code": "message_too_long",
+                                "message": "Message too long (max 1000 chars)",
+                            }
+                        )
+                    )
                     return
 
                 saved_message = await self.save_message(message, username)
@@ -435,7 +450,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 username = data.get("username", "Anonymous")
 
                 if not message_id:
-                    await self.send(json.dumps({"type": "error", "code": "invalid_message_id", "message": "Message ID required"}))
+                    await self.send(
+                        json.dumps({"type": "error", "code": "invalid_message_id", "message": "Message ID required"})
+                    )
                     return
 
                 # Attempt to delete the message
@@ -447,7 +464,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     await self.channel_layer.group_send(self.room_group_name, delete_notification)
                     await self.send(json.dumps(delete_notification))  # Send acknowledgment to the sender
                 else:
-                    await self.send(json.dumps({"type": "error", "code": "delete_failed", "message": "Failed to delete"}))
+                    await self.send(
+                        json.dumps({"type": "error", "code": "delete_failed", "message": "Failed to delete"})
+                    )
 
             elif message_type == "ping":
                 await self.send(text_data=json.dumps({"type": "pong", "timestamp": timezone.now().isoformat()}))
@@ -477,23 +496,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
             )
-        except Exception:
+        except Exception as e:
             pass
 
     async def delete_message_broadcast(self, event):
         """Handles broadcasting delete notifications to all users in the room."""
-        
+
         if not self.connected:
             return
 
         try:
             await self.send(
-                text_data=json.dumps({
-                    "type": "delete_ack",
-                    "message_id": event["message_id"],
-                })
+                text_data=json.dumps(
+                    {
+                        "type": "delete_ack",
+                        "message_id": event["message_id"],
+                    }
+                )
             )
 
         except Exception as e:
             print(f"Error in delete_message_broadcast: {e}")
-

@@ -15,27 +15,26 @@
         <div id="log-history"
              class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
             {% for message in room_messages %}
-                <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm relative group" id="message-{{ message.id }}">
+                <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm relative group"
+                     id="message-{{ message.id }}">
                     <div class="flex justify-between items-end">
                         <strong>{{ message.username }}</strong>
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500">{{ message.timestamp|date:"M d, Y H:i" }}</span>
-
                             {% if message.username == request.user.username %}
-                            <!-- Three dots button (Fixed: added class="menu-button") -->
-                            <button class="menu-button text-gray-500 hover:text-gray-700 p-1"
-                                    onclick="toggleMenu(event, 'menu-{{ message.id }}')">
-                                &#x22EE; <!-- Unicode for 3 vertical dots (⋮) -->
-                            </button>
-
-                            <!-- Dropdown menu (hidden by default) -->
-                            <div id="menu-{{ message.id }}" class="dropdown-menu hidden absolute right-0 bg-white shadow-md rounded-md p-2 w-32 z-10">
-                                <button onclick="deleteMessage('{{ message.username }}','{{ message.id }}')"
-                                        class="delete-button block text-red-600 hover:text-red-800 text-sm w-full text-left px-2 py-1">
-                                    🗑️ Delete Message
+                                <!-- Three dots button (Fixed: added class="menu-button") -->
+                                <button class="menu-button text-gray-500 hover:text-gray-700 p-1"
+                                        onclick="toggleMenu(event, 'menu-{{ message.id }}')">
+                                    ⋮  <!-- Unicode for 3 vertical dots (⋮) -->
                                 </button>
-                            </div>
-
+                                <!-- Dropdown menu (hidden by default) -->
+                                <div id="menu-{{ message.id }}"
+                                     class="dropdown-menu hidden absolute right-0 bg-white shadow-md rounded-md p-2 w-32 z-10">
+                                    <button onclick="deleteMessage('{{ message.username }}','{{ message.id }}')"
+                                            class="delete-button block text-red-600 hover:text-red-800 text-sm w-full text-left px-2 py-1">
+                                        🗑️ Delete Message
+                                    </button>
+                                </div>
                             {% endif %}
                         </div>
                     </div>
