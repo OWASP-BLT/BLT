@@ -372,7 +372,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return Message.objects.create(
                 room=room, user=user, username=username, content=message, session_key=session_key
             )
-        except Exception:
+        except Exception as e:
             return None
 
     @database_sync_to_async
@@ -385,19 +385,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 rows_deleted, _ = message_object.delete()
                 return rows_deleted > 0  # True if deleted, False otherwise
             return False
-        except Exception:
+        except Exception as e:
             return False  # Handle unexpected errors gracefully
 
     async def receive(self, text_data):
         """Handles incoming WebSocket messages, including sending and deleting chat messages."""
 
         if not self.connected:
-            await self.send(json.dumps({"type": "error", "code": "not_connected", "message": "Not connected to chat"}))
+            await self.send(
+                text_data=json.dumps(
+                    {"type": "error", "code": "not_connected", "message": "Not connected to chat room"}
+                )
+            )
             return
 
         try:
             data = json.loads(text_data)
-            message_type = data.get("type", "")
+            message_type = data.get("type", "message")
 
             # Handle new messages
             if message_type == "message":
@@ -406,13 +410,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
                 if not message:
                     await self.send(
-                        json.dumps({"type": "error", "code": "invalid_message", "message": "Message cannot be empty"})
+                        text_data=json.dumps(
+                            {"type": "error", "code": "invalid_message", "message": "Message cannot be empty"}
+                        )
                     )
                     return
 
                 if len(message) > 1000:
                     await self.send(
-                        json.dumps({"type": "error", "code": "message_too_long", "message": "Max 1000 chars"})
+                        text_data=json.dumps(
+                            {
+                                "type": "error",
+                                "code": "message_too_long",
+                                "message": "Message too long (max 1000 chars)",
+                            }
+                        )
                     )
                     return
 
@@ -484,7 +496,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
             )
-        except Exception:
+        except Exception as e:
             pass
 
     async def delete_message_broadcast(self, event):
