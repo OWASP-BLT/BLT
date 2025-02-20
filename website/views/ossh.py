@@ -53,6 +53,9 @@ def get_github_data(request):
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
+            if not github_username:
+                return JsonResponse({"error": "GitHub username is required"}, status=400)
+
             cached_data = cache.get(f"github_data_{github_username}")
             if cached_data:
                 print("Found cached user data")
@@ -63,9 +66,17 @@ def get_github_data(request):
                 user_data["user_tags"] = user_tags
                 user_data["language_weights"] = language_weights
                 cache.set(f"github_data_{github_username}", user_data, timeout=3600)  # Cache for 1 hour
+
             return render(request, "ossh/includes/github_stats.html", {"user_data": user_data})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except KeyError:
+            return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            print(f"Error in get_github_data: {e}", exc_info=True)
+            return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
+
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
@@ -153,6 +164,9 @@ def get_recommended_repos(request):
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
+            if not github_username:
+                return JsonResponse({"error": "GitHub username is required"}, status=400)
+
             user_data = cache.get(f"github_data_{github_username}")
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
@@ -160,8 +174,15 @@ def get_recommended_repos(request):
             recommended_repos = repo_recommender(user_data["user_tags"], user_data["language_weights"])
 
             return render(request, "ossh/includes/recommended_repos.html", {"repos": recommended_repos})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except KeyError:
+            return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            print(f"Error in get_recommended_repos: {e}")  # Print instead of logging
+            return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
+
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
@@ -219,7 +240,9 @@ def get_recommended_communities(request):
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
-            # Fetch user data from cache
+            if not github_username:
+                return JsonResponse({"error": "GitHub username is required"}, status=400)
+
             user_data = cache.get(f"github_data_{github_username}")
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
@@ -229,8 +252,15 @@ def get_recommended_communities(request):
             return render(
                 request, "ossh/includes/recommended_communities.html", {"communities": recommended_communities}
             )
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except KeyError:
+            return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            print(f"Error in get_recommended_communities: {e}")  # Print instead of logging
+            return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
+
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
@@ -281,12 +311,14 @@ def get_recommended_discussion_channels(request):
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
+            if not github_username:
+                return JsonResponse({"error": "GitHub username is required"}, status=400)
+
             user_data = cache.get(f"github_data_{github_username}")
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
 
             language_weights = user_data.get("language_weights", {})
-
             recommended_discussion_channels = discussion_channel_recommender(user_data["user_tags"], language_weights)
 
             return render(
@@ -294,8 +326,15 @@ def get_recommended_discussion_channels(request):
                 "ossh/includes/recommended_discussion_channels.html",
                 {"channels": recommended_discussion_channels},
             )
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except KeyError:
+            return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            print(f"Error in get_recommended_discussion_channels: {e}")  # Print instead of logging
+            return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
+
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
@@ -348,6 +387,9 @@ def get_recommended_articles(request):
             data = json.loads(request.body)
             github_username = data.get("github_username")
 
+            if not github_username:
+                return JsonResponse({"error": "GitHub username is required"}, status=400)
+
             user_data = cache.get(f"github_data_{github_username}")
             if not user_data:
                 return JsonResponse({"error": "GitHub data not found. Fetch it first."}, status=400)
@@ -358,6 +400,13 @@ def get_recommended_articles(request):
             recommended_articles = article_recommender(user_tags, language_weights)
 
             return render(request, "ossh/includes/recommended_articles.html", {"articles": recommended_articles})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        except KeyError:
+            return JsonResponse({"error": "Missing required data"}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            print(f"Error in get_recommended_articles: {e}")  # Print instead of logging
+            return JsonResponse({"error": "An internal error occurred. Please try again later."}, status=500)
+
     return JsonResponse({"error": "Invalid request method"}, status=405)
