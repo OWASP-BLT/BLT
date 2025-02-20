@@ -42,9 +42,15 @@ def ossh_results(request):
     template = "ossh/results.html"
 
     if request.method == "POST":
-        github_username = request.POST.get("github-username")
+        github_username = request.POST.get("github-username", "").strip()
+
+        if not github_username:
+            return JsonResponse({"error": "GitHub username is required"}, status=400)
+
         context = {"username": github_username}
         return render(request, template, context)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 def get_github_data(request):
