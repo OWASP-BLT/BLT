@@ -337,6 +337,11 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+# The delete_issue function performs the following security-critical operations:
+# 1. Validates user permissions before deletion
+# 2. Handles both authenticated web requests and API token requests
+# 3. Cascades deletion to related screenshots
+# 4. Provides appropriate response based on request type
 def delete_issue(request, id):
     try:
         issue = Issue.objects.get(id=id)
