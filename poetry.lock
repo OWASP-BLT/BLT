@@ -3935,6 +3935,6 @@ multidict = ">=4.0"
 propcache = ">=0.2.0"
 
 [metadata]
-lock-version = "2.1"
-python-versions = ">=3.11.2,<3.12"
-content-hash = "bae918c16c64773fbb7754d6b335d9225d1581e40d1c6a07323a0ff5fd5471e0"
+lock-version = "2.0"
+python-versions = "3.11.2"
+content-hash = "455a113266b524286121ed316f2352792a42260924f76c9e6275f14bd674adee"
