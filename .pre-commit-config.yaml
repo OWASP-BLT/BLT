@@ -45,4 +45,13 @@ repos:
         always_run: true
         verbose: true
 
+  - repo: local
+    hooks:
+      - id: check-style-tags
+        name: Check for <style> tags in HTML
+        entry: python3 .pre-commit-hooks/check_style_tags.py
+        language: system
+        types: [text]
+        verbose: true
+
 fail_fast: true
