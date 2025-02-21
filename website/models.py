@@ -1694,3 +1694,103 @@ class ManagementCommandLog(models.Model):
 
     def __str__(self):
         return f"{self.command_name} (Last run: {self.last_run})"
+
+
+class Course(models.Model):
+    LEVEL_CHOICES = [("BEG", "Beginner"), ("INT", "Intermediate"), ("ADV", "Advanced")]
+
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    instructor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="courses_teaching")
+    thumbnail = models.ImageField(upload_to="course_thumbnails/", null=True, blank=True)
+    level = models.CharField(max_length=3, choices=LEVEL_CHOICES, default="BEG")
+    tags = models.ManyToManyField(Tag, related_name="courses", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} taught by {self.instructor.user.username}"
+
+
+class Section(models.Model):
+    title = models.CharField(max_length=200)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections", null=True, blank=True)
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.course.title} - {self.title}"
+
+
+class Lecture(models.Model):
+    CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE", "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
+
+    title = models.CharField(max_length=200)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
+    content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
+    video_url = models.URLField(null=True, blank=True)
+    live_url = models.URLField(null=True, blank=True)
+    scheduled_time = models.DateTimeField()
+    recording_url = models.URLField(null=True, blank=True)
+    content = models.TextField(null=True, blank=True)  # For document-type content
+    # Quiz support can be added later
+    duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.title} ({self.content_type})"
+
+
+class LectureStatus(models.Model):
+    STATUS_TYPES = [
+        ("PROGRESS", "In Progress"),
+        ("COMPLETED", "Completed"),
+    ]
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="student")
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="lecture_status")
+    status = models.CharField(max_length=15, choices=STATUS_TYPES)
+
+    def __str__(self):
+        return f"{self.student.user.username} has status {self.status} for {self.lecture.title}"
+
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollments")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    last_accessed = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["student", "course"]
+
+    def calculate_progress(self):
+        total_lectures = Lecture.objects.filter(section__course=self.course).count()
+        completed_lectures = self.student.lecture_statuses.filter(
+            status="COMPLETED", lecture__section__course=self.course
+        ).count()
+        if total_lectures > 0:
+            return (completed_lectures / total_lectures) * 100
+        return 0.0
+
+    def __str__(self):
+        return f"{self.student.username} - {self.course.title}"
+
+
+class Rating(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="ratings")
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    score = models.DecimalField(
+        max_digits=3, decimal_places=2, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    )
+    comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.score} by {self.user.user.username} for {self.course.title}"

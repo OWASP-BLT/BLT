@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    {% env 'PROJECT_NAME' %}V - Videos on {% env 'PROJECT_NAME' %} Projects
+{% endblock title %}
+{% block description %}
+    Watch videos related to the {% env 'PROJECT_NAME' %} projects. Learn how to configure, host, and use various tools in the OWASP {% env 'PROJECT_NAME' %} ecosystem through video tutorials.
+{% endblock description %}
+{% block keywords %}
+    {% env 'PROJECT_NAME' %}V, {% env 'PROJECT_NAME' %} projects, video tutorials, YouTube, Slack bot, PythonAnywhere, OWASP
+{% endblock keywords %}
+{% block og_title %}
+    {% env 'PROJECT_NAME' %}V - Videos on {% env 'PROJECT_NAME' %} Projects
+{% endblock og_title %}
+{% block og_description %}
+    Explore {% env 'PROJECT_NAME' %} project tutorials on YouTube. Learn to configure Slack bots and host them on platforms like PythonAnywhere.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto mt-10">
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800">
+                <i class="fas fa-tv text-blue-600"></i> BLTV
+            </h1>
+        </div>
+        <div class="text-center mb-4">
+            <h1 class="text-4xl font-bold">Courses</h1>
+        </div>
+        <div class="flex justify-center">
+            <a href="{% url 'instructor_dashboard' %}">
+                <button class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-md font-semibold rounded-sm shadow-md hover:bg-blue-700 transition">
+                    <i class="fas fa-chalkboard-teacher"></i> Become an Instructor
+                </button>
+            </a>
+        </div>
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold">Standalone lectures</h1>
+        </div>
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold">Featured videos</h1>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/N_59irHRjzM"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/IYBRVRfPCK8"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/jNp3J6HLpqc"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/OmxGrjGA_ck"
+                            title="How to configure Slack Bot"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/C_UIm1QR67o"
+                            title="Host Slack Bot on PythonAnywhere"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

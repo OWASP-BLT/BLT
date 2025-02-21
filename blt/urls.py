@@ -41,6 +41,7 @@ from website.api.views import (
 )
 from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.bltv_education import create_or_update_course, instructor_dashboard
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -587,7 +588,9 @@ urlpatterns = [
         name="deletions",
     ),
     re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
-    re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
+    re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv/bltv.html"), name="bltv"),
+    path("bltv/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
+    path("bltv/create-or-update-course/", create_or_update_course, name="create_or_update_course"),
     re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(
         r"^privacypolicy/$",

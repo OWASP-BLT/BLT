@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css"
+          rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <div class="container mx-auto mt-10">
+        <div class="text-center mb-20">
+            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800">
+                <i class="fas fa-book-open text-blue-600"></i> Username's Dashboard
+            </h1>
+        </div>
+        <div class="container mx-auto mt-10 flex">
+            <!-- Sidebar -->
+            <aside class="w-1/4 bg-gray-100 p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-4 text-blue-700">Menu</h2>
+                <nav class="space-y-3 font-semibold">
+                    <button onclick="showSection('createCourse')"
+                            class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-600 hover:text-white rounded">
+                        <i class="fas fa-book text-blue-900"></i> Create Course
+                    </button>
+                    <button onclick="showSection('createLecture')"
+                            class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-600 hover:text-white rounded">
+                        <i class="fas fa-microphone text-blue-900"></i> Create Lecture
+                    </button>
+                    <button onclick="showSection('viewReports')"
+                            class="block w-full text-left px-4 py-2 text-gray-800 hover:bg-blue-600 hover:text-white rounded">
+                        <i class="fas fa-chart-bar text-blue-900"></i> View Reports
+                    </button>
+                </nav>
+            </aside>
+            <!-- Main Content -->
+            <main class="w-3/4 p-6">
+                <!-- Default View -->
+                <div id="defaultSection">
+                    <h1 class="text-3xl font-bold">Welcome, Instructor!</h1>
+                    <p class="text-gray-700 mt-2">Select an option from the sidebar to begin.</p>
+                </div>
+                <div id="createCourse" class="hidden">
+                    <h1 class="text-3xl font-bold mb-6">Create a Course</h1>
+                    <form class="space-y-6" id="course-form">
+                        <div id="error-message" class="hidden text-red-500 text-sm mt-2"></div>
+                        <!-- Course Title -->
+                        <div>
+                            <label for="title" class="block text-sm font-medium text-gray-700">Course Title</label>
+                            <input type="text"
+                                   id="title"
+                                   name="title"
+                                   placeholder="Enter course title"
+                                   class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <!-- Course Description -->
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700">Course Description</label>
+                            <textarea id="description"
+                                      name="description"
+                                      rows="4"
+                                      placeholder="Enter course description"
+                                      class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        <!-- Thumbnail Upload -->
+                        <div>
+                            <label for="thumbnail" class="block text-sm font-medium text-gray-700">Course Thumbnail</label>
+                            <input type="file"
+                                   id="thumbnail"
+                                   name="thumbnail"
+                                   class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        </div>
+                        <!-- Course Level -->
+                        <div>
+                            <label for="level" class="block text-sm font-medium text-gray-700">Course Level</label>
+                            <select id="level"
+                                    name="level"
+                                    class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <option value="BEG">Beginner</option>
+                                <option value="INT">Intermediate</option>
+                                <option value="ADV">Advanced</option>
+                            </select>
+                        </div>
+                        <!-- Tags Section -->
+                        <div>
+                            <label for="tags" class="block text-sm font-medium text-gray-700">Tags</label>
+                            <select id="tags"
+                                    name="tags"
+                                    multiple
+                                    placeholder="Select or search tags..."
+                                    class="mt-1 block w-full">
+                                {% for tag in tags %}<option value="{{ tag.id }}">{{ tag.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <!-- Submit Button -->
+                        <div>
+                            <button id="create-course-btn"
+                                    type="submit"
+                                    class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition duration-200">
+                                Create Course
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <!-- Create Lecture Form -->
+                <div id="createLecture" class="hidden">
+                    <h1 class="text-3xl font-bold">Create a Lecture</h1>
+                    <form class="mt-4 space-y-4">
+                        <input type="text"
+                               placeholder="Lecture Title"
+                               class="w-full p-2 border rounded">
+                        <textarea placeholder="Lecture Content" class="w-full p-2 border rounded"></textarea>
+                        <button type="submit"
+                                class="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition">
+                            Submit
+                        </button>
+                    </form>
+                </div>
+                <!-- Reports Section -->
+                <div id="viewReports" class="hidden">
+                    <h1 class="text-3xl font-bold">View Reports</h1>
+                    <p class="text-gray-700 mt-2">Report content goes here...</p>
+                </div>
+            </main>
+        </div>
+        <script>
+            new TomSelect("#tags", {
+                plugins: ['remove_button'],
+                create: true, // Allow creating new tags
+                maxItems: 10,
+                placeholder: "Select upto 10 tags",
+                hideSelected: true,
+            });
+        </script>
+        <script>
+            function showSection(sectionId) {
+                // Hide all sections
+                document.getElementById('defaultSection').classList.add('hidden');
+                document.getElementById('createCourse').classList.add('hidden');
+                document.getElementById('createLecture').classList.add('hidden');
+                document.getElementById('viewReports').classList.add('hidden');
+        
+                // Show the selected section
+                document.getElementById(sectionId).classList.remove('hidden');
+            }
+
+            document.getElementById('create-course-btn').addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                const button = event.target;
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+
+                const form = document.getElementById('course-form');
+                const formData = new FormData(form);
+
+                await createOrUpdateCourse(formData);
+            });
+
+            const createOrUpdateCourse = async (formData) => {
+                try {
+                    const response = await fetch('/bltv/create-or-update-course/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: formData,
+                    });
+
+                    const result = await response.json();
+                    if (!result.success) {
+                        alert(result.message);
+                    } else {
+                        alert("Done")
+                        // window.location.href = `/course-detail/${result.course_id}/`;
+                    }
+                } catch (error) {
+                    alert('An error occurred. Please try again later.');
+                }
+            };
+        </script>
+    </div>
+{% endblock content %}
