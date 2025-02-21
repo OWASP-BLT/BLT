@@ -9,9 +9,21 @@ from website.models import Course, Tag, UserProfile
 def instructor_dashboard(request):
     template = "bltv/instructor_dashboard.html"
     tags = Tag.objects.all()
-    context = {"tags": tags}
-
+    user_profile = request.user.userprofile
+    courses = Course.objects.filter(instructor=user_profile)
+    context = {"tags": tags, "courses": courses}
     return render(request, template, context)
+
+
+def edit_course(request, course_id):
+    template = "bltv/edit_course.html"
+    tags = Tag.objects.all()
+    try:
+        course = Course.objects.get(id=course_id)
+        context = {"course": course, "tags": tags}
+        return render(request, template, context)
+    except Course.DoesNotExist:
+        return JsonResponse({"success": False, "message": "Course not found"}, status=404)
 
 
 @require_POST

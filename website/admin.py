@@ -18,7 +18,9 @@ from website.models import (
     Contribution,
     Contributor,
     ContributorStats,
+    Course,
     Domain,
+    Enrollment,
     GitHubIssue,
     GitHubReview,
     Hunt,
@@ -27,6 +29,8 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Lecture,
+    LectureStatus,
     Message,
     Monitor,
     Organization,
@@ -37,6 +41,7 @@ from website.models import (
     Post,
     PRAnalysisReport,
     Project,
+    Rating,
     Repo,
     Room,
     SlackBotActivity,
@@ -595,6 +600,11 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
+admin.site.register(Lecture)
+admin.site.register(LectureStatus)
+admin.site.register(Course)
+admin.site.register(Enrollment)
+admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)

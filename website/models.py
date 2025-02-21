@@ -1698,7 +1698,6 @@ class ManagementCommandLog(models.Model):
 
 class Course(models.Model):
     LEVEL_CHOICES = [("BEG", "Beginner"), ("INT", "Intermediate"), ("ADV", "Advanced")]
-
     title = models.CharField(max_length=200)
     description = models.TextField()
     instructor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="courses_teaching")
