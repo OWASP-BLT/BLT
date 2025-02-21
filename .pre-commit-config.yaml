@@ -36,6 +36,16 @@ repos:
 
   - repo: local
     hooks:
+      - id: check-style-tags
+        name: check for <style> tags in HTML
+        entry: python
+        args: [pre-commit-hooks/check_style_tags.py]
+        language: python
+        types: [html]
+        verbose: true
+
+  - repo: local
+    hooks:
       - id: django-test
         name: Django Tests
         entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
@@ -43,15 +53,6 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
-        verbose: true
-
-  - repo: local
-    hooks:
-      - id: check-style-tags
-        name: Check for <style> tags in HTML
-        entry: python3 .pre-commit-hooks/check_style_tags.py
-        language: system
-        types: [text]
         verbose: true
 
 fail_fast: true
