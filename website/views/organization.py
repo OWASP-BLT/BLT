@@ -1,5 +1,6 @@
 import ipaddress
 import json
+import logging
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -50,34 +51,39 @@ from website.models import (
 from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
+logger = logging.getLogger(__name__)
+
 
 def add_domain_to_organization(request):
     if request.method == "POST":
-        domain = request.POST.get("domain")
-        domain = Domain.objects.get(id=domain)
-        organization_name = request.POST.get("organization")
-        organization = Organization.objects.filter(name=organization_name).first()
+        try:
+            domain = Domain.objects.get(id=request.POST.get("domain"))
+            organization_name = request.POST.get("organization")
+            organization = Organization.objects.filter(name=organization_name).first()
 
-        if not organization:
-            url = domain.url
-            if not url.startswith(("http://", "https://")):
-                url = "http://" + url
-            response = requests.get(url)
-            soup = BeautifulSoup(response.text, "html.parser")
-            if organization_name in soup.get_text():
-                organization = Organization.objects.create(name=organization_name)
+            if not organization:
+                url = domain.url
+                if not url.startswith(("http://", "https://")):
+                    url = "http://" + url
+                response = requests.get(url)
+                soup = BeautifulSoup(response.text, "html.parser")
+                if organization_name in soup.get_text():
+                    organization = Organization.objects.create(name=organization_name)
+                    domain.organization = organization
+                    domain.save()
+                    messages.success(request, "Organization added successfully")
+                    return redirect("domain", slug=domain.url)
+                else:
+                    messages.error(request, "Organization not found in the domain")
+                    return redirect("domain", slug=domain.url)
+            else:
                 domain.organization = organization
                 domain.save()
                 messages.success(request, "Organization added successfully")
                 return redirect("domain", slug=domain.url)
-            else:
-                messages.error(request, "Organization not found in the domain")
-                return redirect("domain", slug=domain.url)
-        else:
-            domain.organization = organization
-            domain.save()
-            messages.success(request, "Organization added successfully")
-            return redirect("domain", slug=domain.url)
+        except (Domain.DoesNotExist, requests.RequestException) as e:
+            messages.error(request, f"Error: {str(e)}")
+            return redirect("home")
     else:
         return redirect("home")
 
@@ -105,7 +111,7 @@ def organization_dashboard(request, template="index_organization.html"):
             "previous_hunt": previous_hunt,
         }
         return render(request, template, context)
-    except:
+    except OrganizationAdmin.DoesNotExist:
         return redirect("/")
 
 
@@ -165,8 +171,8 @@ def weekly_report(request):
             [email],
             fail_silently=False,
         )
-    except:
-        return HttpResponse("An error occurred while sending the weekly report")
+    except Exception as e:
+        return HttpResponse(f"An error occurred while sending the weekly report: {str(e)}")
 
     return HttpResponse("Weekly report sent successfully.")
 
@@ -174,11 +180,14 @@ def weekly_report(request):
 @login_required(login_url="/accounts/login")
 def organization_hunt_results(request, pk, template="organization_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
-    issues = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    issues = (
+        Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).order_by("-created")
+    )
+
     context = {}
     if request.method == "GET":
-        context["hunt"] = get_object_or_404(Hunt, pk=pk)
-        context["issues"] = Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+        context["hunt"] = hunt
+        context["issues"] = issues
         if hunt.result_published:
             context["winner"] = Winner.objects.get(hunt=hunt)
         return render(request, template, context)
@@ -187,6 +196,7 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
             issue.verified = False
             issue.score = 0
             issue.save()
+
         for key, value in request.POST.items():
             if key != "csrfmiddlewaretoken" and key != "submit" and key != "checkAll":
                 submit_type = key.split("_")[0]
@@ -201,14 +211,14 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                 try:
                     if request.POST["checkAll"]:
                         issue.verified = True
-                except:
+                except KeyError:
                     pass
                 issue.save()
+
         if request.POST["submit"] == "save":
             pass
-        if request.POST["submit"] == "publish":
+        elif request.POST["submit"] == "publish":
             issue.save()
-            index = 1
             winner = Winner()
             issue_with_score = (
                 Issue.objects.filter(hunt=hunt, verified=True)
@@ -216,24 +226,25 @@ def organization_hunt_results(request, pk, template="organization_hunt_results.h
                 .order_by("user")
                 .annotate(total_score=Sum("score"))
             )
-            for obj in issue_with_score:
+
+            for index, obj in enumerate(issue_with_score, 1):
                 user = User.objects.get(pk=obj["user"])
                 if index == 1:
                     winner.winner = user
-                if index == 2:
+                elif index == 2:
                     winner.runner = user
-                if index == 3:
+                elif index == 3:
                     winner.second_runner = user
-                if index == 4:
+                elif index == 4:
                     break
-                index = index + 1
-            total_amount = Decimal(hunt.prize_winner) + Decimal(hunt.prize_runner) + Decimal(hunt.prize_second_runner)
+
             winner.prize_distributed = True
             winner.hunt = hunt
             winner.save()
             hunt.result_published = True
             hunt.save()
             context["winner"] = winner
+
         context["hunt"] = hunt
         context["issues"] = issues
         return render(request, template, context)
@@ -244,9 +255,12 @@ class DomainListView(ListView):
     paginate_by = 100
     template_name = "domain_list.html"
 
+    def get_queryset(self):
+        return Domain.objects.all().order_by("-created")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        domain = Domain.objects.all()
+        domain = self.get_queryset()
 
         paginator = Paginator(domain, self.paginate_by)
         page = self.request.GET.get("page")
@@ -292,9 +306,9 @@ class DomainList(TemplateView):
             return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = self.model.objects.filter(organization=domain_admin.organization)
+            domain = self.model.objects.filter(organization=domain_admin.organization).order_by("-created")
         else:
-            domain = self.model.objects.filter(pk=domain_admin.domain.pk)
+            domain = self.model.objects.filter(pk=domain_admin.domain.pk).order_by("-created")
         context = {"domains": domain}
         return render(request, self.template_name, context)
 
@@ -313,64 +327,62 @@ class Joinorganization(TemplateView):
     def post(self, request, *args, **kwargs):
         name = request.POST["organization"]
         try:
-            organization_exists = Organization.objects.get(name=name)
-            return JsonResponse({"status": "There was some error"})
-        except:
-            pass
-        url = request.POST["url"]
-        email = request.POST["email"]
-        product = request.POST["product"]
-        sub = Subscription.objects.get(name=product)
-        if name == "" or url == "" or email == "" or product == "":
-            return JsonResponse({"error": "Empty Fields"})
-        paymentType = request.POST["paymentType"]
-        if paymentType == "wallet":
-            wallet, created = Wallet.objects.get_or_create(user=request.user)
-            if wallet.current_balance < sub.charge_per_month:
-                return JsonResponse({"error": "insufficient balance in Wallet"})
-            wallet.withdraw(sub.charge_per_month)
-            organization = Organization()
-            organization.admin = request.user
-            organization.name = name
-            organization.url = url
-            organization.email = email
-            organization.subscription = sub
-            organization.save()
-            admin = OrganizationAdmin()
-            admin.user = request.user
-            admin.role = 0
-            admin.organization = organization
-            admin.is_active = True
-            admin.save()
-            return JsonResponse(
-                {
-                    "status": "Success",
-                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
-                }
-            )
-            # company.subscription =
-        elif paymentType == "card":
-            organization = Organization()
-            organization.admin = request.user
-            organization.name = name
-            organization.url = url
-            organization.email = email
-            organization.subscription = sub
-            organization.save()
-            admin = OrganizationAdmin()
-            admin.user = request.user
-            admin.role = 0
-            admin.organization = organization
-            admin.is_active = True
-            admin.save()
-            return JsonResponse(
-                {
-                    "status": "Success",
-                    "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
-                }
-            )
-        else:
-            return JsonResponse({"status": "There was some error"})
+            Organization.objects.get(name=name)
+            return JsonResponse({"status": "Organization already exists"})
+        except Organization.DoesNotExist:
+            url = request.POST["url"]
+            email = request.POST["email"]
+            product = request.POST["product"]
+            sub = Subscription.objects.get(name=product)
+            if name == "" or url == "" or email == "" or product == "":
+                return JsonResponse({"error": "Empty Fields"})
+            paymentType = request.POST["paymentType"]
+            if paymentType == "wallet":
+                wallet, created = Wallet.objects.get_or_create(user=request.user)
+                if wallet.current_balance < sub.charge_per_month:
+                    return JsonResponse({"error": "insufficient balance in Wallet"})
+                wallet.withdraw(sub.charge_per_month)
+                organization = Organization()
+                organization.admin = request.user
+                organization.name = name
+                organization.url = url
+                organization.email = email
+                organization.subscription = sub
+                organization.save()
+                admin = OrganizationAdmin()
+                admin.user = request.user
+                admin.role = 0
+                admin.organization = organization
+                admin.is_active = True
+                admin.save()
+                return JsonResponse(
+                    {
+                        "status": "Success",
+                        "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                    }
+                )
+            elif paymentType == "card":
+                organization = Organization()
+                organization.admin = request.user
+                organization.name = name
+                organization.url = url
+                organization.email = email
+                organization.subscription = sub
+                organization.save()
+                admin = OrganizationAdmin()
+                admin.user = request.user
+                admin.role = 0
+                admin.organization = organization
+                admin.is_active = True
+                admin.save()
+                return JsonResponse(
+                    {
+                        "status": "Success",
+                        "redirect_url": reverse("organization_detail", kwargs={"slug": organization.slug}),
+                    }
+                )
+            else:
+                return JsonResponse({"status": "There was some error"})
 
 
 class ListHunts(TemplateView):
@@ -458,7 +470,7 @@ class DraftHunts(TemplateView):
                 hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
             context = {"hunts": hunt}
             return render(request, self.template_name, context)
-        except:
+        except OrganizationAdmin.DoesNotExist:
             return HttpResponseRedirect("/")
 
 
@@ -484,7 +496,7 @@ class UpcomingHunts(TemplateView):
                     new_hunt.append(hunt)
             context = {"hunts": new_hunt}
             return render(request, self.template_name, context)
-        except:
+        except OrganizationAdmin.DoesNotExist:
             return HttpResponseRedirect("/")
 
 
@@ -509,7 +521,7 @@ class OngoingHunts(TemplateView):
                     new_hunt.append(hunt)
             context = {"hunts": new_hunt}
             return render(request, self.template_name, context)
-        except:
+        except OrganizationAdmin.DoesNotExist:
             return HttpResponseRedirect("/")
 
 
@@ -538,7 +550,7 @@ class PreviousHunts(TemplateView):
                     pass
             context = {"hunts": new_hunt}
             return render(request, self.template_name, context)
-        except:
+        except OrganizationAdmin.DoesNotExist:
             return HttpResponseRedirect("/")
 
     @method_decorator(login_required)
@@ -572,7 +584,7 @@ class OrganizationSettings(TemplateView):
                 "domain_list": domain_list,
             }
             return render(request, self.template_name, context)
-        except:
+        except OrganizationAdmin.DoesNotExist:
             return HttpResponseRedirect("/")
 
     @method_decorator(login_required)
@@ -615,16 +627,20 @@ class DomainDetailView(ListView):
 
         if organization:
             # Fetch related trademarks for the organization
-            trademarks = Trademark.objects.filter(organization=organization)
+            trademarks = Trademark.objects.filter(organization=organization).order_by("-created")
             context["trademarks"] = trademarks
 
-        open_issues = Issue.objects.filter(
-            domain__name__contains=self.kwargs["slug"], status="open", hunt=None
-        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+        open_issues = (
+            Issue.objects.filter(domain__name__contains=self.kwargs["slug"], status="open", hunt=None)
+            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            .order_by("-created")
+        )
 
-        closed_issues = Issue.objects.filter(
-            domain__name__contains=self.kwargs["slug"], status="closed", hunt=None
-        ).exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+        closed_issues = (
+            Issue.objects.filter(domain__name__contains=self.kwargs["slug"], status="closed", hunt=None)
+            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            .order_by("-created")
+        )
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -665,10 +681,12 @@ class DomainDetailView(ListView):
             hunt=None,
             created__month__gte=(datetime.now().month - 6),
             created__month__lte=datetime.now().month,
-        ).order_by()
+        ).order_by("created")
 
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(domain=context["domain"], hunt=None, label=str(i))
+            context["bug_type_" + str(i)] = Issue.objects.filter(
+                domain=context["domain"], hunt=None, label=str(i)
+            ).order_by("-created")
 
         context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
 
@@ -676,11 +694,13 @@ class DomainDetailView(ListView):
             Issue.objects.filter(domain=context["domain"], hunt=None)
             .values("label")
             .annotate(c=Count("label"))
-            .order_by()
+            .order_by("label")
         )
 
-        context["activities"] = Issue.objects.filter(domain=context["domain"], hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
+        context["activities"] = (
+            Issue.objects.filter(domain=context["domain"], hunt=None)
+            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            .order_by("-created")
         )
 
         context["activity_screenshots"] = {}
@@ -744,15 +764,43 @@ class InboundParseWebhookView(View):
         data = request.body
         for event in json.loads(data):
             try:
-                domain = Domain.objects.get(email__iexact=event.get("email"))
-                domain.email_event = event.get("event")
-                if event.get("event") == "click":
-                    domain.clicks = int(domain.clicks or 0) + 1
-                domain.save()
-            except Exception:
-                pass
+                # Try to find a matching domain first
+                domain = Domain.objects.filter(email__iexact=event.get("email")).first()
+                if domain:
+                    domain.email_event = event.get("event")
+                    if event.get("event") == "click":
+                        domain.clicks = int(domain.clicks or 0) + 1
+                    domain.save()
 
-        return JsonResponse({"detail": "Inbound Sendgrid Webhook recieved"})
+                # Try to find a matching user profile
+                user = User.objects.filter(email__iexact=event.get("email")).first()
+                if user and hasattr(user, "userprofile"):
+                    profile = user.userprofile
+                    event_type = event.get("event")
+
+                    # Update email status and last event
+                    profile.email_status = event_type
+                    profile.email_last_event = event_type
+                    profile.email_last_event_time = timezone.now()
+
+                    # Handle specific event types
+                    if event_type == "bounce":
+                        profile.email_bounce_reason = event.get("reason", "")
+                    elif event_type == "spamreport":
+                        profile.email_spam_report = True
+                    elif event_type == "unsubscribe":
+                        profile.email_unsubscribed = True
+                    elif event_type == "click":
+                        profile.email_click_count = profile.email_click_count + 1
+                    elif event_type == "open":
+                        profile.email_open_count = profile.email_open_count + 1
+
+                    profile.save()
+
+            except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
+                logger.error(f"Error processing SendGrid webhook event: {str(e)}")
+
+        return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
 
 
 class CreateHunt(TemplateView):
@@ -774,7 +822,7 @@ class CreateHunt(TemplateView):
 
             context = {"domains": domain, "hunt_form": HuntForm()}
             return render(request, self.template_name, context)
-        except:
+        except OrganizationAdmin.DoesNotExist:
             return HttpResponseRedirect("/")
 
     @method_decorator(login_required)
@@ -792,7 +840,7 @@ class CreateHunt(TemplateView):
                     + Decimal(request.POST["prize_second_runner"])
                 )
                 if total_amount > wallet.current_balance:
-                    return HttpResponse("failed")
+                    return HttpResponse("Insufficient balance")
                 hunt = Hunt()
                 hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 data = {}
@@ -801,12 +849,12 @@ class CreateHunt(TemplateView):
                 data["end_date"] = request.POST["end_date"]
                 form = HuntForm(data)
                 if not form.is_valid():
-                    return HttpResponse("failed")
+                    return HttpResponse("Invalid form data")
                 if not domain_admin.is_active:
-                    return HttpResponse("failed")
+                    return HttpResponse("Inactive domain admin")
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
-                        return HttpResponse("failed")
+                        return HttpResponse("Domain mismatch")
                 hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 tzsign = 1
                 offset = request.POST["tzoffset"]
@@ -831,16 +879,15 @@ class CreateHunt(TemplateView):
                 wallet.withdraw(total_amount)
                 wallet.save()
                 try:
-                    is_published = request.POST["publish"]
-                    hunt.is_published = True
-                except:
+                    hunt.is_published = request.POST.get("publish", False) == "on"
+                except KeyError:
                     hunt.is_published = False
                 hunt.save()
                 return HttpResponse("success")
             else:
                 return HttpResponse("failed")
-        except:
-            return HttpResponse("failed")
+        except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
+            return HttpResponse(f"Error: {str(e)}")
 
 
 @login_required
@@ -1149,14 +1196,14 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         data["end_date"] = request.POST["end_date"]
         form = HuntForm(data)
         if not form.is_valid():
-            return HttpResponse("failed")
+            return HttpResponse("Invalid form data")
         hunt = get_object_or_404(Hunt, pk=pk)
         domain_admin = OrganizationAdmin.objects.get(user=request.user)
         if not domain_admin.is_active:
-            return HttpResponse("failed")
+            return HttpResponse("Inactive domain admin")
         if domain_admin.role == 1:
             if hunt.domain != domain_admin.domain:
-                return HttpResponse("failed")
+                return HttpResponse("Domain mismatch")
         hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
         tzsign = 1
         offset = request.POST["tzoffset"]
@@ -1173,14 +1220,9 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
             end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         hunt.starts_on = start_date
         hunt.end_on = end_date
-
         hunt.name = request.POST["name"]
         hunt.description = form.cleaned_data["content"]
-        try:
-            is_published = request.POST["publish"]
-            hunt.is_published = True
-        except:
-            hunt.is_published = False
+        hunt.is_published = request.POST.get("publish", False) == "on"
         hunt.save()
         return HttpResponse("success")
 
@@ -1216,10 +1258,11 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
 @login_required(login_url="/accounts/login")
 def add_or_update_domain(request):
     if request.method == "POST":
-        organization_admin = OrganizationAdmin.objects.get(user=request.user)
-        subscription = organization_admin.organization.subscription
-        count_domain = Domain.objects.filter(organization=organization_admin.organization).count()
         try:
+            organization_admin = OrganizationAdmin.objects.get(user=request.user)
+            subscription = organization_admin.organization.subscription
+            count_domain = Domain.objects.filter(organization=organization_admin.organization).count()
+
             try:
                 domain_pk = request.POST["id"]
                 domain = Domain.objects.get(pk=domain_pk)
@@ -1228,11 +1271,11 @@ def add_or_update_domain(request):
                 domain.github = request.POST["github"]
                 try:
                     domain.logo = request.FILES["logo"]
-                except:
+                except KeyError:
                     pass
                 domain.save()
                 return HttpResponse("Domain Updated")
-            except:
+            except Domain.DoesNotExist:
                 if count_domain == subscription.number_of_domains:
                     return HttpResponse("Domains Reached Limit")
                 else:
@@ -1244,101 +1287,100 @@ def add_or_update_domain(request):
                         domain.github = request.POST["github"]
                         try:
                             domain.logo = request.FILES["logo"]
-                        except:
+                        except KeyError:
                             pass
                         domain.organization = organization_admin.organization
                         domain.save()
                         return HttpResponse("Domain Created")
                     else:
-                        return HttpResponse("failed")
-        except:
-            return HttpResponse("failed")
+                        return HttpResponse("Unauthorized: Only admin can create domains")
+        except (OrganizationAdmin.DoesNotExist, KeyError) as e:
+            return HttpResponse(f"Error: {str(e)}")
 
 
 @login_required(login_url="/accounts/login")
 def add_or_update_organization(request):
-    user = request.user
-    if user.is_superuser:
-        if not user.is_active:
-            return HttpResponseRedirect("/")
-        if request.method == "POST":
+    if not request.user.is_superuser:
+        return HttpResponse("Unauthorized: Superuser access required")
+
+    if not request.user.is_active:
+        return HttpResponseRedirect("/")
+
+    if request.method == "POST":
+        try:
             domain_pk = request.POST["id"]
             organization = Organization.objects.get(pk=domain_pk)
             user = organization.admin
-            if user != User.objects.get(email=request.POST["admin"]):
+            new_admin = User.objects.get(email=request.POST["admin"])
+
+            if user != new_admin:
                 try:
-                    admin = OrganizationAdmin.objects.get(user=user, organization=organization)
-                    admin.user = User.objects.get(email=request.POST["admin"])
+                    admin = OrganizationAdmin.objects.get(user=user)
+                    admin.user = new_admin
                     admin.save()
-                except:
-                    admin = OrganizationAdmin()
-                    admin.user = User.objects.get(email=request.POST["admin"])
-                    admin.role = 0
-                    admin.organization = organization
-                    admin.is_active = True
-                    admin.save()
+                except OrganizationAdmin.DoesNotExist:
+                    admin = OrganizationAdmin.objects.create(
+                        user=new_admin, role=0, organization=organization, is_active=True
+                    )
+
             organization.name = request.POST["name"]
             organization.email = request.POST["email"]
             organization.url = request.POST["url"]
-            organization.admin = User.objects.get(email=request.POST["admin"])
+            organization.admin = new_admin
             organization.github = request.POST["github"]
-            try:
-                is_verified = request.POST["verify"]
-                if is_verified == "on":
-                    organization.is_active = True
-                else:
-                    organization.is_active = False
-            except:
-                organization.is_active = False
+            organization.is_active = request.POST.get("verify") == "on"
+
             try:
                 organization.subscription = Subscription.objects.get(name=request.POST["subscription"])
-            except:
+            except (Subscription.DoesNotExist, KeyError):
                 pass
+
             try:
                 organization.logo = request.FILES["logo"]
-            except:
+            except KeyError:
                 pass
-            organization.save()
-            return HttpResponse("success")
 
-        else:
-            return HttpResponse("failed")
+            organization.save()
+            return HttpResponse("Organization updated successfully")
+
+        except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
+            return HttpResponse(f"Error: {str(e)}")
     else:
-        return HttpResponse("no access")
+        return HttpResponse("Invalid request method")
 
 
 @login_required(login_url="/accounts/login")
 def add_role(request):
     if request.method == "POST":
-        domain_admin = OrganizationAdmin.objects.get(user=request.user)
-        if domain_admin.role == 0 and domain_admin.is_active:
+        try:
+            domain_admin = OrganizationAdmin.objects.get(user=request.user)
+            if domain_admin.role != 0 or not domain_admin.is_active:
+                return HttpResponse("Unauthorized: Only active admin can add roles")
+
             email = request.POST["email"]
             user = User.objects.get(email=email)
+
             if request.user == user:
-                return HttpResponse("success")
+                return HttpResponse("Cannot modify your own role")
+
             try:
                 admin = OrganizationAdmin.objects.get(user=user)
                 if admin.organization == domain_admin.organization:
                     admin.is_active = True
                     admin.save()
-                    return HttpResponse("success")
+                    return HttpResponse("Role updated successfully")
                 else:
-                    return HttpResponse("already admin of another domain")
-            except:
-                try:
-                    admin = OrganizationAdmin()
-                    admin.user = user
-                    admin.role = 1
-                    admin.organization = domain_admin.organization
-                    admin.is_active = True
-                    admin.save()
-                    return HttpResponse("success")
-                except:
-                    return HttpResponse("failed")
-        else:
-            return HttpResponse("failed")
+                    return HttpResponse("User is already admin of another organization")
+            except OrganizationAdmin.DoesNotExist:
+                OrganizationAdmin.objects.create(
+                    user=user, role=1, organization=domain_admin.organization, is_active=True
+                )
+                return HttpResponse("Role added successfully")
+
+        except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
+            return HttpResponse(f"Error: {str(e)}")
     else:
-        return HttpResponse("failed")
+        return HttpResponse("Invalid request method")
 
 
 @login_required(login_url="/accounts/login")
@@ -1793,8 +1835,6 @@ class RoomCreateView(CreateView):
             if not self.request.session.session_key:
                 self.request.session.create()
             session_key = self.request.session.session_key
-            # Use last 4 characters of session key for anonymous username
-            anon_name = f"anon_{session_key[-4:]}"
             form.instance.session_key = session_key
         else:
             form.instance.admin = self.request.user

@@ -210,15 +210,22 @@ class UrlsTest(StaticLiveServerTestCase):
                         if not any(x in url for x in matches):
                             total_urls += 1
                             try:
+                                print(f"\nTesting URL: {url}")  # Debug line
                                 response = self.client.get(url, follow=True)
                                 if response.status_code not in allowed_http_codes:
-                                    errors["http"].append(f"URL {url} returned {response.status_code}")
+                                    error_msg = (
+                                        f"URL {url} returned {response.status_code} "
+                                        f"(Expected: {allowed_http_codes})"
+                                    )
+                                    errors["http"].append(error_msg)
+                                    print(f"Failed with status code: {response.status_code}")  # Debug line
                                     continue
 
                                 # Only test with Selenium if the response was successful
                                 if response.status_code in [200, 302]:
                                     try:
                                         test_url = f"{self.live_server_url}{url}"
+                                        print(f"Testing with Selenium: {test_url}")  # Debug line
                                         self.selenium.get(test_url)
 
                                         # Wait for page load with increased timeout
@@ -278,6 +285,9 @@ class UrlsTest(StaticLiveServerTestCase):
                                             errors[url].extend(missing_files)
 
                                         if js_errors:
+                                            print(f"JavaScript errors for {url}:")  # Debug line
+                                            for error in js_errors:
+                                                print(f"  - {error}")  # Debug line
                                             errors[url].extend(js_errors)
 
                                         successful_urls += 1
