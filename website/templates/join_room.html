@@ -64,7 +64,6 @@
     const maxDelay = 30000; // Maximum delay of 30 seconds
     let pingInterval;
     let lastMessageId = null;
-    let pendingMessageData = null;
 
     const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
     const wsUrl = `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`;
