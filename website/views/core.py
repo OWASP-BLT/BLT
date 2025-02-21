@@ -1345,8 +1345,8 @@ def check_owasp_compliance(request):
             safe_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
             # Parse URL to determine if it's a GitHub repository
-            is_github = "github.com" in safe_url.lower()
-            is_owasp_org = "github.com/owasp" in safe_url.lower()
+            is_github = hostname and hostname.endswith("github.com")
+            is_owasp_org = hostname and hostname.endswith("github.com") and "/owasp" in parsed.path.lower()
 
             # Fetch and analyze website content with proper verification
             response = requests.get(safe_url, timeout=10, verify=True)
