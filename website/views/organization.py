@@ -16,7 +16,7 @@ from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.dateparse import parse_datetime
@@ -598,118 +598,123 @@ class OrganizationSettings(TemplateView):
 class DomainDetailView(ListView):
     template_name = "domain.html"
     model = Issue
+    paginate_by = 3
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(DomainDetailView, self).get_context_data(*args, **kwargs)
-        # remove any arguments from the slug
-        self.kwargs["slug"] = self.kwargs["slug"].split("?")[0]
-        domain = get_object_or_404(Domain, name=self.kwargs["slug"])
-        context["domain"] = domain
+    def get_queryset(self):
+        return Issue.objects.none()  # We'll handle the queryset in get_context_data
 
-        # Get view count
-        view_count = IP.objects.filter(path=self.request.path).count()
-        context["view_count"] = view_count
-
-        parsed_url = urlparse("http://" + self.kwargs["slug"])
-        name = parsed_url.netloc.split(".")[-2:][0].title()
-        context["name"] = name
-
-        # Fetch the related organization
-        organization = domain.organization
-        if organization is None:
-            organizations = Organization.objects.filter(name__iexact=domain.get_name)
-            if organizations.exists():
-                organization = organizations.first()
-            else:
-                organization = None
-
-        context["organization"] = organization
-
-        if organization:
-            # Fetch related trademarks for the organization
-            trademarks = Trademark.objects.filter(organization=organization).order_by("-created")
-            context["trademarks"] = trademarks
-
-        open_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"], status="open", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-            .order_by("-created")
-        )
-
-        closed_issues = (
-            Issue.objects.filter(domain__name__contains=self.kwargs["slug"], status="closed", hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-            .order_by("-created")
-        )
-
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-
-        paginator = Paginator(open_issues, 3)
-        page = self.request.GET.get("open")
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
         try:
-            openissue_paginated = paginator.page(page)
-        except PageNotAnInteger:
-            openissue_paginated = paginator.page(1)
-        except EmptyPage:
-            openissue_paginated = paginator.page(paginator.num_pages)
+            # remove any arguments from the slug
+            slug = self.kwargs["slug"].split("?")[0]
+            domain = get_object_or_404(Domain, name=slug)
+            context["domain"] = domain
 
-        paginator = Paginator(closed_issues, 3)
-        page = self.request.GET.get("close")
-        try:
-            closeissue_paginated = paginator.page(page)
-        except PageNotAnInteger:
-            closeissue_paginated = paginator.page(1)
-        except EmptyPage:
-            closeissue_paginated = paginator.page(paginator.num_pages)
+            # Get view count
+            view_count = IP.objects.filter(path=self.request.path).count()
+            context["view_count"] = view_count
 
-        context["opened_net"] = open_issues
-        context["opened"] = openissue_paginated
-        context["closed_net"] = closed_issues
-        context["closed"] = closeissue_paginated
+            parsed_url = urlparse("http://" + slug)
+            name = parsed_url.netloc.split(".")[-2:][0].title()
+            context["name"] = name
 
-        context["leaderboard"] = (
-            User.objects.filter(issue__url__contains=self.kwargs["slug"])
-            .annotate(total=Count("issue"))
-            .order_by("-total")
-        )
+            # Fetch the related organization
+            organization = domain.organization
+            if organization is None:
+                organizations = Organization.objects.filter(name__iexact=domain.get_name)
+                if organizations.exists():
+                    organization = organizations.first()
 
-        context["current_month"] = datetime.now().month
+            context["organization"] = organization
 
-        context["domain_graph"] = Issue.objects.filter(
-            domain=context["domain"],
-            hunt=None,
-            created__month__gte=(datetime.now().month - 6),
-            created__month__lte=datetime.now().month,
-        ).order_by("created")
+            if organization:
+                # Fetch related trademarks for the organization, ordered by filing date
+                trademarks = Trademark.objects.filter(organization=organization).order_by("-filing_date")
+                context["trademarks"] = trademarks
 
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(
-                domain=context["domain"], hunt=None, label=str(i)
-            ).order_by("-created")
+            # Get open and closed issues
+            open_issues = (
+                Issue.objects.filter(domain__name__contains=slug, status="open", hunt=None)
+                .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+                .order_by("-created")
+            )
 
-        context["total_bugs"] = Issue.objects.filter(domain=context["domain"], hunt=None).count()
+            closed_issues = (
+                Issue.objects.filter(domain__name__contains=slug, status="closed", hunt=None)
+                .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+                .order_by("-created")
+            )
 
-        context["pie_chart"] = (
-            Issue.objects.filter(domain=context["domain"], hunt=None)
-            .values("label")
-            .annotate(c=Count("label"))
-            .order_by("label")
-        )
+            if self.request.user.is_authenticated:
+                context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        context["activities"] = (
-            Issue.objects.filter(domain=context["domain"], hunt=None)
-            .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-            .order_by("-created")
-        )
+            # Handle pagination for open issues
+            open_paginator = Paginator(open_issues, self.paginate_by)
+            open_page = self.request.GET.get("open")
+            try:
+                openissue_paginated = open_paginator.page(open_page)
+            except PageNotAnInteger:
+                openissue_paginated = open_paginator.page(1)
+            except EmptyPage:
+                openissue_paginated = open_paginator.page(open_paginator.num_pages)
 
-        context["activity_screenshots"] = {}
-        for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
+            # Handle pagination for closed issues
+            closed_paginator = Paginator(closed_issues, self.paginate_by)
+            closed_page = self.request.GET.get("close")
+            try:
+                closeissue_paginated = closed_paginator.page(closed_page)
+            except PageNotAnInteger:
+                closeissue_paginated = closed_paginator.page(1)
+            except EmptyPage:
+                closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
-        context["twitter_url"] = "https://twitter.com/%s" % domain.get_or_set_x_url(domain.get_name)
+            context.update(
+                {
+                    "opened_net": open_issues,
+                    "opened": openissue_paginated,
+                    "closed_net": closed_issues,
+                    "closed": closeissue_paginated,
+                    "leaderboard": User.objects.filter(issue__url__contains=slug)
+                    .annotate(total=Count("issue"))
+                    .order_by("-total"),
+                    "current_month": datetime.now().month,
+                    "domain_graph": Issue.objects.filter(
+                        domain=domain,
+                        hunt=None,
+                        created__month__gte=(datetime.now().month - 6),
+                        created__month__lte=datetime.now().month,
+                    ).order_by("created"),
+                    "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
+                    "pie_chart": Issue.objects.filter(domain=domain, hunt=None)
+                    .values("label")
+                    .annotate(c=Count("label"))
+                    .order_by("label"),
+                    "activities": Issue.objects.filter(domain=domain, hunt=None)
+                    .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+                    .order_by("-created"),
+                }
+            )
 
-        return context
+            # Add bug types to context
+            for i in range(0, 7):
+                context[f"bug_type_{i}"] = Issue.objects.filter(domain=domain, hunt=None, label=str(i)).order_by(
+                    "-created"
+                )
+
+            # Add activity screenshots
+            context["activity_screenshots"] = {
+                activity: IssueScreenshot.objects.filter(issue=activity.pk).first()
+                for activity in context["activities"]
+            }
+
+            # Add Twitter URL
+            context["twitter_url"] = f"https://twitter.com/{domain.get_or_set_x_url(domain.get_name)}"
+
+            return context
+        except Exception as e:
+            logger.error(f"Error in DomainDetailView: {str(e)}")
+            raise Http404("Domain not found")
 
 
 class ScoreboardView(ListView):
@@ -1242,16 +1247,18 @@ def hunt_results(request, pk, template="hunt_results.html"):
 @login_required(login_url="/accounts/login")
 def organization_dashboard_domain_detail(request, pk, template="organization_dashboard_domain_detail.html"):
     user = request.user
-    domain_admin = OrganizationAdmin.objects.get(user=request.user)
     try:
-        if (Domain.objects.get(pk=pk)) == domain_admin.domain:
+        domain_admin = OrganizationAdmin.objects.get(user=request.user)
+        domain = Domain.objects.get(pk=pk)
+
+        if domain == domain_admin.domain:
             if not user.is_active:
                 return HttpResponseRedirect("/")
-            domain = get_object_or_404(Domain, pk=pk)
             return render(request, template, {"domain": domain})
-        else:
-            return redirect("/")
-    except:
+        return redirect("/")
+
+    except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist) as e:
+        logger.error(f"Error in organization_dashboard_domain_detail: {str(e)}")
         return redirect("/")
 
 
