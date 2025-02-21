@@ -137,7 +137,7 @@ new TomSelect("#tags", {
                     if (!result.success) {
                         alert(result.message);
                     } else {
-                        window.location.href = `/course-detail/${result.course_id}/`;
+                        alert("Course {% if course %} edited {% else %} created {% endif %} successfully.");
                     }
                 } catch (error) {
                     alert('An error occurred. Please try again later.');
