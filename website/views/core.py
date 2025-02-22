@@ -30,7 +30,7 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
-from django.db import connection, models, transaction
+from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -47,6 +47,10 @@ from website.models import (
     Activity,
     Badge,
     Domain,
+    ForumCategory,
+    ForumComment,
+    ForumPost,
+    ForumVote,
     Hunt,
     Issue,
     ManagementCommandLog,
@@ -56,8 +60,6 @@ from website.models import (
     Project,
     Repo,
     SlackBotActivity,
-    Suggestion,
-    SuggestionVotes,
     Tag,
     User,
     UserBadge,
@@ -496,14 +498,11 @@ def find_key(request, token):
 
 
 def search(request, template="search.html"):
-    query = request.GET.get("query")
-    stype = request.GET.get("type", "all")
-    context = None
-    if query is None:
-        return render(request, template, {"request": request})
-    query = query.strip()
+    query = request.GET.get("query", "").strip()
+    stype = request.GET.get("type", "").strip()
+    context = {}
 
-    if stype == "all":
+    if query:
         # Search across multiple models
         organizations = Organization.objects.filter(name__icontains=query)
         issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
@@ -513,14 +512,15 @@ def search(request, template="search.html"):
         users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
         projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
         context = {
             "request": request,
             "query": query,
             "type": stype,
             "organizations": organizations,
-            "issues": issues,
             "domains": domains,
             "users": users,
+            "issues": issues,
             "projects": projects,
             "repos": repos,
         }
@@ -718,92 +718,121 @@ def search(request, template="search.html"):
 
 
 @login_required
-def vote_suggestions(request):
-    if request.method != "POST":
-        return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+def vote_forum_post(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+            up_vote = data.get("up_vote", False)
+            down_vote = data.get("down_vote", False)
 
-    try:
-        data = json.loads(request.body)
-        suggestion_id = data.get("suggestion_id")
-        up_vote = data.get("up_vote", False)
-        down_vote = data.get("down_vote", False)
+            post = ForumPost.objects.get(id=post_id)
+            vote, created = ForumVote.objects.get_or_create(
+                post=post, user=request.user, defaults={"up_vote": up_vote, "down_vote": down_vote}
+            )
 
-        suggestion = Suggestion.objects.get(id=suggestion_id)
-
-        with transaction.atomic():
-            vote, created = SuggestionVotes.objects.get_or_create(user=request.user, suggestion=suggestion)
-
-            old_up_vote = vote.up_vote
-            old_down_vote = vote.down_vote
-
-            if not up_vote and not down_vote:
-                vote.delete()
-            else:
+            if not created:
                 vote.up_vote = up_vote
                 vote.down_vote = down_vote
                 vote.save()
 
-            if old_up_vote != up_vote:
-                suggestion.up_votes += 1 if up_vote else -1
-            if old_down_vote != down_vote:
-                suggestion.down_votes += 1 if down_vote else -1
+            # Update vote counts
+            post.up_votes = ForumVote.objects.filter(post=post, up_vote=True).count()
+            post.down_votes = ForumVote.objects.filter(post=post, down_vote=True).count()
+            post.save()
 
-            suggestion.save()
+            return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
 
-        return JsonResponse({"success": True, "up_vote": suggestion.up_votes, "down_vote": suggestion.down_votes})
-
-    except Suggestion.DoesNotExist:
-        return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
-    except Exception as e:
-        print(f"Unexpected error in vote_suggestions: {e}", exc_info=True)
-        return JsonResponse({"success": False, "error": "An unexpected error occurred"}, status=500)
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
 @login_required
 def set_vote_status(request):
     if request.method == "POST":
-        user = request.user
         try:
             data = json.loads(request.body)
-            id = data.get("id")
+            post_id = data.get("id")
+            vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
-            # Ensure the id is a valid integer
-            if not id or not str(id).isdigit():
-                return JsonResponse({"success": False, "error": f"ID = {id} is invalid."}, status=400)
-
-            suggestion = Suggestion.objects.get(id=int(id))
-
-            up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
-            down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
-
-            return JsonResponse({"up_vote": up_vote, "down_vote": down_vote})
-
-        except Suggestion.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+            return JsonResponse(
+                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+            )
         except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
 
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
-def add_suggestions(request):
+@login_required
+def add_forum_post(request):
     if request.method == "POST":
-        user = request.user if request.user.is_authenticated else None
-        data = json.loads(request.body)
-        title = data.get("title")
-        description = data.get("description", "")
-        if title and description:
-            suggestion = Suggestion(user=user, title=title, description=description)
-            suggestion.save()
-            messages.success(request, "Suggestion added successfully.")
-            return JsonResponse({"status": "success"})
-        else:
-            messages.error(request, "Please fill all the fields.")
-            return JsonResponse({"status": "error"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+        try:
+            data = json.loads(request.body)
+            title = data.get("title")
+            category = data.get("category")
+            description = data.get("description")
+
+            if not all([title, category, description]):
+                return JsonResponse({"status": "error", "message": "Missing required fields"})
+
+            post = ForumPost.objects.create(
+                user=request.user, title=title, category_id=category, description=description
+            )
+
+            return JsonResponse({"status": "success", "post_id": post.id})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+@login_required
+def add_forum_comment(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+            content = data.get("content")
+
+            if not all([post_id, content]):
+                return JsonResponse({"status": "error", "message": "Missing required fields"})
+
+            post = ForumPost.objects.get(id=post_id)
+            comment = ForumComment.objects.create(post=post, user=request.user, content=content)
+
+            return JsonResponse({"status": "success", "comment_id": comment.id})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+def view_forum(request):
+    categories = ForumCategory.objects.all()
+    selected_category = request.GET.get("category")
+
+    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+
+    if selected_category:
+        posts = posts.filter(category_id=selected_category)
+
+    return render(
+        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+    )
 
 
 class GoogleLogin(SocialLoginView):
@@ -1022,8 +1051,38 @@ class StatsDetailView(TemplateView):
 
 
 def view_suggestions(request):
-    suggestion = Suggestion.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+    category_id = request.GET.get("category")
+    status = request.GET.get("status")
+    sort = request.GET.get("sort", "newest")
+
+    suggestions = Suggestion.objects.all()
+
+    # Apply filters
+    if category_id:
+        suggestions = suggestions.filter(category_id=category_id)
+    if status:
+        suggestions = suggestions.filter(status=status)
+
+    # Apply sorting
+    if sort == "oldest":
+        suggestions = suggestions.order_by("created")
+    elif sort == "most_votes":
+        suggestions = suggestions.order_by("-up_votes")
+    elif sort == "most_comments":
+        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
+    else:  # newest
+        suggestions = suggestions.order_by("-created")
+
+    categories = SuggestionCategory.objects.all()
+
+    return render(
+        request,
+        "feature_suggestion.html",
+        {
+            "suggestions": suggestions,
+            "categories": categories,
+        },
+    )
 
 
 def sitemap(request):
@@ -1146,9 +1205,10 @@ def view_pr_analysis(request):
 
 
 def home(request):
+    from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import Repo
+    from website.models import ForumPost, GitHubIssue, Repo, User
 
     # Get last commit date
     try:
@@ -1161,6 +1221,25 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
+    # Get recent forum posts
+    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+
+    # Get top bug reporters for current month
+    current_time = timezone.now()
+    top_bug_reporters = (
+        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
+        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        .order_by("-total_score")[:5]
+    )
+
+    # Get top PR contributors using the leaderboard method
+    top_pr_contributors = (
+        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        .annotate(total_prs=Count("id"))
+        .order_by("-total_prs")[:5]
+    )
+
     return render(
         request,
         "home.html",
@@ -1169,6 +1248,9 @@ def home(request):
             "current_year": timezone.now().year,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
+            "recent_posts": recent_posts,
+            "top_bug_reporters": top_bug_reporters,
+            "top_pr_contributors": top_pr_contributors,
         },
     )
 
