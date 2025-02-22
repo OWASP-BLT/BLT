@@ -2,7 +2,7 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
 from urllib.parse import urlparse
@@ -166,6 +166,10 @@ class Organization(models.Model):
 
     class Meta:
         ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="org_created_idx"),
+        ]
+        constraints = [models.UniqueConstraint(fields=["slug"], name="unique_organization_slug")]
 
     def __str__(self):
         return self.name
@@ -210,6 +214,11 @@ class Domain(models.Model):
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["organization"], name="domain_org_idx"),
+        ]
 
     def __unicode__(self):
         return self.name
@@ -489,6 +498,9 @@ class Issue(models.Model):
 
     class Meta:
         ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+        ]
 
 
 def is_using_gcs():
@@ -603,7 +615,7 @@ class Points(models.Model):
     issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     score = models.IntegerField()
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
     reason = models.TextField(null=True, blank=True)
 
@@ -649,6 +661,20 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+
+    # SendGrid webhook fields
+    email_status = models.CharField(
+        max_length=50, blank=True, null=True, help_text="Current email status from SendGrid"
+    )
+    email_last_event = models.CharField(
+        max_length=50, blank=True, null=True, help_text="Last email event from SendGrid"
+    )
+    email_last_event_time = models.DateTimeField(blank=True, null=True, help_text="Timestamp of last email event")
+    email_bounce_reason = models.TextField(blank=True, null=True, help_text="Reason for email bounce if applicable")
+    email_spam_report = models.BooleanField(default=False, help_text="Whether the email was marked as spam")
+    email_unsubscribed = models.BooleanField(default=False, help_text="Whether the user has unsubscribed")
+    email_click_count = models.PositiveIntegerField(default=0, help_text="Number of email link clicks")
+    email_open_count = models.PositiveIntegerField(default=0, help_text="Number of email opens")
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
@@ -715,7 +741,7 @@ class UserProfile(models.Model):
                 Points.objects.get_or_create(
                     user=self.user,
                     reason="Daily check-in",
-                    created__date=datetime.today().date(),
+                    created__date=timezone.now().date(),
                     defaults={"score": 5},
                 )
 
@@ -802,6 +828,11 @@ class IP(models.Model):
     path = models.CharField(max_length=255, null=True, blank=True)
     method = models.CharField(max_length=10, null=True, blank=True)
     referer = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["path", "created"], name="ip_path_created_idx"),
+        ]
 
 
 class OrganizationAdmin(models.Model):
@@ -913,27 +944,68 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
-class Suggestion(models.Model):
+class ForumCategory(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Forum Categories"
+
+
+class ForumPost(models.Model):
+    STATUS_CHOICES = (
+        ("open", "Open"),
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+        ("declined", "Declined"),
+    )
+
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
+    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    is_pinned = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.title} by {self.user}"
 
+    class Meta:
+        ordering = ["-is_pinned", "-created"]
 
-class SuggestionVotes(models.Model):
-    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
+
+class ForumVote(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     up_vote = models.BooleanField(default=False)
     down_vote = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Suggestion {self.user}"
+        return f"Vote by {self.user} on {self.post.title}"
+
+
+class ForumComment(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.post.title}"
+
+    class Meta:
+        ordering = ["created"]
 
 
 class Contributor(models.Model):
@@ -992,6 +1064,11 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["organization"], name="project_org_idx"),
+        ]
 
 
 class Contribution(models.Model):
@@ -1283,12 +1360,8 @@ class PRAnalysisReport(models.Model):
 def verify_file_upload(sender, instance, **kwargs):
     from django.core.files.storage import default_storage
 
-    print("Verifying file upload...")
-    print(f"Default storage backend: {default_storage.__class__.__name__}")
     if instance.image:
-        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
         if not default_storage.exists(instance.image.name):
-            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
             raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
@@ -1360,6 +1433,11 @@ class Repo(models.Model):
 
     def __str__(self):
         return f"{self.project.name}/{self.name}" if self.project else f"{self.name}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["project"], name="repo_project_idx"),
+        ]
 
 
 class ContributorStats(models.Model):
