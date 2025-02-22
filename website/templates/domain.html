@@ -225,7 +225,7 @@
                         </div>
                         <div class="hidden opacity-0" id="message" role="tabpanel">
                             <p class="block font-sans text-base antialiased font-light leading-relaxed text-inherit text-blue-gray-500">
-                                {% if activity in closed %}
+                                {% if closed %}
                                     {% for activity in closed %}
                                         {% include "includes/_new_activity.html" %}
                                     {% endfor %}
@@ -269,6 +269,11 @@
                                 </div>
                             {% endif %}
                         </div>
+                        {% if organization %}
+                            <small class="uppercase flex flex-col text-[#909090]">
+                                <span class="text-gray-700">{{ organization.name }}</span>
+                            </small>
+                        {% endif %}
                         {% if domain.email %}
                             <small class="uppercase flex flex-col text-[#909090]">
                                 <span class="blue">{{ domain.email|obfuscate_mailto }}</span>
