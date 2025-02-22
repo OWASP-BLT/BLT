@@ -1205,9 +1205,10 @@ def view_pr_analysis(request):
 
 
 def home(request):
+    from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import Repo
+    from website.models import ForumPost, GitHubIssue, Repo, User
 
     # Get last commit date
     try:
@@ -1220,6 +1221,25 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
+    # Get recent forum posts
+    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+
+    # Get top bug reporters for current month
+    current_time = timezone.now()
+    top_bug_reporters = (
+        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
+        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        .order_by("-total_score")[:5]
+    )
+
+    # Get top PR contributors using the leaderboard method
+    top_pr_contributors = (
+        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        .annotate(total_prs=Count("id"))
+        .order_by("-total_prs")[:5]
+    )
+
     return render(
         request,
         "home.html",
@@ -1228,6 +1248,9 @@ def home(request):
             "current_year": timezone.now().year,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
+            "recent_posts": recent_posts,
+            "top_bug_reporters": top_bug_reporters,
+            "top_pr_contributors": top_pr_contributors,
         },
     )
 
