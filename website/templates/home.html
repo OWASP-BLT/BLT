@@ -160,11 +160,25 @@
                                             <span class="text-[#e74c3c] font-semibold">{{ forloop.counter }}</span>
                                             <a href="{% url 'profile' user.username %}"
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
-                                                <img src="{{ user.userprofile.avatar }}"
-                                                     alt="{{ user.username }}"
-                                                     width="24"
-                                                     height="24"
-                                                     class="w-6 h-6 rounded-full">
+                                                {% if user.userprofile.avatar %}
+                                                    <img src="{{ user.userprofile.avatar }}"
+                                                         alt="{{ user.username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% elif user.socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                         alt="{{ user.username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% else %}
+                                                    <img src="{% gravatar_url user.email 50 %}"
+                                                         alt="{{ user.username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% endif %}
                                                 {{ user.username }}
                                             </a>
                                         </div>
@@ -198,6 +212,18 @@
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
                                                 {% if user.user_profile__github_url %}
                                                     <img src="https://github.com/{{ user.user_profile__user__username }}.png"
+                                                         alt="{{ user.user_profile__user__username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% elif user.user_profile__user__userprofile.avatar %}
+                                                    <img src="{{ user.user_profile__user__userprofile.avatar }}"
+                                                         alt="{{ user.user_profile__user__username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
