@@ -2,7 +2,7 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
 from urllib.parse import urlparse
@@ -614,7 +614,7 @@ class Points(models.Model):
     issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     score = models.IntegerField()
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
     reason = models.TextField(null=True, blank=True)
 
@@ -740,7 +740,7 @@ class UserProfile(models.Model):
                 Points.objects.get_or_create(
                     user=self.user,
                     reason="Daily check-in",
-                    created__date=datetime.today().date(),
+                    created__date=timezone.now().date(),
                     defaults={"score": 5},
                 )
 
@@ -943,27 +943,68 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
-class Suggestion(models.Model):
+class ForumCategory(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Forum Categories"
+
+
+class ForumPost(models.Model):
+    STATUS_CHOICES = (
+        ("open", "Open"),
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+        ("declined", "Declined"),
+    )
+
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
+    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    is_pinned = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.title} by {self.user}"
 
+    class Meta:
+        ordering = ["-is_pinned", "-created"]
 
-class SuggestionVotes(models.Model):
-    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
+
+class ForumVote(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     up_vote = models.BooleanField(default=False)
     down_vote = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Suggestion {self.user}"
+        return f"Vote by {self.user} on {self.post.title}"
+
+
+class ForumComment(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.post.title}"
+
+    class Meta:
+        ordering = ["created"]
 
 
 class Contributor(models.Model):
@@ -1318,12 +1359,8 @@ class PRAnalysisReport(models.Model):
 def verify_file_upload(sender, instance, **kwargs):
     from django.core.files.storage import default_storage
 
-    print("Verifying file upload...")
-    print(f"Default storage backend: {default_storage.__class__.__name__}")
     if instance.image:
-        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
         if not default_storage.exists(instance.image.name):
-            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
             raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 

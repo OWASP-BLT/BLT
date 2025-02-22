@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Discussion Forum{% endblock %}
+{% block description %}
+    Share and discuss ideas, ask questions, and engage with the OWASP Bug Logging Tool community. Join the conversation and help shape the future of the tool.
+{% endblock %}
+{% block keywords %}discussion, forum, community, OWASP, Bug Logging Tool, feedback, ideas, questions{% endblock %}
+{% block og_title %}Discussion Forum - OWASP Bug Logging Tool{% endblock %}
+{% block og_description %}
+    Join the OWASP Bug Logging Tool community discussion. Share ideas, ask questions, and connect with other users.
+{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .forum-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .forum-title {
+        font-size: 2rem;
+        color: #e74c3c;
+    }
+
+    .new-suggestion-btn {
+        background-color: #e74c3c;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .new-suggestion-btn:hover {
+        background-color: #c0392b;
+    }
+
+    .forum-filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .filter-select {
+        padding: 0.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        min-width: 150px;
+    }
+
+    .suggestion-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .suggestion-item {
+        background-color: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+
+    .suggestion-item:hover {
+        transform: translateY(-2px);
+    }
+
+    .suggestion-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .suggestion-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+    }
+
+    .suggestion-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: #718096;
+        font-size: 0.875rem;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-open {
+        background-color: #e6fffa;
+        color: #319795;
+    }
+
+    .status-in-progress {
+        background-color: #ebf8ff;
+        color: #3182ce;
+    }
+
+    .status-completed {
+        background-color: #f0fff4;
+        color: #38a169;
+    }
+
+    .status-declined {
+        background-color: #fff5f5;
+        color: #e53e3e;
+    }
+
+    .suggestion-content {
+        padding: 1.5rem;
+        color: #4a5568;
+    }
+
+    .suggestion-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background-color: #f7fafc;
+        border-top: 1px solid #e2e8f0;
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+
+    .vote-buttons {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .vote-button {
+        background-color: #edf2f7;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .vote-button:hover {
+        background-color: #e2e8f0;
+    }
+
+    .vote-button.active {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .vote-count {
+        font-weight: 500;
+    }
+
+    .comment-section {
+        padding: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .comment-form {
+        margin-bottom: 1.5rem;
+    }
+
+    .comment-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        resize: vertical;
+    }
+
+    .comment-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .comment-item {
+        padding: 1rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .comment-meta {
+        display: flex;
+        justify-content: space-between;
+        color: #718096;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: white;
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        position: relative;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+    </style>
+    <div class="container">
+        <div class="forum-header">
+            <h1 class="forum-title">Discussion Forum</h1>
+            <button class="new-suggestion-btn" onclick="openNewSuggestionModal()">
+                <i class="fas fa-plus"></i> New Discussion
+            </button>
+        </div>
+        <div class="forum-filters">
+            <select class="filter-select" id="categoryFilter">
+                <option value="">All Categories</option>
+                {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
+            </select>
+            <select class="filter-select" id="statusFilter">
+                <option value="">All Status</option>
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="declined">Declined</option>
+            </select>
+            <select class="filter-select" id="sortFilter">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="most_votes">Most Votes</option>
+                <option value="most_comments">Most Comments</option>
+            </select>
+        </div>
+        <ul class="suggestion-list">
+            {% for post in posts %}
+                <li class="suggestion-item {% if post.is_pinned %}pinned{% endif %}">
+                    <div class="suggestion-header">
+                        <h2 class="suggestion-title">{{ post.title }}</h2>
+                        <div class="suggestion-meta">
+                            <span>
+                                <i class="fas fa-user"></i>
+                                {% if post.user %}
+                                    {{ post.user }}
+                                {% else %}
+                                    Anonymous
+                                {% endif %}
+                            </span>
+                            <span>
+                                <i class="fas fa-clock"></i>
+                                {{ post.created|timesince }} ago
+                            </span>
+                            <span class="status-badge status-{{ post.status }}">{{ post.get_status_display }}</span>
+                            {% if post.category %}
+                                <span>
+                                    <i class="fas fa-tag"></i>
+                                    {{ post.category.name }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="suggestion-content">
+                        <p>{{ post.description }}</p>
+                    </div>
+                    <div class="suggestion-footer">
+                        <div class="vote-buttons">
+                            <button type="button"
+                                    class="vote-button"
+                                    data-vote-type="up"
+                                    data-suggestion-id="{{ post.id }}">
+                                <i class="fas fa-arrow-up"></i>
+                                <span class="vote-count">{{ post.up_votes }}</span>
+                            </button>
+                            <button type="button"
+                                    class="vote-button"
+                                    data-vote-type="down"
+                                    data-suggestion-id="{{ post.id }}">
+                                <i class="fas fa-arrow-down"></i>
+                                <span class="vote-count">{{ post.down_votes }}</span>
+                            </button>
+                        </div>
+                        <div class="comment-count">
+                            <i class="fas fa-comments"></i>
+                            {{ post.comments.count }} Comments
+                        </div>
+                    </div>
+                    <div class="comment-section" id="comments-{{ post.id }}">
+                        <form class="comment-form" onsubmit="submitComment(event, {{ post.id }})">
+                            {% csrf_token %}
+                            <textarea class="comment-input" placeholder="Add a comment..." required></textarea>
+                            <button type="submit" class="new-suggestion-btn">Post Comment</button>
+                        </form>
+                        <ul class="comment-list">
+                            {% for comment in post.comments.all %}
+                                <li class="comment-item">
+                                    <div class="comment-meta">
+                                        <span>{{ comment.user }}</span>
+                                        <span>{{ comment.created|timesince }} ago</span>
+                                    </div>
+                                    <p>{{ comment.content }}</p>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="suggestion-item">
+                    <div class="suggestion-content">
+                        <p>No discussions yet. Be the first to start a discussion!</p>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    <!-- New Discussion Modal -->
+    <div id="newSuggestionModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeNewSuggestionModal()">×</span>
+            <h2>Start New Discussion</h2>
+            <form id="suggestionForm"
+                  class="suggestion-form"
+                  onsubmit="submitPost(event)">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text"
+                           id="title"
+                           name="title"
+                           placeholder="Enter your discussion title"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" name="category" required>
+                        <option value="">Select a category</option>
+                        {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description"
+                              name="description"
+                              rows="4"
+                              placeholder="Write your discussion post"
+                              required></textarea>
+                </div>
+                <button type="submit" class="new-suggestion-btn">Submit Post</button>
+            </form>
+        </div>
+    </div>
+    <script>
+    function initializeVoting() {
+        document.querySelectorAll('.vote-button').forEach(button => {
+            button.addEventListener('click', handleVote);
+        });
+
+        document.querySelectorAll('.vote-button').forEach(button => {
+            const suggestionId = button.dataset.suggestionId;
+            if (suggestionId) {
+                fetchVoteStatus(suggestionId);
+            }
+        });
+    }
+
+    function fetchVoteStatus(suggestionId) {
+        fetch('/forum/set-vote-status/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({id: suggestionId}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            const upButton = document.querySelector(`.vote-button[data-vote-type="up"][data-suggestion-id="${suggestionId}"]`);
+            const downButton = document.querySelector(`.vote-button[data-vote-type="down"][data-suggestion-id="${suggestionId}"]`);
+            
+            if (data.up_vote) {
+                upButton?.classList.add('active');
+            } else if (data.down_vote) {
+                downButton?.classList.add('active');
+            }
+        })
+        .catch(error => console.error('Error fetching vote status:', error));
+    }
+
+    function handleVote(event) {
+        const button = event.currentTarget;
+        const postId = button.dataset.suggestionId;
+        const voteType = button.dataset.voteType;
+        
+        if (!postId || !voteType) {
+            console.error('Missing required data attributes');
+            return;
+        }
+
+        const upButton = document.querySelector(`.vote-button[data-vote-type="up"][data-suggestion-id="${postId}"]`);
+        const downButton = document.querySelector(`.vote-button[data-vote-type="down"][data-suggestion-id="${postId}"]`);
+        
+        const isUpvote = voteType === 'up';
+        const wasActive = button.classList.contains('active');
+
+        const upVote = isUpvote ? !wasActive : false;
+        const downVote = !isUpvote ? !wasActive : false;
+
+        fetch('/forum/vote/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                post_id: postId,
+                up_vote: upVote,
+                down_vote: downVote
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                upButton.querySelector('.vote-count').textContent = data.up_vote;
+                downButton.querySelector('.vote-count').textContent = data.down_vote;
+
+                upButton.classList.toggle('active', upVote);
+                downButton.classList.toggle('active', downVote);
+            }
+        })
+        .catch(error => console.error('Error submitting vote:', error));
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    function openNewSuggestionModal() {
+        document.getElementById('newSuggestionModal').style.display = 'block';
+    }
+
+    function closeNewSuggestionModal() {
+        document.getElementById('newSuggestionModal').style.display = 'none';
+    }
+
+    function submitPost(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        fetch('/forum/add/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: formData.get('title'),
+                category: formData.get('category'),
+                description: formData.get('description')
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                form.reset();
+                closeNewSuggestionModal();
+                location.reload();
+            } else {
+                alert('Error: Please fill all required fields.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function submitComment(event, postId) {
+        event.preventDefault();
+        const form = event.target;
+        const content = form.querySelector('textarea').value;
+
+        fetch('/forum/comment/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                post_id: postId,
+                content: content
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                form.reset();
+                location.reload();
+            } else {
+                alert('Error posting comment. Please try again.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    // Initialize voting when the page loads
+    document.addEventListener('DOMContentLoaded', initializeVoting);
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('newSuggestionModal');
+        if (event.target === modal) {
+            closeNewSuggestionModal();
+        }
+    }
+    </script>
+{% endblock content %}
