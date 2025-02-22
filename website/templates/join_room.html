@@ -39,6 +39,24 @@
                         </div>
                     </div>
                     <div class="mt-1">{{ message.content }}</div>
+                    <!-- React button (always visible on hover) -->
+                    <button class="react-button absolute top-4 right-0 mt-1 mr-1 text-gray-500 hover:text-gray-700 p-1 rounded-full bg-gray-200"
+                            onclick="toggleEmojiList('{{ message.id }}')">
+                        ➕
+                    </button>
+                    <!-- Emoji list (hidden by default) -->
+                    <div id="emoji-list-{{ message.id }}" class="emoji-list hidden absolute top-8 right-0 mt-1 mr-1 bg-white shadow-md rounded-md p-2 w-32 z-10">
+                        <button onclick="sendReaction('{{ message.id }}', '❤️')">❤️</button>
+                        <button onclick="sendReaction('{{ message.id }}', '😂')">😂</button>
+                        <button onclick="sendReaction('{{ message.id }}', '👍')">👍</button>
+                        <button onclick="sendReaction('{{ message.id }}', '😢')">😢</button>
+                        <button onclick="sendReaction('{{ message.id }}', '🙏')">🙏</button>
+                        <button onclick="sendReaction('{{ message.id }}', '😊')">😊</button>
+                    </div>
+                    <!-- Reactions display (hidden by default) -->
+                    <div id="reactions-{{ message.id }}" class="reactions hidden absolute top-4 right-0 mt-1 mr-1 bg-white shadow-md rounded-md p-2 w-32 z-10">
+                        <!-- Reactions will be dynamically added here -->
+                    </div>
                 </div>
             {% endfor %}
         </div>
@@ -169,6 +187,35 @@
 
         newMessage.appendChild(header);
         newMessage.appendChild(contentElement);
+
+        // React button
+        const reactButton = document.createElement('button');
+        reactButton.classList.add('react-button', 'absolute', 'top-4', 'right-0', 'mt-1', 'mr-1', 'text-gray-500', 'hover:text-gray-700', 'p-1', 'rounded-full', 'bg-gray-200');
+        reactButton.innerHTML = "➕";
+        reactButton.onclick = function() {
+            toggleEmojiList(data.message_id);
+        };
+        newMessage.appendChild(reactButton);
+
+        // Emoji list
+        const emojiList = document.createElement('div');
+        emojiList.id = `emoji-list-${data.message_id}`;
+        emojiList.classList.add('emoji-list', 'hidden', 'absolute', 'top-8', 'right-0', 'mt-1', 'mr-1', 'bg-white', 'shadow-md', 'rounded-md', 'p-2', 'w-32', 'z-10');
+        emojiList.innerHTML = `
+            <button onclick="sendReaction('${data.message_id}', '❤️')">❤️</button>
+            <button onclick="sendReaction('${data.message_id}', '😂')">😂</button>
+            <button onclick="sendReaction('${data.message_id}', '👍')">👍</button>
+            <button onclick="sendReaction('${data.message_id}', '😢')">😢</button>
+            <button onclick="sendReaction('${data.message_id}', '🙏')">🙏</button>
+            <button onclick="sendReaction('${data.message_id}', '😊')">😊</button>
+        `;
+        newMessage.appendChild(emojiList);
+
+        // Reactions display
+        const reactionsDiv = document.createElement('div');
+        reactionsDiv.id = `reactions-${data.message_id}`;
+        reactionsDiv.classList.add('reactions', 'hidden', 'absolute', 'top-4', 'right-0', 'mt-1', 'mr-1', 'bg-white', 'shadow-md', 'rounded-md', 'p-2', 'w-32', 'z-10');
+        newMessage.appendChild(reactionsDiv);
 
         if (data.username === username) {
             const menuContainer = document.createElement('div');
@@ -334,6 +381,52 @@
         }
     }
 
+    function toggleEmojiList(messageId) {
+        const emojiList = document.getElementById(`emoji-list-${messageId}`);
+        emojiList.classList.toggle('hidden');
+    }
+
+    function sendReaction(messageId, emoji) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            const data = {
+                'type': 'reaction',
+                'messageId': messageId,
+                'emoji': emoji,
+                'username': username
+            };
+            socket.send(JSON.stringify(data));
+            updateReactionButton(messageId, emoji);
+            hideEmojiList(messageId);
+        }
+    }
+
+    function hideEmojiList(messageId) {
+        const emojiList = document.getElementById(`emoji-list-${messageId}`);
+        emojiList.classList.add('hidden');
+    }
+
+    function updateReactionButton(messageId, emoji) {
+        const reactButton = document.querySelector(`#message-${messageId} .react-button`);
+        reactButton.innerHTML = emoji;
+        reactButton.onclick = function() {
+            showReactions(messageId);
+        };
+    }
+
+    function showReactions(messageId) {
+        fetch(`/api/reactions/${messageId}/`)
+            .then(response => response.json())
+            .then(data => {
+                const reactionsDiv = document.getElementById(`reactions-${messageId}`);
+                reactionsDiv.innerHTML = '';
+                data.reactions.forEach(reaction => {
+                    const reactionElement = document.createElement('div');
+                    reactionElement.textContent = `${reaction.emoji} ${reaction.username}`;
+                    reactionsDiv.appendChild(reactionElement);
+                });
+                reactionsDiv.classList.toggle('hidden');
+            });
+    }
 
     // Function to remove a message from the UI
     function removeMessageFromUI(messageId) {
@@ -354,6 +447,23 @@
         }
     });
 
+    document.addEventListener("mouseover", function(event) {
+        if (event.target.closest(".group")) {
+            const reactButton = event.target.closest(".group").querySelector(".react-button");
+            if (reactButton) {
+                reactButton.classList.remove("hidden");
+            }
+        }
+    });
+
+    document.addEventListener("mouseout", function(event) {
+        if (event.target.closest(".group")) {
+            const reactButton = event.target.closest(".group").querySelector(".react-button");
+            if (reactButton) {
+                reactButton.classList.add("hidden");
+            }
+        }
+    });
 
     sendButton.addEventListener('click', sendMessage);
 
