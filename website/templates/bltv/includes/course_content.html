@@ -1,0 +1,36 @@
+<!-- course_content.html -->
+<div class="course">
+    <div class="sections">
+        {% for section in sections %}
+            <div class="section">
+                <h2>{{ section.title }}</h2>
+                <div class="lectures">
+                    {% for lecture in section.lectures.all %}
+                        <div class="lecture">
+                            <h3>{{ lecture.title }}</h3>
+                            <p>Type: {{ lecture.get_content_type_display }}</p>
+                            {% if lecture.video_url %}
+                                <p>
+                                    Video URL: <a href="{{ lecture.video_url }}">{{ lecture.video_url }}</a>
+                                </p>
+                            {% endif %}
+                            {% if lecture.live_url %}
+                                <p>
+                                    Live URL: <a href="{{ lecture.live_url }}">{{ lecture.live_url }}</a>
+                                </p>
+                            {% endif %}
+                            {% if lecture.scheduled_time %}<p>Scheduled Time: {{ lecture.scheduled_time }}</p>{% endif %}
+                            {% if lecture.recording_url %}
+                                <p>
+                                    Recording URL: <a href="{{ lecture.recording_url }}">{{ lecture.recording_url }}</a>
+                                </p>
+                            {% endif %}
+                            {% if lecture.content %}<p>Content: {{ lecture.content }}</p>{% endif %}
+                            {% if lecture.duration %}<p>Duration: {{ lecture.duration }} minutes</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

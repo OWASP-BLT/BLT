@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_POST
 
 from website.models import Course, Tag, UserProfile
@@ -24,6 +24,28 @@ def edit_course(request, course_id):
         return render(request, template, context)
     except Course.DoesNotExist:
         return JsonResponse({"success": False, "message": "Course not found"}, status=404)
+
+
+def view_course(request, course_id):
+    template = "bltv/view_course.html"
+    course = get_object_or_404(Course, id=course_id)
+    context = {"course": course}
+    return render(request, template, context)
+
+
+def get_course_content(request, course_id):
+    if request.method == "GET":
+        course = get_object_or_404(Course, id=course_id)
+        sections = course.sections.all().order_by("order")
+
+        return render(
+            request,
+            "bltv/includes/course_content.html",
+            {
+                "course": course,
+                "sections": sections,
+            },
+        )
 
 
 @require_POST

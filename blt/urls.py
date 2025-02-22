@@ -41,7 +41,13 @@ from website.api.views import (
 )
 from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
-from website.views.bltv_education import create_or_update_course, edit_course, instructor_dashboard
+from website.views.bltv_education import (
+    create_or_update_course,
+    edit_course,
+    get_course_content,
+    instructor_dashboard,
+    view_course,
+)
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -592,6 +598,8 @@ urlpatterns = [
     path("bltv/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("bltv/instructor_dashboard/edit-course/<int:course_id>/", edit_course, name="edit_course"),
     path("bltv/instructor_dashboard/create-or-update-course/", create_or_update_course, name="create_or_update_course"),
+    path("bltv/view-course/<int:course_id>/", view_course, name="view_course"),
+    path("bltv/get-course-content/<int:course_id>/", get_course_content, name="get_course_content"),
     re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(
         r"^privacypolicy/$",

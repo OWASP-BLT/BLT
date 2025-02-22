@@ -138,6 +138,7 @@ new TomSelect("#tags", {
                         alert(result.message);
                     } else {
                         alert("Course {% if course %} edited {% else %} created {% endif %} successfully.");
+                        window.location.reload();
                     }
                 } catch (error) {
                     alert('An error occurred. Please try again later.');
