@@ -235,112 +235,191 @@
         font-size: 1.5rem;
         cursor: pointer;
     }
+
+    .category-sidebar {
+        width: 250px;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-right: 2rem;
+        height: fit-content;
+    }
+
+    .category-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .category-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border-radius: 0.375rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .category-item:hover {
+        background-color: #fdf2f2;
+    }
+
+    .category-item.active {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .category-count {
+        background-color: #feebc8;
+        color: #e74c3c;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .category-item.active .category-count {
+        background-color: white;
+        color: #e74c3c;
+    }
+
+    .forum-layout {
+        display: flex;
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .forum-main {
+        flex: 1;
+    }
     </style>
-    <div class="container">
-        <div class="forum-header">
-            <h1 class="forum-title">Discussion Forum</h1>
-            <button class="new-suggestion-btn" onclick="openNewSuggestionModal()">
-                <i class="fas fa-plus"></i> New Discussion
-            </button>
+    <div class="forum-layout">
+        <div class="category-sidebar">
+            <h2 class="text-xl font-semibold mb-4 text-[#e74c3c]">Categories</h2>
+            <ul class="category-list">
+                <li class="category-item {% if not selected_category %}active{% endif %}"
+                    onclick="filterByCategory('')">
+                    <span>All Categories</span>
+                    <span class="category-count">{{ posts.count }}</span>
+                </li>
+                {% for category in categories %}
+                    <li class="category-item {% if selected_category == category.id %}active{% endif %}"
+                        onclick="filterByCategory('{{ category.id }}')">
+                        <span>{{ category.name }}</span>
+                        <span class="category-count">{{ category.post_set.count }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
         </div>
-        <div class="forum-filters">
-            <select class="filter-select" id="categoryFilter">
-                <option value="">All Categories</option>
-                {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
-            </select>
-            <select class="filter-select" id="statusFilter">
-                <option value="">All Status</option>
-                <option value="open">Open</option>
-                <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
-                <option value="declined">Declined</option>
-            </select>
-            <select class="filter-select" id="sortFilter">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="most_votes">Most Votes</option>
-                <option value="most_comments">Most Comments</option>
-            </select>
-        </div>
-        <ul class="suggestion-list">
-            {% for post in posts %}
-                <li class="suggestion-item {% if post.is_pinned %}pinned{% endif %}">
-                    <div class="suggestion-header">
-                        <h2 class="suggestion-title">{{ post.title }}</h2>
-                        <div class="suggestion-meta">
-                            <span>
-                                <i class="fas fa-user"></i>
-                                {% if post.user %}
-                                    {{ post.user }}
-                                {% else %}
-                                    Anonymous
-                                {% endif %}
-                            </span>
-                            <span>
-                                <i class="fas fa-clock"></i>
-                                {{ post.created|timesince }} ago
-                            </span>
-                            <span class="status-badge status-{{ post.status }}">{{ post.get_status_display }}</span>
-                            {% if post.category %}
+        <div class="forum-main">
+            <div class="forum-header">
+                <h1 class="forum-title">Discussion Forum</h1>
+                <button class="new-suggestion-btn" onclick="openNewSuggestionModal()">
+                    <i class="fas fa-plus"></i> New Discussion
+                </button>
+            </div>
+            <div class="forum-filters">
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
+                </select>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="declined">Declined</option>
+                </select>
+                <select class="filter-select" id="sortFilter">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="most_votes">Most Votes</option>
+                    <option value="most_comments">Most Comments</option>
+                </select>
+            </div>
+            <ul class="suggestion-list">
+                {% for post in posts %}
+                    <li class="suggestion-item {% if post.is_pinned %}pinned{% endif %}">
+                        <div class="suggestion-header">
+                            <h2 class="suggestion-title">{{ post.title }}</h2>
+                            <div class="suggestion-meta">
                                 <span>
-                                    <i class="fas fa-tag"></i>
-                                    {{ post.category.name }}
+                                    <i class="fas fa-user"></i>
+                                    {% if post.user %}
+                                        {{ post.user }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
                                 </span>
-                            {% endif %}
+                                <span>
+                                    <i class="fas fa-clock"></i>
+                                    {{ post.created|timesince }} ago
+                                </span>
+                                <span class="status-badge status-{{ post.status }}">{{ post.get_status_display }}</span>
+                                {% if post.category %}
+                                    <span>
+                                        <i class="fas fa-tag"></i>
+                                        {{ post.category.name }}
+                                    </span>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <div class="suggestion-content">
-                        <p>{{ post.description }}</p>
-                    </div>
-                    <div class="suggestion-footer">
-                        <div class="vote-buttons">
-                            <button type="button"
-                                    class="vote-button"
-                                    data-vote-type="up"
-                                    data-suggestion-id="{{ post.id }}">
-                                <i class="fas fa-arrow-up"></i>
-                                <span class="vote-count">{{ post.up_votes }}</span>
-                            </button>
-                            <button type="button"
-                                    class="vote-button"
-                                    data-vote-type="down"
-                                    data-suggestion-id="{{ post.id }}">
-                                <i class="fas fa-arrow-down"></i>
-                                <span class="vote-count">{{ post.down_votes }}</span>
-                            </button>
+                        <div class="suggestion-content">
+                            <p>{{ post.description }}</p>
                         </div>
-                        <div class="comment-count">
-                            <i class="fas fa-comments"></i>
-                            {{ post.comments.count }} Comments
+                        <div class="suggestion-footer">
+                            <div class="vote-buttons">
+                                <button type="button"
+                                        class="vote-button"
+                                        data-vote-type="up"
+                                        data-suggestion-id="{{ post.id }}">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span class="vote-count">{{ post.up_votes }}</span>
+                                </button>
+                                <button type="button"
+                                        class="vote-button"
+                                        data-vote-type="down"
+                                        data-suggestion-id="{{ post.id }}">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span class="vote-count">{{ post.down_votes }}</span>
+                                </button>
+                            </div>
+                            <div class="comment-count">
+                                <i class="fas fa-comments"></i>
+                                {{ post.comments.count }} Comments
+                            </div>
                         </div>
-                    </div>
-                    <div class="comment-section" id="comments-{{ post.id }}">
-                        <form class="comment-form" onsubmit="submitComment(event, {{ post.id }})">
-                            {% csrf_token %}
-                            <textarea class="comment-input" placeholder="Add a comment..." required></textarea>
-                            <button type="submit" class="new-suggestion-btn">Post Comment</button>
-                        </form>
-                        <ul class="comment-list">
-                            {% for comment in post.comments.all %}
-                                <li class="comment-item">
-                                    <div class="comment-meta">
-                                        <span>{{ comment.user }}</span>
-                                        <span>{{ comment.created|timesince }} ago</span>
-                                    </div>
-                                    <p>{{ comment.content }}</p>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </li>
-            {% empty %}
-                <li class="suggestion-item">
-                    <div class="suggestion-content">
-                        <p>No discussions yet. Be the first to start a discussion!</p>
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
+                        <div class="comment-section" id="comments-{{ post.id }}">
+                            <form class="comment-form" onsubmit="submitComment(event, {{ post.id }})">
+                                {% csrf_token %}
+                                <textarea class="comment-input" placeholder="Add a comment..." required></textarea>
+                                <button type="submit" class="new-suggestion-btn">Post Comment</button>
+                            </form>
+                            <ul class="comment-list">
+                                {% for comment in post.comments.all %}
+                                    <li class="comment-item">
+                                        <div class="comment-meta">
+                                            <span>{{ comment.user }}</span>
+                                            <span>{{ comment.created|timesince }} ago</span>
+                                        </div>
+                                        <p>{{ comment.content }}</p>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="suggestion-item">
+                        <div class="suggestion-content">
+                            <p>No discussions yet. Be the first to start a discussion!</p>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
     <!-- New Discussion Modal -->
     <div id="newSuggestionModal" class="modal">
@@ -529,6 +608,16 @@
             }
         })
         .catch(error => console.error('Error:', error));
+    }
+
+    function filterByCategory(categoryId) {
+        const url = new URL(window.location.href);
+        if (categoryId) {
+            url.searchParams.set('category', categoryId);
+        } else {
+            url.searchParams.delete('category');
+        }
+        window.location.href = url.toString();
     }
 
     // Initialize voting when the page loads

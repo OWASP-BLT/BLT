@@ -823,8 +823,16 @@ def add_forum_comment(request):
 
 def view_forum(request):
     categories = ForumCategory.objects.all()
+    selected_category = request.GET.get("category")
+
     posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
-    return render(request, "forum.html", {"categories": categories, "posts": posts})
+
+    if selected_category:
+        posts = posts.filter(category_id=selected_category)
+
+    return render(
+        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+    )
 
 
 class GoogleLogin(SocialLoginView):
