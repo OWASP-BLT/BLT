@@ -41,11 +41,10 @@
                     <div class="mt-1">{{ message.content }}</div>
                     <!-- React button (always visible on hover) -->
                     <button class="react-button absolute top-4 right-0 mt-1 mr-1 text-gray-500 hover:text-gray-700 p-1 rounded-full bg-gray-200"
-                            onclick="toggleEmojiList('{{ message.id }}')">
-                        ➕
-                    </button>
+                            onclick="toggleEmojiList('{{ message.id }}')">➕</button>
                     <!-- Emoji list (hidden by default) -->
-                    <div id="emoji-list-{{ message.id }}" class="emoji-list hidden absolute top-8 right-0 mt-1 mr-1 bg-white shadow-md rounded-md p-2 w-32 z-10">
+                    <div id="emoji-list-{{ message.id }}"
+                         class="emoji-list hidden absolute top-8 right-0 mt-1 mr-1 bg-white shadow-md rounded-md p-2 w-32 z-10">
                         <button onclick="sendReaction('{{ message.id }}', '❤️')">❤️</button>
                         <button onclick="sendReaction('{{ message.id }}', '😂')">😂</button>
                         <button onclick="sendReaction('{{ message.id }}', '👍')">👍</button>
@@ -54,7 +53,8 @@
                         <button onclick="sendReaction('{{ message.id }}', '😊')">😊</button>
                     </div>
                     <!-- Reactions display (hidden by default) -->
-                    <div id="reactions-{{ message.id }}" class="reactions hidden absolute top-4 right-0 mt-1 mr-1 bg-white shadow-md rounded-md p-2 w-32 z-10">
+                    <div id="reactions-{{ message.id }}"
+                         class="reactions hidden absolute top-4 right-0 mt-1 mr-1 bg-white shadow-md rounded-md p-2 w-32 z-10">
                         <!-- Reactions will be dynamically added here -->
                     </div>
                 </div>
