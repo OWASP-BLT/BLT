@@ -1,36 +1,110 @@
-<!-- course_content.html -->
-<div class="course">
-    <div class="sections">
-        {% for section in sections %}
-            <div class="section">
-                <h2>{{ section.title }}</h2>
-                <div class="lectures">
+<div class="flex w-full h-full">
+    <div class="hidden lg:block w-64 bg-white shadow-lg border-r border-gray-200 h-screen sticky top-4 overflow-y-auto">
+        <div class="p-6">
+            <h2 class="text-xl font-bold text-gray-800">Course Contents</h2>
+        </div>
+        <nav class="mt-2">
+            {% for section in sections %}
+                <div class="px-4 py-2">
+                    <a href="#section-{{ forloop.counter }}"
+                       class="flex items-center text-gray-700 hover:text-blue-600">
+                        <span class="mr-2">•</span>
+                        {{ section.title }}
+                    </a>
                     {% for lecture in section.lectures.all %}
-                        <div class="lecture">
-                            <h3>{{ lecture.title }}</h3>
-                            <p>Type: {{ lecture.get_content_type_display }}</p>
-                            {% if lecture.video_url %}
-                                <p>
-                                    Video URL: <a href="{{ lecture.video_url }}">{{ lecture.video_url }}</a>
-                                </p>
+                        <a href="#lecture-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"
+                           class="flex items-center pl-8 py-2 text-sm text-gray-600 hover:text-blue-600">
+                            {% if lecture.get_content_type_display == 'video' %}
+                                <svg class="w-4 h-4 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                </svg>
+                            {% elif lecture.get_content_type_display == 'live' %}
+                                <svg class="w-4 h-4 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                </svg>
+                            {% else %}
+                                <svg class="w-4 h-4 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                </svg>
                             {% endif %}
-                            {% if lecture.live_url %}
-                                <p>
-                                    Live URL: <a href="{{ lecture.live_url }}">{{ lecture.live_url }}</a>
-                                </p>
-                            {% endif %}
-                            {% if lecture.scheduled_time %}<p>Scheduled Time: {{ lecture.scheduled_time }}</p>{% endif %}
-                            {% if lecture.recording_url %}
-                                <p>
-                                    Recording URL: <a href="{{ lecture.recording_url }}">{{ lecture.recording_url }}</a>
-                                </p>
-                            {% endif %}
-                            {% if lecture.content %}<p>Content: {{ lecture.content }}</p>{% endif %}
-                            {% if lecture.duration %}<p>Duration: {{ lecture.duration }} minutes</p>{% endif %}
-                        </div>
+                            {{ lecture.title }}
+                        </a>
                     {% endfor %}
                 </div>
-            </div>
-        {% endfor %}
+            {% endfor %}
+        </nav>
+    </div>
+    <div class="flex-1 p-6">
+        <div class="max-w-4xl mx-auto">
+            {% for section in sections %}
+                <div id="section-{{ forloop.counter }}" class="mb-12">
+                    <div class="flex items-center mb-6">
+                        <h1 class="text-3xl font-bold text-gray-900">{{ section.title }}</h1>
+                    </div>
+                    <div class="space-y-3">
+                        {% for lecture in section.lectures.all %}
+                            <div id="lecture-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"
+                                 class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col gap-2">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-base font-semibold text-gray-800 truncate">{{ lecture.title }}</h3>
+                                    <div class="flex items-center gap-2 text-xs">
+                                        {% if lecture.duration %}
+                                            <span class="text-gray-600 flex items-center gap-1">
+                                                <i class="fas fa-clock"></i> {{ lecture.duration }} min
+                                            </span>
+                                        {% endif %}
+                                        <span class="px-2 py-0.5 rounded-md font-semibold {% if lecture.content_type == 'VIDEO' %} bg-blue-100 text-blue-800 {% elif lecture.content_type == 'LIVE' %} bg-green-100 text-green-800 {% elif lecture.content_type == 'DOCUMENT' %} bg-yellow-100 text-yellow-800 {% else %} bg-gray-100 text-gray-800 {% endif %}">
+                                            {{ lecture.get_content_type_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-3 text-sm">
+                                    {% if lecture.video_url %}
+                                        <a href="{{ lecture.video_url }}"
+                                           class="flex items-center gap-1 text-blue-600 hover:text-blue-800">
+                                            {% if "youtube.com" in lecture.video_url or "youtu.be" in lecture.video_url %}
+                                                <i class="fab fa-youtube text-red-600"></i> View
+                                            {% else %}
+                                                <i class="fas fa-video text-blue-600"></i> View
+                                            {% endif %}
+                                        </a>
+                                    {% endif %}
+                                    {% if lecture.live_url %}
+                                        <a href="{{ lecture.live_url }}"
+                                           class="flex items-center gap-1 text-green-600 hover:text-green-800">
+                                            <i class="fas fa-broadcast-tower"></i> Live Session
+                                        </a>
+                                    {% endif %}
+                                    {% if lecture.recording_url %}
+                                        <a href="{{ lecture.recording_url }}"
+                                           class="flex items-center gap-1 text-purple-600 hover:text-purple-800">
+                                            <i class="fas fa-play-circle"></i> Recording
+                                        </a>
+                                    {% endif %}
+                                    {% if lecture.scheduled_time %}
+                                        <span class="flex items-center gap-1 text-gray-600">
+                                            <i class="fas fa-calendar-alt"></i> {{ lecture.scheduled_time|date:"M d, H:i" }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if lecture.content %}
+                                    <div class="text-sm text-gray-700 line-clamp-1 truncate">{{ lecture.content }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </div>

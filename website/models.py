@@ -1713,14 +1713,14 @@ class Course(models.Model):
 
 class Section(models.Model):
     title = models.CharField(max_length=200)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections", null=True, blank=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     order = models.PositiveIntegerField()
 
     class Meta:
         ordering = ["order"]
 
     def __str__(self):
-        return f"{self.course.title} - {self.title}"
+        return f"{self.order}. {self.title} - {self.course.title} "
 
 
 class Lecture(models.Model):
@@ -1731,9 +1731,9 @@ class Lecture(models.Model):
     content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
     video_url = models.URLField(null=True, blank=True)
     live_url = models.URLField(null=True, blank=True)
-    scheduled_time = models.DateTimeField()
+    scheduled_time = models.DateTimeField(null=True, blank=True)
     recording_url = models.URLField(null=True, blank=True)
-    content = models.TextField(null=True, blank=True)  # For document-type content
+    content = models.TextField()  # For document-type content
     # Quiz support can be added later
     duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)

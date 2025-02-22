@@ -11,23 +11,22 @@
                     onclick="openModal()">Add course</button>
         </div>
         <div class="container mx-auto mt-10 flex">
-            <!-- Main Content -->
             <main class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
                     {% for course in courses %}
                         <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
                             <a href="{% url 'view_course' course.id %}">
                                 <img src="{{ course.thumbnail.url }}"
-                                     class="w-full h-56 object-cover"
+                                     class="w-full h-56"
                                      alt="{{ course.title }}"
                                      width="400"
                                      height="224">
                             </a>
                             <div class="p-6 flex flex-col flex-grow">
-                                <h3 class="text-xl font-bold text-gray-800 mb-2">{{ course.title }}</h3>
-                                <!-- Fixed height for description -->
+                                <a href="{% url 'view_course' course.id %}">
+                                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ course.title }}</h3>
+                                </a>
                                 <div class="text-gray-600 text-sm mb-4 h-28 overflow-hidden">{{ course.description|truncatewords:25 }}</div>
-                                <!-- Levels and Tags Section -->
                                 <div class="flex items-center text-gray-700 font-bold mb-4">
                                     <i class="fas fa-chart-line text-blue-500 mr-2"></i>
                                     <span>
@@ -41,7 +40,6 @@
                                         {% endif %}
                                     </span>
                                 </div>
-                                <!-- Fixed height for tags -->
                                 <div class="h-24 overflow-hidden">
                                     <div class="flex flex-wrap mt-2">
                                         {% for tag in course.tags.all %}
@@ -51,7 +49,6 @@
                                         {% endfor %}
                                     </div>
                                 </div>
-                                <!-- Edit Course Button always at the bottom -->
                                 <a href="{% url 'edit_course' course.id %}"
                                    class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300">
                                     <i class="fas fa-pencil-alt mr-2"></i>
