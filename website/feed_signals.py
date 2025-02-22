@@ -8,11 +8,11 @@ from .models import (
     BaconEarning,
     Badge,
     Bid,
+    ForumPost,
     Hunt,
     IpReport,
     Issue,
     Post,
-    Suggestion,
     TimeLog,
     UserBadge,
     UserProfile,
@@ -45,11 +45,15 @@ def create_activity(instance, action_type):
     # Get the content type of the instance
     content_type = ContentType.objects.get_for_model(instance)
 
+    # Get instance name or title
+    name = getattr(instance, "name", getattr(instance, "title", ""))[:50]
+    title = f"{model_name.capitalize()} {action_type.capitalize()} {name}"
+
     # Create the activity
     Activity.objects.create(
         user=user,
         action_type=action_type,
-        title=f"{model_name.capitalize()} {action_type.capitalize()} {getattr(instance, 'name', getattr(instance, 'title', ''))[:50]}",
+        title=title,
         content_type=content_type,
         object_id=instance.id,  # Use object_id for GenericForeignKey
         description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
@@ -102,9 +106,9 @@ def handle_post_save(sender, instance, created, **kwargs):
             assign_first_action_badge(user, "First Bug Bounty")
             create_activity(instance, "created")
 
-    elif sender == Suggestion and created:  # Track first suggestion
-        assign_first_action_badge(instance.user, "First Suggestion")
-        create_activity(instance, "suggested")
+    elif sender == ForumPost and created:  # Track first forum post
+        assign_first_action_badge(instance.user, "First Forum Post")
+        create_activity(instance, "created")
 
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")
