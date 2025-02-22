@@ -18,68 +18,6 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-        }
-
-        #bid {
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        #issueLinkInput {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-
-        #fetchBids {
-            padding: 8px 15px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            display: block;
-            margin: 0 auto;
-        }
-
-        #BidDisplay {
-            width: 400px;
-            margin: 0 auto;
-            border-radius: 5px;
-            background-color: #e53e3e;
-            color: #000;
-            padding: 10px;
-            text-align: center;
-        }
-
-        #BidDisplay button {
-            padding: 8px 15px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-    </style>
     <script>
         function fetchBid(event) {
             const issueUrl = document.getElementById("issueLinkInput").value;
@@ -102,14 +40,15 @@
                     data.forEach(bid => {
                         console.log('Data fetched:', bid.user);
                         const bidElement = document.createElement("div");
+                        bidElement.classList.add("bg-red-500", "text-black", "p-4", "rounded", "text-center", "mb-2");
                         bidElement.innerHTML = `
-                            <div>
-                                <p>User: ${bid.user}</p>
+                            <div class="p-4 border rounded-lg shadow-md bg-white">
+                                <p class="font-bold">User: ${bid.user}</p>
                                 <p>Current Bid: ${bid.amount}</p>
-                                <p>Issue Url: ${bid.issue_url}</p>
+                                <p>Issue Url: <a href="${bid.issue_url}" class="text-blue-500 underline">${bid.issue_url}</a></p>
                                 <p>Created on: ${bid.created}</p>
                                 <p>Status: ${bid.status}</p>
-                                <button onclick="changeStatus(${bid.id})">Change Status</button>
+                                <button class="bg-blue-500 text-white px-4 py-2 rounded mt-2" onclick="changeStatus(${bid.id})">Change Status</button>
                             </div>
                         `;
                         bidContainer.appendChild(bidElement);
@@ -142,27 +81,33 @@
         }
 
         function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
                 }
             }
+            return cookieValue;
         }
-        return cookieValue;
-    }
     </script>
-    <div>
-        <form id="bid" method="post">
+    <div class="flex flex-col items-center py-8">
+        <form id="bid" class="bg-white p-6 rounded-lg shadow-lg w-96" method="post">
             {% csrf_token %}
-            <label>Paste Url to fetch bids</label>
-            <input type="text" id="issueLinkInput" name="issueLinkInput">
-            <button type="button" id="fetchBids" onclick="fetchBid()">Fetch</button>
+            <label class="block font-bold mb-2">Paste URL to fetch bids</label>
+            <input type="text"
+                   id="issueLinkInput"
+                   name="issueLinkInput"
+                   class="w-full p-2 border rounded mb-4">
+            <button type="button"
+                    id="fetchBids"
+                    onclick="fetchBid()"
+                    class="w-full bg-blue-500 text-white px-4 py-2 rounded">Fetch</button>
         </form>
-        <div id="BidDisplay"></div>
+        <div id="BidDisplay" class="mt-6 w-96"></div>
     </div>
 {% endblock content %}

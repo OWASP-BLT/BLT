@@ -18,88 +18,59 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        .container {
-            margin-top: 20px;
-        }
-        .card {
-            margin-bottom: 20px;
-        }
-        /* Responsive iframe */
-        .video-responsive{
-            overflow:hidden;
-            padding-bottom:56.25%;
-            position:relative;
-            height:0;
-        }
-        .video-responsive iframe{
-            left:0;
-            top:0;
-            height:100%;
-            width:100%;
-            position:absolute;
-        }
-    </style>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12">
-                <h1 class="my-4">BLTV</h1>
-            </div>
+    <div class="container mx-auto mt-5 px-4">
+        <div class="mb-4">
+            <h1 class="text-3xl font-bold">BLTV</h1>
         </div>
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="video-responsive">
-                        <iframe src="https://www.youtube.com/embed/N_59irHRjzM"
-                                title="YouTube video player"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="card bg-white shadow-md rounded-lg p-4">
+                <div class="relative w-full pb-[56.25%]">
+                    <iframe class="absolute top-0 left-0 w-full h-full"
+                            src="https://www.youtube.com/embed/N_59irHRjzM"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="video-responsive">
-                        <iframe src="https://www.youtube.com/embed/IYBRVRfPCK8"
-                                title="YouTube video player"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
+            <div class="card bg-white shadow-md rounded-lg p-4">
+                <div class="relative w-full pb-[56.25%]">
+                    <iframe class="absolute top-0 left-0 w-full h-full"
+                            src="https://www.youtube.com/embed/IYBRVRfPCK8"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="video-responsive">
-                        <iframe src="https://www.youtube.com/embed/jNp3J6HLpqc"
-                                title="YouTube video player"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
+            <div class="card bg-white shadow-md rounded-lg p-4">
+                <div class="relative w-full pb-[56.25%]">
+                    <iframe class="absolute top-0 left-0 w-full h-full"
+                            src="https://www.youtube.com/embed/jNp3J6HLpqc"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="video-responsive">
-                        <iframe src="https://www.youtube.com/embed/OmxGrjGA_ck"
-                                title="How to configure Slack Bot"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
+            <div class="card bg-white shadow-md rounded-lg p-4">
+                <div class="relative w-full pb-[56.25%]">
+                    <iframe class="absolute top-0 left-0 w-full h-full"
+                            src="https://www.youtube.com/embed/OmxGrjGA_ck"
+                            title="How to configure Slack Bot"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card mb-4">
-                    <div class="video-responsive">
-                        <iframe src="https://www.youtube.com/embed/C_UIm1QR67o"
-                                title="Host Slack Bot on PythonAnywhere"
-                                frameborder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowfullscreen></iframe>
-                    </div>
+            <div class="card bg-white shadow-md rounded-lg p-4">
+                <div class="relative w-full pb-[56.25%]">
+                    <iframe class="absolute top-0 left-0 w-full h-full"
+                            src="https://www.youtube.com/embed/C_UIm1QR67o"
+                            title="Host Slack Bot on PythonAnywhere"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
                 </div>
             </div>
         </div>

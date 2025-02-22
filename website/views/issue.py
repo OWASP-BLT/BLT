@@ -505,14 +505,14 @@ def SaveBiddingData(request):
         if not request.user.is_authenticated:
             messages.error(request, "Please login to bid.")
             return redirect("login")
-        user = request.user.username
+        user = request.user
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
         current_time = datetime.now(timezone.utc)
         bid = Bid(
             user=user,
             issue_url=url,
-            amount=amount,
+            amount_bch=amount,
             created=current_time,
             modified=current_time,
         )

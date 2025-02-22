@@ -82,8 +82,6 @@
         {% endif %}
         {% block head %}
         {% endblock head %}
-        {% block style %}
-        {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
         {% include "includes/header.html" %}
@@ -175,7 +173,7 @@
                 };
             });
         </script>
-        <style>
+        <!-- >
             .animate-slide-in {
                 animation: slideIn 0.3s ease-out;
             }
@@ -194,7 +192,7 @@
             .message-alert {
                 transition: opacity 0.3s ease-out;
             }
-        </style>
+        <> -->
         {% block extra_js %}
         {% endblock %}
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

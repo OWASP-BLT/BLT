@@ -26,7 +26,7 @@ def get_staged_files():
 def check_style_tags(files):
     """Check if any staged HTML files contain <style> tags"""
     pattern = re.compile(r"<style\b", re.IGNORECASE)
-    flagged_files = []
+    flagged_files = set()
 
     for file in files:
         try:
@@ -37,16 +37,15 @@ def check_style_tags(files):
             with path.open("r", encoding="utf-8") as f:
                 content = f.read()
                 if pattern.search(content):
-                    flagged_files.append(file)
+                    flagged_files.add(file)
         except (IOError, UnicodeDecodeError) as e:
             print(f"Warning: Could not read file {file}: {str(e)}")
             continue
 
-    return flagged_files
+    return sorted(flagged_files)
 
 
 def main():
-    # Check if --allow-styles flag is present
     if "--allow-styles" in sys.argv:
         print("Bypassing <style> tag check.")
         sys.exit(0)
@@ -57,10 +56,10 @@ def main():
 
     flagged_files = check_style_tags(staged_files)
     if flagged_files:
-        print("\nCommit blocked. <style> tags detected in these files:")
+        print("\n❌ Commit blocked: `<style>` tags detected in these files:\n")
         for file in flagged_files:
             print(f"  - {file}")
-        print("\nRemove <style> tags or use `git commit --allow-styles` to bypass manually.\n")
+        print("\n🛠 Remove `<style>` tags or use `git commit --allow-styles` to bypass manually.\n")
         sys.exit(1)
 
     sys.exit(0)
