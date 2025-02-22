@@ -99,7 +99,8 @@
         <div class="pb-[50px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
-        {% block scripts %}{% endblock %}
+        {% block scripts %}
+        {% endblock scripts %}
         <!-- Messages container -->
         <div id="messages-container" class="fixed bottom-5 left-5 z-50 max-w-md">
             {% if messages %}
@@ -196,7 +197,7 @@
             }
         </style>
         {% block extra_js %}
-        {% endblock %}
+        {% endblock extra_js %}
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
         <script src="{% static 'js/ui.js' %}"></script>
         {% block after_js %}
@@ -280,13 +281,14 @@
             });
         // Check if the modal exists in the DOM
         const modal = document.getElementById('cardModalDailyStatus');
-        if (!modal) {
-            return; // Exit if modal is not present
-        }
-
-        const closeButton = modal.querySelector('.close-button');
+        const closeButton = modal ? modal.querySelector('.close-button') : null;
         const openCheckInButton = document.getElementById('openCheckIn');
         const checkInForm = document.getElementById('checkInForm');
+
+        // Exit if required modal elements are not present
+        if (!modal || !closeButton) {
+            return;
+        }
         // Function to check if form was submitted today
         function isFormSubmittedToday() {
             const submittedDate = localStorage.getItem('formSubmittedDateCard');
@@ -296,6 +298,7 @@
 
         // Function to show modal
         function showModal() {
+            if (!modal) return;
             modal.classList.remove('hidden');
             document.body.classList.add('modal-open'); // Prevent background scrolling
             // Focus on the first input field
@@ -307,6 +310,7 @@
 
         // Function to hide modal
         function hideModal() {
+            if (!modal) return;
             modal.classList.add('hidden');
             document.body.classList.remove('modal-open'); // Restore background scrolling
         }
@@ -315,19 +319,21 @@
         closeButton.addEventListener('click', hideModal);
 
         // Close modal when clicking outside the modal content
-        modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
-
+        const modalOverlay = modal.querySelector('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', hideModal);
+        }
             
         document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+            if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
                 hideModal();
             }
         });
 
-        // Event listener to open modal when clicking the openCheckIn button           
+        // Event listener to open modal when clicking the openCheckIn button
         if (openCheckInButton) {
-             openCheckInButton.addEventListener('click', showModal);
-         }
+            openCheckInButton.addEventListener('click', showModal);
+        }
 
         // Handle check-in form submission with AJAX
         if (checkInForm) {
