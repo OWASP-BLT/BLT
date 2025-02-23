@@ -1352,7 +1352,7 @@ def add_or_update_organization(request):
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
             logger.error(f"Error updating organization: {str(e)}")
-            return HttpResponse("An internal error has occurred. Please try again later.")
+            return HttpResponse("Error updating organization. Either organization or user doesn't exist or there was a key error. Please try again later.")
     else:
         return HttpResponse("Invalid request method")
 
@@ -1387,7 +1387,7 @@ def add_role(request):
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
             logger.error(f"Error adding role: {str(e)}")
-            return HttpResponse("An internal error has occurred. Please try again later.")
+            return HttpResponse("Error updating organization. Either organization or user doesn't exist or there was a key error. Please try again later.")
     else:
         return HttpResponse("Invalid request method")
 
