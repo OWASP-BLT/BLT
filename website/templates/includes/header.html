@@ -539,7 +539,7 @@
         const loading = document.querySelector('#loading');
 
         function escapeHtml(text) {
-            return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
         }
 
         function handleSlashCommand(command, args) {
@@ -590,7 +590,7 @@
             chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
 
-            // Check for slash commands
+            // Check for slash command
             if (message.startsWith('/')) {
                 const [command, ...argsArr] = message.split(' ');
                 const args = argsArr.join(' ').trim();
