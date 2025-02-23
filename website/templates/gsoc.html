@@ -216,10 +216,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {% for project, data in projects.items %}
                         <div class="bg-gray-50 rounded-lg p-6">
-                            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                            <a href="{{ data.repo_url }}" target="_blank" class="text-xl font-semibold text-gray-900 mb-4">
                                 {{ project }} - Total PRs: 
                                 <span class="text-red-600 font-bold">{{ data.total_prs }}</span>
-                            </h3>
+                            </a>
                             
                             <div class="space-y-3">
                                 {% for username, pr_count in data.contributors %}

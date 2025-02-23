@@ -798,7 +798,7 @@ urlpatterns = [
         name="delete_manager",
     ),
     path("features/", features_view, name="features"),
-    path('gsoc/', GSoCView.as_view(), name='gsoc'),
+    path("gsoc/", GSoCView.as_view(), name="gsoc"),
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),

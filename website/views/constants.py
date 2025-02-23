@@ -569,7 +569,7 @@ TAG_NORMALIZATION = {
     "ant": "ant",
 }
 
-# Mentors/user excluded from list of contributors 
+# Mentors/user excluded from list of contributors
 EXCLUDED_USERS = {
     "0x41head",
     "J12934",
@@ -606,12 +606,18 @@ EXCLUDED_USERS = {
     "stevespringett",
     "tghosth",
     "vanderaj",
-    "vbakke"
+    "vbakke",
 }
 
 # GSOC 2025 Projects
 GSOC25_PROJECTS = {
-    "Bug Logging Tool(BLT)":["OWASP-BLT/BLT", "OWASP-BLT/BLT-Flutter", "OWASP-BLT/BLT-Bacon","OWASP-BLT/BLT-Action", "OWASP-BLT/BLT-Extension"],
+    "Bug Logging Tool(BLT)": [
+        "OWASP-BLT/BLT",
+        "OWASP-BLT/BLT-Flutter",
+        "OWASP-BLT/BLT-Bacon",
+        "OWASP-BLT/BLT-Action",
+        "OWASP-BLT/BLT-Extension",
+    ],
     "NEST": ["OWASP/Nest"],
     "NETTACKER": ["OWASP/Nettacker"],
     "JUICE-SHOP": ["juice-shop/juice-shop"],

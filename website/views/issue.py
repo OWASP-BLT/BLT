@@ -1788,6 +1788,7 @@ class GitHubIssuesView(ListView):
 
         return context
 
+
 class GitHubIssueDetailView(DetailView):
     model = GitHubIssue
     template_name = "github_issue_detail.html"
@@ -1802,13 +1803,14 @@ class GitHubIssueDetailView(DetailView):
 
         return context
 
+
 class GSoCView(View):
-    SINCE_DATE = datetime(2024, 11, 1, tzinfo=timezone.utc) # Fetch PRs merged after this date
-    
+    SINCE_DATE = datetime(2024, 11, 1, tzinfo=timezone.utc)  # Fetch PRs merged after this date
+
     def fetch_github_prs(self, repo_names):
         """Fetch merged PRs for multiple repositories and return contributor counts & total PR count."""
         contributors = defaultdict(int)
-        total_pr_count = 0  # Track total PRs for all repos under a project
+        total_pr_count = 0
 
         for repo_name in repo_names:
             page = 1
@@ -1817,26 +1819,28 @@ class GSoCView(View):
             while True:
                 url = f"https://api.github.com/repos/{repo_name}/pulls?state=closed&per_page=100&page={page}"
                 response = requests.get(url, headers=headers)
-                
+
                 if response.status_code != 200:
                     break
-                
+
                 prs = response.json()
                 if not prs:
                     break
-                
+
                 for pr in prs:
                     if pr.get("merged_at"):
-                        merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                        merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                            tzinfo=timezone.utc
+                        )
                         if merged_at >= self.SINCE_DATE:
                             total_pr_count += 1  # Count all merged PRs
                             username = pr["user"]["login"]
                             if username not in EXCLUDED_USERS:
                                 contributors[username] += 1
-                
+
                 page += 1
 
-        sorted_contributors = sorted(contributors.items(), key=lambda x: x[1], reverse=True)[:10]  # Top 10 contributors per project
+        sorted_contributors = sorted(contributors.items(), key=lambda x: x[1], reverse=True)[:10]  # Top 10 contributors
         return sorted_contributors, total_pr_count
 
     def get(self, request):
@@ -1846,7 +1850,10 @@ class GSoCView(View):
             contributors, total_prs = self.fetch_github_prs(repo_names)
             project_data[project] = {
                 "contributors": contributors,
-                "total_prs": total_prs
+                "total_prs": total_prs,
+                "repo_url": f"https://github.com/{repo_names[0]}",
             }
 
-        return render(request, "gsoc.html", {"projects": project_data})
+        sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
+
+        return render(request, "gsoc.html", {"projects": sorted_project_data})
