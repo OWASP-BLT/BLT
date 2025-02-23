@@ -153,6 +153,7 @@ class Command(LoggedBaseCommand):
                             commit_count=repo_info.get("commit_count", 0),
                             release_name=repo_info.get("release_name", ""),
                             release_datetime=self.parse_date_safely(repo_info.get("release_datetime")),
+                            is_owasp_repo=True,
                         )
 
                         # Add to new projects list for Slack notification

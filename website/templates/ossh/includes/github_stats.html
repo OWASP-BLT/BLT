@@ -1,0 +1,51 @@
+<div class="bg-gradient-to-b from-blue-900 via-purple-900 to-black p-8 rounded-lg shadow-2xl">
+    <h1 class="text-4xl font-bold text-center text-white mb-6 tracking-wider">What we found</h1>
+    <div class="flex flex-col items-center space-y-8">
+        <div class="relative">
+            <img src="{{ user_data.profile.avatar_url }}"
+                 alt="Profile Avatar"
+                 width="160"
+                 height="160"
+                 class="rounded-full border-4 border-indigo-500 shadow-lg object-cover">
+        </div>
+        <div class="bg-black bg-opacity-50 p-6 rounded-lg space-y-4 shadow-inner w-full md:w-3/4">
+            <div class="text-center">
+                <h3 class="text-2xl font-semibold text-indigo-300">{{ user_data.profile.name }}</h3>
+                <p class="text-indigo-500">@{{ user_data.profile.username }}</p>
+            </div>
+            {% if user_data.profile.bio %}<p class="text-gray-300 text-center italic">"{{ user_data.profile.bio }}"</p>{% endif %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
+                {% if user_data.profile.location %}
+                    <p class="flex items-center">
+                        <span class="mr-2">📍</span>{{ user_data.profile.location }}
+                    </p>
+                {% endif %}
+                {% if user_data.profile.company %}
+                    <p class="flex items-center">
+                        <span class="mr-2">🏢</span>{{ user_data.profile.company }}
+                    </p>
+                {% endif %}
+                {% if user_data.profile.blog %}
+                    <p class="flex items-center">
+                        <span class="mr-2">🌐</span>
+                        <a href="{{ user_data.profile.blog }}"
+                           target="_blank"
+                           class="text-blue-400 hover:underline">{{ user_data.profile.blog }}</a>
+                    </p>
+                {% endif %}
+                <p class="flex items-center">
+                    <span class="mr-2">👥</span>
+                    <span class="font-semibold text-white">{{ user_data.profile.followers }}</span> Followers
+                </p>
+                <p class="flex items-center">
+                    <span class="mr-2">🔄</span>
+                    <span class="font-semibold text-white">{{ user_data.profile.following }}</span> Following
+                </p>
+                <p class="flex items-center">
+                    <span class="mr-2">📁</span>
+                    <span class="font-semibold text-white">{{ user_data.profile.public_repos }}</span> Public Repositories
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

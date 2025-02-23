@@ -350,13 +350,13 @@
                             <span>Donations</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'view_suggestions' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/suggestion/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                    <li class="mb-2 {% if request.path == '/forum/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'view_forum' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/forum/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-comments fa-lg"></i>
                             </div>
-                            <span>Suggestions</span>
+                            <span>Forum</span>
                         </a>
                     </li>
                 </ul>
@@ -399,6 +399,15 @@
                                 <i class="fas fa-tv fa-lg"></i>
                             </div>
                             <span>BLTV</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/open-source-sorting-hat/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'ossh_home' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/open-source-sorting-hat/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hat-wizard fa-lg"></i>
+                            </div>
+                            <span>Open Source Sorting Hat</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/gsoc/' %}bg-gray-200{% endif %}">
