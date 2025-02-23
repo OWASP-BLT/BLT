@@ -87,6 +87,38 @@
                                     </a>
                                 </th>
                                 <th scope="col"
+                                    class="w-24 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=has_sidenav{% if sort == 'has_sidenav' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center justify-center hover:text-[#e74c3c]">
+                                        Sidenav
+                                        {% if sort == 'has_sidenav' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="w-24 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Base
+                                </th>
+                                <th scope="col"
+                                    class="w-24 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <a href="?sort=has_style_tags{% if sort == 'has_style_tags' and direction != 'desc' %}&dir=desc{% endif %}"
+                                       class="flex items-center justify-center hover:text-[#e74c3c]">
+                                        Style Tags
+                                        {% if sort == 'has_style_tags' %}
+                                            {% if direction == 'desc' %}
+                                                ↓
+                                            {% else %}
+                                                ↑
+                                            {% endif %}
+                                        {% endif %}
+                                    </a>
+                                </th>
+                                <th scope="col"
                                     class="w-32 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
@@ -108,6 +140,69 @@
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-500">{{ template.modified|date:"Y-m-d H:i" }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500 text-center">{{ template.views|default:0 }}</td>
+                                    <td class="px-6 py-4 text-sm text-center">
+                                        {% if template.has_sidenav %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <svg class="mr-1.5 h-2 w-2 text-green-400"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 8 8">
+                                                    <circle cx="4" cy="4" r="3" />
+                                                </svg>
+                                                Yes
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <svg class="mr-1.5 h-2 w-2 text-gray-400"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 8 8">
+                                                    <circle cx="4" cy="4" r="3" />
+                                                </svg>
+                                                No
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-center">
+                                        {% if template.extends_base %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <svg class="mr-1.5 h-2 w-2 text-green-400"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 8 8">
+                                                    <circle cx="4" cy="4" r="3" />
+                                                </svg>
+                                                Yes
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <svg class="mr-1.5 h-2 w-2 text-gray-400"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 8 8">
+                                                    <circle cx="4" cy="4" r="3" />
+                                                </svg>
+                                                No
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-center">
+                                        {% if template.has_style_tags %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                <svg class="mr-1.5 h-2 w-2 text-green-400"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 8 8">
+                                                    <circle cx="4" cy="4" r="3" />
+                                                </svg>
+                                                Yes
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                <svg class="mr-1.5 h-2 w-2 text-gray-400"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 8 8">
+                                                    <circle cx="4" cy="4" r="3" />
+                                                </svg>
+                                                No
+                                            </span>
+                                        {% endif %}
+                                    </td>
                                     <td class="px-6 py-4 text-sm whitespace-nowrap">
                                         <a href="{{ template.github_url }}"
                                            target="_blank"
