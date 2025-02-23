@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 from website.models import Course, Tag, UserProfile
 
 
+@login_required(login_url="/accounts/login")
 def instructor_dashboard(request):
     template = "bltv/instructor_dashboard.html"
     tags = Tag.objects.all()
@@ -37,14 +38,14 @@ def get_course_content(request, course_id):
     if request.method == "GET":
         course = get_object_or_404(Course, id=course_id)
         sections = course.sections.all().order_by("order")
+        editable = False
+        if request.user == course.instructor.user:
+            editable = True
 
         return render(
             request,
             "bltv/includes/course_content.html",
-            {
-                "course": course,
-                "sections": sections,
-            },
+            {"course": course, "sections": sections, "editable": editable},
         )
 
 
