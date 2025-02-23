@@ -1750,6 +1750,7 @@ def contribute(request):
         good_first_issues = []
     return {"good_first_issues": good_first_issues}
 
+
 class GSoCView(View):
     SINCE_DATE = datetime(2024, 11, 1, tzinfo=timezone.utc)  # Fetch PRs merged after this date
 
@@ -1856,5 +1857,3 @@ class GitHubIssueDetailView(DetailView):
         context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
 
         return context
-
-
