@@ -756,25 +756,6 @@ def slack_commands(request):
                 activity.save()
                 return JsonResponse({"response_type": "ephemeral", "text": "Error reporting bug. Please try again."})
         
-        elif command == "/gsoc":
-            try:
-                gsoc_message = [
-                    {"type": "section", "text": {"type": "mrkdwn", "text": "*Google Summer of Code (GSoC) Info*"}},
-                    {"type": "section", "text": {"type": "mrkdwn", "text": "Explore OWASP’s GSoC participation:\n- Current projects: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas>\n- Use `/gsoc25` for detailed 2025 info."}},
-                    {"type": "context", "elements": [{"type": "mrkdwn", "text": "Get involved with open-source at OWASP!"}]},
-                ]
-                dm_response = workspace_client.conversations_open(users=[user_id])
-                if not dm_response["ok"]:
-                    return JsonResponse({"response_type": "ephemeral", "text": "Couldn’t open a DM channel."})
-                dm_channel = dm_response["channel"]["id"]
-                workspace_client.chat_postMessage(channel=dm_channel, blocks=gsoc_message, text="GSoC Information")
-                return JsonResponse({"response_type": "ephemeral", "text": "I’ve sent you GSoC info in a DM!"})
-            except SlackApiError as e:
-                activity.success = False
-                activity.error_message = f"Slack API error: {str(e)}"
-                activity.save()
-                return JsonResponse({"response_type": "ephemeral", "text": "Error sending GSoC info."})
-        
     return HttpResponse(status=405)
 
 
