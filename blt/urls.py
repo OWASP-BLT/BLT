@@ -38,7 +38,6 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views import domain  # Add this import
 from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
@@ -101,6 +100,7 @@ from website.views.core import (
     vote_suggestions,
     website_stats,
 )
+from website.views.domain import check_domain_security, project_badge_view, repo_badge_view
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
@@ -914,7 +914,9 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
-    path("domains/<int:domain_id>/check-security/", domain.check_domain_security, name="check_domain_security"),
+    path("badge/project/<slug:slug>/", project_badge_view, name="project-badge"),
+    path("badge/repo/<slug:slug>/", repo_badge_view, name="repo-badge"),
+    path("domains/<int:domain_id>/check-security/", check_domain_security, name="check_domain_security"),
 ]
 
 if settings.DEBUG:
