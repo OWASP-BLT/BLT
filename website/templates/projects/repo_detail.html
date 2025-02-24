@@ -713,12 +713,8 @@
                                         <h3 class="text-lg font-semibold text-gray-900">{{ milestone.title }}</h3>
                                         <p class="text-gray-600">{{ milestone.description }}</p>
                                         <div class="flex items-center justify-between mt-4">
-                                            <div class="text-sm text-gray-500">
-                                                Due: {{ milestone.due_on|date:"M d, Y" }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ milestone.open_issues }} open / {{ milestone.closed_issues }} closed
-                                            </div>
+                                            <div class="text-sm text-gray-500">Due: {{ milestone.due_on|date:"M d, Y" }}</div>
+                                            <div class="text-sm text-gray-500">{{ milestone.open_issues }} open / {{ milestone.closed_issues }} closed</div>
                                             <div class="text-sm text-gray-500">
                                                 {{ milestone.closed_issues|divisibleby:milestone.open_issues|floatformat:2 }}% complete
                                             </div>
