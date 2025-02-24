@@ -136,6 +136,8 @@
                     {% endif %}
                 </a>
                 <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
+                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">Clicks: {{ leader.userprofile.referral_clicks }}</span>
+                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">Signups: {{ leader.userprofile.referral_signups }}</span>
                 <button type="button"
                         id="openModal-{{ leader.id }}"
                         class="btn btn-danger text-black"
