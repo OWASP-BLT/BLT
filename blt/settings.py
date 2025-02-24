@@ -23,6 +23,7 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
 
 PROJECT_NAME = "BLT"
@@ -97,6 +98,9 @@ INSTALLED_APPS = (
     "channels",
 )
 
+if DEBUG:
+    INSTALLED_APPS += ("livereload",)
+
 SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
 SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
@@ -115,6 +119,10 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
+
+if DEBUG:
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -326,14 +334,13 @@ ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+
 ALLOWED_HOSTS = [
-    "." + DOMAIN_NAME,
     "127.0.0.1",
     "localhost",
     "0.0.0.0",
-    "blt.owasp.org",
-    "." + DOMAIN_NAME_PREVIOUS,
 ]
+ALLOWED_HOSTS.extend(os.environ.get("ALLOWED_HOSTS", "").split(","))
 
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")

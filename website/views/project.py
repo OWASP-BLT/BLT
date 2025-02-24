@@ -262,7 +262,13 @@ class ProjectRepoFilter(django_filters.FilterSet):
         fields = ["search", "repo_type", "sort", "order"]
 
     def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
+        return queryset.filter(
+            Q(project__name__icontains=value)
+            | Q(name__icontains=value)
+            | Q(primary_language__icontains=value)
+            | Q(ai_summary__icontains=value)
+            | Q(readme_content__icontains=value)
+        )
 
     def filter_repo_type(self, queryset, name, value):
         if value == "main":
@@ -966,7 +972,7 @@ class RepoDetailView(DetailView):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             if "time_period" in request.POST:
                 context = self.get_context_data()
-                return render(request, "projects/_contributor_stats_table.html", context)
+                return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
             search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"

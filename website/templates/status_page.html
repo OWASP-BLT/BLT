@@ -178,7 +178,9 @@
                                 {% for type, count in status.slack_bot.activity_types.items %}<div>{{ type|title }}: {{ count }}</div>{% endfor %}
                             </div>
                         </div>
-                        <!-- Recent Activities -->
+                        <div class="w-full h-96 mb-8">
+                            <canvas id="activityChart"></canvas>
+                        </div>
                         <div>
                             <h4 class="text-lg font-semibold mb-4">Recent Activities</h4>
                             <div class="overflow-x-auto">
@@ -213,3 +215,70 @@
         </div>
     </div>
 {% endblock content %}
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    const dates = JSON.parse('{{ chart_data.dates|escapejs }}');
+    const teamJoins = JSON.parse('{{ chart_data.team_joins|escapejs }}');
+    const commands = JSON.parse('{{ chart_data.commands|escapejs }}');
+
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Team Joins',
+                    data: teamJoins,
+                    backgroundColor: '#e74c3c',
+                    borderColor: '#c0392b',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Commands',
+                    data: commands,
+                    backgroundColor: '#e74c3c80',
+                    borderColor: '#c0392b80',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: false,
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    stacked: false,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Activities'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Slack Bot Activities (Last 30 Days)',
+                    font: {
+                        size: 16
+                    }
+                },
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+    </script>
+{% endblock %}

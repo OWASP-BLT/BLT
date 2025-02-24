@@ -1,0 +1,223 @@
+{% load gravatar %}
+{% load static %}
+{% load custom_tags %}
+<div class="flex flex-col bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+    <!-- Header with user info and label -->
+    <div class="p-4 flex items-center justify-between border-b border-gray-100">
+        <div class="flex items-center gap-3">
+            <!-- User Avatar -->
+            <div class="flex-shrink-0">
+                {% if bug.user.userprofile.avatar %}
+                    <img src="{{ bug.user.userprofile.avatar }}"
+                         class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="{{ bug.user.username }}'s avatar"
+                         width="32"
+                         height="32">
+                {% elif bug.user.socialaccount_set.all.0.get_avatar_url %}
+                    <img src="{{ bug.user.socialaccount_set.all.0.get_avatar_url }}"
+                         class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="{{ bug.user.username }}'s avatar"
+                         width="32"
+                         height="32">
+                {% elif bug.user.email %}
+                    <img src="{% gravatar_url bug.user.email 32 %}"
+                         class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="{{ bug.user.username }}'s avatar"
+                         width="32"
+                         height="32">
+                {% else %}
+                    <img src="{% static 'images/dummy-user.png' %}"
+                         class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
+                         loading="lazy"
+                         alt="Default avatar"
+                         width="32"
+                         height="32">
+                {% endif %}
+            </div>
+            <!-- User Info -->
+            <div class="flex-1 min-w-0">
+                {% if bug.user.username is not None %}
+                    <a href="{% url 'profile' slug=bug.user.username %}"
+                       class="text-sm font-medium text-gray-900 hover:text-[#e74c3c] transition-colors truncate">
+                        {{ bug.user }}
+                    </a>
+                {% else %}
+                    <span class="text-sm font-medium text-gray-900">Anonymous</span>
+                {% endif %}
+                <p class="text-xs text-gray-500">{{ bug.created|timesince }} ago</p>
+            </div>
+            <!-- Label -->
+            <div class="flex-shrink-0">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#e74c3c] bg-opacity-10 text-[#e74c3c] border border-[#e74c3c] border-opacity-20">
+                    {{ bug.get_label_display }}
+                </span>
+            </div>
+        </div>
+        <!-- Admin Controls -->
+        {% if request.user.is_superuser or request.user == bug.user %}
+            <div class="flex items-center space-x-2 ml-4">
+                <a href="{% url 'admin:website_issue_change' bug.id %}"
+                   class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-[#e74c3c] hover:bg-[#e74c3c] hover:bg-opacity-10 transition-colors">
+                    <svg class="w-4 h-4 mr-1"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                </a>
+                <a href="{% url 'admin:website_issue_delete' bug.id %}"
+                   class="inline-flex items-center px-2 py-1 text-xs font-medium rounded text-red-600 hover:bg-red-100 transition-colors">
+                    <svg class="w-4 h-4 mr-1"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                </a>
+            </div>
+        {% endif %}
+    </div>
+    <!-- Bug Description -->
+    <div class="p-4 flex-1">
+        <!-- Domain and Organization Info -->
+        <div class="flex items-start space-x-3 mb-3">
+            <div class="flex-shrink-0 w-6 h-6">
+                <img src="https://www.google.com/s2/favicons?domain={{ bug.domain_name }}&sz=32"
+                     loading="lazy"
+                     class="w-6 h-6 rounded shadow-sm"
+                     alt="{{ bug.domain_name }} icon"
+                     width="24"
+                     height="24">
+            </div>
+            <div class="flex-1">
+                <a href="{% url 'domain' slug=bug.domain_name %}"
+                   class="text-sm text-gray-600 hover:text-[#e74c3c] transition-colors">{{ bug.domain_name }}</a>
+                {% if bug.domain.organization %}
+                    <p class="text-xs text-gray-500 mt-1">
+                        Organization:
+                        <a href="{% url 'organization_detail' bug.domain.organization.slug %}"
+                           class="text-[#e74c3c] hover:underline">{{ bug.domain.organization.name }}</a>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Bug Title -->
+        <a href="{% url 'issue_view' slug=bug.id %}"
+           class="block text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors line-clamp-3">
+            {{ bug.description|truncatechars:150 }}
+        </a>
+        <!-- URL -->
+        <a href="{{ bug.url }}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="mt-2 text-sm text-gray-500 hover:text-[#e74c3c] transition-colors break-all inline-block">
+            {{ bug.url|truncatechars:60 }}
+        </a>
+    </div>
+    <!-- Screenshot -->
+    {% if bug.screenshot or bugs_screenshots %}
+        <div class="border-t border-gray-100">
+            {% if bug.screenshot %}
+                <a href="{% url 'issue_view' slug=bug.id %}"
+                   class="block relative h-48 bg-gray-50">
+                    <img src="{{ bug.screenshot.url }}"
+                         alt="Bug Screenshot"
+                         class="w-full h-full object-contain"
+                         width="800"
+                         height="600">
+                </a>
+            {% else %}
+                {% for bug_key, bug_screenshots in bugs_screenshots.items %}
+                    {% if bug == bug_key and bug_screenshots %}
+                        <div class="relative h-48 bg-gray-50">
+                            {% if bug_screenshots|length == 1 %}
+                                <a href="{% url 'issue_view' slug=bug.id %}" class="block h-full">
+                                    <img src="{{ bug_screenshots.0.image.url }}"
+                                         alt="Bug Screenshot"
+                                         class="w-full h-full object-contain"
+                                         width="800"
+                                         height="600">
+                                </a>
+                            {% else %}
+                                <div class="relative h-full">
+                                    <img id="screenshot-{{ bug.id }}"
+                                         src="{{ bug_screenshots.0.image.url }}"
+                                         alt="Bug Screenshot"
+                                         class="w-full h-full object-contain"
+                                         width="800"
+                                         height="600">
+                                    <!-- Navigation Buttons -->
+                                    <button onclick="prevImage({{ bug.id }})"
+                                            class="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <button onclick="nextImage({{ bug.id }})"
+                                            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black bg-opacity-50 text-white hover:bg-opacity-75 transition-colors">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+    {% endif %}
+    <!-- Footer -->
+    <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+        <div class="flex justify-between items-center">
+            <!-- Actions -->
+            <div class="flex items-center space-x-4">
+                <!-- Like -->
+                <button onclick="like_unlike_handler(event, {{ bug.id }})"
+                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                    <svg id="likeSvg{{ bug.id }}"
+                         class="w-5 h-5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3">
+                        </path>
+                    </svg>
+                </button>
+                <!-- Dislike -->
+                <button onclick="dislike_handler(event, {{ bug.id }})"
+                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                    <svg id="dislikeSvg{{ bug.id }}"
+                         class="w-5 h-5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3">
+                        </path>
+                    </svg>
+                </button>
+                <!-- Flag -->
+                <button onclick="flag_unflag_handler(event, {{ bug.id }})"
+                        class="text-gray-500 hover:text-[#e74c3c] transition-colors">
+                    <svg id="flagSvg{{ bug.id }}"
+                         class="w-5 h-5"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+            <!-- View Details -->
+            <a href="{{ bug.get_absolute_url }}"
+               class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:text-[#e74c3c] hover:border-[#e74c3c] transition-colors">
+                View Details
+            </a>
+        </div>
+    </div>
+</div>

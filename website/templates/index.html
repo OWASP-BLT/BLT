@@ -38,7 +38,7 @@
             <h1 class="page-sub-header">{% trans "Latest activity" %}</h1>
             <div class="list-group">
                 {% for activity in activities %}
-                    {% include "_activity.html" %}
+                    {% include "includes/_activity.html" %}
                 {% endfor %}
             </div>
             <a href="{% url 'all_activity' %}" class="btn btn-default btn-block">{% trans "View All Activity" %}</a>
