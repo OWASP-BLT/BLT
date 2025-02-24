@@ -276,6 +276,23 @@
             </button>
             {% if request.user.is_authenticated %}
                 <div class="h-[80px] flex justify-center items-center">
+                    <div class="relative mr-6">
+                        <!-- Notification Icon -->
+                        <button id="notificationButton" class="flex items-center focus:outline-none">
+                            <i class="fa fa-bell text-gray-500 hover:text-red-500 text-3xl"></i>
+                            <span id="notificationCount"
+                                  class="absolute -top-1 -right-1 bg-red-500 text-white text-sm font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">
+                                0
+                            </span>
+                        </button>
+                        <!-- Notification Dropdown -->
+                        <div id="notificationDropdown"
+                             class="hidden absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[80vh] overflow-y-auto">
+                            <ul id="notificationList" class="divide-y divide-gray-200">
+                                <li class="p-4 text-gray-500">Loading...</li>
+                            </ul>
+                        </div>
+                    </div>
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
@@ -435,6 +452,126 @@
         </svg>
     </div>
 </div>
+<!-- Script for handling notifications -->
+<script>
+    // Global variables
+    const dropdown = document.getElementById('notificationDropdown');
+    const notificationList = document.getElementById('notificationList');
+    const notificationCount = document.getElementById('notificationCount');
+    const notificationButton = document.getElementById('notificationButton');
+    let notifications = []; 
+
+    // Fetch notifications function
+    async function fetchNotifications() {
+        try {
+            const response = await fetch('/notifications/fetch/');
+            const data = await response.json();
+            notifications = data.notifications || [];
+
+            // Update the notification count
+            if (notifications.length > 0) {
+                const unreadCount = notifications.filter(n => !n.is_read).length;
+                if (unreadCount > 0) {
+                    notificationCount.textContent = unreadCount;
+                    notificationCount.classList.remove('hidden');
+                } else {
+                    notificationCount.classList.add('hidden');
+                }
+            } else {
+                notificationCount.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+        }
+    }
+
+    // Render notifications
+    function renderNotifications() {
+        notificationList.innerHTML = '';
+
+        if (notifications.length === 0) {
+            notificationList.innerHTML = '<li class="p-4 text-gray-500">No new notifications</li>';
+            return;
+        }
+
+        notifications.forEach(notification => {
+            const listItem = document.createElement('li');
+            listItem.className = `p-4 hover:bg-gray-100 relative ${notification.is_read ? '' : 'bg-blue-50'}`;
+            console.log("Printing notif link")
+            console.log(notification.link)
+
+            notif_icon_src = ""
+            if (notification.notification_type == 'reward'){
+                notif_icon_src = "{% static 'images/reward_icon.png' %}"
+            } else if (notification.notification_type == 'reminder'){
+                notif_icon_src = "{% static 'images/remind_icon.png' %}"
+            } else {
+                notif_icon_src = "{% static 'images/general_icon.png' %}"
+            }
+
+
+            const content = `
+                <div class="flex items-center space-x-4 w-full notification-item" data-notification-id="${notification.id}" style="cursor: ${notification.link ? 'pointer' : 'default'};">
+                    ${notification.link 
+                        ? `<a href="${notification.link}" class="flex items-center space-x-4 w-full" target="_blank" rel="noopener noreferrer">`
+                        : ''}
+                        <img src="${notif_icon_src}" class="h-12 w-12 object-cover" alt="Notification Icon">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start">
+                                <p class="text-xl font-medium text-gray-900 mb-1">${notification.message}</p>
+                                ${!notification.is_read ? '<div class="flex items-center justify-center w-2 h-2 bg-red-500 rounded-full" style="min-width: 7px; min-height: 7px;"></div>' : ''}
+                            </div>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="text-sm text-gray-600">${new Date(notification.created_at).toLocaleString()}</span>
+                                ${!notification.is_read ? '<span class="text-sm font-medium text-blue-600">New</span>' : ''}
+                            </div>
+                        </div>
+                    ${notification.link ? '</a>' : ''}
+                </div>
+            `;
+            listItem.innerHTML = content;
+            notificationList.appendChild(listItem);
+        });
+    }
+
+    async function markAllRead(){
+        const response = await fetch(`/notifications/mark_all_read`, {
+            method: 'PATCH',
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+            console.log('Notifications marked as read');
+        } else {
+            console.error('Error marking notifications as read:', data.message);
+        }
+    }
+
+    // Toggle dropdown and fetch notifications
+    notificationButton.addEventListener('click', function(event) {
+        event.stopPropagation(); 
+        notificationCount.classList.add('hidden');
+        dropdown.classList.toggle('hidden');
+        
+        if (!dropdown.classList.contains('hidden')) {
+            renderNotifications();
+            fetchNotifications();
+            markAllRead();
+        }
+    });
+
+    // Handle click outside
+    document.addEventListener('click', function(event) {
+        if (!dropdown.contains(event.target) && !notificationButton.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
+
+    // Fetch notifications when page loads
+    document.addEventListener('DOMContentLoaded', fetchNotifications);
+
+    // Periodic refresh (every 30 seconds)
+    setInterval(fetchNotifications, 30000);
+</script>
 <!--Script for Dropdown button-->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
