@@ -1,0 +1,17 @@
+[Unit]
+Description=Bitcoin Core Mainnet
+After=network.target
+
+[Service]
+User=bitcoin
+Group=bitcoin
+WorkingDirectory=/blockchain/bitcoin/data
+Type=simple
+ExecStart=/opt/bitcoin/28.1/bin/bitcoind -conf=/blockchain/bitcoin/data/bitcoin.conf
+Restart=on-failure
+RestartSec=5
+MemoryMax=1500M
+CPUQuota=75%
+
+[Install]
+WantedBy=multi-user.target

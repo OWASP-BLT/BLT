@@ -19,9 +19,9 @@ class Command(LoggedBaseCommand):
     def handle(self, *args, **kwargs):
         project_id = kwargs.get("project_id")
         if project_id:
-            projects = Project.objects.filter(id=project_id).prefetch_related("contributors")
+            projects = Project.objects.filter(id=project_id).prefetch_related("contributor")
         else:
-            projects = Project.objects.prefetch_related("contributors").all()
+            projects = Project.objects.prefetch_related("contributor").all()
 
         headers = {
             "Authorization": f"token {settings.GITHUB_TOKEN}",

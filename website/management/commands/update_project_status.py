@@ -8,10 +8,13 @@ class Command(LoggedBaseCommand):
     help = "Update project status from GitHub"
 
     def handle(self, *args, **options):
-        projects = Project.objects.filter(github_url__isnull=False)
+        # Only get projects with GitHub URLs
+        projects = Project.objects.filter(url__icontains="github.com")
         for project in projects:
             try:
-                response = requests.get(project.github_url)
+                # Convert web URL to API URL
+                api_url = project.url.replace("github.com", "api.github.com/repos")
+                response = requests.get(api_url)
                 if response.status_code == 200:
                     data = response.json()
                     project.status = data.get("archived", False)

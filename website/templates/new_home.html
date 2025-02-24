@@ -1,166 +1,102 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
-    New Home
+    All Issues
 {% endblock title %}
 {% block description %}
-    Welcome to our new home page. Navigate through our updated features, explore new sections, and stay connected with the latest updates.
+    Browse through all reported issues. Filter by label and user to find specific issues and track progress.
 {% endblock description %}
 {% block keywords %}
-    New Home, Homepage, Updated Features, Latest Updates, Explore Sections, Stay Connected
+    All Issues, Reported Issues, Issue Tracking, Filter Issues, User Issues, Label Issues
 {% endblock keywords %}
 {% block og_title %}
-    New Home - Explore Our Latest Features
+    All Issues - Track and Browse Reported Issues
 {% endblock og_title %}
 {% block og_description %}
-    Discover our new home page with updated features and sections. Stay connected and informed with the latest updates from our platform.
+    Explore all reported issues. Filter by label and user to efficiently find and track the progress of specific issues.
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        .hero-bugs-container {
-            grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
-        }
-
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-        }
-    </style>
-    <div class="mt-14 ml-8">
-        <a href="{% url 'report' %}"
-           class="bg-red-500 text-white px-8 py-4 rounded-lg shadow-lg font-bold text-2xl hover:bg-red-600 transform hover:-translate-y-1 transition hover:text-white">
-            Report a Bug!
-        </a>
-    </div>
-    <div class="flex flex-col sm:flex-row mt-[35px]">
-        <div class="flex-1">
-            <div class="hero-bugs-container grid grid-cols-1 sm:grid-cols-2 gap-4 mx-4 my-2.5">
-                {% for bug in bugs %}
-                    {% include "_bug.html" %}
-                {% endfor %}
+    <div class="p-6 lg:p-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">Latest Bugs</h1>
+                <p class="text-gray-600">Browse and track the latest reported bugs across all domains</p>
+            </div>
+            <a href="{% url 'report' %}"
+               class="mt-4 sm:mt-0 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-[#d44637] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Report a Bug
+            </a>
+        </div>
+        <!-- Main Content -->
+        <div class="flex flex-col lg:flex-row lg:space-x-8">
+            <!-- Issues Grid -->
+            <div class="flex-1">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {% for bug in bugs %}
+                        {% include "includes/_bug.html" %}
+                    {% endfor %}
+                </div>
+                <!-- Pagination -->
+                {% if bugs.paginator %}
+                    <div class="mt-8 flex flex-col items-center space-y-3">
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                             aria-label="Pagination">
+                            {% if bugs.has_previous %}
+                                <a href="?page=1"
+                                   class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
+                                    First
+                                </a>
+                            {% endif %}
+                            {% for num in bugs.paginator.page_range %}
+                                {% if num == bugs.number %}
+                                    <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
+                                        {{ num }}
+                                    </span>
+                                {% elif num > bugs.number|add:"-3" and num < bugs.number|add:"3" %}
+                                    <a href="?page={{ num }}"
+                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                                        {{ num }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            {% if bugs.has_next %}
+                                <a href="?page={{ bugs.paginator.num_pages }}"
+                                   class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
+                                    Last
+                                </a>
+                            {% endif %}
+                        </nav>
+                        <p class="text-sm text-gray-700">Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Sidebar -->
+            <div class="w-full lg:w-80 mt-8 lg:mt-0">
+                <!-- Leaderboard -->
+                {% include "includes/_leaderboard_widget.html" %}
             </div>
         </div>
-        <div class="w-full mt-4 sm:w-1/3 sm:mt-0 sm:order-2 ">
-            <div class="mx-4 mr-10 ">{% include "_leaderboard_widget.html" %}</div>
-        </div>
     </div>
+    <!-- JavaScript for voting and flagging -->
     <script>
-        function like_unlike_handler(e,issue_pk){
-            e.preventDefault();
-            var issue_pk = issue_pk;
-            $.ajax({
-                type: 'GET',
-                url: '/like_issue/' + issue_pk + '/',
-                data: {},
-                success: function (data) {
-
-                    var likesvg = $('#likeSvg' + issue_pk);
-                    var dislikesvg = $('#dislikeSvg' + issue_pk);
-                    var currentColor = likesvg.find('path').attr('fill');
-                    
-                    if (currentColor === '#a11010') {
-                        likesvg.find('path').attr('fill', ''); 
-                    } else {
-                        likesvg.find('path').attr('fill', '#a11010');
-                        dislikesvg.find('path').attr('fill', ''); 
-                    }
-
-                    getVoteCount(issue_pk);
-                },
-            });
-        }
-        function dislike_handler(e,issue_pk){
-            e.preventDefault();
-            var issue_pk = issue_pk;
-            $.ajax({
-                type: 'GET',
-                url: '/dislike_issue/' + issue_pk + '/',
-                data: {},
-                success: function (data) {
-                    var likesvg = $('#likeSvg' + issue_pk);
-                    var dislikesvg = $('#dislikeSvg' + issue_pk);
-                    var currentColor = dislikesvg.find('path').attr('fill');
-    
-                    if (currentColor === '#a11010') {
-                        dislikesvg.find('path').attr('fill', ''); 
-                    } else {
-                        dislikesvg.find('path').attr('fill', '#a11010');
-                        likesvg.find('path').attr('fill', ''); 
-                    }
-
-                    getVoteCount(issue_pk);
-                },
-            });
-        }
-        function flag_unflag_handler(e,issue_pk){
-            e.preventDefault();
-            var issue_pk = issue_pk;
-            $.ajax({
-                type: 'GET',
-                url: '/flag_issue/' + issue_pk + '/',
-                data: {},
-                success: function (data) {
-                    // Toggle the color of the SVG
-                    var svg = $('#flagSvg' + issue_pk);
-                    var currentColor = svg.find('path').attr('fill');
-    
-                    if (currentColor === '#a11010') {
-                        // Change to default color
-                        svg.find('path').attr('fill', ''); // Set to default color
-                    } else {
-                        // Change to full red
-                        svg.find('path').attr('fill', '#a11010');
-                    }
-                },
-            });
-        }
         function getVoteCount(issue_pk) {
             $.ajax({
-                url: `/vote_count/${issue_pk}/`,  // Adjust the URL as needed
                 type: 'GET',
-                success: function(response) {
-                    $('#likes_count').text(response.likes);
-                    $('#dislikes_count').text(response.dislikes);
+                url: '/vote_count/' + issue_pk + '/',
+                data: {},
+                success: function(data) {
+                    $('#likes_count').text(data.likes);
+                    $('#dislikes_count').text(data.dislikes);
                 },
-                error: function(error) {
-                    console.log(error);
-                }
             });
         }
     </script>
-    <div class="col-md-12">
-        <div class="text-center">
-            {% if bugs.has_previous %}
-                <a href="?page=1{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                   class="btn btn-default">First</a>
-            {% else %}
-                <button class="btn btn-default" disabled>First</button>
-            {% endif %}
-            {% for num in bugs.paginator.page_range %}
-                {% if num == bugs.number %}
-                    <button class="btn btn-default" disabled>{{ num }}</button>
-                {% elif num > bugs.number|add:"-5" and num < bugs.number|add:"5" %}
-                    <a href="?page={{ num }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                       class="btn btn-default">{{ num }}</a>
-                {% endif %}
-            {% endfor %}
-            {% if bugs.has_next %}
-                <a href="?page={{ bugs.paginator.num_pages }}{% if user %}&user={{ user }}{% endif %}{% if label %}&label={{ label }}{% endif %}"
-                   class="btn btn-default">Last</a>
-            {% else %}
-                <button class="btn btn-default" disabled>Last</button>
-            {% endif %}
-            <div>Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</div>
-        </div>
-    </div>
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/new_home.html">
-            <i class="fab fa-github"></i>
-        </a>
-        <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1">
-            <i class="fab fa-figma"></i>
-        </a>
-    </div>
 {% endblock content %}

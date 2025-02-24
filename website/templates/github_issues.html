@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}GitHub Issues - {{ block.super }}{% endblock %}
+{% block description %}
+    Browse through all GitHub issues and pull requests
+{% endblock description %}
+{% block keywords %}
+    GitHub Issues, Pull Requests, Open Source, Contributions
+{% endblock keywords %}
+{% block og_title %}
+    GitHub Issues - Track and Browse GitHub Issues
+{% endblock og_title %}
+{% block og_description %}
+    Explore all GitHub issues and pull requests. Track progress and contribute to open source.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Total</h3>
+                <p class="text-2xl font-bold">{{ total_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Open</h3>
+                <p class="text-2xl font-bold text-green-600">{{ open_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Closed</h3>
+                <p class="text-2xl font-bold text-gray-600">{{ closed_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Pull Requests</h3>
+                <p class="text-2xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 text-center">
+                <h3 class="text-lg font-semibold">Issues</h3>
+                <p class="text-2xl font-bold text-blue-600">{{ issue_count }}</p>
+            </div>
+        </div>
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow p-4 mb-8">
+            <form method="get" class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                    <select name="type"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                        <option value="all" {% if current_type == 'all' %}selected{% endif %}>All Types</option>
+                        <option value="issue" {% if current_type == 'issue' %}selected{% endif %}>Issues Only</option>
+                        <option value="pull_request"
+                                {% if current_type == 'pull_request' %}selected{% endif %}>Pull Requests Only</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
+                    <select name="state"
+                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50">
+                        <option value="all" {% if current_state == 'all' %}selected{% endif %}>All States</option>
+                        <option value="open" {% if current_state == 'open' %}selected{% endif %}>Open</option>
+                        <option value="closed" {% if current_state == 'closed' %}selected{% endif %}>Closed</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button type="submit"
+                            class="bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- Issues List -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="divide-y divide-gray-200">
+                {% for issue in issues %}
+                    <div class="p-6 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-start gap-4">
+                            <!-- Type Badge -->
+                            <div class="shrink-0">
+                                {% if issue.type == 'pull_request' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#e74c3c] text-white">PR</span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        Issue
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <!-- Content -->
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h3 class="text-lg font-medium flex items-center gap-2">
+                                        <a href="{% url 'github_issue_detail' issue.id %}"
+                                           class="hover:text-[#e74c3c]">{{ issue.title }}</a>
+                                        <a href="{{ issue.url }}"
+                                           target="_blank"
+                                           class="text-gray-500 hover:text-[#e74c3c]"
+                                           title="Open in GitHub">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                            </svg>
+                                        </a>
+                                    </h3>
+                                    <!-- State Badge -->
+                                    {% if issue.state == 'open' %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            Open
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            Closed
+                                        </span>
+                                    {% endif %}
+                                    {% if issue.is_merged %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                            Merged
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% if issue.body %}<p class="text-gray-600 mb-2 line-clamp-2">{{ issue.body }}</p>{% endif %}
+                                <div class="flex items-center gap-4 text-sm text-gray-500">
+                                    <span>Created: {{ issue.created_at|date:"M d, Y" }}</span>
+                                    {% if issue.closed_at %}<span>Closed: {{ issue.closed_at|date:"M d, Y" }}</span>{% endif %}
+                                    {% if issue.repo %}
+                                        <span>Repo:
+                                            <a href="{{ issue.repo.repo_url }}"
+                                               target="_blank"
+                                               class="hover:text-[#e74c3c]">{{ issue.repo.name }}</a>
+                                        </span>
+                                    {% endif %}
+                                    {% if issue.user_profile %}
+                                        <span>By:
+                                            {% if issue.user_profile.github_url %}
+                                                <a href="{{ issue.user_profile.github_url }}"
+                                                   target="_blank"
+                                                   class="hover:text-[#e74c3c]">
+                                                    {{ issue.user_profile.user.username }}
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'profile' issue.user_profile.user.username %}"
+                                                   class="hover:text-[#e74c3c]">
+                                                    {{ issue.user_profile.user.username }}
+                                                </a>
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-6 text-center text-gray-500">No issues found matching your criteria.</div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Pagination -->
+        {% if is_paginated %}
+            <div class="mt-8 flex justify-center">
+                <nav class="inline-flex rounded-md shadow">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if current_type != 'all' %}&type={{ current_type }}{% endif %}{% if current_state != 'all' %}&state={{ current_state }}{% endif %}"
+                           class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Previous
+                        </a>
+                    {% endif %}
+                    <span class="px-3 py-2 border-t border-b border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if current_type != 'all' %}&type={{ current_type }}{% endif %}{% if current_state != 'all' %}&state={{ current_state }}{% endif %}"
+                           class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Next
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

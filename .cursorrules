@@ -1,5 +1,18 @@
+when using cursor rules, show two emojis that are related to the task at hand also give a confidence score 1-100
 {
     "urlModules": {
         "website/urls.py": "blt/urls.py"
     },
 } 
+
+use tailwind only
+for anything with color, make it the red color we use which is #e74c3c
+
+always use poetry and not pip
+if you don't fix somethign on the first try, add debugging to the code and try again
+
+if you are unsure of something, ask the user for clarification
+
+if you are not sure about the user's intent, ask the user for clarification
+
+dont include exceptions in error messages but be very detailed in text what the error is - don't do this: messages.error(request, f"Error: {str(e)}")

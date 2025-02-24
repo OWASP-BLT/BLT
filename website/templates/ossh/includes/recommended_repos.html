@@ -1,0 +1,55 @@
+<div class="bg-gradient-to-b from-blue-900 via-purple-900 to-black p-8 rounded-lg shadow-2xl">
+    <h1 class="text-4xl font-bold text-center text-white mb-6 tracking-wider">Recommended Repositories</h1>
+    <div class="space-y-6">
+        {% for repo in repos %}
+            <div class="bg-black bg-opacity-50 p-6 rounded-lg shadow-inner hover:shadow-lg transition-shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-semibold text-indigo-300">{{ repo.repo.name }}</h3>
+                    <span class="bg-green-600 text-white text-sm font-medium px-3 py-1 rounded-full">
+                        Score: {{ repo.relevance_score }}
+                    </span>
+                </div>
+                <p class="text-gray-300 italic mb-4">{{ repo.repo.description|default:"No description available." }}</p>
+                <div class="mb-4">
+                    <p class="text-sm text-gray-400">
+                        <span class="font-semibold text-indigo-400">Why this repo?</span> {{ repo.reasoning }}
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    {% if repo.repo.primary_language %}
+                        <span class="bg-blue-600 text-white text-sm font-medium px-3 py-1 rounded-full flex items-center">
+                            <span class="mr-1">💻</span>{{ repo.repo.primary_language }}
+                        </span>
+                    {% endif %}
+                    {% for tag in repo.repo.tags.all %}
+                        <span class="bg-gray-600 text-white text-sm font-medium px-3 py-1 rounded-full flex items-center">
+                            <span class="mr-1">🏷️</span>{{ tag.name }}
+                        </span>
+                    {% endfor %}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-gray-300">
+                    <p class="flex items-center">
+                        <span class="mr-2">⭐</span>
+                        <span class="font-semibold text-white">{{ repo.repo.stars }}</span> Stars
+                    </p>
+                    <p class="flex items-center">
+                        <span class="mr-2">🍴</span>
+                        <span class="font-semibold text-white">{{ repo.repo.forks }}</span> Forks
+                    </p>
+                    <p class="flex items-center">
+                        <span class="mr-2">📅</span>
+                        <span class="font-semibold text-white">{{ repo.repo.last_updated|date:"M d, Y" }}</span>
+                    </p>
+                </div>
+                <div class="mt-6 text-center">
+                    <a href="{{ repo.repo.repo_url }}"
+                       target="_blank"
+                       class="inline-flex items-center text-blue-400 hover:text-blue-300 hover:underline">
+                        <span class="mr-2">🌐</span>
+                        Visit Repository
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>

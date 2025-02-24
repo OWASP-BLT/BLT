@@ -16,7 +16,7 @@ class PostListView(generic.ListView):
 
 class PostDetailView(generic.DetailView):
     model = Post
-    template_name = "blog/post_details.html"
+    template_name = "blog/post_detail.html"
 
     def get_object(self):
         post = super().get_object()

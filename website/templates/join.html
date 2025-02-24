@@ -418,143 +418,77 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.1/velocity.min.js"
             integrity="sha384-WT0CC+OrC0vGKpxNQInSyfMeKWFIpgiHtnV9HsqN0g6n9urfDfEUQJZFpT0t9P4U"
             crossorigin="anonymous"></script>
-    <div class="join-body">
-        <div id="svg_wrap"></div>
-        <form class="col-md-12" id="payment-form">
-            {% csrf_token %}
-            <h1>Create Organization</h1>
-            <section>
-                <p>Organization information</p>
-                <input type="text" name="organization" placeholder="Organization's Name" />
-                <input type="url" name="url" placeholder="Website" />
-                <input type="file" name="file" placeholder="Logo" />
-                <input type="email" name="email" placeholder="Email Address" />
-            </section>
-            <section id="subscription_id">
-                <p>Subscription</p>
-                <div class="row">
-                    <div class="col-md-4 col-lg-4 col-sm-4">
-                        <label>
-                            <input type="radio"
-                                   value="flea"
-                                   name="product"
-                                   class="card-input-element"
-                                   checked />
-                            <div class="panel panel-default card-input">
-                                <div class="panel-heading text-red-900">
-                                    <div class="row">
-                                        <div class="pull-left image-subs">
-                                            <img src="{% static 'img/flea.svg' %}" width="100" height="100" alt="flea">
-                                        </div>
-                                        <div class="col-xs-6 text-right pull-right plan-color">
-                                            <div class="huge">Flea</div>
-                                            <span class="plan-style">$9</span> / month
-                                        </div>
+    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Join Organization</h2>
+                <p class="mt-2 text-sm text-gray-600">Join an organization and collaborate with their team</p>
+            </div>
+            <!-- Join Form -->
+            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <form class="space-y-6" method="post" action="{% url 'join' %}">
+                    {% csrf_token %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="rounded-md {% if message.tags == 'error' %}bg-red-50{% else %}bg-green-50{% endif %} p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        {% if message.tags == 'error' %}
+                                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                                        {% else %}
+                                            <i class="fas fa-check-circle text-green-400"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm {% if message.tags == 'error' %}text-red-700{% else %}text-green-700{% endif %}">{{ message }}</p>
                                     </div>
                                 </div>
-                                <div class="panel-body">
-                                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                            {% trans "Featured on Homepage" %}</span>
-                            <span class="pull-right"></span>
-                        </div>
-                    </div>
-                </label>
-            </div>
-            <div class="col-md-4 col-lg-4 col-sm-4">
-                <label>
-                    <input type="radio" value="ant" name="product" class="card-input-element" />
-                    <div class="panel panel-default card-input">
-                        <div class="panel-heading text-red-900">
-                            <div class="row">
-                                <div class="pull-left image-subs">
-                                    <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="ant">
-                                </div>
-                                <div class="col-xs-6 text-right pull-right plan-color">
-                                    <div class="huge">Ant</div>
-                                    <span class="plan-style">$99</span> / month
-                                </div>
                             </div>
+                        {% endfor %}
+                    {% endif %}
+                    <div>
+                        <label for="organization" class="block text-sm font-medium text-gray-700">Organization Name</label>
+                        <div class="mt-1">
+                            <input type="text"
+                                   name="organization"
+                                   id="organization"
+                                   required
+                                   value="{{ organization_name }}"
+                                   class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
+                                   placeholder="Enter organization name">
                         </div>
-                        <div class="panel-body">
-                        <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                    {% trans "Featured on Homepage" %}</span>
-                </br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
-                </span>
-            </div>
-        </div>
-    </label>
-</div>
-<div class="col-md-4 col-lg-4 col-sm-4">
-    <label>
-        <input type="radio" value="wasp" name="product" class="card-input-element" />
-        <div class="panel panel-default card-input">
-            <div class="panel-heading text-red-900">
-                <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="wasp">
                     </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Wasp</div>
-                        <span class="plan-style">$499</span> / month
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Your Email</label>
+                        <div class="mt-1">
+                            <input type="email"
+                                   name="email"
+                                   id="email"
+                                   required
+                                   class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
+                                   placeholder="Enter your email">
+                        </div>
                     </div>
-                </div>
+                    <div>
+                        <button type="submit"
+                                class="flex w-full justify-center rounded-md border border-transparent bg-[#e74c3c] py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 transition-colors duration-200">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            Join Organization
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="panel-body">
-            <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-        {% trans "Featured on Homepage" %}</span>
-    </br>
-    <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
-    </span>
-    <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
-</div>
-</div>
-</label>
-</div>
-</div>
-</section>
-<section class="p-8 max-w-[500px]">
-    {% if wallet.current_balance != 0 %}
-        <div class="formHolder wallet">
-            <h3>Wallet</h3>
-            Current Balance : {{ wallet.current_balance }}$
-            <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
-        </div>
-    {% endif %}
-    <div class="formHolder card">
-        <h3>Card</h3>
-        <!-- <script src="https://js.stripe.com/v3/"></script> -->
-        <div class="col-md-12" id="card-element-container">
-            <div>
-                <label for="card-element">Credit or debit card</label>
-                <div id="card-element"></div>
-                <!-- Used to display form errors. -->
-                <div id="card-errors" role="alert"></div>
+            <!-- Back Link -->
+            <div class="mt-6 text-center">
+                <a href="{% url 'organizations' %}"
+                   class="text-sm font-medium text-[#e74c3c] hover:text-red-700">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    Back to Organizations
+                </a>
             </div>
-            <button>Submit Payment</button>
         </div>
-        {% if wallet.current_balance != 0 %}
-            <div type="submit"
-                 class="btn btn-sm btn-link newAccButton"
-                 id="showwallet">Use Wallet</div>
-        {% endif %}
     </div>
-</section>
-<section>
-    <p>General condtitions</p>
-    <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.
-    </p>
-</section>
-<div class="button" id="prev">← Previous</div>
-<div class="button" id="next">Next →</div>
-<button class="button" id="submit">Agree and send application</button>
-</form>
-</div>
 {% endblock content %}
 {% block after_js %}
     <script type="text/javascript">

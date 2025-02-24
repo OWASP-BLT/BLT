@@ -288,6 +288,37 @@
                     </div>
                 </div>
             </section>
+            <section id="good-first-issues" class="my-8">
+                <h3 class="text-2xl font-semibold mb-4">Good First Issues for New Contributors</h3>
+                <table class="min-w-full table-auto border-collapse border border-gray-300">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2 border border-gray-300">Title</th>
+                            <!-- Removed Repository column -->
+                            <th class="px-4 py-2 border border-gray-300">Time Listed</th>
+                            <th class="px-4 py-2 border border-gray-300">Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in good_first_issues %}
+                            <tr>
+                                <td class="px-4 py-2 border border-gray-300">{{ issue.title }}</td>
+                                <!-- Removed repository cell -->
+                                <td class="px-4 py-2 border border-gray-300">{{ issue.created_at|date:"M d, Y H:i" }}</td>
+                                <td class="px-4 py-2 border border-gray-300">
+                                    <a href="{{ issue.url }}"
+                                       class="text-blue-600 hover:underline"
+                                       target="_blank">View Issue</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3" class="px-4 py-2 text-center">No issues found.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
             <section id="contact" class="my-8">
                 <h3 class="text-2xl font-semibold mb-4">Coding Style Guide</h3>
                 <p class="mb-4">

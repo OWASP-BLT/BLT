@@ -11,14 +11,14 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Count, OuterRef, Prefetch, Q, Subquery, Sum
+from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from django.views.generic import ListView, View
+from django.views.generic import View
 from slack_bolt import App
 
 from website.models import (
@@ -118,7 +118,7 @@ def Organization_view(request, *args, **kwargs):
     # Get the organization to redirect to
     organization = user_organizations.first() or organizations_with_user_domains.first()
 
-    return redirect("organization_analytics", id=organization.id)
+    return redirect("organization_detail", slug=organization.slug)
 
 
 class RegisterOrganizationView(View):
@@ -190,7 +190,7 @@ class RegisterOrganizationView(View):
             return render(request, "organization/register_organization.html")
 
         messages.success(request, "organization registered successfully.")
-        return redirect("organization_analytics", id=organization.id)
+        return redirect("organization_detail", slug=organization.slug)
 
 
 class OrganizationDashboardAnalyticsView(View):
@@ -1741,39 +1741,3 @@ def delete_manager(request, manager_id, domain_id):
         return JsonResponse({"success": False, "message": "Domain not found."})
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "User not found."})
-
-
-class OrganizationListView(ListView):
-    model = Organization
-    template_name = "organization/organization_list.html"
-    context_object_name = "organizations"
-    paginate_by = 100
-
-    def get_queryset(self):
-        # Get organizations with domain stats
-        return (
-            Organization.objects.filter(is_active=True)
-            .prefetch_related(
-                "domain_set",
-                "domain_set__issue_set",
-                Prefetch(
-                    "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
-                ),
-                Prefetch(
-                    "domain_set__issue_set",
-                    queryset=Issue.objects.filter(status="closed"),
-                    to_attr="closed_issues_list",
-                ),
-                Prefetch(
-                    "domain_set__issue_set",
-                    queryset=Issue.objects.annotate(issue_count=Count("id")).order_by("-issue_count"),
-                    to_attr="top_testers_list",
-                ),
-            )
-            .order_by("name")
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["total_organizations"] = Organization.objects.filter(is_active=True).count()
-        return context
