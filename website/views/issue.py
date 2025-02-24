@@ -100,7 +100,7 @@ def like_issue(request, issue_pk):
         liker_user = request.user
         issue_pk = issue.pk
         msg_plain = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -108,7 +108,7 @@ def like_issue(request, issue_pk):
             },
         )
         msg_html = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -270,7 +270,7 @@ def UpdateIssue(request):
             issue.closed_date = datetime.now()
 
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.user.username if issue.user else "Anonymous",
@@ -286,7 +286,7 @@ def UpdateIssue(request):
             issue.closed_by = None
             issue.closed_date = None
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.domain.email.split("@")[0],
@@ -619,8 +619,8 @@ class IssueBaseCreate(object):
             name = email_to.split("@")[0]
 
             try:
-                msg_plain = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
-                msg_html = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
+                msg_plain = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
+                msg_html = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
 
                 send_mail(
                     domain.name + " added to " + settings.PROJECT_NAME,
@@ -644,7 +644,7 @@ class IssueBaseCreate(object):
             try:
                 if not tokenauth:
                     msg_plain = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -655,7 +655,7 @@ class IssueBaseCreate(object):
                         },
                     )
                     msg_html = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -667,7 +667,7 @@ class IssueBaseCreate(object):
                     )
                 else:
                     msg_plain = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -678,7 +678,7 @@ class IssueBaseCreate(object):
                         },
                     )
                     msg_html = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
