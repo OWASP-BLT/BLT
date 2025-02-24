@@ -1511,6 +1511,11 @@ def management_commands(request):
 
 def run_management_command(request):
     if request.method == "POST":
+        # Check if user is superuser
+        if not request.user.is_superuser:
+            messages.error(request, "Only superusers can run management commands.")
+            return redirect("management_commands")
+
         command = request.POST.get("command")
         logging.info(f"Running command: {command}")
         print(f"Running command: {command}")
