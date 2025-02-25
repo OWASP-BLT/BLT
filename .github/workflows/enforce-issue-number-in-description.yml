@@ -1,5 +1,3 @@
-name: Validate PR Closing Issues
-
 on:
   pull_request:
     types:
@@ -16,7 +14,11 @@ permissions:
 jobs:
   validate_pr_closing_issues:
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]' && github.actor != 'dependabot-preview[bot]' && github.actor != 'dependabot'
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != github.repository_owner
     steps:
       - name: Validate PR closing issues with GraphQL
         env:
@@ -58,17 +60,12 @@ jobs:
             }
           }')
 
-          # echo "GraphQL Query: $QUERY"
-
           # Make the GraphQL API request
           RESPONSE=$(curl -s -X POST \
             --location 'https://api.github.com/graphql' \
             -H "Authorization: bearer $GITHUB_TOKEN" \
             -H "Content-Type: application/json" \
             --data "$QUERY")
-
-          # echo "GraphQL Response:"
-          # echo "$RESPONSE"
 
           # Check for errors in the response
           ERRORS=$(echo "$RESPONSE" | jq -r '.errors')

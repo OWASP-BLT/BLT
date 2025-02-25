@@ -282,7 +282,7 @@ class LikeIssueApiView(APIView):
 
             if liked_user:
                 msg_plain = render_to_string(
-                    "email/issue_liked.txt",
+                    "email/issue_liked.html",
                     {
                         "liker_user": liker_user.username,
                         "liked_user": liked_user.username,
@@ -290,7 +290,7 @@ class LikeIssueApiView(APIView):
                     },
                 )
                 msg_html = render_to_string(
-                    "email/issue_liked.txt",
+                    "email/issue_liked.html",
                     {
                         "liker_user": liker_user.username,
                         "liked_user": liked_user.username,
@@ -633,7 +633,7 @@ class InviteFriendApiViewset(APIView):
             # Prepare email content
             subject = f"Join me on {current_site.name}!"
             message = render_to_string(
-                "email/invite_friend.txt",
+                "email/invite_friend.html",
                 {
                     "sender": request.user.username,
                     "referral_link": referral_link,

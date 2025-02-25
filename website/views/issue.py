@@ -2,6 +2,8 @@ import base64
 import io
 import json
 import os
+import smtplib
+import socket
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
@@ -34,11 +36,13 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
 from openai import OpenAI
@@ -92,7 +96,7 @@ def like_issue(request, issue_pk):
         liker_user = request.user
         issue_pk = issue.pk
         msg_plain = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -100,7 +104,7 @@ def like_issue(request, issue_pk):
             },
         )
         msg_html = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -262,7 +266,7 @@ def UpdateIssue(request):
             issue.closed_date = datetime.now()
 
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.user.username if issue.user else "Anonymous",
@@ -278,7 +282,7 @@ def UpdateIssue(request):
             issue.closed_by = None
             issue.closed_date = None
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.domain.email.split("@")[0],
@@ -337,26 +341,25 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@login_required
+@require_POST
 def delete_issue(request, id):
-    try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
-        tokenauth = False
+    issue = get_object_or_404(Issue, id=id)
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
+    # Check permissions
+    if not (request.user.is_superuser or request.user == issue.user):
+        return HttpResponse("Permission denied", status=403)
+
+    try:
+        # Delete screenshots and issue
+        issue.screenshots.all().delete()
         issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
-    return redirect("/")
+        messages.success(request, "Issue deleted successfully")
+        return JsonResponse({"status": "success"})
+    except Issue.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+    except PermissionError:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
 
 def remove_user_from_issue(request, id):
@@ -611,79 +614,87 @@ class IssueBaseCreate(object):
 
             name = email_to.split("@")[0]
 
-            msg_plain = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
-            msg_html = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
+            try:
+                msg_plain = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
+                msg_html = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
 
-            send_mail(
-                domain.name + " added to " + settings.PROJECT_NAME,
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [email_to],
-                html_message=msg_html,
-            )
+                send_mail(
+                    domain.name + " added to " + settings.PROJECT_NAME,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [email_to],
+                    html_message=msg_html,
+                )
+            except (smtplib.SMTPException, socket.gaierror, ConnectionRefusedError) as e:
+                messages.warning(self.request, "Issue created successfully, but notification email could not be sent.")
         else:
             email_to = domain.email
             try:
                 name = email_to.split("@")[0]
-            except Exception:
+            except (AttributeError, IndexError):
                 email_to = "support@" + domain.name
                 name = "support"
                 domain.email = email_to
                 domain.save()
 
-            if not tokenauth:
-                msg_plain = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": self.request.user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
+            try:
+                if not tokenauth:
+                    msg_plain = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": self.request.user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+                    msg_html = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": self.request.user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+                else:
+                    msg_plain = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+                    msg_html = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+
+                send_mail(
+                    "Bug found on " + domain.name,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [email_to],
+                    html_message=msg_html,
                 )
-                msg_html = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": self.request.user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
-                )
-            else:
-                msg_plain = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
-                )
-                msg_html = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
-                )
-            send_mail(
-                "Bug found on " + domain.name,
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [email_to],
-                html_message=msg_html,
-            )
+            except (smtplib.SMTPException, socket.gaierror, ConnectionRefusedError, TemplateDoesNotExist) as e:
+                messages.warning(self.request, "Issue created successfully, but notification email could not be sent.")
+
         return HttpResponseRedirect("/")
 
 
@@ -781,7 +792,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
         screenshot = request.FILES.get("screenshots")
-        if not screenshot:
+        if not screenshot and not request.POST.get("screenshot-hash"):
             messages.error(request, "Screenshot is required")
             captcha_form = CaptchaForm(request.POST)
             return render(
@@ -790,17 +801,19 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 {"form": self.get_form(), "captcha_form": captcha_form},
             )
 
-        try:
-            img = Image.open(screenshot)
-            img.verify()
-        except (IOError, ValueError):
-            messages.error(request, "Invalid image file.")
-            captcha_form = CaptchaForm(request.POST)
-            return render(
-                request,
-                "report.html",
-                {"form": self.get_form(), "captcha_form": captcha_form},
-            )
+        # Only validate uploaded screenshot if there is one
+        if screenshot:
+            try:
+                img = Image.open(screenshot)
+                img.verify()
+            except (IOError, ValueError):
+                messages.error(request, "Invalid image file.")
+                captcha_form = CaptchaForm(request.POST)
+                return render(
+                    request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
 
         return super().post(request, *args, **kwargs)
 
@@ -836,15 +849,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     {"form": self.get_form(), "captcha_form": CaptchaForm()},
                 )
 
-            for screenshot in self.request.FILES.getlist("screenshots"):
-                img_valid = image_validator(screenshot)
-                if img_valid is not True:
-                    messages.error(self.request, img_valid)
-                    return render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    )
+            # Only validate uploaded screenshots if there are any
+
+            if len(self.request.FILES.getlist("screenshots")) > 0:
+                for screenshot in self.request.FILES.getlist("screenshots"):
+                    img_valid = image_validator(screenshot)
+                    if img_valid is not True:
+                        messages.error(self.request, img_valid)
+                        return render(
+                            self.request,
+                            "report.html",
+                            {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                        )
 
             tokenauth = False
             obj = form.save(commit=False)
@@ -891,7 +907,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
-            obj.cve_score = obj.get_cve_score()
+            try:
+                obj.cve_score = obj.get_cve_score()
+            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
+                # If CVE score fetch fails, continue without it
+                obj.cve_score = None
+                messages.warning(
+                    self.request, "Could not fetch CVE score at this time. Issue will be created without it."
+                )
+
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
 
@@ -905,16 +929,28 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 messages.success(self.request, "Domain added! + 1")
 
             if self.request.POST.get("screenshot-hash"):
-                reopen = default_storage.open(
-                    "uploads\/" + self.request.POST.get("screenshot-hash") + ".png",
-                    "rb",
-                )
-                django_file = File(reopen)
-                obj.screenshot.save(
-                    self.request.POST.get("screenshot-hash") + ".png",
-                    django_file,
-                    save=True,
-                )
+                try:
+                    # Fix path separators and use os.path.join for cross-platform compatibility
+                    screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
+
+                    try:
+                        reopen = default_storage.open(screenshot_path, "rb")
+                        django_file = File(reopen)
+                        obj.screenshot.save(
+                            f"{self.request.POST.get('screenshot-hash')}.png",
+                            django_file,
+                            save=True,
+                        )
+                    finally:
+                        if "reopen" in locals():
+                            reopen.close()
+                except FileNotFoundError:
+                    messages.error(self.request, "Screenshot file not found. Please try uploading again.")
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                    )
 
             # Save screenshots
             for screenshot in self.request.FILES.getlist("screenshots"):
@@ -968,7 +1004,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             if domain.github and os.environ.get("GITHUB_TOKEN"):
                 import json
 
-                import requests
                 from giturlparse import parse
 
                 github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
@@ -1543,7 +1578,7 @@ def flag_issue(request, issue_pk):
     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
     context["object"] = issue
     context["flags"] = total_flag_votes
-    return render(request, "_flags.html", context)
+    return render(request, "includes/_flags.html", context)
 
 
 def select_bid(request):

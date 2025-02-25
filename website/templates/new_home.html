@@ -41,7 +41,7 @@
             <div class="flex-1">
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {% for bug in bugs %}
-                        {% include "_bug.html" %}
+                        {% include "includes/_bug.html" %}
                     {% endfor %}
                 </div>
                 <!-- Pagination -->
@@ -81,7 +81,7 @@
             <!-- Sidebar -->
             <div class="w-full lg:w-80 mt-8 lg:mt-0">
                 <!-- Leaderboard -->
-                {% include "_leaderboard_widget.html" %}
+                {% include "includes/_leaderboard_widget.html" %}
             </div>
         </div>
     </div>

@@ -858,8 +858,8 @@ def follow_user(request, user):
                 flag = 1
         if flag != 1:
             request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
-            msg_html = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
+            msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+            msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
 
             send_mail(
                 "You got a new follower!!",
