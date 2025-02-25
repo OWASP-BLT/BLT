@@ -65,6 +65,7 @@ from website.models import (
     UserBadge,
     UserProfile,
     Wallet,
+    Post,  
 )
 from website.utils import analyze_pr_content, fetch_github_data, safe_redirect_allowed, save_analysis_report
 
@@ -1055,7 +1056,7 @@ def view_suggestions(request):
     status = request.GET.get("status")
     sort = request.GET.get("sort", "newest")
 
-    suggestions = Suggestion.objects.all()
+    suggestions = ForumPost.objects.all()
 
     # Apply filters
     if category_id:
@@ -1073,7 +1074,7 @@ def view_suggestions(request):
     else:  # newest
         suggestions = suggestions.order_by("-created")
 
-    categories = SuggestionCategory.objects.all()
+    categories = ForumCategory.objects.all()
 
     return render(
         request,
@@ -1208,7 +1209,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Repo, User
+    from website.models import ForumPost, GitHubIssue, Repo, User, Post  # Add BlogPost model
 
     # Get last commit date
     try:
@@ -1240,6 +1241,9 @@ def home(request):
         .order_by("-total_prs")[:5]
     )
 
+    # Get latest blog posts
+    latest_blog_posts = Post.objects.order_by('-created_at')[:4]
+
     return render(
         request,
         "home.html",
@@ -1251,6 +1255,7 @@ def home(request):
             "recent_posts": recent_posts,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
+            "latest_blog_posts": latest_blog_posts,  # Add latest blog posts to context
         },
     )
 
@@ -1791,7 +1796,7 @@ def website_stats(request):
         views.append(day["daily_count"])
 
     # Get unique visitors (unique IPs), excluding admin URLs
-    unique_visitors = IP.objects.exclude(path__startswith=f"/{admin_url}/").values("address").distinct().count()
+    unique_visitors = IP.objects.exclude(path__startswith=admin_url).values("address").distinct().count()
 
     total_views = sum(view_stats.values())
 
