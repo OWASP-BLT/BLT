@@ -35,17 +35,14 @@ class Command(LoggedBaseCommand):
         if hasattr(project, "url") and project.url:
             parsed_url = urlparse(project.url.strip())
 
-            if "github.com" in parsed_url.netloc:
-                path_parts = parsed_url.path.strip("/").split("/")
-
-                if len(path_parts) >= 2:
-                    repo = f"{path_parts[0]}/{path_parts[1]}"
+            if parsed_url.netloc.endswith("github.com"):
+                repo_path = parsed_url.path.strip("/")
+                if repo_path.count("/") == 1:
+                    repo = repo_path
                 else:
                     self.stdout.write(self.style.ERROR("Invalid GitHub repository URL format."))
-                    return
             else:
-                self.stdout.write(self.style.ERROR("Project URL is not a GitHub repository."))
-                return
+                self.stdout.write(self.style.ERROR("Project URL is not a valid GitHub repository URL."))
 
         headers = {
             "Authorization": f"token {settings.GITHUB_TOKEN}",
