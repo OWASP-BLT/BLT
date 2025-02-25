@@ -1378,6 +1378,7 @@ class Repo(models.Model):
     project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
+    is_owasp_repo = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
     repo_url = models.URLField(unique=True)
     homepage_url = models.URLField(null=True, blank=True)
