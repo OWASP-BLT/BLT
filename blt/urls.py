@@ -1,4 +1,3 @@
-# Move social account imports to top
 from allauth.socialaccount.providers.facebook import views as facebook_views
 from allauth.socialaccount.providers.github import views as github_views
 from allauth.socialaccount.providers.google import views as google_views
@@ -102,6 +101,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
+from website.views.domain import check_domain_security, project_badge_view, repo_badge_view
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
@@ -195,15 +195,6 @@ from website.views.organization import (
     user_sizzle_report,
     view_hunt,
     weekly_report,
-)
-from website.views.ossh import (
-    get_github_data,
-    get_recommended_articles,
-    get_recommended_communities,
-    get_recommended_discussion_channels,
-    get_recommended_repos,
-    ossh_home,
-    ossh_results,
 )
 from website.views.project import (
     ProjectBadgeView,
@@ -905,17 +896,6 @@ urlpatterns = [
         name="batch_send_bacon_tokens",
     ),
     path("pending-transactions/", pending_transactions_view, name="pending_transactions"),
-    path("open-source-sorting-hat/", ossh_home, name="ossh_home"),
-    path("open-source-sorting-hat/results", ossh_results, name="ossh_results"),
-    path("get-github-data/", get_github_data, name="get_github_data"),
-    path("get-recommended-repos/", get_recommended_repos, name="get_recommended_repos"),
-    path("get-recommended-communities/", get_recommended_communities, name="get_recommended_communities"),
-    path(
-        "get-recommended-discussion-channels/",
-        get_recommended_discussion_channels,
-        name="get_recommended_discussion_channels",
-    ),
-    path("get-recommended-articles/", get_recommended_articles, name="get_recommended_articles"),
     path("stats-dashboard/", stats_dashboard, name="stats_dashboard"),
     path("stats/sync-github-projects/", sync_github_projects, name="sync_github_projects"),
     path("stats/run-command/", run_management_command, name="run_management_command"),
@@ -936,6 +916,9 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
+    path("badge/project/<slug:slug>/", project_badge_view, name="project-badge"),
+    path("badge/repo/<slug:slug>/", repo_badge_view, name="repo-badge"),
+    path("domains/<int:domain_id>/check-security/", check_domain_security, name="check_domain_security"),
 ]
 
 if settings.DEBUG:
