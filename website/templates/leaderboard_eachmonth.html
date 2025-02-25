@@ -101,6 +101,8 @@
                                     <span class="pull-right badge">${{ month.user.userprofile.winnings|default:""|floatformat }}</span>
                                 {% endif %}
                                 <span><kbd class="{{ month.user.userprofile.get_title_display }} titleuser">{{ month.user.userprofile.get_title_display }}</kbd></span>
+                                <span class="pull-right badge">Signups: {{ month.user.userprofile.referral_signups }}</span>
+                                <span class="pull-right badge">Clicks: {{ month.user.userprofile.referral_clicks }}</span>
                             {% endif %}
                         </div>
                     {% endfor %}

@@ -64,6 +64,7 @@ def handle_user_signup(request, user, **kwargs):
             invite = InviteFriend.objects.get(referral_code=referral_token)
             invite.recipients.add(user)
             invite.point_by_referral += 2
+            invite.increment_referral_signups()
             invite.save()
             reward_sender_with_points(invite.sender)
             del request.session["ref"]
@@ -727,6 +728,7 @@ def referral_signup(request):
     if referral_token:
         try:
             invite = InviteFriend.objects.get(referral_code=referral_token)
+            invite.increment_referral_clicks()
             request.session["ref"] = referral_token
         except InviteFriend.DoesNotExist:
             messages.error(request, "Invalid referral token")

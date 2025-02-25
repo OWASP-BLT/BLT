@@ -632,6 +632,14 @@ class InviteFriend(models.Model):
     def __str__(self):
         return f"Invite from {self.sender}"
 
+    def increment_referral_clicks(self):
+        self.sender.userprofile.referral_clicks += 1
+        self.sender.userprofile.save()
+
+    def increment_referral_signups(self):
+        self.sender.userprofile.referral_signups += 1
+        self.sender.userprofile.save()
+
 
 def user_images_path(instance, filename):
     from django.template.defaultfilters import slugify
@@ -705,6 +713,9 @@ class UserProfile(models.Model):
     current_streak = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_check_in = models.DateField(null=True, blank=True)
+
+    referral_clicks = models.PositiveIntegerField(default=0)
+    referral_signups = models.PositiveIntegerField(default=0)
 
     def avatar(self, size=36):
         if self.user_avatar:
