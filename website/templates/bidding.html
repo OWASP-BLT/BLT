@@ -17,86 +17,6 @@
     Place bids on GitHub issues, view current bids, and manage your submissions. An efficient platform to submit, track, and update your bids.
 {% endblock og_description %}
 {% block content %}
-    <style>
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    margin: 0;
-    padding: 0;
-}
-
-#bid, .left-side, #bid-container {
-    max-width: 400px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: bold;
-}
-
-#issueLinkInput, #bid_amount {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-}
-
-#fetchbid, #submitBid {
-    padding: 8px 15px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-#BidDisplay {
-    margin-bottom: 10px;
-}
-
-#Link_pr {
-    text-align: center;
-    margin-top: 20px;
-}
-
-#Link_pr a {
-    display: inline-block;
-    padding: 10px 20px;
-    border-radius: 5px;
-    background-color: #e53e3e;
-    color: #000;
-    text-decoration: none;
-}
-
-#invalidUrlMessage{
-    display: none;
-}
-
-.left-side {
-    flex: 1;
-    padding: 20px;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-#bid-container {
-    flex: 3;
-    padding: 20px;
-}
-
-#biddiv {
-    display: flex;
-}
-
-    </style>
     <script>
     function fetchBid() {
         const issueUrl = document.getElementById('issueLinkInput').value;
@@ -124,9 +44,6 @@ label {
                     document.getElementById('BidDisplay').innerHTML = `Current Bid:  ${currentBid} <br>`;
                     const bidAmountInput = document.getElementById('bid_amount');
                     bidAmountInput.setAttribute('max', currentBid - 1);
-
-                    // Start the countdown timer
-                    startTimer(time_left);
                 } else {
                     document.getElementById('BidDisplay').innerHTML = 'No current bid';
                 }
@@ -135,32 +52,7 @@ label {
                 console.error('Error:', error);
             });
     }
-
-    // Function to start the countdown timer
-    function startTimer(time_left) {
-        const timerElement = document.getElementById('timer');
-
-        // Update the timer every second
-        const intervalId = setInterval(() => {
-            time_left -= 1;
-            if (time_left <= 0) {
-                clearInterval(intervalId);
-                timerElement.textContent = 'Expired';
-            } else {
-                timerElement.textContent = formatTime(time_left);
-            }
-        }, 1000);
-    }
-
-    // Function to format time in HH:MM:SS
-    function formatTime(time_left) {
-        let hours = Math.floor(time_left / 3600);
-        let minutes = Math.floor((time_left % 3600) / 60);
-        let seconds = time_left % 60;
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    // Function to retrieve the CSRF token from cookies
+    
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -176,17 +68,16 @@ label {
         return cookieValue;
     }
     </script>
-    <div id="biddiv">
-        <!-- Left side: List of bids -->
-        <div class="left-side">
-            <h2>Current Bids</h2>
+    <div class="flex flex-col md:flex-row gap-4 p-10">
+        <div class="flex-1 p-10 bg-white shadow-md rounded-md">
+            <h2 class="text-xl font-semibold mb-4">Current Bids</h2>
             {% if bids %}
-                <ul>
+                <ul class="space-y-2">
                     {% for bid in bids %}
-                        <li>
+                        <li class="border-b pb-2">
                             ${{ bid.amount_bch }} on
-                            <a href="{{ bid.issue_url }}">{{ bid.issue_url }}</a>
-                            by <a href="{{ bid.user.get_absolute_url }}">{{ bid.user.username }}</a>
+                            <a href="{{ bid.issue_url }}" class="text-blue-500 underline">{{ bid.issue_url }}</a>
+                            by <a href="{{ bid.user.get_absolute_url }}" class="text-gray-700">{{ bid.user.username }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -194,29 +85,39 @@ label {
                 <p>No bids to display.</p>
             {% endif %}
         </div>
-        <!-- Main content -->
-        <div id="bid-container">
+        <div class="flex-3 p-6 bg-white shadow-md rounded-md w-full max-w-md mx-auto">
             {% include "includes/sidenav.html" %}
-            <h1>Bid on Bugs</h1>
-            <div id="bid">
-                <form method="post" action="{% url 'BiddingData' %}">
+            <h1 class="text-2xl font-bold mb-4">Bid on Bugs</h1>
+            <div>
+                <form method="post" action="{% url 'BiddingData' %}" class="space-y-4">
                     {% csrf_token %}
-                    <label>Issue link:</label>
-                    <input type="text" id="issueLinkInput" name="issue_url">
-                    <br>
-                    <button id="fetchbid" type="button" onclick="fetchBid()">Fetch</button>
-                    <br>
-                    <p id="invalidUrlMessage">Please enter a valid GitHub link</p>
-                    <div id="BidDisplay"></div>
-                    <br>
-                    <label id="bidamount">New Bid:</label>
-                    <input type="number" id="bid_amount" name="bid_amount" required min="1">
-                    <br>
-                    <button type="submit" id="submitBid">Submit Bid</button>
+                    <label class="block font-medium">Issue link:</label>
+                    <input type="text"
+                           id="issueLinkInput"
+                           name="issue_url"
+                           class="w-full p-2 border rounded-md"
+                           required>
+                    <button id="fetchbid"
+                            type="button"
+                            onclick="fetchBid()"
+                            class="w-full bg-blue-500 text-white py-2 rounded-md">Fetch</button>
+                    <p id="invalidUrlMessage" class="text-red-500 hidden">Please enter a valid GitHub link</p>
+                    <div id="BidDisplay" class="text-gray-700"></div>
+                    <label class="block font-medium">New Bid:</label>
+                    <input type="number"
+                           id="bid_amount"
+                           name="bid_amount"
+                           required
+                           min="1"
+                           class="w-full p-2 border rounded-md">
+                    <button type="submit"
+                            id="submitBid"
+                            class="w-full bg-green-500 text-white py-2 rounded-md">Submit Bid</button>
                 </form>
             </div>
-            <div id="Link_pr">
-                <a href="{% url 'submit_pr' %}">Submit Your Pull Request</a>
+            <div class="text-center mt-6">
+                <a href="{% url 'submit_pr' %}"
+                   class="inline-block bg-red-500 text-white py-2 px-4 rounded-md">Submit Your Pull Request</a>
             </div>
         </div>
     </div>

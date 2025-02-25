@@ -1,14 +1,7 @@
 <div class="comment_group">
     {% for comment in all_comment %}
         {% if comment.parent is None %}
-            <style>
-                .bottom-right {
-                    position: absolute;
-                    bottom: 10px;
-                    right: 15px;
-                }
-            </style>
-            <div class="bottom-right">
+            <div class="absolute bottom-2 right-4 flex space-x-3">
                 <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/comments.html">
                     <i class="fab fa-github"></i>
                 </a>

@@ -16,78 +16,6 @@
     Access comprehensive details about the Bughunt, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
 {% endblock og_description %}
 {% block content %}
-    <style>
-  #banner {
-  background:
-   url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
-  background-size: cover;
-  height: 400px;
-  background-position: 0 0;
-}
-
-@media screen and (max-width:768px){
-  
- #banner {
-  background-size: cover;
-  height: 300px;
-  background-position: right bottom;
-} 
-  
-#banner h1{
-  font-size: 3.2rem !important;
-}
- 
-  #banner p{
-    padding:0.5rem;
-    text-align: center;
-  }
-  
-}
-.text-light {
-  color: #f8f9fa!important;
-}
-
-h5.card-title{
-  line-height:1.6rem;
-}
-
-
-#footer a {
-    padding: 0.8rem;
-}
-.badge-organization {
-      display: inline-block;
-    padding: .25em .4em;
-    font-size: 75%;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: .25rem;
-}
-.pl-4, .px-4 {
-    padding-left: 1.5rem!important;
-}
-.mt-4, .my-4 {
-    margin-top: 1.5rem!important;
-}
-.font-italic {
-    font-style: italic!important;
-}
-.start-btn {
-    float: right;
-    margin: 100px 25px;
-    width: 150px;
-}
-.time-remaining-btn {
-    float: right;
-    margin: 100px 25px;
-    width: auto;
-
-}
-
-    </style>
     <section>
         {% include "includes/user_sidenav.html" %}
     </section>
@@ -95,25 +23,32 @@ h5.card-title{
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">
     <main>
-        <article id="banner" class="jumbotron jumbotron-fluid">
-            <div class="font-italic pl-4 mt-4 text-light">
-                <h1 class="display-1 font-italic">
+        <article id="banner"
+                 class="jumbotron jumbotron-fluid h-[400px] bg-cover bg-no-repeat bg-center bg-[url('https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg')]">
+            <div class="italic pl-4 mt-4 text-gray-100">
+                <h1 class="text-5xl italic">
                     {{ hunt.domain.organization.name }}
-                    <span class="badge-organization badge-primary shadow">{{ hunt.domain.name }}</span>
+                    <span class="inline-block px-2 py-1 text-xs font-bold text-center text-gray-100 align-baseline bg-primary-500 rounded">{{ hunt.domain.name }}</span>
                 </h1>
                 <p class="lead mt-5">{{ hunt.name }} / {{ hunt.starts_on|date:'Y-m-d H:i' }} - {{ hunt.end_on|date:'Y-m-d H:i' }}</p>
             </div>
             {% if hunt_active %}
                 <a href="{% url 'submit_bug' %}">
-                    <button class="start-btn btn btn-danger">Start</button>
+                    <button class="start-btn bg-red-600 text-white font-bold py-2 px-4 rounded mt-10 ml-6 hover:bg-red-700 transition-transform duration-300">
+                        Start
+                    </button>
                 </a>
             {% else %}
                 {% if hunt_completed %}
                     <a href="{% url 'hunt_results' %}">
-                        <button class="start-btn btn btn-danger">View Results</button>
+                        <button class="start-btn bg-red-600 text-white font-bold py-2 px-4 rounded mt-10 ml-6 hover:bg-red-700 transition-transform duration-300">
+                            View Results
+                        </button>
                     </a>
                 {% else %}
-                    <button class="time-remaining-btn btn btn-danger">Time Remaining : {{ time_remaining }}</button>
+                    <button class="time-remaining-btn bg-red-600 text-white font-bold py-2 px-4 rounded mt-10 ml-6 hover:bg-red-700 transition-transform duration-300">
+                        Time Remaining: {{ time_remaining }}
+                    </button>
                 {% endif %}
             {% endif %}
         </article>
@@ -121,7 +56,7 @@ h5.card-title{
     <div id="content">
         <textarea>{{ hunt.description }}</textarea>
     </div>
-    <div>Hunt URL : {{ hunt.domain.url }}</div>
+    <div>Hunt URL: {{ hunt.domain.url }}</div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
@@ -134,19 +69,18 @@ h5.card-title{
     <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
     <script>
-  $(function () {
-      editormd.markdownToHTML("content", {
-          emoji           : true,
-          taskList        : true,
-          tex             : true,  
-          flowChart       : true,  
-          sequenceDiagram : true,  
-      });
+        $(function () {
+            editormd.markdownToHTML("content", {
+                emoji: true,
+                taskList: true,
+                tex: true,
+                flowChart: true,
+                sequenceDiagram: true,
+            });
 
-      $(".reference-link").each(function (i,obj) {
-        console.log(obj)
-      })
-  })
-
+            $(".reference-link").each(function (i, obj) {
+                console.log(obj)
+            })
+        })
     </script>
 {% endblock content %}

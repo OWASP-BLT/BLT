@@ -1,63 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-    <style>
-    body {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f4f4f4;
-    }
-
-    .confirm-buttons {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 20px;
-    }
-
-    .delete-button {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        color: #fff;
-        font-weight: bold;
-        background-color: #dc3545;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .delete-button:hover {
-        background-color: #c82333;
-    }
-
-    .cancel-button {
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        color: #fff;
-        font-weight: bold;
-        background-color: #007bff;
-        text-decoration: none;
-        cursor: pointer;
-    }
-
-    .cancel-button:hover {
-        background-color: #0056b3;
-    }
-
-    .post_content {
-        text-align: center;
-        margin: 0;
-    }
-    </style>
     {% include "includes/sidenav.html" %}
-    <h1>Confirm Delete</h1>
-    <p class="post_content">Are you sure you want to delete the post "{{ post.title }}"?</p>
-    <form method="post" class="confirm-buttons">
-        {% csrf_token %}
-        <button type="submit" class="delete-button">Delete</button>
-        <a href="{% url 'post_detail' slug=post.slug %}" class="cancel-button">Cancel</a>
-    </form>
+    <div class="flex justify-center items-center h-screen">
+        <div class="text-center">
+            <h1 class="text-3xl mb-4">Confirm Delete</h1>
+            <p class="mb-5">Are you sure you want to delete the post "{{ post.title }}"?</p>
+            <form method="post" class="flex gap-2 justify-center mt-5">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700">Delete</button>
+                <a href="{% url 'post_detail' slug=post.slug %}"
+                   class="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Cancel</a>
+            </form>
+        </div>
+    </div>
 {% endblock content %}
