@@ -1,4 +1,5 @@
 import time
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -31,12 +32,20 @@ class Command(LoggedBaseCommand):
             self.stdout.write(self.style.ERROR(f"Project with ID {project_id} does not exist"))
             return
 
-        # Extract repo name from project URL if available
-        if hasattr(project, "url") and project.url and "github.com" in project.url:
-            repo = "/".join(project.url.rstrip("/").split("/")[-2:])
-        else:
-            self.stdout.write(self.style.ERROR("Project does not have a valid GitHub repository URL."))
-            return
+        if hasattr(project, "url") and project.url:
+            parsed_url = urlparse(project.url.strip())
+
+            if "github.com" in parsed_url.netloc:
+                path_parts = parsed_url.path.strip("/").split("/")
+
+                if len(path_parts) >= 2:
+                    repo = f"{path_parts[0]}/{path_parts[1]}"
+                else:
+                    self.stdout.write(self.style.ERROR("Invalid GitHub repository URL format."))
+                    return
+            else:
+                self.stdout.write(self.style.ERROR("Project URL is not a GitHub repository."))
+                return
 
         headers = {
             "Authorization": f"token {settings.GITHUB_TOKEN}",
