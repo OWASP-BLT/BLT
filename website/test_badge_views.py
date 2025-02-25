@@ -65,8 +65,8 @@ class BadgeViewsTest(TestCase):
 
     def test_repo_badge_view(self):
         """Test that repo badge view returns correct chart with visit count"""
-        repo = get_object_or_404(Repo, slug=slug)
-        return JsonResponse({"repo": repo.name, "visit_count": repo.visit_count})
+        url = reverse("repo-badge", kwargs={"slug": self.repo.slug})
+        response = self.client.get(url)
 
         # Check response basics
         self.assertEqual(response.status_code, 200)
