@@ -32,17 +32,38 @@ class Command(LoggedBaseCommand):
             self.stdout.write(self.style.ERROR(f"Project with ID {project_id} does not exist"))
             return
 
-        if hasattr(project, "url") and project.url:
+        repo = None
+
+        if not hasattr(project, "url"):
+            self.stdout.write(self.style.ERROR(f"Project {project.name} does not have a URL attribute"))
+            return
+
+        if not project.url:
+            self.stdout.write(self.style.ERROR(f"Project {project.name} has an empty URL"))
+            return
+
+        try:
             parsed_url = urlparse(project.url.strip())
 
-            if parsed_url.netloc.endswith("github.com"):
+            if parsed_url.netloc == "github.com":
                 repo_path = parsed_url.path.strip("/")
-                if repo_path.count("/") == 1:
+                if repo_path and repo_path.count("/") == 1:
                     repo = repo_path
                 else:
-                    self.stdout.write(self.style.ERROR("Invalid GitHub repository URL format."))
+                    self.stdout.write(
+                        self.style.ERROR(f"Invalid GitHub repository format: {parsed_url.path}. Expected 'owner/repo'")
+                    )
+                    return
             else:
-                self.stdout.write(self.style.ERROR("Project URL is not a valid GitHub repository URL."))
+                self.stdout.write(self.style.ERROR(f"Project URL is not a GitHub repository URL: {project.url}"))
+                return
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f"Error parsing URL {project.url}: {str(e)}"))
+            return
+
+        if not repo:
+            self.stdout.write(self.style.ERROR("Could not extract valid GitHub repository information"))
+            return
 
         headers = {
             "Authorization": f"token {settings.GITHUB_TOKEN}",
