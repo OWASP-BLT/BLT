@@ -5,7 +5,6 @@ import os
 import smtplib
 import socket
 import uuid
-from collections import defaultdict
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -42,7 +41,6 @@ from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
-from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
@@ -79,8 +77,6 @@ from website.utils import (
     safe_redirect_request,
 )
 
-from .constants import EXCLUDED_USERS, GSOC25_PROJECTS
-
 
 @login_required(login_url="/accounts/login")
 def like_issue(request, issue_pk):
@@ -100,7 +96,7 @@ def like_issue(request, issue_pk):
         liker_user = request.user
         issue_pk = issue.pk
         msg_plain = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -108,7 +104,7 @@ def like_issue(request, issue_pk):
             },
         )
         msg_html = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -270,7 +266,7 @@ def UpdateIssue(request):
             issue.closed_date = datetime.now()
 
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.user.username if issue.user else "Anonymous",
@@ -286,7 +282,7 @@ def UpdateIssue(request):
             issue.closed_by = None
             issue.closed_date = None
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.domain.email.split("@")[0],
@@ -619,8 +615,8 @@ class IssueBaseCreate(object):
             name = email_to.split("@")[0]
 
             try:
-                msg_plain = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
-                msg_html = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
+                msg_plain = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
+                msg_html = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
 
                 send_mail(
                     domain.name + " added to " + settings.PROJECT_NAME,
@@ -644,7 +640,7 @@ class IssueBaseCreate(object):
             try:
                 if not tokenauth:
                     msg_plain = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -655,7 +651,7 @@ class IssueBaseCreate(object):
                         },
                     )
                     msg_html = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -667,7 +663,7 @@ class IssueBaseCreate(object):
                     )
                 else:
                     msg_plain = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -678,7 +674,7 @@ class IssueBaseCreate(object):
                         },
                     )
                     msg_html = render_to_string(
-                        "email/bug_added.txt",
+                        "email/bug_added.html",
                         {
                             "domain": domain.name,
                             "name": name,
@@ -1749,61 +1745,6 @@ def contribute(request):
     else:
         good_first_issues = []
     return {"good_first_issues": good_first_issues}
-
-
-class GSoCView(View):
-    SINCE_DATE = datetime(2024, 11, 1, tzinfo=timezone.utc)  # Fetch PRs merged after this date
-
-    def fetch_github_prs(self, repo_names):
-        """Fetch merged PRs for multiple repositories and return contributor counts & total PR count."""
-        contributors = defaultdict(int)
-        total_pr_count = 0
-
-        for repo_name in repo_names:
-            page = 1
-            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
-
-            while True:
-                url = f"https://api.github.com/repos/{repo_name}/pulls?state=closed&per_page=100&page={page}"
-                response = requests.get(url, headers=headers)
-
-                if response.status_code != 200:
-                    break
-
-                prs = response.json()
-                if not prs:
-                    break
-
-                for pr in prs:
-                    if pr.get("merged_at"):
-                        merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
-                            tzinfo=timezone.utc
-                        )
-                        if merged_at >= self.SINCE_DATE:
-                            total_pr_count += 1  # Count all merged PRs
-                            username = pr["user"]["login"]
-                            if username not in EXCLUDED_USERS:
-                                contributors[username] += 1
-
-                page += 1
-
-        sorted_contributors = sorted(contributors.items(), key=lambda x: x[1], reverse=True)[:10]  # Top 10 contributors
-        return sorted_contributors, total_pr_count
-
-    def get(self, request):
-        project_data = {}
-
-        for project, repo_names in GSOC25_PROJECTS.items():
-            contributors, total_prs = self.fetch_github_prs(repo_names)
-            project_data[project] = {
-                "contributors": contributors,
-                "total_prs": total_prs,
-                "repo_url": f"https://github.com/{repo_names[0]}",
-            }
-
-        sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
-
-        return render(request, "gsoc.html", {"projects": sorted_project_data})
 
 
 class GitHubIssuesView(ListView):
