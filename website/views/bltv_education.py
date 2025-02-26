@@ -10,6 +10,17 @@ from website.decorators import instructor_required
 from website.models import Course, Lecture, Section, Tag, UserProfile
 
 
+def bltv_home(request):
+    template = "bltv/bltv.html"
+    user = request.user
+    is_instructor = (
+        Course.objects.filter(instructor__user=user).exists()
+        or Lecture.objects.filter(section__course__instructor__user=user).exists()
+    )
+    context = {"is_instructor": is_instructor}
+    return render(request, template, context)
+
+
 @login_required(login_url="/accounts/login")
 def instructor_dashboard(request):
     template = "bltv/instructor_dashboard.html"

@@ -27,15 +27,20 @@
         <div class="text-center mb-4">
             <h1 class="text-4xl font-bold">Courses</h1>
         </div>
-        <div class="flex justify-center">
+        <div class="flex justify-center mb-8">
             <a href="{% url 'instructor_dashboard' %}">
                 <button class="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white text-md font-semibold rounded-sm shadow-md hover:bg-blue-700 transition">
-                    <i class="fas fa-chalkboard-teacher"></i> Become an Instructor
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    {% if is_instructor %}
+                        My Courses
+                    {% else %}
+                        Become an Instructor
+                    {% endif %}
                 </button>
             </a>
         </div>
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold">Standalone lectures</h1>
+            <h1 class="text-4xl font-bold">Featured lectures</h1>
         </div>
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold">Featured videos</h1>

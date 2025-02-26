@@ -44,6 +44,7 @@ from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, P
 from website.views.bltv_education import (
     add_lecture,
     add_section,
+    bltv_home,
     course_content_management,
     create_or_update_course,
     delete_lecture,
@@ -606,7 +607,7 @@ urlpatterns = [
         name="deletions",
     ),
     re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
-    re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv/bltv.html"), name="bltv"),
+    re_path(r"^bltv/$", bltv_home, name="bltv"),
     path("bltv/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("bltv/instructor_dashboard/edit-course/<int:course_id>/", edit_course, name="edit_course"),
     path("bltv/instructor_dashboard/create-or-update-course/", create_or_update_course, name="create_or_update_course"),
