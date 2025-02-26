@@ -172,19 +172,20 @@ class UserDeleteView(LoginRequiredMixin, View):
 class InviteCreate(TemplateView):
     template_name = "invite.html"
 
+    @staticmethod
     def extract_domain(email):
-    """Extracts the domain safely from an email address."""
-    match = re.match(r"^[^@]+@([a-zA-Z0-9.-]+)$", email)
-    if match:
-        domain = match.group(1)
-        domain = domain.split("/")[0]  
-        return domain.lower()  
-    return None
+        """Extracts the domain safely from an email address."""
+        match = re.match(r"^[^@]+@([a-zA-Z0-9.-]+)$", email)
+        if match:
+            domain = match.group(1)
+            domain = domain.split("/")[0]  
+            return domain.lower()  
+        return None
 
     def post(self, request, *args, **kwargs):
         email = request.POST.get("email", "").strip()
         exists = False
-        domain = extract_domain(email)
+        domain = self.extract_domain(email)
 
         if domain and validators.domain(domain):  
             try:
