@@ -1791,7 +1791,7 @@ class BaconSubmission(models.Model):
         max_length=20, choices=[("pending", "Pending"), ("completed", "Completed")], default="pending"
     )
     transaction_id = models.CharField(max_length=255, blank=True, null=True)
-    bacon_amount = models.IntegerField(default=0)  
+    bacon_amount = models.IntegerField(default=0)
     modified_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
