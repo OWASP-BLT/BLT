@@ -84,6 +84,7 @@ def edit_section(request, section_id):
     # Check permissions
 
     section.title = request.POST.get("title")
+    section.description = request.POST.get("description")
     section.save()
 
     return redirect("course_content_management", course_id=course_id)
@@ -229,6 +230,19 @@ def get_lecture_data(request, lecture_id):
         "duration": lecture.duration,
         "order": lecture.order,
     }
+
+    return JsonResponse(data)
+
+
+@login_required
+@require_GET
+def get_section_data(request, section_id):
+    """API endpoint to get lecture data for editing"""
+    section = get_object_or_404(Section, id=section_id)
+
+    # Check permissions
+
+    data = {"id": section.id, "title": section.title, "description": section.description}
 
     return JsonResponse(data)
 

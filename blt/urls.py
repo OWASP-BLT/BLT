@@ -53,6 +53,7 @@ from website.views.bltv_education import (
     edit_section,
     get_course_content,
     get_lecture_data,
+    get_section_data,
     instructor_dashboard,
     update_lectures_order,
     update_sections_order,
@@ -623,6 +624,7 @@ urlpatterns = [
     path("bltv/instructor_dashboard/lectures/<int:lecture_id>/delete/", delete_lecture, name="delete_lecture"),
     # API endpoints
     path("bltv/instructor_dashboard/api/lectures/<int:lecture_id>/", get_lecture_data, name="get_lecture_data"),
+    path("bltv/instructor_dashboard/api/sections/<int:section_id>/", get_section_data, name="get_section_data"),
     path(
         "bltv/instructor_dashboard/courses/<int:course_id>/sections/reorder/",
         update_sections_order,
