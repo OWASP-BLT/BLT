@@ -196,7 +196,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Top PR Contributors -->
+                    <!-- Top PR Contributors here -->
                     <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
@@ -270,7 +270,8 @@
                                 <div class="p-6">
                                     <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
                                     <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
-                                    <a href="{% url 'post_detail' slug=post.slug %}" class="text-red-500 hover:underline">Read more</a>
+                                    <a href="{% url 'post_detail' slug=post.slug %}"
+                                       class="text-red-500 hover:underline">Read more</a>
                                 </div>
                             </div>
                         {% endfor %}

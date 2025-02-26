@@ -65,7 +65,6 @@ from website.models import (
     UserBadge,
     UserProfile,
     Wallet,
-    Post,  
 )
 from website.utils import analyze_pr_content, fetch_github_data, safe_redirect_allowed, save_analysis_report
 
@@ -1015,7 +1014,7 @@ class StatsDetailView(TemplateView):
                 dates, counts = self.get_historical_counts(model, start_date)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
 
-                # Get filtered count and total count
+                # Get filtered count and total counts
                 total_count = model.objects.count()
                 filtered_count = counts[-1] if counts else 0
 
@@ -1209,7 +1208,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Repo, User, Post  # Add BlogPost model
+    from website.models import ForumPost, GitHubIssue, Post, Repo, User  # Add BlogPost model
 
     # Get last commit date
     try:
@@ -1242,7 +1241,7 @@ def home(request):
     )
 
     # Get latest blog posts
-    latest_blog_posts = Post.objects.order_by('-created_at')[:4]
+    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
     return render(
         request,
