@@ -101,7 +101,6 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
-from website.views.domain import check_domain_security, project_badge_view, repo_badge_view
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
