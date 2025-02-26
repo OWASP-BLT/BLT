@@ -319,3 +319,33 @@ def get_wallet_balance(request):
             return JsonResponse({"error": "Failed to fetch wallet balance"}, status=response.status_code)
     except requests.RequestException as e:
         return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
+
+
+@login_required
+def bacon_view(request):
+    """Combined view for bacon form and requests."""
+    tx_status = request.GET.get("tx-status", "")
+    decision_status = request.GET.get("decision-status", "")
+
+    submissions = BaconSubmission.objects.all().order_by("-created")
+
+    if tx_status in ["pending", "completed"]:
+        submissions = submissions.filter(transaction_status=tx_status)
+
+    if decision_status in ["accepted", "declined"]:
+        submissions = submissions.filter(status=decision_status)
+
+    # Check if the logged-in user is a mentor
+    mentor_badge = Badge.objects.filter(title="mentor").first()
+    is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+
+    return render(
+        request,
+        "bacon.html",
+        {
+            "submissions": submissions,
+            "tx_status": tx_status,
+            "decision_status": decision_status,
+            "is_mentor": is_mentor,
+        },
+    )

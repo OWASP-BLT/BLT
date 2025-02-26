@@ -42,6 +42,7 @@ from website.api.views import (
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
+    bacon_view,
     batch_send_bacon_tokens_view,
     get_wallet_balance,
     initiate_transaction,
@@ -597,7 +598,7 @@ urlpatterns = [
         deletions,
         name="deletions",
     ),
-    re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
+    re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
     re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(

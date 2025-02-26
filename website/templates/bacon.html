@@ -61,7 +61,7 @@
                 <section id="get-involved" class="mb-12">
                     <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Get Involved</h2>
                     <p class="text-gray-700 text-lg leading-relaxed mb-6">
-                        We're excited to have the community involved in bringing BACON to life. Whether you’re a developer, blockchain expert, or just passionate about open-source, there’s a place for you in this project.
+                        We're excited to have the community involved in bringing BACON to life. Whether you're a developer, blockchain expert, or just passionate about open-source, there's a place for you in this project.
                     </p>
                     <div class="flex gap-4">
                         <a href="{% url 'contribution_guidelines' %}"
@@ -93,50 +93,148 @@
                      class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center">
                     <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
                         <h3 class="text-2xl font-semibold mb-4">Submit a BACON Request</h3>
-                        <form id="baconForm">
-                            <div class="mb-4">
-                                <label for="github_url" class="block text-gray-700">GitHub URL</label>
+                        <form id="baconForm" class="space-y-4">
+                            <div>
+                                <label for="github_url" class="block text-sm font-medium text-gray-700">GitHub PR URL</label>
                                 <input type="url"
                                        id="github_url"
                                        name="github_url"
-                                       class="w-full p-2 border rounded-md"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"
                                        required>
                             </div>
-                            <div class="mb-4">
-                                <label for="contribution_type" class="block text-gray-700">Contribution Type</label>
+                            <div>
+                                <label for="contribution_type"
+                                       class="block text-sm font-medium text-gray-700">Contribution Type</label>
                                 <select id="contribution_type"
                                         name="contribution_type"
-                                        class="w-full p-2 border rounded-md"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"
                                         required>
                                     <option value="security">Security Related</option>
                                     <option value="non-security">Non-Security Related</option>
                                 </select>
                             </div>
-                            <div class="mb-4">
-                                <label for="description" class="block text-gray-700">Description</label>
+                            <div>
+                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
                                 <textarea id="description"
                                           name="description"
-                                          class="w-full p-2 border rounded-md"
                                           rows="4"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"
                                           required></textarea>
                             </div>
-                            <div class="mb-4">
-                                <label for="bacon_amount" class="block text-gray-700">Bacon amount</label>
-                                <input type="text"
-                                       id="bacon_amount"
-                                       name="bacon_amount"
-                                       class="w-full p-2 border rounded-md"
-                                       rows="4"
-                                       required>
-                                </>
-                            </div>
-                            <div class="flex justify-end">
-                                <button type="button"
-                                        id="closeModalBtn"
-                                        class="bg-gray-500 text-white px-4 py-2 rounded-md mr-2">Cancel</button>
-                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md">Submit</button>
+                            <div>
+                                <button type="submit"
+                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    Submit Request
+                                </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+                <!-- Requests List Section -->
+                <div class="bg-white rounded-lg shadow-sm p-6 mt-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold">BACON Requests</h2>
+                        <!-- Filter Form -->
+                        <form method="get" class="flex gap-4">
+                            <select name="tx-status"
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                                <option value="">Transaction: All</option>
+                                <option value="pending" {% if tx_status == "pending" %}selected{% endif %}>Pending</option>
+                                <option value="completed"
+                                        {% if tx_status == "completed" %}selected{% endif %}>Confirmed</option>
+                            </select>
+                            <select name="decision-status"
+                                    class="rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                                <option value="">Status: All</option>
+                                <option value="accepted"
+                                        {% if decision_status == "accepted" %}selected{% endif %}>Accepted</option>
+                                <option value="declined"
+                                        {% if decision_status == "declined" %}selected{% endif %}>Rejected</option>
+                            </select>
+                            <button type="submit"
+                                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                Filter
+                            </button>
+                        </form>
+                    </div>
+                    <!-- Requests Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for submission in submissions %}
+                            <div class="bg-white shadow-md rounded-lg p-4 relative border-2 {% if submission.status == 'accepted' %} border-green-500 {% elif submission.status == 'declined' %} border-red-500 {% else %} border-gray-300 {% endif %}">
+                                <!-- User Info -->
+                                <div class="flex justify-between">
+                                    <div>
+                                        <h3 class="text-lg font-semibold">{{ submission.user.username }}</h3>
+                                        <a href="{{ submission.github_url }}"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:text-[#c0392b] underline">GitHub PR</a>
+                                    </div>
+                                </div>
+                                <!-- Contribution Type & Status -->
+                                <p class="mt-2 text-sm text-gray-600">
+                                    Type: <strong>{{ submission.get_contribution_type_display }}</strong>
+                                    <br>
+                                    Status: <span id="status-{{ submission.id }}" class="font-semibold">{{ submission.get_status_display }}</span>
+                                    <br>
+                                    Transaction: {{ submission.get_transaction_status_display }}
+                                    <br>
+                                    Bacon Amount: <span id="bacon-amount-{{ submission.id }}">{{ submission.bacon_amount }}</span>
+                                </p>
+                                <!-- Expandable Description -->
+                                <button onclick="toggleDescription('{{ submission.id }}')"
+                                        class="text-[#e74c3c] hover:text-[#c0392b] mt-2 underline">
+                                    View Description
+                                </button>
+                                <p id="description-{{ submission.id }}"
+                                   class="hidden mt-2 text-gray-700">{{ submission.description }}</p>
+                                <!-- Mentor Only: Inspect Button -->
+                                {% if is_mentor %}
+                                    <button onclick="toggleInspect('{{ submission.id }}')"
+                                            class="mt-4 bg-gray-200 text-black px-4 py-2 rounded-md hover:bg-gray-300">
+                                        Inspect
+                                    </button>
+                                    <div id="inspect-{{ submission.id }}"
+                                         class="hidden mt-2 p-2 border border-gray-300 rounded-md bg-gray-100">
+                                        <p>
+                                            <strong>GitHub Username:</strong> {{ submission.user.username }}
+                                        </p>
+                                        <p>
+                                            <strong>BCH Address:</strong> <span class="bch-address">{{ submission.user.userprofile.bch_address }}</span>
+                                        </p>
+                                        <!-- Editable Bacon Amount Field -->
+                                        <label for="bacon-input-{{ submission.id }}" class="block mt-2">Bacon Amount:</label>
+                                        <input type="number"
+                                               id="bacon-input-{{ submission.id }}"
+                                               value="{{ submission.bacon_amount }}"
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                                        <!-- Accept / Reject Buttons -->
+                                        <div class="mt-2 flex gap-2">
+                                            <button onclick="updateSubmission('{{ submission.id }}', 'accepted')"
+                                                    class="flex-1 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
+                                                Accept
+                                            </button>
+                                            <button onclick="updateSubmission('{{ submission.id }}', 'declined')"
+                                                    class="flex-1 bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-[#c0392b]">
+                                                Reject
+                                            </button>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <div class="col-span-full text-center py-12">
+                                <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                    <svg class="w-12 h-12 text-gray-400"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                <p class="text-gray-500 text-lg">No submissions found</p>
+                                <p class="text-gray-400 mt-2">Submit a new BACON request above!</p>
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -157,8 +255,7 @@
             const formData = {
                 github_url: document.getElementById("github_url").value,
                 contribution_type: document.getElementById("contribution_type").value,
-                description: document.getElementById("description").value,
-                bacon_amount: document.getElementById("bacon_amount").value
+                description: document.getElementById("description").value
             };
 
             fetch("/api/bacon/submit/", {
@@ -175,6 +272,7 @@
                     alert("Submission Successful!");
                     document.getElementById("baconModal").classList.add("hidden");
                     document.getElementById("baconForm").reset();
+                    window.location.reload();
                 } else {
                     alert("Error: " + data.error);
                 }
@@ -184,5 +282,42 @@
                 alert("An unexpected error occurred.");
             });
         });
+
+        function toggleDescription(id) {
+            let desc = document.getElementById("description-" + id);
+            desc.classList.toggle("hidden");
+        }
+
+        function toggleInspect(id) {
+            let inspectBox = document.getElementById("inspect-" + id);
+            inspectBox.classList.toggle("hidden");
+        }
+
+        function updateSubmission(id, status) {
+            let baconAmount = document.getElementById("bacon-input-" + id).value;
+
+            fetch(`/update-submission-status/${id}/`, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status: status,
+                    bacon_amount: baconAmount
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("status-" + id).innerText = status.charAt(0).toUpperCase() + status.slice(1);
+                    document.getElementById("bacon-amount-" + id).innerText = baconAmount;
+                    window.location.reload();
+                } else {
+                    alert("Error updating submission.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        }
     </script>
 {% endblock content %}

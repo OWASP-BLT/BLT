@@ -59,7 +59,7 @@
                             </div>
                             <div class="mt-4">
                                 {% if marker_type == 'organizations' %}
-                                    <a href="{% url 'organization_view' slug=location.slug %}"
+                                    <a href="{% url 'organization_detail' slug=location.slug %}"
                                        class="inline-flex items-center text-sm text-[#e74c3c] hover:text-red-700">
                                         View Details
                                         <svg class="w-4 h-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
@@ -122,7 +122,7 @@
                             </p>
                         {% endif %}
                         {% if marker_type == 'organizations' %}
-                            <a href="{% url 'organization_view' slug=location.slug %}" class="inline-block mt-2 text-sm text-[#e74c3c] hover:text-red-700">
+                            <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block mt-2 text-sm text-[#e74c3c] hover:text-red-700">
                                 View Details
                             </a>
                         {% endif %}
