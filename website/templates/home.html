@@ -215,25 +215,29 @@
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% elif user.user_profile__user__userprofile.avatar %}
                                                     <img src="{{ user.user_profile__user__userprofile.avatar }}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
                                                     <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% else %}
                                                     <img src="{% gravatar_url user.user_profile__user__email 50 %}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% endif %}
                                                 {{ user.user_profile__user__username }}
                                             </a>

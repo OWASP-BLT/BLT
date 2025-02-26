@@ -277,6 +277,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 handler404 = "website.views.core.handler404"
+handler500 = "website.views.core.handler500"
 
 urlpatterns = [
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
@@ -916,9 +917,8 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
-    path("badge/project/<slug:slug>/", project_badge_view, name="project-badge"),
-    path("badge/repo/<slug:slug>/", repo_badge_view, name="repo-badge"),
-    path("domains/<int:domain_id>/check-security/", check_domain_security, name="check_domain_security"),
+    # Extension page
+    path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
 ]
 
 if settings.DEBUG:

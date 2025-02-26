@@ -42,7 +42,7 @@ def add_comment(request):
 
         for obj in user_list:
             msg_plain = render_to_string(
-                "email/comment_mention.txt",
+                "email/comment_mention.html",
                 {
                     "name": obj.username,
                     "commentor": request.user,
@@ -51,7 +51,7 @@ def add_comment(request):
                 },
             )
             msg_html = render_to_string(
-                "email/comment_mention.txt",
+                "email/comment_mention.html",
                 {
                     "name": obj.username,
                     "commentor": request.user,
