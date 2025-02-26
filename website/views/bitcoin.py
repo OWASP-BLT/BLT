@@ -327,7 +327,7 @@ def bacon_view(request):
     tx_status = request.GET.get("tx-status", "")
     decision_status = request.GET.get("decision-status", "")
 
-    submissions = BaconSubmission.objects.all().order_by("-created")
+    submissions = BaconSubmission.objects.all().order_by("-created_at")
 
     if tx_status in ["pending", "completed"]:
         submissions = submissions.filter(transaction_status=tx_status)
