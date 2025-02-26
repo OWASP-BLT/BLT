@@ -27,7 +27,7 @@
         </div>
         <div class="w-full mx-auto">
             <div class="flex justify-center space-x-4 border-b">
-                <button data-tab="course-content"
+                <button data-tab="view-course-content"
                         class="tablinks py-2 px-4 font-semibold transition-colors duration-300 border-b-2 border-transparent text-lg hover:text-blue-600 focus:outline-none active-tab">
                     Content
                 </button>
@@ -36,7 +36,7 @@
                     Details
                 </button>
             </div>
-            <div id="course-content" class="tabcontent p-4 min-h-screen">
+            <div id="view-course-content" class="tabcontent p-4 min-h-screen">
                 <div id="loader" class="flex items-center justify-center space-x-2 mt-5">
                     <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce"></span>
                     <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce delay-200"></span>
@@ -75,7 +75,7 @@
                 });
             });
     
-            openTab("course-content");
+            openTab("view-course-content");
         });
 
         document.addEventListener("DOMContentLoaded", function() {
@@ -101,5 +101,7 @@
                     }, 2000);
                 });
         });
+
+
     </script>
 {% endblock content %}

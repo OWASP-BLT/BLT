@@ -1791,6 +1791,7 @@ class Course(models.Model):
 
 class Section(models.Model):
     title = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     order = models.PositiveIntegerField()
 
@@ -1806,6 +1807,7 @@ class Lecture(models.Model):
 
     title = models.CharField(max_length=200)
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
     video_url = models.URLField(null=True, blank=True)
     live_url = models.URLField(null=True, blank=True)

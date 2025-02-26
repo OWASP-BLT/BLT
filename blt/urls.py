@@ -42,10 +42,20 @@ from website.api.views import (
 from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.bltv_education import (
+    add_lecture,
+    add_section,
+    course_content_management,
     create_or_update_course,
+    delete_lecture,
+    delete_section,
     edit_course,
+    edit_lecture,
+    edit_section,
     get_course_content,
+    get_lecture_data,
     instructor_dashboard,
+    update_lectures_order,
+    update_sections_order,
     view_course,
 )
 from website.views.company import (
@@ -601,6 +611,28 @@ urlpatterns = [
     path("bltv/instructor_dashboard/create-or-update-course/", create_or_update_course, name="create_or_update_course"),
     path("bltv/view-course/<int:course_id>/", view_course, name="view_course"),
     path("bltv/get-course-content/<int:course_id>/", get_course_content, name="get_course_content"),
+    path(
+        "bltv/course-content-management/<int:course_id>/", course_content_management, name="course_content_management"
+    ),
+    path("bltv/instructor_dashboard/courses/<int:course_id>/sections/add/", add_section, name="add_section"),
+    path("bltv/instructor_dashboard/sections/<int:section_id>/edit/", edit_section, name="edit_section"),
+    path("bltv/instructor_dashboard/sections/<int:section_id>/delete/", delete_section, name="delete_section"),
+    # Lecture management
+    path("bltv/instructor_dashboard/sections/<int:section_id>/lectures/add/", add_lecture, name="add_lecture"),
+    path("bltv/instructor_dashboard/lectures/<int:lecture_id>/edit/", edit_lecture, name="edit_lecture"),
+    path("bltv/instructor_dashboard/lectures/<int:lecture_id>/delete/", delete_lecture, name="delete_lecture"),
+    # API endpoints
+    path("bltv/instructor_dashboard/api/lectures/<int:lecture_id>/", get_lecture_data, name="get_lecture_data"),
+    path(
+        "bltv/instructor_dashboard/courses/<int:course_id>/sections/reorder/",
+        update_sections_order,
+        name="update_sections_order",
+    ),
+    path(
+        "bltv/instructor_dashboard/sections/<int:section_id>/lectures/reorder/",
+        update_lectures_order,
+        name="update_lectures_order",
+    ),
     re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(
         r"^privacypolicy/$",
