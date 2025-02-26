@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import requests
+import re
+import validators
+from django.shortcuts import render
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -169,27 +172,37 @@ class UserDeleteView(LoginRequiredMixin, View):
 class InviteCreate(TemplateView):
     template_name = "invite.html"
 
-    def post(self, request, *args, **kwargs):
-        email = request.POST.get("email")
-        exists = False
-        domain = None
-        if email:
-            domain = email.split("@")[-1]
-            try:
-                full_url_domain = "https://" + domain + "/favicon.ico"
-                if is_valid_https_url(full_url_domain):
-                    safe_url = rebuild_safe_url(full_url_domain)
-                    response = requests.get(safe_url, timeout=5)
-                    if response.status_code == 200:
-                        exists = "exists"
-            except:
-                pass
-        context = {
-            "exists": exists,
-            "domain": domain,
-            "email": email,
-        }
-        return render(request, "invite.html", context)
+    def extract_domain(email):
+    """Extracts the domain safely from an email address."""
+    match = re.match(r"^[^@]+@([a-zA-Z0-9.-]+)$", email)
+    if match:
+        domain = match.group(1)
+        domain = domain.split("/")[0]  
+        return domain.lower()  
+    return None
+
+def post(self, request, *args, **kwargs):
+    email = request.POST.get("email", "").strip()
+    exists = False
+    domain = extract_domain(email)
+
+    if domain and validators.domain(domain):  
+        try:
+            full_url_domain = f"https://{domain}/favicon.ico"
+
+            if validators.url(full_url_domain):  
+                response = requests.get(full_url_domain, timeout=5)
+                if response.status_code == 200:
+                    exists = "exists"
+        except requests.RequestException:
+            pass  
+
+    context = {
+        "exists": exists,
+        "domain": domain,
+        "email": email,
+    }
+    return render(request, "invite.html", context)
 
 
 def get_github_stats(user_profile):
