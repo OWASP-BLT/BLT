@@ -538,16 +538,67 @@
         const chatClose = document.querySelector('#closeChatbot');
         const loading = document.querySelector('#loading');
 
+        function escapeHtml(text) {
+            return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
+        }
+
+        function handleSlashCommand(command, args) {
+            let response = '';
+            switch (command) {
+                case '/help':
+                    response = '<strong>Available Commands:</strong><br>' +
+                        '/help - Show this message<br>' +
+                        '/report &lt;description&gt; - Report a bug<br>' +
+                        '/gsoc - Get GSoC info<br>' +
+                        '/stats - View platform stats<br>'
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/report':
+                    if (!args) {
+                        response = 'Please provide a description. Usage: /report &lt;description&gt;';
+                        chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        return true;
+                    }
+
+                    return false;
+                case '/gsoc':
+                    response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
+                        'Explore OWASP’s GSoC participation:<br>' +
+                        '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
+                        'Get involved with open-source at OWASP!';
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/stats':
+                    response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
         chatSubmit.onclick = function () {
-            const message = chatInput.value;
+            const message = chatInput.value.trim();
             chatInput.value = '';
-            if (message.trim() === "") return;
+            if (message === "") return;
 
-            // Escape HTML meta-characters in the message
-            const escapedMessage = message.replace(/</g , "&lt;").replace( />/g, "&gt;");
-
+            const escapedMessage = escapeHtml(message);
             chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
+
+            // Check for slash command
+            if (message.startsWith('/')) {
+                const [command, ...argsArr] = message.split(' ');
+                const args = argsArr.join(' ').trim();
+                if (handleSlashCommand(command, args)) {
+                    loading.style.display = 'none';
+                    return;
+                }
+            }
 
             fetch('/api/chatbot/conversation/', {
                 method: 'POST',
@@ -566,19 +617,17 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Escape HTML meta-characters in the response
-                    const escapedAnswer = data.answer.replace(/</g , "&lt;").replace( />/g, "&gt;");
-
+                    const escapedAnswer = escapeHtml(data.answer);
                     chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to the bottom
+                    chatLog.scrollTop = chatLog.scrollHeight;
                     loading.style.display = 'none';
                 })
                 .catch((error) => {
+                    let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
                     if (error.message === 'Rate limit exceeded') {
-                        chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: The request limit has been reached. Please try again later.</div>';
-                    } else {
-                        chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: Sorry, I am unable to process your request at the moment. Please try again later.</div>';
+                        errorMessage = 'The request limit has been reached. Please try again later.';
                     }
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + errorMessage + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     loading.style.display = 'none';
                 });

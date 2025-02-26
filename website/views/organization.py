@@ -2,7 +2,7 @@ import ipaddress
 import json
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -19,6 +19,7 @@ from django.db.models import Count, Prefetch, Q, Sum
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -1351,7 +1352,11 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Error updating organization: {str(e)}")
+            return HttpResponse(
+                "Error updating organization. Either organization or user "
+                "doesn't exist or there was a key error. Please try again later."
+            )
     else:
         return HttpResponse("Invalid request method")
 
@@ -1385,7 +1390,11 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Error adding role: {str(e)}")
+            return HttpResponse(
+                "Error updating organization. Either organization or user "
+                "doesn't exist or there was a key error. Please try again later."
+            )
     else:
         return HttpResponse("Invalid request method")
 
@@ -1780,7 +1789,6 @@ def checkIN(request):
             }
         )
 
-    # Return JSON if AJAX
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse(data, safe=False)
 
@@ -1993,10 +2001,11 @@ class OrganizationListView(ListView):
 
         context["recently_viewed"] = recently_viewed
 
-        # Get most popular organizations by counting their view paths
+        # Get most popular organizations by counting their view paths for today only
+        today = timezone.now().date()
         orgs_with_views = []
         for org in self.get_queryset():
-            view_count = IP.objects.filter(path=f"/organization/{org.slug}/").count()
+            view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
             orgs_with_views.append((org, view_count))
 
         # Sort by view count and get top 5
