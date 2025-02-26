@@ -31,7 +31,7 @@
                                     <div class="flex space-x-2">
                                         <button type="button"
                                                 class="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition duration-300 add-lecture"
-                                                onclick="toggleModal('addLectureModal')"
+                                                onclick="toggleAddLectureModal('{{ section.id }}')"
                                                 data-section-id="{{ section.id }}">Add Lecture</button>
                                         <button type="button"
                                                 class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition duration-300 edit-section"
@@ -41,7 +41,7 @@
                                         <button type="button"
                                                 class="px-3 py-1.5 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition duration-300 delete-section"
                                                 data-section-id="{{ section.id }}"
-                                                onclick="toggleModal('confirmDeleteModal')">Delete</button>
+                                                onclick="toggleDeleteModal('sec', '{{ section.id }}')">Delete</button>
                                     </div>
                                 </div>
                                 <div class="lectures-container pl-6 mt-3">
@@ -54,7 +54,9 @@
                                                 </span>
                                                 <div>
                                                     <h6 class="text-base font-medium text-gray-800">{{ lecture.order }}. {{ lecture.title }}</h6>
-                                                    <small class="text-gray-500">{{ lecture.get_content_type_display }}
+                                                    {% if lecture.description %}<p class="text-sm text-gray-900 mt-1">{{ lecture.description }}</p>{% endif %}
+                                                    <small class="text-gray-500">
+                                                        {{ lecture.get_content_type_display }}
                                                         {% if lecture.duration %}• {{ lecture.duration }} min{% endif %}
                                                     </small>
                                                 </div>
@@ -67,7 +69,9 @@
                                                 <button type="button"
                                                         class="text-red-600 hover:text-red-800 transition duration-300 delete-lecture"
                                                         data-lecture-id="{{ lecture.id }}"
-                                                        onclick="toggleModal('confirmDeleteModal')">Delete</button>
+                                                        onclick="toggleDeleteModal('lec', '{{ lecture.id }}')">
+                                                    Delete
+                                                </button>
                                             </div>
                                         </div>
                                     {% empty %}
@@ -316,6 +320,15 @@
                                name="duration"
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
+                    <!-- Description Field -->
+                    <div>
+                        <label for="editLectureDescription"
+                               class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="editLectureDescription"
+                                  name="description"
+                                  rows="3"
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
                     <!-- Video Fields -->
                     <div id="editVideoFields" class="edit-content-fields hidden space-y-4">
                         <div>
@@ -394,16 +407,18 @@
             <div class="p-6">
                 <p id="deleteConfirmationText" class="text-gray-700">Are you sure you want to delete this item?</p>
             </div>
-            <div class="p-6 border-t flex justify-end space-x-3">
-                <button type="button"
-                        class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
-                        onclick="toggleModal('confirmDeleteModal')">Cancel</button>
-                <button type="button"
-                        id="confirmDeleteButton"
-                        class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-300">
-                    Delete
-                </button>
-            </div>
+            <form action="{% url 'delete_lecture' 0 %}" id="confirmDeleteForm">
+                <div class="p-6 border-t flex justify-end space-x-3">
+                    <button type="button"
+                            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
+                            onclick="toggleModal('confirmDeleteModal')">Cancel</button>
+                    <button type="submit"
+                            id="confirmDeleteButton"
+                            class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-300">
+                        Delete
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     <!-- JavaScript for Modal Toggle -->
@@ -421,6 +436,15 @@
             });
         });
 
+        // Add lecture modal
+        async function toggleAddLectureModal(sectionId) {
+            const modal = document.getElementById('addLectureModal');
+            modal.classList.toggle('hidden');
+            // Update form action with correct sectionId
+            const form = document.getElementById('addLectureForm');
+            form.action = `{% url 'add_lecture' 0 %}`.replace('0', sectionId);
+        }
+
         // Edit section modal
         async function toggleEditSectionModal(sectionId){
             const modal = document.getElementById('editSectionModal');
@@ -430,6 +454,30 @@
             form.action = `{% url 'edit_section' 0 %}`.replace('0', sectionId);
             
             await fetchSectionData(sectionId)
+
+        }
+
+        // Delete modal
+        async function toggleDeleteModal(itemType, itemId){
+            const modal = document.getElementById('confirmDeleteModal');
+            modal.classList.toggle('hidden');
+            
+            confirmText = ''
+            action = ''
+            if (itemType == 'lec'){
+                confirmText = 'Are you sure you want to delete this lecture?'
+                action = `{% url 'delete_lecture' 0 %}`.replace('0', itemId)
+            } else if (itemType == 'sec'){
+                confirmText = 'Are you sure you want to delete this section? All related lectures will also be deleted.'
+                action = `{% url 'delete_section' 0 %}`.replace('0', itemId)
+            } else {
+                confirmText = 'Are you sure you want to delete this item?'
+            }
+            
+            document.getElementById('deleteConfirmationText').textContent = confirmText;
+
+            const form = document.getElementById('confirmDeleteForm');
+            form.action = action
 
         }
 
@@ -480,46 +528,6 @@
                 });
             });
 
-            
-            // Function to set up the delete confirmation modal
-            function setupDeleteModal(itemType, itemId) {
-                const modal = document.getElementById('confirmDeleteModal');
-                const confirmBtn = document.getElementById('confirmDeleteButton');
-                const modalText = document.getElementById('deleteConfirmationText');
-
-                // Set the confirmation message
-                if (itemType === 'section') {
-                    modalText.textContent = 'Are you sure you want to delete this section? This will also delete all lectures within this section.';
-                } else {
-                    modalText.textContent = 'Are you sure you want to delete this lecture?';
-                }
-
-                // Set data attributes for the confirm button
-                confirmBtn.setAttribute('data-item-type', itemType);
-                confirmBtn.setAttribute('data-item-id', itemId);
-
-                // Show the modal
-                toggleModal('confirmDeleteModal');
-            }
-            
-            document.addEventListener('DOMContentLoaded', function () {
-                // Setup delete section buttons
-                document.querySelectorAll('.delete-section').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const sectionId = this.getAttribute('data-section-id');
-                        setupDeleteModal('section', sectionId);
-                    });
-                });
-
-                // Setup delete lecture buttons
-                document.querySelectorAll('.delete-lecture').forEach(button => {
-                    button.addEventListener('click', function () {
-                        const lectureId = this.getAttribute('data-lecture-id');
-                        setupDeleteModal('lecture', lectureId);
-                    });
-                });
-
-            });
         });
         
         // Function to toggle content fields based on selected type
@@ -540,6 +548,7 @@
             }
         }
 
+
         // Call the function on page load to set the initial state
         document.addEventListener('DOMContentLoaded', function () {
             const defaultContentType = document.getElementById('contentType').value;
@@ -554,6 +563,7 @@
             
             if (contentType === 'VIDEO') {
                 document.getElementById('editVideoFields').classList.remove('d-none');
+                document.getElementById('editDocumentFields').classList.remove('d-none');
             } else if (contentType === 'LIVE') {
                 document.getElementById('editLiveFields').classList.remove('d-none');
             } else if (contentType === 'DOCUMENT') {
@@ -593,6 +603,7 @@
                 document.getElementById('editLectureTitle').value = lecture.title;
                 document.getElementById('editContentType').value = lecture.content_type;
                 document.getElementById('editLectureDuration').value = lecture.duration || '';
+                document.getElementById('editLectureDescription').value = lecture.description || '';
                 
                 // Toggle the right fields
                 toggleEditContentFields(lecture.content_type);

@@ -1,10 +1,12 @@
 import json
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
+from website.decorators import instructor_required
 from website.models import Course, Lecture, Section, Tag, UserProfile
 
 
@@ -18,6 +20,7 @@ def instructor_dashboard(request):
     return render(request, template, context)
 
 
+@instructor_required
 def edit_course(request, course_id):
     template = "bltv/dashboard_edit_course.html"
     tags = Tag.objects.all()
@@ -36,13 +39,10 @@ def view_course(request, course_id):
     return render(request, template, context)
 
 
-@login_required
+@instructor_required
 def course_content_management(request, course_id):
     """View for managing course content (sections and lectures)"""
     course = get_object_or_404(Course, id=course_id)
-
-    if request.user != course.instructor.user:
-        return JsonResponse({"Error": "You do not have permission to access this page."})
 
     next_section_order = course.sections.count() + 1
 
@@ -58,7 +58,7 @@ def course_content_management(request, course_id):
 
 
 # Section CRUD operations
-@login_required
+@instructor_required
 @require_POST
 def add_section(request, course_id):
     """Add a new section to the course"""
@@ -70,11 +70,12 @@ def add_section(request, course_id):
     order = int(request.POST.get("order", 0))
 
     section = Section.objects.create(course=course, title=title, order=order)
+    messages.success(request, f"Section '{title}' was added successfully!")
 
     return redirect("course_content_management", course_id=course_id)
 
 
-@login_required
+@instructor_required
 @require_POST
 def edit_section(request, section_id):
     """Edit an existing section"""
@@ -87,10 +88,12 @@ def edit_section(request, section_id):
     section.description = request.POST.get("description")
     section.save()
 
+    messages.success(request, f"Section '{section.title}' was edited successfully!")
+
     return redirect("course_content_management", course_id=course_id)
 
 
-@login_required
+@instructor_required
 def delete_section(request, section_id):
     """Delete a section and all its lectures"""
     section = get_object_or_404(Section, id=section_id)
@@ -105,17 +108,16 @@ def delete_section(request, section_id):
         section.order = i
         section.save()
 
+    messages.success(request, "Section was deleted successfully!")
+
     return redirect("course_content_management", course_id=course_id)
 
 
 # Lecture CRUD operations
-@login_required
+@instructor_required
 @require_POST
 def add_lecture(request, section_id):
     """Add a new lecture to a section"""
-    first_section = Section.objects.all().first()
-    print("Section id found: ", first_section.id)
-    print("Request id: ", section_id)
     section = get_object_or_404(Section, id=section_id)
     course_id = section.course.id
 
@@ -145,10 +147,12 @@ def add_lecture(request, section_id):
 
     lecture.save()
 
+    messages.success(request, f"Lecture '{title}' was added successfully!")
+
     return redirect("course_content_management", course_id=course_id)
 
 
-@login_required
+@instructor_required
 @require_POST
 def edit_lecture(request, lecture_id):
     """Edit an existing lecture"""
@@ -160,6 +164,7 @@ def edit_lecture(request, lecture_id):
     # Update basic fields
     lecture.title = request.POST.get("title")
     lecture.content_type = request.POST.get("content_type")
+    lecture.description = request.POST.get("description")
     lecture.duration = request.POST.get("duration") or None
 
     # Update content type specific fields
@@ -186,11 +191,12 @@ def edit_lecture(request, lecture_id):
         lecture.recording_url = None
 
     lecture.save()
+    messages.success(request, f"Lecture '{lecture.title}' was edited successfully!")
 
     return redirect("course_content_management", course_id=course_id)
 
 
-@login_required
+@instructor_required
 def delete_lecture(request, lecture_id):
     """Delete a lecture"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
@@ -206,11 +212,13 @@ def delete_lecture(request, lecture_id):
         lec.order = i
         lec.save()
 
+    messages.success(request, f"Lecture '{lecture.title}' was deleted successfully!")
+
     return redirect("course_content_management", course_id=course_id)
 
 
 # API endpoints for AJAX operations
-@login_required
+@instructor_required
 @require_GET
 def get_lecture_data(request, lecture_id):
     """API endpoint to get lecture data for editing"""
@@ -228,13 +236,14 @@ def get_lecture_data(request, lecture_id):
         "recording_url": lecture.recording_url,
         "content": lecture.content,
         "duration": lecture.duration,
+        "description": lecture.description,
         "order": lecture.order,
     }
 
     return JsonResponse(data)
 
 
-@login_required
+@instructor_required
 @require_GET
 def get_section_data(request, section_id):
     """API endpoint to get lecture data for editing"""
@@ -247,7 +256,7 @@ def get_section_data(request, section_id):
     return JsonResponse(data)
 
 
-@login_required
+@instructor_required
 @require_POST
 def update_sections_order(request, course_id):
     """API endpoint to update the order of sections"""
@@ -272,7 +281,7 @@ def update_sections_order(request, course_id):
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
 
-@login_required
+@instructor_required
 @require_POST
 def update_lectures_order(request, section_id):
     """API endpoint to update the order of lectures within a section"""
@@ -309,8 +318,8 @@ def get_course_content(request, course_id):
         )
 
 
+@instructor_required
 @require_POST
-@login_required(login_url="/accounts/login")
 def create_or_update_course(request):
     try:
         if request.method == "POST":
