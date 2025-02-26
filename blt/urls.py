@@ -79,6 +79,7 @@ from website.views.core import (
     GithubLogin,
     GoogleConnect,
     GoogleLogin,
+    MapView,
     StatsDetailView,
     UploadCreate,
     add_forum_comment,
@@ -810,6 +811,7 @@ urlpatterns = [
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("map/", MapView.as_view(), name="map"),
     path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path(
