@@ -267,11 +267,30 @@
                     {% if latest_blog_posts %}
                         {% for post in latest_blog_posts %}
                             <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                                {% if post.image %}
+                                    <div class="w-full h-48 overflow-hidden">
+                                        <img src="{{ post.image.url }}"
+                                             alt="{{ post.title }}"
+                                             width="auto"
+                                             height="auto"
+                                             class="w-full h-full object-cover">
+                                    </div>
+                                {% endif %}
                                 <div class="p-6">
                                     <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
+                                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-user"></i>
+                                            {{ post.author.username }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-clock"></i>
+                                            {{ post.created_at|timesince }} ago
+                                        </span>
+                                    </div>
                                     <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
                                     <a href="{% url 'post_detail' slug=post.slug %}"
-                                       class="text-red-500 hover:underline">Read more</a>
+                                       class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more</a>
                                 </div>
                             </div>
                         {% endfor %}
