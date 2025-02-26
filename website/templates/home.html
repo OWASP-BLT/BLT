@@ -259,6 +259,27 @@
                 </div>
             </div>
         </section>
+        <!-- Latest Blog Posts Section -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Latest Blog Posts</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    {% if latest_blog_posts %}
+                        {% for post in latest_blog_posts %}
+                            <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                                <div class="p-6">
+                                    <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
+                                    <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
+                                    <a href="{% url 'post_detail' slug=post.slug %}" class="text-red-500 hover:underline">Read more</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">No blog posts available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
         <!-- Call to Action Section -->
         <section class="py-12">
             <div class="max-w-7xl mx-auto text-center">
