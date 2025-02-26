@@ -3,6 +3,7 @@ name: Auto-Fix Sentry Issue
 on:
   issues:
     types: [opened]
+  workflow_dispatch:
 
 jobs:
   auto_fix:
