@@ -1,6 +1,5 @@
 import os
 import openai
-import json
 
 # Load OpenAI API Key
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -16,14 +15,17 @@ Sentry reported an issue:
 Provide a concise fix in Python.
 """
 
-# Get AI-Generated Fix
+# Get AI-Generated Fix using the new API format
 response = openai.ChatCompletion.create(
     model="gpt-4",
-    messages=[{"role": "system", "content": "You are an AI developer."},
-              {"role": "user", "content": prompt}]
+    messages=[
+        {"role": "system", "content": "You are an experienced software engineer. Provide a concise and effective bug fix."},
+        {"role": "user", "content": prompt}
+    ]
 )
 
-fix_code = response["choices"][0]["message"]["content"]
+# Extract the AI-generated fix
+fix_code = response.choices[0].message.content
 
 # Write Fix to a File (Example: Modify `app.py`)
 with open("app.py", "a") as f:
