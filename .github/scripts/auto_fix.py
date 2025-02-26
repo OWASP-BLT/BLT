@@ -1,4 +1,5 @@
 import os
+
 import openai
 
 # Load OpenAI API Key
@@ -19,9 +20,12 @@ Provide a concise fix in Python.
 response = openai.ChatCompletion.create(
     model="gpt-4",
     messages=[
-        {"role": "system", "content": "You are an experienced software engineer. Provide a concise and effective bug fix."},
-        {"role": "user", "content": prompt}
-    ]
+        {
+            "role": "system",
+            "content": "You are an experienced software engineer. Provide a concise and effective bug fix.",
+        },
+        {"role": "user", "content": prompt},
+    ],
 )
 
 # Extract the AI-generated fix

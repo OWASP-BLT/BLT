@@ -39,7 +39,15 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
+from website.views.bitcoin import (
+    BaconSubmissionView,
+    bacon_requests_view,
+    batch_send_bacon_tokens_view,
+    get_wallet_balance,
+    initiate_transaction,
+    pending_transactions_view,
+    update_submission_status,
+)
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
@@ -939,7 +947,11 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
-    # Extension page
+    path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
+    path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
+    path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
+    path("initiate-transaction/", initiate_transaction, name="initiate_transaction"),
+    path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
 ]
 
