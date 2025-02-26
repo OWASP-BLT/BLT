@@ -942,13 +942,13 @@ files = [
 
 [[package]]
 name = "django-import-export"
-version = "4.3.5"
+version = "4.3.7"
 description = "Django application and library for importing and exporting data with included admin integration."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "django_import_export-4.3.5-py3-none-any.whl", hash = "sha256:143611d9d3c8b000c54e33db122c8d283eef38167acd7a854d15b9ad77c328e7"},
-    {file = "django_import_export-4.3.5.tar.gz", hash = "sha256:61e078cea307a6199a7e905840640e55db3521d7c81be224fd8b6576ce9bd0fc"},
+    {file = "django_import_export-4.3.7-py3-none-any.whl", hash = "sha256:5514d09636e84e823a42cd5e79292f70f20d6d2feed117a145f5b64a5b44f168"},
+    {file = "django_import_export-4.3.7.tar.gz", hash = "sha256:bd3fe0aa15a2bce9de4be1a2f882e2c4539fdbfdfa16f2052c98dd7aec0f085c"},
 ]
 
 [package.dependencies]
@@ -1039,19 +1039,18 @@ hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
 
 [[package]]
 name = "django-simple-captcha"
-version = "0.6.1"
+version = "0.6.2"
 description = "A very simple, yet powerful, Django captcha application"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django_simple_captcha-0.6.1-py2.py3-none-any.whl", hash = "sha256:75c4a89cf54011be54dd96fc4bfc2286f92bed88c46d247b9e504b7fc4c7cfe5"},
-    {file = "django_simple_captcha-0.6.1.tar.gz", hash = "sha256:9df5cf24e38b91af62d601f8e5189b0f6d28dbaa55a363a8b9d727703f9c35de"},
+    {file = "django_simple_captcha-0.6.2-py2.py3-none-any.whl", hash = "sha256:f5b7eee6bfeba6c55b47f2f8414557d5609fc29c4758da2c91ba9a91d6ac349d"},
+    {file = "django_simple_captcha-0.6.2.tar.gz", hash = "sha256:24db2bd1386c1833618465862e3518d310246d88f5e7f3bec23a5bda768ef834"},
 ]
 
 [package.dependencies]
 Django = ">=4.2"
 django-ranged-response = "0.2.0"
-djangorestframework = ">=3.15.0"
 Pillow = ">=6.2.0"
 
 [package.extras]
@@ -3789,4 +3788,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "7c8c7048b5a3487cdf45729c1170538f5d5ec62c51c76254487e7125805c796a"
+content-hash = "dbd92758532b405f4e2ca766c43058fbb9373436d4214d76519dd1796d8a9fa3"
