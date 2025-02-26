@@ -191,6 +191,15 @@
                             <span>BACON (coin)</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/bacon-requests/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'bacon_requests' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/bacon-requests/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hands-helping fa-lg"></i>
+                            </div>
+                            <span>Bacon Requests</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
