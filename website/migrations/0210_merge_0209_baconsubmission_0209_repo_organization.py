@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0209_baconsubmission"),
         ("website", "0209_repo_organization"),
