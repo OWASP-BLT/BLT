@@ -212,7 +212,6 @@ def initiate_transaction(request):
                 return JsonResponse({"error": "Network is required"}, status=400)
 
             total_bacon = sum(user["bacon_amount"] for user in selected_users)
-            print("Total Bacon Amount:", total_bacon)
 
             # MAINNET LOGIC: Send YAML payload along with JSON fields
             if network == "mainnet":
@@ -230,8 +229,6 @@ def initiate_transaction(request):
                     "password": password,
                 }
 
-                print("Final Payload for Mainnet:", final_payload)
-
                 # Send request to ORD server
                 ord_server_url = settings.ORD_SERVER_URL
 
@@ -240,7 +237,6 @@ def initiate_transaction(request):
 
                 response = requests.post(f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload)
                 response_data = response.json()
-                print(response_data)
                 if response.status_code == 200 and "txid" in response_data:
                     txid = response_data["txid"]
 
@@ -258,8 +254,6 @@ def initiate_transaction(request):
             # REGTEST LOGIC: Send only required fields in JSON
             elif network == "regtest":
                 final_payload = {"num_users": len(selected_users), "fee_rate": fee_rate, "dry_run": dry_run}
-                print(selected_users)
-                print("Payload for Regtest:", final_payload)
 
                 ord_server_url = settings.ORD_SERVER_URL
 
@@ -268,7 +262,6 @@ def initiate_transaction(request):
 
                 response = requests.post(f"{ord_server_url}/regtest/send-bacon-tokens", json=final_payload)
                 response_data = response.json()
-                print(response_data)
                 if response.status_code == 200:
                     return JsonResponse(response_data)
                 else:
@@ -319,7 +312,6 @@ def get_wallet_balance(request):
     try:
         response = requests.get(f"{ord_server_url}/mainnet/wallet-balance")
         response_data = response.json()
-        print(response_data)
         if response.status_code == 200 and response_data.get("success"):
             balance_data = json.loads(response_data["balance"])
             return JsonResponse({"balance": balance_data, "success": True})
