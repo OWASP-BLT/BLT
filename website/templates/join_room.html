@@ -4,8 +4,10 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="max-w-4xl mx-auto py-8">
-        <div class="flex items-center justify-between">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Breadcrumbs -->
+        {% include "includes/breadcrumbs.html" %}
+        <div class="flex items-center justify-between mt-4">
             <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
             <div class="flex items-center gap-2">
                 <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400"></div>

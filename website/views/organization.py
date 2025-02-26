@@ -1830,6 +1830,9 @@ class RoomsListView(ListView):
         for room in context["rooms"]:
             room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
 
+        # Add breadcrumbs
+        context["breadcrumbs"] = [{"title": "Discussion Rooms", "url": None}]
+
         return context
 
 
@@ -1863,7 +1866,11 @@ def join_room(request, room_id):
         request.session.create()
     # Get messages ordered by timestamp
     room_messages = room.messages.all().order_by("timestamp")
-    return render(request, "join_room.html", {"room": room, "room_messages": room_messages})
+
+    # Add breadcrumbs context
+    breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
+
+    return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
 @login_required(login_url="/accounts/login")
