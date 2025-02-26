@@ -1365,6 +1365,9 @@ def verify_file_upload(sender, instance, **kwargs):
 
 
 class Repo(models.Model):
+    organization = models.ForeignKey(
+        Organization, related_name="repos", on_delete=models.CASCADE, null=True, blank=True
+    )
     project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
