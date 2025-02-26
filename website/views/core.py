@@ -40,7 +40,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.generic import TemplateView, View
+from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
     IP,
@@ -1093,7 +1093,7 @@ def sitemap(request):
 
 def badge_list(request):
     badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge"))
+    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
     return render(request, "badges.html", {"badges": badges})
 
 
@@ -1896,3 +1896,36 @@ class CustomSocialAccountDisconnectView(BaseSocialAccountDisconnectView):
         if getattr(self, "swagger_fake_view", False):
             return SocialAccount.objects.none()
         return super().get_queryset()
+
+
+class MapView(ListView):
+    template_name = "map.html"
+    context_object_name = "locations"
+
+    def get_queryset(self):
+        # Get the marker type from query params, default to 'organizations'
+        marker_type = self.request.GET.get("type", "organizations")
+
+        if marker_type == "organizations":
+            return Organization.objects.filter(
+                latitude__isnull=False, longitude__isnull=False, is_active=True
+            ).order_by("-created")
+        # Add more types here as needed
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        marker_type = self.request.GET.get("type", "organizations")
+
+        context["marker_type"] = marker_type
+        context["marker_types"] = [
+            {
+                "id": "organizations",
+                "name": "Organizations",
+                "icon": "fa-building",
+                "description": "View organizations around the world",
+            },
+            # Add more marker types here as needed
+        ]
+
+        return context

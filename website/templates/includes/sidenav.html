@@ -31,6 +31,15 @@
                             <span>Domains</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if '/map/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'map' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/map/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-map-marker-alt fa-lg"></i>
+                            </div>
+                            <span>Map</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/feed/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'feed' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/feed' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
@@ -182,6 +191,15 @@
                             <span>BACON (coin)</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/bacon-requests/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'bacon_requests' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/bacon-requests/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hands-helping fa-lg"></i>
+                            </div>
+                            <span>Bacon Requests</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
@@ -296,6 +314,16 @@
                             <i class="fab fa-apple fa-lg"></i>
                         </div>
                         <span>iPhone App</span>
+                    </a>
+                </li>
+                <!-- Chrome Extension -->
+                <li class="mb-2 {% if request.path == '/extension/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'extension' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/extension/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
+                            <i class="fas fa-puzzle-piece fa-lg"></i>
+                        </div>
+                        <span>Chrome Extension</span>
                     </a>
                 </li>
                 <!-- Spacer -->

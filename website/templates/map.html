@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Location Map{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin="" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header Section -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Location Map</h1>
+            <p class="mt-2 text-sm text-gray-600">View locations around the world</p>
+        </div>
+        <!-- Map Type Selector -->
+        <div class="mb-6">
+            <div class="flex flex-wrap gap-4">
+                {% for type in marker_types %}
+                    <a href="?type={{ type.id }}"
+                       class="inline-flex items-center px-4 py-2 rounded-lg {% if marker_type == type.id %}bg-[#e74c3c] text-white{% else %}bg-white text-gray-700 hover:bg-gray-50 border border-gray-200{% endif %} transition-colors duration-200">
+                        <i class="fas {{ type.icon }} mr-2"></i>
+                        {{ type.name }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Map Container -->
+        <div id="map" class="w-full h-[600px] rounded-lg shadow-lg mb-8"></div>
+        <!-- Location List -->
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Locations</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for location in locations %}
+                    {% if location.latitude and location.longitude %}
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow duration-200">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="text-lg font-medium text-gray-900">{{ location.name }}</h3>
+                                    {% if location.city or location.country %}
+                                        <p class="text-sm text-gray-600 mt-1">
+                                            {% if location.city %}{{ location.city }}{% endif %}
+                                            {% if location.city and location.country %},{% endif %}
+                                            {% if location.country %}{{ location.country }}{% endif %}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                {% if location.logo %}
+                                    <img src="{{ location.logo.url }}"
+                                         alt="{{ location.name }} logo"
+                                         width="40"
+                                         height="40"
+                                         class="w-10 h-10 object-contain" />
+                                {% endif %}
+                            </div>
+                            <div class="mt-4">
+                                {% if marker_type == 'organizations' %}
+                                    <a href="{% url 'organization_detail' slug=location.slug %}"
+                                       class="inline-flex items-center text-sm text-[#e74c3c] hover:text-red-700">
+                                        View Details
+                                        <svg class="w-4 h-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                        </svg>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="col-span-full text-center py-12">
+                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                            <svg class="w-12 h-12 text-gray-400"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-500 text-lg">No locations found</p>
+                        <p class="text-gray-400 mt-2">Try selecting a different location type</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script>
+    // Initialize map
+    const map = L.map('map').setView([20, 0], 2);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add markers for locations
+    {% for location in locations %}
+        {% if location.latitude and location.longitude %}
+            const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}])
+                .addTo(map)
+                .bindPopup(`
+                    <div class="text-center">
+                        {% if location.logo %}
+                            <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-16 h-16 mx-auto mb-2 object-contain" />
+                        {% endif %}
+                        <h3 class="font-medium text-gray-900">{{ location.name }}</h3>
+                        {% if location.city or location.country %}
+                            <p class="text-sm text-gray-600">
+                                {% if location.city %}{{ location.city }}{% endif %}
+                                {% if location.city and location.country %}, {% endif %}
+                                {% if location.country %}{{ location.country }}{% endif %}
+                            </p>
+                        {% endif %}
+                        {% if marker_type == 'organizations' %}
+                            <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block mt-2 text-sm text-[#e74c3c] hover:text-red-700">
+                                View Details
+                            </a>
+                        {% endif %}
+                    </div>
+                `);
+        {% endif %}
+    {% endfor %}
+    </script>
+{% endblock %}
