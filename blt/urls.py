@@ -286,6 +286,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 handler404 = "website.views.core.handler404"
+handler500 = "website.views.core.handler500"
 
 urlpatterns = [
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
@@ -936,6 +937,8 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
+    # Extension page
+    path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
 ]
 
 if settings.DEBUG:
