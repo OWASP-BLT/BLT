@@ -706,7 +706,7 @@ urlpatterns = [
     path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
-    path("robots.txt", robots_txt),
+    re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     # users
     path("users/", users_view, name="users"),
