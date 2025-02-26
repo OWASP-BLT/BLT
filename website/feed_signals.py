@@ -61,16 +61,16 @@ def create_activity(instance, action_type):
     )
 
 
-def giveBacon(user):
+def giveBacon(user, amt=1):
     # Check if the user already has a token record
     if user is None or user.is_authenticated is False:
         return
     token_earning, created = BaconEarning.objects.get_or_create(user=user)
 
     if created:
-        token_earning.tokens_earned = 1  # Reward 10 tokens for completing the action (adjust as needed)
+        token_earning.tokens_earned = amt  # Reward 10 tokens for completing the action (adjust as needed)
     else:
-        token_earning.tokens_earned += 1  # Add 10 tokens if the user already exists in the system
+        token_earning.tokens_earned += amt  # Add 10 tokens if the user already exists in the system
 
     token_earning.save()  # Save the updated record
 

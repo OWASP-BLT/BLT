@@ -61,7 +61,7 @@
                 <section id="get-involved" class="mb-12">
                     <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Get Involved</h2>
                     <p class="text-gray-700 text-lg leading-relaxed mb-6">
-                        We’re excited to have the community involved in bringing BACON to life. Whether you’re a developer, blockchain expert, or just passionate about open-source, there’s a place for you in this project.
+                        We're excited to have the community involved in bringing BACON to life. Whether you’re a developer, blockchain expert, or just passionate about open-source, there’s a place for you in this project.
                     </p>
                     <div class="flex gap-4">
                         <a href="{% url 'contribution_guidelines' %}"
@@ -72,6 +72,10 @@
                            class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-md shadow-md">
                             View on GitHub
                         </a>
+                        <button id="openModalBtn"
+                                class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md">
+                            Submit BACON Request
+                        </button>
                     </div>
                 </section>
                 <!-- Updates Section -->
@@ -85,7 +89,100 @@
                         Visit OWASP BLT Wiki
                     </a>
                 </section>
+                <div id="baconModal"
+                     class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center">
+                    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
+                        <h3 class="text-2xl font-semibold mb-4">Submit a BACON Request</h3>
+                        <form id="baconForm">
+                            <div class="mb-4">
+                                <label for="github_url" class="block text-gray-700">GitHub URL</label>
+                                <input type="url"
+                                       id="github_url"
+                                       name="github_url"
+                                       class="w-full p-2 border rounded-md"
+                                       required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="contribution_type" class="block text-gray-700">Contribution Type</label>
+                                <select id="contribution_type"
+                                        name="contribution_type"
+                                        class="w-full p-2 border rounded-md"
+                                        required>
+                                    <option value="security">Security Related</option>
+                                    <option value="non-security">Non-Security Related</option>
+                                </select>
+                            </div>
+                            <div class="mb-4">
+                                <label for="description" class="block text-gray-700">Description</label>
+                                <textarea id="description"
+                                          name="description"
+                                          class="w-full p-2 border rounded-md"
+                                          rows="4"
+                                          required></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label for="bacon_amount" class="block text-gray-700">Bacon amount</label>
+                                <input type="text"
+                                       id="bacon_amount"
+                                       name="bacon_amount"
+                                       class="w-full p-2 border rounded-md"
+                                       rows="4"
+                                       required>
+                                </>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="button"
+                                        id="closeModalBtn"
+                                        class="bg-gray-500 text-white px-4 py-2 rounded-md mr-2">Cancel</button>
+                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <script>
+        document.getElementById("openModalBtn").addEventListener("click", function() {
+            document.getElementById("baconModal").classList.remove("hidden");
+        });
+        
+        document.getElementById("closeModalBtn").addEventListener("click", function() {
+            document.getElementById("baconModal").classList.add("hidden");
+        });
+        
+        document.getElementById("baconForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+        
+            const formData = {
+                github_url: document.getElementById("github_url").value,
+                contribution_type: document.getElementById("contribution_type").value,
+                description: document.getElementById("description").value,
+                bacon_amount: document.getElementById("bacon_amount").value
+            };
+
+            fetch("/api/bacon/submit/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert("Submission Successful!");
+                    document.getElementById("baconModal").classList.add("hidden");
+                    document.getElementById("baconForm").reset();
+                } else {
+                    alert("Error: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("An unexpected error occurred.");
+            });
+        });
+    </script>
 {% endblock content %}

@@ -6,7 +6,7 @@ User=bitcoin
 Group=bitcoin
 WorkingDirectory=/blockchain/regtest/data
 Type=simple
-ExecStart=/opt/bitcoin/28.0/bin/bitcoind -conf=/blockchain/regtest/data/bitcoin.conf
+ExecStart=/opt/bitcoin/28.1/bin/bitcoind -conf=/blockchain/regtest/data/bitcoin.conf
 
 [Install]
 WantedBy=multi-user.target
