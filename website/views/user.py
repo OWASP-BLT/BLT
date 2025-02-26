@@ -181,28 +181,28 @@ class InviteCreate(TemplateView):
         return domain.lower()  
     return None
 
-def post(self, request, *args, **kwargs):
-    email = request.POST.get("email", "").strip()
-    exists = False
-    domain = extract_domain(email)
+    def post(self, request, *args, **kwargs):
+        email = request.POST.get("email", "").strip()
+        exists = False
+        domain = extract_domain(email)
 
-    if domain and validators.domain(domain):  
-        try:
-            full_url_domain = f"https://{domain}/favicon.ico"
+        if domain and validators.domain(domain):  
+            try:
+                full_url_domain = f"https://{domain}/favicon.ico"
 
-            if validators.url(full_url_domain):  
-                response = requests.get(full_url_domain, timeout=5)
-                if response.status_code == 200:
-                    exists = "exists"
-        except requests.RequestException:
-            pass  
+                if validators.url(full_url_domain):  
+                    response = requests.get(full_url_domain, timeout=5)
+                    if response.status_code == 200:
+                        exists = "exists"
+            except requests.RequestException:
+                pass  
 
-    context = {
-        "exists": exists,
-        "domain": domain,
-        "email": email,
-    }
-    return render(request, "invite.html", context)
+        context = {
+            "exists": exists,
+            "domain": domain,
+            "email": email,
+        }
+        return render(request, "invite.html", context)
 
 
 def get_github_stats(user_profile):
