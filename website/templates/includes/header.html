@@ -42,6 +42,13 @@
         /* Fixed height */
     }
 
+    @media (prefers-color-scheme: dark) {
+        .chatbot {
+            background-color: #1f2937;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+    }
+
     .chat-icon {
         position: fixed;
         bottom: 4%;
@@ -105,6 +112,16 @@
     #mobile-search.active {
         display: block;
     }
+
+    @media (prefers-color-scheme: dark) {
+        .chat-header {
+            background-color: #e74c3c;
+        }
+        
+        .loading {
+            background-color: #1f2937e6;
+        }
+    }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -162,7 +179,7 @@
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4">
+<nav class="fixed top-0 z-50 w-full bg-white dark:bg-gray-900 border-[#F7F7F7] dark:border-gray-700 border-b-2 px-4 transition-colors duration-300">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
@@ -183,10 +200,17 @@
                          width="56"
                          height="56">
                 </a>
+                <!-- Theme Toggle Button -->
+                <button id="theme-toggle"
+                        type="button"
+                        class="ml-4 text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg text-sm p-2">
+                    <i id="theme-toggle-dark-icon" class="fa-solid fa-moon hidden"></i>
+                    <i id="theme-toggle-light-icon" class="fa-solid fa-sun hidden"></i>
+                </button>
             </div>
             <!-- Search Bar -->
             <div class="flex-1 max-w-xl mx-4 hidden sm:block">
-                <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
+                <div class="relative flex items-center rounded-lg overflow-hidden bg-white dark:bg-gray-800 border-2 border-red-500 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200">
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
@@ -195,7 +219,7 @@
                                name="query"
                                id="query-input"
                                placeholder="Search..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent outline-none">
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent outline-none">
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
                                 <div class="relative border-l-2 border-red-500 flex">
@@ -210,39 +234,39 @@
                                         <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
                                     </button>
                                     <div id="organizations-dropdown"
-                                         class="z-50 hidden absolute bg-white top-full left-0 w-max mt-2 rounded-lg shadow-xl border">
+                                         class="z-50 hidden absolute bg-white dark:bg-gray-800 top-full left-0 w-max mt-2 rounded-lg shadow-xl border dark:border-gray-700">
                                         <ul class="flex flex-col gap-2 px-4 py-2">
                                             <li>
                                                 <button data-value="all"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option text-gray-700 dark:text-gray-200">
                                                     <i class="fa fa-check mr-2 text-red-500"></i>
                                                     {% trans "All" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="organizations"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option text-gray-700 dark:text-gray-200">
                                                     <i class="fa fa-building fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Organizations" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="issues"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option text-gray-700 dark:text-gray-200">
                                                     <i class="fa fa-bug fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Issues" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="domains"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option text-gray-700 dark:text-gray-200">
                                                     <i class="fa fa-globe fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Domains" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="users"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option text-gray-700 dark:text-gray-200">
                                                     <i class="fa fa-user-group fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Users" %}
                                                 </button>
@@ -372,14 +396,14 @@
     </div>
     <!-- Mobile Search Bar - Moved inside nav -->
     <div id="mobile-search"
-         class="hidden sm:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
+         class="hidden sm:hidden w-full px-4 py-3 bg-white dark:bg-gray-800">
         <form action="{% url 'search' %}" method="get" class="flex items-center">
             <div class="relative flex-1">
                 <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
                 <input type="text"
                        name="query"
                        placeholder="Search..."
-                       class="w-full pl-10 pr-4 py-3 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400">
+                       class="w-full pl-10 pr-4 py-3 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 dark:text-gray-200 dark:placeholder-gray-500">
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
@@ -565,7 +589,7 @@
                     return false;
                 case '/gsoc':
                     response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                        'Explore OWASP’s GSoC participation:<br>' +
+                        'Explore OWASP's GSoC participation:<br>' +
                         '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
                         'Get involved with open-source at OWASP!';
                     chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
@@ -669,4 +693,53 @@
         mobileSearch.classList.toggle('hidden');
         mobileSearch.classList.toggle('active');
     }
+</script>
+<script>
+    // Theme toggle functionality
+    function initTheme() {
+        // On page load or when changing themes, best to add inline in `head` to avoid FOUC
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            document.getElementById('theme-toggle-dark-icon').classList.add('hidden');
+            document.getElementById('theme-toggle-light-icon').classList.remove('hidden');
+        } else {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-toggle-light-icon').classList.add('hidden');
+            document.getElementById('theme-toggle-dark-icon').classList.remove('hidden');
+        }
+    }
+
+    // Call once to initialize
+    initTheme();
+
+    // Add event listener for theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', function() {
+        // Toggle theme
+        if (document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.remove('dark');
+            localStorage.theme = 'light';
+            document.getElementById('theme-toggle-light-icon').classList.add('hidden');
+            document.getElementById('theme-toggle-dark-icon').classList.remove('hidden');
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.theme = 'dark';
+            document.getElementById('theme-toggle-dark-icon').classList.add('hidden');
+            document.getElementById('theme-toggle-light-icon').classList.remove('hidden');
+        }
+    });
+
+    // Watch for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        if (!('theme' in localStorage)) {
+            if (e.matches) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-toggle-dark-icon').classList.add('hidden');
+                document.getElementById('theme-toggle-light-icon').classList.remove('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('theme-toggle-light-icon').classList.add('hidden');
+                document.getElementById('theme-toggle-dark-icon').classList.remove('hidden');
+            }
+        }
+    });
 </script>

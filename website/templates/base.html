@@ -85,7 +85,7 @@
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] transition-colors duration-300">
         {% include "includes/header.html" %}
         <div class="w-full h-[100px]"></div>
         <!-- Main content starts here -->
@@ -177,6 +177,61 @@
             });
         </script>
         <style>
+            /* Base text color transitions */
+            body {
+                @apply text-gray-900 dark:text-gray-100 transition-colors duration-300;
+            }
+            
+            /* Headings */
+            h1, h2, h3, h4, h5, h6 {
+                @apply text-gray-900 dark:text-gray-100 transition-colors duration-300;
+            }
+            
+            /* Paragraphs and general text */
+            p, span, div {
+                @apply text-gray-700 dark:text-gray-300 transition-colors duration-300;
+            }
+            
+            /* Links */
+            a:not(.no-theme-color) {
+                @apply text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors duration-300;
+            }
+            
+            /* Form inputs */
+            input, textarea, select {
+                @apply text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 transition-colors duration-300;
+            }
+            
+            /* Tables */
+            table {
+                @apply text-gray-900 dark:text-gray-100;
+            }
+            
+            /* Lists */
+            ul, ol {
+                @apply text-gray-700 dark:text-gray-300;
+            }
+            
+            /* Code blocks */
+            pre, code {
+                @apply text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-gray-800;
+            }
+            
+            /* Buttons */
+            button:not(.no-theme-color) {
+                @apply text-gray-900 dark:text-gray-100 hover:text-[#e74c3c] dark:hover:text-[#e74c3c] transition-colors duration-300;
+            }
+            
+            /* Form labels */
+            label {
+                @apply text-gray-700 dark:text-gray-300;
+            }
+            
+            /* Placeholders */
+            ::placeholder {
+                @apply text-gray-500 dark:text-gray-400;
+            }
+            
             .animate-slide-in {
                 animation: slideIn 0.3s ease-out;
             }
@@ -202,6 +257,24 @@
         <script src="{% static 'js/ui.js' %}"></script>
         {% block after_js %}
         {% endblock after_js %}
+        <script>
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            brand: {
+                                red: '#e74c3c'
+                            },
+                            text: {
+                                light: '#1a202c', // Dark text for light mode
+                                dark: '#f7fafc'   // Light text for dark mode
+                            }
+                        }
+                    }
+                }
+            }
+        </script>
     </body>
     <script>
         $("#report-bug-btn").click(function () {

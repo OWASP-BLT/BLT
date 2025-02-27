@@ -4,15 +4,15 @@
 <!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<div class="sidebar fixed left-0 top-[64px] h-full bg-white border-r border-gray-200  transform -translate-x-full transition-transform duration-300 ease-in-out z-40">
-    <div class="h-full overflow-y-auto bg-white flex flex-col justify-between scrollbar-hide mt-4">
+<div class="sidebar fixed left-0 top-[64px] h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 transform -translate-x-full transition-transform duration-300 ease-in-out z-40">
+    <div class="h-full overflow-y-auto bg-white dark:bg-gray-900 flex flex-col justify-between scrollbar-hide mt-4">
         <div class="overflow-auto scrollbar-hide">
             <ul class="font-medium text-2xl mt-6 mb-0">
                 <!-- Stats Dashboard Link -->
                 <!-- Organizations Header Link -->
-                <li class="mb-2 {% if '/organizations/' in request.path %}bg-gray-200{% endif %}">
+                <li class="mb-2 {% if '/organizations/' in request.path %}bg-gray-200 dark:bg-gray-800{% endif %}">
                     <a href="{% url 'organizations' %}"
-                       class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                       class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path %}text-black dark:text-white{% else %}hover:text-[#e74c3c] text-black dark:text-gray-200{% endif %}">
                         <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fas fa-building fa-lg"></i>
                         </div>
@@ -22,9 +22,9 @@
                 <!-- Domains Link -->
                 <!-- Submenu Items -->
                 <ul class="pl-8">
-                    <li class="mb-2 {% if '/domains/' in request.path %}bg-gray-200{% endif %}">
+                    <li class="mb-2 {% if '/domains/' in request.path %}bg-gray-200 dark:bg-gray-800{% endif %}">
                         <a href="{% url 'domains' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/domains/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                           class="flex items-center w-full no-underline p-2 {% if '/domains/' in request.path %}text-black dark:text-white{% else %}hover:text-[#e74c3c] text-black dark:text-gray-200{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-globe fa-lg"></i>
                             </div>
@@ -133,7 +133,7 @@
                     </li>
                 </ul>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Projects Header Link -->
                 <li class="mb-2 {% if request.path == '/projects/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'project_list' %}"
@@ -184,7 +184,7 @@
                     </li>
                 </ul>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Users Header Link -->
                 <li class="mb-2 {% if request.path == '/users/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'users' %}"
@@ -244,7 +244,7 @@
                     </li>
                 </ul>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Teams (Gamification) Static Item -->
                 <li class="mb-2">
                     <div class="flex items-center w-full p-2 hover:text-[#e74c3c] text-black">
@@ -286,7 +286,7 @@
                     </li>
                 </ul>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- iPhone App -->
                 <li class="mb-2">
                     <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
@@ -299,7 +299,7 @@
                     </a>
                 </li>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- About Us Header Link -->
                 <li class="mb-2 {% if request.path == '/about/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'about' %}"
@@ -361,7 +361,7 @@
                     </li>
                 </ul>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Contribute Header Link -->
                 <li class="mb-2 {% if request.path == '/contribute/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'contribution_guidelines' %}"
@@ -439,7 +439,7 @@
                     </li>
                 </ul>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Follow Us Header Link -->
                 <li class="mb-2">
                     <a href="https://twitter.com/owasp_blt"
@@ -483,7 +483,7 @@
                     </a>
                 </li>
                 <!-- Spacer -->
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Footer Links -->
                 <li class="mb-2 {% if request.path == '/sitemap/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'sitemap' %}"
@@ -540,7 +540,7 @@
                         <span>Website Stats</span>
                     </a>
                 </li>
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <li class="mb-2">
                     <a href="https://github.com/OWASP/BLT"
                        class="flex items-center w-full no-underline p-2 hover:text-[#e74c3c] text-black"
@@ -615,7 +615,7 @@
                         </a>
                     </li>
                 </ul>
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <li class="mb-2 {% if request.path == '/terms/' %}bg-gray-200{% endif %}">
                     <a href="{% url 'terms' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/terms' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
@@ -625,7 +625,7 @@
                         <span>Terms</span>
                     </a>
                 </li>
-                <div class="my-4 border-t border-gray-300"></div>
+                <div class="my-4 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Language selector -->
                 <form action="{% url 'set_language' %}"
                       method="post"
@@ -667,7 +667,7 @@
                         <span>Edit</span>
                     </a>
                 </li>
-                <div class="my-8 border-t border-gray-300"></div>
+                <div class="my-8 border-t border-gray-300 dark:border-gray-700"></div>
                 <!-- Bottom spacer -->
                 <div class="h-[50px]"></div>
             </ul>
@@ -683,3 +683,24 @@
         });
     </script>
 </div>
+<style>
+    /* Dark mode scrollbar styles */
+    @media (prefers-color-scheme: dark) {
+        .sidebar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .sidebar::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 4px;
+        }
+        
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+    }
+</style>
