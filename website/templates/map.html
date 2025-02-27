@@ -4,57 +4,62 @@
 {% block extra_css %}
     <link rel="stylesheet"
           href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin="" />
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+          href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+          href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.css" />
     <style>
         #map {
             width: 100%;
             height: 600px;
             z-index: 1;
+            background: #f8f9fa;
         }
         .leaflet-popup-content-wrapper {
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .leaflet-popup-content {
             margin: 16px;
-            min-width: 200px;
+            min-width: 250px;
         }
-        .marker-cluster-small {
+        .marker-cluster {
             background-color: rgba(231, 76, 60, 0.2);
+            border: 3px solid rgba(231, 76, 60, 0.4);
+            border-radius: 50%;
         }
-        .marker-cluster-small div {
-            background-color: rgba(231, 76, 60, 0.4);
-            color: #fff;
-        }
-        .marker-cluster-medium {
-            background-color: rgba(231, 76, 60, 0.4);
-        }
-        .marker-cluster-medium div {
+        .marker-cluster div {
             background-color: rgba(231, 76, 60, 0.6);
-            color: #fff;
-        }
-        .marker-cluster-large {
-            background-color: rgba(231, 76, 60, 0.6);
-        }
-        .marker-cluster-large div {
-            background-color: rgba(231, 76, 60, 0.8);
-            color: #fff;
-        }
-        .leaflet-control-zoom a {
-            background-color: white;
-            color: #e74c3c;
-            border: 2px solid rgba(231, 76, 60, 0.2);
-        }
-        .leaflet-control-zoom a:hover {
-            background-color: #e74c3c;
             color: white;
+            width: 30px;
+            height: 30px;
+            margin-left: -3px;
+            margin-top: -3px;
+            text-align: center;
+            border-radius: 50%;
+            font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+            line-height: 30px;
+        }
+        .leaflet-control-zoom a,
+        .leaflet-control-fullscreen a {
+            background-color: white !important;
+            color: #e74c3c !important;
+            border: 2px solid rgba(231, 76, 60, 0.2) !important;
+            width: 36px !important;
+            height: 36px !important;
+            line-height: 32px !important;
+            border-radius: 8px !important;
+            margin-bottom: 5px !important;
+        }
+        .leaflet-control-zoom a:hover,
+        .leaflet-control-fullscreen a:hover {
+            background-color: #e74c3c !important;
+            color: white !important;
         }
         .map-loading {
             position: absolute;
@@ -62,10 +67,20 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .custom-popup img {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .location-card {
+            transition: all 0.3s ease;
+        }
+        .location-card:hover {
+            transform: translateY(-2px);
         }
     </style>
 {% endblock %}
@@ -159,10 +174,9 @@
     </div>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const loadingEl = document.getElementById('map-loading');
@@ -177,60 +191,87 @@
                 maxZoom: 18,
                 zoomControl: false,
                 scrollWheelZoom: true,
-                worldCopyJump: true
+                worldCopyJump: true,
+                fullscreenControl: true,
+                fullscreenControlOptions: {
+                    position: 'topright'
+                }
             });
 
-            // Add custom tiles with better styling and error handling
-            const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                subdomains: 'abcd',
-                maxZoom: 19
+            // Add OpenStreetMap tiles with better styling
+            const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+                className: 'map-tiles'
             }).addTo(map);
 
-            // Add zoom control to top-right
+            // Add zoom control to top-right with better styling
             L.control.zoom({
                 position: 'topright'
             }).addTo(map);
 
+            // Custom icon for markers
+            const customIcon = L.divIcon({
+                html: `<div style=" background-color: #e74c3c; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); "></div>`,
+                className: 'custom-marker',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+
             // Initialize marker cluster group with custom styling
             const markers = L.markerClusterGroup({
                 showCoverageOnHover: false,
-                maxClusterRadius: 50,
+                maxClusterRadius: 40,
                 spiderfyOnMaxZoom: true,
                 zoomToBoundsOnClick: true,
                 chunkedLoading: true,
-                disableClusteringAtZoom: 16
+                disableClusteringAtZoom: 16,
+                animate: true,
+                animateAddingMarkers: true,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    let size = 40;
+                    if (count > 100) size = 60;
+                    else if (count > 50) size = 50;
+                    
+                    return L.divIcon({
+                        html: `<div style=" background-color: rgba(231, 76, 60, 0.8); color: white; width: ${size}px; height: ${size}px; line-height: ${size}px; text-align: center; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-weight: bold; ">${count}</div>`,
+                        className: 'marker-cluster-custom',
+                        iconSize: L.point(size, size)
+                    });
+                }
             });
 
-            // Add markers for locations
+            // Add markers for locations with custom icons and improved popups
             const markerPromises = [];
             {% for location in locations %}
                 {% if location.latitude and location.longitude %}
                     markerPromises.push(new Promise((resolve) => {
-                        const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}])
-                            .bindPopup(`
-                                <div class="text-center p-2">
-                                    {% if location.logo %}
-                                        <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-16 h-16 mx-auto mb-3 object-contain" width="64" height="64" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
-                                    {% endif %}
-                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
-                                    {% if location.city or location.country %}
-                                        <p class="text-sm text-gray-600 mb-3">
-                                            {% if location.city %}{{ location.city }}{% endif %}
-                                            {% if location.city and location.country %}, {% endif %}
-                                            {% if location.country %}{{ location.country }}{% endif %}
-                                        </p>
-                                    {% endif %}
-                                    {% if marker_type == 'organizations' %}
-                                        <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm">
-                                            View Details
-                                        </a>
-                                    {% endif %}
-                                </div>
-                            `, {
-                                maxWidth: 300,
-                                className: 'custom-popup'
-                            });
+                        const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}], {
+                            icon: customIcon
+                        }).bindPopup(`
+                            <div class="text-center p-3">
+                                {% if location.logo %}
+                                    <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-20 h-20 mx-auto mb-4 object-contain" width="80" height="80" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
+                                {% endif %}
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
+                                {% if location.city or location.country %}
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        {% if location.city %}{{ location.city }}{% endif %}
+                                        {% if location.city and location.country %}, {% endif %}
+                                        {% if location.country %}{{ location.country }}{% endif %}
+                                    </p>
+                                {% endif %}
+                                {% if marker_type == 'organizations' %}
+                                    <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm font-medium">
+                                        View Details
+                                    </a>
+                                {% endif %}
+                            </div>
+                        `, {
+                            maxWidth: 300,
+                            className: 'custom-popup'
+                        });
                         markers.addLayer(marker);
                         resolve();
                     }));
@@ -239,21 +280,19 @@
 
             // Wait for all markers to be added
             Promise.all(markerPromises).then(() => {
-                // Add marker cluster to map
                 map.addLayer(markers);
-
-                // Fit bounds if there are markers
+                
                 if (markers.getLayers().length > 0) {
                     map.fitBounds(markers.getBounds(), {
-                        padding: [50, 50]
+                        padding: [50, 50],
+                        maxZoom: 12
                     });
                 }
-
-                // Hide loading indicator
+                
                 loadingEl.classList.add('hidden');
             });
 
-            // Handle window resize
+            // Handle window resize with debounce
             let resizeTimeout;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimeout);
@@ -266,9 +305,9 @@
             map.on('error', function(e) {
                 console.error('Map error:', e.error);
                 loadingEl.innerHTML = `
-                    <div class="text-red-600">
+                    <div class="text-red-600 flex items-center">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        Error loading map
+                        <span>Error loading map</span>
                     </div>
                 `;
             });
@@ -281,9 +320,9 @@
         } catch (error) {
             console.error('Map initialization error:', error);
             loadingEl.innerHTML = `
-                <div class="text-red-600">
+                <div class="text-red-600 flex items-center">
                     <i class="fas fa-exclamation-triangle mr-2"></i>
-                    Error initializing map
+                    <span>Error initializing map</span>
                 </div>
             `;
         }
