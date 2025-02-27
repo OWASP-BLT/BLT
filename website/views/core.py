@@ -30,6 +30,7 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
@@ -40,7 +41,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.generic import TemplateView, View
+from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
     IP,
@@ -1014,7 +1015,7 @@ class StatsDetailView(TemplateView):
                 dates, counts = self.get_historical_counts(model, start_date)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
 
-                # Get filtered count and total count
+                # Get filtered count and total counts
                 total_count = model.objects.count()
                 filtered_count = counts[-1] if counts else 0
 
@@ -1055,7 +1056,7 @@ def view_suggestions(request):
     status = request.GET.get("status")
     sort = request.GET.get("sort", "newest")
 
-    suggestions = Suggestion.objects.all()
+    suggestions = ForumPost.objects.all()
 
     # Apply filters
     if category_id:
@@ -1073,7 +1074,7 @@ def view_suggestions(request):
     else:  # newest
         suggestions = suggestions.order_by("-created")
 
-    categories = SuggestionCategory.objects.all()
+    categories = ForumCategory.objects.all()
 
     return render(
         request,
@@ -1092,7 +1093,7 @@ def sitemap(request):
 
 def badge_list(request):
     badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge"))
+    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
     return render(request, "badges.html", {"badges": badges})
 
 
@@ -1208,7 +1209,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Repo, User
+    from website.models import ForumPost, GitHubIssue, Post, Repo, User  # Add BlogPost model
 
     # Get last commit date
     try:
@@ -1240,6 +1241,9 @@ def home(request):
         .order_by("-total_prs")[:5]
     )
 
+    # Get latest blog posts
+    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
     return render(
         request,
         "home.html",
@@ -1251,6 +1255,7 @@ def home(request):
             "recent_posts": recent_posts,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
+            "latest_blog_posts": latest_blog_posts,  # Add latest blog posts to context
         },
     )
 
@@ -1511,6 +1516,11 @@ def management_commands(request):
 
 def run_management_command(request):
     if request.method == "POST":
+        # Check if user is superuser
+        if not request.user.is_superuser:
+            messages.error(request, "Only superusers can run management commands.")
+            return redirect("management_commands")
+
         command = request.POST.get("command")
         logging.info(f"Running command: {command}")
         print(f"Running command: {command}")
@@ -1561,118 +1571,77 @@ def run_management_command(request):
 
 
 def template_list(request):
+    from django.core.cache import cache
+    from django.core.paginator import Paginator
     from django.db.models import Sum
     from django.urls import URLPattern, URLResolver, get_resolver
 
+    # Get search and filter parameters
+    search_query = request.GET.get("search", "")
+    filter_by = request.GET.get("filter", "all")
+    sort = request.GET.get("sort", "name")
+    direction = request.GET.get("dir", "asc")
+    page = request.GET.get("page", 1)
+
     def get_templates_from_dir(directory):
+        # Try to get from cache first
+        cache_key = f"template_list_{directory}_{search_query}_{filter_by}"
+        cached_templates = cache.get(cache_key)
+        if cached_templates is not None:
+            return cached_templates
+
         templates = []
         for template_name in os.listdir(directory):
             if template_name.endswith(".html"):
-                template_path = os.path.join(directory, template_name)
+                if search_query and search_query.lower() not in template_name.lower():
+                    continue
 
-                # Get last modified time
+                template_path = os.path.join(directory, template_name)
                 modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
 
-                # Get view count from IP table
-                view_count = (
-                    IP.objects.filter(
-                        Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
-                    ).aggregate(total_views=Sum("count"))["total_views"]
-                    or 0
-                )
+                # Get view count from IP table with caching
+                view_count_key = f"template_views_{template_name}"
+                view_count = cache.get(view_count_key)
+                if view_count is None:
+                    view_count = (
+                        IP.objects.filter(
+                            Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
+                        ).aggregate(total_views=Sum("count"))["total_views"]
+                        or 0
+                    )
+                    cache.set(view_count_key, view_count, 3600)  # Cache for 1 hour
 
-                # Get GitHub URL
                 github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
 
-                # Check template contents for sidenav and base.html extension
-                has_sidenav = False
-                extends_base = False
-                has_style_tags = False
-                with open(template_path, "r") as f:
-                    content = f.read()
-                    if '{% include "includes/sidenav.html" %}' in content:
-                        has_sidenav = True
-                    if '{% extends "base.html" %}' in content:
-                        extends_base = True
-                    if "<style" in content:
-                        has_style_tags = True
+                # Check template contents with caching
+                template_info_key = f"template_info_{template_name}"
+                template_info = cache.get(template_info_key)
 
-                # Check if template has a URL
-                template_url = None
-                resolver = get_resolver()
+                if template_info is None:
+                    with open(template_path, "r") as f:
+                        content = f.read()
+                        template_info = {
+                            "has_sidenav": '{% include "includes/sidenav.html" %}' in content,
+                            "extends_base": '{% extends "base.html" %}' in content,
+                            "has_style_tags": "<style" in content,
+                        }
+                    cache.set(template_info_key, template_info, 3600)  # Cache for 1 hour
 
-                def check_urlpatterns(urlpatterns, template_name):
-                    # Get template name without .html extension for comparison
-                    template_base_name = template_name.replace(".html", "")
+                # Filter based on user selection
+                if filter_by != "all":
+                    if filter_by == "with_sidenav" and not template_info["has_sidenav"]:
+                        continue
+                    if filter_by == "with_base" and not template_info["extends_base"]:
+                        continue
+                    if filter_by == "with_styles" and not template_info["has_style_tags"]:
+                        continue
 
-                    for pattern in urlpatterns:
-                        if isinstance(pattern, URLResolver):
-                            match = check_urlpatterns(pattern.url_patterns, template_name)
-                            if match:
-                                return match
-                        elif isinstance(pattern, URLPattern):
-                            # Get pattern path and name for comparison
-                            pattern_path = str(pattern.pattern) if pattern.pattern else ""
-                            pattern_name = getattr(pattern, "name", "")
-
-                            # Check class-based views
-                            if hasattr(pattern.callback, "view_class"):
-                                view_class = pattern.callback.view_class
-                                pattern_path = str(pattern.pattern) if pattern.pattern else ""
-                                pattern_name = getattr(pattern, "name", "")
-
-                                # Check template_name attribute
-                                if hasattr(view_class, "template_name"):
-                                    view_template = view_class.template_name
-                                    if view_template == template_name or view_template == template_base_name:
-                                        return pattern.pattern
-
-                                # Check if pattern path or name matches template name
-                                path_match = pattern_path == template_base_name
-                                path_replace_match = (
-                                    pattern_path and pattern_path.replace("-", "_") == template_base_name
-                                )
-                                name_match = pattern_name == template_base_name
-                                name_replace_match = (
-                                    pattern_name and pattern_name.replace("-", "_") == template_base_name
-                                )
-
-                                if path_match or path_replace_match or name_match or name_replace_match:
-                                    return pattern.pattern
-
-                            # Check function-based views
-                            elif hasattr(pattern.callback, "__code__"):
-                                func_code = pattern.callback.__code__
-                                pattern_path = str(pattern.pattern) if pattern.pattern else ""
-                                pattern_name = getattr(pattern, "name", "")
-
-                                if (
-                                    template_name in func_code.co_names
-                                    or template_base_name in func_code.co_names
-                                    or pattern.callback.__name__ == template_base_name
-                                    or pattern_path == template_base_name
-                                    or (pattern_path and pattern_path.replace("-", "_") == template_base_name)
-                                    or pattern_name == template_base_name
-                                    or (pattern_name and pattern_name.replace("-", "_") == template_base_name)
-                                ):
-                                    return pattern.pattern
-
-                            # Check closure-based views
-                            elif hasattr(pattern.callback, "__closure__") and pattern.callback.__closure__:
-                                for cell in pattern.callback.__closure__:
-                                    if isinstance(cell.cell_contents, str):
-                                        matches_template = cell.cell_contents.endswith(
-                                            template_name
-                                        ) or cell.cell_contents.endswith(template_base_name)
-                                        if matches_template:
-                                            return pattern.pattern
-                    return None
-
-                url_pattern = check_urlpatterns(resolver.url_patterns, template_name)
-                if url_pattern:
-                    template_url = "/" + str(url_pattern).lstrip("^").rstrip("$")
-                    if template_url.endswith("/"):
-                        template_url = template_url[:-1]
+                # Check if template has a URL (cached)
+                url_key = f"template_url_{template_name}"
+                template_url = cache.get(url_key)
+                if template_url is None:
+                    template_url = check_template_url(template_name)
+                    cache.set(url_key, template_url, 3600)  # Cache for 1 hour
 
                 templates.append(
                     {
@@ -1682,12 +1651,64 @@ def template_list(request):
                         "modified": modified_time,
                         "views": view_count,
                         "github_url": github_url,
-                        "has_sidenav": has_sidenav,
-                        "extends_base": extends_base,
-                        "has_style_tags": has_style_tags,
+                        "has_sidenav": template_info["has_sidenav"],
+                        "extends_base": template_info["extends_base"],
+                        "has_style_tags": template_info["has_style_tags"],
                     }
                 )
+
+        # Cache the results
+        cache.set(cache_key, templates, 300)  # Cache for 5 minutes
         return templates
+
+    def check_template_url(template_name):
+        resolver = get_resolver()
+        template_base_name = template_name.replace(".html", "")
+
+        for pattern in resolver.url_patterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
+
+    def check_pattern(pattern, template_name, template_base_name):
+        pattern_path = str(pattern.pattern) if pattern.pattern else ""
+        pattern_name = getattr(pattern, "name", "")
+
+        if hasattr(pattern.callback, "view_class"):
+            view_class = pattern.callback.view_class
+            if hasattr(view_class, "template_name") and view_class.template_name in (template_name, template_base_name):
+                return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
+
+        if any(
+            [
+                pattern_path == template_base_name,
+                pattern_path and pattern_path.replace("-", "_") == template_base_name,
+                pattern_name == template_base_name,
+                pattern_name and pattern_name.replace("-", "_") == template_base_name,
+            ]
+        ):
+            return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
+
+        return None
+
+    def check_template_url_in_patterns(urlpatterns, template_name):
+        template_base_name = template_name.replace(".html", "")
+        for pattern in urlpatterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
 
     template_dirs = []
     main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
@@ -1705,13 +1726,21 @@ def template_list(request):
     # Calculate total templates
     total_templates = sum(len(dir["templates"]) for dir in template_dirs)
 
-    # Get sort parameters
-    sort = request.GET.get("sort", "name")
-    direction = request.GET.get("dir", "asc")
-
     # Sort templates in each directory
     for dir in template_dirs:
         dir["templates"].sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
+
+    # Flatten templates for pagination
+    all_templates = []
+    for dir in template_dirs:
+        all_templates.extend([(dir["name"], template) for template in dir["templates"]])
+
+    # Paginate results
+    paginator = Paginator(all_templates, 20)  # Show 20 templates per page
+    try:
+        templates_page = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        templates_page = paginator.page(1)
 
     return render(
         request,
@@ -1722,6 +1751,15 @@ def template_list(request):
             "sort": sort,
             "direction": direction,
             "base_dir": settings.BASE_DIR,
+            "search_query": search_query,
+            "filter_by": filter_by,
+            "page_obj": templates_page,
+            "filter_options": [
+                {"value": "all", "label": "All Templates"},
+                {"value": "with_sidenav", "label": "With Sidenav"},
+                {"value": "with_base", "label": "Extends Base"},
+                {"value": "with_styles", "label": "With Style Tags"},
+            ],
         },
     )
 
@@ -1786,7 +1824,7 @@ def website_stats(request):
         views.append(day["daily_count"])
 
     # Get unique visitors (unique IPs), excluding admin URLs
-    unique_visitors = IP.objects.exclude(path__startswith=f"/{admin_url}/").values("address").distinct().count()
+    unique_visitors = IP.objects.exclude(path__startswith=admin_url).values("address").distinct().count()
 
     total_views = sum(view_stats.values())
 
@@ -1886,3 +1924,36 @@ class CustomSocialAccountDisconnectView(BaseSocialAccountDisconnectView):
         if getattr(self, "swagger_fake_view", False):
             return SocialAccount.objects.none()
         return super().get_queryset()
+
+
+class MapView(ListView):
+    template_name = "map.html"
+    context_object_name = "locations"
+
+    def get_queryset(self):
+        # Get the marker type from query params, default to 'organizations'
+        marker_type = self.request.GET.get("type", "organizations")
+
+        if marker_type == "organizations":
+            return Organization.objects.filter(
+                latitude__isnull=False, longitude__isnull=False, is_active=True
+            ).order_by("-created")
+        # Add more types here as needed
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        marker_type = self.request.GET.get("type", "organizations")
+
+        context["marker_type"] = marker_type
+        context["marker_types"] = [
+            {
+                "id": "organizations",
+                "name": "Organizations",
+                "icon": "fa-building",
+                "description": "View organizations around the world",
+            },
+            # Add more marker types here as needed
+        ]
+
+        return context

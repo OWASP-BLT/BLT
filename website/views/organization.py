@@ -2,7 +2,7 @@ import ipaddress
 import json
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -19,6 +19,7 @@ from django.db.models import Count, Prefetch, Q, Sum
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
@@ -600,24 +601,64 @@ class DomainDetailView(ListView):
     model = Issue
     paginate_by = 3
 
+    def get_domain_from_slug(self, slug):
+        """Helper method to find domain from a slug that might be a URL."""
+        if not slug:
+            raise Http404("No domain specified")
+
+        # Clean the slug
+        slug = slug.strip().lower()
+
+        # First try direct name match
+        try:
+            return Domain.objects.get(name=slug)
+        except Domain.DoesNotExist:
+            pass
+
+        # Try to parse as URL
+        if "//" not in slug:
+            slug = "http://" + slug
+
+        try:
+            parsed = urlparse(slug)
+            hostname = parsed.netloc or parsed.path
+            # Remove www. prefix if present
+            hostname = hostname.replace("www.", "")
+            # Remove any remaining path components
+            hostname = hostname.split("/")[0]
+
+            # Try to find domain by name or URL
+            try:
+                return Domain.objects.get(name=hostname)
+            except Domain.DoesNotExist:
+                try:
+                    return Domain.objects.get(url__icontains=hostname)
+                except Domain.DoesNotExist:
+                    # Try one last time with the original slug
+                    return get_object_or_404(Domain, url__icontains=slug)
+        except Exception as e:
+            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            raise Http404("Invalid domain format")
+
     def get_queryset(self):
         return Issue.objects.none()  # We'll handle the queryset in get_context_data
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            # remove any arguments from the slug
-            slug = self.kwargs["slug"].split("?")[0]
-            domain = get_object_or_404(Domain, name=slug)
+            # Get the slug and clean it
+            slug = self.kwargs.get("slug", "").strip().split("?")[0]
+
+            # Find the domain
+            domain = self.get_domain_from_slug(slug)
             context["domain"] = domain
 
             # Get view count
             view_count = IP.objects.filter(path=self.request.path).count()
             context["view_count"] = view_count
 
-            parsed_url = urlparse("http://" + slug)
-            name = parsed_url.netloc.split(".")[-2:][0].title()
-            context["name"] = name
+            # Set the name for display
+            context["name"] = domain.get_name or domain.name
 
             # Fetch the related organization
             organization = domain.organization
@@ -635,13 +676,13 @@ class DomainDetailView(ListView):
 
             # Get open and closed issues
             open_issues = (
-                Issue.objects.filter(domain__name__contains=slug, status="open", hunt=None)
+                Issue.objects.filter(domain=domain, status="open", hunt=None)
                 .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
                 .order_by("-created")
             )
 
             closed_issues = (
-                Issue.objects.filter(domain__name__contains=slug, status="closed", hunt=None)
+                Issue.objects.filter(domain=domain, status="closed", hunt=None)
                 .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
                 .order_by("-created")
             )
@@ -675,24 +716,30 @@ class DomainDetailView(ListView):
                     "opened": openissue_paginated,
                     "closed_net": closed_issues,
                     "closed": closeissue_paginated,
-                    "leaderboard": User.objects.filter(issue__url__contains=slug)
-                    .annotate(total=Count("issue"))
-                    .order_by("-total"),
+                    "leaderboard": (
+                        User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
+                    ),
                     "current_month": datetime.now().month,
-                    "domain_graph": Issue.objects.filter(
-                        domain=domain,
-                        hunt=None,
-                        created__month__gte=(datetime.now().month - 6),
-                        created__month__lte=datetime.now().month,
-                    ).order_by("created"),
+                    "domain_graph": (
+                        Issue.objects.filter(
+                            domain=domain,
+                            hunt=None,
+                            created__month__gte=(datetime.now().month - 6),
+                            created__month__lte=datetime.now().month,
+                        ).order_by("created")
+                    ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
-                    "pie_chart": Issue.objects.filter(domain=domain, hunt=None)
-                    .values("label")
-                    .annotate(c=Count("label"))
-                    .order_by("label"),
-                    "activities": Issue.objects.filter(domain=domain, hunt=None)
-                    .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-                    .order_by("-created"),
+                    "pie_chart": (
+                        Issue.objects.filter(domain=domain, hunt=None)
+                        .values("label")
+                        .annotate(c=Count("label"))
+                        .order_by("label")
+                    ),
+                    "activities": (
+                        Issue.objects.filter(domain=domain, hunt=None)
+                        .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+                        .order_by("-created")
+                    ),
                 }
             )
 
@@ -712,6 +759,8 @@ class DomainDetailView(ListView):
             context["twitter_url"] = f"https://twitter.com/{domain.get_or_set_x_url(domain.get_name)}"
 
             return context
+        except Http404:
+            raise
         except Exception as e:
             logger.error(f"Error in DomainDetailView: {str(e)}")
             raise Http404("Domain not found")
@@ -1351,7 +1400,11 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Error updating organization: {str(e)}")
+            return HttpResponse(
+                "Error updating organization. Either organization or user "
+                "doesn't exist or there was a key error. Please try again later."
+            )
     else:
         return HttpResponse("Invalid request method")
 
@@ -1385,7 +1438,11 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Error adding role: {str(e)}")
+            return HttpResponse(
+                "Error updating organization. Either organization or user "
+                "doesn't exist or there was a key error. Please try again later."
+            )
     else:
         return HttpResponse("Invalid request method")
 
@@ -1780,7 +1837,6 @@ def checkIN(request):
             }
         )
 
-    # Return JSON if AJAX
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse(data, safe=False)
 
@@ -1822,6 +1878,9 @@ class RoomsListView(ListView):
         for room in context["rooms"]:
             room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
 
+        # Add breadcrumbs
+        context["breadcrumbs"] = [{"title": "Discussion Rooms", "url": None}]
+
         return context
 
 
@@ -1855,7 +1914,11 @@ def join_room(request, room_id):
         request.session.create()
     # Get messages ordered by timestamp
     room_messages = room.messages.all().order_by("timestamp")
-    return render(request, "join_room.html", {"room": room, "room_messages": room_messages})
+
+    # Add breadcrumbs context
+    breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
+
+    return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
 @login_required(login_url="/accounts/login")
@@ -1993,10 +2056,11 @@ class OrganizationListView(ListView):
 
         context["recently_viewed"] = recently_viewed
 
-        # Get most popular organizations by counting their view paths
+        # Get most popular organizations by counting their view paths for today only
+        today = timezone.now().date()
         orgs_with_views = []
         for org in self.get_queryset():
-            view_count = IP.objects.filter(path=f"/organization/{org.slug}/").count()
+            view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
             orgs_with_views.append((org, view_count))
 
         # Sort by view count and get top 5
