@@ -13,6 +13,11 @@
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
+        #map {
+            width: 100%;
+            height: 600px;
+            z-index: 1;
+        }
         .leaflet-popup-content-wrapper {
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -51,6 +56,17 @@
             background-color: #e74c3c;
             color: white;
         }
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
     </style>
 {% endblock %}
 {% block content %}
@@ -74,8 +90,16 @@
             </div>
         </div>
         <!-- Map Container -->
-        <div id="map"
-             class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden"></div>
+        <div class="relative">
+            <div id="map-loading" class="map-loading hidden">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-spinner fa-spin text-[#e74c3c]"></i>
+                    <span>Loading map...</span>
+                </div>
+            </div>
+            <div id="map"
+                 class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden"></div>
+        </div>
         <!-- Location List -->
         <div class="mt-8">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Locations</h2>
@@ -140,82 +164,129 @@
             crossorigin=""></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
     <script>
-    // Initialize map with better default view
-    const map = L.map('map', {
-        center: [20, 0],
-        zoom: 2,
-        minZoom: 2,
-        maxZoom: 18,
-        zoomControl: false,
-        scrollWheelZoom: true,
-        worldCopyJump: true
-    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadingEl = document.getElementById('map-loading');
+        loadingEl.classList.remove('hidden');
 
-    // Add custom tiles with better styling
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(map);
+        try {
+            // Initialize map with better default view
+            const map = L.map('map', {
+                center: [20, 0],
+                zoom: 2,
+                minZoom: 2,
+                maxZoom: 18,
+                zoomControl: false,
+                scrollWheelZoom: true,
+                worldCopyJump: true
+            });
 
-    // Add zoom control to top-right
-    L.control.zoom({
-        position: 'topright'
-    }).addTo(map);
+            // Add custom tiles with better styling and error handling
+            const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
 
-    // Initialize marker cluster group with custom styling
-    const markers = L.markerClusterGroup({
-        showCoverageOnHover: false,
-        maxClusterRadius: 50,
-        spiderfyOnMaxZoom: true,
-        zoomToBoundsOnClick: true,
-        chunkedLoading: true
-    });
+            // Add zoom control to top-right
+            L.control.zoom({
+                position: 'topright'
+            }).addTo(map);
 
-    // Add markers for locations
-    {% for location in locations %}
-        {% if location.latitude and location.longitude %}
-            const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}])
-                .bindPopup(`
-                    <div class="text-center p-2">
-                        {% if location.logo %}
-                            <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-16 h-16 mx-auto mb-3 object-contain" width="64" height="64" />
-                        {% endif %}
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
-                        {% if location.city or location.country %}
-                            <p class="text-sm text-gray-600 mb-3">
-                                {% if location.city %}{{ location.city }}{% endif %}
-                                {% if location.city and location.country %}, {% endif %}
-                                {% if location.country %}{{ location.country }}{% endif %}
-                            </p>
-                        {% endif %}
-                        {% if marker_type == 'organizations' %}
-                            <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm">
-                                View Details
-                            </a>
-                        {% endif %}
+            // Initialize marker cluster group with custom styling
+            const markers = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true,
+                zoomToBoundsOnClick: true,
+                chunkedLoading: true,
+                disableClusteringAtZoom: 16
+            });
+
+            // Add markers for locations
+            const markerPromises = [];
+            {% for location in locations %}
+                {% if location.latitude and location.longitude %}
+                    markerPromises.push(new Promise((resolve) => {
+                        const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}])
+                            .bindPopup(`
+                                <div class="text-center p-2">
+                                    {% if location.logo %}
+                                        <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-16 h-16 mx-auto mb-3 object-contain" width="64" height="64" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
+                                    {% endif %}
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
+                                    {% if location.city or location.country %}
+                                        <p class="text-sm text-gray-600 mb-3">
+                                            {% if location.city %}{{ location.city }}{% endif %}
+                                            {% if location.city and location.country %}, {% endif %}
+                                            {% if location.country %}{{ location.country }}{% endif %}
+                                        </p>
+                                    {% endif %}
+                                    {% if marker_type == 'organizations' %}
+                                        <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm">
+                                            View Details
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            `, {
+                                maxWidth: 300,
+                                className: 'custom-popup'
+                            });
+                        markers.addLayer(marker);
+                        resolve();
+                    }));
+                {% endif %}
+            {% endfor %}
+
+            // Wait for all markers to be added
+            Promise.all(markerPromises).then(() => {
+                // Add marker cluster to map
+                map.addLayer(markers);
+
+                // Fit bounds if there are markers
+                if (markers.getLayers().length > 0) {
+                    map.fitBounds(markers.getBounds(), {
+                        padding: [50, 50]
+                    });
+                }
+
+                // Hide loading indicator
+                loadingEl.classList.add('hidden');
+            });
+
+            // Handle window resize
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(function() {
+                    map.invalidateSize();
+                }, 250);
+            });
+
+            // Handle errors
+            map.on('error', function(e) {
+                console.error('Map error:', e.error);
+                loadingEl.innerHTML = `
+                    <div class="text-red-600">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Error loading map
                     </div>
-                `, {
-                    maxWidth: 300,
-                    className: 'custom-popup'
-                });
-            markers.addLayer(marker);
-        {% endif %}
-    {% endfor %}
+                `;
+            });
 
-    // Add marker cluster to map
-    map.addLayer(markers);
+            // Handle tile loading errors
+            tileLayer.on('tileerror', function(e) {
+                console.error('Tile loading error:', e.tile);
+            });
 
-    // Fit bounds if there are markers
-    if (markers.getLayers().length > 0) {
-        map.fitBounds(markers.getBounds(), {
-            padding: [50, 50]
-        });
-    }
-
-    // Handle window resize
-    window.addEventListener('resize', function() {
-        map.invalidateSize();
+        } catch (error) {
+            console.error('Map initialization error:', error);
+            loadingEl.innerHTML = `
+                <div class="text-red-600">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Error initializing map
+                </div>
+            `;
+        }
     });
     </script>
 {% endblock %}
