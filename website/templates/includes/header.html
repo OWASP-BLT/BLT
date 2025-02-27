@@ -11,19 +11,23 @@
     a {
         color: black;
     }
+
     @media (min-width: 700px) {
         #selected-filter {
             display: inline;
         }
     }
+
     @media (max-width: 699px) {
         #selected-filter {
             display: none;
         }
+
         #organizations-btn {
             padding: 0.1rem;
         }
     }
+
     .chatbot {
         display: none;
         position: fixed;
@@ -34,13 +38,16 @@
         background-color: white;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 450px; /* Fixed height */
+        height: 450px;
+        /* Fixed height */
     }
+
     .chat-icon {
         position: fixed;
         bottom: 4%;
         right: 4%;
-        background-color: rgb(209, 16, 16); /* Red color */
+        background-color: rgb(209, 16, 16);
+        /* Red color */
         border-radius: 50%;
         width: 50px;
         height: 50px;
@@ -50,18 +57,24 @@
         cursor: pointer;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
+
     .chat-header {
-        background-color: #e11d48; /* Red color */
+        background-color: #e11d48;
+        /* Red color */
         color: white;
         padding: 12px;
         border-top-left-radius: 12px;
         border-top-right-radius: 12px;
     }
+
     .chat-log {
-        max-height: 320px; /* Adjusted height */
+        max-height: 320px;
+        /* Adjusted height */
         overflow-y: auto;
-        height: 320px; /* Fixed height */
+        height: 320px;
+        /* Fixed height */
     }
+
     .loading {
         display: none;
         position: fixed;
@@ -70,13 +83,16 @@
         justify-content: center;
         align-items: center;
         padding: 10px;
-        background-color: #ffffffe6; /* Semi-transparent background */
+        background-color: #ffffffe6;
+        /* Semi-transparent background */
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
+
     .chat-Zindex {
         z-index: 9999;
     }
+
     #mobile-search {
         position: absolute;
         top: 100%;
@@ -85,14 +101,14 @@
         z-index: 40;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    
+
     #mobile-search.active {
         display: block;
     }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        
+
         const desktopDropdownButton = document.getElementById('dropdownButton');
         const desktopDropdownMenu = document.getElementById('dropdownMenu');
 
@@ -174,7 +190,6 @@
                     <form class="w-full flex items-center"
                           action="{% url 'search' %}"
                           method="get">
-                        <i class="fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"></i>
                         <input type="hidden" name="type" id="filter-type" value="all">
                         <input type="text"
                                name="query"
@@ -183,18 +198,76 @@
                                class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent outline-none">
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
-                                <div class="relative border-l-2 border-red-500">
+                                <div class="relative border-l-2 border-red-500 flex">
+                                    <button type="submit">
+                                        <i class="fa-solid fa-arrow-right mx-2 text-red-500"></i>
+                                    </button>
                                     <button id="organizations-btn"
                                             type="button"
-                                            class="flex items-center h-full px-4 text-gray-700 hover:bg-red-50 transition-colors duration-200">
-                                        <i id="selected-icon" class="fas fa-search mr-2 text-red-500"></i>
+                                            class="flex items-center h-full px-4 text-gray-700 hover:bg-red-50 transition-colors duration-200 focus:outline-none">
+                                        <i id="selected-icon" class="fas fa-check mr-2 text-red-500"></i>
                                         <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
                                         <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
                                     </button>
+                                    <div id="organizations-dropdown"
+                                         class="z-50 hidden absolute bg-white top-full left-0 w-max mt-2 rounded-lg shadow-xl border">
+                                        <ul class="flex flex-col gap-2 px-4 py-2">
+                                            <li>
+                                                <button data-value="all"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                    <i class="fa fa-check mr-2 text-red-500"></i>
+                                                    {% trans "All" %}
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button data-value="organizations"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                    <i class="fa fa-building fa-fw mr-2 text-red-500"></i>
+                                                    {% trans "Organizations" %}
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button data-value="issues"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                    <i class="fa fa-bug fa-fw mr-2 text-red-500"></i>
+                                                    {% trans "Issues" %}
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button data-value="domains"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                    <i class="fa fa-globe fa-fw mr-2 text-red-500"></i>
+                                                    {% trans "Domains" %}
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button data-value="users"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                    <i class="fa fa-user-group fa-fw mr-2 text-red-500"></i>
+                                                    {% trans "Users" %}
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button data-value="projects"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                    <i class="fa fa-box fa-fw mr-2 text-red-500">
+                                                    </i> {% trans "Projects" %}
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button data-value="repos"
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded  filter-option">
+                                                    <i class="fa-brands fa-github fa-fw mr-2 text-red-500"></i>
+                                                    {% trans "Repos" %}
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             {% endif %}
                         {% endwith %}
                     </form>
+                    <i class="fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"></i>
                 </div>
             </div>
             <!-- Mobile Search Button -->
@@ -368,28 +441,28 @@
         const organizationsBtn = document.getElementById("organizations-btn");
         const organizationsDropdown = document.getElementById("organizations-dropdown");
         const queryInput = document.getElementById("query-input");
-        
+
         // Function to get URL parameters
         function getUrlParameter(name) {
             const params = new URLSearchParams(window.location.search);
             return params.get(name);
         }
-        
+
         // Set initial values from URL parameters if they exist
         const savedQuery = getUrlParameter('query');
         const savedType = getUrlParameter('type');
-        
+
         if (savedQuery) {
             queryInput.value = savedQuery;
         }
-        
+
         if (savedType) {
             // Find the matching filter option
             const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
             if (matchingOption) {
                 const iconElement = matchingOption.querySelector('i');
                 const textContent = matchingOption.textContent.trim();
-                
+
                 // Update the button display
                 document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
                 document.getElementById('selected-filter').textContent = textContent;
@@ -401,9 +474,9 @@
             organizationsBtn.addEventListener("click", function (e) {
                 e.preventDefault();
                 e.stopPropagation();
-                
+
                 const isHidden = organizationsDropdown.classList.toggle('hidden');
-                            
+
                 if (!isHidden) {
                     const btnRect = organizationsBtn.getBoundingClientRect();
                     Object.assign(organizationsDropdown.style, {
@@ -417,7 +490,7 @@
                     organizationsDropdown.style.display = 'none';
                 }
             });
-            
+
             // Close dropdown when clicking outside
             document.addEventListener("click", function (e) {
                 if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
@@ -428,7 +501,7 @@
         } else {
             console.error('Required elements not found!');
         }
-        
+
         document.querySelectorAll('.filter-option').forEach(option => {
             option.addEventListener('click', function (e) {
                 e.preventDefault();
@@ -447,12 +520,12 @@
     });
 </script>
 <script>
-    document.getElementById('chatIcon').addEventListener('click', function() {
+    document.getElementById('chatIcon').addEventListener('click', function () {
         document.getElementById('chatbot').style.display = 'block';
         this.style.display = 'none';
     });
 
-    document.getElementById('closeChatbot').addEventListener('click', function() {
+    document.getElementById('closeChatbot').addEventListener('click', function () {
         document.getElementById('chatbot').style.display = 'none';
         document.getElementById('chatIcon').style.display = 'flex';
     });
@@ -465,16 +538,67 @@
         const chatClose = document.querySelector('#closeChatbot');
         const loading = document.querySelector('#loading');
 
-        chatSubmit.onclick = function() {
-            const message = chatInput.value;
+        function escapeHtml(text) {
+            return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
+        }
+
+        function handleSlashCommand(command, args) {
+            let response = '';
+            switch (command) {
+                case '/help':
+                    response = '<strong>Available Commands:</strong><br>' +
+                        '/help - Show this message<br>' +
+                        '/report &lt;description&gt; - Report a bug<br>' +
+                        '/gsoc - Get GSoC info<br>' +
+                        '/stats - View platform stats<br>'
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/report':
+                    if (!args) {
+                        response = 'Please provide a description. Usage: /report &lt;description&gt;';
+                        chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        return true;
+                    }
+
+                    return false;
+                case '/gsoc':
+                    response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
+                        'Explore OWASP’s GSoC participation:<br>' +
+                        '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
+                        'Get involved with open-source at OWASP!';
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                case '/stats':
+                    response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        chatSubmit.onclick = function () {
+            const message = chatInput.value.trim();
             chatInput.value = '';
-            if (message.trim() === "") return;
+            if (message === "") return;
 
-            // Escape HTML meta-characters in the message
-            const escapedMessage = message.replace(/</g , "&lt;").replace( />/g, "&gt;");
-
+            const escapedMessage = escapeHtml(message);
             chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
+
+            // Check for slash command
+            if (message.startsWith('/')) {
+                const [command, ...argsArr] = message.split(' ');
+                const args = argsArr.join(' ').trim();
+                if (handleSlashCommand(command, args)) {
+                    loading.style.display = 'none';
+                    return;
+                }
+            }
 
             fetch('/api/chatbot/conversation/', {
                 method: 'POST',
@@ -483,32 +607,30 @@
                 },
                 body: JSON.stringify({ question: message }),
             })
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        throw new Error('Rate limit exceeded');
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 429) {
+                            throw new Error('Rate limit exceeded');
+                        }
+                        throw new Error('Network response was not ok');
                     }
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Escape HTML meta-characters in the response
-                const escapedAnswer = data.answer.replace(/</g , "&lt;").replace( />/g, "&gt;");
-                
-                chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
-                chatLog.scrollTop = chatLog.scrollHeight;  // Scroll to the bottom
-                loading.style.display = 'none';
-            })
-            .catch((error) => {
-                if (error.message === 'Rate limit exceeded') {
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: The request limit has been reached. Please try again later.</div>';
-                } else {
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: Sorry, I am unable to process your request at the moment. Please try again later.</div>';
-                }
-                chatLog.scrollTop = chatLog.scrollHeight;
-                loading.style.display = 'none';
-            });
+                    return response.json();
+                })
+                .then(data => {
+                    const escapedAnswer = escapeHtml(data.answer);
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    loading.style.display = 'none';
+                })
+                .catch((error) => {
+                    let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
+                    if (error.message === 'Rate limit exceeded') {
+                        errorMessage = 'The request limit has been reached. Please try again later.';
+                    }
+                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + errorMessage + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                    loading.style.display = 'none';
+                });
         };
 
         function clearChat() {
@@ -520,21 +642,21 @@
                 },
                 body: JSON.stringify({ question: "exit" }),
             })
-            .then(response => response.json())
-            .then(data => {
-                chatLog.innerHTML = '';
-                loading.style.display = 'none';
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                loading.style.display = 'none';
-            });
+                .then(response => response.json())
+                .then(data => {
+                    chatLog.innerHTML = '';
+                    loading.style.display = 'none';
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    loading.style.display = 'none';
+                });
         }
 
         chatClear.onclick = clearChat;
         chatClose.onclick = clearChat;
 
-        chatInput.addEventListener('keyup', function(event) {
+        chatInput.addEventListener('keyup', function (event) {
             if (event.keyCode === 13) {  // Enter key
                 chatSubmit.click();
             }
@@ -542,9 +664,9 @@
     });
 </script>
 <script>
-function toggleMobileSearch() {
-    const mobileSearch = document.getElementById('mobile-search');
-    mobileSearch.classList.toggle('hidden');
-    mobileSearch.classList.toggle('active');
-}
+    function toggleMobileSearch() {
+        const mobileSearch = document.getElementById('mobile-search');
+        mobileSearch.classList.toggle('hidden');
+        mobileSearch.classList.toggle('active');
+    }
 </script>

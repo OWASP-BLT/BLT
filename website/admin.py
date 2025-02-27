@@ -280,10 +280,11 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
+        "user_email",
         "user_avatar",
         "get_title_display",
         "role",
-        "description",
+        "short_description",
         "winnings",
         "issues_hidden",
         "btc_address",
@@ -301,7 +302,24 @@ class UserProfileAdmin(admin.ModelAdmin):
         "github_url",
         "website_url",
         "discounted_hourly_rate",
+        "email_status",
+        "email_last_event",
+        "email_last_event_time",
+        "email_click_count",
+        "email_open_count",
+        "email_spam_report",
+        "email_unsubscribed",
     )
+
+    def user_email(self, obj):
+        return obj.user.email
+
+    user_email.short_description = "Email"
+
+    def short_description(self, obj):
+        return truncatechars(obj.description, 10)
+
+    short_description.short_description = "Description"
 
     def follow_count(self, obj):
         return obj.follows.count()

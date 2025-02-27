@@ -1365,6 +1365,9 @@ def verify_file_upload(sender, instance, **kwargs):
 
 
 class Repo(models.Model):
+    organization = models.ForeignKey(
+        Organization, related_name="repos", on_delete=models.CASCADE, null=True, blank=True
+    )
     project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
@@ -1901,3 +1904,24 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.score} by {self.user.user.username} for {self.course.title}"
+
+class BaconSubmission(models.Model):
+    STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"))
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    github_url = models.URLField()
+    contribution_type = models.CharField(
+        max_length=20, choices=[("security", "Security Related"), ("non-security", "Non-Security Related")]
+    )
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    transaction_status = models.CharField(
+        max_length=20, choices=[("pending", "Pending"), ("completed", "Completed")], default="pending"
+    )
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    bacon_amount = models.IntegerField(default=0)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
+
