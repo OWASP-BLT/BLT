@@ -42,7 +42,6 @@ from website.api.views import (
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
-    bacon_view,
     batch_send_bacon_tokens_view,
     get_wallet_balance,
     initiate_transaction,
