@@ -7,7 +7,51 @@
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin="" />
     <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css" />
+    <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .leaflet-popup-content {
+            margin: 16px;
+            min-width: 200px;
+        }
+        .marker-cluster-small {
+            background-color: rgba(231, 76, 60, 0.2);
+        }
+        .marker-cluster-small div {
+            background-color: rgba(231, 76, 60, 0.4);
+            color: #fff;
+        }
+        .marker-cluster-medium {
+            background-color: rgba(231, 76, 60, 0.4);
+        }
+        .marker-cluster-medium div {
+            background-color: rgba(231, 76, 60, 0.6);
+            color: #fff;
+        }
+        .marker-cluster-large {
+            background-color: rgba(231, 76, 60, 0.6);
+        }
+        .marker-cluster-large div {
+            background-color: rgba(231, 76, 60, 0.8);
+            color: #fff;
+        }
+        .leaflet-control-zoom a {
+            background-color: white;
+            color: #e74c3c;
+            border: 2px solid rgba(231, 76, 60, 0.2);
+        }
+        .leaflet-control-zoom a:hover {
+            background-color: #e74c3c;
+            color: white;
+        }
+    </style>
 {% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -30,7 +74,8 @@
             </div>
         </div>
         <!-- Map Container -->
-        <div id="map" class="w-full h-[600px] rounded-lg shadow-lg mb-8"></div>
+        <div id="map"
+             class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden"></div>
         <!-- Location List -->
         <div class="mt-8">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Locations</h2>
@@ -93,42 +138,84 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
     <script>
-    // Initialize map
-    const map = L.map('map').setView([20, 0], 2);
+    // Initialize map with better default view
+    const map = L.map('map', {
+        center: [20, 0],
+        zoom: 2,
+        minZoom: 2,
+        maxZoom: 18,
+        zoomControl: false,
+        scrollWheelZoom: true,
+        worldCopyJump: true
+    });
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+    // Add custom tiles with better styling
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
     }).addTo(map);
+
+    // Add zoom control to top-right
+    L.control.zoom({
+        position: 'topright'
+    }).addTo(map);
+
+    // Initialize marker cluster group with custom styling
+    const markers = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        maxClusterRadius: 50,
+        spiderfyOnMaxZoom: true,
+        zoomToBoundsOnClick: true,
+        chunkedLoading: true
+    });
 
     // Add markers for locations
     {% for location in locations %}
         {% if location.latitude and location.longitude %}
             const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}])
-                .addTo(map)
                 .bindPopup(`
-                    <div class="text-center">
+                    <div class="text-center p-2">
                         {% if location.logo %}
-                            <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-16 h-16 mx-auto mb-2 object-contain" />
+                            <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-16 h-16 mx-auto mb-3 object-contain" width="64" height="64" />
                         {% endif %}
-                        <h3 class="font-medium text-gray-900">{{ location.name }}</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
                         {% if location.city or location.country %}
-                            <p class="text-sm text-gray-600">
+                            <p class="text-sm text-gray-600 mb-3">
                                 {% if location.city %}{{ location.city }}{% endif %}
                                 {% if location.city and location.country %}, {% endif %}
                                 {% if location.country %}{{ location.country }}{% endif %}
                             </p>
                         {% endif %}
                         {% if marker_type == 'organizations' %}
-                            <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block mt-2 text-sm text-[#e74c3c] hover:text-red-700">
+                            <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm">
                                 View Details
                             </a>
                         {% endif %}
                     </div>
-                `);
+                `, {
+                    maxWidth: 300,
+                    className: 'custom-popup'
+                });
+            markers.addLayer(marker);
         {% endif %}
     {% endfor %}
+
+    // Add marker cluster to map
+    map.addLayer(markers);
+
+    // Fit bounds if there are markers
+    if (markers.getLayers().length > 0) {
+        map.fitBounds(markers.getBounds(), {
+            padding: [50, 50]
+        });
+    }
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        map.invalidateSize();
+    });
     </script>
 {% endblock %}
