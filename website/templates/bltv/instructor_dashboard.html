@@ -10,56 +10,7 @@
             <button class="mt-4 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300"
                     onclick="openModal()">Add course</button>
         </div>
-        <div class="container mx-auto mt-10 flex">
-            <main class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
-                    {% for course in courses %}
-                        <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
-                            <a href="{% url 'view_course' course.id %}">
-                                <img src="{{ course.thumbnail.url }}"
-                                     class="w-full h-56"
-                                     alt="{{ course.title }}"
-                                     width="400"
-                                     height="224">
-                            </a>
-                            <div class="p-6 flex flex-col flex-grow">
-                                <a href="{% url 'view_course' course.id %}">
-                                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ course.title }}</h3>
-                                </a>
-                                <div class="text-gray-600 text-sm mb-4 h-28 overflow-hidden">{{ course.description|truncatewords:25 }}</div>
-                                <div class="flex items-center text-gray-700 font-bold mb-4">
-                                    <i class="fas fa-chart-line text-blue-500 mr-2"></i>
-                                    <span>
-                                        <strong>Level:</strong>
-                                        {% if course.level == "BEG" %}
-                                            <span class="text-green-600">{{ course.get_level_display }}</span>
-                                        {% elif course.level == "INT" %}
-                                            <span class="text-yellow-700">{{ course.get_level_display }}</span>
-                                        {% elif course.level == "ADV" %}
-                                            <span class="text-red-700">{{ course.get_level_display }}</span>
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <div class="h-24 overflow-hidden">
-                                    <div class="flex flex-wrap mt-2">
-                                        {% for tag in course.tags.all %}
-                                            <span class="bg-blue-100 text-blue-800 text-sm font-semibold mr-2 mb-2 px-3 py-1 rounded-sm flex items-center">
-                                                {{ tag.name }}
-                                            </span>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                <a href="{% url 'edit_course' course.id %}"
-                                   class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300">
-                                    <i class="fas fa-pencil-alt mr-2"></i>
-                                    Edit Course
-                                </a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </main>
-        </div>
+        {% include "bltv/includes/course_list.html" %}
     </div>
     <div id="createCourseModal"
          class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center hidden">

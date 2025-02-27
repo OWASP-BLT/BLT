@@ -1,0 +1,77 @@
+{% load custom_filters %}
+<div class="hidden lg:block w-64 bg-white shadow-lg border-r border-gray-200 fixed top-0 left-0 h-screen overflow-y-auto">
+    <div class="mt-20 p-3 sticky top-0 bg-white z-10 border-b border-gray-200">
+        <h2 class="text-xl font-bold mt-5">{{ course.title }}</h2>
+        <div class="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+            <div class="bg-blue-600 h-1.5 rounded-full progress-bar"
+                 style="width: {{ course_progress }}%"></div>
+        </div>
+        <p class="text-xs mt-1 text-right progress-text">{{ course_progress }}% complete</p>
+    </div>
+    <nav class="mt-2">
+        {% for section in sections %}
+            <div class="border-b border-gray-100 last:border-b-0">
+                <div class="px-4 py-3 flex items-center justify-between cursor-pointer section-header"
+                     data-section-id="{{ section.id }}">
+                    <span class="font-medium text-gray-800">{{ section.title }}</span>
+                    <svg class="w-4 h-4 text-gray-500 section-toggle transform transition-transform duration-200"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div class="section-lectures-container {% if not section.lectures.all %}hidden{% endif %}">
+                    {% for lecture in section.lectures.all %}
+                        <div class="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer lecture-nav-item"
+                             data-lecture-id="{{ lecture.id }}">
+                            <div class="w-6 flex justify-center">
+                                {% if lecture.content_type == "VIDEO" %}
+                                    <svg class="w-4 h-4 text-blue-500"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    </svg>
+                                {% elif lecture.content_type == "LIVE" %}
+                                    <svg class="w-4 h-4 text-red-500"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                        <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    </svg>
+                                {% elif lecture.content_type == "QUIZ" %}
+                                    <svg class="w-4 h-4 text-yellow-500"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    </svg>
+                                {% else %}
+                                    <svg class="w-4 h-4 text-gray-500"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                    </svg>
+                                {% endif %}
+                            </div>
+                            <div class="ml-2 text-sm flex-grow overflow-hidden">
+                                <span class="truncate block">{{ lecture.title }}</span>
+                                <span class="text-xs text-gray-500">
+                                    {% if lecture.duration %}{{ lecture.duration }} min{% endif %}
+                                </span>
+                            </div>
+                            <div class="w-4 flex justify-center">
+                                <span class="text-sm status-icon {% if lecture_statuses|get_item:lecture.id == 'COMPLETED' %}text-green-500{% else %}text-gray-300{% endif %}">
+                                    {% if lecture_statuses|get_item:lecture.id == 'COMPLETED' %}✓{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </nav>
+</div>

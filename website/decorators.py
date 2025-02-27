@@ -15,7 +15,7 @@ def instructor_required(view_func):
             course = get_object_or_404(Course, id=kwargs["course_id"])
         elif "lecture_id" in kwargs:
             lecture = get_object_or_404(Lecture, id=kwargs["lecture_id"])
-            course = lecture.course
+            course = lecture.section.course
         elif "section_id" in kwargs:
             section = get_object_or_404(Section, id=kwargs["section_id"])
             course = section.course

@@ -5,7 +5,7 @@ import uuid
 from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from annoying.fields import AutoOneToOneField
@@ -1813,11 +1813,33 @@ class Lecture(models.Model):
     live_url = models.URLField(null=True, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
     recording_url = models.URLField(null=True, blank=True)
-    content = models.TextField()  # For document-type content
+    content = models.TextField()  # For reading content
     # Quiz support can be added later
     duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
     order = models.PositiveIntegerField()
+
+    @property
+    def embed_url(self):
+        """Generates an embeddable URL if the video is from YouTube or Vimeo."""
+        if not self.video_url:
+            return None
+
+        parsed_url = urlparse(self.video_url)
+        domain = parsed_url.netloc.lower()
+
+        if "youtube.com" in domain or "youtu.be" in domain:
+            query_params = parse_qs(parsed_url.query)
+            video_id = query_params.get("v", [None])[0]
+            if not video_id and "youtu.be" in domain:
+                video_id = parsed_url.path.lstrip("/")
+            return f"https://www.youtube.com/embed/{video_id}" if video_id else self.video_url
+
+        elif "vimeo.com" in domain:
+            video_id = parsed_url.path.lstrip("/")
+            return f"https://player.vimeo.com/video/{video_id}"
+
+        return self.video_url
 
     class Meta:
         ordering = ["order"]
@@ -1832,7 +1854,7 @@ class LectureStatus(models.Model):
         ("COMPLETED", "Completed"),
     ]
     student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="student")
-    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="lecture_status")
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="lecture_statuses")
     status = models.CharField(max_length=15, choices=STATUS_TYPES)
 
     def __str__(self):
@@ -1840,7 +1862,7 @@ class LectureStatus(models.Model):
 
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name="enrollments")
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="enrollments")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)
@@ -1850,13 +1872,19 @@ class Enrollment(models.Model):
         unique_together = ["student", "course"]
 
     def calculate_progress(self):
-        total_lectures = Lecture.objects.filter(section__course=self.course).count()
-        completed_lectures = self.student.lecture_statuses.filter(
-            status="COMPLETED", lecture__section__course=self.course
+        """Calculate course progress as percentage of completed lectures"""
+        lectures = Lecture.objects.filter(section__course=self.course)
+        total_lectures = lectures.count()
+
+        if total_lectures == 0:
+            return 0
+
+        completed_lectures = LectureStatus.objects.filter(
+            student=self.student, lecture__section__course=self.course, status="COMPLETED"
         ).count()
-        if total_lectures > 0:
-            return (completed_lectures / total_lectures) * 100
-        return 0.0
+
+        progress = round((completed_lectures / total_lectures) * 100)
+        return progress
 
     def __str__(self):
         return f"{self.student.username} - {self.course.title}"

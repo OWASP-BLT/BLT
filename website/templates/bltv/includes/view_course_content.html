@@ -1,60 +1,24 @@
 <div class="flex w-full h-full">
-    <!-- Sidebar with fixed positioning and scrolling -->
-    <div class="hidden lg:block w-64 bg-white shadow-lg border-r border-gray-200 fixed top-0 left-0 h-screen overflow-y-auto">
-        <div class="mt-20 p-3 sticky top-0 bg-white z-10 border-b border-gray-200">
-            <h2 class="text-xl font-bold mt-5">Table of Contents</h2>
-        </div>
-        <nav class="mt-2">
-            {% for section in sections %}
-                <div class="px-4 py-2">
-                    <a href="#section-{{ forloop.counter }}"
-                       class="flex items-center hover:text-blue-600"
-                       onclick="scrollToElement('section-{{ forloop.counter }}')">
-                        <span class="mr-2">■</span>
-                        {{ section.title }}
-                    </a>
-                    <div class="max-h-60 overflow-y-auto">
-                        {% for lecture in section.lectures.all %}
-                            <a href="#lecture-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"
-                               class="flex items-center pl-8 py-2 text-sm hover:text-blue-600"
-                               onclick="scrollToElement('lecture-{{ forloop.parentloop.counter }}-{{ forloop.counter }}')">
-                                {% if lecture.get_content_type_display == 'video' %}
-                                    <svg class="w-4 h-4 mr-2"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                    </svg>
-                                {% elif lecture.get_content_type_display == 'live' %}
-                                    <svg class="w-4 h-4 mr-2"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                        <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                    </svg>
-                                {% else %}
-                                    <svg class="w-4 h-4 mr-2"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                                    </svg>
-                                {% endif %}
-                                {{ lecture.title }}
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endfor %}
-        </nav>
-    </div>
-    <!-- Main content with proper margin for sidebar -->
+    {% include "bltv/includes/course_sidebar.html" %}
     <div class="flex-1 p-8 lg:ml-72">
         <div class="w-full mx-auto">
             {% if request.user == course.instructor.user %}
                 <a href="{% url 'course_content_management' course.id %}">
                     <button class="my-4 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">Edit</button>
+                </a>
+            {% elif is_enrolled %}
+                <p>You are enrolled in this course.</p>
+                <a href="{% url 'study_course' course.id %}">
+                    <button class="my-4 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-pen"></i> Continue Studying
+                    </button>
+                </a>
+                {% if is_completed %}<p class="text-black">Congratulations! You have completed this course.</p>{% endif %}
+            {% else %}
+                <a href="{% url 'enroll' course.id %}">
+                    <button class="my-4 bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded">
+                        <i class="fas fa-user-plus"></i> Enroll
+                    </button>
                 </a>
             {% endif %}
             {% if sections %}

@@ -2,22 +2,30 @@ import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
-from website.models import Course, Lecture, Section, Tag, UserProfile
+from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 
 
 def bltv_home(request):
     template = "bltv/bltv.html"
     user = request.user
-    is_instructor = (
-        Course.objects.filter(instructor__user=user).exists()
-        or Lecture.objects.filter(section__course__instructor__user=user).exists()
-    )
-    context = {"is_instructor": is_instructor}
+    if user.is_authenticated:
+        is_instructor = (
+            Course.objects.filter(instructor__user=user).exists()
+            or Lecture.objects.filter(section__course__instructor__user=user).exists()
+        )
+    else:
+        is_instructor = False
+
+    featured_lectures = Lecture.objects.filter(section__isnull=True)
+    courses = Course.objects.all()
+    context = {"is_instructor": is_instructor, "featured_lectures": featured_lectures, "courses": courses}
     return render(request, template, context)
 
 
@@ -43,11 +51,115 @@ def edit_course(request, course_id):
         return JsonResponse({"success": False, "message": "Course not found"}, status=404)
 
 
+@login_required(login_url="/accounts/login")
+def enroll(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    userprofile = request.user.userprofile
+
+    enrollment, created = Enrollment.objects.get_or_create(student=userprofile, course=course)
+
+    if created:
+        message = "You have been successfully enrolled in the course."
+    else:
+        message = "You are already enrolled in this course."
+
+    messages.success(request, message)
+    return redirect("study_course", course_id=course_id)
+
+
 def view_course(request, course_id):
     template = "bltv/view_course.html"
     course = get_object_or_404(Course, id=course_id)
-    context = {"course": course}
+    context = {
+        "course": course,
+    }
     return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+def study_course(request, course_id):
+    template = "bltv/study_course.html"
+
+    course = get_object_or_404(Course, id=course_id)
+
+    userprofile = request.user.userprofile
+    enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
+
+    if not enrollment:
+        messages.error(request, "You are not enrolled in this course.")
+        return redirect("bltv")
+
+    course_progress = enrollment.calculate_progress()
+
+    sections = (
+        Section.objects.filter(course=course)
+        .prefetch_related(Prefetch("lectures", queryset=Lecture.objects.all().order_by("order")))
+        .order_by("order")
+    )
+
+    lecture_statuses = {
+        status.lecture_id: status.status
+        for status in LectureStatus.objects.filter(student=userprofile, lecture__section__course=course)
+    }
+
+    # Get the first incomplete lecture for initial display
+    current_lecture = None
+    for section in sections:
+        for lecture in section.lectures.all():
+            lecture_status = lecture_statuses.get(lecture.id, None)
+            if lecture_status != "COMPLETED":
+                current_lecture = lecture
+                break
+        if current_lecture:
+            break
+
+    # If all lectures are complete or none started, show the first lecture
+    if not current_lecture and sections.exists() and sections.first().lectures.exists():
+        current_lecture = sections.first().lectures.first()
+
+    context = {
+        "course": course,
+        "sections": sections,
+        "course_progress": course_progress,
+        "lecture_statuses": lecture_statuses,
+        "current_lecture": current_lecture,
+        "now": timezone.now(),
+    }
+
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+def mark_lecture_complete(request):
+    """API endpoint to mark a lecture as completed"""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            lecture_id = data.get("lecture_id")
+
+            if not lecture_id:
+                return JsonResponse({"success": False, "error": "Lecture ID is required"})
+
+            lecture = get_object_or_404(Lecture, id=lecture_id)
+            userprofile = request.user.userprofile
+
+            course = lecture.section.course
+            enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
+            if not enrollment:
+                return JsonResponse({"success": False, "error": "You are not enrolled in this course."})
+
+            lecture_status, created = LectureStatus.objects.update_or_create(
+                student=userprofile, lecture=lecture, defaults={"status": "COMPLETED"}
+            )
+
+            progress = enrollment.calculate_progress()
+
+            return JsonResponse({"success": True, "status": "COMPLETED", "progress": progress})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Invalid request method"})
 
 
 @instructor_required
@@ -75,8 +187,6 @@ def add_section(request, course_id):
     """Add a new section to the course"""
     course = get_object_or_404(Course, id=course_id)
 
-    # Check permissions
-
     title = request.POST.get("title")
     order = int(request.POST.get("order", 0))
 
@@ -93,8 +203,6 @@ def edit_section(request, section_id):
     section = get_object_or_404(Section, id=section_id)
     course_id = section.course.id
 
-    # Check permissions
-
     section.title = request.POST.get("title")
     section.description = request.POST.get("description")
     section.save()
@@ -109,8 +217,6 @@ def delete_section(request, section_id):
     """Delete a section and all its lectures"""
     section = get_object_or_404(Section, id=section_id)
     course_id = section.course.id
-
-    # Check permissions
 
     section.delete()
 
@@ -132,21 +238,16 @@ def add_lecture(request, section_id):
     section = get_object_or_404(Section, id=section_id)
     course_id = section.course.id
 
-    # Check permissions
-
-    # Get form data
     title = request.POST.get("title")
     content_type = request.POST.get("content_type")
     description = request.POST.get("description")
     order = int(request.POST.get("order", 0))
     duration = request.POST.get("duration") or None
 
-    # Create base lecture
     lecture = Lecture(
         title=title, section=section, content_type=content_type, order=order, description=description, duration=duration
     )
 
-    # Add content type specific data
     if content_type == "VIDEO":
         lecture.video_url = request.POST.get("video_url")
         lecture.content = request.POST.get("content")
@@ -170,18 +271,13 @@ def edit_lecture(request, lecture_id):
     lecture = get_object_or_404(Lecture, id=lecture_id)
     course_id = lecture.section.course.id
 
-    # Check permissions
-
-    # Update basic fields
     lecture.title = request.POST.get("title")
     lecture.content_type = request.POST.get("content_type")
     lecture.description = request.POST.get("description")
     lecture.duration = request.POST.get("duration") or None
 
-    # Update content type specific fields
     if lecture.content_type == "VIDEO":
         lecture.video_url = request.POST.get("video_url")
-        # Clear other fields
         lecture.live_url = None
         lecture.scheduled_time = None
         lecture.recording_url = None
@@ -190,12 +286,10 @@ def edit_lecture(request, lecture_id):
         lecture.live_url = request.POST.get("live_url")
         lecture.scheduled_time = request.POST.get("scheduled_time") or None
         lecture.recording_url = request.POST.get("recording_url")
-        # Clear other fields
         lecture.video_url = None
         lecture.content = ""
     elif lecture.content_type == "DOCUMENT":
         lecture.content = request.POST.get("content")
-        # Clear other fields
         lecture.video_url = None
         lecture.live_url = None
         lecture.scheduled_time = None
@@ -214,11 +308,8 @@ def delete_lecture(request, lecture_id):
     section = lecture.section
     course_id = section.course.id
 
-    # Check permissions
-
     lecture.delete()
 
-    # Re-order remaining lectures in this section
     for i, lec in enumerate(Lecture.objects.filter(section=section), 1):
         lec.order = i
         lec.save()
@@ -228,14 +319,11 @@ def delete_lecture(request, lecture_id):
     return redirect("course_content_management", course_id=course_id)
 
 
-# API endpoints for AJAX operations
 @instructor_required
 @require_GET
 def get_lecture_data(request, lecture_id):
     """API endpoint to get lecture data for editing"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
-
-    # Check permissions
 
     data = {
         "id": lecture.id,
@@ -260,8 +348,6 @@ def get_section_data(request, section_id):
     """API endpoint to get lecture data for editing"""
     section = get_object_or_404(Section, id=section_id)
 
-    # Check permissions
-
     data = {"id": section.id, "title": section.title, "description": section.description}
 
     return JsonResponse(data)
@@ -272,8 +358,6 @@ def get_section_data(request, section_id):
 def update_sections_order(request, course_id):
     """API endpoint to update the order of sections"""
     course = get_object_or_404(Course, id=course_id)
-
-    # Check permissions
 
     try:
         data = json.loads(request.body)
@@ -298,8 +382,6 @@ def update_lectures_order(request, section_id):
     """API endpoint to update the order of lectures within a section"""
     section = get_object_or_404(Section, id=section_id)
 
-    # Check permissions
-
     try:
         data = json.loads(request.body)
         lectures = data.get("lectures", [])
@@ -322,10 +404,28 @@ def get_course_content(request, course_id):
         course = get_object_or_404(Course, id=course_id)
         sections = course.sections.all().order_by("order")
 
+        is_enrolled = False
+        is_completed = False
+        course_progress = 0.0
+
+        if request.user.is_authenticated:
+            userprofile = request.user.userprofile
+            enrollment = Enrollment.objects.filter(student=userprofile, course=course).first()
+            if enrollment:
+                is_enrolled = True
+                is_completed = enrollment.completed
+                course_progress = enrollment.calculate_progress()
+
         return render(
             request,
             "bltv/includes/view_course_content.html",
-            {"course": course, "sections": sections},
+            {
+                "course": course,
+                "sections": sections,
+                "is_enrolled": is_enrolled,
+                "is_completed": is_completed,
+                "course_progress": course_progress,
+            },
         )
 
 

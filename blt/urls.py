@@ -52,10 +52,13 @@ from website.views.bltv_education import (
     edit_course,
     edit_lecture,
     edit_section,
+    enroll,
     get_course_content,
     get_lecture_data,
     get_section_data,
     instructor_dashboard,
+    mark_lecture_complete,
+    study_course,
     update_lectures_order,
     update_sections_order,
     view_course,
@@ -612,6 +615,9 @@ urlpatterns = [
     path("bltv/instructor_dashboard/edit-course/<int:course_id>/", edit_course, name="edit_course"),
     path("bltv/instructor_dashboard/create-or-update-course/", create_or_update_course, name="create_or_update_course"),
     path("bltv/view-course/<int:course_id>/", view_course, name="view_course"),
+    path("bltv/enroll/<int:course_id>/", enroll, name="enroll"),
+    path("bltv/study_course/<int:course_id>/", study_course, name="study_course"),
+    path("bltv/mark-lecture-complete/", mark_lecture_complete, name="mark_lecture_complete"),
     path("bltv/get-course-content/<int:course_id>/", get_course_content, name="get_course_content"),
     path(
         "bltv/course-content-management/<int:course_id>/", course_content_management, name="course_content_management"

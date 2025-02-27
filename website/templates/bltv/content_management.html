@@ -5,13 +5,12 @@
     <div class="container mx-auto mt-8 px-4">
         <div>
             <a href="/bltv/instructor_dashboard/"
-               class="mt-4 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+               class="mt-4 inline-flex items-center justify-center mb-10 px-4 py-2 bg-blue-600 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Dashboard
             </a>
             <h2 class="text-3xl font-bold text-gray-800">{{ course.title }} - Content Management</h2>
             <p class="text-gray-600 mt-2">Organize your course content by adding, editing, or reordering sections and lectures.</p>
-            <!-- Sections Card -->
             <div class="bg-white shadow-lg rounded-lg mt-6">
                 <div class="flex justify-between items-center p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-lg">
                     <h5 class="text-xl font-semibold text-gray-800">Course Sections</h5>
@@ -96,10 +95,9 @@
             </div>
         </div>
     </div>
-    <!-- Add Section Modal -->
     <div id="addSectionModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
             <form method="post" action="{% url 'add_section' course.id %}">
                 {% csrf_token %}
                 <div class="p-6 border-b">
@@ -136,10 +134,9 @@
             </form>
         </div>
     </div>
-    <!-- Edit Section Modal -->
     <div id="editSectionModal"
-         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3">
+         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50 ">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 max-h-screen overflow-y-auto">
             <form method="post"
                   action="{% url 'edit_section' 0 %}"
                   id="editSectionForm">
@@ -176,10 +173,9 @@
             </form>
         </div>
     </div>
-    <!-- Add Lecture Modal -->
     <div id="addLectureModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 max-h-screen overflow-y-auto">
             <form method="post" action="{% url 'add_lecture' 0 %}" id="addLectureForm">
                 {% csrf_token %}
                 <input type="hidden" name="section_id" id="lectureSection">
@@ -187,7 +183,6 @@
                     <h5 class="text-xl font-semibold text-gray-800">Add New Lecture</h5>
                 </div>
                 <div class="p-6 space-y-6">
-                    <!-- Lecture Title -->
                     <div>
                         <label for="lectureTitle" class="block text-sm font-medium text-gray-700">Lecture Title</label>
                         <input type="text"
@@ -196,7 +191,6 @@
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                required>
                     </div>
-                    <!-- Content Type Dropdown -->
                     <div>
                         <label for="contentType" class="block text-sm font-medium text-gray-700">Content Type</label>
                         <select id="contentType"
@@ -208,7 +202,6 @@
                             <option value="DOCUMENT">Document</option>
                         </select>
                     </div>
-                    <!-- Duration -->
                     <div>
                         <label for="lectureDuration" class="block text-sm font-medium text-gray-700">Duration (in minutes)</label>
                         <input type="number"
@@ -216,7 +209,6 @@
                                name="duration"
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <!-- Description Field -->
                     <div>
                         <label for="lectureDescription"
                                class="block text-sm font-medium text-gray-700">Description</label>
@@ -225,7 +217,6 @@
                                   rows="3"
                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
-                    <!-- Video Fields -->
                     <div id="videoFields" class="content-fields hidden space-y-4">
                         <div>
                             <label for="videoUrl" class="block text-sm font-medium text-gray-700">Video URL</label>
@@ -235,7 +226,6 @@
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                    <!-- Live Fields -->
                     <div id="liveFields" class="content-fields hidden space-y-4">
                         <div>
                             <label for="liveUrl" class="block text-sm font-medium text-gray-700">Live Session URL</label>
@@ -259,10 +249,9 @@
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                    <!-- Document Fields -->
                     <div id="documentFields" class="content-fields hidden space-y-4">
                         <div>
-                            <label for="documentContent" class="block text-sm font-medium text-gray-700">Document Content</label>
+                            <label for="documentContent" class="block text-sm font-medium text-gray-700">Content</label>
                             <textarea id="documentContent"
                                       name="content"
                                       rows="4"
@@ -282,10 +271,9 @@
             </form>
         </div>
     </div>
-    <!-- Edit Lecture Modal -->
     <div id="editLectureModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3">
+        <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-2/3 max-h-screen overflow-y-auto">
             <form method="post"
                   action="{% url 'edit_lecture' 0 %}"
                   id="editLectureForm">
@@ -294,7 +282,6 @@
                     <h5 class="text-xl font-semibold text-gray-800">Edit Lecture</h5>
                 </div>
                 <div class="p-6 space-y-6">
-                    <!-- Lecture Title -->
                     <div>
                         <label for="editLectureTitle"
                                class="block text-sm font-medium text-gray-700">Lecture Title</label>
@@ -304,7 +291,6 @@
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                required>
                     </div>
-                    <!-- Content Type Dropdown -->
                     <div>
                         <label for="editContentType" class="block text-sm font-medium text-gray-700">Content Type</label>
                         <select id="editContentType"
@@ -316,7 +302,6 @@
                             <option value="DOCUMENT">Document</option>
                         </select>
                     </div>
-                    <!-- Duration -->
                     <div>
                         <label for="editLectureDuration"
                                class="block text-sm font-medium text-gray-700">Duration (in minutes)</label>
@@ -325,7 +310,6 @@
                                name="duration"
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <!-- Description Field -->
                     <div>
                         <label for="editLectureDescription"
                                class="block text-sm font-medium text-gray-700">Description</label>
@@ -334,7 +318,6 @@
                                   rows="3"
                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
-                    <!-- Video Fields -->
                     <div id="editVideoFields" class="edit-content-fields hidden space-y-4">
                         <div>
                             <label for="editVideoUrl" class="block text-sm font-medium text-gray-700">Video URL</label>
@@ -345,14 +328,13 @@
                         </div>
                         <div>
                             <label for="editDocumentContent"
-                                   class="block text-sm font-medium text-gray-700">Document Content</label>
+                                   class="block text-sm font-medium text-gray-700">Content</label>
                             <textarea id="editDocumentContent"
                                       name="content"
                                       rows="4"
                                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                         </div>
                     </div>
-                    <!-- Live Fields -->
                     <div id="editLiveFields" class="edit-content-fields hidden space-y-4">
                         <div>
                             <label for="editLiveUrl" class="block text-sm font-medium text-gray-700">Live Session URL</label>
@@ -378,7 +360,6 @@
                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                    <!-- Document Fields -->
                     <div id="editDocumentFields" class="edit-content-fields hidden space-y-4">
                         <div>
                             <label for="editDocumentContent"
@@ -402,7 +383,6 @@
             </form>
         </div>
     </div>
-    <!-- Confirmation Modal for Deletion -->
     <div id="confirmDeleteModal"
          class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black bg-opacity-50">
         <div class="bg-white rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3">
@@ -426,14 +406,12 @@
             </form>
         </div>
     </div>
-    <!-- JavaScript for Modal Toggle -->
     <script>
         function toggleModal(modalId) {
             const modal = document.getElementById(modalId);
             modal.classList.toggle('hidden');
         }
     
-        // Add event listeners for modals
         document.querySelectorAll('[data-modal-toggle]').forEach(button => {
             button.addEventListener('click', () => {
                 const modalId = button.getAttribute('data-modal-toggle');
@@ -441,20 +419,16 @@
             });
         });
 
-        // Add lecture modal
         async function toggleAddLectureModal(sectionId) {
             const modal = document.getElementById('addLectureModal');
             modal.classList.toggle('hidden');
-            // Update form action with correct sectionId
             const form = document.getElementById('addLectureForm');
             form.action = `{% url 'add_lecture' 0 %}`.replace('0', sectionId);
         }
 
-        // Edit section modal
         async function toggleEditSectionModal(sectionId){
             const modal = document.getElementById('editSectionModal');
             modal.classList.toggle('hidden');
-            // Update form action with correct sectionId
             const form = document.getElementById('editSectionForm');
             form.action = `{% url 'edit_section' 0 %}`.replace('0', sectionId);
             
@@ -462,7 +436,6 @@
 
         }
 
-        // Delete modal
         async function toggleDeleteModal(itemType, itemId){
             const modal = document.getElementById('confirmDeleteModal');
             modal.classList.toggle('hidden');
@@ -514,7 +487,6 @@
                 });
             });
             
-            // Handle content type changes to show/hide relevant fields
             document.getElementById('contentType').addEventListener('change', function() {
                 toggleContentFields(this.value);
             });
@@ -525,7 +497,6 @@
 
             
     
-            // Setup edit lecture modal
             document.querySelectorAll('.edit-lecture').forEach(button => {
                 button.addEventListener('click', async function() {
                     const lectureId = this.getAttribute('data-lecture-id');
@@ -535,14 +506,11 @@
 
         });
         
-        // Function to toggle content fields based on selected type
         function toggleContentFields(contentType) {
-            // Hide all content fields
             document.querySelectorAll('.content-fields').forEach(field => {
                 field.classList.add('hidden');
             });
 
-            // Show relevant fields based on the selected content type
             if (contentType === 'VIDEO') {
                 document.getElementById('videoFields').classList.remove('hidden');
                 document.getElementById('documentFields').classList.remove('hidden');
@@ -554,29 +522,25 @@
         }
 
 
-        // Call the function on page load to set the initial state
         document.addEventListener('DOMContentLoaded', function () {
             const defaultContentType = document.getElementById('contentType').value;
             toggleContentFields(defaultContentType);
         });
         
-        // Function to toggle edit content fields
         function toggleEditContentFields(contentType) {
             document.querySelectorAll('.edit-content-fields').forEach(field => {
-                field.classList.add('d-none');
+                field.classList.add('hidden');
             });
             
             if (contentType === 'VIDEO') {
-                document.getElementById('editVideoFields').classList.remove('d-none');
-                document.getElementById('editDocumentFields').classList.remove('d-none');
+                document.getElementById('editVideoFields').classList.remove('hidden');
             } else if (contentType === 'LIVE') {
-                document.getElementById('editLiveFields').classList.remove('d-none');
+                document.getElementById('editLiveFields').classList.remove('hidden');
             } else if (contentType === 'DOCUMENT') {
-                document.getElementById('editDocumentFields').classList.remove('d-none');
+                document.getElementById('editDocumentFields').classList.remove('hidden');
             }
         }
 
-        // Function to fetch section data for editing
         async function fetchSectionData(sectionId){
             try{
                 const response = await fetch(`/bltv/instructor_dashboard/api/sections/${sectionId}/`)
@@ -593,7 +557,6 @@
             }
         }
         
-        // Function to fetch lecture data for editing
         async function fetchLectureData(lectureId) {
             try {
                 const response = await fetch(`/bltv/instructor_dashboard/api/lectures/${lectureId}/`);
@@ -601,21 +564,18 @@
                 
                 const lecture = await response.json();
                 
-                // Set the form action
                 document.getElementById('editLectureForm').action = "{% url 'edit_lecture' 0 %}".replace('0', lectureId);
                 
-                // Populate the form fields
                 document.getElementById('editLectureTitle').value = lecture.title;
                 document.getElementById('editContentType').value = lecture.content_type;
                 document.getElementById('editLectureDuration').value = lecture.duration || '';
                 document.getElementById('editLectureDescription').value = lecture.description || '';
                 
-                // Toggle the right fields
                 toggleEditContentFields(lecture.content_type);
                 
-                // Populate content-specific fields
                 if (lecture.content_type === 'VIDEO') {
                     document.getElementById('editVideoUrl').value = lecture.video_url || '';
+                    document.getElementById('editDocumentContent').value = lecture.content || '';
                 } else if (lecture.content_type === 'LIVE') {
                     document.getElementById('editLiveUrl').value = lecture.live_url || '';
                     document.getElementById('editScheduledTime').value = formatDateForInput(lecture.scheduled_time);
@@ -629,13 +589,11 @@
             }
         }
         
-        // Function to format date for datetime-local input
         function formatDateForInput(dateString) {
             if (!dateString) return '';
             
             const date = new Date(dateString);
             
-            // Format as YYYY-MM-DDTHH:MM
             return date.getFullYear() + '-' + 
                    String(date.getMonth() + 1).padStart(2, '0') + '-' +
                    String(date.getDate()).padStart(2, '0') + 'T' +
@@ -643,7 +601,6 @@
                    String(date.getMinutes()).padStart(2, '0');
         }
         
-        // Function to update sections order via AJAX
         function updateSectionsOrder() {
             const sections = [];
             
@@ -674,7 +631,6 @@
             });
         }
         
-        // Function to update lectures order via AJAX
         function updateLecturesOrder(container) {
             const sectionId = container.closest('.section-item').getAttribute('data-section-id');
             const lectures = [];
@@ -704,28 +660,6 @@
             .catch(error => {
                 console.error('Error updating lectures order:', error);
             });
-        }
-
-        function toggleContentFields(contentType) {
-            document.querySelectorAll('.content-fields').forEach(field => field.classList.add('hidden'));
-            if (contentType === 'VIDEO') {
-                document.getElementById('videoFields').classList.remove('hidden');
-            } else if (contentType === 'LIVE') {
-                document.getElementById('liveFields').classList.remove('hidden');
-            } else if (contentType === 'DOCUMENT') {
-                document.getElementById('documentFields').classList.remove('hidden');
-            }
-        }
-
-        function toggleEditContentFields(contentType) {
-            document.querySelectorAll('.edit-content-fields').forEach(field => field.classList.add('hidden'));
-            if (contentType === 'VIDEO') {
-                document.getElementById('editVideoFields').classList.remove('hidden');
-            } else if (contentType === 'LIVE') {
-                document.getElementById('editLiveFields').classList.remove('hidden');
-            } else if (contentType === 'DOCUMENT') {
-                document.getElementById('editDocumentFields').classList.remove('hidden');
-            }
         }
         </script>
     {% endblock %}
