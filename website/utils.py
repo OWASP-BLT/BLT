@@ -113,7 +113,7 @@ def image_validator(img):
         error = "Invalid image content-type"
         return error
 
-    # Images must not be single color
+    # Images must not be single color.
     img_array = np.array(Image.open(img))
     if img_array.std() < 10:
         error = "Image appears to be a single color"
