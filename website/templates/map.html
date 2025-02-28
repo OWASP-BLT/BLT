@@ -169,6 +169,7 @@
                         <p class="text-gray-400 mt-2">Try selecting a different location type</p>
                     </div>
                 {% endfor %}
+                this map was inspired by the map on OWASP Nest
             </div>
         </div>
     </div>
@@ -183,7 +184,7 @@
         loadingEl.classList.remove('hidden');
 
         try {
-            // Initialize map with better default view
+            // Initialize map
             const map = L.map('map', {
                 center: [20, 0],
                 zoom: 2,
@@ -191,34 +192,21 @@
                 maxZoom: 18,
                 zoomControl: false,
                 scrollWheelZoom: true,
-                worldCopyJump: true,
-                fullscreenControl: true,
-                fullscreenControlOptions: {
-                    position: 'topright'
-                }
+                worldCopyJump: true
             });
 
-            // Add OpenStreetMap tiles with better styling
-            const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19,
-                className: 'map-tiles'
+                maxZoom: 19
             }).addTo(map);
 
-            // Add zoom control to top-right with better styling
+            // Add zoom control to top-right
             L.control.zoom({
                 position: 'topright'
             }).addTo(map);
 
-            // Custom icon for markers
-            const customIcon = L.divIcon({
-                html: `<div style=" background-color: #e74c3c; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); "></div>`,
-                className: 'custom-marker',
-                iconSize: [12, 12],
-                iconAnchor: [6, 6]
-            });
-
-            // Initialize marker cluster group with custom styling
+            // Initialize marker cluster group
             const markers = L.markerClusterGroup({
                 showCoverageOnHover: false,
                 maxClusterRadius: 40,
@@ -226,8 +214,6 @@
                 zoomToBoundsOnClick: true,
                 chunkedLoading: true,
                 disableClusteringAtZoom: 16,
-                animate: true,
-                animateAddingMarkers: true,
                 iconCreateFunction: function(cluster) {
                     const count = cluster.getChildCount();
                     let size = 40;
@@ -242,79 +228,67 @@
                 }
             });
 
-            // Add markers for locations with custom icons and improved popups
-            const markerPromises = [];
+            // Custom icon for markers
+            const customIcon = L.divIcon({
+                html: `<div style=" background-color: #e74c3c; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); "></div>`,
+                className: 'custom-marker',
+                iconSize: [12, 12],
+                iconAnchor: [6, 6]
+            });
+
+            // Add markers for locations
             {% for location in locations %}
                 {% if location.latitude and location.longitude %}
-                    markerPromises.push(new Promise((resolve) => {
-                        const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}], {
-                            icon: customIcon
-                        }).bindPopup(`
-                            <div class="text-center p-3">
-                                {% if location.logo %}
-                                    <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-20 h-20 mx-auto mb-4 object-contain" width="80" height="80" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
-                                {% endif %}
-                                <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
-                                {% if location.city or location.country %}
-                                    <p class="text-sm text-gray-600 mb-4">
-                                        {% if location.city %}{{ location.city }}{% endif %}
-                                        {% if location.city and location.country %}, {% endif %}
-                                        {% if location.country %}{{ location.country }}{% endif %}
-                                    </p>
-                                {% endif %}
-                                {% if marker_type == 'organizations' %}
-                                    <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm font-medium">
-                                        View Details
-                                    </a>
-                                {% endif %}
-                            </div>
-                        `, {
-                            maxWidth: 300,
-                            className: 'custom-popup'
-                        });
-                        markers.addLayer(marker);
-                        resolve();
-                    }));
+                    const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}], {
+                        icon: customIcon
+                    }).bindPopup(`
+                        <div class="text-center p-3">
+                            {% if location.logo %}
+                                <img src="{{ location.logo.url }}" alt="{{ location.name }} logo" class="w-20 h-20 mx-auto mb-4 object-contain" width="80" height="80" onload="this.style.opacity=1" style="opacity:0;transition:opacity 0.3s" />
+                            {% endif %}
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ location.name }}</h3>
+                            {% if location.city or location.country %}
+                                <p class="text-sm text-gray-600 mb-4">
+                                    {% if location.city %}{{ location.city }}{% endif %}
+                                    {% if location.city and location.country %}, {% endif %}
+                                    {% if location.country %}{{ location.country }}{% endif %}
+                                </p>
+                            {% endif %}
+                            {% if marker_type == 'organizations' %}
+                                <a href="{% url 'organization_detail' slug=location.slug %}" class="inline-block px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors text-sm font-medium">
+                                    View Details
+                                </a>
+                            {% endif %}
+                        </div>
+                    `, {
+                        maxWidth: 300,
+                        className: 'custom-popup'
+                    });
+                    markers.addLayer(marker);
                 {% endif %}
             {% endfor %}
 
-            // Wait for all markers to be added
-            Promise.all(markerPromises).then(() => {
-                map.addLayer(markers);
-                
-                if (markers.getLayers().length > 0) {
-                    map.fitBounds(markers.getBounds(), {
-                        padding: [50, 50],
-                        maxZoom: 12
-                    });
-                }
-                
-                loadingEl.classList.add('hidden');
-            });
+            // Add marker cluster to map
+            map.addLayer(markers);
 
-            // Handle window resize with debounce
+            // Fit bounds if there are markers
+            if (markers.getLayers().length > 0) {
+                map.fitBounds(markers.getBounds(), {
+                    padding: [50, 50],
+                    maxZoom: 12
+                });
+            }
+
+            // Hide loading indicator
+            loadingEl.classList.add('hidden');
+
+            // Handle window resize
             let resizeTimeout;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(function() {
                     map.invalidateSize();
                 }, 250);
-            });
-
-            // Handle errors
-            map.on('error', function(e) {
-                console.error('Map error:', e.error);
-                loadingEl.innerHTML = `
-                    <div class="text-red-600 flex items-center">
-                        <i class="fas fa-exclamation-triangle mr-2"></i>
-                        <span>Error loading map</span>
-                    </div>
-                `;
-            });
-
-            // Handle tile loading errors
-            tileLayer.on('tileerror', function(e) {
-                console.error('Tile loading error:', e.tile);
             });
 
         } catch (error) {
