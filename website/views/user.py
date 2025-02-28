@@ -6,7 +6,6 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import requests
-import validators
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -52,7 +51,6 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger(__name__)
 
