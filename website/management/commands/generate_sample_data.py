@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
-from website.models import Activity, Badge, Domain, Hunt, Issue, Organization, Points, Project, Repo, Tag, UserBadge
+from website.models import Activity, Badge, Domain,GitHubIssue, Hunt, Issue, Organization, Points, Project, Repo, Tag, UserBadge
 
 
 def random_string(length=10):
@@ -61,6 +61,7 @@ class Command(LoggedBaseCommand):
         Hunt.objects.all().delete()
         Repo.objects.all().delete()
         Project.objects.all().delete()
+        GitHubIssue.objects.all().delete()
         Domain.objects.all().delete()
         UserBadge.objects.all().delete()
         Badge.objects.all().delete()
@@ -161,6 +162,25 @@ class Command(LoggedBaseCommand):
             )
             issues.append(issue)
         return issues
+
+    def create_pull_requests(self, users, repos, count=20):
+        pull_requests = []
+        for i in range(count):
+            userProfile = random.choice(users)
+            created_date = timezone.now() - timedelta(days=random.randint(1, 180))
+            pull_request = GitHubIssue.objects.create(
+                issue_id=random.randint(1000000, 9000000),
+                title=random_sentence(5),
+                url=f"https://example.com/pr/{i+1}",
+                created_at=created_date,
+                updated_at=created_date + timedelta(days=random.randint(1, 180)),
+                repo=random.choice(repos),
+                user_profile=userProfile.userprofile,
+                is_merged=random.choice([True, False]),
+                type="pull_request",
+            )
+            pull_requests.append(pull_request)
+        return pull_requests
 
     def create_hunts(self, users, count=10):
         hunts = []
@@ -341,6 +361,9 @@ class Command(LoggedBaseCommand):
         self.create_tags(20)
 
         self.stdout.write("Creating repos...")
-        self.create_repos(organizations, 30)
+        repos = self.create_repos(organizations, 30)
+
+        self.stdout.write("Creating PRs...")
+        self.create_pull_requests(users, repos, 30)
 
         self.stdout.write(self.style.SUCCESS("Done!"))
