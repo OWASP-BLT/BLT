@@ -59,6 +59,16 @@
                                   rows="4"
                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ form.description.value }}</textarea>
                     </div>
+                    <!-- Recommendation Blurb -->
+                    <div class="mb-8">
+                        <label for="recommendation_blurb"
+                               class="block text-lg font-semibold text-gray-700 mt-6 mb-3">Recommendation Blurb</label>
+                        <textarea name="recommendation_blurb"
+                                  id="id_recommendation_blurb"
+                                  rows="4"
+                                  class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="Write your blurb here">{% if form.recommendation_blurb.value %}{{ form.recommendation_blurb.value }}{% endif %}</textarea>
+                    </div>
                     <!-- Discounted Hourly Rate -->
                     <div class="mb-8">
                         <label for="id_discounted_hourly_rate"

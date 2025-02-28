@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
@@ -72,12 +73,10 @@ class UserIssueViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "head"]
 
     def get_queryset(self):
-        anonymous_user = self.request.user.is_anonymous
-        user_id = self.request.user.id
-        if anonymous_user:
-            return Issue.objects.exclude(Q(is_hidden=True))
+        if isinstance(self.request.user, AnonymousUser):
+            return Issue.objects.exclude(is_hidden=True)
         else:
-            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+            return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):

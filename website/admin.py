@@ -48,6 +48,7 @@ from website.models import (
     Project,
     Queue,
     Rating,
+    Recommendation,
     Repo,
     Room,
     Section,
@@ -278,6 +279,14 @@ admin.site.unregister(User)
 #     )
 
 
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ("recommender", "recommended_user", "created_at")
+    search_fields = ("recommender__username", "recommended_user__username")
+
+
+admin.site.register(Recommendation, RecommendationAdmin)
+
+
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -311,6 +320,8 @@ class UserProfileAdmin(admin.ModelAdmin):
         "email_open_count",
         "email_spam_report",
         "email_unsubscribed",
+        "recommendation_count",
+        "recommendation_blurb",
     )
 
     def user_email(self, obj):
@@ -343,6 +354,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     def subscribed_users_count(self, obj):
         return obj.subscribed_users.count()
+
+    def recommendation_count(self, obj):
+        return obj.recommendations.count()
 
 
 class IssueScreenshotAdmin(admin.ModelAdmin):

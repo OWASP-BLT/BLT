@@ -1,3 +1,5 @@
+import re
+
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
@@ -29,12 +31,30 @@ class UserProfileForm(forms.ModelForm):
             "discounted_hourly_rate",
             "github_url",
             "role",
+            "recommendation_blurb",
         ]
         widgets = {
             "tags": forms.CheckboxSelectMultiple(),
             "subscribed_domains": forms.CheckboxSelectMultiple(),
             "subscribed_users": forms.CheckboxSelectMultiple(),
+            "recommendation_blurb": forms.Textarea(
+                attrs={
+                    "rows": "10",
+                    "class": "mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
+                    "placeholder": "Write your recommendation blurb here...",
+                }
+            ),
         }
+
+    def clean_recommendation_blurb(self):
+        blurb = self.cleaned_data.get("recommendation_blurb")
+        # Remove any potential template tags or code that might have been entered
+        if blurb:
+            # Remove any HTML or template tags
+            blurb = re.sub(r"<[^>]+>", "", blurb)
+            blurb = re.sub(r"{%.*?%}", "", blurb)
+            blurb = re.sub(r"{{.*?}}", "", blurb)
+        return blurb
 
     # def __init__(self, *args, **kwargs):
     #     super().__init__(*args, **kwargs)

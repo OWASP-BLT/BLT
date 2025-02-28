@@ -293,6 +293,8 @@ from website.views.user import (
     invite_friend,
     profile,
     profile_edit,
+    recommend_user,
+    recommend_via_blurb,
     referral_signup,
     update_bch_address,
     user_dashboard,
@@ -1035,6 +1037,8 @@ urlpatterns = [
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
+    path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
+    path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
 ]
 
 if settings.DEBUG:

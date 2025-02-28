@@ -686,6 +686,7 @@ class UserProfile(models.Model):
     title = models.IntegerField(choices=title, default=0)
     role = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    recommendation_blurb = models.TextField(blank=True, null=True)
     winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
     issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
@@ -730,6 +731,14 @@ class UserProfile(models.Model):
     )
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
+    recommended_by = models.ManyToManyField("self", symmetrical=False, related_name="has_recommended", blank=True)
+
+    @property
+    def recommendation_count(self):
+        # Count both types of recommendations
+        standard_recommendations = Recommendation.objects.filter(recommended_user=self.user).count()
+        blurb_recommendations = self.recommended_by.count()
+        return standard_recommendations + blurb_recommendations
 
     def check_team_membership(self):
         return self.team is not None
@@ -2051,3 +2060,18 @@ class Queue(models.Model):
             self.launched = True
             self.launched_at = timezone.now()
             self.save()
+
+
+class Recommendation(models.Model):
+    recommender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="given_recommendations")
+    recommended_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_recommendations")
+    recommendation_message = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["recommender", "recommended_user"], name="unique_recommendation")
+        ]
+
+    def __str__(self):
+        return f"Recommendation from {self.recommender.username} to {self.recommended_user.username}"
