@@ -182,7 +182,6 @@ class InviteCreate(TemplateView):
         return render(request, "invite.html", context)
 
 
-
 def get_github_stats(user_profile):
     # Get all PRs with repo info
     user_prs = (
