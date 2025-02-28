@@ -173,26 +173,26 @@ right: 10.5%;{% endcomment %}
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4">
+<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-0 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
-            <div class="flex items-center justify-start rtl:justify-end">
+            <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
                 <!-- Ham Menu section -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
                         data-drawer-toggle="logo-sidebar"
                         aria-controls="logo-sidebar"
                         type="button"
-                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 text-red-500 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    <i class="fa fa-bars text-xl"></i>
+                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500 ">
+                    <i class="fa fa-bars md:text-xl text-lg "></i>
                 </button>
                 <!-- Logo -->
-                <a href="{% url 'home' %}" class="flex ms-4 md:me-24">
+                <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
                     <img src="{% static 'img/owasp-blt-logo.svg' %}"
-                         class="h-8 sm:h-10 md:h-12 lg:h-14 w-auto"
+                         class="h-9 sm:h-10 md:h-10 lg:h-10 w-auto"
                          alt="OWASP BLT Logo"
-                         width="56"
-                         height="56">
+                         width="50"
+                         height="50" />
                 </a>
             </div>
             <!-- Search Bar -->
@@ -205,8 +205,8 @@ right: 10.5%;{% endcomment %}
                         <input type="text"
                                name="query"
                                id="query-input"
-                               placeholder="Search..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent outline-none">
+                               placeholder="Search here..."
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none">
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
                                 <div class="relative border-l-2 border-red-500 flex">
@@ -283,10 +283,10 @@ right: 10.5%;{% endcomment %}
             </div>
             <!-- Mobile Search Button -->
             <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
-                <i class="fa fa-search text-xl"></i>
+                <i class="fa fa-search text-3xl"></i>
             </button>
             {% if request.user.is_authenticated %}
-                <div class="h-[80px] flex justify-center items-center">
+                <div class=" flex justify-center items-center">
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
@@ -363,19 +363,19 @@ right: 10.5%;{% endcomment %}
                 </div>
             {% else %}
                 <!-- Sign up and Log in Buttons -->
-                <div class="flex items-center h-[80px]">
-                    <div class="hidden lg:!flex h-[80px] justify-center items-center gap-4">
+                <div class="flex items-center ">
+                    <div class="hidden lg:!flex  justify-center items-center gap-4">
                         <a href="{% url 'account_signup' %}"
-                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
                         {% trans "Signup" %}</a>
                         <a href="{% url 'account_login' %}"
                            data-toggle="modal"
-                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
                         {% trans "Login" %}</a>
                     </div>
                     <!-- Log in icon -->
                     <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
-                        <i class="fa fa-user !text-4xl text-red-500"></i>
+                        <i class="fa fa-user text-4xl text-red-500"></i>
                     </a>
                 </div>
             {% endif %}
@@ -383,19 +383,19 @@ right: 10.5%;{% endcomment %}
     </div>
     <!-- Mobile Search Bar - Moved inside nav -->
     <div id="mobile-search"
-         class="hidden sm:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
+         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
         <form action="{% url 'search' %}" method="get" class="flex items-center">
             <div class="relative flex-1">
-                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
+                <i class="fa fa-search absolute text-xl left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
                 <input type="text"
                        name="query"
-                       placeholder="Search..."
-                       class="w-full pl-10 pr-4 py-3 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400">
+                       placeholder="Search here..."
+                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base">
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
-                    class="ml-2 p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                <i class="fa fa-search"></i>
+                    class="ml-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <i class="fa fa-search text-xl"></i>
             </button>
         </form>
     </div>

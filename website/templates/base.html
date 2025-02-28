@@ -81,13 +81,14 @@
                     crossorigin="anonymous"></script>
         {% endif %}
         {% block head %}
+            h-[100px]
         {% endblock head %}
         {% block style %}
         {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
         {% include "includes/header.html" %}
-        <div class="w-full h-[100px]"></div>
+        <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
