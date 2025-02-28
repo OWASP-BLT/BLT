@@ -1832,25 +1832,52 @@ class Lecture(models.Model):
         parsed_url = urlparse(self.video_url)
         domain = parsed_url.netloc.lower()
 
-        if "youtube.com" in domain or "youtu.be" in domain:
-            query_params = parse_qs(parsed_url.query)
-            video_id = query_params.get("v", [None])[0]
+        # Properly validate domains by checking exact matches or subdomains
+        youtube_domains = ["youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be"]
+        vimeo_domains = ["vimeo.com", "www.vimeo.com", "player.vimeo.com"]
 
-            if not video_id and "youtu.be" in domain:
-                match = re.match(r"^/([\w-]+)", parsed_url.path)
-                video_id = match.group(1) if match else None
+        is_youtube = any(domain == yd or domain.endswith("." + yd) for yd in youtube_domains)
+        is_vimeo = any(domain == vd or domain.endswith("." + vd) for vd in vimeo_domains)
 
-            if video_id and re.fullmatch(r"^[\w-]{11}$", video_id):  # Validate YouTube ID (11 chars)
+        if is_youtube:
+            if "youtu.be" in domain:
+                # Short URL format (youtu.be/VIDEO_ID)
+                path_parts = parsed_url.path.strip("/").split("/")
+                video_id = path_parts[0] if path_parts else None
+            else:
+                # Standard format (youtube.com/watch?v=VIDEO_ID)
+                query_params = parse_qs(parsed_url.query)
+                video_id = query_params.get("v", [None])[0]
+
+                # Handle youtube.com/embed/VIDEO_ID format
+                if not video_id and "/embed/" in parsed_url.path:
+                    path_parts = parsed_url.path.strip("/").split("/")
+                    if len(path_parts) >= 2 and path_parts[0] == "embed":
+                        video_id = path_parts[1]
+
+            # Validate YouTube ID format (11 characters of letters, numbers, hyphens, underscores)
+            if video_id and re.fullmatch(r"^[\w-]{11}$", video_id):
                 return f"https://www.youtube.com/embed/{video_id}"
 
-        elif "vimeo.com" in domain:
-            match = re.match(r"^/(\d+)", parsed_url.path)
-            video_id = match.group(1) if match else None
+        elif is_vimeo:
+            path_parts = parsed_url.path.strip("/").split("/")
+            video_id = None
+
+            # Handle various Vimeo URL formats
+            if path_parts:
+                # Standard format: vimeo.com/VIDEO_ID
+                potential_id = path_parts[0]
+                if potential_id and potential_id.isdigit():
+                    video_id = potential_id
+                # Handle other formats like vimeo.com/channels/staffpicks/VIDEO_ID
+                elif len(path_parts) > 1 and path_parts[-1].isdigit():
+                    video_id = path_parts[-1]
 
             if video_id:
                 return f"https://player.vimeo.com/video/{video_id}"
 
-        return self.video_url  # Fallback to the original URL if parsing fails
+        # Return the original URL if it's not a recognized video provider or parsing fails
+        return self.video_url
 
     class Meta:
         ordering = ["order"]
