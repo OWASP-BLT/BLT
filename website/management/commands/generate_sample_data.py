@@ -12,6 +12,7 @@ from website.models import (
     Badge,
     Domain,
     GitHubIssue,
+    GitHubReview,
     Hunt,
     Issue,
     Organization,
@@ -75,6 +76,7 @@ class Command(LoggedBaseCommand):
         Repo.objects.all().delete()
         Project.objects.all().delete()
         GitHubIssue.objects.all().delete()
+        GitHubReview.objects.all().delete()
         Domain.objects.all().delete()
         UserBadge.objects.all().delete()
         Badge.objects.all().delete()
@@ -194,6 +196,23 @@ class Command(LoggedBaseCommand):
             )
             pull_requests.append(pull_request)
         return pull_requests
+
+    def create_reviews(self, users, pull_requests, count=50):
+        reviews = []
+        for i in range(count):
+            reviewer = random.choice(users)
+            created_date = timezone.now() - timedelta(days=random.randint(1, 180))
+            review = GitHubReview.objects.create(
+                review_id=random.randint(1000000000, 9000000000),
+                pull_request=random.choice(pull_requests),
+                reviewer=reviewer.userprofile,
+                state=random.choice(["APPROVED", "CHANGES_REQUESTED", "COMMENTED"]),
+                submitted_at=created_date,
+                body=random_sentence(5),
+                url=f"https://example.com/review/{i+1}",
+            )
+            reviews.append(review)
+        return reviews
 
     def create_hunts(self, users, count=10):
         hunts = []
@@ -377,6 +396,9 @@ class Command(LoggedBaseCommand):
         repos = self.create_repos(organizations, 30)
 
         self.stdout.write("Creating PRs...")
-        self.create_pull_requests(users, repos, 30)
+        pull_requests = self.create_pull_requests(users, repos, 30)
+
+        self.stdout.write("Creating Reviews...")
+        self.create_reviews(users, pull_requests, 90)
 
         self.stdout.write(self.style.SUCCESS("Done!"))
