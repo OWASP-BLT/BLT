@@ -42,6 +42,7 @@ from website.api.views import (
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
+    bacon_view,
     batch_send_bacon_tokens_view,
     get_wallet_balance,
     initiate_transaction,
@@ -619,7 +620,7 @@ urlpatterns = [
         deletions,
         name="deletions",
     ),
-    re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
+    re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^bltv/$", bltv_home, name="bltv"),
     path("bltv/instructor_dashboard/", instructor_dashboard, name="instructor_dashboard"),
     path("bltv/instructor_dashboard/edit-course/<int:course_id>/", edit_course, name="edit_course"),
