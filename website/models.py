@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import time
 import uuid
 from datetime import timedelta
@@ -1834,15 +1835,22 @@ class Lecture(models.Model):
         if "youtube.com" in domain or "youtu.be" in domain:
             query_params = parse_qs(parsed_url.query)
             video_id = query_params.get("v", [None])[0]
+
             if not video_id and "youtu.be" in domain:
-                video_id = parsed_url.path.lstrip("/")
-            return f"https://www.youtube.com/embed/{video_id}" if video_id else self.video_url
+                match = re.match(r"^/([\w-]+)", parsed_url.path)
+                video_id = match.group(1) if match else None
+
+            if video_id and re.fullmatch(r"^[\w-]{11}$", video_id):  # Validate YouTube ID (11 chars)
+                return f"https://www.youtube.com/embed/{video_id}"
 
         elif "vimeo.com" in domain:
-            video_id = parsed_url.path.lstrip("/")
-            return f"https://player.vimeo.com/video/{video_id}"
+            match = re.match(r"^/(\d+)", parsed_url.path)
+            video_id = match.group(1) if match else None
 
-        return self.video_url
+            if video_id:
+                return f"https://player.vimeo.com/video/{video_id}"
+
+        return self.video_url  # Fallback to the original URL if parsing fails
 
     class Meta:
         ordering = ["order"]
@@ -1905,6 +1913,7 @@ class Rating(models.Model):
     def __str__(self):
         return f"{self.score} by {self.user.user.username} for {self.course.title}"
 
+
 class BaconSubmission(models.Model):
     STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"))
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -1924,4 +1933,3 @@ class BaconSubmission(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.status}"
-
