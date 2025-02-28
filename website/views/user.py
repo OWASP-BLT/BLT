@@ -6,9 +6,7 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 import requests
-import re
 import validators
-from django.shortcuts import render
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
