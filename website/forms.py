@@ -1,5 +1,3 @@
-import re
-
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
@@ -48,12 +46,56 @@ class UserProfileForm(forms.ModelForm):
 
     def clean_recommendation_blurb(self):
         blurb = self.cleaned_data.get("recommendation_blurb")
-        # Remove any potential template tags or code that might have been entered
         if blurb:
-            # Remove any HTML or template tags
-            blurb = re.sub(r"<[^>]+>", "", blurb)
-            blurb = re.sub(r"{%.*?%}", "", blurb)
-            blurb = re.sub(r"{{.*?}}", "", blurb)
+            result = []
+            i = 0
+            while i < len(blurb):
+                if blurb[i] == "<":
+                    j = blurb.find(">", i)
+                    if j == -1:
+                        result.append(blurb[i])  # Keep the '<'
+                        i += 1
+                    else:
+                        i = j + 1  # Skip the entire tag
+                else:
+                    result.append(blurb[i])
+                    i += 1
+
+            blurb = "".join(result)
+
+            # Remove {% ... %} tags
+            result = []
+            i = 0
+            while i < len(blurb):
+                if i + 1 < len(blurb) and blurb[i : i + 2] == "{%":
+                    j = blurb.find("%}", i + 2)
+                    if j == -1:  # No closing tag
+                        result.append(blurb[i])
+                        i += 1
+                    else:
+                        i = j + 2  # Skip template tag
+                else:
+                    result.append(blurb[i])
+                    i += 1
+
+            blurb = "".join(result)
+
+            # Remove {{ ... }} tags
+            result = []
+            i = 0
+            while i < len(blurb):
+                if i + 1 < len(blurb) and blurb[i : i + 2] == "{{":
+                    j = blurb.find("}}", i + 2)
+                    if j == -1:  # No closing tag
+                        result.append(blurb[i])
+                        i += 1
+                    else:
+                        i = j + 2  # Skip variable tag
+                else:
+                    result.append(blurb[i])
+                    i += 1
+
+            blurb = "".join(result)
         return blurb
 
     # def __init__(self, *args, **kwargs):
