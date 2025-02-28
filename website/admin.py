@@ -35,7 +35,6 @@ from website.models import (
     Monitor,
     Organization,
     OrganizationAdmin,
-    OsshCommunity,
     Payment,
     Points,
     Post,
@@ -631,7 +630,6 @@ admin.site.register(PRAnalysisReport)
 admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
-admin.site.register(OsshCommunity)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)

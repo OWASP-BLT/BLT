@@ -101,6 +101,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
+from website.views.domain import check_domain_security
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
@@ -918,6 +919,7 @@ urlpatterns = [
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
     # Extension page
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
+    path("domains/<int:domain_id>/check-security/", check_domain_security, name="check_domain_security"),
 ]
 
 if settings.DEBUG:
