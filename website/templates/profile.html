@@ -5,7 +5,8 @@
     {{ user.username }}'s Profile
 {% endblock title %}
 {% block description %}
-    Explore the detailed profile of {{ user.username }}. View their activity, reported bugs, social tags, badges, and other profile information.
+    Explore the detailed profile of {{ user.username }}. View their activity, reported bugs, social tags, badges, and other
+    profile information.
 {% endblock description %}
 {% block keywords %}
     {{ user.username }}'s Profile, User Activity, Reported Bugs, Social Tags, Badges, User Details, User Profile
@@ -14,7 +15,8 @@
     {{ user.username }}'s Profile - User Activity and Details
 {% endblock og_title %}
 {% block og_description %}
-    Access {{ user.username }}'s profile to see detailed information on their activity, bugs reported, social tags, badges, and more. Engage with their profile and stay connected.
+    Access {{ user.username }}'s profile to see detailed information on their activity, bugs reported, social tags, badges,
+    and more. Engage with their profile and stay connected.
 {% endblock og_description %}
 {% load custom_tags %}
 {% load i18n %}
@@ -284,30 +286,38 @@
         color: #ff5722;
         font-weight: bold;
     }
+
     .shine-effect {
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.3),
-        transparent
-    );
-    animation: shine 2s infinite;
+        background: linear-gradient(90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent);
+        animation: shine 2s infinite;
     }
 
     @keyframes shine {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
     }
+
     .bg-[#f4f4f4] {
         margin: 0.5rem 0;
         border: 1px solid #e2e8f0;
     }
+
     .text-lg {
-        font-size: 1.125rem; 
+        font-size: 1.125rem;
     }
+
     .text-sm {
         font-size: 0.875rem;
     }
+
     .bg-gray-100 {
         background-color: #f7fafc;
     }
@@ -501,14 +511,14 @@
                     Recent Activity
                     <hr>
                 </div>
-                <div class="top-findings w-[20vw] max-sm:w-full">
+                <div class="top-findings w-[20vw] max-sm:w-full overflow-auto scroll-smooth">
                     {% if activities %}
                         {% load gravatar %}
                         {% load static %}
-                        <div class="list-group">
+                        <div class="list-group h-[56vh] scroll-smooth overflow-auto">
                             {% for activity in activities %}
                                 <div class="bg-[#f4f4f4] mb-[1rem] rounded-2xl">
-                                    <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
+                                    <div class=" min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
                                         <div class="flex items-center">
                                             <a href="{% url 'domain' slug=activity.domain_name %}">
                                                 <img src="https://www.{{ activity.domain_name }}/favicon.ico"
@@ -519,34 +529,29 @@
                                                      onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                             </a>
                                             <div class="w-[80%]">
-                                                <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
+                                                <a href="{{ activity.get_absolute_url }}" class="w-[80%] text-sm">
                                                     <div class="mb-3 text-xl">{{ activity.description|truncatechars:20 }}</div>
                                                 </a>
-                                                <div class="mb-2 text-xl">
+                                                <div class="mb-2 text-base">
                                                     {{ activity.user|default:"Anonymous" }}
-                                                    found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> - {{ activity.created|timesince }}
+                                                    found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{
+                                                    activity.domain_title }}</a> - {{ activity.created|timesince }}
                                                     ago
                                                 </div>
-                                                <a class="text-lg"
+                                                <a class="text-base"
                                                    href="{{ activity.url }}"
                                                    target="_blank"
                                                    rel="noopener noreferrer">
                                                     <div>{{ activity.url|truncatechars:30 }}</div>
                                                 </a>
-                                                <a class="whitespace-nowrap mb-1 text-xl"
+                                                <a class="whitespace-nowrap mb-1 text-base"
                                                    href="{{ activity.get_absolute_url }}#comments">
-                                                    {% if activity.comments.all|length > 0 %}{{ activity.comments.all|length }} comments{% endif %}
+                                                    {% if activity.comments.all|length > 0 %}
+                                                        {{ activity.comments.all|length }}
+                                                        comments
+                                                    {% endif %}
                                                 </a>
                                             </div>
-                                        </div>
-                                        <div>
-                                            <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right">
-                                                {{ activity.status }}
-                                            </button>
-                                            <br>
-                                            <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right">
-                                                {{ activity.get_label_display }}
-                                            </button>
                                         </div>
                                     </div>
                                     <div class="p-3">
@@ -572,12 +577,22 @@
                                                      height="50%">
                                             </a>
                                         {% endif %}
+                                        <div class="flex  content-center">
+                                            <button class=" bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold px-4 rounded-xl label label-default pull-right">
+                                                {{ activity.status }}
+                                            </button>
+                                            <br>
+                                            <button class=" bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold  px-4 rounded-xl label label-default pull-right">
+                                                {{ activity.get_label_display }}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
                         <a href="{% url 'all_activity' %}?user={{ user.username }}"
-                           class="btn btn-default btn-block">{% trans "View All Activity by" %} {{ user.username }}</a>
+                           class="btn btn-default btn-block">{% trans
+                        "View All Activity by" %} {{ user.username }}</a>
                     {% else %}
                         <div class="text-start">{% trans "No Activity Yet" %}!</div>
                     {% endif %}
@@ -634,7 +649,10 @@
                     </button>
                     <button onclick="window.location.href=`{% url 'all_activitys' %}?user={{ user.username }}&label=close`"
                             class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">
+                            ⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length
+                            }}
+                        </div>
                     </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
@@ -655,7 +673,10 @@
                         <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🌟 Kudos {{ user.kudos_received.count }}</div>
                     </button>
                     <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👁️ {% trans "Profile Views" %} {{ user.userprofile.visit_count }}</div>
+                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">
+                            👁️ {% trans "Profile Views" %} {{
+                            user.userprofile.visit_count }}
+                        </div>
                     </button>
                 </div>
                 <div class="text-2xl font-bold my-4">
@@ -683,8 +704,8 @@
                     Top Finding
                     <hr>
                 </div>
-                <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
-                    <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
+                <div class="top-findings w-[20vw] max-sm:w-full max-h-[20vh] overflow-auto ">
+                    <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl scroll-smooth">
                         <ul>
                             {% if websites %}
                                 {% for website in websites %}
@@ -748,78 +769,91 @@
                     {% if repos_with_prs %}
                         <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                    Overall Pull Requests <i class="fas fa-code-branch text-blue-500"></i>
+                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2 cursor-pointer w-full"
+                                    id="overall-prs-toggle">
+                                    Overall Pull Requests <i class="fas fa-code-branch text-blue-500 mr-auto"></i>
+                                    <i class="fas fa-chevron-down ml-auto"></i>
                                 </h2>
                             </div>
-                            <div class="flex justify-between items-center gap-0">
-                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-purple-100 text-purple-700 font-semibold flex-grow">
-                                    <i class="fas fa-check-circle text-3xl"></i>
-                                    <div>
-                                        <div class="text-2xl font-bold text-center">{{ overall_stats.merged_count }}</div>
-                                        <div class="text-md font-normal">Merged</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
-                                    <i class="fas fa-exclamation-circle text-3xl"></i>
-                                    <div>
-                                        <div class="text-2xl font-bold text-center">{{ overall_stats.open_count }}</div>
-                                        <div class="text-md font-normal">Open</div>
-                                    </div>
-                                </div>
-                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-red-100 text-red-700 font-semibold flex-grow">
-                                    <i class="fas fa-times-circle text-3xl"></i>
-                                    <div>
-                                        <div class="text-2xl font-bold text-center">{{ overall_stats.closed_count }}</div>
-                                        <div class="text-md font-normal">Closed</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
-                                <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.user_rank }}
-                            </div>
-                        </div>
-                        <div class="space-y-6">
-                            {% for repo_name, repo_data in repos_with_prs.items %}
-                                <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                                    <div class="bg-gray-50 p-4 border-b border-gray-200">
-                                        <div class="flex items-center justify-between">
-                                            <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                                <i class="fas fa-book text-gray-600"></i>
-                                                <a href="{{ repo_data.repo_url }}"
-                                                   class="text-blue-600 font-bold text-2xl hover:underline">{{ repo_name }}</a>
-                                            </h3>
-                                            <div class="flex gap-3 text-md">
-                                                <span class="flex items-center gap-1 text-purple-700 font-bold">
-                                                    <i class="fas fa-check-circle text-xl"></i> {{ repo_data.stats.merged_count }}
-                                                </span>
-                                                <span class="flex items-center gap-1 text-yellow-700 font-bold">
-                                                    <i class="fas fa-exclamation-circle text-xl"></i> {{ repo_data.stats.open_count }}
-                                                </span>
-                                                <span class="flex items-center gap-1 text-red-700 font-bold">
-                                                    <i class="fas fa-times-circle text-xl"></i> {{ repo_data.stats.closed_count }}
-                                                </span>
+                            <div id="overall-prs-content">
+                                <div class="flex flex-wrap">
+                                    <div class="flex  justify-between items-center gap-0 w-full">
+                                        <div class="flex  items-center justify-center gap-1 px-2 py-2 bg-purple-100 text-purple-700 font-semibold flex-grow">
+                                            <i class="fas fa-check-circle text-lg"></i>
+                                            <div>
+                                                <div class="text-lg font-bold text-center">{{ overall_stats.merged_count }}</div>
+                                                <div class="text-md font-normal">Merged</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex  items-center justify-center gap-2 px-2 py-2 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
+                                            <i class="fas fa-exclamation-circle text-lg"></i>
+                                            <div>
+                                                <div class="text-lg font-bold text-center">{{ overall_stats.open_count }}</div>
+                                                <div class="text-md font-normal">Open</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex  items-center justify-center gap-1 px-2 py-2 bg-red-100 text-red-700 font-semibold flex-grow">
+                                            <i class="fas fa-times-circle text-lg"></i>
+                                            <div>
+                                                <div class="text-lg font-bold text-center">{{ overall_stats.closed_count }}</div>
+                                                <div class="text-md font-normal">Closed</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                                        {% for pr in repo_data.pull_requests %}
-                                            <div class="flex justify-between items-center p-4 hover:bg-gray-50">
-                                                <a href="{{ pr.url }}" class="text-blue-600 font-medium hover:underline">{{ pr.title }}</a>
-                                                <span class="flex items-center gap-2 px-3 py-1 rounded-sm text-sm font-medium {% if pr.is_merged %} bg-purple-100 text-purple-700 {% elif pr.state == 'open' %} bg-yellow-100 text-yellow-700 {% else %} bg-red-100 text-red-700 {% endif %} text-lg">
-                                                    {% if pr.is_merged %}
-                                                        <i class="fas fa-check-circle text-lg"></i>
-                                                    {% elif pr.state == 'open' %}
-                                                        <i class="fas fa-exclamation-circle text-lg"></i>
-                                                    {% else %}
-                                                        <i class="fas fa-times-circle text-lg"></i>
-                                                    {% endif %}
-                                                </span>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
                                 </div>
-                            {% endfor %}
+                                <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
+                                    <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.user_rank }}
+                                </div>
+                            </div>
+                            <div id="repos-list" class="mt-4 space-y-4 hidden">
+                                {% for repo_name, repo_data in repos_with_prs.items %}
+                                    <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
+                                        <div class="bg-gray-50 p-4 border-b border-gray-200 cursor-pointer repo-header"
+                                             data-repo="repo-{{ forloop.counter }}">
+                                            <div class="flex items-center justify-between">
+                                                <h3 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                                                    <i class="fas fa-book text-gray-600"></i>
+                                                    <a href="{{ repo_data.repo_url }}"
+                                                       class="text-blue-600 font-bold hover:underline">{{ repo_name }}</a>
+                                                </h3>
+                                                <div class="flex gap-3 text-md">
+                                                    <span class="flex items-center gap-1 text-purple-700 font-bold">
+                                                        <i class="fas fa-check-circle text-xl"></i> {{ repo_data.stats.merged_count
+                                                        }}
+                                                    </span>
+                                                    <span class="flex items-center gap-1 text-yellow-700 font-bold">
+                                                        <i class="fas fa-exclamation-circle text-xl"></i> {{
+                                                        repo_data.stats.open_count }}
+                                                    </span>
+                                                    <span class="flex items-center gap-1 text-red-700 font-bold">
+                                                        <i class="fas fa-times-circle text-xl"></i> {{ repo_data.stats.closed_count
+                                                        }}
+                                                    </span>
+                                                    <i class="fas fa-chevron-down ml-2"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="repo-{{ forloop.counter }}"
+                                             class="divide-y divide-gray-200 max-h-96 overflow-y-auto hidden">
+                                            {% for pr in repo_data.pull_requests %}
+                                                <div class="flex justify-between items-center p-4 hover:bg-gray-50">
+                                                    <a href="{{ pr.url }}" class="text-blue-600 font-medium hover:underline">{{ pr.title
+                                                    }}</a>
+                                                    <span class="flex items-center gap-2 px-3 py-1 rounded-sm text-sm font-medium {% if pr.is_merged %} bg-purple-100 text-purple-700 {% elif pr.state == 'open' %} bg-yellow-100 text-yellow-700 {% else %} bg-red-100 text-red-700 {% endif %} text-lg">
+                                                        {% if pr.is_merged %}
+                                                            <i class="fas fa-check-circle text-lg"></i>
+                                                        {% elif pr.state == 'open' %}
+                                                            <i class="fas fa-exclamation-circle text-lg"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-times-circle text-lg"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     {% endif %}
                 </div>
@@ -828,50 +862,60 @@
                     {% if prs_grouped %}
                         <div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 mb-6">
                             <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                                    Reviewed Pull Requests <i class="fas fa-code-review text-blue-500"></i>
+                                <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2 cursor-pointer w-full"
+                                    id="reviewed-prs-toggle">
+                                    Reviewed Pull Requests <i class="fas fa-code-review text-blue-500 mr-auto"></i>
                                     <span class="text-lg font-normal">(Total: {{ total_pr_reviews }})</span>
+                                    <i class="fas fa-chevron-down ml-auto"></i>
                                 </h2>
                             </div>
                             <!-- Status Counts -->
-                            <div class="flex justify-between items-center gap-0 mb-4">
-                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-purple-100 text-purple-700 font-semibold flex-grow">
-                                    <i class="fas fa-check-circle text-3xl"></i>
-                                    <div>
-                                        <div class="text-2xl font-bold text-center">{{ reviewed_stats.merged_count }}</div>
-                                        <div class="text-md font-normal">Merged</div>
+                            <div id="reviewed-prs-content">
+                                <div class="flex justify-between items-center gap-0 mb-4">
+                                    <div class="flex items-center justify-center gap-1 px-2 py-2 bg-purple-100 text-purple-700 font-semibold flex-grow">
+                                        <i class="fas fa-check-circle text-base"></i>
+                                        <div>
+                                            <div class="text-lg font-bold text-center">{{ reviewed_stats.merged_count }}</div>
+                                            <div class="text-md font-normal">Merged</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-center gap-2 px-2 py-2 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
+                                        <i class="fas fa-exclamation-circle text-base"></i>
+                                        <div>
+                                            <div class="text-lg font-bold text-center">{{ reviewed_stats.open_count }}</div>
+                                            <div class="text-md font-normal">Open</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-center gap-1 px-2 py-2 bg-red-100 text-red-700 font-semibold flex-grow">
+                                        <i class="fas fa-times-circle text-base"></i>
+                                        <div>
+                                            <div class="text-lg font-bold text-center">{{ reviewed_stats.closed_count }}</div>
+                                            <div class="text-md font-normal">Closed</div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
-                                    <i class="fas fa-exclamation-circle text-3xl"></i>
-                                    <div>
-                                        <div class="text-2xl font-bold text-center">{{ reviewed_stats.open_count }}</div>
-                                        <div class="text-md font-normal">Open</div>
-                                    </div>
+                                <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
+                                    <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.review_rank }}
                                 </div>
-                                <div class="flex items-center justify-center gap-2 px-4 py-4 bg-red-100 text-red-700 font-semibold flex-grow">
-                                    <i class="fas fa-times-circle text-3xl"></i>
-                                    <div>
-                                        <div class="text-2xl font-bold text-center">{{ reviewed_stats.closed_count }}</div>
-                                        <div class="text-md font-normal">Closed</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="w-full px-4 py-2 rounded-sm text-center bg-blue-100 text-blue-700 font-semibold">
-                                <i class="fas fa-trophy text-xl"></i> Rank: {{ overall_stats.review_rank }}
                             </div>
                             <!-- PR List Grouped by Repo -->
-                            <div class="space-y-6">
+                            <div id="reviewed-repos-list" class="mt-4 space-y-4 hidden">
                                 {% for repo_name, prs in prs_grouped.items %}
                                     <div class="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                                        <div class="bg-gray-50 p-4 border-b border-gray-200">
-                                            <h3 class="text-lg font-semibold">
-                                                <a href="https://github.com/{{ repo_name }}"
-                                                   target="_blank"
-                                                   class="text-blue-600 hover:underline">{{ repo_name }}</a>
-                                            </h3>
+                                        <div class="bg-gray-50 p-4 border-b border-gray-200 cursor-pointer reviewed-repo-header"
+                                             data-repo="reviewed-repo-{{ forloop.counter }}">
+                                            <div class="flex items-center justify-between">
+                                                <h3 class="text-lg font-semibold">
+                                                    <i class="fas fa-book text-gray-600 mr-2"></i>
+                                                    <a href="https://github.com/{{ repo_name }}"
+                                                       target="_blank"
+                                                       class="text-blue-600 hover:underline">{{ repo_name }}</a>
+                                                </h3>
+                                                <i class="fas fa-chevron-down"></i>
+                                            </div>
                                         </div>
-                                        <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                                        <div id="reviewed-repo-{{ forloop.counter }}"
+                                             class="divide-y divide-gray-200 max-h-96 overflow-y-auto hidden">
                                             {% for pr in prs %}
                                                 <div class="flex justify-between items-center p-4 hover:bg-gray-50">
                                                     <a href="{{ pr.html_url }}"
@@ -939,150 +983,155 @@
                                                             </td>
                                                         {% endif %}
                                                         <td>
-                                                            &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
-                                                        </td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </p>
-                                </div>
+                                                            &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username
+                                                        }}</a>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button"
-                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                id="close-follow">Close</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            id="close-follow">Close</button>
                 </div>
             </div>
         </div>
     </div>
-    <div id="following"
-         class="hidden relative z-10"
-         aria-labelledby="modal-title"
-         role="dialog"
-         aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-             aria-hidden="true"></div>
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start lg:w-full">
-                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                                <div class="mt-2">
-                                    <h3>Following:</h3>
-                                    <br>
-                                    <p class="text-xl">
-                                        <table class="table-auto w-full border-spacing-52">
-                                            <tbody>
-                                                {% for user in following %}
-                                                    <tr class="shadow-lg m-3 w-full rounded">
-                                                        {% if user.socialaccount_set.all.0.get_avatar_url %}
-                                                            <td>
-                                                                <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
-                                                                     height="50px"
-                                                                     width="50px"
-                                                                     alt="{{ user.username }}">
-                                                            </td>
-                                                        {% else %}
-                                                            <td>
-                                                                <img src="{% gravatar_url user.email 50 %}"
-                                                                     height="50px"
-                                                                     width="50px"
-                                                                     alt="{{ user.username }}">
-                                                            </td>
-                                                        {% endif %}
+</div>
+<div id="following"
+     class="hidden relative z-10"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+         aria-hidden="true"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start lg:w-full">
+                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                            <div class="mt-2">
+                                <h3>Following:</h3>
+                                <br>
+                                <p class="text-xl">
+                                    <table class="table-auto w-full border-spacing-52">
+                                        <tbody>
+                                            {% for user in following %}
+                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                    {% if user.socialaccount_set.all.0.get_avatar_url %}
                                                         <td>
-                                                            &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
+                                                            <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 alt="{{ user.username }}">
                                                         </td>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </p>
-                                </div>
+                                                    {% else %}
+                                                        <td>
+                                                            <img src="{% gravatar_url user.email 50 %}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 alt="{{ user.username }}">
+                                                        </td>
+                                                    {% endif %}
+                                                    <td>
+                                                        &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username
+                                                    }}</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <button type="button"
+                        class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                        id="close-following">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<div id="Bookmark"
+     class="hidden relative z-10"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+         aria-hidden="true"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start lg:w-full">
+                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                            <div class="mt-2">
+                                <h3>Bookmarks:</h3>
+                                <br>
+                                <p class="text-xl">
+                                    <table class="table-auto w-full border-spacing-52">
+                                        <tbody>
+                                            {% for i in bookmarks %}
+                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                    <div class="list-group-item">
+                                                        <button type="button"
+                                                                class="close"
+                                                                name="{{ i.pk }}"
+                                                                data-dismiss="alert"
+                                                                aria-label="Close">
+                                                            <span aria-hidden="true">×</span>
+                                                        </button>
+                                                        <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
+                                                            <strong>{{ i.description|truncatechars:50 }}</strong>
+                                                        </a>
+                                                        <span class="badge text-capitalize">{{ i.status }}</span>
+                                                        <p class="list-group-item-text">{{ i.user }}</p>
+                                                    </div>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </p>
                             </div>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button"
-                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                id="close-following">Close</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            id="close-Bookmark">Close</button>
                 </div>
             </div>
         </div>
     </div>
-    <div id="Bookmark"
-         class="hidden relative z-10"
-         aria-labelledby="modal-title"
-         role="dialog"
-         aria-modal="true">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-             aria-hidden="true"></div>
-        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start lg:w-full">
-                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                                <div class="mt-2">
-                                    <h3>Bookmarks:</h3>
-                                    <br>
-                                    <p class="text-xl">
-                                        <table class="table-auto w-full border-spacing-52">
-                                            <tbody>
-                                                {% for i in bookmarks %}
-                                                    <tr class="shadow-lg m-3 w-full rounded">
-                                                        <div class="list-group-item">
-                                                            <button type="button"
-                                                                    class="close"
-                                                                    name="{{ i.pk }}"
-                                                                    data-dismiss="alert"
-                                                                    aria-label="Close">
-                                                                <span aria-hidden="true">×</span>
-                                                            </button>
-                                                            <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
-                                                                <strong>{{ i.description|truncatechars:50 }}</strong>
-                                                            </a>
-                                                            <span class="badge text-capitalize">{{ i.status }}</span>
-                                                            <p class="list-group-item-text">{{ i.user }}</p>
-                                                        </div>
-                                                    </tr>
-                                                {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button type="button"
-                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                                id="close-Bookmark">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Assign Badge Modal -->
-    <div id="assign-badge-modal"
-         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden">
-        <div class="bg-white w-full max-w-lg p-6 rounded-lg shadow-lg">
-            <h3 class="text-lg font-semibold mb-4">Assign a Badge</h3>
-            <form method="post" action="{% url 'assign_badge' user.username %}">
-                {% csrf_token %}
-                <div class="mb-4">
-                    <label for="badge" class="block text-sm font-medium text-gray-700">Select a Badge:</label>
-                    <select name="badge"
-                            id="badge"
-                            class="block w-full mt-1 p-2 border rounded-md"
-                            required>
-                        {% for badge in available_badges %}<option value="{{ badge.id }}">{{ badge.title }}</option>{% endfor %}
+</div>
+<!-- Assign Badge Modal -->
+<div id="assign-badge-modal"
+     class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden">
+    <div class="bg-white w-full max-w-lg p-6 rounded-lg shadow-lg">
+        <h3 class="text-lg font-semibold mb-4">Assign a Badge</h3>
+        <form method="post" action="{% url 'assign_badge' user.username %}">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="badge" class="block text-sm font-medium text-gray-700">Select a Badge:</label>
+                <select name="badge"
+                        id="badge"
+                        class="block w-full mt-1 p-2 border rounded-md"
+                        required>
+                    {% for badge in available_badges %}
+                        <option value="{{ badge.id }}">{{ badge.title }}</option>
+                        {%
+                        endfor %}
                     </select>
                 </div>
                 <div class="mb-4">
@@ -1140,7 +1189,8 @@
                                                             {% endif %}
                                                         </td>
                                                         <td>
-                                                            <a href="{% url 'profile' slug=k.sender.username %}">{{ k.sender.username }}</a>
+                                                            <a href="{% url 'profile' slug=k.sender.username %}">{{
+                                                            k.sender.username }}</a>
                                                         </td>
                                                         <td>{{ k.timestamp }}</td>
                                                         {% if k.link %}
@@ -1177,75 +1227,75 @@
         </div>
     </div>
     <script defer>
-            var closeKudos = document.getElementById("close-kudos");
-            var openKudos = document.getElementById("Kudos");
-            closeKudos.addEventListener("click", ()=>{
-                openKudos.style.display="none";
-            });
-            function openKudosModal(){
-                openKudos.style.cssText = "display:block !important;";
-            }
+    var closeKudos = document.getElementById("close-kudos");
+    var openKudos = document.getElementById("Kudos");
+    closeKudos.addEventListener("click", () => {
+        openKudos.style.display = "none";
+    });
+    function openKudosModal() {
+        openKudos.style.cssText = "display:block !important;";
+    }
     </script>
     <script>
-        // Assign Badge Modal Logic
-        const addBadgeButton = document.getElementById("add-badge-button");
-        const assignBadgeModal = document.getElementById("assign-badge-modal");
+    // Assign Badge Modal Logic
+    const addBadgeButton = document.getElementById("add-badge-button");
+    const assignBadgeModal = document.getElementById("assign-badge-modal");
 
-        // Open the modal
-        addBadgeButton?.addEventListener("click", () => {
-            assignBadgeModal.classList.remove("hidden");
-        });
+    // Open the modal
+    addBadgeButton?.addEventListener("click", () => {
+        assignBadgeModal.classList.remove("hidden");
+    });
 
-        // Close the modal
-        function closeAssignBadgeModal() {
-            assignBadgeModal.classList.add("hidden");
-        }
+    // Close the modal
+    function closeAssignBadgeModal() {
+        assignBadgeModal.classList.add("hidden");
+    }
     </script>
     <script defer>
     var closeFollow = document.getElementById("close-follow");
     var openFollow = document.getElementById("followers");
-    closeFollow.addEventListener("click",()=>{
-        openFollow.style.display="none";
+    closeFollow.addEventListener("click", () => {
+        openFollow.style.display = "none";
     });
     var closeFollowing = document.getElementById("close-following");
     var openFollowing = document.getElementById("following");
-    closeFollowing.addEventListener("click",()=>{
-        openFollowing.style.display="none";
+    closeFollowing.addEventListener("click", () => {
+        openFollowing.style.display = "none";
     });
     var closeBookmark = document.getElementById("close-Bookmark");
     var openBookmark = document.getElementById("Bookmark");
-    closeBookmark.addEventListener("click",()=>{
-        openBookmark.style.display="none";
+    closeBookmark.addEventListener("click", () => {
+        openBookmark.style.display = "none";
     });
 
-    function openFollowers(){
+    function openFollowers() {
         openFollow.style.cssText = "display:block !important;"
     }
 
-    
-    function openFollowingModal(){
+
+    function openFollowingModal() {
         openFollowing.style.cssText = "display:block !important;"
     }
 
-    
-    function openBookmarkModal(){
+
+    function openBookmarkModal() {
         openBookmark.style.cssText = "display:block !important;"
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
-        document.querySelector('.score-container').addEventListener('click', function() {
-            var accordion = document.querySelector('.accordion-content');
-            var arrow = document.querySelector('#accordion-toggle');
-            
-            accordion.classList.toggle('hidden'); // Toggles the visibility of the accordion
-            arrow.classList.toggle('fa-chevron-down'); // Changes the arrow to point down
-            arrow.classList.toggle('fa-chevron-up'); // Changes the arrow to point up
-        });
+    document.querySelector('.score-container').addEventListener('click', function () {
+        var accordion = document.querySelector('.accordion-content');
+        var arrow = document.querySelector('#accordion-toggle');
+
+        accordion.classList.toggle('hidden'); // Toggles the visibility of the accordion
+        arrow.classList.toggle('fa-chevron-down'); // Changes the arrow to point down
+        arrow.classList.toggle('fa-chevron-up'); // Changes the arrow to point up
+    });
     </script>
     <script>
-        var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
-        var months = [],
+    var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
+    var months = [],
         data = [];
     var all_data = new Array(12).fill(0);
     var current_month = {{ current_month }};
@@ -1261,48 +1311,48 @@
         months = all_months.slice(current_month - 6, current_month);
         data = all_data.slice(current_month - 6, current_month);
     }
-        var options = {
-            series: [{
+    var options = {
+        series: [{
             name: 'Monthly Activity',
             data: data
-          }],
-            chart: {
+        }],
+        chart: {
             height: 350,
             type: 'area'
-          },
-          dataLabels: {
+        },
+        dataLabels: {
             enabled: false
-          },
-          stroke: {
+        },
+        stroke: {
             curve: 'smooth'
-          },
-          xaxis: {
+        },
+        xaxis: {
             type: 'String',
             categories: months
-          },
-          };
-  
-          var chart = new ApexCharts(document.querySelector("#chart"), options);
-          chart.render();
+        },
+    };
+
+    var chart = new ApexCharts(document.querySelector("#chart"), options);
+    chart.render();
     </script>
     <script>
-        async function followUser(){
-            var user = document.getElementsByClassName("follow_unfollow")[0].getAttribute("name");
-            const request = await fetch(`/follow/${user}/`)
-            if (request.status == 200){
-                $.notify("Done!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                    window.location.reload();
-            }
-            else{
-                $.notify("Permission Denied", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
+    async function followUser() {
+        var user = document.getElementsByClassName("follow_unfollow")[0].getAttribute("name");
+        const request = await fetch(`/follow/${user}/`)
+        if (request.status == 200) {
+            $.notify("Done!", {
+                style: "custom",
+                className: "success"
+            });
+            window.location.reload();
         }
+        else {
+            $.notify("Permission Denied", {
+                style: "custom",
+                className: "danger"
+            });
+        }
+    }
     </script>
     <script type="text/javascript">
     $(function () {
@@ -1322,33 +1372,33 @@
         });
     });
 
-        // $('body').on('click', '.follow_unfollow', function (e) {
-        //     e.preventDefault();
-        //     var usr = $(this).attr('name');
-        //     console.log(usr)
-        //     $.ajax({
-        //         type: 'GET',
-        //         url: '/follow/' + usr + '/',
-        //         data: {},
-        //         success: function (data) {
-        //             var txt = $('.follow_unfollow').text();
-        //             if (txt == "Follow")
-        //                 $('.follow_unfollow').text("Unfollow");
-        //             else
-        //                 $('.follow_unfollow').text("Follow");
-        //             $.notify("Done!", {
-        //                 style: "custom",
-        //                 className: "success"
-        //             });
-        //         },
-        //         error: function () {
-        //             $.notify("Some error occurred!", {
-        //                 style: "custom",
-        //                 className: "danger"
-        //             });
-        //         }
-        //     });
-        // });
+    // $('body').on('click', '.follow_unfollow', function (e) {
+    //     e.preventDefault();
+    //     var usr = $(this).attr('name');
+    //     console.log(usr)
+    //     $.ajax({
+    //         type: 'GET',
+    //         url: '/follow/' + usr + '/',
+    //         data: {},
+    //         success: function (data) {
+    //             var txt = $('.follow_unfollow').text();
+    //             if (txt == "Follow")
+    //                 $('.follow_unfollow').text("Unfollow");
+    //             else
+    //                 $('.follow_unfollow').text("Follow");
+    //             $.notify("Done!", {
+    //                 style: "custom",
+    //                 className: "success"
+    //             });
+    //         },
+    //         error: function () {
+    //             $.notify("Some error occurred!", {
+    //                 style: "custom",
+    //                 className: "danger"
+    //             });
+    //         }
+    //     });
+    // });
 
     $('body').on('click', '.list-group-item button', function (e) {
         e.preventDefault();
@@ -1376,4 +1426,47 @@
 
     </script>
     <script src="{% static 'js/validate-btc.js' %}"></script>
+    <script>
+    document.getElementById('overall-prs-toggle').addEventListener('click', function () {
+        const content = document.getElementById('repos-list');
+        const icon = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+
+        content.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+    });
+
+    document.querySelectorAll('.repo-header').forEach(header => {
+        header.addEventListener('click', function () {
+            const repoId = this.getAttribute('data-repo');
+            const content = document.getElementById(repoId);
+            const icon = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+
+            content.classList.toggle('hidden');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        });
+    });
+
+    document.getElementById('reviewed-prs-toggle').addEventListener('click', function () {
+        const content = document.getElementById('reviewed-repos-list');
+        const icon = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+
+        content.classList.toggle('hidden');
+        icon.classList.toggle('fa-chevron-down');
+        icon.classList.toggle('fa-chevron-up');
+    });
+
+    document.querySelectorAll('.reviewed-repo-header').forEach(header => {
+        header.addEventListener('click', function () {
+            const repoId = this.getAttribute('data-repo');
+            const content = document.getElementById(repoId);
+            const icon = this.querySelector('.fa-chevron-down, .fa-chevron-up');
+
+            content.classList.toggle('hidden');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        });
+    });
+    </script>
 {% endblock content %}
