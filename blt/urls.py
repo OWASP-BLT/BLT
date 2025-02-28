@@ -39,7 +39,16 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
-from website.views.bitcoin import batch_send_bacon_tokens_view, pending_transactions_view
+from website.views.bitcoin import (
+    BaconSubmissionView,
+    bacon_requests_view,
+    bacon_view,
+    batch_send_bacon_tokens_view,
+    get_wallet_balance,
+    initiate_transaction,
+    pending_transactions_view,
+    update_submission_status,
+)
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
 from website.views.company import (
     AddDomainView,
@@ -71,6 +80,7 @@ from website.views.core import (
     GithubLogin,
     GoogleConnect,
     GoogleLogin,
+    MapView,
     StatsDetailView,
     UploadCreate,
     add_forum_comment,
@@ -286,6 +296,7 @@ router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
 
 handler404 = "website.views.core.handler404"
+handler500 = "website.views.core.handler500"
 
 urlpatterns = [
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
@@ -587,7 +598,7 @@ urlpatterns = [
         deletions,
         name="deletions",
     ),
-    re_path(r"^bacon/$", TemplateView.as_view(template_name="bacon.html"), name="bacon"),
+    re_path(r"^bacon/$", bacon_view, name="bacon"),
     re_path(r"^bltv/$", TemplateView.as_view(template_name="bltv.html"), name="bltv"),
     re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(
@@ -696,7 +707,7 @@ urlpatterns = [
     path("activity/approve/<int:id>/", approve_activity, name="approve_activity"),
     re_path(r"^tz_detect/", include("tz_detect.urls")),
     re_path(r"^ratings/", include("star_ratings.urls", namespace="ratings")),
-    path("robots.txt", robots_txt),
+    re_path(r"^robots\.txt$", robots_txt),
     re_path(r"^contributors/$", contributors_view, name="contributors"),
     # users
     path("users/", users_view, name="users"),
@@ -801,6 +812,7 @@ urlpatterns = [
     path("sponsor/", sponsor_view, name="sponsor"),
     path("donate/", donate_view, name="donate"),
     path("organizations/", OrganizationListView.as_view(), name="organizations"),
+    path("map/", MapView.as_view(), name="map"),
     path("domains/", DomainListView.as_view(), name="domains"),
     path("trademarks/", trademark_search, name="trademark_search"),
     path(
@@ -936,6 +948,12 @@ urlpatterns = [
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
+    path("api/bacon/submit/", BaconSubmissionView.as_view(), name="bacon_submit"),
+    path("bacon-requests/", bacon_requests_view, name="bacon_requests"),
+    path("update-submission-status/<int:submission_id>/", update_submission_status, name="update_submission_status"),
+    path("initiate-transaction/", initiate_transaction, name="initiate_transaction"),
+    path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
+    path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
 ]
 
 if settings.DEBUG:
