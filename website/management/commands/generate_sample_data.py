@@ -7,7 +7,20 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
-from website.models import Activity, Badge, Domain,GitHubIssue, Hunt, Issue, Organization, Points, Project, Repo, Tag, UserBadge
+from website.models import (
+    Activity,
+    Badge,
+    Domain,
+    GitHubIssue,
+    Hunt,
+    Issue,
+    Organization,
+    Points,
+    Project,
+    Repo,
+    Tag,
+    UserBadge,
+)
 
 
 def random_string(length=10):
