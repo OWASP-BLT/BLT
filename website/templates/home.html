@@ -196,7 +196,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Top PR Contributors -->
+                    <!-- Top PR Contributors here -->
                     <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
                         <div class="p-6">
                             <div class="flex justify-between items-center mb-6">
@@ -215,25 +215,29 @@
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% elif user.user_profile__user__userprofile.avatar %}
                                                     <img src="{{ user.user_profile__user__userprofile.avatar }}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
                                                     <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% else %}
                                                     <img src="{% gravatar_url user.user_profile__user__email 50 %}"
                                                          alt="{{ user.user_profile__user__username }}"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full">
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% endif %}
                                                 {{ user.user_profile__user__username }}
                                             </a>
@@ -252,6 +256,47 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+        <!-- Latest Blog Posts Section -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Latest Blog Posts</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    {% if latest_blog_posts %}
+                        {% for post in latest_blog_posts %}
+                            <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                                {% if post.image %}
+                                    <div class="w-full h-48 overflow-hidden">
+                                        <img src="{{ post.image.url }}"
+                                             alt="{{ post.title }}"
+                                             width="auto"
+                                             height="auto"
+                                             class="w-full h-full object-cover">
+                                    </div>
+                                {% endif %}
+                                <div class="p-6">
+                                    <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
+                                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-user"></i>
+                                            {{ post.author.username }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-clock"></i>
+                                            {{ post.created_at|timesince }} ago
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
+                                    <a href="{% url 'post_detail' slug=post.slug %}"
+                                       class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">No blog posts available.</p>
+                    {% endif %}
                 </div>
             </div>
         </section>

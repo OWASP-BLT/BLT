@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView
 
-from website.models import Repo
+from website.models import Organization, Repo
 from website.utils import ai_summary, markdown_to_text
 
 
@@ -29,8 +29,13 @@ class RepoListView(ListView):
         if language:
             queryset = queryset.filter(primary_language=language)
 
-        # Get sort parameter from URL
-        sort_by = self.request.GET.get("sort", "-created")
+        # Handle organization filter
+        organization = self.request.GET.get("organization")
+        if organization:
+            queryset = queryset.filter(organization__id=organization)
+
+        # Get sort parameter from URL, default to -stars
+        sort_by = self.request.GET.get("sort", "-stars")
         direction = "-" if sort_by.startswith("-") else ""
         field = sort_by.lstrip("-")
 
@@ -68,7 +73,7 @@ class RepoListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["current_sort"] = self.request.GET.get("sort", "-created")
+        context["current_sort"] = self.request.GET.get("sort", "-stars")
         context["total_repos"] = Repo.objects.count()
 
         # Get language counts
@@ -83,6 +88,12 @@ class RepoListView(ListView):
 
         # Get current language filter
         context["current_language"] = self.request.GET.get("language")
+
+        # Get organizations from related Organization model
+        organizations = Organization.objects.filter(repos__isnull=False).distinct()
+
+        context["organizations"] = organizations
+        context["current_organization"] = self.request.GET.get("organization")
 
         return context
 

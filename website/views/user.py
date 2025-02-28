@@ -863,26 +863,29 @@ def get_score(request):
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
-        userx = User.objects.get(username=user)
-        flag = 0
-        list_userfrof = request.user.userprofile.follows.all()
-        for prof in list_userfrof:
-            if str(prof) == (userx.email):
-                request.user.userprofile.follows.remove(userx.userprofile)
-                flag = 1
-        if flag != 1:
-            request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
-            msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+        try:
+            userx = User.objects.get(username=user)
+            flag = 0
+            list_userfrof = request.user.userprofile.follows.all()
+            for prof in list_userfrof:
+                if str(prof) == (userx.email):
+                    request.user.userprofile.follows.remove(userx.userprofile)
+                    flag = 1
+            if flag != 1:
+                request.user.userprofile.follows.add(userx.userprofile)
+                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
 
-            send_mail(
-                "You got a new follower!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [userx.email],
-                html_message=msg_html,
-            )
-        return HttpResponse("Success")
+                send_mail(
+                    "You got a new follower!!",
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [userx.email],
+                    html_message=msg_html,
+                )
+            return HttpResponse("Success")
+        except User.DoesNotExist:
+            return HttpResponse(f"User {user} not found", status=404)
 
 
 # get issue and comment id from url
@@ -962,6 +965,7 @@ def badge_user_list(request, badge_id):
         .select_related("user")
         .distinct()
         .annotate(awarded_at=F("user__userbadge__awarded_at"))
+        .order_by("-awarded_at")
     )
 
     return render(
