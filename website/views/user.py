@@ -51,7 +51,6 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger(__name__)
 
