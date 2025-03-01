@@ -6,10 +6,10 @@
 {% load humanize %}
 {% providers_media_js %}
 {% load custom_tags %}
-{% block title %}{{ issue.title }} - GitHub Issue - BugHeist{% endblock %}
+{% block title %}{{ issue.title }} - GitHub Issue{% endblock %}
 {% block description %}View details of GitHub issue: {{ issue.title }}{% endblock %}
 {% block keywords %}github, issue, pull request, bug, repository, open source{% endblock %}
-{% block og_title %}{{ issue.title }} - GitHub Issue - BugHeist{% endblock %}
+{% block og_title %}{{ issue.title }} - GitHub Issue{% endblock %}
 {% block og_description %}View details of GitHub issue: {{ issue.title }}{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}

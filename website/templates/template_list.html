@@ -2,128 +2,180 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8 max-w-[95%]">
-        <div class="flex items-center justify-between mb-8">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
             <h1 class="text-3xl font-bold text-[#e74c3c]">Template Files</h1>
-            <span class="text-lg font-medium text-gray-600">
-                {{ total_templates }} template
-                {% if total_templates != 1 %}s{% endif %}
-            </span>
-        </div>
-        {% for dir in template_dirs %}
-            <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ dir.name }}</h2>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col"
-                                    class="w-1/5 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="?sort=name{% if sort == 'name' and direction != 'desc' %}&dir=desc{% endif %}"
-                                       class="flex items-center hover:text-[#e74c3c]">
-                                        Template
-                                        {% if sort == 'name' %}
-                                            {% if direction == 'desc' %}
-                                                ↓
-                                            {% else %}
-                                                ↑
-                                            {% endif %}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th scope="col"
-                                    class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="?sort=path{% if sort == 'path' and direction != 'desc' %}&dir=desc{% endif %}"
-                                       class="flex items-center hover:text-[#e74c3c]">
-                                        Path
-                                        {% if sort == 'path' %}
-                                            {% if direction == 'desc' %}
-                                                ↓
-                                            {% else %}
-                                                ↑
-                                            {% endif %}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th scope="col"
-                                    class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="?sort=url{% if sort == 'url' and direction != 'desc' %}&dir=desc{% endif %}"
-                                       class="flex items-center hover:text-[#e74c3c]">
-                                        URL
-                                        {% if sort == 'url' %}
-                                            {% if direction == 'desc' %}
-                                                ↓
-                                            {% else %}
-                                                ↑
-                                            {% endif %}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th scope="col"
-                                    class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="?sort=modified{% if sort == 'modified' and direction != 'desc' %}&dir=desc{% endif %}"
-                                       class="flex items-center hover:text-[#e74c3c]">
-                                        Last Modified
-                                        {% if sort == 'modified' %}
-                                            {% if direction == 'desc' %}
-                                                ↓
-                                            {% else %}
-                                                ↑
-                                            {% endif %}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th scope="col"
-                                    class="w-20 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    <a href="?sort=view_count{% if sort == 'view_count' and direction != 'desc' %}&dir=desc{% endif %}"
-                                       class="flex items-center justify-center hover:text-[#e74c3c]">
-                                        Views
-                                        {% if sort == 'view_count' %}
-                                            {% if direction == 'desc' %}
-                                                ↓
-                                            {% else %}
-                                                ↑
-                                            {% endif %}
-                                        {% endif %}
-                                    </a>
-                                </th>
-                                <th scope="col"
-                                    class="w-32 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            {% for template in dir.templates %}
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-sm text-gray-900 truncate">{{ template.name }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 group-hover:whitespace-normal truncate hover:whitespace-normal">
-                                        {{ template.path|cut:base_dir }}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 group-hover:whitespace-normal truncate hover:whitespace-normal">
-                                        {% if template.url %}
-                                            <a href="{{ template.url }}" class="text-[#e74c3c] hover:text-[#c0392b]">{{ template.url }}</a>
-                                        {% else %}
-                                            <span class="text-gray-400 italic">No matching URL</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-gray-500">{{ template.modified|date:"Y-m-d H:i" }}</td>
-                                    <td class="px-6 py-4 text-sm text-gray-500 text-center">{{ template.views|default:0 }}</td>
-                                    <td class="px-6 py-4 text-sm whitespace-nowrap">
-                                        <a href="{{ template.github_url }}"
-                                           target="_blank"
-                                           class="text-[#e74c3c] hover:text-[#c0392b] inline-flex items-center">
-                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                                            </svg>
-                                            View on GitHub
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+            <div class="flex items-center gap-4">
+                <span class="text-lg font-medium text-gray-600">
+                    {{ total_templates }} template
+                    {% if total_templates != 1 %}s{% endif %}
+                </span>
+                <!-- Search Box -->
+                <form method="get" class="flex items-center gap-2">
+                    <input type="text"
+                           name="search"
+                           value="{{ search_query }}"
+                           placeholder="Search templates..."
+                           class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#e74c3c]">
+                    <!-- Filter Dropdown -->
+                    <select name="filter"
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#e74c3c]">
+                        {% for option in filter_options %}
+                            <option value="{{ option.value }}"
+                                    {% if filter_by == option.value %}selected{% endif %}>{{ option.label }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit"
+                            class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
             </div>
-        {% endfor %}
+        </div>
+        <!-- Templates Table -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col"
+                                class="w-1/5 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort=name{% if sort == 'name' and direction != 'desc' %}&dir=desc{% endif %}&search={{ search_query }}&filter={{ filter_by }}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Template
+                                    {% if sort == 'name' %}<i class="fas fa-sort-{{ direction }}" aria-hidden="true"></i>{% endif %}
+                                </a>
+                            </th>
+                            <th scope="col"
+                                class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort=path{% if sort == 'path' and direction != 'desc' %}&dir=desc{% endif %}&search={{ search_query }}&filter={{ filter_by }}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Path
+                                    {% if sort == 'path' %}<i class="fas fa-sort-{{ direction }}" aria-hidden="true"></i>{% endif %}
+                                </a>
+                            </th>
+                            <th scope="col"
+                                class="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                URL
+                            </th>
+                            <th scope="col"
+                                class="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort=modified{% if sort == 'modified' and direction != 'desc' %}&dir=desc{% endif %}&search={{ search_query }}&filter={{ filter_by }}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Last Modified
+                                    {% if sort == 'modified' %}<i class="fas fa-sort-{{ direction }}" aria-hidden="true"></i>{% endif %}
+                                </a>
+                            </th>
+                            <th scope="col"
+                                class="w-20 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort=views{% if sort == 'views' and direction != 'desc' %}&dir=desc{% endif %}&search={{ search_query }}&filter={{ filter_by }}"
+                                   class="flex items-center justify-center hover:text-[#e74c3c]">
+                                    Views
+                                    {% if sort == 'views' %}<i class="fas fa-sort-{{ direction }}" aria-hidden="true"></i>{% endif %}
+                                </a>
+                            </th>
+                            <th scope="col"
+                                class="w-32 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col"
+                                class="w-32 px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for dir_name, template in page_obj %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <span class="text-sm font-medium text-gray-900">{{ template.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-sm text-gray-500 hover:whitespace-normal truncate block">{{ template.path|cut:base_dir }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if template.url %}
+                                        <a href="{{ template.url }}"
+                                           class="text-sm text-[#e74c3c] hover:text-[#c0392b]">{{ template.url }}</a>
+                                    {% else %}
+                                        <span class="text-sm text-gray-400 italic">No matching URL</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="text-sm text-gray-500">{{ template.modified|date:"Y-m-d H:i" }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <span class="text-sm text-gray-500">{{ template.views|default:0 }}</span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex flex-col items-center gap-1">
+                                        {% if template.has_sidenav %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                <i class="fas fa-check-circle mr-1"></i>
+                                                Sidenav
+                                            </span>
+                                        {% endif %}
+                                        {% if template.extends_base %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                <i class="fas fa-code mr-1"></i>
+                                                Base
+                                            </span>
+                                        {% endif %}
+                                        {% if template.has_style_tags %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-paint-brush mr-1"></i>
+                                                Styles
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <a href="{{ template.github_url }}"
+                                       target="_blank"
+                                       class="text-[#e74c3c] hover:text-[#c0392b] inline-flex items-center justify-center">
+                                        <i class="fab fa-github mr-1"></i>
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+            <div class="flex justify-center mt-8">
+                <nav class="inline-flex rounded-md shadow-sm -space-x-px"
+                     aria-label="Pagination">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&search={{ search_query }}&filter={{ filter_by }}&sort={{ sort }}&dir={{ direction }}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if num == page_obj.number %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
+                                {{ num }}
+                            </span>
+                        {% else %}
+                            <a href="?page={{ num }}&search={{ search_query }}&filter={{ filter_by }}&sort={{ sort }}&dir={{ direction }}"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&search={{ search_query }}&filter={{ filter_by }}&sort={{ sort }}&dir={{ direction }}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

@@ -10,6 +10,29 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="mb-4 flex items-center space-x-2 text-sm text-gray-500">
+            <a href="{% url 'organizations' %}" class="hover:text-[#e74c3c]">
+                <i class="fas fa-building"></i>
+                Organizations
+            </a>
+            <span class="text-gray-400">/</span>
+            <span class="text-gray-700">{{ organization.name }}</span>
+            {% if user.is_staff %}
+                <div class="ml-auto flex items-center space-x-2">
+                    <a href="{% url 'admin:website_organization_change' organization.id %}"
+                       class="text-[#e74c3c] hover:text-red-700"
+                       title="Edit in Admin">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <a href="{% url 'admin:website_organization_delete' organization.id %}"
+                       class="text-[#e74c3c] hover:text-red-700"
+                       title="Delete in Admin">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            {% endif %}
+        </nav>
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">
             <!-- Header Section -->
             <div class="relative h-48 bg-gradient-to-r from-[#e74c3c] to-red-700">
@@ -63,6 +86,42 @@
                                        class="text-gray-600 hover:text-[#e74c3c]">@{{ organization.twitter }}</a>
                                 </div>
                             {% endif %}
+                            <!-- Location Information -->
+                            {% if organization.country or organization.address_line_1 %}
+                                <div class="mt-4">
+                                    <h3 class="text-lg font-medium text-gray-900 mb-2">Location</h3>
+                                    <div class="space-y-1 text-gray-600">
+                                        {% if organization.country %}
+                                            <div class="flex items-center space-x-2">
+                                                <i class="fas fa-globe text-[#e74c3c]"></i>
+                                                <span>{{ organization.country }}</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if organization.address_line_1 %}
+                                            <div class="mt-2">
+                                                <div class="flex items-start space-x-2">
+                                                    <i class="fas fa-map-marker-alt text-[#e74c3c] mt-1"></i>
+                                                    <div>
+                                                        <p>{{ organization.address_line_1 }}</p>
+                                                        {% if organization.address_line_2 %}<p>{{ organization.address_line_2 }}</p>{% endif %}
+                                                        <p>
+                                                            {% if organization.city %}{{ organization.city }}{% endif %}
+                                                            {% if organization.state %}, {{ organization.state }}{% endif %}
+                                                            {% if organization.postal_code %}{{ organization.postal_code }}{% endif %}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- Map -->
+                            {% if organization.latitude and organization.longitude %}
+                                <div class="mt-4">
+                                    <div id="org-map" class="h-64 w-full rounded-lg shadow-md"></div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     <div>
@@ -91,7 +150,14 @@
                     </div>
                     <div class="bg-gray-50 rounded-lg p-6">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
+                            <div class="flex items-center space-x-3">
+                                <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
+                                <a href="{% url 'join' %}?organization={{ organization.name|urlencode }}"
+                                   class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                    <i class="fas fa-user-plus mr-2"></i>
+                                    Join Team
+                                </a>
+                            </div>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.members.count }}</span>
                         </div>
                     </div>
@@ -99,6 +165,14 @@
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">Total Points</h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.team_points }}</span>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-eye mr-2 text-[#e74c3c]"></i>Views
+                            </h3>
+                            <span class="text-2xl font-bold text-[#e74c3c]">{{ view_count }}</span>
                         </div>
                     </div>
                 </div>
@@ -247,4 +321,28 @@ function syncGithubProjects() {
     });
 }
     </script>
+    <!-- Add Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    {% if organization.latitude and organization.longitude %}
+        <script>
+            // Initialize the map
+            const map = L.map('org-map').setView([{{ organization.latitude }}, {{ organization.longitude }}], 13);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add a marker for the organization's location
+            const marker = L.marker([{{ organization.latitude }}, {{ organization.longitude }}])
+                .addTo(map)
+                .bindPopup("{{ organization.name }}");
+            
+            // Open the popup by default
+            marker.openPopup();
+        </script>
+    {% endif %}
 {% endblock %}

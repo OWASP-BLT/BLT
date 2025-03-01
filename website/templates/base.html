@@ -81,13 +81,14 @@
                     crossorigin="anonymous"></script>
         {% endif %}
         {% block head %}
+            h-[100px]
         {% endblock head %}
         {% block style %}
         {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
         {% include "includes/header.html" %}
-        <div class="w-full h-[100px]"></div>
+        <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
@@ -99,122 +100,110 @@
         <div class="pb-[50px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
-        {% block scripts %}{% endblock %}
-        <script>
-            // Auto-dismiss messages after 5 seconds
-            document.addEventListener('DOMContentLoaded', function() {
-                // Wait for a small delay to ensure elements are rendered
-                setTimeout(function() {
-                    const messages = document.querySelectorAll('.alert');
-                    if (messages) {
-                        messages.forEach(function(message) {
-                            if (message) {
-                                setTimeout(function() {
-                                    if (message && message.style) {
-                                        message.style.animation = 'slideOut 0.5s ease-in forwards';
-                                        setTimeout(function() {
-                                            if (message && message.parentNode) {
-                                                message.remove();
-                                            }
-                                        }, 500);
-                                    }
-                                }, 5000);
-                            }
-                        });
-
-                        // Handle manual close button
-                        document.querySelectorAll('.alert .close').forEach(function(closeBtn) {
-                            if (closeBtn) {
-                                closeBtn.addEventListener('click', function() {
-                                    const alert = this.parentElement;
-                                    if (alert && alert.style) {
-                                        alert.style.animation = 'slideOut 0.5s ease-in forwards';
-                                        setTimeout(function() {
-                                            if (alert && alert.parentNode) {
-                                                alert.remove();
-                                            }
-                                        }, 500);
-                                    }
-                                });
-                            }
-                        });
-                    }
-                }, 100); // Small delay to ensure DOM is ready
-            });
-        </script>
-        {% block extra_js %}{% endblock %}
-        <script>
-        // Message handling
-        document.addEventListener('DOMContentLoaded', function() {
-            // Function to create a dismissible message
-            function createMessage(content, type = 'info', duration = 5000) {
-                const messageContainer = document.createElement('div');
-                messageContainer.className = `fixed top-4 right-4 z-50 max-w-md transform transition-transform duration-300 ease-in-out translate-x-0`;
-                
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `mb-4 p-4 rounded-lg flex items-center justify-between ${
-                    type === 'success' ? 'bg-green-100 text-green-700' :
-                    type === 'error' ? 'bg-red-100 text-red-700' :
-                    type === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-blue-100 text-blue-700'
-                }`;
-                
-                const textDiv = document.createElement('div');
-                textDiv.className = 'flex-grow mr-3';
-                textDiv.textContent = content;
-                
-                const closeButton = document.createElement('button');
-                closeButton.className = 'text-gray-500 hover:text-gray-700 focus:outline-none';
-                closeButton.innerHTML = '×';
-                closeButton.onclick = () => {
-                    messageContainer.classList.add('translate-x-full');
-                    setTimeout(() => messageContainer.remove(), 300);
-                };
-                
-                messageDiv.appendChild(textDiv);
-                messageDiv.appendChild(closeButton);
-                messageContainer.appendChild(messageDiv);
-                document.body.appendChild(messageContainer);
-                
-                // Auto-hide after duration
-                if (duration > 0) {
-                    setTimeout(() => {
-                        messageContainer.classList.add('translate-x-full');
-                        setTimeout(() => messageContainer.remove(), 300);
-                    }, duration);
-                }
-                
-                return messageContainer;
-            }
-            
-            // Make the function globally available
-            window.createMessage = createMessage;
-            
-            // Handle Django messages on page load
-            const messages = document.querySelectorAll('[data-message]');
-            messages.forEach(message => {
-                const content = message.getAttribute('data-message');
-                const type = message.getAttribute('data-message-type') || 'info';
-                createMessage(content, type);
-                message.remove();
-            });
-        });
-        </script>
-        <div class="messages-container fixed bottom-5 left-5 z-50 max-w-md">
+        {% block scripts %}
+        {% endblock scripts %}
+        <!-- Messages container -->
+        <div id="messages-container" class="fixed bottom-5 left-5 z-50 max-w-md">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500 {% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500 {% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500 {% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
+                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500{% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500{% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
                         <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
                     </div>
                 {% endfor %}
             {% endif %}
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Handle message dismissal
+                const messageContainer = document.getElementById('messages-container');
+                if (messageContainer) {
+                    // Handle close button clicks
+                    messageContainer.addEventListener('click', function(e) {
+                        if (e.target.classList.contains('close-message')) {
+                            const messageAlert = e.target.closest('.message-alert');
+                            if (messageAlert) {
+                                messageAlert.style.opacity = '0';
+                                setTimeout(() => messageAlert.remove(), 300);
+                            }
+                        }
+                    });
+
+                    // Auto-dismiss messages after 5 seconds
+                    const messages = messageContainer.querySelectorAll('.message-alert');
+                    messages.forEach(function(message) {
+                        setTimeout(function() {
+                            if (message && message.parentNode) {
+                                message.style.opacity = '0';
+                                setTimeout(() => message.remove(), 300);
+                            }
+                        }, 5000);
+                    });
+                }
+
+                // Function to create new messages programmatically
+                window.createMessage = function(content, type = 'info', duration = 5000) {
+                    const messageContainer = document.getElementById('messages-container');
+                    if (!messageContainer) return;
+
+                    const messageAlert = document.createElement('div');
+                    messageAlert.className = `message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in ${
+                        type === 'success' ? 'bg-green-100 text-green-700 border-l-4 border-green-500' :
+                        type === 'error' ? 'bg-red-100 text-red-700 border-l-4 border-red-500' :
+                        type === 'warning' ? 'bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500' :
+                        'bg-blue-100 text-blue-700 border-l-4 border-blue-500'
+                    }`;
+                    
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'flex-grow mr-3';
+                    textDiv.textContent = content;
+                    
+                    const closeButton = document.createElement('button');
+                    closeButton.className = 'text-gray-500 hover:text-gray-700 focus:outline-none close-message';
+                    closeButton.textContent = '×';
+                    
+                    messageAlert.appendChild(textDiv);
+                    messageAlert.appendChild(closeButton);
+                    messageContainer.appendChild(messageAlert);
+                    
+                    if (duration > 0) {
+                        setTimeout(function() {
+                            messageAlert.style.opacity = '0';
+                            setTimeout(() => messageAlert.remove(), 300);
+                        }, duration);
+                    }
+                    
+                    return messageAlert;
+                };
+            });
+        </script>
+        <style>
+            .animate-slide-in {
+                animation: slideIn 0.3s ease-out;
+            }
+            
+            @keyframes slideIn {
+                from {
+                    transform: translateX(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            .message-alert {
+                transition: opacity 0.3s ease-out;
+            }
+        </style>
+        {% block extra_js %}
+        {% endblock extra_js %}
+        <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'js/ui.js' %}"></script>
+        {% block after_js %}
+        {% endblock after_js %}
     </body>
-    <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
-    <script src="{% static 'js/ui.js' %}"></script>
-    {% block after_js %}
-    {% endblock after_js %}
     <script>
         $("#report-bug-btn").click(function () {
             $("#spinner").show()
@@ -293,13 +282,14 @@
             });
         // Check if the modal exists in the DOM
         const modal = document.getElementById('cardModalDailyStatus');
-        if (!modal) {
-            return; // Exit if modal is not present
-        }
-
-        const closeButton = modal.querySelector('.close-button');
+        const closeButton = modal ? modal.querySelector('.close-button') : null;
         const openCheckInButton = document.getElementById('openCheckIn');
         const checkInForm = document.getElementById('checkInForm');
+
+        // Exit if required modal elements are not present
+        if (!modal || !closeButton) {
+            return;
+        }
         // Function to check if form was submitted today
         function isFormSubmittedToday() {
             const submittedDate = localStorage.getItem('formSubmittedDateCard');
@@ -309,6 +299,7 @@
 
         // Function to show modal
         function showModal() {
+            if (!modal) return;
             modal.classList.remove('hidden');
             document.body.classList.add('modal-open'); // Prevent background scrolling
             // Focus on the first input field
@@ -320,6 +311,7 @@
 
         // Function to hide modal
         function hideModal() {
+            if (!modal) return;
             modal.classList.add('hidden');
             document.body.classList.remove('modal-open'); // Restore background scrolling
         }
@@ -328,19 +320,21 @@
         closeButton.addEventListener('click', hideModal);
 
         // Close modal when clicking outside the modal content
-        modal.querySelector('.modal-overlay').addEventListener('click', hideModal);
-
+        const modalOverlay = modal.querySelector('.modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.addEventListener('click', hideModal);
+        }
             
         document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+            if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
                 hideModal();
             }
         });
 
-        // Event listener to open modal when clicking the openCheckIn button           
+        // Event listener to open modal when clicking the openCheckIn button
         if (openCheckInButton) {
-             openCheckInButton.addEventListener('click', showModal);
-         }
+            openCheckInButton.addEventListener('click', showModal);
+        }
 
         // Handle check-in form submission with AJAX
         if (checkInForm) {

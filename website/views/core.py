@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import subprocess
 import tracemalloc
 import urllib
@@ -12,11 +13,13 @@ import redis
 import requests
 import requests.exceptions
 import sentry_sdk
+from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
+from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
 from django.apps import apps
 from django.conf import settings
@@ -27,6 +30,7 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
+from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
@@ -37,14 +41,17 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.generic import TemplateView, View
+from django.views.generic import ListView, TemplateView, View
 
-from blt import settings
 from website.models import (
     IP,
     Activity,
     Badge,
     Domain,
+    ForumCategory,
+    ForumComment,
+    ForumPost,
+    ForumVote,
     Hunt,
     Issue,
     ManagementCommandLog,
@@ -54,8 +61,6 @@ from website.models import (
     Project,
     Repo,
     SlackBotActivity,
-    Suggestion,
-    SuggestionVotes,
     Tag,
     User,
     UserBadge,
@@ -116,7 +121,7 @@ DAILY_REQUEST_LIMIT = 10
 vector_store = None
 
 
-def check_status(request):
+def status_page(request):
     """
     Status check function with configurable components.
     Enable/disable specific checks using the CONFIG constants.
@@ -142,14 +147,16 @@ def check_status(request):
             "github": None if not CHECK_GITHUB else False,
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
-            "redis_stats": {
-                "status": "Not configured",
-                "version": None,
-                "connected_clients": None,
-                "used_memory_human": None,
-            }
-            if not CHECK_REDIS
-            else {},
+            "redis_stats": (
+                {
+                    "status": "Not configured",
+                    "version": None,
+                    "connected_clients": None,
+                    "used_memory_human": None,
+                }
+                if not CHECK_REDIS
+                else {}
+            ),
             "slack_bot": {},
             "management_commands": [],
             "available_commands": [],
@@ -492,40 +499,40 @@ def find_key(request, token):
 
 
 def search(request, template="search.html"):
-    query = request.GET.get("query")
-    stype = request.GET.get("type", "all")
-    context = None
-    if query is None:
-        return render(request, template)
-    query = query.strip()
+    query = request.GET.get("query", "").strip()
+    stype = request.GET.get("type", "").strip()
+    context = {}
 
-    if stype == "all":
+    if query:
         # Search across multiple models
         organizations = Organization.objects.filter(name__icontains=query)
         issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=request.user.id)
-        )[0:20]
-        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-        users = (
-            UserProfile.objects.filter(Q(user__username__icontains=query))
-            .annotate(total_score=Sum("user__points__score"))
-            .order_by("-total_score")[0:20]
         )
+        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
+        users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
         projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "organizations": organizations,
-            "issues": issues,
             "domains": domains,
             "users": users,
+            "issues": issues,
             "projects": projects,
             "repos": repos,
         }
 
-        for userprofile in users:
-            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+        # Get badges for each user
+        for user in users:
+            user.badges = UserBadge.objects.filter(user=user)
+            # Ensure user has a username for profile URL
+            user.username = user.username
+
+        # Get domain URLs for organizations
         for org in organizations:
             d = Domain.objects.filter(organization=org).first()
             if d:
@@ -533,6 +540,7 @@ def search(request, template="search.html"):
 
     elif stype == "issues":
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "issues": Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
@@ -541,6 +549,7 @@ def search(request, template="search.html"):
         }
     elif stype == "domains":
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "domains": Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20],
@@ -554,6 +563,7 @@ def search(request, template="search.html"):
         for userprofile in users:
             userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
         context = {
+            "request": request,
             "query": query,
             "type": stype,
             "users": users,
@@ -709,95 +719,121 @@ def search(request, template="search.html"):
 
 
 @login_required
-def vote_suggestions(request):
+def vote_forum_post(request):
     if request.method == "POST":
-        user = request.userblt_tomato
-        data = json.loads(request.body)
-        suggestion_id = data.get("suggestion_id")
-        suggestion = Suggestion.objects.get(id=suggestion_id)
-        up_vote = data.get("up_vote")
-        down_vote = data.get("down_vote")
-        voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).exists()
-        if not voted:
-            up_vote = True if up_vote else False
-            down_vote = True if down_vote else False
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+            up_vote = data.get("up_vote", False)
+            down_vote = data.get("down_vote", False)
 
-            if up_vote or down_vote:
-                voted = SuggestionVotes.objects.create(
-                    user=user,
-                    suggestion=suggestion,
-                    up_vote=up_vote,
-                    down_vote=down_vote,
-                )
+            post = ForumPost.objects.get(id=post_id)
+            vote, created = ForumVote.objects.get_or_create(
+                post=post, user=request.user, defaults={"up_vote": up_vote, "down_vote": down_vote}
+            )
 
-                if up_vote:
-                    suggestion.up_votes += 1
-                if down_vote:
-                    suggestion.down_votes += 1
-        else:
-            if not up_vote:
-                suggestion.up_votes -= 1
-            if down_vote is False:
-                suggestion.down_votes -= 1
+            if not created:
+                vote.up_vote = up_vote
+                vote.down_vote = down_vote
+                vote.save()
 
-            voted = SuggestionVotes.objects.filter(user=user, suggestion=suggestion).delete()
+            # Update vote counts
+            post.up_votes = ForumVote.objects.filter(post=post, up_vote=True).count()
+            post.down_votes = ForumVote.objects.filter(post=post, down_vote=True).count()
+            post.save()
 
-            if up_vote:
-                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, up_vote=True, down_vote=False)
-                suggestion.up_votes += 1
+            return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
 
-            if down_vote:
-                voted = SuggestionVotes.objects.create(user=user, suggestion=suggestion, down_vote=True, up_vote=False)
-                suggestion.down_votes += 1
-
-            suggestion.save()
-
-        response = {
-            "success": True,
-            "up_vote": suggestion.up_votes,
-            "down_vote": suggestion.down_votes,
-        }
-        return JsonResponse(response)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=402)
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
 @login_required
 def set_vote_status(request):
     if request.method == "POST":
-        user = request.user
-        data = json.loads(request.body)
-        id = data.get("id")
         try:
-            suggestion = Suggestion.objects.get(id=id)
-        except Suggestion.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+            data = json.loads(request.body)
+            post_id = data.get("id")
+            vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
-        up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
-        down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
+            return JsonResponse(
+                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+            )
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
 
-        response = {"up_vote": up_vote, "down_vote": down_vote}
-        return JsonResponse(response)
-
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
-def add_suggestions(request):
+@login_required
+def add_forum_post(request):
     if request.method == "POST":
-        user = request.user if request.user.is_authenticated else None
-        data = json.loads(request.body)
-        title = data.get("title")
-        description = data.get("description", "")
-        if title and description:
-            suggestion = Suggestion(user=user, title=title, description=description)
-            suggestion.save()
-            messages.success(request, "Suggestion added successfully.")
-            return JsonResponse({"status": "success"})
-        else:
-            messages.error(request, "Please fill all the fields.")
-            return JsonResponse({"status": "error"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+        try:
+            data = json.loads(request.body)
+            title = data.get("title")
+            category = data.get("category")
+            description = data.get("description")
+
+            if not all([title, category, description]):
+                return JsonResponse({"status": "error", "message": "Missing required fields"})
+
+            post = ForumPost.objects.create(
+                user=request.user, title=title, category_id=category, description=description
+            )
+
+            return JsonResponse({"status": "success", "post_id": post.id})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+@login_required
+def add_forum_comment(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+            content = data.get("content")
+
+            if not all([post_id, content]):
+                return JsonResponse({"status": "error", "message": "Missing required fields"})
+
+            post = ForumPost.objects.get(id=post_id)
+            comment = ForumComment.objects.create(post=post, user=request.user, content=content)
+
+            return JsonResponse({"status": "success", "comment_id": comment.id})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+def view_forum(request):
+    categories = ForumCategory.objects.all()
+    selected_category = request.GET.get("category")
+
+    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+
+    if selected_category:
+        posts = posts.filter(category_id=selected_category)
+
+    return render(
+        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+    )
 
 
 class GoogleLogin(SocialLoginView):
@@ -979,7 +1015,7 @@ class StatsDetailView(TemplateView):
                 dates, counts = self.get_historical_counts(model, start_date)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
 
-                # Get filtered count and total count
+                # Get filtered count and total counts
                 total_count = model.objects.count()
                 filtered_count = counts[-1] if counts else 0
 
@@ -1016,8 +1052,38 @@ class StatsDetailView(TemplateView):
 
 
 def view_suggestions(request):
-    suggestion = Suggestion.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+    category_id = request.GET.get("category")
+    status = request.GET.get("status")
+    sort = request.GET.get("sort", "newest")
+
+    suggestions = ForumPost.objects.all()
+
+    # Apply filters
+    if category_id:
+        suggestions = suggestions.filter(category_id=category_id)
+    if status:
+        suggestions = suggestions.filter(status=status)
+
+    # Apply sorting
+    if sort == "oldest":
+        suggestions = suggestions.order_by("created")
+    elif sort == "most_votes":
+        suggestions = suggestions.order_by("-up_votes")
+    elif sort == "most_comments":
+        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
+    else:  # newest
+        suggestions = suggestions.order_by("-created")
+
+    categories = ForumCategory.objects.all()
+
+    return render(
+        request,
+        "feature_suggestion.html",
+        {
+            "suggestions": suggestions,
+            "categories": categories,
+        },
+    )
 
 
 def sitemap(request):
@@ -1027,7 +1093,7 @@ def sitemap(request):
 
 def badge_list(request):
     badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge"))
+    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
     return render(request, "badges.html", {"badges": badges})
 
 
@@ -1084,29 +1150,52 @@ def get_last_commit_date():
 
 def submit_roadmap_pr(request):
     if request.method == "POST":
-        pr_link = request.POST.get("pr_link")
-        issue_link = request.POST.get("issue_link")
+        pr_link = request.POST.get("pr_link", "").strip()
+        issue_link = request.POST.get("issue_link", "").strip()
 
         if not pr_link or not issue_link:
             return JsonResponse({"error": "Both PR and issue links are required."}, status=400)
 
-        pr_parts = pr_link.split("/")
-        issue_parts = issue_link.split("/")
-        owner, repo = pr_parts[3], pr_parts[4]
-        pr_number, issue_number = pr_parts[-1], issue_parts[-1]
+        # Validate GitHub URLs
+        if not (pr_link.startswith("https://github.com/") and issue_link.startswith("https://github.com/")):
+            return JsonResponse({"error": "Invalid GitHub URLs. Both URLs must be from github.com"}, status=400)
 
-        pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
-        roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+        try:
+            pr_parts = pr_link.split("/")
+            issue_parts = issue_link.split("/")
 
-        if "error" in pr_data or "error" in roadmap_data:
-            return JsonResponse(
-                {"error": (f"Failed to fetch PR or roadmap data: " f"{pr_data.get('error', 'Unknown error')}")},
-                status=500,
-            )
+            # Validate URL parts length
+            if len(pr_parts) < 7 or len(issue_parts) < 7:
+                return JsonResponse({"error": "Invalid GitHub URL format"}, status=400)
 
-        analysis = analyze_pr_content(pr_data, roadmap_data)
-        save_analysis_report(pr_link, issue_link, analysis)
-        return JsonResponse({"message": "PR submitted successfully"})
+            # Extract owner and repo from PR URL
+            owner, repo = pr_parts[3], pr_parts[4]
+
+            # Extract PR and issue numbers
+            pr_number = pr_parts[-1]
+            issue_number = issue_parts[-1]
+
+            # Validate that we have numeric IDs
+            if not (pr_number.isdigit() and issue_number.isdigit()):
+                return JsonResponse({"error": "Invalid PR or issue number format"}, status=400)
+
+            pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
+            roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+
+            if "error" in pr_data or "error" in roadmap_data:
+                return JsonResponse(
+                    {"error": f"Failed to fetch PR or roadmap data: {pr_data.get('error', 'Unknown error')}"},
+                    status=500,
+                )
+
+            analysis = analyze_pr_content(pr_data, roadmap_data)
+            save_analysis_report(pr_link, issue_link, analysis)
+            return JsonResponse({"message": "PR submitted successfully"})
+
+        except (IndexError, ValueError) as e:
+            return JsonResponse({"error": f"Invalid URL format: {str(e)}"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": f"An unexpected error occurred: {str(e)}"}, status=500)
 
     return render(request, "submit_roadmap_pr.html")
 
@@ -1117,7 +1206,10 @@ def view_pr_analysis(request):
 
 
 def home(request):
+    from django.db.models import Count, Sum
     from django.utils import timezone
+
+    from website.models import ForumPost, GitHubIssue, Post, Repo, User  # Add BlogPost model
 
     # Get last commit date
     try:
@@ -1126,19 +1218,51 @@ def home(request):
         print(f"Error getting last commit date: {e}")
         last_commit = ""
 
+    # Get latest repositories and total count
+    latest_repos = Repo.objects.order_by("-created")[:5]
+    total_repos = Repo.objects.count()
+
+    # Get recent forum posts
+    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+
+    # Get top bug reporters for current month
+    current_time = timezone.now()
+    top_bug_reporters = (
+        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
+        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        .order_by("-total_score")[:5]
+    )
+
+    # Get top PR contributors using the leaderboard method
+    top_pr_contributors = (
+        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        .annotate(total_prs=Count("id"))
+        .order_by("-total_prs")[:5]
+    )
+
+    # Get latest blog posts
+    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
     return render(
         request,
         "home.html",
         {
             "last_commit": last_commit,
-            "current_year": timezone.now().year,  # Add current year
+            "current_year": timezone.now().year,
+            "latest_repos": latest_repos,
+            "total_repos": total_repos,
+            "recent_posts": recent_posts,
+            "top_bug_reporters": top_bug_reporters,
+            "top_pr_contributors": top_pr_contributors,
+            "latest_blog_posts": latest_blog_posts,  # Add latest blog posts to context
         },
     )
 
 
 def test_sentry(request):
     if request.user.is_superuser:
-        division_by_zero = 1 / 0  # This will raise a ZeroDivisionError
+        1 / 0  # This will raise a ZeroDivisionError
     return HttpResponse("Test error sent to Sentry!")
 
 
@@ -1271,37 +1395,50 @@ def sync_github_projects(request):
 
 
 def check_owasp_compliance(request):
-    """View to check OWASP project compliance criteria"""
+    """
+    View to check OWASP project compliance with guidelines.
+    Combines form and results in a single template.
+    """
     if request.method == "POST":
-        url = request.POST.get("url")
+        url = request.POST.get("url", "").strip()
         if not url:
-            messages.error(request, "URL is required")
+            messages.error(request, "Please provide a valid URL")
             return redirect("check_owasp_compliance")
 
         try:
-            # Check GitHub compliance
-            parsed_url = urlparse(url)
-            is_github = parsed_url.netloc == "github.com"
-            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+            # Parse URL to determine if it's a GitHub repository
+            is_github = "github.com" in url.lower()
+            is_owasp_org = "github.com/owasp" in url.lower()
 
-            # Check website compliance
-            response = requests.get(url, timeout=10)
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            # Check for OWASP mention
+            # Fetch and analyze website content
+            response = requests.get(url, timeout=10, verify=False)
+            soup = BeautifulSoup(response.text.lower(), "html.parser")
             content = soup.get_text().lower()
+
+            # Check for OWASP mentions and links
             has_owasp_mention = "owasp" in content
+            has_project_link = any(
+                "owasp.org/www-project-" in link.get("href", "").lower() for link in soup.find_all("a")
+            )
 
-            # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
-            has_project_link = len(owasp_links) > 0
+            # Check for dates to determine if content is up-to-date
+            date_patterns = [
+                r"\b\d{4}-\d{2}-\d{2}\b",  # YYYY-MM-DD
+                r"\b\d{2}/\d{2}/\d{4}\b",  # DD/MM/YYYY
+                r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2},? \d{4}\b",  # Month DD, YYYY
+            ]
+            has_dates = any(re.search(pattern, content, re.IGNORECASE) for pattern in date_patterns)
 
-            # Check for up-to-date info
-            has_dates = bool(soup.find_all(["time", "date"]))
-
-            # Check vendor neutrality
-            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
-            has_paywall_indicators = any(term in content for term in paywall_terms)
+            # Check for potential paywall indicators
+            paywall_indicators = [
+                "premium",
+                "subscription",
+                "upgrade to",
+                "paid version",
+                "enterprise plan",
+                "pro version",
+            ]
+            has_paywall_indicators = any(indicator in content for indicator in paywall_indicators)
 
             # Compile recommendations
             recommendations = []
@@ -1332,13 +1469,14 @@ def check_owasp_compliance(request):
                 "overall_status": "compliant" if not recommendations else "needs_improvement",
             }
 
-            return render(request, "owasp_compliance_result.html", context)
+            return render(request, "check_owasp_compliance.html", context)
 
+        except requests.RequestException as e:
+            messages.error(request, f"Error accessing the URL: {str(e)}. Please check if the URL is accessible.")
         except Exception as e:
-            messages.error(request, f"Error checking compliance: {str(e)}")
-            return redirect("check_owasp_compliance")
+            messages.error(request, f"Error checking compliance: {str(e)}. Please try again.")
 
-    return render(request, "owasp_compliance_check.html")
+    return render(request, "check_owasp_compliance.html")
 
 
 def management_commands(request):
@@ -1378,6 +1516,11 @@ def management_commands(request):
 
 def run_management_command(request):
     if request.method == "POST":
+        # Check if user is superuser
+        if not request.user.is_superuser:
+            messages.error(request, "Only superusers can run management commands.")
+            return redirect("management_commands")
+
         command = request.POST.get("command")
         logging.info(f"Running command: {command}")
         print(f"Running command: {command}")
@@ -1428,57 +1571,77 @@ def run_management_command(request):
 
 
 def template_list(request):
+    from django.core.cache import cache
+    from django.core.paginator import Paginator
     from django.db.models import Sum
     from django.urls import URLPattern, URLResolver, get_resolver
 
+    # Get search and filter parameters
+    search_query = request.GET.get("search", "")
+    filter_by = request.GET.get("filter", "all")
+    sort = request.GET.get("sort", "name")
+    direction = request.GET.get("dir", "asc")
+    page = request.GET.get("page", 1)
+
     def get_templates_from_dir(directory):
+        # Try to get from cache first
+        cache_key = f"template_list_{directory}_{search_query}_{filter_by}"
+        cached_templates = cache.get(cache_key)
+        if cached_templates is not None:
+            return cached_templates
+
         templates = []
         for template_name in os.listdir(directory):
             if template_name.endswith(".html"):
-                template_path = os.path.join(directory, template_name)
+                if search_query and search_query.lower() not in template_name.lower():
+                    continue
 
-                # Get last modified time
+                template_path = os.path.join(directory, template_name)
                 modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
 
-                # Get view count from IP table
-                view_count = (
-                    IP.objects.filter(
-                        Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
-                    ).aggregate(total_views=Sum("count"))["total_views"]
-                    or 0
-                )
+                # Get view count from IP table with caching
+                view_count_key = f"template_views_{template_name}"
+                view_count = cache.get(view_count_key)
+                if view_count is None:
+                    view_count = (
+                        IP.objects.filter(
+                            Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
+                        ).aggregate(total_views=Sum("count"))["total_views"]
+                        or 0
+                    )
+                    cache.set(view_count_key, view_count, 3600)  # Cache for 1 hour
 
-                # Get GitHub URL
                 github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
 
-                # Check if template has a matching URL pattern
-                template_url = None
-                resolver = get_resolver()
+                # Check template contents with caching
+                template_info_key = f"template_info_{template_name}"
+                template_info = cache.get(template_info_key)
 
-                def check_urlpatterns(urlpatterns, template_name):
-                    for pattern in urlpatterns:
-                        if isinstance(pattern, URLResolver):
-                            match = check_urlpatterns(pattern.url_patterns, template_name)
-                            if match:
-                                return match
-                        elif isinstance(pattern, URLPattern):
-                            if hasattr(pattern.callback, "view_class"):
-                                view = pattern.callback.view_class
-                                if hasattr(view, "template_name") and view.template_name == template_name:
-                                    return pattern.pattern
-                            elif hasattr(pattern.callback, "__closure__") and pattern.callback.__closure__:
-                                for cell in pattern.callback.__closure__:
-                                    if isinstance(cell.cell_contents, str) and cell.cell_contents.endswith(
-                                        template_name
-                                    ):
-                                        return pattern.pattern
-                    return None
+                if template_info is None:
+                    with open(template_path, "r") as f:
+                        content = f.read()
+                        template_info = {
+                            "has_sidenav": '{% include "includes/sidenav.html" %}' in content,
+                            "extends_base": '{% extends "base.html" %}' in content,
+                            "has_style_tags": "<style" in content,
+                        }
+                    cache.set(template_info_key, template_info, 3600)  # Cache for 1 hour
 
-                url_pattern = check_urlpatterns(resolver.url_patterns, template_name)
-                if url_pattern:
-                    template_url = "/" + str(url_pattern).lstrip("^").rstrip("$")
-                    if template_url.endswith("/"):
-                        template_url = template_url[:-1]
+                # Filter based on user selection
+                if filter_by != "all":
+                    if filter_by == "with_sidenav" and not template_info["has_sidenav"]:
+                        continue
+                    if filter_by == "with_base" and not template_info["extends_base"]:
+                        continue
+                    if filter_by == "with_styles" and not template_info["has_style_tags"]:
+                        continue
+
+                # Check if template has a URL (cached)
+                url_key = f"template_url_{template_name}"
+                template_url = cache.get(url_key)
+                if template_url is None:
+                    template_url = check_template_url(template_name)
+                    cache.set(url_key, template_url, 3600)  # Cache for 1 hour
 
                 templates.append(
                     {
@@ -1488,9 +1651,64 @@ def template_list(request):
                         "modified": modified_time,
                         "views": view_count,
                         "github_url": github_url,
+                        "has_sidenav": template_info["has_sidenav"],
+                        "extends_base": template_info["extends_base"],
+                        "has_style_tags": template_info["has_style_tags"],
                     }
                 )
+
+        # Cache the results
+        cache.set(cache_key, templates, 300)  # Cache for 5 minutes
         return templates
+
+    def check_template_url(template_name):
+        resolver = get_resolver()
+        template_base_name = template_name.replace(".html", "")
+
+        for pattern in resolver.url_patterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
+
+    def check_pattern(pattern, template_name, template_base_name):
+        pattern_path = str(pattern.pattern) if pattern.pattern else ""
+        pattern_name = getattr(pattern, "name", "")
+
+        if hasattr(pattern.callback, "view_class"):
+            view_class = pattern.callback.view_class
+            if hasattr(view_class, "template_name") and view_class.template_name in (template_name, template_base_name):
+                return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
+
+        if any(
+            [
+                pattern_path == template_base_name,
+                pattern_path and pattern_path.replace("-", "_") == template_base_name,
+                pattern_name == template_base_name,
+                pattern_name and pattern_name.replace("-", "_") == template_base_name,
+            ]
+        ):
+            return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
+
+        return None
+
+    def check_template_url_in_patterns(urlpatterns, template_name):
+        template_base_name = template_name.replace(".html", "")
+        for pattern in urlpatterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
 
     template_dirs = []
     main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
@@ -1505,22 +1723,24 @@ def template_list(request):
                 {"name": f"{subdir.title()} Templates", "templates": get_templates_from_dir(subdir_path)}
             )
 
+    # Calculate total templates
     total_templates = sum(len(dir["templates"]) for dir in template_dirs)
 
-    sort = request.GET.get("sort", "name")
-    direction = request.GET.get("dir", "asc")
-
-    def get_sort_key(template):
-        if sort == "name":
-            return template["name"].lower()
-        elif sort == "modified":
-            return template["modified"]
-        elif sort == "view_count":
-            return template["views"]
-        return template["name"].lower()
-
+    # Sort templates in each directory
     for dir in template_dirs:
-        dir["templates"].sort(key=get_sort_key, reverse=(direction == "desc"))
+        dir["templates"].sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
+
+    # Flatten templates for pagination
+    all_templates = []
+    for dir in template_dirs:
+        all_templates.extend([(dir["name"], template) for template in dir["templates"]])
+
+    # Paginate results
+    paginator = Paginator(all_templates, 20)  # Show 20 templates per page
+    try:
+        templates_page = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        templates_page = paginator.page(1)
 
     return render(
         request,
@@ -1530,7 +1750,16 @@ def template_list(request):
             "total_templates": total_templates,
             "sort": sort,
             "direction": direction,
-            "base_dir": main_template_dir + "/",  # Add trailing slash to ensure clean path cutting
+            "base_dir": settings.BASE_DIR,
+            "search_query": search_query,
+            "filter_by": filter_by,
+            "page_obj": templates_page,
+            "filter_options": [
+                {"value": "all", "label": "All Templates"},
+                {"value": "with_sidenav", "label": "With Sidenav"},
+                {"value": "with_base", "label": "Extends Base"},
+                {"value": "with_styles", "label": "With Style Tags"},
+            ],
         },
     )
 
@@ -1595,7 +1824,7 @@ def website_stats(request):
         views.append(day["daily_count"])
 
     # Get unique visitors (unique IPs), excluding admin URLs
-    unique_visitors = IP.objects.exclude(path__startswith=f"/{admin_url}/").values("address").distinct().count()
+    unique_visitors = IP.objects.exclude(path__startswith=admin_url).values("address").distinct().count()
 
     total_views = sum(view_stats.values())
 
@@ -1611,6 +1840,24 @@ def website_stats(request):
             status = "normal"
     else:
         status = "normal"
+
+    # Get top 50 user agents
+    user_agents = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .exclude(agent__isnull=True)
+        .values("agent")
+        .annotate(total_count=Sum("count"), last_request=models.Max("created"))
+        .order_by("-total_count")[:50]
+    )
+
+    # Count unique user agents
+    unique_agents_count = (
+        IP.objects.exclude(path__startswith=f"/{admin_url}/")
+        .exclude(agent__isnull=True)
+        .values("agent")
+        .distinct()
+        .count()
+    )
 
     # Collect URL pattern info
     url_info = []
@@ -1661,6 +1908,52 @@ def website_stats(request):
         "total_urls": len(url_info),  # Add total URL count
     }
 
-    context = {"url_info": url_info, "total_views": total_views, "web_stats": web_stats}
+    context = {
+        "url_info": url_info,
+        "total_views": total_views,
+        "web_stats": web_stats,
+        "user_agents": user_agents,
+        "unique_agents_count": unique_agents_count,
+    }
 
     return render(request, "website_stats.html", context)
+
+
+class CustomSocialAccountDisconnectView(BaseSocialAccountDisconnectView):
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SocialAccount.objects.none()
+        return super().get_queryset()
+
+
+class MapView(ListView):
+    template_name = "map.html"
+    context_object_name = "locations"
+
+    def get_queryset(self):
+        # Get the marker type from query params, default to 'organizations'
+        marker_type = self.request.GET.get("type", "organizations")
+
+        if marker_type == "organizations":
+            return Organization.objects.filter(
+                latitude__isnull=False, longitude__isnull=False, is_active=True
+            ).order_by("-created")
+        # Add more types here as needed
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        marker_type = self.request.GET.get("type", "organizations")
+
+        context["marker_type"] = marker_type
+        context["marker_types"] = [
+            {
+                "id": "organizations",
+                "name": "Organizations",
+                "icon": "fa-building",
+                "description": "View organizations around the world",
+            },
+            # Add more marker types here as needed
+        ]
+
+        return context

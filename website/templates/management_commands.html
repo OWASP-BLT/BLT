@@ -6,6 +6,12 @@
     <div class="container mx-auto px-4 py-8">
         <div class="bg-white rounded-lg shadow-sm p-6">
             <h1 class="text-2xl font-bold mb-6">Management Commands</h1>
+            {% if not request.user.is_superuser %}
+                <div class="mb-6 p-4 rounded-lg bg-yellow-100 text-yellow-700">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    Note: Only superusers can run management commands. You can view the command history but cannot execute commands.
+                </div>
+            {% endif %}
             {% if messages %}
                 {% for message in messages %}
                     <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% endif %}">
@@ -55,23 +61,27 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ command.run_count|default:"0" }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     <div class="flex items-center space-x-2">
-                                        <form method="post"
-                                              action="{% url 'run_management_command' %}"
-                                              class="inline">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="command" value="{{ command.name }}">
-                                            <button type="submit"
-                                                    class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                                    title="Run command">
-                                                <svg class="h-4 w-4 mr-1"
-                                                     fill="none"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                                Run
-                                            </button>
-                                        </form>
+                                        {% if request.user.is_superuser %}
+                                            <form method="post"
+                                                  action="{% url 'run_management_command' %}"
+                                                  class="inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="command" value="{{ command.name }}">
+                                                <button type="submit"
+                                                        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]"
+                                                        title="Run command">
+                                                    <svg class="h-4 w-4 mr-1"
+                                                         fill="none"
+                                                         viewBox="0 0 24 24"
+                                                         stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                    </svg>
+                                                    Run
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-gray-400 italic">Superuser only</span>
+                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>

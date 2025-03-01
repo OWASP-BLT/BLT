@@ -39,45 +39,106 @@
                 <canvas id="trafficChart"></canvas>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 class="text-xl font-semibold mb-4">Total Views: {{ total_views }}</h2>
-        </div>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-            <div class="p-6">
-                <h2 class="text-xl font-semibold mb-4">URL Statistics ({{ web_stats.total_urls|default:0 }} URLs)</h2>
+        <!-- User Agent Statistics Section -->
+        <div class="lg:col-span-3 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-200 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="text-2xl text-gray-600 dark:text-gray-400">
+                        <i class="fas fa-desktop"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">User Agents</h2>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Top 50 User Agents</div>
+                    </div>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                    {{ unique_agents_count }} Unique Agents
+                </span>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Path</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">View Name</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for url in url_info %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.path }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_count }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    {% if total_views > 0 %}
-                                        {% widthratio url.view_count total_views 100 as percentage %}
-                                        {{ percentage|floatformat:1 }}%
-                                    {% else %}
-                                        0%
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% empty %}
+            <div class="w-full h-96">
+                <canvas id="userAgentChart"></canvas>
+            </div>
+        </div>
+        <!-- Tabs Section -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+            <div class="border-b border-gray-200">
+                <nav class="flex" aria-label="Tabs">
+                    <button onclick="switchTab('urlStats')"
+                            class="tab-button active text-[#e74c3c] border-[#e74c3c] whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm"
+                            aria-current="page">URL Statistics ({{ web_stats.total_urls }} URLs)</button>
+                    <button onclick="switchTab('userAgents')"
+                            class="tab-button text-gray-500 hover:text-[#e74c3c] hover:border-[#e74c3c] whitespace-nowrap py-4 px-6 border-b-2 border-transparent font-medium text-sm">
+                        Unique Agents ({{ unique_agents_count }})
+                    </button>
+                </nav>
+            </div>
+            <!-- URL Statistics Table -->
+            <div id="urlStats" class="tab-content">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
                             <tr>
-                                <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No URL statistics available</td>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Path</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">View Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for url in url_info %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.path }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ url.view_count }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        {% if total_views > 0 %}
+                                            {% widthratio url.view_count total_views 100 as percentage %}
+                                            {{ percentage|floatformat:1 }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No URL statistics available</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- User Agents Table -->
+            <div id="userAgents" class="tab-content hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Agent</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Request</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">% of Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for agent in user_agents %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 text-sm">{{ agent.agent }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ agent.total_count }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">{{ agent.last_request|timesince }} ago</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        {% widthratio agent.total_count web_stats.total_views 100 as percentage %}
+                                        {{ percentage|floatformat:1 }}%
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="px-6 py-4 text-center text-sm text-gray-500">No user agent data available</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -86,6 +147,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Traffic Chart
     const ctx = document.getElementById('trafficChart').getContext('2d');
     
     const data = {
@@ -153,6 +215,87 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     new Chart(ctx, config);
+
+    // User Agent Chart
+    const userAgentCtx = document.getElementById('userAgentChart').getContext('2d');
+    const userAgentData = {
+        labels: [{% for agent in user_agents %}'{{ agent.agent|truncatechars:50|escapejs }}',{% endfor %}],
+        datasets: [{
+            label: 'User Agent Count',
+            data: [{% for agent in user_agents %}{{ agent.total_count }},{% endfor %}],
+            backgroundColor: 'rgba(231, 76, 60, 0.8)',
+            borderColor: '#e74c3c',
+            borderWidth: 1
+        }]
+    };
+
+    const userAgentConfig = {
+        type: 'bar',
+        data: userAgentData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#e74c3c',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45,
+                        color: '#718096'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        color: '#718096'
+                    }
+                }
+            }
+        }
+    };
+
+    new Chart(userAgentCtx, userAgentConfig);
 });
+
+// Tab switching functionality
+function switchTab(tabId) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Show selected tab content
+    document.getElementById(tabId).classList.remove('hidden');
+    
+    // Update tab button styles
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('text-[#e74c3c]', 'border-[#e74c3c]');
+        button.classList.add('text-gray-500', 'border-transparent');
+    });
+    
+    // Update active tab button
+    const activeButton = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+    activeButton.classList.remove('text-gray-500', 'border-transparent');
+    activeButton.classList.add('text-[#e74c3c]', 'border-[#e74c3c]');
+}
     </script>
 {% endblock %}

@@ -9,7 +9,6 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
-import django_filters
 import requests
 import sentry_sdk
 from dateutil.parser import parse as parse_datetime
@@ -25,6 +24,7 @@ from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
@@ -35,6 +35,7 @@ from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
+from website.filters import ProjectRepoFilter
 from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.utils import admin_required
 
@@ -223,76 +224,6 @@ class ProjectBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
-
-
-class ProjectRepoFilter(django_filters.FilterSet):
-    search = django_filters.CharFilter(method="filter_search", label="Search")
-    repo_type = django_filters.ChoiceFilter(
-        choices=[
-            ("all", "All"),
-            ("main", "Main"),
-            ("wiki", "Wiki"),
-            ("normal", "Normal"),
-        ],
-        method="filter_repo_type",
-        label="Repo Type",
-    )
-    sort = django_filters.ChoiceFilter(
-        choices=[
-            ("stars", "Stars"),
-            ("forks", "Forks"),
-            ("open_issues", "Open Issues"),
-            ("last_updated", "Recently Updated"),
-            ("contributor_count", "Contributors"),
-        ],
-        method="filter_sort",
-        label="Sort By",
-    )
-    order = django_filters.ChoiceFilter(
-        choices=[
-            ("asc", "Ascending"),
-            ("desc", "Descending"),
-        ],
-        method="filter_order",
-        label="Order",
-    )
-
-    class Meta:
-        model = Repo
-        fields = ["search", "repo_type", "sort", "order"]
-
-    def filter_search(self, queryset, name, value):
-        return queryset.filter(
-            Q(project__name__icontains=value)
-            | Q(name__icontains=value)
-            | Q(primary_language__icontains=value)
-            | Q(ai_summary__icontains=value)
-            | Q(readme_content__icontains=value)
-        )
-
-    def filter_repo_type(self, queryset, name, value):
-        if value == "main":
-            return queryset.filter(is_main=True)
-        elif value == "wiki":
-            return queryset.filter(is_wiki=True)
-        elif value == "normal":
-            return queryset.filter(is_main=False, is_wiki=False)
-        return queryset
-
-    def filter_sort(self, queryset, name, value):
-        sort_mapping = {
-            "stars": "stars",
-            "forks": "forks",
-            "open_issues": "open_issues",
-            "last_updated": "last_updated",
-            "contributor_count": "contributor_count",
-        }
-        return queryset.order_by(sort_mapping.get(value, "stars"))
-
-    def filter_order(self, queryset, name, value):
-        if value == "desc":
-            return queryset.reverse()
-        return queryset
 
 
 class ProjectView(FilterView):
@@ -768,6 +699,12 @@ class RepoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
 
+        # Add breadcrumbs
+        context["breadcrumbs"] = [
+            {"title": "Repositories", "url": reverse("project_list")},
+            {"title": repo.name, "url": None},
+        ]
+
         # Get other repos from same project
         context["related_repos"] = (
             Repo.objects.filter(project=repo.project).exclude(id=repo.id).select_related("project")[:5]
@@ -972,7 +909,7 @@ class RepoDetailView(DetailView):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             if "time_period" in request.POST:
                 context = self.get_context_data()
-                return render(request, "projects/_contributor_stats_table.html", context)
+                return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
             search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"

@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Discussion Forum{% endblock %}
+{% block description %}
+    Share and discuss ideas, ask questions, and engage with the OWASP Bug Logging Tool community. Join the conversation and help shape the future of the tool.
+{% endblock %}
+{% block keywords %}discussion, forum, community, OWASP, Bug Logging Tool, feedback, ideas, questions{% endblock %}
+{% block og_title %}Discussion Forum - OWASP Bug Logging Tool{% endblock %}
+{% block og_description %}
+    Join the OWASP Bug Logging Tool community discussion. Share ideas, ask questions, and connect with other users.
+{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex max-w-7xl mx-auto p-4">
+        <!-- Category Sidebar -->
+        <div class="w-64 bg-white rounded-lg shadow-sm p-6 mr-8 h-fit">
+            <h2 class="text-xl font-semibold mb-4 text-[#e74c3c]">Categories</h2>
+            <ul class="space-y-2">
+                <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if not selected_category %}bg-[#e74c3c] text-white{% endif %}"
+                    onclick="filterByCategory('')">
+                    <span>All Categories</span>
+                    <span class="px-3 py-1 rounded-full text-sm font-medium {% if not selected_category %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
+                        {{ posts.count }}
+                    </span>
+                </li>
+                {% for category in categories %}
+                    <li class="flex justify-between items-center p-3 rounded-md cursor-pointer transition-all duration-200 hover:bg-red-50 {% if selected_category == category.id %}bg-[#e74c3c] text-white{% endif %}"
+                        onclick="filterByCategory('{{ category.id }}')">
+                        <span>{{ category.name }}</span>
+                        <span class="px-3 py-1 rounded-full text-sm font-medium {% if selected_category == category.id %}bg-white text-[#e74c3c]{% else %}bg-orange-100 text-[#e74c3c]{% endif %}">
+                            {{ category.post_set.count }}
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <!-- Main Content -->
+        <div class="flex-1">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-[#e74c3c]">Discussion Forum</h1>
+                <button class="bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#c0392b] transition-colors duration-200 flex items-center gap-2"
+                        onclick="openNewSuggestionModal()">
+                    <i class="fas fa-plus"></i> New Discussion
+                </button>
+            </div>
+            <!-- Filters -->
+            <div class="flex gap-4 mb-6 p-4 bg-white rounded-lg shadow-sm">
+                <select class="px-4 py-2 border border-gray-200 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                        id="categoryFilter">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
+                </select>
+                <select class="px-4 py-2 border border-gray-200 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                        id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="declined">Declined</option>
+                </select>
+                <select class="px-4 py-2 border border-gray-200 rounded-md min-w-[150px] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                        id="sortFilter">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="most_votes">Most Votes</option>
+                    <option value="most_comments">Most Comments</option>
+                </select>
+            </div>
+            <!-- Posts List -->
+            <ul class="space-y-4">
+                {% for post in posts %}
+                    <li class="bg-white rounded-lg shadow-sm overflow-hidden {% if post.is_pinned %}border-2 border-[#e74c3c]{% endif %}">
+                        <div class="p-6 border-b border-gray-100">
+                            <h2 class="text-xl font-semibold text-gray-800 mb-2">{{ post.title }}</h2>
+                            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-user"></i>
+                                    {% if post.user %}
+                                        {{ post.user }}
+                                    {% else %}
+                                        Anonymous
+                                    {% endif %}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="fas fa-clock"></i>
+                                    {{ post.created|timesince }} ago
+                                </span>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium {% if post.status == 'open' %}bg-teal-50 text-teal-600 {% elif post.status == 'in_progress' %}bg-blue-50 text-blue-600 {% elif post.status == 'completed' %}bg-green-50 text-green-600 {% else %}bg-red-50 text-red-600{% endif %}">
+                                    {{ post.get_status_display }}
+                                </span>
+                                {% if post.category %}
+                                    <span class="flex items-center gap-1">
+                                        <i class="fas fa-tag"></i>
+                                        {{ post.category.name }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="p-6 text-gray-700">
+                            <p>{{ post.description }}</p>
+                        </div>
+                        <div class="flex justify-between items-center px-6 py-4 bg-gray-50 border-t border-gray-100">
+                            <div class="flex gap-2">
+                                <button type="button"
+                                        class="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors duration-200 {% if post.user_vote and post.user_vote.up_vote %}bg-[#e74c3c] text-white{% endif %}"
+                                        data-vote-type="up"
+                                        data-suggestion-id="{{ post.id }}">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span class="font-medium">{{ post.up_votes }}</span>
+                                </button>
+                                <button type="button"
+                                        class="flex items-center gap-2 px-4 py-2 rounded-md bg-gray-100 hover:bg-gray-200 transition-colors duration-200 {% if post.user_vote and post.user_vote.down_vote %}bg-[#e74c3c] text-white{% endif %}"
+                                        data-vote-type="down"
+                                        data-suggestion-id="{{ post.id }}">
+                                    <i class="fas fa-arrow-down"></i>
+                                    <span class="font-medium">{{ post.down_votes }}</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2 text-gray-600">
+                                <i class="fas fa-comments"></i>
+                                {{ post.comments.count }} Comments
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-100 p-6" id="comments-{{ post.id }}">
+                            <form class="mb-6" onsubmit="submitComment(event, {{ post.id }})">
+                                {% csrf_token %}
+                                <textarea class="w-full px-4 py-3 border border-gray-200 rounded-md mb-2 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                          placeholder="Add a comment..."
+                                          required></textarea>
+                                <button type="submit"
+                                        class="bg-[#e74c3c] text-white px-6 py-2 rounded-md font-medium hover:bg-[#c0392b] transition-colors duration-200">
+                                    Post Comment
+                                </button>
+                            </form>
+                            <ul class="space-y-4">
+                                {% for comment in post.comments.all %}
+                                    <li class="border-b border-gray-100 pb-4">
+                                        <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                            <span>{{ comment.user }}</span>
+                                            <span>{{ comment.created|timesince }} ago</span>
+                                        </div>
+                                        <p class="text-gray-700">{{ comment.content }}</p>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="bg-white rounded-lg shadow-sm p-6 text-center text-gray-600">
+                        <p>No discussions yet. Be the first to start a discussion!</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <!-- New Discussion Modal -->
+    <div id="newSuggestionModal"
+         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50">
+        <div class="bg-white max-w-2xl mx-auto mt-16 rounded-lg relative">
+            <button class="absolute top-4 right-4 text-2xl text-gray-600 hover:text-gray-800"
+                    onclick="closeNewSuggestionModal()">×</button>
+            <div class="p-8">
+                <h2 class="text-2xl font-bold mb-6">Start New Discussion</h2>
+                <form id="suggestionForm" class="space-y-6" onsubmit="submitPost(event)">
+                    {% csrf_token %}
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                        <input type="text"
+                               id="title"
+                               name="title"
+                               class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                               placeholder="Enter your discussion title"
+                               required>
+                    </div>
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select id="category"
+                                name="category"
+                                class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                required>
+                            <option value="">Select a category</option>
+                            {% for category in categories %}<option value="{{ category.id }}">{{ category.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="description"
+                               class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea id="description"
+                                  name="description"
+                                  rows="4"
+                                  class="w-full px-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
+                                  placeholder="Write your discussion post"
+                                  required></textarea>
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-[#e74c3c] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#c0392b] transition-colors duration-200">
+                        Submit Post
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+    function initializeVoting() {
+        document.querySelectorAll('[data-vote-type]').forEach(button => {
+            button.addEventListener('click', handleVote);
+        });
+
+        document.querySelectorAll('[data-suggestion-id]').forEach(button => {
+            const suggestionId = button.dataset.suggestionId;
+            if (suggestionId) {
+                fetchVoteStatus(suggestionId);
+            }
+        });
+    }
+
+    function fetchVoteStatus(suggestionId) {
+        fetch('/forum/set-vote-status/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({id: suggestionId}),
+        })
+        .then(response => response.json())
+        .then(data => {
+            const upButton = document.querySelector(`[data-vote-type="up"][data-suggestion-id="${suggestionId}"]`);
+            const downButton = document.querySelector(`[data-vote-type="down"][data-suggestion-id="${suggestionId}"]`);
+            
+            if (data.up_vote) {
+                upButton?.classList.add('bg-[#e74c3c]', 'text-white');
+            } else if (data.down_vote) {
+                downButton?.classList.add('bg-[#e74c3c]', 'text-white');
+            }
+        })
+        .catch(error => console.error('Error fetching vote status:', error));
+    }
+
+    function handleVote(event) {
+        const button = event.currentTarget;
+        const postId = button.dataset.suggestionId;
+        const voteType = button.dataset.voteType;
+        
+        if (!postId || !voteType) {
+            console.error('Missing required data attributes');
+            return;
+        }
+
+        const upButton = document.querySelector(`[data-vote-type="up"][data-suggestion-id="${postId}"]`);
+        const downButton = document.querySelector(`[data-vote-type="down"][data-suggestion-id="${postId}"]`);
+        
+        const isUpvote = voteType === 'up';
+        const wasActive = button.classList.contains('bg-[#e74c3c]');
+
+        const upVote = isUpvote ? !wasActive : false;
+        const downVote = !isUpvote ? !wasActive : false;
+
+        fetch('/forum/vote/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                post_id: postId,
+                up_vote: upVote,
+                down_vote: downVote
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                upButton.querySelector('span').textContent = data.up_vote;
+                downButton.querySelector('span').textContent = data.down_vote;
+
+                upButton.classList.toggle('bg-[#e74c3c]', upVote);
+                upButton.classList.toggle('text-white', upVote);
+                downButton.classList.toggle('bg-[#e74c3c]', downVote);
+                downButton.classList.toggle('text-white', downVote);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    function openNewSuggestionModal() {
+        document.getElementById('newSuggestionModal').classList.remove('hidden');
+    }
+
+    function closeNewSuggestionModal() {
+        document.getElementById('newSuggestionModal').classList.add('hidden');
+    }
+
+    function submitPost(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        fetch('/forum/add/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: formData.get('title'),
+                category: formData.get('category'),
+                description: formData.get('description')
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                form.reset();
+                closeNewSuggestionModal();
+                location.reload();
+            } else {
+                alert('Error: Please fill all required fields.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function submitComment(event, postId) {
+        event.preventDefault();
+        const form = event.target;
+        const content = form.querySelector('textarea').value;
+
+        fetch('/forum/comment/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                post_id: postId,
+                content: content
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                form.reset();
+                location.reload();
+            } else {
+                alert('Error posting comment. Please try again.');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+
+    function filterByCategory(categoryId) {
+        const url = new URL(window.location.href);
+        if (categoryId) {
+            url.searchParams.set('category', categoryId);
+        } else {
+            url.searchParams.delete('category');
+        }
+        window.location.href = url.toString();
+    }
+
+    // Initialize voting when the page loads
+    document.addEventListener('DOMContentLoaded', initializeVoting);
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('newSuggestionModal');
+        if (event.target === modal) {
+            closeNewSuggestionModal();
+        }
+    }
+    </script>
+{% endblock content %}

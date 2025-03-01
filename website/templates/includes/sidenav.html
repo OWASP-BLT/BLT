@@ -31,6 +31,15 @@
                             <span>Domains</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if '/map/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'map' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/map/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-map-marker-alt fa-lg"></i>
+                            </div>
+                            <span>Map</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/feed/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'feed' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/feed' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
@@ -64,7 +73,7 @@
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-fire fa-lg"></i>
                             </div>
-                            <span>Sizzle</span>
+                            <span>Time Logs</span>
                         </a>
                     </li>
                     <!-- here we have to add another tab for "check-in"  -->
@@ -86,13 +95,13 @@
                             <span>Scoreboard</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
+                    <li class="mb-2 {% if request.path == '/bounties/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'hunts' %}"
-                           class="flex items-center w-full no-underline p-2 {% if request.path == '/hunts/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/bounties/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-bug fa-lg"></i>
                             </div>
-                            <span>Bug Bounties</span>
+                            <span>Bounties</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/reported-ips/' %}bg-gray-200{% endif %}">
@@ -136,7 +145,7 @@
                 <div class="my-4 border-t border-gray-300"></div>
                 <!-- Projects Header Link -->
                 <li class="mb-2 {% if request.path == '/projects/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'project_view' %}"
+                    <a href="{% url 'project_list' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/projects/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                         <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fas fa-box fa-lg"></i>
@@ -180,6 +189,15 @@
                                 <i class="fas fa-coins fa-lg"></i>
                             </div>
                             <span>BACON (coin)</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/bacon-requests/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'bacon_requests' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/bacon-requests/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hands-helping fa-lg"></i>
+                            </div>
+                            <span>Bacon Requests</span>
                         </a>
                     </li>
                 </ul>
@@ -298,6 +316,16 @@
                         <span>iPhone App</span>
                     </a>
                 </li>
+                <!-- Chrome Extension -->
+                <li class="mb-2 {% if request.path == '/extension/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'extension' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/extension/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
+                            <i class="fas fa-puzzle-piece fa-lg"></i>
+                        </div>
+                        <span>Chrome Extension</span>
+                    </a>
+                </li>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
                 <!-- About Us Header Link -->
@@ -350,13 +378,13 @@
                             <span>Donations</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/view-suggestion/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'view_suggestions' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/suggestion/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                    <li class="mb-2 {% if request.path == '/forum/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'view_forum' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/forum/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-comments fa-lg"></i>
                             </div>
-                            <span>Suggestions</span>
+                            <span>Forum</span>
                         </a>
                     </li>
                 </ul>
@@ -399,6 +427,15 @@
                                 <i class="fas fa-tv fa-lg"></i>
                             </div>
                             <span>BLTV</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/open-source-sorting-hat/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'ossh_home' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/open-source-sorting-hat/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hat-wizard fa-lg"></i>
+                            </div>
+                            <span>Open Source Sorting Hat</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/gsoc/' %}bg-gray-200{% endif %}">
@@ -455,7 +492,7 @@
                     </a>
                 </li>
                 <li class="mb-2 {% if request.path == '/blog/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'blog' %}"
+                    <a href="{% url 'post_list' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/blog' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                         <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fas fa-blog fa-lg"></i>
@@ -486,7 +523,7 @@
                     </a>
                 </li>
                 <li class="mb-2 {% if request.path == '/status/' %}bg-gray-200{% endif %}">
-                    <a href="{% url 'check_status' %}"
+                    <a href="{% url 'status_page' %}"
                        class="flex items-center w-full no-underline p-2 {% if '/status' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                         <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fas fa-check-circle fa-lg"></i>

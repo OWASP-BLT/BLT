@@ -1,0 +1,11 @@
+# example split file
+
+# output fields:
+#   address: output recipient bitcoin address
+#   value: output bitcoin value (optional, defaults to minimal-non dust value for `address`)
+#   runes: output rune value map (values respect rune divisibility)
+outputs:
+
+- address: bcrt1pvn4u72tm3c6jzg2ea6h0ldhvlr60mzfnlrn587el82ug4lasrdwqvqgrst
+  runes:
+    BLT•BACON•TOKENS: 1
