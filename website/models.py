@@ -1651,7 +1651,7 @@ class GitHubReview(models.Model):
     Model to store reviews made by users on pull requests.
     """
 
-    review_id = models.IntegerField(unique=True)
+    review_id = models.BigIntegerField(unique=True)
     pull_request = models.ForeignKey(
         GitHubIssue,
         on_delete=models.CASCADE,
