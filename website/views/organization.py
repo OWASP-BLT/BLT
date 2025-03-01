@@ -522,7 +522,10 @@ def load_more_issues(request):
         )
     except Exception as e:
         logger.exception("Error loading more issues")
-        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+        return JsonResponse(
+            {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
+        )
 
 
 class DraftHunts(TemplateView):
