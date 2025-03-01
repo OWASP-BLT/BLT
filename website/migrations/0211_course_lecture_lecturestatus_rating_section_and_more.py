@@ -64,6 +64,12 @@ class Migration(migrations.Migration):
                 ("content", models.TextField()),
                 ("duration", models.PositiveIntegerField(blank=True, help_text="Duration in minutes", null=True)),
                 ("order", models.PositiveIntegerField()),
+                (
+                    "instructor",
+                    models.ForeignKey(
+                        blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to="website.userprofile"
+                    ),
+                ),
                 ("tags", models.ManyToManyField(blank=True, related_name="lectures", to="website.tag")),
             ],
             options={
