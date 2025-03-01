@@ -396,14 +396,14 @@
     </div>
     <!-- Mobile Search Bar - Moved inside nav -->
     <div id="mobile-search"
-         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200">
+         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
         <form action="{% url 'search' %}" method="get" class="flex items-center">
             <div class="relative flex-1">
                 <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
                 <input type="text"
                        name="query"
-                       placeholder="Search..."
-                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 dark:text-gray-200 dark:placeholder-gray-500 placeholder:select-none placeholder:text-base">
+                       placeholder="Search here..."
+                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base">
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
