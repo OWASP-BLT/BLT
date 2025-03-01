@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
@@ -386,9 +387,9 @@ class Joinorganization(TemplateView):
                 return JsonResponse({"status": "There was some error"})
 
 
-class ListHunts(TemplateView):
+class Listbounties(TemplateView):
     model = Hunt
-    template_name = "hunt_list.html"
+    template_name = "bounties_list.html"
 
     def get(self, request, *args, **kwargs):
         search = request.GET.get("search", "")
@@ -425,33 +426,103 @@ class ListHunts(TemplateView):
 
         hunts = filtered_bughunts.get(hunt_type, hunts)
 
-        if search.strip() != "":
+        if search.strip():
             hunts = hunts.filter(Q(name__icontains=search))
 
-        if start_date != "" and start_date is not None:
+        if start_date:
             start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(starts_on__gte=start_date)
 
-        if end_date != "" and end_date is not None:
+        if end_date:
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(end_on__gte=end_date)
 
-        if domain != "Select Domain" and domain is not None:
+        if domain and domain != "Select Domain":
             domain = Domain.objects.filter(id=domain).first()
             hunts = hunts.filter(domain=domain)
 
-        context = {"hunts": hunts, "domains": Domain.objects.values("id", "name").all()}
+        # Fetch GitHub issues with $5 label for first page
+        try:
+            github_issues = self.github_issues_with_bounties("$5")
+        except Exception as e:
+            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            github_issues = []
+
+        context = {
+            "hunts": hunts,
+            "domains": Domain.objects.values("id", "name").all(),
+            "github_issues": github_issues,
+            "current_page": 1,
+        }
 
         return render(request, self.template_name, context)
 
-    def post(self, request, *args, **kwargs):
-        request.GET.search = request.GET.get("search", "")
-        request.GET.start_date = request.GET.get("start_date", "")
-        request.GET.end_date = request.GET.get("end_date", "")
-        request.GET.domain = request.GET.get("domain", "Select Domain")
-        request.GET.hunt_type = request.GET.get("type", "all")
+    def github_issues_with_bounties(self, label, page=1, per_page=10):
+        cache_key = f"github_issues_{label}_page_{page}"
+        cached_issues = cache.get(cache_key)
 
-        return self.get(request)
+        if cached_issues is not None:
+            return cached_issues
+
+        params = {"labels": label, "state": "open", "per_page": per_page, "page": page}
+
+        headers = {}
+        github_token = getattr(settings, "GITHUB_API_TOKEN", None)
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
+
+        try:
+            response = requests.get(
+                "https://api.github.com/repos/OWASP-BLT/BLT/issues", params=params, headers=headers, timeout=5
+            )
+
+            response.raise_for_status()
+
+            issues = response.json()
+            formatted_issues = [
+                {
+                    "id": issue.get("id"),
+                    "number": issue.get("number"),
+                    "title": issue.get("title"),
+                    "url": issue.get("html_url"),
+                    "repository": "OWASP-BLT/BLT",  # Hardcoded since we know the repo
+                    "created_at": issue.get("created_at"),
+                    "updated_at": issue.get("updated_at"),
+                    "labels": [label.get("name") for label in issue.get("labels", [])],
+                    "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                }
+                for issue in issues
+            ]
+
+            # Cache for 5 minutes
+            cache.set(cache_key, formatted_issues, timeout=300)
+            return formatted_issues
+
+        except requests.RequestException as e:
+            logger.error(f"GitHub API request failed: {str(e)}")
+            return []
+
+
+def load_more_issues(request):
+    try:
+        page = int(request.GET.get("page", 1))
+        label = "$5"
+
+        if page < 1:
+            page = 1
+
+        issues = Listbounties().github_issues_with_bounties(label, page=page)
+
+        return JsonResponse(
+            {
+                "success": True,
+                "issues": issues,
+                "next_page": page + 1 if issues else None,  # Only provide next page if we have results
+            }
+        )
+    except Exception as e:
+        logger.exception("Error loading more issues")
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 class DraftHunts(TemplateView):
