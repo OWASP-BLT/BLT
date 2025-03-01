@@ -297,7 +297,7 @@ class Domain(models.Model):
             pass
 
     def check_security_txt(self):
-        """Check if domain has security.txt"""
+        """Check if domain has security.txt file"""
         from website.utils import check_security_txt
 
         try:
