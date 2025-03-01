@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load gravatar %}
 {% load custom_tags %}
 {% block title %}Home - Bug Logging Tool{% endblock %}
 {% block description %}
@@ -16,16 +17,16 @@
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
     <!-- Main Content -->
-    <div>
+    <div class="relative">
         <!-- Hero Section -->
-        <section class="text-center py-16 ">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <h1 class="text-5xl font-bold mb-4">Welcome to OWASP BLT</h1>
             <p class="text-xl mb-8">Making the Internet a Safer Place</p>
             <a href="{% url 'report' %}"
                class="bg-white text-red-500 font-semibold py-3 px-6 rounded-full shadow-lg">
                 <i class="fas fa-flag"></i> Report a Bug
             </a>
-        </section>
+        </div>
         <!-- Features Section -->
         <section class="py-12">
             <div class="max-w-7xl mx-auto">
@@ -52,8 +53,8 @@
             </div>
         </section>
         <!-- About Section -->
-        <section class="py-12">
-            <div class="max-w-4xl mx-auto text-center">
+        <section class="py-12 bg-gray-50">
+            <div class="max-w-4xl mx-auto text-center px-4">
                 <h2 class="text-3xl font-bold mb-6">About OWASP BLT</h2>
                 <p class="mb-4">
                     OWASP BLT (Bugs Logs Tools) is an open-source platform dedicated to making the internet safer through community-driven bug reporting, collaboration, tools and rewards.
@@ -64,7 +65,239 @@
                     Our innovative token reward system, <strong>Bacon</strong>, recognizes valuable contributions.
                 </p>
                 <a href="{% url 'about' %}"
-                   class="mt-4 inline-block bg-red-500 text-white font-semibold py-3 px-6 rounded-full">Learn More</a>
+                   class="mt-4 inline-block bg-red-500 text-white hover:text-black transition-all font-semibold py-3 px-6 rounded-full">Learn More</a>
+            </div>
+        </section>
+        <!-- Latest Activity Section -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Latest Activity</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    <!-- Latest Repositories -->
+                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-semibold text-gray-800">Latest Repositories</h3>
+                                <span class="text-sm text-gray-500">({{ total_repos }} total)</span>
+                            </div>
+                            <div class="space-y-4">
+                                {% for repo in latest_repos %}
+                                    <div class="flex items-center justify-between">
+                                        <a href="{% url 'repo_detail' repo.slug %}"
+                                           class="text-sm hover:text-[#e74c3c] truncate max-w-[280px]">{{ repo.name }}</a>
+                                        <span class="text-xs text-gray-500">{{ repo.primary_language|default:"-" }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                                <a href="{% url 'repo_list' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
+                                <a href="{% url 'repo_list' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium flex items-center">
+                                    <svg class="w-4 h-4 mr-1"
+                                         viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor">
+                                        <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" />
+                                    </svg>
+                                    Add Repo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Recent Forum Posts -->
+                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-semibold text-gray-800">Recent Discussions</h3>
+                                <span class="text-sm text-gray-500">({{ recent_posts.count }} recent)</span>
+                            </div>
+                            <div class="space-y-4">
+                                {% for post in recent_posts %}
+                                    <div class="flex flex-col gap-1">
+                                        <a href="{% url 'view_forum' %}?post={{ post.id }}"
+                                           class="text-sm hover:text-[#e74c3c] font-medium">{{ post.title }}</a>
+                                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-user"></i>
+                                                {{ post.user|default:"Anonymous" }}
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <i class="fas fa-clock"></i>
+                                                {{ post.created|timesince }} ago
+                                            </span>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-sm text-gray-500">No discussions yet</p>
+                                {% endfor %}
+                            </div>
+                            <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                                <a href="{% url 'view_forum' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">View All</a>
+                                <a href="{% url 'view_forum' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium flex items-center">
+                                    <i class="fas fa-plus mr-1"></i>
+                                    New Discussion
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Leaderboards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+                    <!-- Top Bug Reporters -->
+                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-semibold text-gray-800">Top Bug Reporters</h3>
+                                <i class="fas fa-bug text-[#e74c3c]"></i>
+                            </div>
+                            <div class="space-y-4">
+                                {% for user in top_bug_reporters %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-semibold">{{ forloop.counter }}</span>
+                                            <a href="{% url 'profile' user.username %}"
+                                               class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
+                                                {% if user.userprofile.avatar %}
+                                                    <img src="{{ user.userprofile.avatar }}"
+                                                         alt="{{ user.username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% elif user.socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                         alt="{{ user.username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% else %}
+                                                    <img src="{% gravatar_url user.email 50 %}"
+                                                         alt="{{ user.username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% endif %}
+                                                {{ user.username }}
+                                            </a>
+                                        </div>
+                                        <span class="text-sm text-gray-500">{{ user.bug_count }} bugs</span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-sm text-gray-500">No bug reports yet</p>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100">
+                                <a href="{% url 'leaderboard_global' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
+                                    View Full Leaderboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Top PR Contributors here -->
+                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                        <div class="p-6">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-semibold text-gray-800">Top PR Contributors</h3>
+                                <i class="fas fa-code-branch text-[#e74c3c]"></i>
+                            </div>
+                            <div class="space-y-4">
+                                {% for user in top_pr_contributors %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-semibold">{{ forloop.counter }}</span>
+                                            <a href="{% url 'profile' slug=user.user_profile__user__username %}"
+                                               class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
+                                                {% if user.user_profile__github_url %}
+                                                    <img src="https://github.com/{{ user.user_profile__user__username }}.png"
+                                                         alt="{{ user.user_profile__user__username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% elif user.user_profile__user__userprofile.avatar %}
+                                                    <img src="{{ user.user_profile__user__userprofile.avatar }}"
+                                                         alt="{{ user.user_profile__user__username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
+                                                         alt="{{ user.user_profile__user__username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% else %}
+                                                    <img src="{% gravatar_url user.user_profile__user__email 50 %}"
+                                                         alt="{{ user.user_profile__user__username }}"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% endif %}
+                                                {{ user.user_profile__user__username }}
+                                            </a>
+                                        </div>
+                                        <span class="text-sm text-gray-500">{{ user.total_prs }} PRs</span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-sm text-gray-500">No PR contributions yet</p>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-100">
+                                <a href="{% url 'leaderboard_global' %}"
+                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
+                                    View Full Leaderboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Latest Blog Posts Section -->
+        <section class="py-12">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Latest Blog Posts</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    {% if latest_blog_posts %}
+                        {% for post in latest_blog_posts %}
+                            <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                                {% if post.image %}
+                                    <div class="w-full h-48 overflow-hidden">
+                                        <img src="{{ post.image.url }}"
+                                             alt="{{ post.title }}"
+                                             width="auto"
+                                             height="auto"
+                                             class="w-full h-full object-cover">
+                                    </div>
+                                {% endif %}
+                                <div class="p-6">
+                                    <h3 class="text-xl font-semibold mb-2">{{ post.title }}</h3>
+                                    <div class="flex items-center gap-4 text-sm text-gray-500 mb-4">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-user"></i>
+                                            {{ post.author.username }}
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-clock"></i>
+                                            {{ post.created_at|timesince }} ago
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-700 mb-4">{{ post.content|truncatewords:30 }}</p>
+                                    <a href="{% url 'post_detail' slug=post.slug %}"
+                                       class="text-[#e74c3c] hover:text-[#c0392b] font-medium">Read more</a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-gray-500 text-center">No blog posts available.</p>
+                    {% endif %}
+                </div>
             </div>
         </section>
         <!-- Call to Action Section -->
@@ -74,22 +307,22 @@
                 <p class="mb-8">Join our community and help make the internet a safer place.</p>
                 <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
                     <a href="{% url 'contribution_guidelines' %}"
-                       class="bg-green-500 text-white font-semibold py-3 px-6 rounded-full">
+                       class="bg-green-500 text-white hover:text-black hover:bg-green-400 transition-all font-semibold py-3 px-6 rounded-full">
                         <i class="fas fa-users"></i> Join the Community
                     </a>
-                    <a href="{% url 'project_view' %}"
-                       class="bg-blue-500 text-white font-semibold py-3 px-6 rounded-full">
+                    <a href="{% url 'project_list' %}"
+                       class="bg-blue-500 text-white hover:text-black hover:bg-blue-400 transition-all font-semibold py-3 px-6 rounded-full">
                         <i class="fas fa-project-diagram"></i> Explore Projects
                     </a>
                     <a href="{% url 'sponsor' %}"
-                       class="bg-yellow-500 text-white font-semibold py-3 px-6 rounded-full">
+                       class="bg-yellow-500 text-white hover:text-black hover:bg-yellow-400 transition-all font-semibold py-3 px-6 rounded-full">
                         <i class="fas fa-donate"></i> Support Us
                     </a>
                 </div>
             </div>
         </section>
         <!-- Footer -->
-        <footer class="py-8 ">
+        <footer class="py-8">
             <div class="max-w-7xl mx-auto text-center">
                 <p class="mb-4">Follow us on:</p>
                 <div class="flex justify-center space-x-6">

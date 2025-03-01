@@ -2,7 +2,7 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
 from urllib.parse import urlparse
@@ -23,9 +23,8 @@ from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from django.template.defaultfilters import slugify
-from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
@@ -120,6 +119,7 @@ class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
     name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
@@ -141,8 +141,51 @@ class Organization(models.Model):
         default=OrganisationType.ORGANIZATION.value,
     )
 
+    # Address fields
+    address_line_1 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="The primary address of the organization"
+    )
+    address_line_2 = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Additional address details (optional)"
+    )
+    city = models.CharField(
+        max_length=100, blank=True, null=True, help_text="The city where the organization is located"
+    )
+    state = models.CharField(max_length=100, blank=True, null=True, help_text="The state or region of the organization")
+    country = models.CharField(max_length=100, blank=True, null=True, help_text="The country of the organization")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, help_text="ZIP code or postal code")
+
+    # Geographical coordinates
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The latitude coordinate"
+    )
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
+    )
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="org_created_idx"),
+        ]
+        constraints = [models.UniqueConstraint(fields=["slug"], name="unique_organization_slug")]
+
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Generate initial slug from name
+            self.slug = slugify(self.name)
+
+            # If the slug exists, append a number until we find a unique one
+            original_slug = self.slug
+            counter = 1
+            while Organization.objects.filter(slug=self.slug).exists():
+                self.slug = f"{original_slug}-{counter}"
+                counter += 1
+
+        super().save(*args, **kwargs)
 
 
 class JoinRequest(models.Model):
@@ -170,6 +213,11 @@ class Domain(models.Model):
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
     is_active = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["organization"], name="domain_org_idx"),
+        ]
 
     def __unicode__(self):
         return self.name
@@ -449,6 +497,9 @@ class Issue(models.Model):
 
     class Meta:
         ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
+        ]
 
 
 def is_using_gcs():
@@ -563,7 +614,7 @@ class Points(models.Model):
     issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     score = models.IntegerField()
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
     reason = models.TextField(null=True, blank=True)
 
@@ -609,6 +660,20 @@ class UserProfile(models.Model):
     issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
+
+    # SendGrid webhook fields
+    email_status = models.CharField(
+        max_length=50, blank=True, null=True, help_text="Current email status from SendGrid"
+    )
+    email_last_event = models.CharField(
+        max_length=50, blank=True, null=True, help_text="Last email event from SendGrid"
+    )
+    email_last_event_time = models.DateTimeField(blank=True, null=True, help_text="Timestamp of last email event")
+    email_bounce_reason = models.TextField(blank=True, null=True, help_text="Reason for email bounce if applicable")
+    email_spam_report = models.BooleanField(default=False, help_text="Whether the email was marked as spam")
+    email_unsubscribed = models.BooleanField(default=False, help_text="Whether the user has unsubscribed")
+    email_click_count = models.PositiveIntegerField(default=0, help_text="Number of email link clicks")
+    email_open_count = models.PositiveIntegerField(default=0, help_text="Number of email opens")
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
@@ -675,7 +740,7 @@ class UserProfile(models.Model):
                 Points.objects.get_or_create(
                     user=self.user,
                     reason="Daily check-in",
-                    created__date=datetime.today().date(),
+                    created__date=timezone.now().date(),
                     defaults={"score": 5},
                 )
 
@@ -762,6 +827,11 @@ class IP(models.Model):
     path = models.CharField(max_length=255, null=True, blank=True)
     method = models.CharField(max_length=10, null=True, blank=True)
     referer = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["path", "created"], name="ip_path_created_idx"),
+        ]
 
 
 class OrganizationAdmin(models.Model):
@@ -873,27 +943,68 @@ class ChatBotLog(models.Model):
         return f"Q: {self.question} | A: {self.answer} at {self.created}"
 
 
-class Suggestion(models.Model):
+class ForumCategory(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name_plural = "Forum Categories"
+
+
+class ForumPost(models.Model):
+    STATUS_CHOICES = (
+        ("open", "Open"),
+        ("in_progress", "In Progress"),
+        ("completed", "Completed"),
+        ("declined", "Declined"),
+    )
+
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
+    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    is_pinned = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.title} by {self.user}"
 
+    class Meta:
+        ordering = ["-is_pinned", "-created"]
 
-class SuggestionVotes(models.Model):
-    suggestion = models.ForeignKey(Suggestion, on_delete=models.CASCADE)
+
+class ForumVote(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     up_vote = models.BooleanField(default=False)
     down_vote = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Suggestion {self.user}"
+        return f"Vote by {self.user} on {self.post.title}"
+
+
+class ForumComment(models.Model):
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.post.title}"
+
+    class Meta:
+        ordering = ["created"]
 
 
 class Contributor(models.Model):
@@ -936,8 +1047,6 @@ class Project(models.Model):
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
-    # add languages
-    # add tags
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -954,6 +1063,11 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["organization"], name="project_org_idx"),
+        ]
 
 
 class Contribution(models.Model):
@@ -1245,17 +1359,16 @@ class PRAnalysisReport(models.Model):
 def verify_file_upload(sender, instance, **kwargs):
     from django.core.files.storage import default_storage
 
-    print("Verifying file upload...")
-    print(f"Default storage backend: {default_storage.__class__.__name__}")
     if instance.image:
-        print(f"Checking if image '{instance.image.name}' exists in the storage backend...")
         if not default_storage.exists(instance.image.name):
-            print(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
             raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
 class Repo(models.Model):
-    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE)
+    organization = models.ForeignKey(
+        Organization, related_name="repos", on_delete=models.CASCADE, null=True, blank=True
+    )
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
@@ -1263,6 +1376,7 @@ class Repo(models.Model):
     homepage_url = models.URLField(null=True, blank=True)
     is_main = models.BooleanField(default=False)
     is_wiki = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)  # New field for archived status
     stars = models.IntegerField(default=0)
     forks = models.IntegerField(default=0)
     open_issues = models.IntegerField(default=0)
@@ -1273,6 +1387,7 @@ class Repo(models.Model):
     repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
+    closed_pull_requests = models.IntegerField(default=0)
     primary_language = models.CharField(max_length=50, null=True, blank=True)
     license = models.CharField(max_length=100, null=True, blank=True)
     last_commit_date = models.DateTimeField(null=True, blank=True)
@@ -1288,6 +1403,9 @@ class Repo(models.Model):
     logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
     contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
+    is_owasp_repo = models.BooleanField(default=False)
+    readme_content = models.TextField(null=True, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1316,7 +1434,12 @@ class Repo(models.Model):
         super(Repo, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.project.name}/{self.name}"
+        return f"{self.project.name}/{self.name}" if self.project else f"{self.name}"
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["project"], name="repo_project_idx"),
+        ]
 
 
 class ContributorStats(models.Model):
@@ -1429,7 +1552,7 @@ class GitHubIssue(models.Model):
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.IntegerField(unique=True)
+    issue_id = models.BigIntegerField(unique=True)
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)
@@ -1458,6 +1581,60 @@ class GitHubIssue(models.Model):
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
 
+    def get_comments(self):
+        """
+        Fetches comments for this GitHub issue using the GitHub API.
+        Returns a list of comment dictionaries containing:
+        - id: The comment ID
+        - body: The comment text
+        - user: The username of the commenter
+        - created_at: When the comment was created
+        - updated_at: When the comment was last updated
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for comments
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            response.raise_for_status()
+            comments = response.json()
+
+            # Format the comments
+            formatted_comments = []
+            for comment in comments:
+                formatted_comments.append(
+                    {
+                        "id": comment["id"],
+                        "body": comment["body"],
+                        "user": comment["user"]["login"],
+                        "created_at": comment["created_at"],
+                        "updated_at": comment["updated_at"],
+                        "avatar_url": comment["user"]["avatar_url"],
+                        "html_url": comment["html_url"],
+                    }
+                )
+
+            return formatted_comments
+        except (requests.exceptions.RequestException, KeyError) as e:
+            # Log the error but don't raise it to avoid breaking the site
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+            return []
+
 
 class BaconEarning(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -1473,7 +1650,7 @@ class GitHubReview(models.Model):
     Model to store reviews made by users on pull requests.
     """
 
-    review_id = models.IntegerField(unique=True)
+    review_id = models.BigIntegerField(unique=True)
     pull_request = models.ForeignKey(
         GitHubIssue,
         on_delete=models.CASCADE,
@@ -1525,3 +1702,97 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class OsshCommunity(models.Model):
+    CATEGORY_CHOICES = [
+        ("forum", "Forum"),
+        ("community", "Community"),
+        ("mentorship", "Mentorship Program"),
+    ]
+
+    name = models.CharField(max_length=255, unique=True)
+    description = models.TextField(blank=True, null=True)
+    website = models.URLField(unique=True, help_text="Direct link to the community")
+    source = models.CharField(max_length=100, help_text="Source API (GitHub, Dev.to, etc.)")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="community")
+    external_id = models.CharField(
+        max_length=255, blank=True, null=True, unique=True, help_text="ID from external source"
+    )
+    tags = models.ManyToManyField(Tag, related_name="communities", blank=True)
+    metadata = models.JSONField(default=dict, help_text="Additional API-specific metadata")
+    contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class OsshDiscussionChannel(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    source = models.CharField(max_length=100, help_text="Source API (Discord, Slack etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
+    member_count = models.PositiveIntegerField(default=0)
+    invite_url = models.URLField(blank=True, null=True)
+    logo_url = models.URLField(blank=True, null=True)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="channels")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
+class OsshArticle(models.Model):
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255)
+    author_profile_image = models.URLField(max_length=500, blank=True, null=True)
+    description = models.TextField()
+    publication_date = models.DateTimeField()
+    source = models.CharField(max_length=255, help_text="Source API (DEV Community, LinkedIn etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
+    url = models.URLField(
+        max_length=1000, blank=True, null=True
+    )  # DEV.to urls often cross the default 200 character limit
+    tags = models.ManyToManyField(Tag, related_name="articles", blank=True)
+    cover_image = models.URLField(max_length=1000, blank=True, null=True)
+    reading_time_minutes = models.PositiveIntegerField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.source}"
+
+
+class ManagementCommandLog(models.Model):
+    command_name = models.CharField(max_length=255)
+    last_run = models.DateTimeField(auto_now=True)
+    success = models.BooleanField(default=True)
+    error_message = models.TextField(blank=True, null=True)
+    run_count = models.IntegerField(default=0)
+
+    class Meta:
+        get_latest_by = "last_run"
+
+    def __str__(self):
+        return f"{self.command_name} (Last run: {self.last_run})"
+
+
+class BaconSubmission(models.Model):
+    STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"))
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    github_url = models.URLField()
+    contribution_type = models.CharField(
+        max_length=20, choices=[("security", "Security Related"), ("non-security", "Non-Security Related")]
+    )
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    transaction_status = models.CharField(
+        max_length=20, choices=[("pending", "Pending"), ("completed", "Completed")], default="pending"
+    )
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    bacon_amount = models.IntegerField(default=0)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"

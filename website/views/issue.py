@@ -2,6 +2,8 @@ import base64
 import io
 import json
 import os
+import smtplib
+import socket
 import uuid
 from datetime import datetime, timezone
 from urllib.parse import urlparse
@@ -10,6 +12,7 @@ import requests
 import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
+from allauth.socialaccount.models import SocialToken
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -33,12 +36,16 @@ from django.http import (
     JsonResponse,
 )
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import DetailView, ListView
+from django.views.decorators.http import require_POST
+from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView
+from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
 from user_agents import parse
@@ -52,6 +59,7 @@ from website.models import (
     Bid,
     ContentType,
     Domain,
+    GitHubIssue,
     Hunt,
     Issue,
     IssueScreenshot,
@@ -88,7 +96,7 @@ def like_issue(request, issue_pk):
         liker_user = request.user
         issue_pk = issue.pk
         msg_plain = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -96,7 +104,7 @@ def like_issue(request, issue_pk):
             },
         )
         msg_html = render_to_string(
-            "email/issue_liked.txt",
+            "email/issue_liked.html",
             {
                 "liker_user": liker_user.username,
                 "liked_user": liked_user.username,
@@ -258,7 +266,7 @@ def UpdateIssue(request):
             issue.closed_date = datetime.now()
 
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.user.username if issue.user else "Anonymous",
@@ -274,7 +282,7 @@ def UpdateIssue(request):
             issue.closed_by = None
             issue.closed_date = None
             msg_plain = msg_html = render_to_string(
-                "email/bug_updated.txt",
+                "email/bug_updated.html",
                 {
                     "domain": issue.domain.name,
                     "name": issue.domain.email.split("@")[0],
@@ -333,26 +341,25 @@ def newhome(request, template="new_home.html"):
     return render(request, template, context)
 
 
+@login_required
+@require_POST
 def delete_issue(request, id):
-    try:
-        # TODO: Refactor this for a direct query instead of looping through all tokens
-        for token in Token.objects.all():
-            if request.POST["token"] == token.key:
-                request.user = User.objects.get(id=token.user_id)
-                tokenauth = True
-    except Token.DoesNotExist:
-        tokenauth = False
+    issue = get_object_or_404(Issue, id=id)
 
-    issue = Issue.objects.get(id=id)
-    if request.user.is_superuser or request.user == issue.user or tokenauth:
-        screenshots = issue.screenshots.all()
-        for screenshot in screenshots:
-            screenshot.delete()
+    # Check permissions
+    if not (request.user.is_superuser or request.user == issue.user):
+        return HttpResponse("Permission denied", status=403)
+
+    try:
+        # Delete screenshots and issue
+        issue.screenshots.all().delete()
         issue.delete()
-        messages.success(request, "Issue deleted")
-        if tokenauth:
-            return JsonResponse("Deleted", safe=False)
-    return redirect("/")
+        messages.success(request, "Issue deleted successfully")
+        return JsonResponse({"status": "success"})
+    except Issue.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Issue not found"}, status=404)
+    except PermissionError:
+        return JsonResponse({"status": "error", "message": "Permission denied"}, status=403)
 
 
 def remove_user_from_issue(request, id):
@@ -564,10 +571,6 @@ def submit_pr(request):
 
 class IssueBaseCreate(object):
     def form_valid(self, form):
-        # print(
-        #     "processing form_valid IssueBaseCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
         score = 3
         obj = form.save(commit=False)
         obj.user = self.request.user
@@ -591,56 +594,19 @@ class IssueBaseCreate(object):
 
         obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
         obj.save()
-        p = Points.objects.create(user=self.request.user, issue=obj, score=score)
+        Points.objects.create(user=self.request.user, issue=obj, score=score)
+
+        messages.success(self.request, "Bug added successfully!")
+        return HttpResponseRedirect(obj.get_absolute_url())
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        # print("processing process_issue for ip address: ", get_client_ip(self.request))
-        p = Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
+        Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
-
-        # Twitter posting code removed as we no longer use Twitter integration
-        # try:
-        #     auth = tweepy.Client(
-        #         settings.BEARER_TOKEN,
-        #         settings.APP_KEY,
-        #         settings.APP_KEY_SECRET,
-        #         settings.ACCESS_TOKEN,
-        #         settings.ACCESS_TOKEN_SECRET,
-        #     )
-
-        #     blt_url = "https://%s/issue/%d" % (
-        #         settings.DOMAIN_NAME,
-        #         obj.id,
-        #     )
-        #     domain_name = domain.get_name
-        #     twitter_account = (
-        #         "@" + domain.get_or_set_x_url(domain_name) + " " if domain.get_or_set_x_url(domain_name) else ""
-        #     )
-
-        #     issue_title = obj.description + " " if not obj.is_hidden else ""
-
-        #     message = "%sAn Issue %shas been reported on %s by %s on %s.\n Have look here %s" % (
-        #         twitter_account,
-        #         issue_title,
-        #         domain_name,
-        #         user.username,
-        #         settings.PROJECT_NAME,
-        #         blt_url,
-        #     )
-
-        #     auth.create_tweet(text=message)
-
-        # except (
-        #     TypeError,
-        #     tweepy.errors.HTTPException,
-        #     tweepy.errors.TweepyException,
-        # ) as e:
-        #     print(e)
 
         if created:
             try:
                 email_to = get_email_from_domain(domain)
-            except:
+            except Exception:
                 email_to = "support@" + domain.name
 
             domain.email = email_to
@@ -648,79 +614,87 @@ class IssueBaseCreate(object):
 
             name = email_to.split("@")[0]
 
-            msg_plain = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
-            msg_html = render_to_string("email/domain_added.txt", {"domain": domain.name, "name": name})
+            try:
+                msg_plain = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
+                msg_html = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
 
-            send_mail(
-                domain.name + " added to " + settings.PROJECT_NAME,
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [email_to],
-                html_message=msg_html,
-            )
-
+                send_mail(
+                    domain.name + " added to " + settings.PROJECT_NAME,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [email_to],
+                    html_message=msg_html,
+                )
+            except (smtplib.SMTPException, socket.gaierror, ConnectionRefusedError) as e:
+                messages.warning(self.request, "Issue created successfully, but notification email could not be sent.")
         else:
             email_to = domain.email
             try:
                 name = email_to.split("@")[0]
-            except:
+            except (AttributeError, IndexError):
                 email_to = "support@" + domain.name
                 name = "support"
                 domain.email = email_to
                 domain.save()
-            if not tokenauth:
-                msg_plain = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": self.request.user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
+
+            try:
+                if not tokenauth:
+                    msg_plain = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": self.request.user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+                    msg_html = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": self.request.user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+                else:
+                    msg_plain = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+                    msg_html = render_to_string(
+                        "email/bug_added.html",
+                        {
+                            "domain": domain.name,
+                            "name": name,
+                            "username": user,
+                            "id": obj.id,
+                            "description": obj.description,
+                            "label": obj.get_label_display,
+                        },
+                    )
+
+                send_mail(
+                    "Bug found on " + domain.name,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [email_to],
+                    html_message=msg_html,
                 )
-                msg_html = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": self.request.user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
-                )
-            else:
-                msg_plain = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
-                )
-                msg_html = render_to_string(
-                    "email/bug_added.txt",
-                    {
-                        "domain": domain.name,
-                        "name": name,
-                        "username": user,
-                        "id": obj.id,
-                        "description": obj.description,
-                        "label": obj.get_label_display,
-                    },
-                )
-            send_mail(
-                "Bug found on " + domain.name,
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [email_to],
-                html_message=msg_html,
-            )
+            except (smtplib.SMTPException, socket.gaierror, ConnectionRefusedError, TemplateDoesNotExist) as e:
+                messages.warning(self.request, "Issue created successfully, but notification email could not be sent.")
+
         return HttpResponseRedirect("/")
 
 
@@ -730,7 +704,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
     template_name = "report.html"
 
     def get_initial(self):
-        # print("processing post for ip address: ", get_client_ip(self.request))
         try:
             json_data = json.loads(self.request.body)
             if not self.request.GET._mutable:
@@ -779,7 +752,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
         return initial
 
     def post(self, request, *args, **kwargs):
-        # print("processing post for ip address: ", get_client_ip(request))
         url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
@@ -820,7 +792,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 )
 
         screenshot = request.FILES.get("screenshots")
-        if not screenshot:
+        if not screenshot and not request.POST.get("screenshot-hash"):
             messages.error(request, "Screenshot is required")
             captcha_form = CaptchaForm(request.POST)
             return render(
@@ -829,25 +801,23 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 {"form": self.get_form(), "captcha_form": captcha_form},
             )
 
-        try:
-            img = Image.open(screenshot)
-            img.verify()
-        except (IOError, ValueError):
-            messages.error(request, "Invalid image file.")
-            captcha_form = CaptchaForm(request.POST)
-            return render(
-                request,
-                "report.html",
-                {"form": self.get_form(), "captcha_form": captcha_form},
-            )
+        # Only validate uploaded screenshot if there is one
+        if screenshot:
+            try:
+                img = Image.open(screenshot)
+                img.verify()
+            except (IOError, ValueError):
+                messages.error(request, "Invalid image file.")
+                captcha_form = CaptchaForm(request.POST)
+                return render(
+                    request,
+                    "report.html",
+                    {"form": self.get_form(), "captcha_form": captcha_form},
+                )
 
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        # print(
-        #     "processing form_valid in IssueCreate for ip address: ",
-        #     get_client_ip(self.request),
-        # )
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
 
@@ -879,15 +849,18 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     {"form": self.get_form(), "captcha_form": CaptchaForm()},
                 )
 
-            for screenshot in self.request.FILES.getlist("screenshots"):
-                img_valid = image_validator(screenshot)
-                if img_valid is not True:
-                    messages.error(self.request, img_valid)
-                    return render(
-                        self.request,
-                        "report.html",
-                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
-                    )
+            # Only validate uploaded screenshots if there are any
+
+            if len(self.request.FILES.getlist("screenshots")) > 0:
+                for screenshot in self.request.FILES.getlist("screenshots"):
+                    img_valid = image_validator(screenshot)
+                    if img_valid is not True:
+                        messages.error(self.request, img_valid)
+                        return render(
+                            self.request,
+                            "report.html",
+                            {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                        )
 
             tokenauth = False
             obj = form.save(commit=False)
@@ -934,7 +907,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 screenshot_text += "![0](" + screenshot.image.url + ") "
 
             obj.domain = domain
-            obj.cve_score = obj.get_cve_score()
+            try:
+                obj.cve_score = obj.get_cve_score()
+            except (requests.exceptions.JSONDecodeError, requests.exceptions.RequestException) as e:
+                # If CVE score fetch fails, continue without it
+                obj.cve_score = None
+                messages.warning(
+                    self.request, "Could not fetch CVE score at this time. Issue will be created without it."
+                )
+
             obj.user_agent = self.request.META.get("HTTP_USER_AGENT")
             obj.save()
 
@@ -948,16 +929,28 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 messages.success(self.request, "Domain added! + 1")
 
             if self.request.POST.get("screenshot-hash"):
-                reopen = default_storage.open(
-                    "uploads\/" + self.request.POST.get("screenshot-hash") + ".png",
-                    "rb",
-                )
-                django_file = File(reopen)
-                obj.screenshot.save(
-                    self.request.POST.get("screenshot-hash") + ".png",
-                    django_file,
-                    save=True,
-                )
+                try:
+                    # Fix path separators and use os.path.join for cross-platform compatibility
+                    screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
+
+                    try:
+                        reopen = default_storage.open(screenshot_path, "rb")
+                        django_file = File(reopen)
+                        obj.screenshot.save(
+                            f"{self.request.POST.get('screenshot-hash')}.png",
+                            django_file,
+                            save=True,
+                        )
+                    finally:
+                        if "reopen" in locals():
+                            reopen.close()
+                except FileNotFoundError:
+                    messages.error(self.request, "Screenshot file not found. Please try uploading again.")
+                    return render(
+                        self.request,
+                        "report.html",
+                        {"form": self.get_form(), "captcha_form": CaptchaForm()},
+                    )
 
             # Save screenshots
             for screenshot in self.request.FILES.getlist("screenshots"):
@@ -1011,7 +1004,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             if domain.github and os.environ.get("GITHUB_TOKEN"):
                 import json
 
-                import requests
                 from giturlparse import parse
 
                 github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
@@ -1083,9 +1075,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.POST = {}
             self.request.GET = {}
 
-        # print(
-        #     "processing get_context_data for ip address: ", get_client_ip(self.request)
-        # )
         context = super(IssueCreate, self).get_context_data(**kwargs)
         context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
@@ -1114,6 +1103,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
         context["top_domains"] = (
             Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
         )
+
+        # Add top users data
+        top_users = (
+            User.objects.annotate(
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+            )
+            .filter(issue_count__gt=0)
+            .order_by("-issue_count")[:10]
+        )
+        context["top_users"] = top_users
 
         return context
 
@@ -1153,6 +1152,17 @@ class AllIssuesView(ListView):
         context["activity_screenshots"] = {}
         for activity in self.activities:
             context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
+
+        # Add top users data
+        top_users = (
+            User.objects.annotate(
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
+            )
+            .filter(issue_count__gt=0)
+            .order_by("-issue_count")[:10]
+        )
+        context["top_users"] = top_users
+
         return context
 
 
@@ -1225,8 +1235,6 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        # print("getting issue id: ", self.kwargs["slug"])
-        # print("getting issue id: ", self.kwargs)
         ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
@@ -1240,9 +1248,6 @@ class IssueView(DetailView):
         ipdetails.path = request.path
         ipdetails.agent = request.META["HTTP_USER_AGENT"]
         ipdetails.referer = request.META.get("HTTP_REFERER", None)
-
-        # print("IP Address: ", ipdetails.address)
-        # print("Issue Number: ", ipdetails.issuenumber)
 
         try:
             if self.request.user.is_authenticated:
@@ -1260,27 +1265,22 @@ class IssueView(DetailView):
                 except Exception as e:
                     print(e)
                     pass  # pass this temporarly to avoid error
-                    # messages.error(self.request, "That issue was not found 2." + str(e))
-                    # ipdetails.save()
-                    # self.object.views = (self.object.views or 0) + 1
-                    # self.object.save()
         except Exception as e:
             pass  # pass this temporarly to avoid error
-            # print(e)
-            # messages.error(self.request, "That issue was not found 1." + str(e))
-            # return redirect("/")
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        # print("getting context data")
         context = super(IssueView, self).get_context_data(**kwargs)
+
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
             context["browser_family"] = user_agent.browser.family
             context["browser_version"] = user_agent.browser.version_string
             context["os_family"] = user_agent.os.family
             context["os_version"] = user_agent.os.version_string
-        context["users_score"] = list(
+
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
+        context["total_score"] = list(
             Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
         )[0]
 
@@ -1578,8 +1578,223 @@ def flag_issue(request, issue_pk):
     total_flag_votes = UserProfile.objects.filter(issue_flaged=issue).count()
     context["object"] = issue
     context["flags"] = total_flag_votes
-    return render(request, "_flags.html", context)
+    return render(request, "includes/_flags.html", context)
 
 
 def select_bid(request):
     return render(request, "bid_selection.html")
+
+
+@method_decorator(login_required, name="dispatch")
+class GithubIssueView(TemplateView):
+    template_name = "github_issue.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Check if the user has a GitHub social token
+        has_github_token = SocialToken.objects.filter(account__user=request.user, account__provider="github").exists()
+
+        # Redirect to social connections if no token is found
+        if not has_github_token:
+            return redirect("/accounts/social/connections/")
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        # Retrieve data from form
+        title = request.POST.get("issue_title")
+        description = request.POST.get("description")
+
+        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
+        labels = request.POST.get("labels")
+        labels_list = [label.strip() for label in labels.split(",")] if labels else []
+        try:
+            access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
+        except SocialToken.DoesNotExist:
+            print("Access token not found")
+            return redirect("github_login")
+
+        token = access_token.token
+        # Create GitHub issue
+        issue = self.create_github_issue(repository, title, description, token, labels_list)
+
+        if "id" in issue:
+            success_message = f"Issue successfully created: #{issue['number']} - {issue['title']}"
+            return render(request, "github_issue.html", {"message": success_message})
+        else:
+            return render(request, "github_issue.html", {"error": issue.get("message"), "form_data": request.POST})
+
+    def create_github_issue(self, repo, title, description, access_token, labels_list):
+        url = f"https://api.github.com/repos/{repo}/issues"
+        headers = {"Authorization": f"token {access_token}", "Accept": "application/vnd.github.v3+json"}
+        data = {"title": title, "body": description, "labels": labels_list}
+        response = requests.post(url, json=data, headers=headers)
+        return response.json()
+
+
+@login_required(login_url="/accounts/login")
+def get_github_issue(request):
+    if request.method == "POST":
+        description = request.POST.get("description")
+        repository_url = request.POST.get("repository_url")
+
+        if not description:
+            return JsonResponse({"error": "Description is required"}, status=400)
+
+        # Call the generate_github_issue function
+        issue_details = generate_github_issue(description)
+
+        if "error" in issue_details:
+            return JsonResponse({"error": "There's a problem with AI"}, status=500)
+
+        # Render the github_issue.html page with the generated issue details
+        return render(
+            request,
+            "github_issue.html",
+            {
+                "issue_title": issue_details.get("title", ""),
+                "description": issue_details.get("description", ""),
+                "labels": ", ".join(issue_details.get("labels", [])),
+                "repository_url": repository_url,
+            },
+        )
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+def generate_github_issue(description):
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+
+        # Call the OpenAI API with the gpt-4o-mini model
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are a helpful assistant that analyzes bug reports. 
+                    Always respond with a valid JSON object in this exact format:
+                    {
+                        "title": "Brief bug title",
+                        "description": "Detailed bug description",
+                        "labels": ["bug", "other-relevant-labels"]
+                    }""",
+                },
+                {"role": "user", "content": f"Analyze this bug report and respond with a JSON object: {description}"},
+            ],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+
+        # Extract and parse the response
+        if response.choices and response.choices[0].message:
+            issue_details_str = response.choices[0].message.content
+            issue_details = json.loads(issue_details_str)  # Parse the JSON response
+
+            # Validate the response has all required fields
+            if not all(k in issue_details for k in ["title", "description", "labels"]):
+                return {"error": "Invalid response format from OpenAI"}
+
+            return {
+                "title": issue_details["title"],
+                "description": issue_details["description"],
+                "labels": issue_details["labels"],
+            }
+
+        return {"error": "No valid response from OpenAI"}
+
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse response from OpenAI. Please ensure the model returns valid JSON."}
+    except Exception as e:
+        return {"error": "There's a problem with OpenAI", "details": str(e)}
+
+
+class ContributeView(TemplateView):
+    template_name = "contribute.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        extra_context = contribute(self.request)
+        if not isinstance(extra_context, dict):
+            extra_context = {}
+        context.update(extra_context)
+        return context
+
+
+def contribute(request):
+    url = "https://api.github.com/repos/OWASP-BLT/BLT/issues"
+    params = {"labels": "good first issue", "state": "open", "per_page": 10}
+    r = requests.get(url, params=params)
+    good_first_issues = []
+    if r.status_code == 200:
+        issues = r.json()
+        for issue in issues:
+            try:
+                created_at = datetime.strptime(issue.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
+            except Exception:
+                created_at = None
+            good_first_issues.append(
+                {
+                    "id": issue.get("id"),
+                    "title": issue.get("title"),
+                    "url": issue.get("html_url"),
+                    "repository": issue.get("repository_url"),
+                    "created_at": created_at,
+                    "labels": [label.get("name") for label in issue.get("labels", [])],
+                }
+            )
+    else:
+        good_first_issues = []
+    return {"good_first_issues": good_first_issues}
+
+
+class GitHubIssuesView(ListView):
+    model = GitHubIssue
+    template_name = "github_issues.html"
+    context_object_name = "issues"
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = GitHubIssue.objects.all().order_by("-created_at")
+
+        # Filter by type (issue/pr)
+        issue_type = self.request.GET.get("type")
+        if issue_type and issue_type != "all":
+            queryset = queryset.filter(type=issue_type)
+
+        # Filter by state (open/closed)
+        state = self.request.GET.get("state")
+        if state and state != "all":
+            queryset = queryset.filter(state=state)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Add counts for filtering
+        context["total_count"] = GitHubIssue.objects.count()
+        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
+        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
+        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
+        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
+
+        # Add current filter states
+        context["current_type"] = self.request.GET.get("type", "all")
+        context["current_state"] = self.request.GET.get("state", "all")
+
+        return context
+
+
+class GitHubIssueDetailView(DetailView):
+    model = GitHubIssue
+    template_name = "github_issue_detail.html"
+    context_object_name = "issue"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        issue = self.get_object()
+
+        # Add any additional context needed for the detail view
+        context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
+
+        return context

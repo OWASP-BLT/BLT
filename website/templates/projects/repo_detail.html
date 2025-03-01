@@ -15,6 +15,31 @@
         </div>
     </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                {% for crumb in breadcrumbs %}
+                    <li>
+                        {% if not forloop.last %}
+                            <div class="flex items-center">
+                                {% if crumb.url %}
+                                    <a href="{{ crumb.url }}" class="text-gray-500 hover:text-[#e74c3c]">{{ crumb.title }}</a>
+                                {% else %}
+                                    <span class="text-gray-500">{{ crumb.title }}</span>
+                                {% endif %}
+                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400 ml-4"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        {% else %}
+                            <span class="text-[#e74c3c]">{{ crumb.title }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </nav>
         <!-- Repository Header -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
             <div class="flex items-start justify-between">
@@ -30,17 +55,21 @@
                         <div>
                             <h1 class="text-3xl font-bold text-gray-900">{{ repo.name }}</h1>
                             <div class="flex items-center gap-3 mt-2">
-                                <!-- the  -->
-                                <a href="{% url 'projects_detail' repo.project.slug %}"
-                                   class="text-red-600 hover:text-red-700 flex items-center gap-1">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16l-4-4m0 0l4-4m-4 4h18" />
-                                    </svg>
-                                    Back to {{ repo.project.name }}
-                                </a>
-                                {% if repo.project.organization %}
-                                    <span class="text-gray-400">|</span>
-                                    <div class="text-gray-600 hover:text-gray-800">organization : {{ repo.project.organization.name }}</div>
+                                {% if repo.project %}
+                                    <a href="{% url 'project_detail' repo.project.slug %}"
+                                       class="inline-flex items-center px-3 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
+                                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                        Part of {{ repo.project.name }}
+                                    </a>
+                                    {% if repo.project.organization %}
+                                        <span class="text-gray-400">•</span>
+                                        <a href="{% url 'organization_detail' repo.project.organization.slug %}"
+                                           class="text-[#e74c3c] hover:text-[#c0392b]">
+                                            {{ repo.project.organization.name }}
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -93,6 +122,37 @@
                     </div>
                 </div>
             </div>
+            <div class="mt-6 p-4 rounded-lg">
+                <div class="flex items-center mb-4">
+                    <!-- AI Summary Icon -->
+                    <svg class="w-6 h-6 text-red-500 mr-2"
+                         fill="currentColor"
+                         viewBox="0 0 20 20">
+                        <path d="M10 2a6 6 0 00-6 6c0 2.42 1.14 4.08 2.29 5.12.38.33.71.6.95.93.22.29.35.61.37 1.01.02.41.34.74.75.74h4.68c.41 0 .73-.33.75-.74.02-.4.15-.72.37-1.01.24-.33.57-.6.95-.93C14.86 12.08 16 10.42 16 8a6 6 0 00-6-6zM7 17a1 1 0 000 2h6a1 1 0 000-2H7z" />
+                    </svg>
+                    <h3 class="text-xl font-bold text-gray-900">AI Summary</h3>
+                    <div class="refresh-container relative inline-flex ml-2">
+                        <button class="refresh-btn"
+                                data-section="ai_summary"
+                                onclick="refreshSection(this, 'ai_summary')"
+                                title="Regenerate AI Summary">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg overflow-x-auto">
+                    <article class="prose prose-red max-w-none text-black" id="ai-summary-content">
+                        <!-- Summary -->
+                        {% if repo.ai_summary %}
+                            {{ repo.ai_summary }}
+                        {% else %}
+                            <p class="text-gray-600 italic">AI summary unavailable for this repo.</p>
+                        {% endif %}
+                    </article>
+                </div>
+            </div>
             <!-- Repository Type & Metadata -->
             <div class="mt-6 flex items-center justify-between border-t border-gray-200 pt-6">
                 <div class="flex items-center gap-6">
@@ -116,6 +176,14 @@
                                 <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0h8v12H6V4z" clip-rule="evenodd" />
                             </svg>
                             Standard Repository
+                        </span>
+                    {% endif %}
+                    {% if repo.is_archived %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                            <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 0h8v12H6V4z" clip-rule="evenodd" />
+                            </svg>
+                            Archived
                         </span>
                     {% endif %}
                     <div class="flex items-center gap-2 relative">
@@ -825,7 +893,17 @@
             throw new Error(data.message || 'Failed to refresh data');
         }
 
-        if (section === 'basic') {
+        if (section === 'ai_summary') {
+            // Update AI summary content
+            const summaryContainer = document.getElementById('ai-summary-content');
+            if (summaryContainer) {
+                summaryContainer.innerHTML = data.data.ai_summary || '<p class="text-gray-600 italic">AI summary unavailable for this repo.</p>';
+            }
+
+            // Show success message
+            messageContainer.className = 'refresh-message text-sm text-green-600';
+            messageContainer.textContent = data.message;
+        } else if (section === 'basic') {
             // Update stats with new data
             const updates = {
                 'stars': data.data.stars,
@@ -918,7 +996,7 @@
                         </div>
                         <a href="${contributor.github_url}" target="_blank" class="p-2 text-gray-400 hover:text-gray-600">
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.237 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
                             </svg>
                         </a>
                     </div>
@@ -931,22 +1009,72 @@
             messageContainer.className = 'refresh-message text-sm text-green-600';
             messageContainer.textContent = data.message;
         } else if (section === 'contributor_stats') {
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
+                const statsTableBody = document.querySelector('.contributor-stats-table tbody');
+                if (!statsTableBody) return;
 
-            window.location.reload();
-        }
+                // Clear existing table content
+                statsTableBody.innerHTML = '';
+
+                // Populate new data
+                if (data.data.stats && data.data.stats.length > 0) {
+                    data.data.stats.forEach(stat => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50 transition-colors';
+                        row.innerHTML = `
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <img class="h-8 w-8 rounded-full" width="20" height="20" src="${stat.contributor.avatar_url}" alt="${stat.contributor.name}">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">${stat.contributor.name}</div>
+                                        <div class="text-sm text-gray-500">@${stat.contributor.github_id}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-emerald-600 font-medium">
+                                ${stat.commits ? stat.commits.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-blue-600 font-medium">
+                                ${stat.issues_opened ? stat.issues_opened.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-purple-600 font-medium">
+                                ${stat.issues_closed ? stat.issues_closed.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-orange-600 font-medium">
+                                ${stat.pull_requests ? stat.pull_requests.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-cyan-600 font-medium">
+                                ${stat.comments ? stat.comments.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center">
+                                <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stat.impact_level.class}">
+                                    ${stat.impact_level.text}
+                                </div>
+                            </td>
+                        `;
+                        statsTableBody.appendChild(row);
+                    });
+                } else {
+                    statsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                No contributor statistics available for this period
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                // Show success message
+                messageContainer.className = 'refresh-message text-sm text-green-600';
+                messageContainer.textContent = data.message || 'Contributor statistics refreshed successfully';
+            }
         
     } catch (error) {
         console.error('Error:', error);
         messageContainer.className = 'refresh-message text-sm text-red-600';
         messageContainer.textContent = error.message;
     } finally {
-        // Remove loading state only after all UI updates are done
-        requestAnimationFrame(() => {
-            button.classList.remove('refresh_spinner');
-        });
+        // Remove loading state
+        button.classList.remove('refresh_spinner');
         
         // Remove message after 5 seconds
         setTimeout(() => {

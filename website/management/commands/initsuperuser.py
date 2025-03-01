@@ -1,9 +1,10 @@
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.management.base import BaseCommand
+
+from website.management.base import LoggedBaseCommand
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     def handle(self, *args, **options):
         for user in settings.SUPERUSERS:
             USERNAME = user[0]

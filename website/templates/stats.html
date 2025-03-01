@@ -20,7 +20,7 @@
     <style>
     /* Dashboard Styles */
     .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
         color: #fff;
         border-radius: 12px;
         padding: 20px;
@@ -53,6 +53,11 @@
         display: flex;
         align-items: center;
     }
+    .stat-total {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin-top: 5px;
+    }
     .stat-count span {
         margin-left: 10px;
         font-size: 1.25rem;
@@ -67,13 +72,32 @@
         height: 60px;
         margin-top: 20px;
     }
-
     </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-12 text-center">System Statistics Dashboard</h1>
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Statistics</h2>
+            <div class="flex gap-4">
+                <a href="?period=7"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    7 Days
+                </a>
+                <a href="?period=30"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    30 Days
+                </a>
+                <a href="?period=90"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    90 Days
+                </a>
+                <a href="?period=ytd"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    YTD
+                </a>
+            </div>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {% for stat in stats %}
                 <div class="stat-card">
@@ -92,6 +116,7 @@
                                 </span>
                             {% endif %}
                         </div>
+                        <div class="stat-total">Total: {{ stat.total_count|intcomma }}</div>
                         {% if stat.history and stat.dates %}
                             <div class="chart-container">
                                 <canvas id="chart-{{ forloop.counter }}"
@@ -109,46 +134,95 @@
     {% block extra_js %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.sparkline').forEach(function(canvas) {
-            const values = JSON.parse(canvas.dataset.values);
-            const dates = JSON.parse(canvas.dataset.dates);
-            const ctx = canvas.getContext('2d');
+        // Store chart instances globally
+        window.chartInstances = window.chartInstances || {};
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        data: values,
-                        borderColor: 'rgba(255, 255, 255, 0.7)',
-                        borderWidth: 2,
-                        fill: false,
-                        pointRadius: 0,
-                        tension: 0.4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false },
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false },
-                    },
-                    elements: {
-                        line: {
-                            borderCapStyle: 'round',
-                            borderJoinStyle: 'round',
-                        }
-                    }
+        function destroyCharts() {
+            // Destroy all existing chart instances
+            Object.values(window.chartInstances).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
                 }
             });
-        });
-    });
+            window.chartInstances = {};
+        }
+
+        function initializeCharts() {
+            // First destroy any existing charts
+            destroyCharts();
+
+            // Initialize new charts
+            document.querySelectorAll('.sparkline').forEach(function(canvas) {
+                const values = JSON.parse(canvas.dataset.values);
+                const dates = JSON.parse(canvas.dataset.dates);
+                const ctx = canvas.getContext('2d');
+
+                // Create new chart instance and store it
+                window.chartInstances[canvas.id] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            data: values,
+                            borderColor: 'rgba(231, 76, 60, 0.7)',
+                            borderWidth: 2,
+                            fill: true,
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            pointRadius: 0,
+                            tension: 0.4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    },
+                                    label: function(context) {
+                                        return 'Count: ' + context.raw;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: false,
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: { 
+                                display: false,
+                                beginAtZero: true,
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            });
+        }
+
+        // Initialize charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeCharts);
+
+        // Clean up charts when navigating away
+        window.addEventListener('beforeunload', destroyCharts);
         </script>
     {% endblock extra_js %}
 {% endblock content %}

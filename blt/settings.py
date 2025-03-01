@@ -23,6 +23,7 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
+DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
 
 PROJECT_NAME = "BLT"
@@ -97,6 +98,12 @@ INSTALLED_APPS = (
     "channels",
 )
 
+if DEBUG:
+    INSTALLED_APPS += ("livereload",)
+
+SOCIAL_AUTH_GITHUB_KEY = os.environ.get("GITHUB_CLIENT_ID", "blank")
+SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
+
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -112,6 +119,10 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
 )
+
+if DEBUG:
+    MIDDLEWARE += ["livereload.middleware.LiveReloadScript"]
+
 BLUESKY_USERNAME = env("BLUESKY_USERNAME", default="default_username")
 BLUESKY_PASSWORD = env("BLUESKY_PASSWORD", default="default_password")
 TESTING = len(sys.argv) > 1 and sys.argv[1] == "test"
@@ -159,6 +170,11 @@ TEMPLATES = [
                 "django.template.context_processors.i18n",
             ],
             "loaders": [
+                "django.template.loaders.filesystem.Loader",
+                "django.template.loaders.app_directories.Loader",
+            ]
+            if DEBUG
+            else [
                 (
                     "django.template.loaders.cached.Loader",
                     [
@@ -296,8 +312,8 @@ else:
 
     # use this to debug emails locally
     # python -m smtpd -n -c DebuggingServer localhost:1025
-    if DEBUG:
-        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # if DEBUG:
+    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -318,14 +334,13 @@ ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+
 ALLOWED_HOSTS = [
-    "." + DOMAIN_NAME,
     "127.0.0.1",
     "localhost",
     "0.0.0.0",
-    "blt.owasp.org",
-    "." + DOMAIN_NAME_PREVIOUS,
 ]
+ALLOWED_HOSTS.extend(os.environ.get("ALLOWED_HOSTS", "").split(","))
 
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
@@ -346,22 +361,31 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {"format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"},
+        "simple": {"format": "%(levelname)s %(message)s"},
     },
     "handlers": {
-        "console": {"level": "DEBUG", "class": "logging.StreamHandler", "formatter": "verbose"},
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout",  # Explicitly use stdout
+        },
         "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {
+        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "handlers": ["console"],
+    },
     "loggers": {
         "django": {
             "handlers": ["console", "mail_admins"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "django.server": {
             "handlers": ["console"],
             "level": "INFO",
-            "propagate": False,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "website": {
             "handlers": ["console"],
@@ -455,7 +479,7 @@ REST_FRAMEWORK = {
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
-        "SCOPE": ["user:email"],
+        "SCOPE": ["user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
     "google": {
@@ -569,5 +593,12 @@ CHANNEL_LAYERS = {
         },
     },
 }
+if DEBUG:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
+SOCIALACCOUNT_STORE_TOKENS = True

@@ -19,122 +19,109 @@
 {% load humanize %}
 {% block style %}
     {% include "includes/sidenav.html" %}
-    <style>
-    .alt-img {
-        padding-top: 25px;
-        width: 75px;
-        filter: blur(2px);
-        -webkit-filter: blur(2px);
-        display: none;
-    }
-
-    .table td,
-    .table th {
-        text-align: center;
-        vertical-align: middle !important;
-    }
-
-    .table a {
-        text-decoration: none;
-    }
-
-    thead {
-        background: #73DC69;
-        color: white;
-    }
-    .bottom-right {
-        position: absolute;
-        bottom: 10px;
-        right: 15px;
-}
-    </style>
 {% endblock style %}
 {% block content %}
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/scoreboard.html">
+    <div class="fixed bottom-4 right-4 space-x-2">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/scoreboard.html"
+           class="text-gray-600 hover:text-gray-800">
             <i class="fab fa-github"></i>
         </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1307%3A653&t=pqxWpF3hcYxjEDrs-1">
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1307%3A653&t=pqxWpF3hcYxjEDrs-1"
+           class="text-gray-600 hover:text-gray-800">
             <i class="fab fa-figma"></i>
         </a>
     </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <h2 class="page-header">Domain Scoreboard</h2>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-10 col-lg-offset-1">
-            <table id="keywords"
-                   class="table table-bordered table-striped table-condensed">
-                <thead>
-                    <tr>
-                        <th>Logo</th>
-                        <th>
-                            <a href="?sort_by=domain_name&sort_order={% if sort_by == 'domain_name' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Domain Name</a>
-                        </th>
-                        <th>
-                            <a href="?sort_by=open_issues_count&sort_order={% if sort_by == 'open_issues_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Open Issues</a>
-                        </th>
-                        <th>
-                            <a href="?sort_by=closed_issues_count&sort_order={% if sort_by == 'closed_issues_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Closed Issues</a>
-                        </th>
-                        <th>
-                            <a href="?sort_by=email_event&sort_order={% if sort_by == 'email_event' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Email Event</a>
-                        </th>
-                        <th>
-                            <a href="?sort_by=modified&sort_order={% if sort_by == 'modified' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Time of Last Event</a>
-                        </th>
-                        <th>
-                            <a href="?sort_by=top_tester&sort_order={% if sort_by == 'top_tester' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">Top Domain Tester</a>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for domain in scoreboard %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-8">Domain Scoreboard</h2>
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-[#e74c3c]">
                         <tr>
-                            <td height="80px">
-                                <a href="{% url 'domain' slug=domain.name %}">
-                                    <img src="{{ domain.get_logo }}"
-                                         alt="{{ domain.name }}"
-                                         onerror="this.onerror=null; this.style.display='none';this.parentNode.childNodes[3].style.display='block';"
-                                         width="80px"
-                                         height="80px">
-                                    <img src="https://www.google.com/s2/favicons?sz=80&domain_url={{ domain.name }}"
-                                         class="alt-img"
-                                         alt="{{ domain.name }}"
-                                         width="80px"
-                                         height="80px">
-                                </a>
-                            </td>
-                            <td>{{ domain }}</td>
-                            <td>{{ domain.open_issues|length }}</td>
-                            <td>{{ domain.closed_issues|length }}</td>
-                            <td>{{ domain.email_event }}</td>
-                            <td>{{ domain.modified|timesince }} ago</td>
-                            <td>
-                                <a href="{% url 'profile' slug=domain.top_tester %}">{{ domain.top_tester|default:"" }}</a>
-                            </td>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-sm font-semibold text-white">Logo</th>
+                            <th scope="col"
+                                class="px-6 py-4 text-left text-sm font-semibold text-white">
+                                <a href="?sort_by=name&sort_order={% if sort_by == 'name' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                                   class="text-white hover:text-white/80">Domain Name</a>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-4 text-center text-sm font-semibold text-white">
+                                <a href="?sort_by=open_issues_count&sort_order={% if sort_by == 'open_issues_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                                   class="text-white hover:text-white/80">Open Issues</a>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-4 text-center text-sm font-semibold text-white">
+                                <a href="?sort_by=closed_issues_count&sort_order={% if sort_by == 'closed_issues_count' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                                   class="text-white hover:text-white/80">Closed Issues</a>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-4 text-center text-sm font-semibold text-white">
+                                <a href="?sort_by=email_event&sort_order={% if sort_by == 'email_event' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                                   class="text-white hover:text-white/80">Email Event</a>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-4 text-center text-sm font-semibold text-white">
+                                <a href="?sort_by=modified&sort_order={% if sort_by == 'modified' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                                   class="text-white hover:text-white/80">Time of Last Event</a>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-4 text-center text-sm font-semibold text-white">
+                                <a href="?sort_by=top_tester&sort_order={% if sort_by == 'top_tester' and sort_order == 'asc' %}desc{% else %}asc{% endif %}"
+                                   class="text-white hover:text-white/80">Top Domain Tester</a>
+                            </th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for domain in scoreboard %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <a href="{% url 'domain' slug=domain.name %}" class="block w-16 h-16">
+                                        {% if domain.get_logo and domain.get_logo != "None" %}
+                                            <img src="{{ domain.get_logo }}"
+                                                 alt="{{ domain.name }}"
+                                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                                                 class="w-16 h-16 object-contain rounded"
+                                                 width="64"
+                                                 height="64">
+                                        {% endif %}
+                                        <div class="{% if domain.get_logo and domain.get_logo != 'None' %}hidden{% endif %} w-16 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">
+                                            {{ domain.name|slice:":1"|upper }}
+                                        </div>
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ domain.name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{{ domain.open_issues_count }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{{ domain.closed_issues_count }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{{ domain.email_event }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-900">{{ domain.modified|timesince }} ago</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                    <a href="{% url 'profile' slug=domain.top_tester %}"
+                                       class="text-[#e74c3c] hover:text-[#c0392b]">
+                                        {{ domain.top_tester|default:"" }}
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
-    <div>
         {% if is_paginated %}
-            <div class="col-md-12">
-                <div class="text-center">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}"
-                           class="btn btn-default">Prev</a>
-                    {% endif %}
-                    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}"
-                           class="btn btn-default">Next</a>
-                    {% endif %}
-                </div>
+            <div class="mt-6 flex justify-center items-center space-x-4">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}"
+                       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Previous
+                    </a>
+                {% endif %}
+                <span class="text-sm text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}"
+                       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Next
+                    </a>
+                {% endif %}
             </div>
         {% endif %}
     </div>

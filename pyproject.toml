@@ -6,7 +6,7 @@ authors = ["OWASP BLT <you@example.com>"]
 license = "AGPLv3"
 
 [tool.poetry.dependencies]
-python = "3.11.2"
+python = ">=3.11.2,<3.14"
 python-dotenv = "^1.0.1"
 Django = "^5.1.6"
 dj-database-url = "^2.3.0"
@@ -14,7 +14,7 @@ django-allauth = "^0.61.1"
 beautifulsoup4 = "^4.13.3"
 django-email-obfuscator = "^0.1.5"
 django-gravatar2 = "^1.4.5"
-django-import-export = "^4.3.5"
+django-import-export = "^4.3.7"
 django-annoying = "^0.10.7"
 dj-rest-auth = "^5.0.2"
 user-agents = "^2.2.0"
@@ -40,14 +40,13 @@ django-mdeditor = "^0.1.20"
 django-tz-detect = "^0.4.0"
 django-star-ratings = "^0.9.2"
 django-environ = "^0.12.0"
-django-simple-captcha = "^0.6.1"
+django-simple-captcha = "^0.6.2"
 django-filter = "^24.3"
 pillow = "^10.4.0"
-sentry-sdk = "^2.20.0"
+sentry-sdk = "^2.22.0"
 bitcash = "^1.0.2"
 pydantic = "^2.10.6"
 pydantic_core = "^2.18.4"
-unstructured = "^0.16.19"
 Markdown = "^3.6"
 faiss-cpu = "^1.10.0"
 psutil = "^5.9.8"
@@ -58,20 +57,27 @@ django-redis = "^5.4.0"
 uvicorn = "^0.34.0"
 channels = "^4.2.0"
 channels-redis = "^4.2.1"
-aiohttp = "^3.11.12"
+aiohttp = "^3.11.13"
 drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
+slack-sdk = "^3.27.1"
 tld = "0.13"
+openai = "^1.65.1"
+async-timeout = "^4.0.3"
+python-dateutil = "^2.9.0.post0"
+
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.8.0"
 isort = "^5.13.2"
-ruff = "^0.9.5"
+ruff = "^0.9.8"
 pre-commit = "^3.8.0"
-selenium = "^4.28.1"
+selenium = "^4.29.0"
 webdriver-manager = "^4.0.2"
 chromedriver-autoinstaller = "^0.6.4"
 django-debug-toolbar = "^4.4.6"
+django-livereload-server = "^0.5.1"
+watchfiles = "^1.0.4"
 
 [tool.isort]
 known_first_party = ["blt"]
@@ -81,6 +87,10 @@ profile = "black"
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
 
 [tool.ruff.lint]
 # This is a temporary ignore list to address on a PR per category basis after the initial run.

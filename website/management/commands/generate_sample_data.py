@@ -4,10 +4,24 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
-from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from website.models import Activity, Badge, Domain, Hunt, Issue, Organization, Points, Project, Repo, Tag, UserBadge
+from website.management.base import LoggedBaseCommand
+from website.models import (
+    Activity,
+    Badge,
+    Domain,
+    GitHubIssue,
+    GitHubReview,
+    Hunt,
+    Issue,
+    Organization,
+    Points,
+    Project,
+    Repo,
+    Tag,
+    UserBadge,
+)
 
 
 def random_string(length=10):
@@ -47,7 +61,7 @@ def random_sentence(word_count=6):
     return " ".join(random.choice(words) for _ in range(word_count))
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Generate sample data for testing"
 
     def clear_existing_data(self):
@@ -61,6 +75,8 @@ class Command(BaseCommand):
         Hunt.objects.all().delete()
         Repo.objects.all().delete()
         Project.objects.all().delete()
+        GitHubIssue.objects.all().delete()
+        GitHubReview.objects.all().delete()
         Domain.objects.all().delete()
         UserBadge.objects.all().delete()
         Badge.objects.all().delete()
@@ -161,6 +177,42 @@ class Command(BaseCommand):
             )
             issues.append(issue)
         return issues
+
+    def create_pull_requests(self, users, repos, count=20):
+        pull_requests = []
+        for i in range(count):
+            userProfile = random.choice(users)
+            created_date = timezone.now() - timedelta(days=random.randint(1, 180))
+            pull_request = GitHubIssue.objects.create(
+                issue_id=random.randint(1000000, 9000000),
+                title=random_sentence(5),
+                url=f"https://example.com/pr/{i+1}",
+                created_at=created_date,
+                updated_at=created_date + timedelta(days=random.randint(1, 180)),
+                repo=random.choice(repos),
+                user_profile=userProfile.userprofile,
+                is_merged=random.choice([True, False]),
+                type="pull_request",
+            )
+            pull_requests.append(pull_request)
+        return pull_requests
+
+    def create_reviews(self, users, pull_requests, count=50):
+        reviews = []
+        for i in range(count):
+            reviewer = random.choice(users)
+            created_date = timezone.now() - timedelta(days=random.randint(1, 180))
+            review = GitHubReview.objects.create(
+                review_id=random.randint(1000000000, 9000000000),
+                pull_request=random.choice(pull_requests),
+                reviewer=reviewer.userprofile,
+                state=random.choice(["APPROVED", "CHANGES_REQUESTED", "COMMENTED"]),
+                submitted_at=created_date,
+                body=random_sentence(5),
+                url=f"https://example.com/review/{i+1}",
+            )
+            reviews.append(review)
+        return reviews
 
     def create_hunts(self, users, count=10):
         hunts = []
@@ -341,6 +393,12 @@ class Command(BaseCommand):
         self.create_tags(20)
 
         self.stdout.write("Creating repos...")
-        self.create_repos(organizations, 30)
+        repos = self.create_repos(organizations, 30)
+
+        self.stdout.write("Creating PRs...")
+        pull_requests = self.create_pull_requests(users, repos, 30)
+
+        self.stdout.write("Creating Reviews...")
+        self.create_reviews(users, pull_requests, 90)
 
         self.stdout.write(self.style.SUCCESS("Done!"))

@@ -89,26 +89,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle');
     
-    // Check if sidebar state is stored
-    const sidebarVisible = localStorage.getItem('sidebarVisible') !== 'false';
-    if (!sidebarVisible) {
-        sidebar.classList.add('translate-x-[-100%]');
-    }
-
-    toggleBtn.addEventListener('click', function() {
-        sidebar.classList.toggle('translate-x-[-100%]');
-        const isVisible = !sidebar.classList.contains('translate-x-[-100%]');
-        localStorage.setItem('sidebarVisible', isVisible);
-    });
-
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', function(event) {
-        const isMobile = window.innerWidth < 1024;
-        if (isMobile && !sidebar.contains(event.target) && !toggleBtn.contains(event.target)) {
+    // Only proceed if both elements exist
+    if (sidebar && toggleBtn) {
+        // Check if sidebar state is stored
+        const sidebarVisible = localStorage.getItem('sidebarVisible') !== 'false';
+        if (!sidebarVisible) {
             sidebar.classList.add('translate-x-[-100%]');
-            localStorage.setItem('sidebarVisible', false);
         }
-    });
+
+        toggleBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('translate-x-[-100%]');
+            const isVisible = !sidebar.classList.contains('translate-x-[-100%]');
+            localStorage.setItem('sidebarVisible', isVisible);
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const isMobile = window.innerWidth < 1024;
+            if (isMobile && !sidebar.contains(event.target) && !toggleBtn.contains(event.target)) {
+                sidebar.classList.add('translate-x-[-100%]');
+                localStorage.setItem('sidebarVisible', false);
+            }
+        });
+    }
 });
     </script>
 {% endblock js %}

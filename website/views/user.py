@@ -36,6 +36,7 @@ from website.models import (
     IP,
     Badge,
     Challenge,
+    Contributor,
     Domain,
     GitHubIssue,
     Hunt,
@@ -762,14 +763,27 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
+    # Get total count of users with GitHub profiles
+    context["users_with_github_count"] = (
+        UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
+    )
+
+    # Get contributors from database
+    context["contributors"] = Contributor.objects.all().order_by("-contributions")
+    context["contributors_count"] = context["contributors"].count()
+
     context["tags_with_counts"] = (
         Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
     )
 
     tag_name = request.GET.get("tag")
     show_githubbers = request.GET.get("githubbers") == "true"
+    show_contributors = request.GET.get("contributors") == "true"
 
-    if show_githubbers:
+    if show_contributors:
+        context["show_contributors"] = True
+        context["users"] = []
+    elif show_githubbers:
         context["githubbers"] = True
         context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
         context["user_count"] = context["users"].count()
@@ -835,26 +849,29 @@ def get_score(request):
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
-        userx = User.objects.get(username=user)
-        flag = 0
-        list_userfrof = request.user.userprofile.follows.all()
-        for prof in list_userfrof:
-            if str(prof) == (userx.email):
-                request.user.userprofile.follows.remove(userx.userprofile)
-                flag = 1
-        if flag != 1:
-            request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
-            msg_html = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
+        try:
+            userx = User.objects.get(username=user)
+            flag = 0
+            list_userfrof = request.user.userprofile.follows.all()
+            for prof in list_userfrof:
+                if str(prof) == (userx.email):
+                    request.user.userprofile.follows.remove(userx.userprofile)
+                    flag = 1
+            if flag != 1:
+                request.user.userprofile.follows.add(userx.userprofile)
+                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
 
-            send_mail(
-                "You got a new follower!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [userx.email],
-                html_message=msg_html,
-            )
-        return HttpResponse("Success")
+                send_mail(
+                    "You got a new follower!!",
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [userx.email],
+                    html_message=msg_html,
+                )
+            return HttpResponse("Success")
+        except User.DoesNotExist:
+            return HttpResponse(f"User {user} not found", status=404)
 
 
 # get issue and comment id from url
@@ -934,6 +951,7 @@ def badge_user_list(request, badge_id):
         .select_related("user")
         .distinct()
         .annotate(awarded_at=F("user__userbadge__awarded_at"))
+        .order_by("-awarded_at")
     )
 
     return render(
@@ -1047,22 +1065,9 @@ def assign_github_badge(user, action_title):
         badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.create(user=user, badge=badge)
-            print(f"Assigned '{action_title}' badge to {user.username}")
-        else:
-            print(f"{user.username} already has the '{action_title}' badge.")
+
     except Badge.DoesNotExist:
         print(f"Badge '{action_title}' does not exist.")
-
-
-# def validate_signature(payload, signature):
-#     if not signature:
-#         return False
-
-#     secret = bytes(os.environ.get("GITHUB_TOKEN", ""), "utf-8")
-#     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
-#     computed_signature = f"sha256={computed_hmac.hexdigest()}"
-
-#     return hmac.compare_digest(computed_signature, signature)
 
 
 @method_decorator(login_required, name="dispatch")

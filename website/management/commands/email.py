@@ -1,9 +1,9 @@
 import datetime
 
-from django.core.management.base import BaseCommand
+from website.management.base import LoggedBaseCommand
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Monthly Email"
 
     def handle(self, *args, **options):
@@ -16,7 +16,7 @@ class Command(BaseCommand):
         #     lastMonth = first - datetime.timedelta(days=1)
 
         #     subject = settings.PROJECT_NAME + ' ' + lastMonth.strftime("%B") + ' summary'
-        #     msg_plain = msg_html = render_to_string('email/bug_summary.txt', {
+        #     msg_plain = msg_html = render_to_string('email/bug_summary.html', {
         #         'month': lastMonth.strftime("%B"),
         #         'leaderboard': User.objects.filter(points__created__month=lastMonth.strftime("%m")).annotate(
         #             total_score=Sum('points__score')).order_by('-total_score')[:5],

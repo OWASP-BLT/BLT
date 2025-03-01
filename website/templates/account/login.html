@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
 {% load custom_tags %}
+{% load i18n %}
+{% load account socialaccount %}
 {% block title %}
     Account Login | {% env 'PROJECT_NAME' %}
 {% endblock title %}
@@ -16,9 +18,6 @@
 {% block og_description %}
     Log in to your account to access the bug logging tool. Enter your username and password or log in with Google or GitHub for a seamless experience.
 {% endblock og_description %}
-{% load i18n %}
-{% load custom_tags %}
-{% load account socialaccount %}
 {% block natural_content %}
     {% include "includes/sidenav.html" %}
     {% get_providers as socialaccount_providers %}
@@ -34,7 +33,8 @@
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Don't have an account" %}?</span>
-                    <a href="{% url 'account_signup' %}" class="underline text-white">{% trans "Get Started" %}!</a>
+                    <a href="{% url 'account_signup' %}{% if redirect_field_value %}?{{ redirect_field_name }}={{ redirect_field_value }}{% endif %}"
+                       class="underline text-white">{% trans "Get Started" %}!</a>
                 </p>
                 <p class="mt-6 text-sm text-center text-white">
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
@@ -46,6 +46,11 @@
                       method="post"
                       action="{% url 'account_login' %}">
                     {% csrf_token %}
+                    {% if redirect_field_value %}
+                        <input type="hidden"
+                               name="{{ redirect_field_name }}"
+                               value="{{ redirect_field_value }}" />
+                    {% endif %}
                     <div class="flex flex-col space-y-1">
                         <label for="email" class="text-sm font-semibold text-gray-500">Username</label>
                         <input autofocus
@@ -95,7 +100,7 @@
                     <div>
                         <button type="submit"
                                 name="login_button"
-                                class="px-4 py-2 w-[100%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                                class="px-0 py-0 w-[100%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
                             {% trans "Log in" %}
                         </button>
                     </div>

@@ -3,14 +3,14 @@ from datetime import datetime
 
 import requests
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
 
+from website.management.base import LoggedBaseCommand
 from website.models import GitHubIssue, GitHubReview, Repo, UserProfile
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Fetches and updates GitHub issue and review data for users with GitHub profiles"
 
     def handle(self, *args, **options):

@@ -1,0 +1,59 @@
+<!-- recommended_articles.html -->
+<div class="space-y-6">
+    {% if articles %}
+        <h2 class="text-2xl font-bold text-gray-100">Recommended Articles</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in articles %}
+                <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105">
+                    <div class="p-6 space-y-4">
+                        <!-- Article Title -->
+                        <h3 class="text-xl font-semibold text-white">{{ item.article.title }}</h3>
+                        <!-- Author -->
+                        <div class="flex items-center space-x-2">
+                            {% if item.article.author_profile_image %}
+                                <img src="{{ item.article.author_profile_image }}"
+                                     alt="{{ item.article.author }}"
+                                     class="w-8 h-8 rounded-full"
+                                     width="32"
+                                     height="32">
+                            {% endif %}
+                            <span class="text-sm text-gray-300">{{ item.article.author }}</span>
+                        </div>
+                        <!-- Publication Date -->
+                        <div class="text-sm text-gray-400">Published on {{ item.article.publication_date|date:"F j, Y" }}</div>
+                        <!-- Description -->
+                        <p class="text-gray-300 line-clamp-3">{{ item.article.description|default:"No description available." }}</p>
+                        <!-- Tags -->
+                        {% if item.article.tags.exists %}
+                            <div class="flex flex-wrap gap-2">
+                                {% for tag in item.article.tags.all %}
+                                    <span class="px-2 py-1 bg-indigo-700 text-indigo-200 rounded-full text-xs font-medium">{{ tag.name }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <!-- Relevance Score -->
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-400">Relevance Score:</span>
+                            <span class="text-sm text-green-400 font-semibold">{{ item.relevance_score }}</span>
+                        </div>
+                        <!-- Reasoning -->
+                        <div class="text-sm text-gray-300">
+                            <span class="font-medium">Reason:</span> {{ item.reasoning }}
+                        </div>
+                        <!-- Read Article Button -->
+                        <a href="{{ item.article.url }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            Read Article
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <p class="text-lg text-gray-300">No recommended articles found.</p>
+        </div>
+    {% endif %}
+</div>

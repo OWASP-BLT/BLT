@@ -8,11 +8,11 @@ from .models import (
     BaconEarning,
     Badge,
     Bid,
+    ForumPost,
     Hunt,
     IpReport,
     Issue,
     Post,
-    Suggestion,
     TimeLog,
     UserBadge,
     UserProfile,
@@ -32,7 +32,6 @@ def assign_first_action_badge(user, action_title):
 
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.get_or_create(user=user, badge=badge)
-            print(f"Assigned '{action_title}' badge to {user.username}")
 
 
 def create_activity(instance, action_type):
@@ -46,11 +45,15 @@ def create_activity(instance, action_type):
     # Get the content type of the instance
     content_type = ContentType.objects.get_for_model(instance)
 
+    # Get instance name or title
+    name = getattr(instance, "name", getattr(instance, "title", ""))[:50]
+    title = f"{model_name.capitalize()} {action_type.capitalize()} {name}"
+
     # Create the activity
     Activity.objects.create(
         user=user,
         action_type=action_type,
-        title=f"{model_name.capitalize()} {action_type.capitalize()} {getattr(instance, 'name', getattr(instance, 'title', ''))[:50]}",
+        title=title,
         content_type=content_type,
         object_id=instance.id,  # Use object_id for GenericForeignKey
         description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
@@ -58,16 +61,16 @@ def create_activity(instance, action_type):
     )
 
 
-def giveBacon(user):
+def giveBacon(user, amt=1):
     # Check if the user already has a token record
     if user is None or user.is_authenticated is False:
         return
     token_earning, created = BaconEarning.objects.get_or_create(user=user)
 
     if created:
-        token_earning.tokens_earned = 1  # Reward 10 tokens for completing the action (adjust as needed)
+        token_earning.tokens_earned = amt  # Reward 10 tokens for completing the action (adjust as needed)
     else:
-        token_earning.tokens_earned += 1  # Add 10 tokens if the user already exists in the system
+        token_earning.tokens_earned += amt  # Add 10 tokens if the user already exists in the system
 
     token_earning.save()  # Save the updated record
 
@@ -103,9 +106,9 @@ def handle_post_save(sender, instance, created, **kwargs):
             assign_first_action_badge(user, "First Bug Bounty")
             create_activity(instance, "created")
 
-    elif sender == Suggestion and created:  # Track first suggestion
-        assign_first_action_badge(instance.user, "First Suggestion")
-        create_activity(instance, "suggested")
+    elif sender == ForumPost and created:  # Track first forum post
+        assign_first_action_badge(instance.user, "First Forum Post")
+        create_activity(instance, "created")
 
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")

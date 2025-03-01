@@ -19,26 +19,29 @@
 {% block style %}
     <style type="text/tailwindcss">
      @layer components {
-      .card {
-        @apply flex items-center justify-center flex-col gap-2 p-5 w-full sm:w-72 h-full bg-gray-100 border rounded-2xl;
+      .social-icon {
+        @apply text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl;
+      }
+      .profile-button {
+        @apply mt-4 px-6 py-2.5 bg-white text-[#e74c3c] border border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200 font-medium text-sm;
       }
       .tag-count {
-        @apply ml-2 px-2 py-0.5 text-sm rounded-full inline-flex items-center justify-center;
+        @apply ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px];
       }
       .tag-link {
-        @apply inline-flex items-center px-4 py-2 rounded-full transition-all duration-200 ease-in-out font-medium text-sm hover:shadow-md;
+        @apply inline-flex items-center px-5 py-2.5 rounded-full transition-all duration-300 ease-in-out font-medium text-sm hover:shadow-lg hover:scale-105 transform;
       }
       .tag-link.active {
-        @apply bg-red-100 text-red-800;
+        @apply bg-[#e74c3c] text-white;
       }
       .tag-link.active .tag-count {
-        @apply bg-red-200 text-red-800;
+        @apply bg-white/20 text-white;
       }
       .tag-link.inactive {
-        @apply bg-gray-100 text-gray-800 hover:bg-gray-200;
+        @apply bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200;
       }
       .tag-link.inactive .tag-count {
-        @apply bg-gray-200 text-gray-700;
+        @apply bg-gray-100 text-gray-600;
       }
     }
     </style>
@@ -53,20 +56,27 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container py-8 min-h-[100vh]">
-        <div class="flex flex-col text-center gap-4 mb-10 p-4">
-            <div class="w-full h-max flex flex-col items-center">
-                <p class="text-7xl mb-5 font-bold">Explore Our Community Members</p>
-                <p class="text-xl bg-red-600 text-white w-max px-5 py-2 rounded-lg lg:text-4xl">
+        <div class="flex flex-col text-center gap-6 mb-12 px-4 py-8 max-w-7xl mx-auto">
+            <div class="w-full flex flex-col items-center space-y-6">
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">Explore Our Community Members</h1>
+                <p class="text-lg md:text-xl lg:text-2xl bg-[#e74c3c] text-white px-6 py-3 rounded-xl shadow-md transform hover:scale-105 transition-transform duration-200">
                     A warm and welcoming collection of open sourcers
                 </p>
             </div>
         </div>
-        <!-- New block to show tags with counts -->
-        <div class="flex flex-wrap items-center justify-center gap-3 my-8">
+        <!-- Filter tags section -->
+        <div class="flex flex-wrap items-center justify-center gap-4 my-12 px-4 max-w-5xl mx-auto">
+            <a href="?contributors=true"
+               class="tag-link {% if show_contributors %}active{% else %}inactive{% endif %}">
+                <i class="fas fa-users mr-2"></i>
+                <span>OWASP Contributors</span>
+                <span class="tag-count">{{ contributors_count }}</span>
+            </a>
             <a href="?githubbers=true"
                class="tag-link {% if githubbers %}active{% else %}inactive{% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
+                <span class="tag-count">{{ users_with_github_count }}</span>
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
@@ -76,86 +86,111 @@
                 </a>
             {% endfor %}
         </div>
-        <div class="flex items-center justify-center flex-wrap gap-4 p-4">
-            {% for user in users %}
-                <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between border rounded-lg transition duration-200 shadow-lg hover:shadow-2xl">
-                    {% if user.userprofile and user.userprofile.user_avatar %}
-                        <img src="{{ user.userprofile.user_avatar.url }}"
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 pb-12">
+            {% if show_contributors %}
+                {% for contributor in contributors %}
+                    <div class="group bg-white p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e74c3c]/20 h-[420px]">
+                        <img src="{{ contributor.avatar_url }}"
                              class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                              width="100px"
                              height="100px"
-                             alt="{{ user.user.username }}'s avatar"
+                             alt="{{ contributor.name }}'s avatar"
                              onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                    {% else %}
-                        {% for account in user.socialaccount_set.all %}
-                            {% if account.extra_data.avatar_url %}
-                                <img src="{{ account.extra_data.avatar_url }}"
+                        <div class="text-2xl font-bold text-gray-900">{{ contributor.name }}</div>
+                        <div class="text-purple-600 text-lg">{{ contributor.contributor_type }}</div>
+                        <p class="text-gray-600 text-center px-4">Contributions: {{ contributor.contributions }}</p>
+                        <div class="flex items-center justify-center gap-3 mt-2">
+                            <a href="{{ contributor.github_url }}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-gray-600 hover:text-red-500 transition-colors">
+                                <i class="fab fa-github fa-lg"></i>
+                            </a>
+                        </div>
+                        <a href="{{ contributor.github_url }}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="mt-4 px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors font-medium">
+                            View Profile
+                        </a>
+                    </div>
+                {% endfor %}
+            {% else %}
+                {% for user in users %}
+                    <div class="group bg-white p-6 flex flex-col items-center justify-between rounded-xl transition-all duration-300 hover:shadow-xl border border-gray-100 hover:border-[#e74c3c]/20 h-[420px]">
+                        {% if user.user_avatar %}
+                            <img src="{{ user.user_avatar.url }}"
+                                 class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
+                                 width="100px"
+                                 height="100px"
+                                 alt="{{ user.user.username }}'s avatar"
+                                 onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                        {% elif user.github_url %}
+                            {% with github_username=user.github_url|cut:"https://github.com/"|cut:"/" %}
+                                <img src="https://github.com/{{ github_username }}.png"
                                      class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                      width="100px"
                                      height="100px"
-                                     alt="{{ user.username }}'s avatar"
+                                     alt="{{ user.user.username }}'s avatar"
                                      onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                            {% elif account.extra_data.picture %}
-                                <img src="{{ account.extra_data.picture }}"
-                                     class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
-                                     width="100px"
-                                     height="100px"
-                                     alt="{{ user.username }}'s avatar"
-                                     onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                            {% endif %}
-                        {% empty %}
+                            {% endwith %}
+                        {% else %}
                             <img src="{% static 'images/dummy-user.png' %}"
                                  class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                                  width="100px"
                                  height="100px"
                                  alt="user image" />
-                        {% endfor %}
-                    {% endif %}
-                    <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
+                        {% endif %}
+                        <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
+                            <a href="{% url 'profile' slug=user.user.username %}"
+                               class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
+                        </div>
+                        <div class="text-purple-600 text-2xl">{{ user.role }}</div>
+                        {% if user.discounted_hourly_rate %}
+                            <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
+                                <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
+                                <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
+                            </p>
+                        {% endif %}
+                        <div class="flex items-center justify-center gap-6 mt-4">
+                            {% if user.x_username %}
+                                <a href="{{ user.x_username }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="social-icon">
+                                    <i class="fa-brands fa-x-twitter"></i>
+                                </a>
+                            {% endif %}
+                            {% if user.linkedin_url %}
+                                <a href="{{ user.linkedin_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="social-icon">
+                                    <i class="fa-brands fa-linkedin"></i>
+                                </a>
+                            {% endif %}
+                            {% if user.github_url %}
+                                <a href="{{ user.github_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="social-icon">
+                                    <i class="fa-brands fa-github"></i>
+                                </a>
+                            {% endif %}
+                            {% if user.website_url %}
+                                <a href="{{ user.website_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="social-icon">
+                                    <i class="fa-solid fa-globe"></i>
+                                </a>
+                            {% endif %}
+                        </div>
                         <a href="{% url 'profile' slug=user.user.username %}"
-                           class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
+                           class="profile-button">View Profile</a>
                     </div>
-                    <div class="text-purple-600 text-2xl">{{ user.role }}</div>
-                    <p class="transition duration-200 text-gray-600 text-center px-10 py-4 bg-gray-100 rounded-md shadow-md">
-                        <span class="font-semibold text-lg text-gray-600">Discounted Hourly Rate:</span>
-                        <span class="text-green-600 font-bold text-xl">${{ user.discounted_hourly_rate }}</span>
-                    </p>
-                    <div class="flex items-center justify-center gap-3 mt-2 w-auto h-5 text-gray-600 mt-7">
-                        {% if user.x_username %}
-                            <a href="{{ user.x_username }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-x-twitter fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.linkedin_url %}
-                            <a href="{{ user.linkedin_url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-linkedin fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.github_url %}
-                            <a href="{{ user.github_url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-github fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                        {% if user.website_url %}
-                            <a href="{{ user.website_url }}"
-                               target="_blank"
-                               rel="noopener noreferrer">
-                                <i class="fa-brands fa-dribbble fa-lg cursor-pointer transition duration-200 hover:text-red-500 scale-125 m-3"></i>
-                            </a>
-                        {% endif %}
-                    </div>
-                    <a href="{% url 'profile' slug=user.user.username %}"
-                       class="w-[150px] h-[40px] rounded-md shadow-md bg-white text-red-500 flex justify-center items-center mt-10 no-underline hover:bg-red-500 hover:text-white font-bold transition duration-200 text-[15px]">
-                        More Info
-                    </a>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            {% endif %}
         </div>
     </div>
 {% endblock content %}

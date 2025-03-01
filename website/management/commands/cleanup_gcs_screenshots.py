@@ -3,15 +3,15 @@
 import logging
 
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from google.cloud import storage
 
-from website.models import Issue, IssueScreenshot
+from website.management.base import LoggedBaseCommand
+from website.models import Issue
 
 logger = logging.getLogger(__name__)
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Clean up orphaned screenshots in Google Cloud Storage"
 
     def add_arguments(self, parser):
