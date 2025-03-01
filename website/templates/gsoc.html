@@ -98,67 +98,97 @@
                     Donate to the BLT project
                 </a>
             </div>
-            <!-- Potential Candidates and Mentors -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Potential Candidates</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/candidate1.jpg' %}" alt="Candidate 1" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Candidate 1</h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/candidate2.jpg' %}" alt="Candidate 2" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Candidate 2</h3>
-                        </div>  
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/candidate3.jpg' %}" alt="Candidate 3" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Candidate 3</h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/candidate4.jpg' %}" alt="Candidate 4" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Candidate 4</h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/candidate5.jpg' %}" alt="Candidate 5" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Candidate 5</h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/candidate6.jpg' %}" alt="Candidate 6" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Candidate 6</h3>
-                        </div>
-                    </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Community Fundraiser Section -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 border-l-4 border-red-500 w-full">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Community Fundraiser</h2>
+                    <p class="text-xl text-gray-700 leading-relaxed mb-6">
+                        Last year, BLT had six students, and it was a fantastic experience. This year, we plan to support 10 students. However, we understand that GSoC may only allocate funding for six students.
+                    </p>
+                    <p class="text-xl text-gray-700 leading-relaxed mb-6">
+                        To ensure that all 10 students selected by us receive the $3,000 stipend they would typically get from GSoC, we are organizing a community fundraiser.
+                    </p>
+                    <a href="https://owasp.org/donate/?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool"
+                        class="block p-4 bg-red-50 rounded-lg hover:bg-red-100 transition-colors text-center text-xl font-semibold text-red-700">
+                        Donate to the BLT project
+                    </a>
                 </div>
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Potential Mentors</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/mentor1.jpg' %}" alt="Mentor 1" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Mentor 1</h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/mentor2.jpg' %}" alt="Mentor 2" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Mentor 2</h3>
-                        </div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <img src="{% static 'images/mentor3.jpg' %}" alt="Mentor 3" class="w-16 h-16 rounded-full">
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-900">Mentor 3</h3>
-                        </div>
-                    </div>
+            
+                <!-- Potential Candidates & Mentors Section -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 border-l-4 border-red-500 w-full">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6">Potential Candidates & Mentors</h2>
+                    <table class="w-full border border-gray-200 rounded-lg">
+                        <thead>
+                            <tr class="bg-gray-50 border-b border-gray-200">
+                                <th class="py-3 px-4 text-left text-gray-800 font-semibold">Student</th>
+                                <th class="py-3 px-4 text-left text-gray-800 font-semibold">PRs</th>
+                                <th class="py-3 px-4 text-left text-gray-800 font-semibold">Mentor</th>
+                                <th class="py-3 px-4 text-left text-gray-800 font-semibold">Potential Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Krrish Sehgal</td>
+                                <td class="py-3 px-4">32</td>
+                                <td class="py-3 px-4">Donnie (@DonnieBLT)</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Sahil Omkumar Dhillon</td>
+                                <td class="py-3 px-4">28</td>
+                                <td class="py-3 px-4">Yash Pandey</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Krishna Kaushal</td>
+                                <td class="py-3 px-4">29</td>
+                                <td class="py-3 px-4">Bishal Das</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Apoorva Pendse</td>
+                                <td class="py-3 px-4">10</td>
+                                <td class="py-3 px-4">Ahmed ElSheikh</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Dhruv Trivedi</td>
+                                <td class="py-3 px-4">11</td>
+                                <td class="py-3 px-4">Patricia Waiyego</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Nitin Awari</td>
+                                <td class="py-3 px-4">6</td>
+                                <td class="py-3 px-4">Sudhir</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Student 7</td>
+                                <td class="py-3 px-4">TBD</td>
+                                <td class="py-3 px-4">Looking for Mentor</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Student 8</td>
+                                <td class="py-3 px-4">TBD</td>
+                                <td class="py-3 px-4">Looking for Mentor</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr class="border-b border-gray-200">
+                                <td class="py-3 px-4">Student 9</td>
+                                <td class="py-3 px-4">TBD</td>
+                                <td class="py-3 px-4">Looking for Mentor</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4">Student 10</td>
+                                <td class="py-3 px-4">TBD</td>
+                                <td class="py-3 px-4">Looking for Mentor</td>
+                                <td class="py-3 px-4">$3,000</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <!-- Benefits Card -->
