@@ -54,7 +54,7 @@ SECRET_KEY = "i+acxn5(akgsn!sr4^qgf(^m&*@+g1@u^t@=8s@axc41ml*f=s"
 DEBUG = False
 TESTING = sys.argv[1:2] == ["test"]
 
-SITE_ID = 2
+SITE_ID = 1
 
 # Scout settings
 SCOUT_MONITOR = True
