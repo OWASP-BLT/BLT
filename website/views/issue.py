@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import os
 import smtplib
 import socket
@@ -314,6 +315,16 @@ def newhome(request, template="new_home.html"):
             messages.error(request, "No email associated with your account. Please add an email.")
 
     issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    try:
+        issues_with_github = issues_queryset.filter(github_url__icontains="github.com/OWASP-BLT/BLT/issues")[:3]
+
+        for issue in issues_with_github:
+            if hasattr(issue, "update_github_metadata"):
+                issue.update_github_metadata()
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error updating GitHub metadata: {str(e)}")
+
     paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)

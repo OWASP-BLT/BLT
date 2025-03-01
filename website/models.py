@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import time
 import uuid
 from datetime import timedelta
@@ -436,6 +437,54 @@ class Issue(models.Model):
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
+    github_issue_state = models.CharField(max_length=20, null=True, blank=True)
+    github_comments_count = models.IntegerField(null=True, blank=True)
+
+    def update_github_metadata(self):
+        """
+        Fetches the current state and comment count from GitHub for issues linked to GitHub.
+        Updates the issue with this metadata using cache when possible.
+        """
+        if not self.github_url or "github.com/OWASP-BLT/BLT/issues" not in self.github_url:
+            return
+
+        match = re.search(r"issues/(\d+)", self.github_url)
+        if not match:
+            return
+
+        issue_number = match.group(1)
+        cache_key = f"github_issue_{issue_number}"
+        cached_data = cache.get(cache_key)
+
+        if cached_data:
+            self.github_issue_state = cached_data.get("state")
+            self.github_comments_count = cached_data.get("comments", 0)
+            self.save(update_fields=["github_issue_state", "github_comments_count"])
+            return
+
+        api_url = f"https://api.github.com/repos/OWASP-BLT/BLT/issues/{issue_number}"
+
+        headers = {}
+        if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            if response.status_code == 200:
+                issue_data = response.json()
+
+                cache_data = {"state": issue_data.get("state"), "comments": issue_data.get("comments", 0)}
+                cache.set(cache_key, cache_data, 3600)
+
+                self.github_issue_state = issue_data.get("state")
+                self.github_comments_count = issue_data.get("comments", 0)
+                self.save(update_fields=["github_issue_state", "github_comments_count"])
+
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error fetching GitHub metadata for issue {self.id}: {str(e)}")
 
     def __unicode__(self):
         return self.description
