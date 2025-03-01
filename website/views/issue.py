@@ -44,6 +44,7 @@ from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
+from django.views.generic.edit import CreateView
 from openai import OpenAI
 from PIL import Image, ImageDraw, ImageFont
 from rest_framework.authtoken.models import Token
@@ -343,7 +344,6 @@ def newhome(request, template="new_home.html"):
 # The delete_issue function performs delete operation from the database
 @login_required
 @require_POST
-
 def delete_issue(request, id):
     issue = get_object_or_404(Issue, id=id)
 
