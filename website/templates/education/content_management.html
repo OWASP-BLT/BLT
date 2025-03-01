@@ -4,7 +4,7 @@
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto mt-8 px-4">
         <div>
-            <a href="/bltv/instructor_dashboard/"
+            <a href="/education/instructor_dashboard/"
                class="mt-4 inline-flex items-center justify-center mb-10 px-4 py-2 bg-blue-600 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
                 <i class="fas fa-arrow-left mr-2"></i>
                 Back to Dashboard
@@ -543,7 +543,7 @@
 
         async function fetchSectionData(sectionId){
             try{
-                const response = await fetch(`/bltv/instructor_dashboard/api/sections/${sectionId}/`)
+                const response = await fetch(`/education/instructor_dashboard/api/sections/${sectionId}/`)
                 if (!response.ok) throw new Error('Failed to fetch section data');
 
                 const section = await response.json()
@@ -559,7 +559,7 @@
         
         async function fetchLectureData(lectureId) {
             try {
-                const response = await fetch(`/bltv/instructor_dashboard/api/lectures/${lectureId}/`);
+                const response = await fetch(`/education/instructor_dashboard/api/lectures/${lectureId}/`);
                 if (!response.ok) throw new Error('Failed to fetch lecture data');
                 
                 const lecture = await response.json();

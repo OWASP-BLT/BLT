@@ -4,7 +4,7 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="flex w-full h-full">
-        {% include "bltv/includes/course_sidebar.html" %}
+        {% include "education/includes/course_sidebar.html" %}
         <div class="flex-1 p-4 lg:ml-72">
             <div class="w-full mx-auto">
                 <div class="mb-6 bg-white rounded-lg shadow-md p-6">
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function markLectureComplete() {
-        fetch('/bltv/mark-lecture-complete/', {
+        fetch('/education/mark-lecture-complete/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

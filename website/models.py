@@ -1809,6 +1809,7 @@ class Section(models.Model):
 class Lecture(models.Model):
     CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE", "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
 
+    instructor = models.ForeignKey(UserProfile, on_delete=models.Case, null=True, blank=True)
     title = models.CharField(max_length=200)
     section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
     description = models.TextField(null=True, blank=True)

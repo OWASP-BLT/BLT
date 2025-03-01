@@ -12,8 +12,8 @@ from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 
 
-def bltv_home(request):
-    template = "bltv/bltv.html"
+def education_home(request):
+    template = "education/education.html"
     user = request.user
     if user.is_authenticated:
         is_instructor = (
@@ -31,17 +31,18 @@ def bltv_home(request):
 
 @login_required(login_url="/accounts/login")
 def instructor_dashboard(request):
-    template = "bltv/instructor_dashboard.html"
+    template = "education/instructor_dashboard.html"
     tags = Tag.objects.all()
     user_profile = request.user.userprofile
     courses = Course.objects.filter(instructor=user_profile)
-    context = {"tags": tags, "courses": courses}
+    standalone_lectures = Lecture.objects.filter(instructor=user_profile, section__isnull=True)
+    context = {"tags": tags, "courses": courses, "standalone_lectures": standalone_lectures}
     return render(request, template, context)
 
 
 @instructor_required
 def edit_course(request, course_id):
-    template = "bltv/dashboard_edit_course.html"
+    template = "education/dashboard_edit_course.html"
     tags = Tag.objects.all()
     try:
         course = Course.objects.get(id=course_id)
@@ -68,7 +69,7 @@ def enroll(request, course_id):
 
 
 def view_course(request, course_id):
-    template = "bltv/view_course.html"
+    template = "education/view_course.html"
     course = get_object_or_404(Course, id=course_id)
     context = {
         "course": course,
@@ -77,8 +78,32 @@ def view_course(request, course_id):
 
 
 @login_required(login_url="/accounts/login")
+def view_lecture(request, lecture_id):
+    template = "education/view_lecture.html"
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    context = {
+        "lecture": lecture,
+    }
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
+def create_standalone_lecture(request):
+    template = "education/create_standalone_lecture.html"
+    return render(request, template)
+
+
+@login_required(login_url="/accounts/login")
+def edit_standalone_lecture(request, lecture_id):
+    template = "education/edit_standalone_lecture.html"
+    lecture = get_object_or_404(Lecture, id=lecture_id)
+    context = {"lecture": lecture}
+    return render(request, template, context)
+
+
+@login_required(login_url="/accounts/login")
 def study_course(request, course_id):
-    template = "bltv/study_course.html"
+    template = "education/study_course.html"
 
     course = get_object_or_404(Course, id=course_id)
 
@@ -87,7 +112,7 @@ def study_course(request, course_id):
 
     if not enrollment:
         messages.error(request, "You are not enrolled in this course.")
-        return redirect("bltv")
+        return redirect("education")
 
     course_progress = enrollment.calculate_progress()
 
@@ -178,7 +203,7 @@ def course_content_management(request, course_id):
         "lecture_types": lecture_types,
     }
 
-    return render(request, "bltv/content_management.html", context)
+    return render(request, "education/content_management.html", context)
 
 
 # Section CRUD operations
@@ -232,13 +257,17 @@ def delete_section(request, section_id):
 
 
 # Lecture CRUD operations
-@instructor_required
 @require_POST
 def add_lecture(request, section_id):
-    """Add a new lecture to a section"""
-    section = get_object_or_404(Section, id=section_id)
-    course_id = section.course.id
+    """Add a new lecture to a section, else standalone"""
+    print("Section ID:", section_id, type(section_id))
+    if section_id == 0:
+        section = None
+    else:
+        section = get_object_or_404(Section, id=section_id)
+        course_id = section.course.id
 
+    user_profile = request.user.userprofile
     title = request.POST.get("title")
     content_type = request.POST.get("content_type")
     description = request.POST.get("description")
@@ -246,7 +275,13 @@ def add_lecture(request, section_id):
     duration = request.POST.get("duration") or None
 
     lecture = Lecture(
-        title=title, section=section, content_type=content_type, order=order, description=description, duration=duration
+        title=title,
+        instructor=user_profile,
+        section=section,
+        content_type=content_type,
+        order=order,
+        description=description,
+        duration=duration,
     )
 
     if content_type == "VIDEO":
@@ -262,7 +297,10 @@ def add_lecture(request, section_id):
 
     messages.success(request, f"Lecture '{title}' was added successfully!")
 
-    return redirect("course_content_management", course_id=course_id)
+    if section:
+        return redirect("course_content_management", course_id=course_id)
+    else:
+        return redirect("instructor_dashboard")
 
 
 @instructor_required
@@ -270,11 +308,16 @@ def add_lecture(request, section_id):
 def edit_lecture(request, lecture_id):
     """Edit an existing lecture"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
-    course_id = lecture.section.course.id
+
+    is_standalone = True
+    if lecture.section:
+        is_standalone = False
+        course_id = lecture.section.course.id
 
     lecture.title = request.POST.get("title")
     lecture.content_type = request.POST.get("content_type")
     lecture.description = request.POST.get("description")
+    lecture.content = request.POST.get("content", "")
     lecture.duration = request.POST.get("duration") or None
 
     if lecture.content_type == "VIDEO":
@@ -282,15 +325,12 @@ def edit_lecture(request, lecture_id):
         lecture.live_url = None
         lecture.scheduled_time = None
         lecture.recording_url = None
-        lecture.content = ""
     elif lecture.content_type == "LIVE":
         lecture.live_url = request.POST.get("live_url")
         lecture.scheduled_time = request.POST.get("scheduled_time") or None
         lecture.recording_url = request.POST.get("recording_url")
         lecture.video_url = None
-        lecture.content = ""
     elif lecture.content_type == "DOCUMENT":
-        lecture.content = request.POST.get("content")
         lecture.video_url = None
         lecture.live_url = None
         lecture.scheduled_time = None
@@ -299,7 +339,10 @@ def edit_lecture(request, lecture_id):
     lecture.save()
     messages.success(request, f"Lecture '{lecture.title}' was edited successfully!")
 
-    return redirect("course_content_management", course_id=course_id)
+    if is_standalone:
+        return redirect("view_lecture", lecture_id)
+    else:
+        return redirect("course_content_management", course_id=course_id)
 
 
 @instructor_required
@@ -421,7 +464,7 @@ def get_course_content(request, course_id):
 
         return render(
             request,
-            "bltv/includes/view_course_content.html",
+            "education/includes/view_course_content.html",
             {
                 "course": course,
                 "sections": sections,
@@ -432,7 +475,6 @@ def get_course_content(request, course_id):
         )
 
 
-@instructor_required
 @require_POST
 def create_or_update_course(request):
     try:

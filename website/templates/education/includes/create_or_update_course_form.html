@@ -125,7 +125,7 @@ new TomSelect("#tags", {
 
             const createOrUpdateCourse = async (formData) => {
                 try {
-                    const response = await fetch('/bltv/instructor_dashboard/create-or-update-course/', {
+                    const response = await fetch('/education/instructor_dashboard/create-or-update-course/', {
                         method: 'POST',
                         headers: {
                             'X-CSRFToken': '{{ csrf_token }}'

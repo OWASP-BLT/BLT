@@ -10,12 +10,17 @@ def instructor_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         course = None
+        lecture = None
 
         if "course_id" in kwargs:
             course = get_object_or_404(Course, id=kwargs["course_id"])
         elif "lecture_id" in kwargs:
             lecture = get_object_or_404(Lecture, id=kwargs["lecture_id"])
-            course = lecture.section.course
+            if lecture.section:
+                course = lecture.section.course
+            else:
+                if request.user.userprofile == lecture.instructor:
+                    return view_func(request, *args, **kwargs)
         elif "section_id" in kwargs:
             section = get_object_or_404(Section, id=kwargs["section_id"])
             course = section.course

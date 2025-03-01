@@ -39,7 +39,7 @@
                         </div>
                         {% if request.user.userprofile == course.instructor %}
                             <a href="{% url 'edit_course' course.id %}"
-                               class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300">
+                               class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300 mb-4">
                                 <i class="fas fa-pencil-alt mr-2"></i>
                                 Edit Course
                             </a>
