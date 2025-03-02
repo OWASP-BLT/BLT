@@ -1,11 +1,13 @@
 import logging
 import os
+
 import requests
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
+
 from website.models import Organization
-from django.core.files.storage import default_storage
 
 # ANSI escape codes for colors
 COLOR_RED = "\033[91m"
