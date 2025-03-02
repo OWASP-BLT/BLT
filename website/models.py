@@ -120,6 +120,7 @@ class OrganisationType(Enum):
 def default_list():
     return []
 
+
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
