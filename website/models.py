@@ -733,7 +733,7 @@ class UserProfile(models.Model):
         Update streak based on consecutive daily check-ins and award points
         """
         # Use current date if no check-in date provided
-        if check_in_date is None:
+        if (check_in_date is None):
             check_in_date = timezone.now().date()
 
         try:
@@ -1831,6 +1831,8 @@ class Lecture(models.Model):
     duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
     order = models.PositiveIntegerField()
+    transcript = models.TextField(null=True, blank=True)
+    quiz = models.JSONField(null=True, blank=True)
 
     @property
     def embed_url(self):
@@ -1893,6 +1895,12 @@ class Lecture(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.content_type})"
+
+    def generate_transcript_and_quiz(self):
+        # Placeholder for AI integration logic
+        self.transcript = "AI-generated transcript"
+        self.quiz = {"questions": ["AI-generated question 1", "AI-generated question 2"]}
+        self.save()
 
 
 class LectureStatus(models.Model):

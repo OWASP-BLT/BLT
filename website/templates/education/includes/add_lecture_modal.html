@@ -50,6 +50,22 @@
                                name="video_url"
                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
+                    <div>
+                        <label for="transcript" class="block text-sm font-medium text-gray-700">AI-generated Transcript</label>
+                        <textarea id="transcript"
+                                  name="transcript"
+                                  rows="4"
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  readonly></textarea>
+                    </div>
+                    <div>
+                        <label for="quiz" class="block text-sm font-medium text-gray-700">AI-generated Quiz</label>
+                        <textarea id="quiz"
+                                  name="quiz"
+                                  rows="4"
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  readonly></textarea>
+                    </div>
                 </div>
                 <div id="liveFields" class="content-fields hidden space-y-4">
                     <div>
@@ -120,5 +136,18 @@
                 toggleContentFields(this.value);
             });
 
-        
+        document.getElementById('videoUrl').addEventListener('change', function() {
+            const videoUrl = this.value;
+            if (videoUrl) {
+                fetch(`/api/generate_transcript_and_quiz/?video_url=${encodeURIComponent(videoUrl)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('transcript').value = data.transcript;
+                        document.getElementById('quiz').value = JSON.stringify(data.quiz, null, 2);
+                    })
+                    .catch(error => {
+                        console.error('Error generating transcript and quiz:', error);
+                    });
+            }
+        });
 </script>

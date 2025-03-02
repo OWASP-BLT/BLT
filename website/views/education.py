@@ -287,6 +287,7 @@ def add_lecture(request, section_id):
     if content_type == "VIDEO":
         lecture.video_url = request.POST.get("video_url")
         lecture.content = request.POST.get("content")
+        lecture.generate_transcript_and_quiz()
     elif content_type == "LIVE":
         lecture.live_url = request.POST.get("live_url")
         lecture.scheduled_time = request.POST.get("scheduled_time") or None
@@ -325,6 +326,7 @@ def edit_lecture(request, lecture_id):
         lecture.live_url = None
         lecture.scheduled_time = None
         lecture.recording_url = None
+        lecture.generate_transcript_and_quiz()
     elif lecture.content_type == "LIVE":
         lecture.live_url = request.POST.get("live_url")
         lecture.scheduled_time = request.POST.get("scheduled_time") or None

@@ -9,6 +9,7 @@ from website.models import (
     HuntPrize,
     Issue,
     IssueScreenshot,
+    Lecture,
     Organization,
     Points,
     Project,
@@ -174,3 +175,9 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             "recorded_at",
             "created",
         ]  # Auto-filled fields
+
+
+class LectureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lecture
+        fields = ["id", "title", "description", "content_type", "video_url", "live_url", "scheduled_time", "recording_url", "content", "duration", "transcript", "quiz"]
