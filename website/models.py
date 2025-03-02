@@ -125,7 +125,7 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
-    twitter = models.CharField(max_length=30, null=True, blank=True)
+    twitter = models.CharField(max_length=255, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -136,6 +136,14 @@ class Organization(models.Model):
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
+    tagline = models.CharField(max_length=255, blank=True, null=True)
+    license = models.CharField(max_length=100, blank=True, null=True)
+    categories = models.JSONField(default=list)
+    contributor_guidance_url = models.URLField(blank=True, null=True)
+    tech_tags = models.JSONField(default=list)
+    topic_tags = models.JSONField(default=list)
+    source_code = models.URLField(blank=True, null=True)
+    ideas_link = models.URLField(blank=True, null=True)
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
