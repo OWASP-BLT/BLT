@@ -131,9 +131,9 @@ class Command(BaseCommand):
                     org.twitter = match.group(1) if match else ""
                 else:
                     setattr(org, social_mapping[name], value)
-            elif "element" in value:
+            elif "element"+".io" in value:
                 org.element_url = self.sanitize_url(value)
-            elif "gitter" in value:
+            elif "gitter"+".im" in value:
                 org.gitter_url = self.sanitize_url(value)
             elif "discord" in value:
                 org.discord_url = self.sanitize_url(value)
