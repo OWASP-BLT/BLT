@@ -6,7 +6,7 @@ from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 
-from website.models import Organization
+from website.models import Organization, Tag
 
 # ANSI escape codes for colors
 COLOR_RED = "\033[91m"
@@ -39,19 +39,24 @@ class Command(BaseCommand):
 
         logger.info(f"{COLOR_GREEN}Finished fetching organizations!{COLOR_RESET}")
 
-    def process_organization(self, data):
-        """Processes and saves an organization to the database."""
+    def process_organization(self,org_data):
+        data = org_data
         slug = slugify(data["slug"])
-        website = data["source_code"]
-
+        
         try:
             org, created = Organization.objects.update_or_create(
                 slug=slug,
                 defaults={
                     "name": data["name"],
                     "description": data.get("description", "")[:500],
-                    "url": website,
-                    "type": "organization",
+                    "url": data.get("website_url"),
+                    "tagline": data.get("tagline", ""),
+                    "license": data.get("license", ""),
+                    "categories": data.get("categories", []),
+                    "contributor_guidance_url": data.get("contributor_guidance_url", ""),
+                    "tech_tags": data.get("tech_tags", []),
+                    "topic_tags": data.get("topic_tags", []),
+                    "source_code": data.get("website_url"),
                     "is_active": True,
                 },
             )
@@ -62,6 +67,9 @@ class Command(BaseCommand):
 
             # Handle Tags (tech_tags + topic_tags)
             self.assign_tags(org, data.get("tech_tags", []) + data.get("topic_tags", []))
+
+            # Handle Contact Links
+            self.assign_contacts(org, data.get("contact_links", []))
 
             org.save()
             status = "Added" if created else "Updated"
@@ -92,3 +100,12 @@ class Command(BaseCommand):
             tag_slug = slugify(tag_name)
             tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": tag_name})
             org.tags.add(tag)
+    def assign_contacts(self, org, contacts):
+
+        for contact in contacts:
+            if contact["name"].lower() == "email":
+                org.email = contact["value"]
+            elif contact["name"].lower() == "chat":
+                org.twitter = contact["value"]  # Adjust this if needed
+        
+        org.save()
