@@ -110,13 +110,20 @@ def profile_edit(request):
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
+            # Save the form
             form.save()
+
+            # Update the User model's email
+            request.user.email = new_email
+            request.user.save()
+
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
         else:
             messages.error(request, "Please correct the errors below.")
     else:
-        form = UserProfileForm(instance=user_profile)
+        # Initialize the form with the user's current email
+        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
 
     return render(request, "profile_edit.html", {"form": form})
 

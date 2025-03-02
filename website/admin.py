@@ -536,17 +536,24 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
         "url",
+        "p2p_amount_usd",
+        "p2p_amount_bch",
+        "sent_by_user",
+        "p2p_payment_created_at",
+        "bch_tx_id",
     )
     list_filter = [
         "type",
         "state",
         "is_merged",
         "user_profile",
+        "sent_by_user",
     ]
     search_fields = [
         "title",
         "url",
         "user_profile__user__username",
+        "bch_tx_id",
     ]
     date_hierarchy = "created_at"
 

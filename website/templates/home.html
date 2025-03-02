@@ -109,7 +109,10 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">Django Core</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Django Core</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
                         <div class="flex flex-col gap-2">
@@ -133,7 +136,10 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-mobile-alt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">Flutter iOS App</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-flutter' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Flutter iOS App</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
                         <div class="flex flex-col gap-2">
@@ -157,7 +163,10 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-puzzle-piece text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">Chrome Extension</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-extension' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Chrome Extension</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
                         <div class="flex flex-col gap-2">
@@ -181,7 +190,10 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-bolt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">GitHub Action</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-action' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">GitHub Action</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
                         <div class="flex flex-col gap-2">

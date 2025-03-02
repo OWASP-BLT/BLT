@@ -39,6 +39,39 @@
                 <p class="text-2xl font-bold text-blue-600">{{ issue_count }}</p>
             </div>
         </div>
+        <!-- Add GitHub Issue Form -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Add GitHub Issue with Bounty</h2>
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="p-4 mb-2 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="{{ form.github_url.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-1">{{ form.github_url.label }}</label>
+                    {{ form.github_url }}
+                    {% if form.github_url.help_text %}<p class="mt-1 text-sm text-gray-500">{{ form.github_url.help_text }}</p>{% endif %}
+                    {% if form.github_url.errors %}
+                        <div class="mt-1 text-sm text-red-600">
+                            {% for error in form.github_url.errors %}<p>{{ error }}</p>{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <button type="submit"
+                            class="bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors">
+                        Add GitHub Issue
+                    </button>
+                </div>
+            </form>
+        </div>
         <!-- Filters -->
         <div class="bg-white rounded-lg shadow p-4 mb-8">
             <form method="get" class="flex flex-wrap gap-4">
