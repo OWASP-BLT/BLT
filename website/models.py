@@ -139,10 +139,10 @@ class Organization(models.Model):
     team_points = models.IntegerField(default=0)
     tagline = models.CharField(max_length=255, blank=True, null=True)
     license = models.CharField(max_length=100, blank=True, null=True)
-    categories = ArrayField(models.CharField(max_length=100), blank=True, default=list)
+    categories = ArrayField(models.CharField(max_length=100), blank=True, default=dict)
     contributor_guidance_url = models.URLField(blank=True, null=True)
-    tech_tags = ArrayField(models.CharField(max_length=100), blank=True, default=list)
-    topic_tags = ArrayField(models.CharField(max_length=100), blank=True, default=list)
+    tech_tags = ArrayField(models.CharField(max_length=100), blank=True, default=dict)
+    topic_tags = ArrayField(models.CharField(max_length=100), blank=True, default=dict)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
     type = models.CharField(
