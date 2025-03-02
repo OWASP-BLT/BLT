@@ -100,6 +100,9 @@ class Command(BaseCommand):
             tag_slug = slugify(tag_name)
             tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": tag_name})
             org.tags.add(tag)
+        # also add the tag gsoc25 to all orgs that run this
+        tag, _ = Tag.objects.get_or_create(slug="gsoc25", defaults={"name": "GSoC 2025"})
+        org.tags.add(tag)
 
     def assign_contacts(self, org, contacts):
         for contact in contacts:

@@ -19,6 +19,7 @@ from website.models import (
     Contributor,
     ContributorStats,
     Course,
+    DailyStats,
     Domain,
     Enrollment,
     ForumCategory,
@@ -598,6 +599,14 @@ class RoomAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
 
 
+class DailyStatsAdmin(admin.ModelAdmin):
+    list_display = ("name", "value", "created", "modified")
+    search_fields = ["name", "value"]
+    list_filter = ["created", "modified"]
+    readonly_fields = ["created", "modified"]
+    ordering = ["-modified"]
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -649,3 +658,4 @@ admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
+admin.site.register(DailyStats, DailyStatsAdmin)

@@ -66,6 +66,24 @@
                             </button>
                         </div>
                     </div>
+                    <!-- GitHub Username Input -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fab fa-github mr-2"></i>GitHub Username
+                        </label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="githubUsername"
+                                   name="user"
+                                   class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
+                                   placeholder="Enter GitHub username"
+                                   value="{{ request.user.username }}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fab fa-github text-gray-400"></i>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">Enter your GitHub username if different from your BLT username</p>
+                    </div>
                     <!-- Current Bid Display -->
                     <div id="BidDisplay" class="text-lg font-medium text-gray-900"></div>
                     <!-- Quick Bid Buttons -->

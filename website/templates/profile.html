@@ -311,6 +311,20 @@
     .bg-gray-100 {
         background-color: #f7fafc;
     }
+    
+    /* Styles for cryptocurrency addresses */
+    .copy_text {
+        word-break: break-all;
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+    
+    /* Ensure the crypto address container has enough width */
+    .border-[1px].rounded-xl.p-1.border-[#DFDCE4].flex {
+        min-width: 300px;
+        max-width: 100%;
+        overflow: hidden;
+    }
     </style>
 {% endblock style %}
 {% block content %}

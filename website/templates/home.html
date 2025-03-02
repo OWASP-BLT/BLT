@@ -803,53 +803,26 @@
             'action': 'OWASP-BLT/BLT-Action'
         };
 
-        // Cache star counts in localStorage with expiration
-        function getStoredStarCount(repo) {
-            const stored = localStorage.getItem(`star_count_${repo}`);
-            if (stored) {
-                try {
-                    const { count, timestamp } = JSON.parse(stored);
-                    // Cache for 1 hour
-                    if (Date.now() - timestamp < 3600000) {
-                        return count;
-                    }
-                } catch (e) {
-                    return null;
-                }
+        // Display star counts from the database
+        {% for repo in repo_stars %}
+            const countElement = document.getElementById(`{{ repo.key }}-star-count`);
+            if (countElement) {
+                countElement.textContent = {{ repo.stars }};
             }
+        {% endfor %}
 
-        function storeStarCount(repo, count) {
-            localStorage.setItem(`star_count_${repo}`, JSON.stringify({
-                count: count,
-                timestamp: Date.now()
-            }));
-        }
-
+        // Fallback to GitHub API if no data in database
         Object.entries(repos).forEach(([key, repo]) => {
             const countElement = document.getElementById(`${key}-star-count`);
-            if (!countElement) return;
+            if (!countElement || countElement.textContent.trim() !== '') return;
 
-            // First try to get from cache
-            const cachedCount = getStoredStarCount(repo);
-            if (cachedCount !== null) {
-                countElement.textContent = cachedCount;
-            }
-
-            // Then fetch fresh data
+            // If we don't have data from the database, fetch from GitHub API
             fetch(`https://api.github.com/repos/${repo}`, {
                 headers: {
                     'Accept': 'application/vnd.github.v3+json'
                 }
             })
             .then(response => {
-                if (response.status === 403) {
-                    // Rate limited - use cached value or keep showing loading
-                    const cached = getStoredStarCount(repo);
-                    if (cached !== null) {
-                        countElement.textContent = cached;
-                    }
-                    throw new Error('Rate limited');
-                }
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -858,16 +831,11 @@
             .then(data => {
                 if (data && typeof data.stargazers_count === 'number') {
                     countElement.textContent = data.stargazers_count;
-                    storeStarCount(repo, data.stargazers_count);
                 }
             })
             .catch(error => {
                 console.error(`Error fetching star count for ${repo}:`, error);
-                // Only show 0 if we don't have a cached value
-                const cached = getStoredStarCount(repo);
-                if (cached === null) {
-                    countElement.textContent = '...';
-                }
+                countElement.textContent = '...';
             });
         });
     </script>

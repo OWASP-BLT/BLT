@@ -18,6 +18,7 @@ class Command(BaseCommand):
             call_command("check_keywords")
             call_command("check_owasp_projects")
             call_command("check_trademarks")
+            call_command("update_repo_stars")
         except Exception as e:
             logger.error(f"Error in daily tasks: {str(e)}")
             raise

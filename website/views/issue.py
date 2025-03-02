@@ -505,20 +505,33 @@ def SaveBiddingData(request):
         if not request.user.is_authenticated:
             messages.error(request, "Please login to bid.")
             return redirect("login")
-        user = request.user.username
+
+        username = request.POST.get("user", request.user.username)
         url = request.POST.get("issue_url")
         amount = request.POST.get("bid_amount")
         current_time = datetime.now(timezone.utc)
-        bid = Bid(
-            user=user,
-            issue_url=url,
-            amount=amount,
-            created=current_time,
-            modified=current_time,
-        )
+
+        # Check if the username exists in our database
+        user = User.objects.filter(username=username).first()
+
+        bid = Bid()
+        if user:
+            # If user exists, use the User instance
+            bid.user = user
+        else:
+            # If user doesn't exist, store as github_username
+            bid.github_username = username
+            bid.user = request.user  # Set the authenticated user as a fallback
+
+        bid.issue_url = url
+        bid.amount_bch = amount
+        bid.created = current_time
+        bid.modified = current_time
         bid.save()
+
         bid_link = f"https://blt.owasp.org/generate_bid_image/{amount}/"
         return JsonResponse({"Paste this in GitHub Issue Comments:": bid_link})
+
     bids = Bid.objects.all()
     return render(request, "bidding.html", {"bids": bids})
 
@@ -546,24 +559,35 @@ def fetch_current_bid(request):
 @login_required
 def submit_pr(request):
     if request.method == "POST":
-        user = request.user.username
+        username = request.POST.get("user", request.user.username)
         pr_link = request.POST.get("pr_link")
         amount = request.POST.get("bid_amount")
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
         current_time = datetime.now(timezone.utc)
         bch_address = request.POST.get("bch_address")
-        bid = Bid(
-            user=user,
-            pr_link=pr_link,
-            amount=amount,
-            issue_url=issue_url,
-            status=status,
-            created=current_time,
-            modified=current_time,
-            bch_address=bch_address,
-        )
+
+        # Check if the username exists in our database
+        user = User.objects.filter(username=username).first()
+
+        bid = Bid()
+        if user:
+            # If user exists, use the User instance
+            bid.user = user
+        else:
+            # If user doesn't exist, store as github_username
+            bid.github_username = username
+            bid.user = request.user  # Set the authenticated user as a fallback
+
+        bid.pr_link = pr_link
+        bid.amount_bch = amount
+        bid.issue_url = issue_url
+        bid.status = status
+        bid.created = current_time
+        bid.modified = current_time
+        bid.bch_address = bch_address
         bid.save()
+
         return render(request, "submit_pr.html")
 
     return render(request, "submit_pr.html")

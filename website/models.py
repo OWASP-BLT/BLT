@@ -914,7 +914,8 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    github_username = models.CharField(max_length=100, blank=True, null=True)
     # link this to our issue model
     issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
@@ -1969,3 +1970,18 @@ class BaconSubmission(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.status}"
+
+
+class DailyStats(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    value = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Daily Statistic"
+        verbose_name_plural = "Daily Statistics"
+        ordering = ["-modified"]
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
