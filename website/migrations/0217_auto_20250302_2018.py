@@ -3,7 +3,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0215_bid_github_username_alter_bid_user"),
+        ("website", "0216_githubissue_bch_tx_id_githubissue_p2p_amount_bch_and_more"),
     ]
 
     operations = [

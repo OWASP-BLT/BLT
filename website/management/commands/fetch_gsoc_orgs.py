@@ -118,6 +118,10 @@ class Command(BaseCommand):
             "facebook": "facebook",
         }
 
+        def sanitize_url(self, url):
+            """Sanitizes URLs to ensure they are safe."""
+            return re.sub(r"[^a-zA-Z0-9:/._-]", "", url)
+
         for link in social_links:
             name = link.get("name", "").lower()
             value = link.get("value", "")
@@ -128,9 +132,9 @@ class Command(BaseCommand):
                 else:
                     setattr(org, social_mapping[name], value)
             elif "element.io" in value:
-                org.element_url = value
+                org.element_url = self.sanitize_url(value)
             elif "gitter.im" in value:
-                org.gitter_url = value
+                org.gitter_url = self.sanitize_url(value)
             elif "discord" in value:
-                org.discord_url = value
-        org.save()
+                org.discord_url = self.sanitize_url(value)
+            org.save()
