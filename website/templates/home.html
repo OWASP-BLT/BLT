@@ -116,8 +116,12 @@
                             <a href="https://github.com/OWASP-BLT/BLT"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="blt-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'blt' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="{% url 'report' %}"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -136,8 +140,12 @@
                             <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="flutter-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'flutter' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="#"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -156,8 +164,12 @@
                             <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="extension-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'extension' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="#"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -176,8 +188,12 @@
                             <a href="https://github.com/OWASP-BLT/BLT-Action"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="action-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'action' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="#"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -232,7 +248,8 @@
                                                      width="32"
                                                      height="32">
                                             {% endif %}
-                                            <span class="font-medium">{{ profile.user.username }}</span>
+                                            <a href="{% url 'profile' profile.user.username %}"
+                                               class="font-medium hover:text-[#e74c3c]">{{ profile.user.username }}</a>
                                         </div>
                                         <span class="text-green-600 font-medium">${{ profile.winnings|floatformat:2 }}</span>
                                     </div>
@@ -794,49 +811,4 @@
     </div>
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
-    <!-- Add GitHub Star Count Script -->
-    <script>
-        const repos = {
-            'blt': 'OWASP-BLT/BLT',
-            'flutter': 'OWASP-BLT/BLT-Flutter',
-            'extension': 'OWASP-BLT/BLT-Extension',
-            'action': 'OWASP-BLT/BLT-Action'
-        };
-
-        // Display star counts from the database
-        {% for repo in repo_stars %}
-            const countElement = document.getElementById(`{{ repo.key }}-star-count`);
-            if (countElement) {
-                countElement.textContent = {{ repo.stars }};
-            }
-        {% endfor %}
-
-        // Fallback to GitHub API if no data in database
-        Object.entries(repos).forEach(([key, repo]) => {
-            const countElement = document.getElementById(`${key}-star-count`);
-            if (!countElement || countElement.textContent.trim() !== '') return;
-
-            // If we don't have data from the database, fetch from GitHub API
-            fetch(`https://api.github.com/repos/${repo}`, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && typeof data.stargazers_count === 'number') {
-                    countElement.textContent = data.stargazers_count;
-                }
-            })
-            .catch(error => {
-                console.error(`Error fetching star count for ${repo}:`, error);
-                countElement.textContent = '...';
-            });
-        });
-    </script>
 {% endblock content %}
