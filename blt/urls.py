@@ -81,6 +81,7 @@ from website.views.core import (
     GoogleConnect,
     GoogleLogin,
     MapView,
+    RoadmapView,
     StatsDetailView,
     UploadCreate,
     add_forum_comment,
@@ -1021,6 +1022,7 @@ urlpatterns = [
     path("initiate-transaction/", initiate_transaction, name="initiate_transaction"),
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
+    path("roadmap/", RoadmapView.as_view(), name="roadmap"),
 ]
 
 if settings.DEBUG:

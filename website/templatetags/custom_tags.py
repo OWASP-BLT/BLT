@@ -1,3 +1,5 @@
+import random
+
 from django import template
 from django.conf import settings
 from django.templatetags.static import static
@@ -36,6 +38,27 @@ def divide(value, arg):
         return int(value) / int(arg)
     except (ValueError, ZeroDivisionError):
         return None
+
+
+@register.filter
+def random_number(value):
+    """
+    Returns a random number between 0 and 20 for animation delays.
+    Usage: {{ value|random_number }}
+    """
+    return random.uniform(0, 20)
+
+
+@register.filter
+def multiply(value, arg):
+    """
+    Multiplies the value by the argument.
+    Usage: {{ value|multiply:2 }}
+    """
+    try:
+        return float(value) * float(arg)
+    except (ValueError, TypeError):
+        return 0
 
 
 @register.simple_tag(takes_context=True)

@@ -447,6 +447,15 @@
                             <span>GSOC</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/roadmap/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'roadmap' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/roadmap/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-road fa-lg"></i>
+                            </div>
+                            <span>Roadmap</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if '/submit-roadmap-pr/' in request.path %}bg-gray-200{% endif %}">
                         <a href="{% url 'submit-roadmap-pr' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/submit-roadmap-pr/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
@@ -520,6 +529,15 @@
                             <i class="fas fa-sitemap fa-lg"></i>
                         </div>
                         <span>Sitemap</span>
+                    </a>
+                </li>
+                <li class="mb-2 {% if request.path == '/roadmap/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'roadmap' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/roadmap' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
+                            <i class="fas fa-road fa-lg"></i>
+                        </div>
+                        <span>Roadmap</span>
                     </a>
                 </li>
                 <li class="mb-2 {% if request.path == '/status/' %}bg-gray-200{% endif %}">
