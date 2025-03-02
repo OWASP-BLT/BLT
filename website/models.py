@@ -733,7 +733,7 @@ class UserProfile(models.Model):
         Update streak based on consecutive daily check-ins and award points
         """
         # Use current date if no check-in date provided
-        if (check_in_date is None):
+        if check_in_date is None:
             check_in_date = timezone.now().date()
 
         try:
