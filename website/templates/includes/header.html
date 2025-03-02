@@ -31,26 +31,37 @@
     .chatbot {
         display: none;
         position: fixed;
-        bottom: 7%;
+        bottom: 3%;
         right: 1%;
         max-width: 400px;
         width: 100%;
         background-color: white;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 450px;
-        /* Fixed height */
+        height: 520px;
+        z-index: 9999;
+        overflow: hidden;
+        @media (max-width: 768px) {
+            right: 50%;
+            transform: translateX(50%);
+            max-width: 95%;
+        }
+        
     }
 
     .chat-icon {
         position: fixed;
-        bottom: 4%;
-        right: 4%;
+        bottom: 3%;
+        right: 2%;
         background-color: rgb(209, 16, 16);
-        /* Red color */
+        transition: opacity 0.2s;
+        &:hover {
+            opacity: 0.8;
+        }
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
+        padding: 10px;
+        width: 55px;
+        height: 55px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -68,29 +79,33 @@
     }
 
     .chat-log {
-        max-height: 320px;
+        max-height: 295px;
         /* Adjusted height */
         overflow-y: auto;
-        height: 320px;
+        height: 295px;
         /* Fixed height */
     }
 
     .loading {
         display: none;
-        position: fixed;
+        {% comment %} position: fixed;
         bottom: 100px;
-        right: 10.5%;
+right: 10.5%;{% endcomment %}
         justify-content: center;
         align-items: center;
-        padding: 10px;
+        font-size: 2xl;
+        padding: 10px; 
         background-color: #ffffffe6;
         /* Semi-transparent background */
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+       border-radius: 8px;
     }
 
     .chat-Zindex {
         z-index: 9999;
+    }
+
+    #quick-commands {
+        overflow-x: auto; /* Ensure buttons do not overflow */
     }
 
     #mobile-search {
@@ -105,6 +120,7 @@
     #mobile-search.active {
         display: block;
     }
+    
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -162,26 +178,26 @@
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white border-[#F7F7F7] border-b-2 px-4">
+<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-0 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
-            <div class="flex items-center justify-start rtl:justify-end">
+            <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
                 <!-- Ham Menu section -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
                         data-drawer-toggle="logo-sidebar"
                         aria-controls="logo-sidebar"
                         type="button"
-                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-50 text-red-500 border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500">
-                    <i class="fa fa-bars text-xl"></i>
+                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500 ">
+                    <i class="fa fa-bars md:text-xl text-lg "></i>
                 </button>
                 <!-- Logo -->
-                <a href="{% url 'home' %}" class="flex ms-4 md:me-24">
+                <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
                     <img src="{% static 'img/owasp-blt-logo.svg' %}"
-                         class="h-8 sm:h-10 md:h-12 lg:h-14 w-auto"
+                         class="h-9 sm:h-10 md:h-10 lg:h-10 w-auto"
                          alt="OWASP BLT Logo"
-                         width="56"
-                         height="56">
+                         width="50"
+                         height="50" />
                 </a>
             </div>
             <!-- Search Bar -->
@@ -194,8 +210,8 @@
                         <input type="text"
                                name="query"
                                id="query-input"
-                               placeholder="Search..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 bg-transparent outline-none">
+                               placeholder="Search here..."
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none">
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
                                 <div class="relative border-l-2 border-red-500 flex">
@@ -272,10 +288,10 @@
             </div>
             <!-- Mobile Search Button -->
             <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
-                <i class="fa fa-search text-xl"></i>
+                <i class="fa fa-search text-3xl"></i>
             </button>
             {% if request.user.is_authenticated %}
-                <div class="h-[80px] flex justify-center items-center">
+                <div class=" flex justify-center items-center">
                     <button id="dropdownButton"
                             class="relative flex items-center sm:gap-3 mr-[30px]"
                             type="button">
@@ -352,19 +368,19 @@
                 </div>
             {% else %}
                 <!-- Sign up and Log in Buttons -->
-                <div class="flex items-center h-[80px]">
-                    <div class="hidden lg:!flex h-[80px] justify-center items-center gap-4">
+                <div class="flex items-center ">
+                    <div class="hidden lg:!flex  justify-center items-center gap-4">
                         <a href="{% url 'account_signup' %}"
-                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
                         {% trans "Signup" %}</a>
                         <a href="{% url 'account_login' %}"
                            data-toggle="modal"
-                           class="inline-flex items-center justify-center p-3 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-50 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
                         {% trans "Login" %}</a>
                     </div>
                     <!-- Log in icon -->
                     <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
-                        <i class="fa fa-user !text-4xl text-red-500"></i>
+                        <i class="fa fa-user text-4xl text-red-500"></i>
                     </a>
                 </div>
             {% endif %}
@@ -372,19 +388,19 @@
     </div>
     <!-- Mobile Search Bar - Moved inside nav -->
     <div id="mobile-search"
-         class="hidden sm:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
+         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
         <form action="{% url 'search' %}" method="get" class="flex items-center">
             <div class="relative flex-1">
-                <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
+                <i class="fa fa-search absolute text-xl left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
                 <input type="text"
                        name="query"
-                       placeholder="Search..."
-                       class="w-full pl-10 pr-4 py-3 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400">
+                       placeholder="Search here..."
+                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base">
                 <input type="hidden" name="type" id="mobile-filter-type" value="all">
             </div>
             <button type="submit"
-                    class="ml-2 p-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                <i class="fa fa-search"></i>
+                    class="ml-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <i class="fa fa-search text-xl"></i>
             </button>
         </form>
     </div>
@@ -393,35 +409,50 @@
     <div id="chatbot" class="chatbot">
         <div class="chat-header flex justify-between items-center">
             <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
-            <button id="closeChatbot" class="text-white text-2xl">×</button>
+            <button id="closeChatbot" class="text-white text-2xl">x</button>
         </div>
         <div class="p-4">
             <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
-                <p class="text-base">We reply immediately</p>
+                <p class="text-base">We respond instantly!</p>
             </div>
-            <div id="chat-log" class="chat-log bg-gray-50 p-3 rounded-lg"></div>
-            <div class="flex" id="chat-message-input-container">
+            <div id="chat-log" class="relative chat-log bg-gray-100 p-3 rounded-lg">
+                <div id="loading" class="loading absolute bottom-1 left-1">
+                    <svg class="animate-spin h-5 w-5 text-red-600"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <span class="ml-2 text-gray-600">Loading...</span>
+                </div>
+            </div>
+            <!-- Quick Command Buttons -->
+            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/help">/help</button>
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/stats">/stats</button>
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/bid">/bid</button>
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/bacon">/bacon</button>
+            </div>
+            <div class="flex flex-row gap-4 items-center mt-1 w-full"
+                 id="chat-message-input-container">
                 <input id="chat-message-input"
                        type="text"
-                       class="flex-grow p-2 border border-gray-300 rounded-l-lg"
+                       class="w-full p-2 border-2 border-gray-300 placeholder:text-base rounded-lg"
                        placeholder="Enter your message...">
-                <button id="chat-message-submit"
-                        class="bg-red-600 text-white p-2 rounded-md ml-2">Send</button>
-                <button id="chat-message-clear"
-                        class="bg-gray-300 text-black p-2 rounded-md ml-2">Clear</button>
+                <div class="flex flex-row gap-2 items-center shrink-0">
+                    <button id="chat-message-submit"
+                            class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg">Send</button>
+                    <button id="chat-message-clear"
+                            class="bg-gray-300 hover:bg-gray-200 text-black p-2 rounded-lg">Clear</button>
+                </div>
             </div>
         </div>
-    </div>
-    <div id="loading" class="loading">
-        <svg class="animate-spin h-5 w-5 text-red-600"
-             xmlns="http://www.w3.org/2000/svg"
-             fill="none"
-             viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-            </path>
-        </svg>
-        <span class="ml-2 text-gray-600">Loading...</span>
     </div>
     <div id="chatIcon" class="chat-icon">
         <svg class="w-10 h-10 text-white"
@@ -519,6 +550,7 @@
         });
     });
 </script>
+<!--Script for ChatBot -->
 <script>
     document.getElementById('chatIcon').addEventListener('click', function () {
         document.getElementById('chatbot').style.display = 'block';
@@ -537,11 +569,12 @@
         const chatClear = document.querySelector('#chat-message-clear');
         const chatClose = document.querySelector('#closeChatbot');
         const loading = document.querySelector('#loading');
-
+        const quickCommands = document.querySelectorAll('.quick-command');
+    
         function escapeHtml(text) {
             return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
         }
-
+    
         function handleSlashCommand(command, args) {
             let response = '';
             switch (command) {
@@ -550,46 +583,45 @@
                         '/help - Show this message<br>' +
                         '/report &lt;description&gt; - Report a bug<br>' +
                         '/gsoc - Get GSoC info<br>' +
-                        '/stats - View platform stats<br>'
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                        '/stats - View platform stats<br>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     return true;
                 case '/report':
                     if (!args) {
                         response = 'Please provide a description. Usage: /report &lt;description&gt;';
-                        chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                         chatLog.scrollTop = chatLog.scrollHeight;
                         return true;
                     }
-
                     return false;
                 case '/gsoc':
                     response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
                         'Explore OWASP’s GSoC participation:<br>' +
                         '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
                         'Get involved with open-source at OWASP!';
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     return true;
                 case '/stats':
                     response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + response + '</div>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     return true;
                 default:
                     return false;
             }
         }
-
+    
         chatSubmit.onclick = function () {
             const message = chatInput.value.trim();
             chatInput.value = '';
             if (message === "") return;
-
+    
             const escapedMessage = escapeHtml(message);
-            chatLog.innerHTML += '<div class="bg-red-100 text-red-800 p-2 rounded-lg mb-2">You: ' + escapedMessage + '</div>';
+            chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
-
+    
             // Check for slash command
             if (message.startsWith('/')) {
                 const [command, ...argsArr] = message.split(' ');
@@ -599,7 +631,7 @@
                     return;
                 }
             }
-
+    
             fetch('/api/chatbot/conversation/', {
                 method: 'POST',
                 headers: {
@@ -618,7 +650,7 @@
                 })
                 .then(data => {
                     const escapedAnswer = escapeHtml(data.answer);
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + escapedAnswer + '</div>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     loading.style.display = 'none';
                 })
@@ -627,12 +659,12 @@
                     if (error.message === 'Rate limit exceeded') {
                         errorMessage = 'The request limit has been reached. Please try again later.';
                     }
-                    chatLog.innerHTML += '<div class="bg-gray-100 text-gray-800 p-2 rounded-lg mb-2">Bot: ' + errorMessage + '</div>';
+                    chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     loading.style.display = 'none';
                 });
         };
-
+    
         function clearChat() {
             loading.style.display = 'flex';
             fetch('/api/chatbot/conversation/', {
@@ -652,14 +684,23 @@
                     loading.style.display = 'none';
                 });
         }
-
+    
         chatClear.onclick = clearChat;
         chatClose.onclick = clearChat;
-
+    
         chatInput.addEventListener('keyup', function (event) {
             if (event.keyCode === 13) {  // Enter key
                 chatSubmit.click();
             }
+        });
+    
+        // Handle quick command button clicks
+        quickCommands.forEach(button => {
+            button.addEventListener('click', function () {
+                const command = this.getAttribute('data-command');
+                chatInput.value = command;
+                chatSubmit.click();
+            });
         });
     });
 </script>

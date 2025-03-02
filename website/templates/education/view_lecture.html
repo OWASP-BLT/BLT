@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto mt-10 bg-gray-2 rounded-sm shadow-md p-7">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center space-x-8 max-w-4xl mx-auto p-8 bg-white relative">
+                {% if lecture.thumbnail %}
+                    <img src="{{ lecture.thumbnail.url }}"
+                         alt="Lecture Thumbnail"
+                         class="w-44 h-44 rounded-sm shadow-md"
+                         width="176"
+                         height="176">
+                {% else %}
+                    <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 flex items-center justify-center">
+                        <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-600 text-6xl"></i>
+                    </div>
+                {% endif %}
+                <div class="flex flex-col space-y-4 w-full">
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-600"></i>
+                        {{ lecture.title|capfirst }}
+                    </h1>
+                    {% if request.user.userprofile == lecture.instructor %}
+                        <a href="{% url 'edit_standalone_lecture' lecture.id %}"
+                           class="self-start flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300">
+                            <i class="fas fa-edit"></i> Edit Lecture
+                        </a>
+                        <a href="/education/instructor_dashboard/"
+                           class="self-start flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                        </a>
+                    {% endif %}
+                    <p class="text-gray-600 text-sm">{{ lecture.description|truncatewords:50 }}</p>
+                    <div class="flex items-center space-x-4 text-sm text-gray-700 font-medium">
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-user text-gray-500"></i>
+                            <a href="/profile/{{ lecture.instructor.user.username }}">
+                                <span>Instructor: {{ lecture.instructor.user.username }}</span>
+                            </a>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-clock text-gray-500"></i>
+                            <span>Duration: {{ lecture.duration }} minutes</span>
+                        </span>
+                        {% if lecture.scheduled_time %}
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-calendar-alt text-gray-500"></i>
+                                <span>Scheduled: {{ lecture.scheduled_time|date:"F d, Y H:i" }}</span>
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center space-x-4 text-sm font-medium mt-2">
+                        <span class="flex items-center gap-2">
+                            <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-500"></i>
+                            <strong>Type:</strong>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-semibold">{{ lecture.get_content_type_display }}</span>
+                        </span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        {% for tag in lecture.tags.all %}
+                            <span class="bg-gray-200 text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-sm">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-10 rounded-lg bg-white p-6 shadow-md">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Lecture Content</h2>
+            {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <p class="text-gray-800">{{ lecture.content|linebreaks }}</p>
+                </div>
+                <div class="mb-6 w-full">
+                    <iframe src="{{ lecture.embed_url }}"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen
+                            class="w-full h-[400px] sm:h-[450px] md:h-[800px] lg:h-[1000px] rounded-lg shadow-md">
+                    </iframe>
+                </div>
+                <p class="mt-2 text-blue-600 underline">
+                    <a href="{{ lecture.video_url }}" target="_blank">Watch Separately</a>
+                </p>
+            {% elif lecture.content_type == "LIVE" %}
+                <p class="text-blue-600 font-semibold">
+                    Live Session URL: <a href="{{ lecture.live_url }}" target="_blank" class="underline">{{ lecture.live_url }}</a>
+                </p>
+            {% elif lecture.content_type == "DOCUMENT" %}
+                <div class="bg-gray-100 p-4 rounded-lg">
+                    <p class="text-gray-800">{{ lecture.content|linebreaks }}</p>
+                </div>
+            {% elif lecture.content_type == "QUIZ" %}
+                <p class="text-gray-800">Quiz content will be displayed here.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto mt-10 bg-gray-2 rounded-sm shadow-md p-7">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center space-x-6 max-w-3xl mx-auto p-7 m-7">
+                <img src="{{ course.thumbnail.url }}"
+                     alt="Course Thumbnail"
+                     class="w-40 h-40 rounded-lg shadow-lg"
+                     width="160"
+                     height="160">
+                <div>
+                    <h1 class="text-3xl font-bold flex items-center gap-3 text-red-800">
+                        <i class="fas fa-graduation-cap text-black"></i>
+                        {{ course.title|capfirst }}
+                    </h1>
+                    <span class="block text-gray-700 mt-1">by {{ user.username }}</span>
+                    <span class="block text-sm text-gray-500 mt-1">Last updated: {{ course.updated_at|date:"F d, Y" }}</span>
+                    <a href="/education/instructor_dashboard/"
+                       class="mt-4 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white font-semibold text-lg rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="w-full mx-auto">
+            <div class="flex justify-center space-x-4 border-b">
+                <button data-tab="view-course-content"
+                        class="tablinks py-2 px-4 font-semibold transition-colors duration-300 border-b-2 border-transparent text-lg hover:text-blue-600 focus:outline-none active-tab">
+                    Content
+                </button>
+                <button data-tab="details"
+                        class="tablinks py-2 px-4 font-semibold transition-colors duration-300 border-b-2 border-transparent text-lg  hover:text-blue-600 focus:outline-none">
+                    Details
+                </button>
+            </div>
+            <div id="view-course-content" class="tabcontent p-4 min-h-screen">
+                <div id="loader" class="flex items-center justify-center space-x-2 mt-5">
+                    <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce"></span>
+                    <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce delay-200"></span>
+                    <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce delay-400"></span>
+                </div>
+                <div id="content-sections" class="flex"></div>
+            </div>
+            <div id="details"
+                 class="tabcontent p-4 bg-white flex shadow-sm items-center justify-center hidden">
+                <div class="w-full max-w-4xl">{% include "education/includes/create_or_update_course_form.html" %}</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const tabButtons = document.querySelectorAll(".tablinks");
+            const tabContents = document.querySelectorAll(".tabcontent");
+    
+            function openTab(tabName) {
+                tabContents.forEach(content => {
+                    content.classList.add("hidden");
+                });
+    
+                tabButtons.forEach(button => {
+                    button.classList.remove("text-blue-600", "border-blue-600");
+                    button.classList.add("text-gray-600", "border-transparent");
+                });
+    
+                document.getElementById(tabName).classList.remove("hidden");
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add("text-blue-600", "border-blue-600");
+            }
+    
+            tabButtons.forEach(button => {
+                button.addEventListener("click", function () {
+                    openTab(this.dataset.tab);
+                });
+            });
+    
+            openTab("view-course-content");
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const loader = document.getElementById("loader");
+            const contentSections = document.getElementById("content-sections");
+    
+            const startTime = Date.now();
+    
+            fetch("{% url 'get_course_content' course.id %}")
+                .then(response => response.text())
+                .then(html => {
+                    const elapsedTime = Date.now() - startTime;
+                    const delay = Math.max(2000 - elapsedTime, 0);
+    
+                    setTimeout(() => {
+                        contentSections.innerHTML = html;
+                        loader.classList.add("hidden")
+                    }, delay);
+                })
+                .catch(error => {
+                    setTimeout(() => {
+                        contentSections.innerHTML = "<p class='text-red-600'>Failed to load course content.</p>";
+                    }, 2000);
+                });
+        });
+
+
+    </script>
+{% endblock content %}

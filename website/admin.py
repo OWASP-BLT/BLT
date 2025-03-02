@@ -18,7 +18,10 @@ from website.models import (
     Contribution,
     Contributor,
     ContributorStats,
+    Course,
+    DailyStats,
     Domain,
+    Enrollment,
     ForumCategory,
     ForumComment,
     ForumPost,
@@ -31,6 +34,8 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Lecture,
+    LectureStatus,
     Message,
     Monitor,
     Organization,
@@ -41,8 +46,10 @@ from website.models import (
     Post,
     PRAnalysisReport,
     Project,
+    Rating,
     Repo,
     Room,
+    Section,
     SlackBotActivity,
     SlackIntegration,
     Subscription,
@@ -274,10 +281,11 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
+        "user_email",
         "user_avatar",
         "get_title_display",
         "role",
-        "description",
+        "short_description",
         "winnings",
         "issues_hidden",
         "btc_address",
@@ -295,7 +303,24 @@ class UserProfileAdmin(admin.ModelAdmin):
         "github_url",
         "website_url",
         "discounted_hourly_rate",
+        "email_status",
+        "email_last_event",
+        "email_last_event_time",
+        "email_click_count",
+        "email_open_count",
+        "email_spam_report",
+        "email_unsubscribed",
     )
+
+    def user_email(self, obj):
+        return obj.user.email
+
+    user_email.short_description = "Email"
+
+    def short_description(self, obj):
+        return truncatechars(obj.description, 10)
+
+    short_description.short_description = "Description"
 
     def follow_count(self, obj):
         return obj.follows.count()
@@ -574,6 +599,14 @@ class RoomAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
 
 
+class DailyStatsAdmin(admin.ModelAdmin):
+    list_display = ("name", "value", "created", "modified")
+    search_fields = ["name", "value"]
+    list_filter = ["created", "modified"]
+    readonly_fields = ["created", "modified"]
+    ordering = ["-modified"]
+
+
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(Repo, RepoAdmin)
 admin.site.register(Contributor, ContributorAdmin)
@@ -614,8 +647,15 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
+admin.site.register(Lecture)
+admin.site.register(LectureStatus)
+admin.site.register(Course)
+admin.site.register(Section)
+admin.site.register(Enrollment)
+admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
+admin.site.register(DailyStats, DailyStatsAdmin)
