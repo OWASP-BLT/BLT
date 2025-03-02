@@ -116,8 +116,6 @@ class OrganisationType(Enum):
     TEAM = "team"
 
 
-
-
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
@@ -142,7 +140,7 @@ class Organization(models.Model):
     license = models.CharField(max_length=100, blank=True, null=True)
     categories = models.JSONField(default=list)
     contributor_guidance_url = models.URLField(blank=True, null=True)
-    tech_tags = models.JSONField(default=list) 
+    tech_tags = models.JSONField(default=list)
     topic_tags = models.JSONField(default=list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
