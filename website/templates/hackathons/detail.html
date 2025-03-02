@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ hackathon.name }} - Hackathon{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Hackathon Header -->
+        <div class="relative rounded-lg overflow-hidden mb-8">
+            {% if hackathon.banner_image %}
+                <img src="{{ hackathon.banner_image.url }}"
+                     alt="{{ hackathon.name }}"
+                     width="1200"
+                     height="256"
+                     class="w-full h-64 object-cover">
+            {% else %}
+                <div class="w-full h-64 bg-gradient-to-r from-gray-700 to-gray-900"></div>
+            {% endif %}
+            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div class="text-center text-white p-4">
+                    <h1 class="text-4xl font-bold mb-2">{{ hackathon.name }}</h1>
+                    <p class="text-xl">
+                        {% if hackathon.is_ongoing %}
+                            <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm">Ongoing</span>
+                        {% elif hackathon.has_ended %}
+                            <span class="bg-gray-500 text-white px-3 py-1 rounded-full text-sm">Ended</span>
+                        {% else %}
+                            <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">Upcoming</span>
+                        {% endif %}
+                    </p>
+                    <p class="mt-2">{{ hackathon.time_remaining }}</p>
+                </div>
+            </div>
+        </div>
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700">Participants</h3>
+                <p class="text-3xl font-bold text-[#e74c3c]">{{ participant_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700">Pull Requests</h3>
+                <p class="text-3xl font-bold text-[#e74c3c]">{{ pr_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700">Merged PRs</h3>
+                <p class="text-3xl font-bold text-[#e74c3c]">{{ merged_pr_count }}</p>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Hackathon Info -->
+            <div class="lg:col-span-2">
+                <!-- Description -->
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">About this Hackathon</h2>
+                    <div class="prose max-w-none">{{ hackathon.description|linebreaks }}</div>
+                    {% if hackathon.rules %}
+                        <div class="mt-6">
+                            <h3 class="text-xl font-semibold mb-2 text-gray-800">Rules</h3>
+                            <div class="prose max-w-none">{{ hackathon.rules|linebreaks }}</div>
+                        </div>
+                    {% endif %}
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800">Timeline</h3>
+                        <div class="flex flex-col space-y-2">
+                            <div class="flex items-center">
+                                <div class="w-24 font-medium text-gray-600">Start:</div>
+                                <div>{{ hackathon.start_time|date:"F j, Y, g:i a" }}</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-24 font-medium text-gray-600">End:</div>
+                                <div>{{ hackathon.end_time|date:"F j, Y, g:i a" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <h3 class="text-xl font-semibold mb-2 text-gray-800">Repositories</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {% for repo in hackathon.repositories.all %}
+                                <a href="{{ repo.repo_url }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="flex items-center p-3 border rounded-lg hover:bg-gray-50 transition">
+                                    <div class="text-[#e74c3c] mr-3">
+                                        <i class="fab fa-github fa-lg"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium">{{ repo.name }}</div>
+                                        <div class="text-sm text-gray-500">{{ repo.description|truncatechars:60 }}</div>
+                                    </div>
+                                </a>
+                            {% empty %}
+                                <div class="col-span-2 text-gray-500 italic">No repositories have been added to this hackathon yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if can_manage %}
+                        <div class="mt-8 flex flex-wrap gap-4">
+                            <a href="{% url 'hackathon_edit' hackathon.slug %}"
+                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                <i class="fas fa-edit mr-2"></i> Edit Hackathon
+                            </a>
+                            <a href="{% url 'hackathon_add_sponsor' hackathon.slug %}"
+                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                <i class="fas fa-plus mr-2"></i> Add Sponsor
+                            </a>
+                            <a href="{% url 'hackathon_add_prize' hackathon.slug %}"
+                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                <i class="fas fa-trophy mr-2"></i> Add Prize
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Prizes -->
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Prizes</h2>
+                    {% if prizes %}
+                        <div class="space-y-6">
+                            {% for prize in prizes %}
+                                <div class="border-b pb-4 last:border-b-0 last:pb-0">
+                                    <div class="flex items-center mb-2">
+                                        {% if prize.position == 1 %}
+                                            <div class="text-yellow-500 mr-2">
+                                                <i class="fas fa-trophy fa-lg"></i>
+                                            </div>
+                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                        {% elif prize.position == 2 %}
+                                            <div class="text-gray-400 mr-2">
+                                                <i class="fas fa-trophy fa-lg"></i>
+                                            </div>
+                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                        {% elif prize.position == 3 %}
+                                            <div class="text-amber-700 mr-2">
+                                                <i class="fas fa-trophy fa-lg"></i>
+                                            </div>
+                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                        {% else %}
+                                            <div class="text-blue-500 mr-2">
+                                                <i class="fas fa-award fa-lg"></i>
+                                            </div>
+                                            <h3 class="text-xl font-semibold">{{ prize.title }}</h3>
+                                        {% endif %}
+                                    </div>
+                                    <p class="text-gray-600 mb-2">{{ prize.description }}</p>
+                                    {% if prize.value %}<p class="font-medium text-[#e74c3c]">${{ prize.value }}</p>{% endif %}
+                                    {% if prize.sponsor %}
+                                        <div class="mt-2 text-sm text-gray-500">Sponsored by: {{ prize.sponsor.organization.name }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No prizes have been announced yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Right Column - Leaderboard and Sponsors -->
+            <div class="lg:col-span-1">
+                <!-- Leaderboard -->
+                <div class="bg-white rounded-lg shadow p-6 mb-8">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Leaderboard</h2>
+                    {% if leaderboard %}
+                        <div class="space-y-4">
+                            {% for entry in leaderboard %}
+                                <div class="flex items-center p-3 {% if forloop.counter <= 3 %}bg-gray-50{% endif %} rounded-lg">
+                                    <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
+                                        {{ forloop.counter }}
+                                    </div>
+                                    <div class="flex-grow">
+                                        <div class="font-medium">{{ entry.user.username }}</div>
+                                        <div class="text-sm text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No contributions yet. Be the first to contribute!</p>
+                    {% endif %}
+                </div>
+                <!-- Sponsors -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-2xl font-bold mb-4 text-gray-800">Sponsors</h2>
+                    {% for level, sponsors in sponsors_by_level.items %}
+                        {% if sponsors %}
+                            <div class="mb-6 last:mb-0">
+                                <h3 class="text-lg font-semibold mb-3 capitalize">{{ level }} Sponsors</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    {% for sponsor in sponsors %}
+                                        <a href="{{ sponsor.website|default:'#' }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="flex flex-col items-center p-3 border rounded-lg hover:bg-gray-50 transition">
+                                            {% if sponsor.logo %}
+                                                <img src="{{ sponsor.logo.url }}"
+                                                     alt="{{ sponsor.organization.name }}"
+                                                     width="48"
+                                                     height="48"
+                                                     class="h-12 object-contain mb-2">
+                                            {% else %}
+                                                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-2">
+                                                    <span class="text-gray-500 font-bold">{{ sponsor.organization.name|slice:":1" }}</span>
+                                                </div>
+                                            {% endif %}
+                                            <div class="text-center">
+                                                <div class="text-sm font-medium">{{ sponsor.organization.name }}</div>
+                                            </div>
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not sponsors_by_level.platinum and not sponsors_by_level.gold and not sponsors_by_level.silver and not sponsors_by_level.bronze and not sponsors_by_level.partner %}
+                        <p class="text-gray-500 italic">No sponsors yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

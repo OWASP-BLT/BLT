@@ -49,6 +49,15 @@
                             <span>Feed</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if '/hackathons/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'hackathons' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/hackathons/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-trophy fa-lg"></i>
+                            </div>
+                            <span>Hackathons</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/issues/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'issues' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/issues' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
