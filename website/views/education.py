@@ -10,6 +10,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
+from website.utils import client
 
 
 def education_home(request):
@@ -287,7 +288,8 @@ def add_lecture(request, section_id):
     if content_type == "VIDEO":
         lecture.video_url = request.POST.get("video_url")
         lecture.content = request.POST.get("content")
-        lecture.generate_transcript_and_quiz()
+        lecture.generate_quiz()
+        lecture.verify_educational_video()
     elif content_type == "LIVE":
         lecture.live_url = request.POST.get("live_url")
         lecture.scheduled_time = request.POST.get("scheduled_time") or None
@@ -326,7 +328,8 @@ def edit_lecture(request, lecture_id):
         lecture.live_url = None
         lecture.scheduled_time = None
         lecture.recording_url = None
-        lecture.generate_transcript_and_quiz()
+        lecture.generate_quiz()
+        lecture.verify_educational_video()
     elif lecture.content_type == "LIVE":
         lecture.live_url = request.POST.get("live_url")
         lecture.scheduled_time = request.POST.get("scheduled_time") or None
@@ -534,3 +537,17 @@ def create_or_update_course(request):
     except Exception as e:
         print(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
+
+
+def parse_transcript(video_url):
+    try:
+        response = client.transcriptions.create(
+            model="whisper-1",
+            input=video_url,
+            response_format="json",
+        )
+        transcript = response["text"]
+        return transcript
+    except Exception as e:
+        print(f"Error parsing transcript: {e}")
+        return None

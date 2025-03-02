@@ -191,6 +191,5 @@ class LectureSerializer(serializers.ModelSerializer):
             "recording_url",
             "content",
             "duration",
-            "transcript",
             "quiz",
         ]

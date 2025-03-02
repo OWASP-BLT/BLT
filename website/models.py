@@ -1896,12 +1896,15 @@ class Lecture(models.Model):
     def __str__(self):
         return f"{self.title} ({self.content_type})"
 
-    def generate_transcript_and_quiz(self):
+    def generate_quiz(self):
         # Placeholder for AI integration logic
-        self.transcript = "AI-generated transcript"
         self.quiz = {"questions": ["AI-generated question 1", "AI-generated question 2"]}
         self.save()
 
+    def verify_educational_video(self):
+        # Placeholder for AI integration logic to verify if the video is educational
+        return True
+        
 
 class LectureStatus(models.Model):
     STATUS_TYPES = [
