@@ -321,7 +321,6 @@ def get_wallet_balance(request):
         return JsonResponse({"error": "There's some problem fetching wallet details"}, status=500)
 
 
-@login_required
 def bacon_view(request):
     """Combined view for bacon form and requests."""
     tx_status = request.GET.get("tx-status", "")
@@ -337,7 +336,10 @@ def bacon_view(request):
 
     # Check if the logged-in user is a mentor
     mentor_badge = Badge.objects.filter(title="mentor").first()
-    is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+    if request.user.is_authenticated:
+        is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+    else:
+        is_mentor = False
 
     return render(
         request,

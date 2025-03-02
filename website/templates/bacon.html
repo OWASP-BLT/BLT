@@ -18,237 +18,330 @@
     Explore the BACON project, its key features, and how you can contribute to the development and success of the open-source ecosystem through BACON
 {% endblock og_description %}
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <!-- Include the left navigation -->
-        <div class="flex">
-            {% include "includes/sidenav.html" %}
-            <!-- Main Content Section -->
-            <div class="main-content w-full md:pl-6 lg:pl-8">
-                <!-- Overview Section -->
-                <section id="overview" class="mb-12">
-                    <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Overview</h2>
-                    <!-- Centered Image Container -->
-                    <div class="flex justify-center mb-6">
-                        <img src="{% static 'images/bacon.png' %}"
-                             alt="BACON Project Image"
-                             class="rounded-lg shadow-lg max-w-full md:w-1/3 lg:w-1/4 mb-6"
-                             height="auto"
-                             width="50%">
-                    </div>
-                    <p class="text-gray-700 text-lg leading-relaxed">
-                        BACON (Blockchain Assisted Contribution Network) is an innovative project within the OWASP BLT platform that integrates Bitcoin Core technology and the Runes protocol to reward contributors with blockchain-based incentives. By leveraging the power of blockchain, BACON ensures transparency, security, and fairness in the distribution of rewards, ultimately enhancing the quality and security of open-source software.
-                    </p>
-                </section>
-                <!-- Features Section -->
-                <section id="features" class="mb-12 bg-gray-50 p-6 rounded-lg shadow-md">
-                    <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Key Features</h2>
-                    <ul class="list-disc list-inside space-y-3 pl-4">
-                        <li>
-                            <strong>Incentivized Contributions:</strong> Earn BACON tokens for reporting issues and resolving bugs.
-                        </li>
-                        <li>
-                            <strong>Blockchain Transparency:</strong> All transactions are securely logged on the Bitcoin blockchain.
-                        </li>
-                        <li>
-                            <strong>Seamless Integration:</strong> BACON tokens are fully integrated within the BLT ecosystem and can be managed via the BLT platform.
-                        </li>
-                        <li>
-                            <strong>Secure Transactions:</strong> Leverage the Runes protocol to ensure all token transactions are safe and immutable.
-                        </li>
-                    </ul>
-                </section>
-                <!-- Get Involved Section -->
-                <section id="get-involved" class="mb-12">
-                    <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Get Involved</h2>
-                    <p class="text-gray-700 text-lg leading-relaxed mb-6">
-                        We're excited to have the community involved in bringing BACON to life. Whether you're a developer, blockchain expert, or just passionate about open-source, there's a place for you in this project.
-                    </p>
-                    <div class="flex gap-4">
-                        <a href="{% url 'contribution_guidelines' %}"
-                           class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md">
-                            Learn How to Contribute
-                        </a>
-                        <a href="https://github.com/owasp/BLT-BACON"
-                           class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-md shadow-md">
-                            View on GitHub
-                        </a>
-                        <button id="openModalBtn"
-                                class="bg-green-600 text-white font-semibold py-2 px-4 rounded-md shadow-md">
-                            Submit BACON Request
-                        </button>
-                    </div>
-                </section>
-                <!-- Updates Section -->
-                <section id="updates" class="mb-12 bg-gray-50 p-6 rounded-lg shadow-md">
-                    <h2 class="text-3xl font-bold mb-4 text-center md:text-left">Latest Updates</h2>
-                    <p class="text-gray-700 text-lg leading-relaxed mb-6">
-                        Stay tuned for updates as we progress through the development of the BACON project. You can follow our journey and contribute to the discussion on our community channels.
-                    </p>
-                    <a href="https://owasp.org/www-project-bug-logging-tool/"
-                       class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow-md">
-                        Visit OWASP BLT Wiki
-                    </a>
-                </section>
-                <div id="baconModal"
-                     class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center">
-                    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-                        <h3 class="text-2xl font-semibold mb-4">Submit a BACON Request</h3>
-                        <form id="baconForm" class="space-y-4">
-                            <div>
-                                <label for="github_url" class="block text-sm font-medium text-gray-700">GitHub PR URL</label>
-                                <input type="url"
-                                       id="github_url"
-                                       name="github_url"
-                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"
-                                       required>
-                            </div>
-                            <div>
-                                <label for="contribution_type"
-                                       class="block text-sm font-medium text-gray-700">Contribution Type</label>
-                                <select id="contribution_type"
-                                        name="contribution_type"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"
-                                        required>
-                                    <option value="security">Security Related</option>
-                                    <option value="non-security">Non-Security Related</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                                <textarea id="description"
-                                          name="description"
-                                          rows="4"
-                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"
-                                          required></textarea>
-                            </div>
-                            <div>
-                                <button type="submit"
-                                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                    Submit Request
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-                <!-- Requests List Section -->
-                <div class="bg-white rounded-lg shadow-sm p-6 mt-8">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-2xl font-semibold">BACON Requests</h2>
-                        <!-- Filter Form -->
-                        <form method="get" class="flex gap-4">
-                            <select name="tx-status"
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
-                                <option value="">Transaction: All</option>
-                                <option value="pending" {% if tx_status == "pending" %}selected{% endif %}>Pending</option>
-                                <option value="completed"
-                                        {% if tx_status == "completed" %}selected{% endif %}>Confirmed</option>
-                            </select>
-                            <select name="decision-status"
-                                    class="rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
-                                <option value="">Status: All</option>
-                                <option value="accepted"
-                                        {% if decision_status == "accepted" %}selected{% endif %}>Accepted</option>
-                                <option value="declined"
-                                        {% if decision_status == "declined" %}selected{% endif %}>Rejected</option>
-                            </select>
-                            <button type="submit"
-                                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                                Filter
-                            </button>
-                        </form>
-                    </div>
-                    <!-- Requests Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {% for submission in submissions %}
-                            <div class="bg-white shadow-md rounded-lg p-4 relative border-2 {% if submission.status == 'accepted' %} border-green-500 {% elif submission.status == 'declined' %} border-red-500 {% else %} border-gray-300 {% endif %}">
-                                <!-- User Info -->
-                                <div class="flex justify-between">
-                                    <div>
-                                        <h3 class="text-lg font-semibold">{{ submission.user.username }}</h3>
-                                        <a href="{{ submission.github_url }}"
-                                           target="_blank"
-                                           class="text-[#e74c3c] hover:text-[#c0392b] underline">GitHub PR</a>
-                                    </div>
+    <div class="min-h-screen bg-white">
+        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Left Sidebar -->
+                <div class="lg:w-64 flex-shrink-0">{% include "includes/sidenav.html" %}</div>
+                <!-- Main Content -->
+                <div class="flex-1 max-w-[1400px]">
+                    <div class="flex flex-col xl:flex-row gap-8">
+                        <!-- Left Column -->
+                        <div class="xl:w-2/3">
+                            <!-- Overview Section -->
+                            <section class="bg-white rounded-xl shadow-sm p-8 mb-8">
+                                <div class="mb-8 -mx-8 -mt-8">
+                                    <img src="{% static 'images/bacon.png' %}"
+                                         alt="BACON Project Image"
+                                         class="w-full h-auto object-cover rounded-t-xl"
+                                         height="auto"
+                                         width="auto">
                                 </div>
-                                <!-- Contribution Type & Status -->
-                                <p class="mt-2 text-sm text-gray-600">
-                                    Type: <strong>{{ submission.get_contribution_type_display }}</strong>
-                                    <br>
-                                    Status: <span id="status-{{ submission.id }}" class="font-semibold">{{ submission.get_status_display }}</span>
-                                    <br>
-                                    Transaction: {{ submission.get_transaction_status_display }}
-                                    <br>
-                                    Bacon Amount: <span id="bacon-amount-{{ submission.id }}">{{ submission.bacon_amount }}</span>
-                                </p>
-                                <!-- Expandable Description -->
-                                <button onclick="toggleDescription('{{ submission.id }}')"
-                                        class="text-[#e74c3c] hover:text-[#c0392b] mt-2 underline">
-                                    View Description
-                                </button>
-                                <p id="description-{{ submission.id }}"
-                                   class="hidden mt-2 text-gray-700">{{ submission.description }}</p>
-                                <!-- Mentor Only: Inspect Button -->
-                                {% if is_mentor %}
-                                    <button onclick="toggleInspect('{{ submission.id }}')"
-                                            class="mt-4 bg-gray-200 text-black px-4 py-2 rounded-md hover:bg-gray-300">
-                                        Inspect
-                                    </button>
-                                    <div id="inspect-{{ submission.id }}"
-                                         class="hidden mt-2 p-2 border border-gray-300 rounded-md bg-gray-100">
-                                        <p>
-                                            <strong>GitHub Username:</strong> {{ submission.user.username }}
-                                        </p>
-                                        <p>
-                                            <strong>BCH Address:</strong> <span class="bch-address">{{ submission.user.userprofile.bch_address }}</span>
-                                        </p>
-                                        <!-- Editable Bacon Amount Field -->
-                                        <label for="bacon-input-{{ submission.id }}" class="block mt-2">Bacon Amount:</label>
-                                        <input type="number"
-                                               id="bacon-input-{{ submission.id }}"
-                                               value="{{ submission.bacon_amount }}"
-                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
-                                        <!-- Accept / Reject Buttons -->
-                                        <div class="mt-2 flex gap-2">
-                                            <button onclick="updateSubmission('{{ submission.id }}', 'accepted')"
-                                                    class="flex-1 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
-                                                Accept
-                                            </button>
-                                            <button onclick="updateSubmission('{{ submission.id }}', 'declined')"
-                                                    class="flex-1 bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-[#c0392b]">
-                                                Reject
-                                            </button>
+                                <div class="max-w-3xl mx-auto">
+                                    <p class="text-gray-700 text-lg leading-relaxed">
+                                        BACON (Blockchain Assisted Contribution Network) is an innovative project within the OWASP BLT platform that integrates Bitcoin Core technology and the Runes protocol to reward contributors with blockchain-based incentives. By leveraging the power of blockchain, BACON ensures transparency, security, and fairness in the distribution of rewards, ultimately enhancing the quality and security of open-source software.
+                                    </p>
+                                </div>
+                            </section>
+                            <!-- Features Section -->
+                            <section class="bg-white rounded-xl shadow-sm p-8 mb-8">
+                                <div class="max-w-3xl mx-auto">
+                                    <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
+                                        <i class="fas fa-star text-[#e74c3c]"></i>
+                                        Key Features
+                                    </h2>
+                                    <div class="grid md:grid-cols-2 gap-6">
+                                        <div class="p-6 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <i class="fas fa-coins text-[#e74c3c] text-xl"></i>
+                                                <h3 class="font-semibold text-lg">Incentivized Contributions</h3>
+                                            </div>
+                                            <p class="text-gray-600">Earn BACON tokens for reporting issues and resolving bugs.</p>
+                                        </div>
+                                        <div class="p-6 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <i class="fas fa-link text-[#e74c3c] text-xl"></i>
+                                                <h3 class="font-semibold text-lg">Blockchain Transparency</h3>
+                                            </div>
+                                            <p class="text-gray-600">All transactions are securely logged on the Bitcoin blockchain.</p>
+                                        </div>
+                                        <div class="p-6 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <i class="fas fa-puzzle-piece text-[#e74c3c] text-xl"></i>
+                                                <h3 class="font-semibold text-lg">Seamless Integration</h3>
+                                            </div>
+                                            <p class="text-gray-600">BACON tokens are fully integrated within the BLT ecosystem.</p>
+                                        </div>
+                                        <div class="p-6 rounded-lg border-2 border-gray-100 hover:border-[#e74c3c] transition-colors duration-200">
+                                            <div class="flex items-center gap-3 mb-3">
+                                                <i class="fas fa-shield-alt text-[#e74c3c] text-xl"></i>
+                                                <h3 class="font-semibold text-lg">Secure Transactions</h3>
+                                            </div>
+                                            <p class="text-gray-600">Leverage the Runes protocol for safe and immutable transactions.</p>
                                         </div>
                                     </div>
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <div class="col-span-full text-center py-12">
-                                <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                                    <svg class="w-12 h-12 text-gray-400"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
                                 </div>
-                                <p class="text-gray-500 text-lg">No submissions found</p>
-                                <p class="text-gray-400 mt-2">Submit a new BACON request above!</p>
+                            </section>
+                            <!-- Get Involved Section -->
+                            <section class="bg-white rounded-xl shadow-sm p-8">
+                                <div class="max-w-3xl mx-auto">
+                                    <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
+                                        <i class="fas fa-users text-[#e74c3c]"></i>
+                                        Get Involved
+                                    </h2>
+                                    <p class="text-gray-700 text-lg leading-relaxed mb-8">
+                                        We're excited to have the community involved in bringing BACON to life. Whether you're a developer, blockchain expert, or just passionate about open-source, there's a place for you in this project.
+                                    </p>
+                                    <div class="flex flex-wrap gap-4">
+                                        <a href="{% url 'contribution_guidelines' %}"
+                                           class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
+                                            <i class="fas fa-book"></i>
+                                            Learn How to Contribute
+                                        </a>
+                                        <a href="https://github.com/owasp/BLT-BACON"
+                                           class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
+                                            <i class="fab fa-github"></i>
+                                            View on GitHub
+                                        </a>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        <!-- Right Column -->
+                        <div class="xl:w-1/3 space-y-8">
+                            <!-- Submit BACON Request Form -->
+                            <div class="bg-white rounded-xl shadow-sm p-8 border-2 border-[#e74c3c] sticky top-[88px]">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <i class="fas fa-bacon text-2xl text-[#e74c3c]"></i>
+                                    <h3 class="text-2xl font-bold">Submit Request</h3>
+                                </div>
+                                <form id="baconForm" class="space-y-6">
+                                    <div class="space-y-2">
+                                        <label for="github_url" class="block text-sm font-semibold text-gray-700">
+                                            <i class="fab fa-github mr-2"></i>GitHub Pull Request URL
+                                        </label>
+                                        <div class="relative">
+                                            <input type="url"
+                                                   id="github_url"
+                                                   name="github_url"
+                                                   placeholder="https://github.com/owner/repo/pull/123"
+                                                   class="pl-10 block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                                   required>
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-link text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label for="contribution_type"
+                                               class="block text-sm font-semibold text-gray-700">
+                                            <i class="fas fa-code-branch mr-2"></i>Contribution Type
+                                        </label>
+                                        <div class="relative">
+                                            <select id="contribution_type"
+                                                    name="contribution_type"
+                                                    class="pl-10 block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                                    required>
+                                                <option value="" disabled selected>Select contribution type...</option>
+                                                <option value="security">Security Related</option>
+                                                <option value="non-security">Non-Security Related</option>
+                                            </select>
+                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <i class="fas fa-shield-alt text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label for="description" class="block text-sm font-semibold text-gray-700">
+                                            <i class="fas fa-align-left mr-2"></i>Description
+                                        </label>
+                                        <div class="relative">
+                                            <textarea id="description"
+                                                      name="description"
+                                                      rows="4"
+                                                      placeholder="Describe your contribution..."
+                                                      class="pl-10 block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200"
+                                                      required></textarea>
+                                            <div class="absolute top-3 left-0 pl-3 flex items-start pointer-events-none">
+                                                <i class="fas fa-pen text-gray-400"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="pt-4">
+                                        <button type="submit"
+                                                class="group w-full inline-flex items-center justify-center gap-2 py-3 px-4 border-2 border-[#e74c3c] rounded-lg bg-[#e74c3c] text-white font-semibold hover:bg-[#c0392b] hover:border-[#c0392b] focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 transition-all duration-200">
+                                            <i class="fas fa-paper-plane group-hover:translate-x-1 transition-transform duration-200"></i>
+                                            Submit BACON Request
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
-                        {% endfor %}
+                            <!-- Requests List -->
+                            <div class="bg-white rounded-xl shadow-sm p-8">
+                                <div class="flex items-center gap-3 mb-6">
+                                    <i class="fas fa-list text-2xl text-[#e74c3c]"></i>
+                                    <h2 class="text-2xl font-bold">BACON Requests</h2>
+                                </div>
+                                <!-- Filter Form -->
+                                <form method="get" class="space-y-4 mb-8">
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-semibold text-gray-700">
+                                            <i class="fas fa-filter mr-2"></i>Transaction Status
+                                        </label>
+                                        <select name="tx-status"
+                                                class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200">
+                                            <option value="">All Transactions</option>
+                                            <option value="pending" {% if tx_status == "pending" %}selected{% endif %}>Pending</option>
+                                            <option value="completed"
+                                                    {% if tx_status == "completed" %}selected{% endif %}>
+                                                Confirmed
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="block text-sm font-semibold text-gray-700">
+                                            <i class="fas fa-tasks mr-2"></i>Request Status
+                                        </label>
+                                        <select name="decision-status"
+                                                class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200">
+                                            <option value="">All Statuses</option>
+                                            <option value="accepted"
+                                                    {% if decision_status == "accepted" %}selected{% endif %}>
+                                                Accepted
+                                            </option>
+                                            <option value="declined"
+                                                    {% if decision_status == "declined" %}selected{% endif %}>
+                                                Rejected
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <button type="submit"
+                                            class="w-full inline-flex items-center justify-center gap-2 py-3 px-4 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
+                                        <i class="fas fa-search"></i>
+                                        Apply Filters
+                                    </button>
+                                </form>
+                                <!-- Requests List -->
+                                <div class="space-y-6">
+                                    {% for submission in submissions %}
+                                        <div class="rounded-lg border-2 {% if submission.status == 'accepted' %}border-green-500 bg-green-50{% elif submission.status == 'declined' %}border-red-500 bg-red-50{% else %}border-gray-200{% endif %} p-6 transition-all duration-200 hover:shadow-md">
+                                            <div class="flex items-start justify-between mb-4">
+                                                <div class="flex items-center gap-3">
+                                                    {% if submission.user.userprofile.avatar %}
+                                                        <img src="{{ submission.user.userprofile.avatar }}"
+                                                             alt="{{ submission.user.username }}"
+                                                             class="w-10 h-10 rounded-full"
+                                                             width="40"
+                                                             height="40">
+                                                    {% else %}
+                                                        <img src="{% gravatar_url submission.user.email 40 %}"
+                                                             alt="{{ submission.user.username }}"
+                                                             class="w-10 h-10 rounded-full"
+                                                             width="40"
+                                                             height="40">
+                                                    {% endif %}
+                                                    <div>
+                                                        <h3 class="font-semibold text-lg">{{ submission.user.username }}</h3>
+                                                        <a href="{{ submission.github_url }}"
+                                                           target="_blank"
+                                                           class="text-[#e74c3c] hover:text-[#c0392b] inline-flex items-center gap-1">
+                                                            <i class="fab fa-github"></i>
+                                                            View PR
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <span class="px-3 py-1 rounded-full text-sm font-medium {% if submission.status == 'accepted' %}bg-green-200 text-green-800{% elif submission.status == 'declined' %}bg-red-200 text-red-800{% else %}bg-gray-200 text-gray-800{% endif %}">
+                                                    {{ submission.get_status_display }}
+                                                </span>
+                                            </div>
+                                            <div class="space-y-2 text-sm text-gray-600">
+                                                <p class="flex items-center gap-2">
+                                                    <i class="fas fa-code-branch w-5"></i>
+                                                    <span class="font-medium">Type:</span> {{ submission.get_contribution_type_display }}
+                                                </p>
+                                                <p class="flex items-center gap-2">
+                                                    <i class="fas fa-exchange-alt w-5"></i>
+                                                    <span class="font-medium">Transaction:</span> {{ submission.get_transaction_status_display }}
+                                                </p>
+                                                <p class="flex items-center gap-2">
+                                                    <i class="fas fa-bacon w-5"></i>
+                                                    <span class="font-medium">Amount:</span> {{ submission.bacon_amount }} BACON
+                                                </p>
+                                            </div>
+                                            <div class="mt-4">
+                                                <button onclick="toggleDescription('{{ submission.id }}')"
+                                                        class="text-[#e74c3c] hover:text-[#c0392b] inline-flex items-center gap-2">
+                                                    <i class="fas fa-eye"></i>
+                                                    View Description
+                                                </button>
+                                                <p id="description-{{ submission.id }}"
+                                                   class="hidden mt-3 p-4 bg-gray-50 rounded-lg text-gray-700">
+                                                    {{ submission.description }}
+                                                </p>
+                                            </div>
+                                            {% if is_mentor %}
+                                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                                    <button onclick="toggleInspect('{{ submission.id }}')"
+                                                            class="w-full inline-flex items-center justify-center gap-2 py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">
+                                                        <i class="fas fa-eye"></i>
+                                                        Inspect Request
+                                                    </button>
+                                                    <div id="inspect-{{ submission.id }}" class="hidden mt-4 space-y-4">
+                                                        <div class="p-4 bg-gray-50 rounded-lg space-y-3">
+                                                            <p class="flex items-center gap-2">
+                                                                <i class="fab fa-github w-5"></i>
+                                                                <span class="font-medium">GitHub:</span> {{ submission.user.username }}
+                                                            </p>
+                                                            <p class="flex items-center gap-2">
+                                                                <i class="fas fa-wallet w-5"></i>
+                                                                <span class="font-medium">BCH Address:</span>
+                                                                <span class="font-mono text-sm">{{ submission.user.userprofile.bch_address }}</span>
+                                                            </p>
+                                                        </div>
+                                                        <div class="space-y-2">
+                                                            <label for="bacon-input-{{ submission.id }}"
+                                                                   class="block text-sm font-semibold text-gray-700">
+                                                                <i class="fas fa-bacon mr-2"></i>BACON Amount
+                                                            </label>
+                                                            <input type="number"
+                                                                   id="bacon-input-{{ submission.id }}"
+                                                                   value="{{ submission.bacon_amount }}"
+                                                                   class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 transition-all duration-200">
+                                                        </div>
+                                                        <div class="flex gap-4">
+                                                            <button onclick="updateSubmission('{{ submission.id }}', 'accepted')"
+                                                                    class="flex-1 inline-flex items-center justify-center gap-2 py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors duration-200">
+                                                                <i class="fas fa-check"></i>
+                                                                Accept
+                                                            </button>
+                                                            <button onclick="updateSubmission('{{ submission.id }}', 'declined')"
+                                                                    class="flex-1 inline-flex items-center justify-center gap-2 py-2 px-4 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-lg transition-colors duration-200">
+                                                                <i class="fas fa-times"></i>
+                                                                Reject
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% empty %}
+                                        <div class="text-center py-12">
+                                            <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                                                <i class="fas fa-inbox text-4xl text-gray-400"></i>
+                                            </div>
+                                            <h3 class="text-lg font-medium text-gray-900 mb-2">No Requests Found</h3>
+                                            <p class="text-gray-500">Submit a new BACON request to get started!</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <script>
-        document.getElementById("openModalBtn").addEventListener("click", function() {
-            document.getElementById("baconModal").classList.remove("hidden");
-        });
-        
-        document.getElementById("closeModalBtn").addEventListener("click", function() {
-            document.getElementById("baconModal").classList.add("hidden");
-        });
-        
         document.getElementById("baconForm").addEventListener("submit", function(event) {
             event.preventDefault();
         
@@ -270,7 +363,6 @@
             .then(data => {
                 if (data.message) {
                     alert("Submission Successful!");
-                    document.getElementById("baconModal").classList.add("hidden");
                     document.getElementById("baconForm").reset();
                     window.location.reload();
                 } else {
