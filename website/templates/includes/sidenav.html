@@ -95,13 +95,13 @@
                             <span>Scoreboard</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
+                    <li class="mb-2 {% if request.path == '/bounties/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'hunts' %}"
-                           class="flex items-center w-full no-underline p-2 {% if request.path == '/hunts/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/bounties/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-bug fa-lg"></i>
                             </div>
-                            <span>Bug Bounties</span>
+                            <span>Bounties</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/reported-ips/' %}bg-gray-200{% endif %}">
