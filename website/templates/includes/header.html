@@ -38,8 +38,9 @@
         background-color: white;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 500px;
-        
+        height: 520px;
+        z-index: 9999;
+        overflow: hidden;
         @media (max-width: 768px) {
             right: 50%;
             transform: translateX(50%);
@@ -57,7 +58,6 @@
         &:hover {
             opacity: 0.8;
         }
-        /* Red color */
         border-radius: 50%;
         padding: 10px;
         width: 55px;
@@ -104,6 +104,10 @@ right: 10.5%;{% endcomment %}
         z-index: 9999;
     }
 
+    #quick-commands {
+        overflow-x: auto; /* Ensure buttons do not overflow */
+    }
+
     #mobile-search {
         position: absolute;
         top: 100%;
@@ -116,6 +120,7 @@ right: 10.5%;{% endcomment %}
     #mobile-search.active {
         display: block;
     }
+    
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -410,7 +415,7 @@ right: 10.5%;{% endcomment %}
             <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
                 <p class="text-base">We respond instantly!</p>
             </div>
-            <div id="chat-log" class=" relative chat-log bg-gray-100 p-3 rounded-lg">
+            <div id="chat-log" class="relative chat-log bg-gray-100 p-3 rounded-lg">
                 <div id="loading" class="loading absolute bottom-1 left-1">
                     <svg class="animate-spin h-5 w-5 text-red-600"
                          xmlns="http://www.w3.org/2000/svg"
@@ -423,7 +428,18 @@ right: 10.5%;{% endcomment %}
                     <span class="ml-2 text-gray-600">Loading...</span>
                 </div>
             </div>
-            <div class="flex flex-row gap-4 items-center mt-4 w-full"
+            <!-- Quick Command Buttons -->
+            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/help">/help</button>
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/stats">/stats</button>
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/bid">/bid</button>
+                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+                        data-command="/bacon">/bacon</button>
+            </div>
+            <div class="flex flex-row gap-4 items-center mt-1 w-full"
                  id="chat-message-input-container">
                 <input id="chat-message-input"
                        type="text"
@@ -534,6 +550,7 @@ right: 10.5%;{% endcomment %}
         });
     });
 </script>
+<!--Script for ChatBot -->
 <script>
     document.getElementById('chatIcon').addEventListener('click', function () {
         document.getElementById('chatbot').style.display = 'block';
@@ -552,11 +569,12 @@ right: 10.5%;{% endcomment %}
         const chatClear = document.querySelector('#chat-message-clear');
         const chatClose = document.querySelector('#closeChatbot');
         const loading = document.querySelector('#loading');
-
+        const quickCommands = document.querySelectorAll('.quick-command');
+    
         function escapeHtml(text) {
             return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
         }
-
+    
         function handleSlashCommand(command, args) {
             let response = '';
             switch (command) {
@@ -565,46 +583,45 @@ right: 10.5%;{% endcomment %}
                         '/help - Show this message<br>' +
                         '/report &lt;description&gt; - Report a bug<br>' +
                         '/gsoc - Get GSoC info<br>' +
-                        '/stats - View platform stats<br>'
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
+                        '/stats - View platform stats<br>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
                     return true;
                 case '/report':
                     if (!args) {
                         response = 'Please provide a description. Usage: /report &lt;description&gt;';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
+                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                         chatLog.scrollTop = chatLog.scrollHeight;
                         return true;
                     }
-
                     return false;
                 case '/gsoc':
                     response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
                         'Explore OWASP’s GSoC participation:<br>' +
                         '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
                         'Get involved with open-source at OWASP!';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                    chatLog.scrollTop = chatLog.scrollHeight;
                     return true;
                 case '/stats':
                     response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
+                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                     chatLog.scrollTop = chatLog.scrollHeight;
                     return true;
                 default:
                     return false;
             }
         }
-
+    
         chatSubmit.onclick = function () {
             const message = chatInput.value.trim();
             chatInput.value = '';
             if (message === "") return;
-
+    
             const escapedMessage = escapeHtml(message);
             chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
             loading.style.display = 'flex';
-
+    
             // Check for slash command
             if (message.startsWith('/')) {
                 const [command, ...argsArr] = message.split(' ');
@@ -614,7 +631,7 @@ right: 10.5%;{% endcomment %}
                     return;
                 }
             }
-
+    
             fetch('/api/chatbot/conversation/', {
                 method: 'POST',
                 headers: {
@@ -647,7 +664,7 @@ right: 10.5%;{% endcomment %}
                     loading.style.display = 'none';
                 });
         };
-
+    
         function clearChat() {
             loading.style.display = 'flex';
             fetch('/api/chatbot/conversation/', {
@@ -667,14 +684,23 @@ right: 10.5%;{% endcomment %}
                     loading.style.display = 'none';
                 });
         }
-
+    
         chatClear.onclick = clearChat;
         chatClose.onclick = clearChat;
-
+    
         chatInput.addEventListener('keyup', function (event) {
             if (event.keyCode === 13) {  // Enter key
                 chatSubmit.click();
             }
+        });
+    
+        // Handle quick command button clicks
+        quickCommands.forEach(button => {
+            button.addEventListener('click', function () {
+                const command = this.getAttribute('data-command');
+                chatInput.value = command;
+                chatSubmit.click();
+            });
         });
     });
 </script>
