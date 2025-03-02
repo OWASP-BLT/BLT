@@ -1,4 +1,4 @@
-name: Auto Assign
+name: OWASP BLT Action
 
 on:
   issue_comment:
@@ -13,7 +13,7 @@ jobs:
     permissions: 
       issues: write
     steps:
-      - name: Assign Issues
+      - name: OWASP BLT Action
         uses: OWASP-BLT/BLT-Action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
