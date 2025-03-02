@@ -34,6 +34,21 @@ from rest_framework.authtoken.models import Token
 logger = logging.getLogger(__name__)
 
 
+# Custom validators for cryptocurrency addresses
+def validate_bch_address(value):
+    """Validates that a BCH address is in the new CashAddr format."""
+    if not value.startswith("bitcoincash:"):
+        raise ValidationError('BCH address must be in the new CashAddr format starting with "bitcoincash:"')
+    # Additional validation for the rest of the address could be added here
+
+
+def validate_btc_address(value):
+    """Validates that a BTC address is in the new SegWit format."""
+    if not (value.startswith("bc1") or value.startswith("3") or value.startswith("1")):
+        raise ValidationError('BTC address must be in a valid format (SegWit addresses start with "bc1")')
+    # Additional validation for the rest of the address could be added here
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -686,8 +701,8 @@ class UserProfile(models.Model):
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
-    btc_address = models.CharField(max_length=100, blank=True, null=True)
-    bch_address = models.CharField(max_length=100, blank=True, null=True)
+    btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
+    bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
@@ -923,7 +938,7 @@ class Bid(models.Model):
     amount_bch = models.DecimalField(max_digits=16, decimal_places=8, default=0)
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
-    bch_address = models.CharField(blank=True, null=True, max_length=45)
+    bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1587,6 +1602,18 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    # Peer-to-Peer Payment Fields
+    p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
+    p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    p2p_amount_bch = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
+    sent_by_user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issue_p2p_payments",
+    )
+    bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"

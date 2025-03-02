@@ -52,7 +52,7 @@ from user_agents import parse
 
 from blt import settings
 from comments.models import Comment
-from website.forms import CaptchaForm
+from website.forms import CaptchaForm, GitHubIssueForm
 from website.models import (
     IP,
     Activity,
@@ -64,6 +64,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Points,
+    Repo,
     User,
     UserProfile,
     Wallet,
@@ -1806,7 +1807,103 @@ class GitHubIssuesView(ListView):
         context["current_type"] = self.request.GET.get("type", "all")
         context["current_state"] = self.request.GET.get("state", "all")
 
+        # Add the form for adding GitHub issues
+        context["form"] = GitHubIssueForm()
+
         return context
+
+    def post(self, request, *args, **kwargs):
+        form = GitHubIssueForm(request.POST)
+
+        if form.is_valid():
+            github_url = form.cleaned_data["github_url"]
+
+            # Check if this issue already exists
+            if GitHubIssue.objects.filter(url=github_url).exists():
+                messages.warning(request, "This GitHub issue is already in our database.")
+                return redirect("github_issues")
+
+            # Extract owner, repo, and issue number from URL
+            parts = github_url.split("/")
+            owner = parts[3]
+            repo_name = parts[4]
+            issue_number = parts[6]
+
+            # Fetch issue details from GitHub API
+            import requests
+            from django.conf import settings
+
+            api_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+            try:
+                response = requests.get(api_url, headers=headers)
+                response.raise_for_status()
+                issue_data = response.json()
+
+                # Check if it has a bounty label (containing $)
+                has_bounty_label = False
+                for label in issue_data.get("labels", []):
+                    if "$" in label.get("name", ""):
+                        has_bounty_label = True
+                        break
+
+                if not has_bounty_label:
+                    messages.error(
+                        request,
+                        "This issue doesn't have a bounty label (containing a $ sign). "
+                        "Only issues with bounty labels can be added.",
+                    )
+                    return redirect("github_issues")
+
+                # Determine if it's a PR or an issue
+                is_pr = "pull_request" in issue_data
+                issue_type = "pull_request" if is_pr else "issue"
+
+                # Find or create the repo
+                repo_url = f"https://github.com/{owner}/{repo_name}"
+                repo, created = Repo.objects.get_or_create(
+                    repo_url=repo_url,
+                    defaults={
+                        "name": repo_name,
+                        "slug": f"{owner}-{repo_name}",
+                    },
+                )
+
+                # Create the GitHub issue
+                new_issue = GitHubIssue(
+                    issue_id=issue_data["id"],
+                    title=issue_data["title"],
+                    body=issue_data.get("body", ""),
+                    state=issue_data["state"],
+                    type=issue_type,
+                    created_at=issue_data["created_at"],
+                    updated_at=issue_data["updated_at"],
+                    closed_at=issue_data.get("closed_at"),
+                    merged_at=None,  # We'll need to fetch PR details separately for this
+                    is_merged=False,  # Default to false, update if needed
+                    url=github_url,
+                    repo=repo,
+                )
+
+                # If the user is logged in, associate with their profile
+                if request.user.is_authenticated:
+                    new_issue.user_profile = request.user.userprofile
+
+                new_issue.save()
+                messages.success(request, "GitHub issue with bounty added successfully!")
+
+            except requests.exceptions.RequestException:
+                messages.error(
+                    request, "Failed to fetch issue details from GitHub. Please check the URL and try again."
+                )
+
+            return redirect("github_issues")
+        else:
+            # If form is invalid, render the list view with form errors
+            context = self.get_context_data()
+            context["form"] = form
+            return self.render_to_response(context)
 
 
 class GitHubIssueDetailView(DetailView):
