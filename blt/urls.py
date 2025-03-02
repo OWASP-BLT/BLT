@@ -164,6 +164,7 @@ from website.views.issue import (
     issue_count,
     like_issue,
     newhome,
+    page_vote,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -1023,6 +1024,7 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
+    path("page-vote/", page_vote, name="page_vote"),
 ]
 
 if settings.DEBUG:
