@@ -483,7 +483,7 @@ right: 10.5%;{% endcomment %}
         const savedQuery = getUrlParameter('query');
         const savedType = getUrlParameter('type');
 
-        if (savedQuery) {
+        if (queryInput && savedQuery) {
             queryInput.value = savedQuery;
         }
 
@@ -493,11 +493,17 @@ right: 10.5%;{% endcomment %}
             if (matchingOption) {
                 const iconElement = matchingOption.querySelector('i');
                 const textContent = matchingOption.textContent.trim();
-
-                // Update the button display
-                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
-                document.getElementById('selected-filter').textContent = textContent;
-                document.getElementById('filter-type').value = savedType;
+                
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+                const filterType = document.getElementById('filter-type');
+                
+                // Update the button display if elements exist
+                if (selectedIcon && selectedFilter && filterType) {
+                    selectedIcon.className = iconElement.className + ' mr-2';
+                    selectedFilter.textContent = textContent;
+                    filterType.value = savedType;
+                }
             }
         }
 
@@ -529,25 +535,35 @@ right: 10.5%;{% endcomment %}
                     organizationsDropdown.style.display = 'none';
                 }
             });
-        } else {
-            console.error('Required elements not found!');
         }
 
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function (e) {
-                e.preventDefault();
-                const iconElement = this.querySelector('i');
-                const textContent = this.textContent.trim();
-                const filterValue = this.getAttribute('data-value');
+        // Only add event listeners to filter options if they exist
+        const filterOptions = document.querySelectorAll('.filter-option');
+        if (filterOptions.length > 0) {
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const iconElement = this.querySelector('i');
+                    const textContent = this.textContent.trim();
+                    const filterValue = this.getAttribute('data-value');
+                    
+                    const selectedIcon = document.getElementById('selected-icon');
+                    const selectedFilter = document.getElementById('selected-filter');
+                    const filterType = document.getElementById('filter-type');
+                    
+                    if (selectedIcon && selectedFilter && filterType) {
+                        selectedIcon.className = iconElement.className + ' mr-2';
+                        selectedFilter.textContent = textContent;
+                        filterType.value = filterValue;
+                    }
 
-                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
-                document.getElementById('selected-filter').textContent = textContent;
-                document.getElementById('filter-type').value = filterValue;
-
-                organizationsDropdown.classList.add('hidden');
-                organizationsDropdown.style.display = 'none';
+                    if (organizationsDropdown) {
+                        organizationsDropdown.classList.add('hidden');
+                        organizationsDropdown.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
     });
 </script>
 <!--Script for ChatBot -->

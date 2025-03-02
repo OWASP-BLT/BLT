@@ -1311,7 +1311,8 @@ class RepoDetailView(DetailView):
                     status=500,
                 )
 
-        return super().post(request, *args, **kwargs)
+        # Return a default response if no section matched
+        return JsonResponse({"status": "error", "message": "Invalid section specified"}, status=400)
 
 
 class RepoBadgeView(APIView):
