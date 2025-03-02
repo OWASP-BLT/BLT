@@ -1209,7 +1209,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Post, Repo, User  # Add BlogPost model
+    from website.models import ForumPost, GitHubIssue, Post, Repo, User, UserProfile  # Add UserProfile model
 
     # Get last commit date
     try:
@@ -1241,6 +1241,9 @@ def home(request):
         .order_by("-total_prs")[:5]
     )
 
+    # Get top earners
+    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:3]
+
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
@@ -1255,7 +1258,8 @@ def home(request):
             "recent_posts": recent_posts,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,  # Add latest blog posts to context
+            "latest_blog_posts": latest_blog_posts,
+            "top_earners": top_earners,  # Add top earners to context
         },
     )
 
@@ -1956,4 +1960,465 @@ class MapView(ListView):
             # Add more marker types here as needed
         ]
 
+        return context
+
+
+class RoadmapView(TemplateView):
+    template_name = "roadmap.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        milestones = [
+            {
+                "title": "📺 BLTV - BLT Eduction",
+                "due_date": "No due date",
+                "last_updated": "about 3 hours ago",
+                "description": "Add an educational component to BLT so that users can learn along w…",
+                "progress": "100%",
+                "open": 0,
+                "closed": 1,
+            },
+            {
+                "title": "🚀 Code Reviewer Leaderboard",
+                "due_date": "No due date",
+                "last_updated": "1 day ago",
+                "description": "Here's an Emoji Code Reviewer Leaderboard idea, ranking reviewers b…",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "Bid on Issues",
+                "due_date": "No due date",
+                "last_updated": "1 day ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🏠 Improvements",
+                "due_date": "No due date",
+                "last_updated": "5 days ago",
+                "description": "",
+                "progress": "46%",
+                "open": 7,
+                "closed": 6,
+            },
+            {
+                "title": "🔒 Protection Of Online Privacy",
+                "due_date": "No due date",
+                "last_updated": "8 days ago",
+                "description": "Web Monitoring System Implementation Plan Overview Enhances user tr…",
+                "progress": "88%",
+                "open": 1,
+                "closed": 8,
+            },
+            {
+                "title": "🧠 AI",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "🔧 App Improvements",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 16,
+                "closed": 0,
+            },
+            {
+                "title": "🛡️ OWASP tools",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 2,
+                "closed": 0,
+            },
+            {
+                "title": "🧰 Extension Improvements",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 4,
+                "closed": 0,
+            },
+            {
+                "title": "🏆 Sponsorship in app",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🎤 GitHub Sportscaster",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🥗 Daily Check-ins",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "New Project: Fresh - Daily Check-In Component for BLT Fresh is a pr…",
+                "progress": "18%",
+                "open": 9,
+                "closed": 2,
+            },
+            {
+                "title": "🔥 Time Tracking",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "Simplified Project: Sizzle - Multi-Platform Time Tracking for BLT P…",
+                "progress": "12%",
+                "open": 14,
+                "closed": 2,
+            },
+            {
+                "title": "🛡️ Trademark Defense",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "Protects brand integrity and legal standing, important for long-ter…",
+                "progress": "30%",
+                "open": 7,
+                "closed": 3,
+            },
+            {
+                "title": "🏢 Organization Portal in App",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "💌 Invites in app",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌍 Banned Apps Simulation in app",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Simulate app behavior in countries with restrictions to ensure compliance "
+                "and accessibility.",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🤖 Slack Bot 2.0",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 12,
+                "closed": 0,
+            },
+            {
+                "title": "🚀 OWASP BLT Adventures",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌐 Organizations",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Project: Refactor BLT Website to Combine Companies and Teams into O…",
+                "progress": "0%",
+                "open": 4,
+                "closed": 0,
+            },
+            {
+                "title": "🔧 Maintenance",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "General maintenance issues",
+                "progress": "50%",
+                "open": 16,
+                "closed": 16,
+            },
+            {
+                "title": "Bug / Issue / Project tools",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🏆 Gamification",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Project Summary: Gamification Integration for BLT Platform The gami…",
+                "progress": "15%",
+                "open": 17,
+                "closed": 3,
+            },
+            {
+                "title": "GSOC tools",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 3,
+                "closed": 0,
+            },
+            {
+                "title": "🚀🎨🔄 Tailwind Migration",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Migrate the remaining pages to tailwind "
+                "https://blt.owasp.org/template_list/?sort=has_style_tags",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🐞 New Issue Detail Page",
+                "due_date": "No due date",
+                "last_updated": "13 days ago",
+                "description": "Improves issue tracking efficiency and developer experience on the site.",
+                "progress": "66%",
+                "open": 3,
+                "closed": 6,
+            },
+            {
+                "title": "🥓 BACON",
+                "due_date": "No due date",
+                "last_updated": "21 days ago",
+                "description": "🥓 BACON: Blockchain Assisted Contribution Network BACON is a cuttin…",
+                "progress": "50%",
+                "open": 7,
+                "closed": 7,
+            },
+            {
+                "title": "💰 Multi-Crypto Donations",
+                "due_date": "No due date",
+                "last_updated": "about 1 month ago",
+                "description": "Overview: The Decentralized Multi-Crypto Payment Integration featur…",
+                "progress": "25%",
+                "open": 6,
+                "closed": 2,
+            },
+            {
+                "title": "💡 Suggestions",
+                "due_date": "No due date",
+                "last_updated": "about 1 month ago",
+                "description": "",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "💸 Pledge",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌘Dark Mode",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "👷 Contributor Ranking",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "🌞💻🥉 Shows contributor github username, commits, issues opened, issu…",
+                "progress": "80%",
+                "open": 1,
+                "closed": 4,
+            },
+            {
+                "title": "✅ Bug Verifiers",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "Ensures bug fixes are valid and effective, maintaining site integrity.",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "🤖 Artificial Intelligence",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "",
+                "progress": "100%",
+                "open": 0,
+                "closed": 2,
+            },
+            {
+                "title": "🕹️ Penteston Integration",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Enhances site security through integrated pentesting tools. We will…",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🔔 Follower notifications",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "The feature would allow users to follow a company's bug reports and…",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "📊 Review Queue",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Streamlines content moderation, improving site quality.",
+                "progress": "0%",
+                "open": 3,
+                "closed": 0,
+            },
+            {
+                "title": "🕵️ Private Bug Bounties",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Allows companies to conduct private, paid bug bounties in a non-com…",
+                "progress": "25%",
+                "open": 3,
+                "closed": 1,
+            },
+            {
+                "title": "📡 Cyber Dashboard",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "🌞💻🥉 a comprehensive dashboard of stats and information for organiza…",
+                "progress": "0%",
+                "open": 13,
+                "closed": 0,
+            },
+            {
+                "title": "🪝 Webhooks",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "automate the synchronization of issue statuses between GitHub and t…",
+                "progress": "0%",
+                "open": 2,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Modern Front-End Redesign with React & Tailwind CSS (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "A complete redesign of BLT's interface, improving accessibility, usability, "
+                "and aesthetics. The new front-end will be built with React and Tailwind CSS, "
+                "ensuring high performance while maintaining a lightweight architecture under "
+                "100MB. Dark mode will be the default, with full responsiveness and an enhanced "
+                "user experience.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Organization Dashboard – Enhanced Vulnerability & Bug Management (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Redesign and expand the organization dashboard to provide seamless management of bug "
+                "bounties, security reports, and contributor metrics. Features will include advanced "
+                "filtering, real-time analytics, and improved collaboration tools for security teams.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Secure API Development & Migration to Django Ninja (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Migrate our existing and develop a secure, well-documented API with automated "
+                "security tests to support the new front-end. This may involve migrating from Django "
+                "Rest Framework to Django Ninja for improved performance, maintainability, and API "
+                "efficiency.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Gamification & Blockchain Rewards System (Ordinals & Solana) (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Introduce GitHub-integrated contribution tracking that rewards security "
+                "researchers with Bitcoin Ordinals and Solana-based incentives. This will "
+                "integrate with other parts of the website as well such as daily check-ins "
+                "and code quality. Gamification elements such as badges, leaderboards, and "
+                "contribution tiers will encourage engagement and collaboration in "
+                "open-source security.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Decentralized Bidding System for Issues (Bitcoin Cash Integration) (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Create a decentralized system where developers can bid on GitHub issues "
+                "using Bitcoin Cash, ensuring direct transactions between contributors and "
+                "project owners without BLT handling funds.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 AI-Powered Code Review & Smart Prioritization System for Maintainers (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Develop an AI-driven GitHub assistant that analyzes pull requests, detects "
+                "security vulnerabilities, and provides real-time suggestions for improving "
+                "code quality. A smart prioritization system will help maintainers rank issues "
+                "based on urgency, community impact, and dependencies.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Enhanced Slack Bot & Automation System (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Expand the BLT Slack bot to automate vulnerability tracking, send real-time "
+                "alerts for new issues, and integrate GitHub notifications and contributor "
+                "activity updates for teams. prioritize them based on community engagement, "
+                "growth and securing worldwide applications",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+        ]
+
+        context["milestones"] = milestones
+        context["milestone_count"] = len(milestones)
         return context

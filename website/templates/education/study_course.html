@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="flex w-full h-full">
+        {% include "education/includes/course_sidebar.html" %}
+        <div class="flex-1 p-4 lg:ml-72">
+            <div class="w-full mx-auto">
+                <div class="mb-6 bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-center">
+                        <h1 class="text-2xl font-bold text-gray-800">{{ course.title }}</h1>
+                        <div class="flex items-center">
+                            <div class="mr-4">
+                                <div class="text-sm text-gray-500">Progress</div>
+                                <div class="w-48 bg-gray-200 rounded-full h-2.5">
+                                    <div class="bg-blue-600 h-2.5 rounded-full"
+                                         style="width: {{ course_progress }}%"></div>
+                                </div>
+                                <div class="text-xs text-right mt-1">{{ course_progress }}% complete</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-gray-600 mt-2">{{ course.description }}</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-gray-50 border-b border-gray-200 px-6 py-3 flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <span id="current-section-title" class="text-sm font-medium text-gray-500"></span>
+                            <span class="text-gray-400">/</span>
+                            <span id="current-lecture-title" class="text-sm font-medium text-gray-700"></span>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button id="prev-lecture"
+                                    class="px-3 py-1 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Previous
+                            </button>
+                            <button id="mark-complete"
+                                    class="px-3 py-1 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Mark Complete
+                            </button>
+                            <button id="next-lecture"
+                                    class="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        {% for section in sections %}
+                            <div id="section-content-{{ section.id }}" class="section-content hidden">
+                                <h2 class="text-xl font-bold mb-4">{{ section.title }}</h2>
+                                <div class="mb-4 text-sm text-gray-500">Section • {{ section.lectures.all|length }} lectures</div>
+                                {% if section.description %}<div class="mb-6 text-gray-700">{{ section.description|linebreaks }}</div>{% endif %}
+                                {% if not section.lectures.all %}
+                                    <div class="text-center py-10 text-gray-500">No lectures in this section.</div>
+                                {% endif %}
+                            </div>
+                            {% for lecture in section.lectures.all %}
+                                <div id="lecture-content-{{ lecture.id }}" class="lecture-content hidden">
+                                    <h2 class="text-xl font-bold mb-4">{{ lecture.title }}</h2>
+                                    <div class="mb-4 text-sm text-gray-500">
+                                        {{ lecture.get_content_type_display }} •
+                                        {% if lecture.duration %}{{ lecture.duration }} min{% endif %}
+                                    </div>
+                                    {% if lecture.description %}<div class="mb-6 text-gray-700">{{ lecture.description|linebreaks }}</div>{% endif %}
+                                    {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
+                                        <div class="mb-6 w-full">
+                                            <iframe src="{{ lecture.embed_url }}"
+                                                    frameborder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowfullscreen
+                                                    class="w-full h-[400px] sm:h-[450px] md:h-[800px] lg:h-[1000px] rounded-lg shadow-md">
+                                            </iframe>
+                                        </div>
+                                        <p class="mt-2 text-blue-600 underline">
+                                            <a href="{{ lecture.video_url }}" target="_blank">Watch Separately</a>
+                                        </p>
+                                    {% elif lecture.content_type == "LIVE" %}
+                                        <div class="mb-6 p-4 bg-blue-50 rounded-md">
+                                            {% if lecture.scheduled_time and lecture.scheduled_time > now %}
+                                                <p class="font-medium">This live session is scheduled for {{ lecture.scheduled_time|date:"F j, Y, g:i a" }}</p>
+                                                {% if lecture.live_url %}
+                                                    <a href="{{ lecture.live_url }}"
+                                                       target="_blank"
+                                                       class="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                                        Join Live Session
+                                                    </a>
+                                                {% endif %}
+                                            {% elif lecture.recording_url %}
+                                                <p class="font-medium mb-3">This session has ended. You can watch the recording below:</p>
+                                                <div class="aspect-w-16 aspect-h-9">
+                                                    <iframe src="{{ lecture.recording_url }}"
+                                                            frameborder="0"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowfullscreen
+                                                            class="w-full h-full"></iframe>
+                                                </div>
+                                                <p class="font-medium mb-3">
+                                                    Or use this link: <a href="{{ lecture.recording_url }}">Recording</a>
+                                                </p>
+                                            {% else %}
+                                                <p class="font-medium">This live session has ended. Recording will be available soon.</p>
+                                            {% endif %}
+                                        </div>
+                                    {% elif lecture.content_type == "DOCUMENT" %}
+                                        <div class="prose max-w-none">{{ lecture.content|safe }}</div>
+                                    {% elif lecture.content_type == "QUIZ" %}
+                                        <div class="bg-yellow-50 p-4 rounded-md">
+                                            <p class="font-medium mb-3">This is a quiz section. Complete all questions to mark this lecture as completed.</p>
+                                            <button class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Start Quiz</button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                        <div id="empty-state" class="hidden text-center py-20">
+                            <svg class="mx-auto h-12 w-12 text-gray-400"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">No content available</h3>
+                            <p class="mt-1 text-sm text-gray-500">This course doesn't have any content yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentSectionId = null;
+    let currentLectureId = null;
+    const sections = [
+        {% for section in sections %}
+            {
+                id: {{ section.id }},
+                title: "{{ section.title }}",
+                lectures: [
+                    {% for lecture in section.lectures.all %}
+                        {
+                            id: {{ lecture.id }},
+                            title: "{{ lecture.title }}",
+                            status: "{{ lecture_statuses|get_item:lecture.id|default:'PROGRESS' }}"
+                        }{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ]
+            }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    if (sections.length === 0) {
+        document.getElementById('empty-state').classList.remove('hidden');
+        return;
+    }
+
+    const initialSectionId = {{ current_section.id|default:'null' }};
+    const initialLectureId = {{ current_lecture.id|default:'null' }};
+
+    function showSection(sectionId) {
+        document.querySelectorAll('.section-content, .lecture-content').forEach(el => {
+            el.classList.add('hidden');
+        });
+
+        const sectionContent = document.getElementById(`section-content-${sectionId}`);
+        if (sectionContent) {
+            sectionContent.classList.remove('hidden');
+        }
+
+        currentSectionId = sectionId;
+        currentLectureId = null;
+
+        updateSidebarState();
+
+        updateNavigation();
+
+        updateButtonStates();
+    }
+
+    function showLecture(lectureId) {
+        document.querySelectorAll('.section-content, .lecture-content').forEach(el => {
+            el.classList.add('hidden');
+        });
+
+        const lectureContent = document.getElementById(`lecture-content-${lectureId}`);
+        if (lectureContent) {
+            lectureContent.classList.remove('hidden');
+        }
+
+        currentLectureId = lectureId;
+
+        updateSidebarState();
+
+        updateNavigation();
+
+        updateButtonStates();
+    }
+
+    function updateSidebarState() {
+        document.querySelectorAll('.section-header, .lecture-nav-item').forEach(el => {
+            el.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-500', 'pl-3');
+        });
+
+        if (currentLectureId) {
+            const currentLectureItem = document.querySelector(`.lecture-nav-item[data-lecture-id="${currentLectureId}"]`);
+            if (currentLectureItem) {
+                currentLectureItem.classList.add('bg-blue-50', 'border-l-4', 'border-blue-500', 'pl-3');
+
+                const sectionItem = currentLectureItem.closest('.section-lectures-container');
+                if (sectionItem) {
+                    sectionItem.classList.remove('hidden');
+                    const toggleIcon = sectionItem.previousElementSibling.querySelector('.section-toggle');
+                    if (toggleIcon) {
+                        toggleIcon.classList.remove('transform', 'rotate-270');
+                    }
+                }
+            }
+        } else if (currentSectionId) {
+            const currentSectionItem = document.querySelector(`.section-header[data-section-id="${currentSectionId}"]`);
+            if (currentSectionItem) {
+                currentSectionItem.classList.add('bg-blue-50', 'border-l-4', 'border-blue-500', 'pl-3');
+            }
+        }
+    }
+
+    function updateNavigation() {
+        if (currentLectureId) {
+            const lecture = sections.flatMap(s => s.lectures).find(l => l.id === currentLectureId);
+            if (lecture) {
+                const section = sections.find(s => s.lectures.some(l => l.id === currentLectureId));
+                document.getElementById('current-section-title').textContent = section.title;
+                document.getElementById('current-lecture-title').textContent = lecture.title;
+            }
+        } else if (currentSectionId) {
+            const section = sections.find(s => s.id === currentSectionId);
+            if (section) {
+                document.getElementById('current-section-title').textContent = section.title;
+                document.getElementById('current-lecture-title').textContent = '';
+            }
+        }
+    }
+
+    function updateButtonStates() {
+        const prevButton = document.getElementById('prev-lecture');
+        const nextButton = document.getElementById('next-lecture');
+        const completeButton = document.getElementById('mark-complete');
+
+        if (currentLectureId) {
+            const currentIndex = sections.flatMap(s => s.lectures).findIndex(l => l.id === currentLectureId);
+            const totalLectures = sections.flatMap(s => s.lectures).length;
+
+            prevButton.disabled = currentIndex <= 0;
+
+            nextButton.disabled = currentIndex >= totalLectures - 1;
+
+            const lecture = sections.flatMap(s => s.lectures).find(l => l.id === currentLectureId);
+            if (lecture && lecture.status === 'COMPLETED') {
+                completeButton.textContent = 'Completed';
+                completeButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+                completeButton.classList.add('bg-gray-400');
+                completeButton.disabled = true;
+            } else {
+                completeButton.textContent = 'Mark Complete';
+                completeButton.classList.add('bg-green-600', 'hover:bg-green-700');
+                completeButton.classList.remove('bg-gray-400');
+                completeButton.disabled = false;
+            }
+        } else if (currentSectionId) {
+            prevButton.disabled = true;
+            nextButton.disabled = true;
+            completeButton.disabled = true;
+        }
+    }
+
+    function goToPreviousLecture() {
+        const lectures = sections.flatMap(s => s.lectures);
+        const currentIndex = lectures.findIndex(l => l.id === currentLectureId);
+        if (currentIndex > 0) {
+            showLecture(lectures[currentIndex - 1].id);
+        }
+    }
+
+    function goToNextLecture() {
+        const lectures = sections.flatMap(s => s.lectures);
+        const currentIndex = lectures.findIndex(l => l.id === currentLectureId);
+        if (currentIndex < lectures.length - 1) {
+            showLecture(lectures[currentIndex + 1].id);
+        }
+    }
+
+    function markLectureComplete() {
+        fetch('/education/mark-lecture-complete/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                lecture_id: currentLectureId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const lecture = sections.flatMap(s => s.lectures).find(l => l.id === currentLectureId);
+                if (lecture) {
+                    lecture.status = 'COMPLETED';
+                }
+
+                updateButtonStates();
+
+                const lectureItem = document.querySelector(`.lecture-nav-item[data-lecture-id="${currentLectureId}"]`);
+                if (lectureItem) {
+                    lectureItem.classList.add('completed');
+                    const statusIcon = lectureItem.querySelector('.status-icon');
+                    if (statusIcon) {
+                        statusIcon.innerHTML = '✓';
+                        statusIcon.classList.remove('text-gray-300');
+                        statusIcon.classList.add('text-green-500');
+                    }
+                }
+
+                document.querySelector('.progress-bar').style.width = `${data.progress}%`;
+                document.querySelector('.progress-text').textContent = `${data.progress}% complete`;
+
+                const currentIndex = sections.flatMap(s => s.lectures).findIndex(l => l.id === currentLectureId);
+                if (currentIndex < sections.flatMap(s => s.lectures).length - 1) {
+                    showLecture(sections.flatMap(s => s.lectures)[currentIndex + 1].id);
+                }
+            }
+        });
+    }
+
+    document.getElementById('prev-lecture').addEventListener('click', goToPreviousLecture);
+    document.getElementById('next-lecture').addEventListener('click', goToNextLecture);
+    document.getElementById('mark-complete').addEventListener('click', markLectureComplete);
+
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const icon = this.querySelector('.section-toggle');
+            const content = this.nextElementSibling;
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.remove('transform', 'rotate-270');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.add('transform', 'rotate-270');
+            }
+        });
+    });
+
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', function() {
+            const sectionId = parseInt(this.dataset.sectionId);
+            showSection(sectionId);
+        });
+    });
+
+    document.querySelectorAll('.lecture-nav-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const lectureId = parseInt(this.dataset.lectureId);
+            showLecture(lectureId);
+        });
+    });
+
+    if (initialLectureId) {
+        showLecture(initialLectureId);
+    } else if (initialSectionId) {
+        showSection(initialSectionId);
+    } else if (sections.length > 0) {
+        showSection(sections[0].id);
+    }
+});
+
+  function scrollToElement(elementId) {
+    const element = document.getElementById(elementId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+    </script>
+{% endblock extra_js %}
