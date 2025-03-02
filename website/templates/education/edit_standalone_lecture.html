@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container mx-auto mt-10 bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Edit Lecture</h2>
+        <form method="post"
+              action="{% url 'edit_lecture' lecture.id %}"
+              id="editLectureForm">
+            {% csrf_token %}
+            <div class="space-y-6">
+                <div>
+                    <label for="lectureTitle" class="block text-sm font-medium text-gray-700">Lecture Title</label>
+                    <input type="text"
+                           id="lectureTitle"
+                           name="title"
+                           value="{{ lecture.title }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           required>
+                </div>
+                <div>
+                    <label for="contentType" class="block text-sm font-medium text-gray-700">Content Type</label>
+                    <select id="contentType"
+                            name="content_type"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onchange="toggleContentFields(this.value)">
+                        <option value="VIDEO"
+                                {% if lecture.content_type == "VIDEO" %}selected{% endif %}>Video Lecture</option>
+                        <option value="LIVE"
+                                {% if lecture.content_type == "LIVE" %}selected{% endif %}>Live Session</option>
+                        <option value="DOCUMENT"
+                                {% if lecture.content_type == "DOCUMENT" %}selected{% endif %}>Document</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="lectureDuration" class="block text-sm font-medium text-gray-700">Duration (in minutes)</label>
+                    <input type="number"
+                           id="lectureDuration"
+                           name="duration"
+                           value="{{ lecture.duration }}"
+                           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="lectureDescription"
+                           class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="lectureDescription"
+                              name="description"
+                              rows="3"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ lecture.description }}</textarea>
+                </div>
+                <div id="videoFields"
+                     class="content-fields space-y-4 {% if lecture.content_type != 'VIDEO' %}hidden{% endif %}">
+                    <div>
+                        <label for="videoUrl" class="block text-sm font-medium text-gray-700">Video URL</label>
+                        <input type="url"
+                               id="videoUrl"
+                               name="video_url"
+                               value="{{ lecture.video_url|default:'' }}"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div id="liveFields"
+                     class="content-fields space-y-4 {% if lecture.content_type != 'LIVE' %}hidden{% endif %}">
+                    <div>
+                        <label for="liveUrl" class="block text-sm font-medium text-gray-700">Live Session URL</label>
+                        <input type="url"
+                               id="liveUrl"
+                               name="live_url"
+                               value="{{ lecture.live_url|default:'' }}"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="scheduledTime" class="block text-sm font-medium text-gray-700">Scheduled Time</label>
+                        <input type="datetime-local"
+                               id="scheduledTime"
+                               name="scheduled_time"
+                               value="{{ lecture.scheduled_time|date:'Y-m-d\TH:i'|default:'' }}"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="recordingUrl" class="block text-sm font-medium text-gray-700">Recording URL (optional)</label>
+                        <input type="url"
+                               id="recordingUrl"
+                               name="recording_url"
+                               value="{{ lecture.recording_url|default:'' }}"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                <div id="contentField"
+                     class="{% if lecture.content_type != 'VIDEO' and lecture.content_type != 'DOCUMENT' %}hidden{% endif %}">
+                    <label for="documentContent" class="block text-sm font-medium text-gray-700">Content</label>
+                    <textarea id="documentContent"
+                              name="content"
+                              rows="4"
+                              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ lecture.content }}</textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button type="submit"
+                        class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-300">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+        <script>
+            function toggleContentFields(selectedType) {
+                document.getElementById('videoFields').classList.add('hidden');
+                document.getElementById('liveFields').classList.add('hidden');
+                document.getElementById('contentField').classList.add('hidden');
+
+                if (selectedType === 'VIDEO') {
+                    document.getElementById('videoFields').classList.remove('hidden');
+                    document.getElementById('contentField').classList.remove('hidden');
+                } else if (selectedType === 'LIVE') {
+                    document.getElementById('liveFields').classList.remove('hidden');
+                } else if (selectedType === 'DOCUMENT') {
+                    document.getElementById('contentField').classList.remove('hidden');
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const initialContentType = document.getElementById('contentType').value;
+                toggleContentFields(initialContentType);
+            });
+        </script>
+    </div>
+{% endblock content %}
