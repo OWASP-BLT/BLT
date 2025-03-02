@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0212_course_lecture_lecturestatus_rating_section_and_more"),
     ]
