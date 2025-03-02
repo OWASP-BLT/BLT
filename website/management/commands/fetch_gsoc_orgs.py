@@ -39,10 +39,10 @@ class Command(BaseCommand):
 
         logger.info(f"{COLOR_GREEN}Finished fetching organizations!{COLOR_RESET}")
 
-    def process_organization(self,org_data):
+    def process_organization(self, org_data):
         data = org_data
         slug = slugify(data["slug"])
-        
+
         try:
             org, created = Organization.objects.update_or_create(
                 slug=slug,
@@ -100,12 +100,12 @@ class Command(BaseCommand):
             tag_slug = slugify(tag_name)
             tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": tag_name})
             org.tags.add(tag)
-    def assign_contacts(self, org, contacts):
 
+    def assign_contacts(self, org, contacts):
         for contact in contacts:
             if contact["name"].lower() == "email":
                 org.email = contact["value"]
             elif contact["name"].lower() == "chat":
                 org.twitter = contact["value"]  # Adjust this if needed
-        
+
         org.save()
