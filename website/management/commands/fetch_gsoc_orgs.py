@@ -45,21 +45,21 @@ class Command(BaseCommand):
 
         try:
             org, created = Organization.objects.update_or_create(
-                slug=slug,
-                defaults={
-                    "name": data["name"],
-                    "description": data.get("description", "")[:500],
-                    "url": data.get("website_url"),
-                    "tagline": data.get("tagline", ""),
-                    "license": data.get("license", ""),
-                    "categories": data.get("categories", []),
-                    "contributor_guidance_url": data.get("contributor_guidance_url", ""),
-                    "tech_tags": data.get("tech_tags", []),
-                    "topic_tags": data.get("topic_tags", []),
-                    "source_code": data.get("website_url"),
-                    "is_active": True,
-                },
-            )
+            slug=slug,
+            defaults={
+                "name": data["name"],
+                "description": data.get("description", "")[:500],
+                "url": data.get("website_url"),
+                "tagline": data.get("tagline", ""),
+                "license": data.get("license", ""),
+                "categories": data.get("categories") or None,  # ✅ Use None instead of []
+                "contributor_guidance_url": data.get("contributor_guidance_url", ""),
+                "tech_tags": data.get("tech_tags") or None,  # ✅ Use None instead of []
+                "topic_tags": data.get("topic_tags") or None,  # ✅ Use None instead of []
+                "source_code": data.get("website_url"),
+                "is_active": True,
+            },
+        )
 
             # Handle Logo
             if data.get("logo_url"):
