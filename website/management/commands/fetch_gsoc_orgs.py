@@ -52,10 +52,10 @@ class Command(BaseCommand):
                 "url": data.get("website_url"),
                 "tagline": data.get("tagline", ""),
                 "license": data.get("license", ""),
-                "categories": data.get("categories") or None,  # ✅ Use None instead of []
+                "categories": data.get("categories") or None,
                 "contributor_guidance_url": data.get("contributor_guidance_url", ""),
-                "tech_tags": data.get("tech_tags") or None,  # ✅ Use None instead of []
-                "topic_tags": data.get("topic_tags") or None,  # ✅ Use None instead of []
+                "tech_tags": data.get("tech_tags") or None,
+                "topic_tags": data.get("topic_tags") or None,
                 "source_code": data.get("website_url"),
                 "is_active": True,
             },
