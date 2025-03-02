@@ -1031,7 +1031,7 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
-    # Hackathon URLs
+    # Hackathon URLs.
     path("hackathons/", HackathonListView.as_view(), name="hackathons"),
     path("hackathons/create/", HackathonCreateView.as_view(), name="hackathon_create"),
     path("hackathons/<slug:slug>/", HackathonDetailView.as_view(), name="hackathon_detail"),
