@@ -44,6 +44,7 @@ from website.models import (
     OrganizationAdmin,
     Room,
     Subscription,
+    Tag,
     TimeLog,
     Trademark,
     UserBadge,
@@ -2078,12 +2079,12 @@ class OrganizationListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        # Optimize query with select_related and prefetch_related
-        return (
+        queryset = (
             Organization.objects.prefetch_related(
                 "domain_set",
                 "projects",
                 "projects__repos",
+                "tags",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
                 ),
@@ -2104,6 +2105,13 @@ class OrganizationListView(ListView):
             .select_related("admin")
             .order_by("-created")
         )
+
+        # Filter by tag if provided in the URL
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2143,6 +2151,18 @@ class OrganizationListView(ListView):
 
         # Get total count using cached queryset
         context["total_organizations"] = Organization.objects.count()
+
+        # Get top tags by usage count
+        top_tags = (
+            Tag.objects.annotate(org_count=Count("organization")).filter(org_count__gt=0).order_by("-org_count")[:10]
+        )
+
+        context["top_tags"] = top_tags
+
+        # Get the currently selected tag if any
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            context["selected_tag"] = Tag.objects.filter(slug=tag_slug).first()
 
         # Add top testers for each domain
         for org in context["organizations"]:

@@ -1,11 +1,8 @@
 import json
 import logging
 import os
-from collections import defaultdict
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
-import requests
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -365,62 +362,6 @@ class UserProfileDetailView(DetailView):
                 "repos_with_prs": stats["repos_with_prs"],
             }
         )
-
-        context["prs_grouped"] = None
-        context["total_pr_reviews"] = 0
-
-        if user.userprofile.github_url:
-            try:
-                parsed_url = urlparse(user.userprofile.github_url)
-                path_parts = parsed_url.path.strip("/").split("/")
-                if path_parts:
-                    github_username = path_parts[0]
-                    headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"} if settings.GITHUB_TOKEN else {}
-                    reviewed_prs_response = requests.get(
-                        f"https://api.github.com/search/issues?q=type:pr+reviewed-by:{github_username}",
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if reviewed_prs_response.status_code == 200:
-                        reviewed_prs = reviewed_prs_response.json().get("items", [])
-                        prs_grouped = defaultdict(list)
-                        reviewed_stats = {"merged_count": 0, "open_count": 0, "closed_count": 0}
-
-                        for pr in reviewed_prs:
-                            repo_name = pr["repository_url"].split("/")[-1]
-                            is_merged = pr.get("pull_request", {}).get("merged_at") is not None
-                            state = pr["state"]
-
-                            # Update counts
-                            if is_merged:
-                                reviewed_stats["merged_count"] += 1
-                            elif state == "open":
-                                reviewed_stats["open_count"] += 1
-                            else:
-                                reviewed_stats["closed_count"] += 1
-
-                            # Add to grouped PRs
-                            prs_grouped[repo_name].append(
-                                {
-                                    "html_url": pr["html_url"],
-                                    "number": pr["number"],
-                                    "title": pr["title"],
-                                    "state": state,
-                                    "merged": is_merged,
-                                    "created_at": pr["created_at"],
-                                }
-                            )
-
-                        context.update(
-                            {
-                                "prs_grouped": dict(prs_grouped),
-                                "reviewed_stats": reviewed_stats,
-                                "total_pr_reviews": len(reviewed_prs),
-                            }
-                        )
-
-            except Exception as e:
-                logger.error(f"Error fetching GitHub PRs: {str(e)}")
 
         return context
 

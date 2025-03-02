@@ -304,7 +304,7 @@ def UpdateIssue(request):
         return HttpResponse("invalid")
 
 
-def newhome(request, template="new_home.html"):
+def newhome(request, template="bugs_list.html"):
     if request.user.is_authenticated:
         email_record = EmailAddress.objects.filter(email=request.user.email).first()
         if email_record:
