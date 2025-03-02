@@ -15,7 +15,6 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -117,8 +116,6 @@ class OrganisationType(Enum):
     TEAM = "team"
 
 
-def default_list():
-    return []
 
 
 class Organization(models.Model):
@@ -143,10 +140,10 @@ class Organization(models.Model):
     team_points = models.IntegerField(default=0)
     tagline = models.CharField(max_length=255, blank=True, null=True)
     license = models.CharField(max_length=100, blank=True, null=True)
-    categories = ArrayField(models.CharField(max_length=100), blank=True, default=default_list)
+    categories = models.JSONField(default=list)
     contributor_guidance_url = models.URLField(blank=True, null=True)
-    tech_tags = ArrayField(models.CharField(max_length=100), blank=True, default=default_list)
-    topic_tags = ArrayField(models.CharField(max_length=100), blank=True, default=default_list)
+    tech_tags = models.JSONField(default=list) 
+    topic_tags = models.JSONField(default=list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
     type = models.CharField(
