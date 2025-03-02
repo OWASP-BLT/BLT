@@ -14,6 +14,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import ArrayField
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -135,6 +136,14 @@ class Organization(models.Model):
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
+    tagline = models.CharField(max_length=255, blank=True, null=True)
+    license = models.CharField(max_length=100, blank=True, null=True)
+    categories = ArrayField(models.CharField(max_length=100), blank=True, default=list)
+    contributor_guidance_url = models.URLField(blank=True, null=True)
+    tech_tags = ArrayField(models.CharField(max_length=100), blank=True, default=list)
+    topic_tags = ArrayField(models.CharField(max_length=100), blank=True, default=list)
+    source_code = models.URLField(blank=True, null=True)
+    ideas_link = models.URLField(blank=True, null=True)
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
