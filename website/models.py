@@ -117,6 +117,9 @@ class OrganisationType(Enum):
     TEAM = "team"
 
 
+def default_list():
+    return []
+
 class Organization(models.Model):
     admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
@@ -139,10 +142,10 @@ class Organization(models.Model):
     team_points = models.IntegerField(default=0)
     tagline = models.CharField(max_length=255, blank=True, null=True)
     license = models.CharField(max_length=100, blank=True, null=True)
-    categories = ArrayField(models.CharField(max_length=100), blank=True, default=dict)
+    categories = ArrayField(models.CharField(max_length=100), blank=True, default=default_list)
     contributor_guidance_url = models.URLField(blank=True, null=True)
-    tech_tags = ArrayField(models.CharField(max_length=100), blank=True, default=dict)
-    topic_tags = ArrayField(models.CharField(max_length=100), blank=True, default=dict)
+    tech_tags = ArrayField(models.CharField(max_length=100), blank=True, default=default_list)
+    topic_tags = ArrayField(models.CharField(max_length=100), blank=True, default=default_list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
     type = models.CharField(
