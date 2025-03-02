@@ -1242,7 +1242,7 @@ def home(request):
     )
 
     # Get top earners
-    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:3]
+    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
 
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
