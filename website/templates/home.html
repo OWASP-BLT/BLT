@@ -19,55 +19,399 @@
     <!-- Main Content -->
     <div class="relative">
         <!-- Hero Section -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <h1 class="text-5xl font-bold mb-4">Welcome to OWASP BLT</h1>
-            <p class="text-xl mb-8">Making the Internet a Safer Place</p>
-            <a href="{% url 'report' %}"
-               class="bg-white text-red-500 font-semibold py-3 px-6 rounded-full shadow-lg">
-                <i class="fas fa-flag"></i> Report a Bug
-            </a>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <h1 class="text-3xl font-bold mb-4">OWASP BLT: Secure the Web, Get Rewarded</h1>
+            <p class="text-xl mb-4">
+                Strengthen <span class="font-bold">worldwide applications</span> by <span class="font-bold">finding and fixing security & coding issues</span> through <span class="font-bold">bug bounties and issue rewards.</span> Earn <span class="font-bold">money via GitHub Sponsors & BCH</span> and get recognized with <span class="font-bold">BACON</span>, the first open-source security token on Bitcoin Runes.
+            </p>
         </div>
         <!-- Features Section -->
-        <section class="py-12">
+        <section class="py-1">
             <div class="max-w-7xl mx-auto">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <!-- Feature 1 -->
                     <div class="text-center">
-                        <i class="fas fa-bug fa-3x text-red-500 mb-4"></i>
-                        <h3 class="text-xl font-semibold mb-2">Report Bugs</h3>
-                        <p>Submit issues and help improve web security and usability.</p>
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                            <i class="fas fa-shield-virus fa-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-1">Protect Applications</h3>
+                        <p class="text-sm text-gray-600">Safeguard your applications from security vulnerabilities.</p>
                     </div>
                     <!-- Feature 2 -->
                     <div class="text-center">
-                        <i class="fas fa-trophy fa-3x  text-red-500 mb-4"></i>
-                        <h3 class="text-xl font-semibold mb-2">Earn Rewards</h3>
-                        <p>Gain points and recognition for your contributions.</p>
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                            <i class="fas fa-hand-holding-usd fa-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-1">Earn Rewards</h3>
+                        <p class="text-sm text-gray-600">Get rewarded for your security findings.</p>
+                        <a href="{% url 'hunts' %}"
+                           class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
+                            <span class="flex items-center gap-1">
+                                View Bounties
+                                <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                            </span>
+                        </a>
                     </div>
                     <!-- Feature 3 -->
                     <div class="text-center">
-                        <i class="fas fa-shield-alt fa-3x  text-red-500 mb-4"></i>
-                        <h3 class="text-xl font-semibold mb-2">Secure the Web</h3>
-                        <p>Help organizations and projects fix vulnerabilities or improve user experience.</p>
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                            <i class="fas fa-robot fa-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-1">Automate Security</h3>
+                        <p class="text-sm text-gray-600">Streamline your security workflows.</p>
+                    </div>
+                    <!-- New Education Feature -->
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 mb-3 shadow-sm hover:shadow-md transition-all duration-200">
+                            <i class="fas fa-graduation-cap fa-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -top-1 right-0 inline-flex items-center px-2 py-0.5 text-xs font-medium bg-[#e74c3c] text-white rounded-full animate-pulse">NEW</span>
+                            <h3 class="text-lg font-semibold mb-1">Learn & Grow</h3>
+                        </div>
+                        <p class="text-sm text-gray-600">Access expert-led security courses.</p>
+                        <a href="{% url 'education' %}"
+                           class="inline-block mt-3 text-[#e74c3c] hover:text-[#c0392b] font-medium text-sm">
+                            <span class="flex items-center gap-1">
+                                Start Learning
+                                <i class="fas fa-arrow-right transition-transform group-hover:translate-x-1"></i>
+                            </span>
+                        </a>
                     </div>
                 </div>
             </div>
         </section>
-        <!-- About Section -->
-        <section class="py-12 bg-gray-50">
-            <div class="max-w-4xl mx-auto text-center px-4">
-                <h2 class="text-3xl font-bold mb-6">About OWASP BLT</h2>
-                <p class="mb-4">
-                    OWASP BLT (Bugs Logs Tools) is an open-source platform dedicated to making the internet safer through community-driven bug reporting, collaboration, tools and rewards.
-                    Users can report bugs, track issues, and collaborate with organizations to enhance security measures.
-                </p>
-                <p class="mb-4">
-                    Earn points and rewards for your contributions. Organizations can launch bug bounty programs, reward contributors, and monitor trademarks.
-                    Our innovative token reward system, <strong>Bacon</strong>, recognizes valuable contributions.
-                </p>
-                <a href="{% url 'about' %}"
-                   class="mt-4 inline-block bg-red-500 text-white hover:text-black transition-all font-semibold py-3 px-6 rounded-full">Learn More</a>
+        <!-- Decorative Divider -->
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div class="flex items-center justify-center">
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div class="mx-4">
+                    <i class="fas fa-code-branch text-2xl text-[#e74c3c]"></i>
+                </div>
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+            </div>
+        </div>
+        <!-- Project Cards Section -->
+        <section class="py-6">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class=" mb-8">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-code-branch text-2xl text-[#e74c3c]"></i>
+                        <h2 class="text-3xl font-bold">Our Components</h2>
+                        <div class="flex-grow h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                    </div>
+                    <p class="text-gray-600 text-base max-w-9xl mx-auto mt-3">
+                        Four key components power OWASP BLT. The core, mobile access, browser integration, and automation—working together to secure applications worldwide.
+                    </p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Core Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">Django Core</h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="blt-star-count"
+       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                            </a>
+                            <a href="{% url 'report' %}"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fas fa-bug mr-2"></i> Report a Bug
+                            </a>
+                        </div>
+                    </div>
+                    <!-- App Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-mobile-alt text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">Flutter iOS App</h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT-Flutter"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="flutter-star-count"
+       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                            </a>
+                            <a href="#"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fab fa-apple mr-2"></i> Download App
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Extension Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-puzzle-piece text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">Chrome Extension</h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT-Extension"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="extension-star-count"
+       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                            </a>
+                            <a href="#"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fab fa-chrome mr-2"></i> Install Extension
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Action Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-bolt text-2xl text-[#e74c3c]"></i>
+                            <h4 class="font-bold text-lg">GitHub Action</h4>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
+                        <div class="flex flex-col gap-2">
+                            <a href="https://github.com/OWASP-BLT/BLT-Action"
+                               target="_blank"
+                               class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="action-star-count"
+       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                            </a>
+                            <a href="#"
+                               class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                                <i class="fas fa-code-branch mr-2"></i> Use Latest
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
+        <!-- Leaderboard Section -->
+        <section class="py-12 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold mb-4">Community Leaderboards</h2>
+                    <div class="inline-flex items-center justify-center px-6 py-3 bg-white rounded-full shadow-md mb-8">
+                        <i class="fas fa-trophy text-[#e74c3c] mr-3"></i>
+                        <span class="text-xl font-bold">Total Bounties Earned: $155</span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Top Earners -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold">Top Earners</h3>
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="space-y-4">
+                                {% for profile in top_earners %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
+                                            {% if profile.avatar %}
+                                                <img src="{{ profile.avatar }}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ profile.user.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% elif profile.user.socialaccount_set.all.0.get_avatar_url %}
+                                                <img src="{{ profile.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ profile.user.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% else %}
+                                                <img src="{% gravatar_url profile.user.email 50 %}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ profile.user.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% endif %}
+                                            <span class="font-medium">{{ profile.user.username }}</span>
+                                        </div>
+                                        <span class="text-green-600 font-medium">${{ profile.winnings|floatformat:2 }}</span>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center text-gray-500">
+                                        <p>No earnings recorded yet</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Top Bug Reporters -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold">Top Bug Reporters</h3>
+                                <i class="fas fa-bug"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="space-y-4">
+                                {% for user in top_bug_reporters %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
+                                            <a href="{% url 'profile' user.username %}"
+                                               class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
+                                                {% if user.userprofile.avatar %}
+                                                    <img src="{{ user.userprofile.avatar }}"
+                                                         alt="{{ user.username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% elif user.socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                         alt="{{ user.username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% else %}
+                                                    <img src="{% gravatar_url user.email 50 %}"
+                                                         alt="{{ user.username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full">
+                                                {% endif %}
+                                                {{ user.username }}
+                                            </a>
+                                        </div>
+                                        <span class="text-sm text-gray-500">{{ user.bug_count }} bugs</span>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center text-gray-500">
+                                        <p>No bug reports yet</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Top PR Contributors -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold">Top PR Contributors</h3>
+                                <i class="fas fa-code-branch"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="space-y-4">
+                                {% for user in top_pr_contributors %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
+                                            <a href="{% url 'profile' slug=user.user_profile__user__username %}"
+                                               class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
+                                                {% if user.user_profile__github_url %}
+                                                    <img src="https://github.com/{{ user.user_profile__user__username }}.png"
+                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% elif user.user_profile__user__userprofile.avatar %}
+                                                    <img src="{{ user.user_profile__user__userprofile.avatar }}"
+                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
+                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% else %}
+                                                    <img src="{% gravatar_url user.user_profile__user__email 50 %}"
+                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                         width="24"
+                                                         height="24"
+                                                         class="w-6 h-6 rounded-full"
+                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                {% endif %}
+                                                {{ user.user_profile__user__username }}
+                                            </a>
+                                        </div>
+                                        <span class="text-sm text-gray-500">{{ user.total_prs }} PRs</span>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center text-gray-500">
+                                        <p>No PR contributions yet</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Top Referrals -->
+                    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+                        <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-lg font-bold">Top Referrals</h3>
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[#e74c3c] font-bold">1</span>
+                                        <img src="{% static 'images/dummy-user.png' %}"
+                                             class="w-8 h-8 rounded-full"
+                                             alt="Default User Avatar"
+                                             width="24"
+                                             height="24">
+                                        <span class="font-medium">Jack Brown</span>
+                                    </div>
+                                    <span class="font-medium">20 refs</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[#e74c3c] font-bold">2</span>
+                                        <img src="{% static 'images/dummy-user.png' %}"
+                                             class="w-8 h-8 rounded-full"
+                                             alt="Default User Avatar"
+                                             width="24"
+                                             height="24">
+                                        <span class="font-medium">Kelly Green</span>
+                                    </div>
+                                    <span class="font-medium">18 refs</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[#e74c3c] font-bold">3</span>
+                                        <img src="{% static 'images/dummy-user.png' %}"
+                                             class="w-8 h-8 rounded-full"
+                                             alt="Default User Avatar"
+                                             width="24"
+                                             height="24">
+                                        <span class="font-medium">Liam Taylor</span>
+                                    </div>
+                                    <span class="font-medium">15 refs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Decorative Divider -->
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div class="flex items-center justify-center">
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                <div class="mx-4">
+                    <i class="fas fa-chart-line text-2xl text-[#e74c3c]"></i>
+                </div>
+                <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+            </div>
+        </div>
         <!-- Latest Activity Section -->
         <section class="py-12">
             <div class="max-w-7xl mx-auto px-4">
@@ -146,116 +490,7 @@
                 </div>
                 <!-- Leaderboards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-                    <!-- Top Bug Reporters -->
-                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
-                        <div class="p-6">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-semibold text-gray-800">Top Bug Reporters</h3>
-                                <i class="fas fa-bug text-[#e74c3c]"></i>
-                            </div>
-                            <div class="space-y-4">
-                                {% for user in top_bug_reporters %}
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-[#e74c3c] font-semibold">{{ forloop.counter }}</span>
-                                            <a href="{% url 'profile' user.username %}"
-                                               class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
-                                                {% if user.userprofile.avatar %}
-                                                    <img src="{{ user.userprofile.avatar }}"
-                                                         alt="{{ user.username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full">
-                                                {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                                                    <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
-                                                         alt="{{ user.username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full">
-                                                {% else %}
-                                                    <img src="{% gravatar_url user.email 50 %}"
-                                                         alt="{{ user.username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full">
-                                                {% endif %}
-                                                {{ user.username }}
-                                            </a>
-                                        </div>
-                                        <span class="text-sm text-gray-500">{{ user.bug_count }} bugs</span>
-                                    </div>
-                                {% empty %}
-                                    <p class="text-sm text-gray-500">No bug reports yet</p>
-                                {% endfor %}
-                            </div>
-                            <div class="mt-6 pt-4 border-t border-gray-100">
-                                <a href="{% url 'leaderboard_global' %}"
-                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
-                                    View Full Leaderboard
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Top PR Contributors here -->
-                    <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
-                        <div class="p-6">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-semibold text-gray-800">Top PR Contributors</h3>
-                                <i class="fas fa-code-branch text-[#e74c3c]"></i>
-                            </div>
-                            <div class="space-y-4">
-                                {% for user in top_pr_contributors %}
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-[#e74c3c] font-semibold">{{ forloop.counter }}</span>
-                                            <a href="{% url 'profile' slug=user.user_profile__user__username %}"
-                                               class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
-                                                {% if user.user_profile__github_url %}
-                                                    <img src="https://github.com/{{ user.user_profile__user__username }}.png"
-                                                         alt="{{ user.user_profile__user__username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% elif user.user_profile__user__userprofile.avatar %}
-                                                    <img src="{{ user.user_profile__user__userprofile.avatar }}"
-                                                         alt="{{ user.user_profile__user__username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
-                                                    <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
-                                                         alt="{{ user.user_profile__user__username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% else %}
-                                                    <img src="{% gravatar_url user.user_profile__user__email 50 %}"
-                                                         alt="{{ user.user_profile__user__username }}"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% endif %}
-                                                {{ user.user_profile__user__username }}
-                                            </a>
-                                        </div>
-                                        <span class="text-sm text-gray-500">{{ user.total_prs }} PRs</span>
-                                    </div>
-                                {% empty %}
-                                    <p class="text-sm text-gray-500">No PR contributions yet</p>
-                                {% endfor %}
-                            </div>
-                            <div class="mt-6 pt-4 border-t border-gray-100">
-                                <a href="{% url 'leaderboard_global' %}"
-                                   class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
-                                    View Full Leaderboard
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Remove the duplicate Top PR Contributors section -->
                 </div>
             </div>
         </section>
@@ -271,8 +506,8 @@
                                     <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ post.image.url }}"
                                              alt="{{ post.title }}"
-                                             width="auto"
-                                             height="auto"
+                                             width="800"
+                                             height="400"
                                              class="w-full h-full object-cover">
                                     </div>
                                 {% endif %}
@@ -300,6 +535,225 @@
                 </div>
             </div>
         </section>
+        <!-- Tools for Organizations Section -->
+        <section class="py-12 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Tools for Organizations</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-6">
+                    <!-- Organizations -->
+                    <a href="{% url 'organizations' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-building text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Organizations</span>
+                    </a>
+                    <!-- Domains -->
+                    <a href="{% url 'domains' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Domains</span>
+                    </a>
+                    <!-- Bugs -->
+                    <a href="{% url 'issues' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Bugs</span>
+                    </a>
+                    <!-- Issues -->
+                    <a href="{% url 'github_issues' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Issues</span>
+                    </a>
+                    <!-- Bounties -->
+                    <a href="{% url 'hunts' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Bounties</span>
+                    </a>
+                    <!-- Check-ins -->
+                    <a href="{% url 'checkIN' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Check-ins</span>
+                    </a>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Time Logs -->
+                    <a href="{% url 'sizzle' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-clock text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Time Logs</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Track time spent on security tasks</p>
+                    </a>
+                    <!-- Trademarks -->
+                    <a href="{% url 'trademark_search' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-trademark text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Trademarks</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Manage intellectual property</p>
+                    </a>
+                    <!-- Map -->
+                    <a href="{% url 'map' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-map-marked-alt text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Map</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Visualize global security impact</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+        <!-- Tools for Projects Section -->
+        <section class="py-12 bg-white">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-8">Tools for Projects</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <!-- Projects -->
+                    <a href="{% url 'project_list' %}"
+                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-project-diagram text-2xl text-[#e74c3c] mb-2"></i>
+                        <span class="text-base font-medium text-center">Projects</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Manage your security projects</p>
+                    </a>
+                    <!-- Repositories -->
+                    <a href="{% url 'repo_list' %}"
+                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-code-branch text-2xl text-[#e74c3c] mb-2"></i>
+                        <span class="text-base font-medium text-center">Repositories</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Connect and monitor GitHub repos</p>
+                    </a>
+                    <!-- Bid on Issues -->
+                    <a href="{% url 'BiddingData' %}"
+                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-gavel text-2xl text-[#e74c3c] mb-2"></i>
+                        <span class="text-base font-medium text-center">Bid on Issues</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Place bids on open issues</p>
+                    </a>
+                    <!-- Funding -->
+                    <a href="{% url 'sponsor' %}"
+                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-hand-holding-usd text-2xl text-[#e74c3c] mb-2"></i>
+                        <span class="text-base font-medium text-center">Funding</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Manage project funding & rewards</p>
+                    </a>
+                    <!-- Bacon -->
+                    <a href="{% url 'bacon' %}"
+                       class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-bacon text-2xl text-[#e74c3c] mb-2"></i>
+                        <span class="text-base font-medium text-center">Bacon</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Earn & manage Bacon tokens</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+        <!-- Tools for Users & Teams Section -->
+        <section class="py-12 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Tools for Users & Teams</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                    <!-- Users -->
+                    <a href="{% url 'users' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-users text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Users</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Manage team members</p>
+                    </a>
+                    <!-- Teams -->
+                    <a href="{% url 'team_overview' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-user-friends text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Teams</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Create & manage teams</p>
+                    </a>
+                    <!-- Challenges -->
+                    <a href="{% url 'team_challenges' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-flag text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Challenges</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Security challenges</p>
+                    </a>
+                    <!-- Leaderboards -->
+                    <a href="{% url 'team_leaderboard' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-trophy text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Leaderboards</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Track achievements</p>
+                    </a>
+                    <!-- Badges -->
+                    <a href="{% url 'badges' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-medal text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Badges</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Earn achievements</p>
+                    </a>
+                    <!-- Analytics -->
+                    <a href="{% url 'team_leaderboard' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                        <i class="fas fa-chart-line text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Analytics</span>
+                        <p class="text-sm text-gray-600 text-center mt-2">Team performance</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+        <!-- Corporate Supporters Section -->
+        <section class="bg-white rounded-xl shadow-sm p-8 mb-8">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6 flex items-center gap-3">
+                    <i class="fas fa-handshake text-[#e74c3c]"></i>
+                    Corporate Supporters
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <!-- OWASP -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-32 h-32 flex items-center justify-center mb-4">
+                            <img src="{% static 'images/OWASP_black_logo.svg' %}"
+                                 alt="OWASP Logo"
+                                 width="128"
+                                 height="128"
+                                 class="max-w-full max-h-full">
+                        </div>
+                        <p class="text-gray-700">
+                            BLT is an official OWASP project, adhering to the highest standards of open-source security.
+                        </p>
+                    </div>
+                    <!-- Sentry -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-32 h-32 flex items-center justify-center mb-4">
+                            <img src="{% static 'images/sentry-logo.svg' %}"
+                                 alt="Sentry Logo"
+                                 width="128"
+                                 height="128"
+                                 class="max-w-full max-h-full">
+                        </div>
+                        <p class="text-gray-700">Sentry provides BLT with a free plan for error monitoring and performance tracking.</p>
+                    </div>
+                    <!-- Google -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-32 h-32 flex items-center justify-center mb-4">
+                            <img src="{% static 'images/googlelogo_color_272x92dp.png' %}"
+                                 alt="Google Logo"
+                                 width="272"
+                                 height="92"
+                                 class="max-w-full max-h-full">
+                        </div>
+                        <p class="text-gray-700">
+                            Google supports BLT through <a href="{% url 'gsoc' %}" class="text-[#e74c3c] hover:text-[#c0392b]">Google Summer of Code</a>, fostering student contributions.
+                        </p>
+                    </div>
+                    <!-- Your Logo Here -->
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-32 h-32 flex items-center justify-center mb-4 border-2 border-dashed border-[#e74c3c] rounded-lg">
+                            <i class="fas fa-image text-6xl text-[#e74c3c]"></i>
+                        </div>
+                        <p class="text-gray-700">
+                            Donate to the BLT project to support our development and have your logo featured here. <a href="https://owasp.org/donate?reponame=www-project-bug-logging-tool&title=OWASP+Bug+logging+tool"
+    target="_blank"
+    class="text-[#e74c3c] hover:text-[#c0392b]">Become a Supporter</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
         <!-- Call to Action Section -->
         <section class="py-12">
             <div class="max-w-7xl mx-auto text-center">
@@ -307,15 +761,19 @@
                 <p class="mb-8">Join our community and help make the internet a safer place.</p>
                 <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
                     <a href="{% url 'contribution_guidelines' %}"
-                       class="bg-green-500 text-white hover:text-black hover:bg-green-400 transition-all font-semibold py-3 px-6 rounded-full">
+                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
                         <i class="fas fa-users"></i> Join the Community
                     </a>
                     <a href="{% url 'project_list' %}"
-                       class="bg-blue-500 text-white hover:text-black hover:bg-blue-400 transition-all font-semibold py-3 px-6 rounded-full">
+                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
                         <i class="fas fa-project-diagram"></i> Explore Projects
                     </a>
+                    <a href="{% url 'roadmap' %}"
+                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
+                        <i class="fas fa-road"></i> Roadmap
+                    </a>
                     <a href="{% url 'sponsor' %}"
-                       class="bg-yellow-500 text-white hover:text-black hover:bg-yellow-400 transition-all font-semibold py-3 px-6 rounded-full">
+                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
                         <i class="fas fa-donate"></i> Support Us
                     </a>
                 </div>
@@ -334,4 +792,83 @@
             </div>
         </footer>
     </div>
+    <!-- Add GitHub Buttons Script at the end of the content block -->
+    <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <!-- Add GitHub Star Count Script -->
+    <script>
+        const repos = {
+            'blt': 'OWASP-BLT/BLT',
+            'flutter': 'OWASP-BLT/BLT-Flutter',
+            'extension': 'OWASP-BLT/BLT-Extension',
+            'action': 'OWASP-BLT/BLT-Action'
+        };
+
+        // Cache star counts in localStorage with expiration
+        function getStoredStarCount(repo) {
+            const stored = localStorage.getItem(`star_count_${repo}`);
+            if (stored) {
+                try {
+                    const { count, timestamp } = JSON.parse(stored);
+                    // Cache for 1 hour
+                    if (Date.now() - timestamp < 3600000) {
+                        return count;
+                    }
+                } catch (e) {
+                    return null;
+                }
+            }
+
+        function storeStarCount(repo, count) {
+            localStorage.setItem(`star_count_${repo}`, JSON.stringify({
+                count: count,
+                timestamp: Date.now()
+            }));
+        }
+
+        Object.entries(repos).forEach(([key, repo]) => {
+            const countElement = document.getElementById(`${key}-star-count`);
+            if (!countElement) return;
+
+            // First try to get from cache
+            const cachedCount = getStoredStarCount(repo);
+            if (cachedCount !== null) {
+                countElement.textContent = cachedCount;
+            }
+
+            // Then fetch fresh data
+            fetch(`https://api.github.com/repos/${repo}`, {
+                headers: {
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            })
+            .then(response => {
+                if (response.status === 403) {
+                    // Rate limited - use cached value or keep showing loading
+                    const cached = getStoredStarCount(repo);
+                    if (cached !== null) {
+                        countElement.textContent = cached;
+                    }
+                    throw new Error('Rate limited');
+                }
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && typeof data.stargazers_count === 'number') {
+                    countElement.textContent = data.stargazers_count;
+                    storeStarCount(repo, data.stargazers_count);
+                }
+            })
+            .catch(error => {
+                console.error(`Error fetching star count for ${repo}:`, error);
+                // Only show 0 if we don't have a cached value
+                const cached = getStoredStarCount(repo);
+                if (cached === null) {
+                    countElement.textContent = '...';
+                }
+            });
+        });
+    </script>
 {% endblock content %}

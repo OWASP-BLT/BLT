@@ -18,7 +18,9 @@ from website.models import (
     Contribution,
     Contributor,
     ContributorStats,
+    Course,
     Domain,
+    Enrollment,
     ForumCategory,
     ForumComment,
     ForumPost,
@@ -31,6 +33,8 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    Lecture,
+    LectureStatus,
     Message,
     Monitor,
     Organization,
@@ -41,8 +45,10 @@ from website.models import (
     Post,
     PRAnalysisReport,
     Project,
+    Rating,
     Repo,
     Room,
+    Section,
     SlackBotActivity,
     SlackIntegration,
     Subscription,
@@ -632,6 +638,12 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
+admin.site.register(Lecture)
+admin.site.register(LectureStatus)
+admin.site.register(Course)
+admin.site.register(Section)
+admin.site.register(Enrollment)
+admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
