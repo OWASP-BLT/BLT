@@ -103,7 +103,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Rating",
             fields=[
-                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("id", models.AutoField(auto_created=True, primary key=True, serialize=False, verbose_name="ID")),
                 (
                     "score",
                     models.DecimalField(
@@ -129,7 +129,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Section",
             fields=[
-                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("id", models.AutoField(auto_created=True, primary key=True, serialize=False, verbose_name="ID")),
                 ("title", models.CharField(max_length=200)),
                 ("description", models.TextField(blank=True, null=True)),
                 ("order", models.PositiveIntegerField()),
@@ -158,7 +158,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Enrollment",
             fields=[
-                ("id", models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("id", models.AutoField(auto_created=True, primary key=True, serialize=False, verbose_name="ID")),
                 ("enrolled_at", models.DateTimeField(auto_now_add=True)),
                 ("completed", models.BooleanField(default=False)),
                 ("last_accessed", models.DateTimeField(auto_now=True)),
