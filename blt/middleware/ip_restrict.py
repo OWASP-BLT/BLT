@@ -64,13 +64,17 @@ class IPRestrictMiddleware:
         """
         Check if the IP address is in the list of blocked IPs.
         """
-        return ip in blocked_ips
-
-    def ip_in_range(self, ip, blocked_ip_network):
-        """
         Check if the IP address is within any of the blocked IP networks.
         """
-        ip_obj = ipaddress.ip_address(ip)
+        try:
+            ip_obj = ipaddress.ip_address(ip)
+            return any(ip_obj in ip_range for ip_range in blocked_ip_network)
+        except ValueError:
+            # Handle the case where the IP string is not a valid IP address
+            return False
+
+    def is_user_agent_blocked(self, user_agent, blocked_agents):
+        """
         return any(ip_obj in ip_range for ip_range in blocked_ip_network)
 
     def is_user_agent_blocked(self, user_agent, blocked_agents):
@@ -130,9 +134,13 @@ class IPRestrictMiddleware:
         if self.ip_in_range(ip, blocked_ip_network):
             # Find the specific network that caused the block and increment its count
             for network in blocked_ip_network:
-                if ipaddress.ip_address(ip) in network:
-                    self.increment_block_count(network=str(network))
-                    break
+                try:
+                    if ipaddress.ip_address(ip) in network:
+                        self.increment_block_count(network=str(network))
+                        break
+                except ValueError:
+                    # Skip this network check if the IP is invalid
+                    continue
             return HttpResponseForbidden()
 
         if self.is_user_agent_blocked(agent, blocked_agents):
