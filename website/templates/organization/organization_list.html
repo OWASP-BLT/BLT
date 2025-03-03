@@ -4,12 +4,36 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
+        <!-- Top Tags Section -->
+        {% if top_tags %}
+            <div class="mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Popular Tags</h2>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{% url 'organizations' %}"
+                       class="px-4 py-2 rounded-full text-sm font-medium {% if not selected_tag %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 hover:bg-gray-200{% endif %} transition-colors">
+                        All
+                    </a>
+                    {% for tag in top_tags %}
+                        <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
+                           class="px-4 py-2 rounded-full text-sm font-medium {% if selected_tag.slug == tag.slug %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-800 hover:bg-gray-200{% endif %} transition-colors">
+                            {{ tag.name }} ({{ tag.org_count }})
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
         <div class="flex flex-col lg:flex-row gap-8">
             <!-- Main Content -->
             <div class="flex-1">
                 <div class="flex justify-between items-center mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900">Organizations</h1>
-                    <p class="text-gray-600">Total: {{ total_organizations }}</p>
+                    <h1 class="text-3xl font-bold text-gray-900">
+                        {% if selected_tag %}
+                            Organizations tagged with "{{ selected_tag.name }}"
+                        {% else %}
+                            Organizations
+                        {% endif %}
+                    </h1>
+                    <p class="text-gray-600">Total: {{ paginator.count }}</p>
                 </div>
                 {% if organizations %}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -18,14 +42,16 @@
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center">
                                         {% if org.logo %}
-                                            <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                                 alt="{{ org.name }} logo"
-                                                 width="48"
-                                                 height="48"
-                                                 class="w-12 h-12 rounded-full object-cover mr-4">
+                                            <div class="w-12 h-12 bg-white rounded-lg shadow-sm p-1 flex items-center justify-center mr-4">
+                                                <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                                     alt="{{ org.name }} logo"
+                                                     width="48"
+                                                     height="48"
+                                                     class="max-w-full max-h-full object-contain">
+                                            </div>
                                         {% else %}
-                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
-                                                <i class="fas fa-building text-gray-400"></i>
+                                            <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-4 shadow-sm">
+                                                <i class="fas fa-building text-[#e74c3c]"></i>
                                             </div>
                                         {% endif %}
                                         <div>
@@ -53,6 +79,19 @@
                                         </div>
                                     {% endif %}
                                 </div>
+                                <!-- Tags Section -->
+                                {% if org.tags.all %}
+                                    <div class="mt-2 mb-4">
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for tag in org.tags.all %}
+                                                <a href="{% url 'organizations' %}?tag={{ tag.slug }}"
+                                                   class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors">
+                                                    {{ tag.name }}
+                                                </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
                                 <!-- Domains and Stats Section -->
                                 <div class="mt-4 p-4 bg-gray-50 rounded-lg">
                                     <div class="flex items-center justify-between mb-2">
@@ -174,7 +213,7 @@
                         <div class="mt-8 flex justify-center">
                             <nav class="inline-flex rounded-md shadow">
                                 {% if page_obj.has_previous %}
-                                    <a href="?page={{ page_obj.previous_page_number }}"
+                                    <a href="?page={{ page_obj.previous_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
                                        class="px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                                         Previous
                                     </a>
@@ -183,7 +222,7 @@
                                     Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
                                 </span>
                                 {% if page_obj.has_next %}
-                                    <a href="?page={{ page_obj.next_page_number }}"
+                                    <a href="?page={{ page_obj.next_page_number }}{% if selected_tag %}&tag={{ selected_tag.slug }}{% endif %}"
                                        class="px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
                                         Next
                                     </a>
@@ -196,6 +235,12 @@
                         <div class="text-gray-500">
                             <i class="fas fa-building text-6xl mb-4"></i>
                             <p class="text-xl">No organizations found</p>
+                            {% if selected_tag %}
+                                <p class="mt-4">
+                                    <a href="{% url 'organizations' %}"
+                                       class="text-[#e74c3c] hover:underline">Clear tag filter</a>
+                                </p>
+                            {% endif %}
                         </div>
                     </div>
                 {% endif %}
@@ -210,14 +255,16 @@
                             {% for org in recently_viewed %}
                                 <div class="flex items-center">
                                     {% if org.logo %}
-                                        <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                             alt="{{ org.name }} logo"
-                                             width="32"
-                                             height="32"
-                                             class="w-8 h-8 rounded-full object-cover mr-3">
+                                        <div class="w-8 h-8 bg-white rounded-lg shadow-sm p-1 flex items-center justify-center mr-3">
+                                            <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                                 alt="{{ org.name }} logo"
+                                                 width="32"
+                                                 height="32"
+                                                 class="max-w-full max-h-full object-contain">
+                                        </div>
                                     {% else %}
-                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                            <i class="fas fa-building text-gray-400 text-sm"></i>
+                                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center mr-3 shadow-sm">
+                                            <i class="fas fa-building text-[#e74c3c] text-sm"></i>
                                         </div>
                                     {% endif %}
                                     <a href="{% url 'organization_detail' org.slug %}"
@@ -237,14 +284,16 @@
                             {% for org in most_popular %}
                                 <div class="flex items-center">
                                     {% if org.logo %}
-                                        <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                             alt="{{ org.name }} logo"
-                                             width="32"
-                                             height="32"
-                                             class="w-8 h-8 rounded-full object-cover mr-3">
+                                        <div class="w-8 h-8 bg-white rounded-lg shadow-sm p-1 flex items-center justify-center mr-3">
+                                            <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                                 alt="{{ org.name }} logo"
+                                                 width="32"
+                                                 height="32"
+                                                 class="max-w-full max-h-full object-contain">
+                                        </div>
                                     {% else %}
-                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                            <i class="fas fa-building text-gray-400 text-sm"></i>
+                                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center mr-3 shadow-sm">
+                                            <i class="fas fa-building text-[#e74c3c] text-sm"></i>
                                         </div>
                                     {% endif %}
                                     <a href="{% url 'organization_detail' org.slug %}"

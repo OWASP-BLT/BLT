@@ -1,11 +1,12 @@
 import logging
 import os
+import re
 import time
 import uuid
 from datetime import timedelta
 from decimal import Decimal
 from enum import Enum
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import requests
 from annoying.fields import AutoOneToOneField
@@ -31,6 +32,21 @@ from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
 
 logger = logging.getLogger(__name__)
+
+
+# Custom validators for cryptocurrency addresses
+def validate_bch_address(value):
+    """Validates that a BCH address is in the new CashAddr format."""
+    if not value.startswith("bitcoincash:"):
+        raise ValidationError('BCH address must be in the new CashAddr format starting with "bitcoincash:"')
+    # Additional validation for the rest of the address could be added here
+
+
+def validate_btc_address(value):
+    """Validates that a BTC address is in the new SegWit format."""
+    if not (value.startswith("bc1") or value.startswith("3") or value.startswith("1")):
+        raise ValidationError('BTC address must be in a valid format (SegWit addresses start with "bc1")')
+    # Additional validation for the rest of the address could be added here
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -124,7 +140,13 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
-    twitter = models.CharField(max_length=30, null=True, blank=True)
+    twitter = models.URLField(null=True, blank=True)
+    matrix_url = models.URLField(null=True, blank=True)
+    slack_url = models.URLField(null=True, blank=True)
+    discord_url = models.URLField(null=True, blank=True)
+    gitter_url = models.URLField(null=True, blank=True)
+    zulipchat_url = models.URLField(null=True, blank=True)
+    element_url = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -135,6 +157,15 @@ class Organization(models.Model):
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
+    tagline = models.CharField(max_length=255, blank=True, null=True)
+    license = models.CharField(max_length=100, blank=True, null=True)
+    categories = models.JSONField(default=list)
+    contributor_guidance_url = models.URLField(blank=True, null=True)
+    tech_tags = models.JSONField(default=list)
+    topic_tags = models.JSONField(default=list)
+    source_code = models.URLField(blank=True, null=True)
+    ideas_link = models.URLField(blank=True, null=True)
+    repos_updated_at = models.DateTimeField(null=True, blank=True, help_text="When repositories were last updated")
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
@@ -677,8 +708,8 @@ class UserProfile(models.Model):
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
-    btc_address = models.CharField(max_length=100, blank=True, null=True)
-    bch_address = models.CharField(max_length=100, blank=True, null=True)
+    btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
+    bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
@@ -905,7 +936,8 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    github_username = models.CharField(max_length=100, blank=True, null=True)
     # link this to our issue model
     issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
@@ -913,7 +945,7 @@ class Bid(models.Model):
     amount_bch = models.DecimalField(max_digits=16, decimal_places=8, default=0)
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
-    bch_address = models.CharField(blank=True, null=True, max_length=45)
+    bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1365,6 +1397,9 @@ def verify_file_upload(sender, instance, **kwargs):
 
 
 class Repo(models.Model):
+    organization = models.ForeignKey(
+        Organization, related_name="repos", on_delete=models.CASCADE, null=True, blank=True
+    )
     project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
@@ -1574,6 +1609,18 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    # Peer-to-Peer Payment Fields
+    p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
+    p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    p2p_amount_bch = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
+    sent_by_user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issue_p2p_payments",
+    )
+    bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
@@ -1647,7 +1694,7 @@ class GitHubReview(models.Model):
     Model to store reviews made by users on pull requests.
     """
 
-    review_id = models.IntegerField(unique=True)
+    review_id = models.BigIntegerField(unique=True)
     pull_request = models.ForeignKey(
         GitHubIssue,
         on_delete=models.CASCADE,
@@ -1772,3 +1819,234 @@ class ManagementCommandLog(models.Model):
 
     def __str__(self):
         return f"{self.command_name} (Last run: {self.last_run})"
+
+
+class Course(models.Model):
+    LEVEL_CHOICES = [("BEG", "Beginner"), ("INT", "Intermediate"), ("ADV", "Advanced")]
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    instructor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="courses_teaching")
+    thumbnail = models.ImageField(upload_to="course_thumbnails/", null=True, blank=True)
+    level = models.CharField(max_length=3, choices=LEVEL_CHOICES, default="BEG")
+    tags = models.ManyToManyField(Tag, related_name="courses", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} taught by {self.instructor.user.username}"
+
+
+class Section(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.order}. {self.title} - {self.course.title} "
+
+
+class Lecture(models.Model):
+    CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE", "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
+
+    instructor = models.ForeignKey(UserProfile, on_delete=models.Case, null=True, blank=True)
+    title = models.CharField(max_length=200)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
+    video_url = models.URLField(null=True, blank=True)
+    live_url = models.URLField(null=True, blank=True)
+    scheduled_time = models.DateTimeField(null=True, blank=True)
+    recording_url = models.URLField(null=True, blank=True)
+    content = models.TextField()  # For reading content
+    # Quiz support can be added later
+    duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
+    order = models.PositiveIntegerField()
+
+    @property
+    def embed_url(self):
+        """Generates an embeddable URL if the video is from YouTube or Vimeo."""
+        if not self.video_url:
+            return None
+
+        parsed_url = urlparse(self.video_url)
+        domain = parsed_url.netloc.lower()
+
+        # Properly validate domains by checking exact matches or subdomains
+        youtube_domains = ["youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be"]
+        vimeo_domains = ["vimeo.com", "www.vimeo.com", "player.vimeo.com"]
+
+        is_youtube = any(domain == yd or domain.endswith("." + yd) for yd in youtube_domains)
+        is_vimeo = any(domain == vd or domain.endswith("." + vd) for vd in vimeo_domains)
+
+        if is_youtube:
+            if "youtu.be" in domain:
+                # Short URL format (youtu.be/VIDEO_ID)
+                path_parts = parsed_url.path.strip("/").split("/")
+                video_id = path_parts[0] if path_parts else None
+            else:
+                # Standard format (youtube.com/watch?v=VIDEO_ID)
+                query_params = parse_qs(parsed_url.query)
+                video_id = query_params.get("v", [None])[0]
+
+                # Handle youtube.com/embed/VIDEO_ID format
+                if not video_id and "/embed/" in parsed_url.path:
+                    path_parts = parsed_url.path.strip("/").split("/")
+                    if len(path_parts) >= 2 and path_parts[0] == "embed":
+                        video_id = path_parts[1]
+
+            # Validate YouTube ID format (11 characters of letters, numbers, hyphens, underscores)
+            if video_id and re.fullmatch(r"^[\w-]{11}$", video_id):
+                return f"https://www.youtube.com/embed/{video_id}"
+
+        elif is_vimeo:
+            path_parts = parsed_url.path.strip("/").split("/")
+            video_id = None
+
+            # Handle various Vimeo URL formats
+            if path_parts:
+                # Standard format: vimeo.com/VIDEO_ID
+                potential_id = path_parts[0]
+                if potential_id and potential_id.isdigit():
+                    video_id = potential_id
+                # Handle other formats like vimeo.com/channels/staffpicks/VIDEO_ID
+                elif len(path_parts) > 1 and path_parts[-1].isdigit():
+                    video_id = path_parts[-1]
+
+            if video_id:
+                return f"https://player.vimeo.com/video/{video_id}"
+
+        # Return the original URL if it's not a recognized video provider or parsing fails
+        return self.video_url
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.title} ({self.content_type})"
+
+
+class LectureStatus(models.Model):
+    STATUS_TYPES = [
+        ("PROGRESS", "In Progress"),
+        ("COMPLETED", "Completed"),
+    ]
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="student")
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="lecture_statuses")
+    status = models.CharField(max_length=15, choices=STATUS_TYPES)
+
+    def __str__(self):
+        return f"{self.student.user.username} has status {self.status} for {self.lecture.title}"
+
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="enrollments")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    completed = models.BooleanField(default=False)
+    last_accessed = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ["student", "course"]
+
+    def calculate_progress(self):
+        """Calculate course progress as percentage of completed lectures"""
+        lectures = Lecture.objects.filter(section__course=self.course)
+        total_lectures = lectures.count()
+
+        if total_lectures == 0:
+            return 0
+
+        completed_lectures = LectureStatus.objects.filter(
+            student=self.student, lecture__section__course=self.course, status="COMPLETED"
+        ).count()
+
+        progress = round((completed_lectures / total_lectures) * 100)
+        return progress
+
+    def __str__(self):
+        return f"{self.student.username} - {self.course.title}"
+
+
+class Rating(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="ratings")
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+    score = models.DecimalField(
+        max_digits=3, decimal_places=2, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
+    )
+    comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.score} by {self.user.user.username} for {self.course.title}"
+
+
+class BaconSubmission(models.Model):
+    STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"))
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    github_url = models.URLField()
+    contribution_type = models.CharField(
+        max_length=20, choices=[("security", "Security Related"), ("non-security", "Non-Security Related")]
+    )
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
+    transaction_status = models.CharField(
+        max_length=20, choices=[("pending", "Pending"), ("completed", "Completed")], default="pending"
+    )
+    transaction_id = models.CharField(max_length=255, blank=True, null=True)
+    bacon_amount = models.IntegerField(default=0)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
+
+
+class DailyStats(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    value = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Daily Statistic"
+        verbose_name_plural = "Daily Statistics"
+        ordering = ["-modified"]
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+
+
+class Queue(models.Model):
+    """
+    Model to store queue items with a message, image, and launch status.
+    """
+
+    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    image = models.ImageField(upload_to="queue_images", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    launched = models.BooleanField(default=False)
+    launched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="queue_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
+
+    def launch(self):
+        """
+        Mark the queue item as launched and set the launched_at timestamp.
+        """
+        if not self.launched:
+            self.launched = True
+            self.launched_at = timezone.now()
+            self.save()

@@ -31,6 +31,15 @@
                             <span>Domains</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if '/map/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'map' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/map/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-map-marker-alt fa-lg"></i>
+                            </div>
+                            <span>Map</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/feed/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'feed' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/feed' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
@@ -86,13 +95,13 @@
                             <span>Scoreboard</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
+                    <li class="mb-2 {% if request.path == '/bounties/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'hunts' %}"
-                           class="flex items-center w-full no-underline p-2 {% if request.path == '/hunts/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/bounties/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-bug fa-lg"></i>
                             </div>
-                            <span>Bug Bounties</span>
+                            <span>Bounties</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/reported-ips/' %}bg-gray-200{% endif %}">
@@ -180,6 +189,15 @@
                                 <i class="fas fa-coins fa-lg"></i>
                             </div>
                             <span>BACON (coin)</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/bacon-requests/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'bacon_requests' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/bacon-requests/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-hands-helping fa-lg"></i>
+                            </div>
+                            <span>Bacon Requests</span>
                         </a>
                     </li>
                 </ul>
@@ -298,6 +316,16 @@
                         <span>iPhone App</span>
                     </a>
                 </li>
+                <!-- Chrome Extension -->
+                <li class="mb-2 {% if request.path == '/extension/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'extension' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/extension/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
+                            <i class="fas fa-puzzle-piece fa-lg"></i>
+                        </div>
+                        <span>Chrome Extension</span>
+                    </a>
+                </li>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
                 <!-- About Us Header Link -->
@@ -392,13 +420,13 @@
                             <span>Developer API</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'bltv' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/bltv/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                    <li class="mb-2 {% if request.path == '/education/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'education' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/education/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-tv fa-lg"></i>
                             </div>
-                            <span>BLTV</span>
+                            <span>Education</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/open-source-sorting-hat/' %}bg-gray-200{% endif %}">
@@ -417,6 +445,15 @@
                                 <i class="fas fa-sun-o fa-lg"></i>
                             </div>
                             <span>GSOC</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/roadmap/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'roadmap' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/roadmap/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-road fa-lg"></i>
+                            </div>
+                            <span>Roadmap</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if '/submit-roadmap-pr/' in request.path %}bg-gray-200{% endif %}">
@@ -492,6 +529,15 @@
                             <i class="fas fa-sitemap fa-lg"></i>
                         </div>
                         <span>Sitemap</span>
+                    </a>
+                </li>
+                <li class="mb-2 {% if request.path == '/roadmap/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'roadmap' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/roadmap' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
+                            <i class="fas fa-road fa-lg"></i>
+                        </div>
+                        <span>Roadmap</span>
                     </a>
                 </li>
                 <li class="mb-2 {% if request.path == '/status/' %}bg-gray-200{% endif %}">

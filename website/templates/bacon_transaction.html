@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}GitHub Issues - {{ block.super }}{% endblock %}
+{% block description %}
+    Browse through all GitHub issues and pull requests
+{% endblock description %}
+{% block keywords %}
+    GitHub Issues, Pull Requests, Open Source, Contributions
+{% endblock keywords %}
+{% block og_title %}
+    GitHub Issues - Track and Browse GitHub Issues
+{% endblock og_title %}
+{% block og_description %}
+    Explore all GitHub issues and pull requests. Track progress and contribute to open source.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <style>
+        /* Table Styling */
+        #transaction-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            margin: 20px auto;
+        }
+        #transaction-form table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        #transaction-form th, #transaction-form td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        #transaction-form th {
+            background: red;
+            color: white;
+        }
+        #transaction-form tr:nth-child(even) { background: #f9f9f9; }
+        #transaction-form tr:hover { background: #ffe6e6; }
+
+        /* Toggle Details */
+        .toggle-details {
+            color: black;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .toggle-details:hover { text-decoration: underline; }
+        .user-details {
+            background: #f2f2f2;
+            color: black;
+            display: none;
+        }
+
+        /* Buttons */
+        #transaction-form button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        #transaction-form button:hover {
+            background: white;
+            color: red;
+            border: 1px solid red;
+        }
+        #total-bacon { font-weight: bold; color: red; }
+        .serial-number { width: 50px; }
+        .select-all { width: 20px; }
+        .transaction-heading {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        /* Modal Styling */
+        #tx-modal {
+            display: none; /* Ensure modal is hidden on page load */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px); /* Soft blur effect */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #tx-modal .modal-content {
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            width: 420px;
+            text-align: center;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            border: 2px solid #007bff; /* Blue border */
+            position: relative;
+        }
+
+        /* Close Button */
+        #tx-modal .close-modal {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            border-radius: 50%;
+            transition: background 0.2s ease-in-out;
+        }
+
+        #tx-modal .close-modal:hover {
+            background: #c82333;
+        }
+
+        /* Headings */
+        #tx-modal h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Labels and Inputs */
+        #tx-modal label {
+            font-size: 16px;
+            display: block;
+            margin: 10px 0;
+            color: #555;
+        }
+
+        #tx-modal input, 
+        #tx-modal select {
+            padding: 8px;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-top: 5px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s ease-in-out;
+        }
+
+        #tx-modal input:focus, 
+        #tx-modal select:focus {
+            border-color: #007bff;
+        }
+
+        /* Radio Buttons */
+        #tx-modal input[type="radio"] {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        /* Confirm Button */
+        #tx-modal #confirm-tx {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background 0.2s ease-in-out;
+            margin-top: 15px;
+        }
+
+        #tx-modal #confirm-tx:hover {
+            background: #0056b3;
+        }
+
+        #response-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        #response-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        #response-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        #wallet-balance {
+            position: fixed;
+            top: 100px; /* Move the wallet balance section down */
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 250px;
+        }
+        #wallet-balance h3 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        #wallet-balance p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        #fetch-balance {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        #fetch-balance:hover {
+            background: #0056b3;
+        }
+        #password-field {
+            display: none;
+            margin-top: 10px;
+        }
+        .bch-address {
+            word-wrap: break-word;
+            word-break: break-all;
+        }
+    </style>
+    <h2 class="transaction-heading">Initiate Transaction</h2>
+    <form id="transaction-form">
+        <table>
+            <thead>
+                <tr>
+                    <th class="serial-number">#</th>
+                    <th class="select-all">
+                        <input type="checkbox" id="select-all">
+                    </th>
+                    <th>GitHub Name</th>
+                    <th>Total Bacon Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user, details in submissions_by_user.items %}
+                    <tr>
+                        <td class="serial-number">{{ forloop.counter }}</td>
+                        <td class="select-all">
+                            <input type="checkbox"
+                                   class="select-user"
+                                   data-amount="{{ details.total_bacon }}">
+                        </td>
+                        <td class="toggle-details">{{ user.username }}</td>
+                        <td>{{ details.total_bacon }}</td>
+                    </tr>
+                    <tr class="user-details">
+                        <td colspan="4">
+                            <strong>BCH Address:</strong> <span class="bch-address">{{ user.userprofile.bch_address }}</span>
+                            <br>
+                            <strong>PRs:</strong>
+                            <ul>
+                                {% for submission in details.submissions %}
+                                    <li>{{ submission.github_url }} ({{ submission.bacon_amount }} Runes)</li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h3>
+            Total Selected Bacon Amount: <span id="total-bacon">0</span>
+        </h3>
+        <button type="button" id="perform-tx">Perform on Transaction</button>
+    </form>
+    <!-- Modal -->
+    <div id="tx-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal"></button>
+            <h3>Confirm Transaction</h3>
+            <p>
+                Number of Users Selected: <span id="modal-num-users">0</span>
+            </p>
+            <p>
+                Total Bacon Amount: <span id="modal-total-bacon">0</span>
+            </p>
+            <label>
+                Fee Rate:
+                <input type="number" id="fee-rate" value="1">
+            </label>
+            <br>
+            <br>
+            <label>
+                <input type="radio" name="dry-run" value="true" checked>
+                Dry Run
+            </label>
+            <label>
+                <input type="radio" name="dry-run" value="false">
+                Actual Transaction
+            </label>
+            <br>
+            <br>
+            <label>
+                Network:
+                <select id="network">
+                    <option value="regtest">Regtest</option>
+                    <option value="mainnet">Mainnet</option>
+                </select>
+            </label>
+            <br>
+            <br>
+            <div id="password-field">
+                <label>
+                    Password:
+                    <input type="password" id="transaction-password">
+                </label>
+            </div>
+            <button id="confirm-tx">Confirm</button>
+        </div>
+    </div>
+    <div id="response-message"></div>
+    <div id="wallet-balance">
+        <h3>Wallet Balance</h3>
+        <p>
+            <strong>Cardinal:</strong> <span id="balance-cardinal">Loading...</span>
+        </p>
+        <p>
+            <strong>Ordinal:</strong> <span id="balance-ordinal">Loading...</span>
+        </p>
+        <p>
+            <strong>Runes:</strong> <span id="balance-runes">Loading...</span>
+        </p>
+        <p>
+            <strong>Runic:</strong> <span id="balance-runic">Loading...</span>
+        </p>
+        <p>
+            <strong>Total:</strong> <span id="balance-total">Loading...</span>
+        </p>
+        <button id="fetch-balance">Fetch Balance</button>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const checkboxes = document.querySelectorAll(".select-user");
+            const totalBaconSpan = document.getElementById("total-bacon");
+            const modal = document.getElementById("tx-modal");
+            const confirmTx = document.getElementById("confirm-tx");
+            const closeModal = document.querySelector(".close-modal");
+            const modalNumUsers = document.getElementById("modal-num-users");
+            const modalTotalBacon = document.getElementById("modal-total-bacon");
+            const performTx = document.getElementById("perform-tx");
+            const selectAll = document.getElementById("select-all");
+            const fetchBalanceButton = document.getElementById("fetch-balance");
+            const networkSelect = document.getElementById("network");
+            const dryRunRadios = document.querySelectorAll('input[name="dry-run"]');
+            const passwordField = document.getElementById("password-field");
+
+            function updateTotal() {
+                let total = 0, count = 0;
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        total += parseFloat(cb.dataset.amount);
+                        count++;
+                    }
+                });
+                totalBaconSpan.textContent = total;
+                modalNumUsers.textContent = count;
+                modalTotalBacon.textContent = total;
+            }
+
+            function togglePasswordField() {
+                const network = networkSelect.value;
+                const dryRun = document.querySelector('input[name="dry-run"]:checked').value === "false";
+                if (network === "mainnet" && dryRun) {
+                    passwordField.style.display = "block";
+                } else {
+                    passwordField.style.display = "none";
+                }
+            }
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener("change", updateTotal);
+            });
+
+            selectAll.addEventListener("change", function() {
+                checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                updateTotal();
+            });
+
+            networkSelect.addEventListener("change", togglePasswordField);
+            dryRunRadios.forEach(radio => radio.addEventListener("change", togglePasswordField));
+
+            performTx.addEventListener("click", function() {
+                modal.style.display = "flex"; /* Display modal in the center */
+            });
+
+            closeModal.addEventListener("click", function() {
+                modal.style.display = "none";
+            });
+
+            // Ensure modal is hidden on page load
+            modal.style.display = "none";
+
+            confirmTx.addEventListener("click", function() {
+                const feeRate = document.getElementById("fee-rate").value;
+                const dryRun = document.querySelector('input[name="dry-run"]:checked').value === "true";
+                const network = document.getElementById("network").value;
+                const password = document.getElementById("transaction-password").value;
+                const selectedUsers = [];
+
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        selectedUsers.push({
+                            username: cb.closest('tr').querySelector('.toggle-details').textContent.trim(),
+                            bch_address: cb.closest('tr').nextElementSibling.querySelector('strong').nextSibling.textContent.trim(),
+                            bacon_amount: parseFloat(cb.dataset.amount)
+                        });
+                    }
+                });
+
+                const payload = {
+                    selected_users: selectedUsers,
+                    fee_rate: parseFloat(feeRate),
+                    dry_run: dryRun,
+                    network: network
+                };
+
+                if (network === "mainnet" && !dryRun) {
+                    payload.password = password;
+                }
+
+                fetch("/initiate-transaction/", {  // Added trailing slash
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const responseMessage = document.getElementById("response-message");
+                    if (data.success) {
+                        responseMessage.textContent = `Transaction Success: TXID: ${data.txid}`;
+                        responseMessage.className = "success";
+                    } else {
+                        responseMessage.textContent = `Error: ${data.error}`;
+                        responseMessage.className = "error";
+                    }
+                    responseMessage.style.display = "block";
+                })
+                .catch(error => {
+                    const responseMessage = document.getElementById("response-message");
+                    responseMessage.textContent = `Error: ${error}`;
+                    responseMessage.className = "error";
+                    responseMessage.style.display = "block";
+                });
+
+                modal.style.display = "none";
+            });
+
+            document.querySelectorAll(".toggle-details").forEach(el => {
+                el.addEventListener("click", function() {
+                    this.parentNode.nextElementSibling.style.display =
+                        this.parentNode.nextElementSibling.style.display === "none" ? "table-row" : "none";
+                });
+            });
+
+            document.getElementById("transaction-form").addEventListener("submit", function(event) {
+                event.preventDefault();
+                alert("Performing actual transaction...");
+            });
+
+            // Fetch and display wallet balance on button click
+            fetchBalanceButton.addEventListener("click", function() {
+                fetch("/api/get-wallet-balance/")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById("balance-cardinal").textContent = data.balance.cardinal;
+                            document.getElementById("balance-ordinal").textContent = data.balance.ordinal;
+                            document.getElementById("balance-runes").textContent = JSON.stringify(data.balance.runes);
+                            document.getElementById("balance-runic").textContent = data.balance.runic;
+                            document.getElementById("balance-total").textContent = data.balance.total;
+                        } else {
+                            alert("Error fetching wallet balance: " + data.error);
+                        }
+                    })
+                    .catch(error => alert("Error: " + error));
+            });
+        });
+    </script>
+{% endblock %}

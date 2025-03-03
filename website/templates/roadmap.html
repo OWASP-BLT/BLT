@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}OWASP BLT Roadmap - Future of Web Security{% endblock %}
+{% block description %}
+    Explore OWASP BLT's development roadmap and upcoming features. See how we're shaping the future of web security.
+{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="min-h-screen bg-white py-12 relative overflow-hidden">
+        <!-- Enhanced Cyber Background Elements -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <!-- Animated Circuit Board Pattern -->
+            <div class="absolute inset-0 opacity-15">
+                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                    <pattern id="circuit" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <path d="M0,0 L100,0 L100,100 L0,100 Z" fill="none" stroke="#e74c3c" stroke-width="0.5" opacity="0.3"></path>
+                    <circle cx="50" cy="50" r="3" fill="#e74c3c" opacity="0.3"></circle>
+                    <path d="M50,0 L50,50 M0,50 L50,50 M50,50 L100,50 M50,50 L50,100" stroke="#e74c3c" stroke-width="0.5" opacity="0.3">
+                    </path>
+                    <circle cx="0" cy="0" r="2" fill="#e74c3c" opacity="0.3"></circle>
+                    <circle cx="100" cy="0" r="2" fill="#e74c3c" opacity="0.3"></circle>
+                    <circle cx="0" cy="100" r="2" fill="#e74c3c" opacity="0.3"></circle>
+                    <circle cx="100" cy="100" r="2" fill="#e74c3c" opacity="0.3"></circle>
+                    </pattern>
+                    <rect x="0" y="0" width="100%" height="100%" fill="url(#circuit)">
+                    <animateTransform attributeName="transform" type="translate" from="0 0" to="50 50" dur="20s" repeatCount="indefinite" />
+                    </rect>
+                </svg>
+            </div>
+            <!-- Enhanced Binary Rain -->
+            <div class="absolute inset-0 overflow-hidden">
+                <div class="absolute inset-0 grid grid-cols-20 gap-1">
+                    {% for i in "x"|rjust:"40" %}
+                        <div class="text-[#e74c3c] opacity-20 text-xs font-mono transform translate-y-full animate-matrix-fall"
+                             style="animation-delay: {{ forloop.counter|random_number }}s;
+                                    animation-duration: {{ forloop.counter|multiply:2|floatformat:0 }}s">
+                            01001010101
+                            <br>
+                            10101010101
+                            <br>
+                            01010101010
+                            <br>
+                            10101010101
+                            <br>
+                            01010101010
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Floating Particles with Subtle Rotation -->
+            <div class="absolute inset-0">
+                {% for i in "x"|rjust:"30" %}
+                    <div class="absolute rounded-full animate-float"
+                         style="width: {{ forloop.counter|random_number|multiply:0.3|floatformat:1 }}rem;
+                                height: {{ forloop.counter|random_number|multiply:0.3|floatformat:1 }}rem;
+                                background-color: rgba(231, 76, 60, {{ forloop.counter|random_number|multiply:0.02|floatformat:2 }});
+                                left: {{ forloop.counter|random_number|multiply:5|floatformat:0 }}%;
+                                top: {{ forloop.counter|random_number|multiply:5|floatformat:0 }}%;
+                                animation-delay: {{ forloop.counter|random_number|floatformat:1 }}s;
+                                animation-duration: {{ forloop.counter|random_number|multiply:2|floatformat:0 }}s">
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Pulsing Nodes -->
+            <div class="absolute inset-0">
+                {% for i in "x"|rjust:"10" %}
+                    <div class="absolute w-3 h-3 rounded-full bg-[#e74c3c] opacity-30 animate-pulse-node"
+                         style="left: {{ forloop.counter|random_number|multiply:10|floatformat:0 }}%;
+                                top: {{ forloop.counter|random_number|multiply:10|floatformat:0 }}%;
+                                animation-delay: {{ forloop.counter|random_number|floatformat:1 }}s"></div>
+                {% endfor %}
+            </div>
+            <!-- Animated Connection Lines -->
+            <svg class="absolute inset-0 w-full h-full"
+                 xmlns="http://www.w3.org/2000/svg">
+                <line x1="10%" y1="20%" x2="30%" y2="40%" stroke="#e74c3c" stroke-width="1" class="animate-pulse-line" />
+                <line x1="80%" y1="10%" x2="60%" y2="30%" stroke="#e74c3c" stroke-width="1" class="animate-pulse-line" />
+                <line x1="40%" y1="80%" x2="20%" y2="60%" stroke="#e74c3c" stroke-width="1" class="animate-pulse-line" />
+                <line x1="70%" y1="70%" x2="90%" y2="50%" stroke="#e74c3c" stroke-width="1" class="animate-pulse-line" />
+                <line x1="30%" y1="30%" x2="70%" y2="70%" stroke="#e74c3c" stroke-width="1" class="animate-pulse-line" />
+            </svg>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <!-- Header Section with Glitch Effect -->
+            <div class="text-center mb-16">
+                <h1 data-text="Project Roadmap"
+                    class="glitch text-5xl font-bold text-gray-900 mb-6 flex items-center justify-center gap-4">
+                    <i class="fas fa-road text-[#e74c3c]"></i>
+                    Project Roadmap
+                </h1>
+                <p class="text-xl text-gray-700 max-w-3xl mx-auto">
+                    Discover our vision for the future of web security. Track our progress and upcoming features as we continue to evolve OWASP BLT.
+                </p>
+            </div>
+            <!-- Milestone List Section -->
+            <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-200 mb-16 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-br from-white via-gray-100 to-[#e74c3c] opacity-20"></div>
+                <div class="relative">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-3">
+                        <i class="fas fa-tasks text-[#e74c3c]"></i>
+                        Development Milestones {{ milestones|length }}
+                    </h2>
+                    <div class="space-y-6">
+                        {% for milestone in milestones %}
+                            <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#e74c3c] hover:shadow-2xl transition-all duration-300">
+                                <div class="flex flex-wrap items-center gap-4 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <i class="{{ milestone.icon }} text-[#e74c3c]"></i>
+                                        <h3 class="text-2xl font-bold text-gray-900">{{ milestone.title }}</h3>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        {% for tag in milestone.tags %}
+                                            <span class="px-3 py-1 bg-{{ tag.color }} text-white rounded-full text-sm font-semibold">{{ tag.label }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% if milestone.description %}<p class="text-gray-700 mb-4">{{ milestone.description }}</p>{% endif %}
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                        <i class="{{ milestone.progress_icon }} text-[#e74c3c]"></i>
+                                    </div>
+                                    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div class="h-full bg-[#e74c3c] rounded-full"
+                                             style="width: {{ milestone.progress }}"></div>
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900">{{ milestone.progress }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- Community Input Section -->
+            <div class="bg-white rounded-3xl p-8 shadow-xl border border-gray-200 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-tr from-white via-gray-100 to-[#e74c3c] opacity-20"></div>
+                <div class="relative">
+                    <div class="text-center mb-8">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Shape Our Future</h2>
+                        <p class="text-gray-700">
+                            Your voice matters in our development journey. Share your ideas and help us build the future of web security.
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <a href="{% url 'view_forum' %}" class="group">
+                            <div class="bg-white rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
+                                    <i class="fas fa-comments text-2xl text-gray-400 group-hover:text-white"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Join Discussion</h3>
+                                <p class="text-gray-700">Share your thoughts in our community forum</p>
+                            </div>
+                        </a>
+                        <a href="{% url 'github_issues' %}" class="group">
+                            <div class="bg-white rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
+                                    <i class="fab fa-github text-2xl text-gray-400 group-hover:text-white"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Submit Issues</h3>
+                                <p class="text-gray-700">Report bugs or request new features</p>
+                            </div>
+                        </a>
+                        <a href="{% url 'contribution_guidelines' %}" class="group">
+                            <div class="bg-white rounded-xl p-6 text-center hover:shadow-2xl transition-all duration-300 border border-gray-200">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center group-hover:bg-[#e74c3c] transition-colors shadow-md">
+                                    <i class="fas fa-code text-2xl text-gray-400 group-hover:text-white"></i>
+                                </div>
+                                <h3 class="text-xl font-semibold text-gray-900 mb-2">Contribute</h3>
+                                <p class="text-gray-700">Help us develop new features</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <style>
+        /* Glitch Effect for Header */
+        .glitch {
+            position: relative;
+            color: #333;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0.8;
+            clip: rect(0, 900px, 0, 0);
+            color: #e74c3c;
+        }
+        .glitch::before {
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+        .glitch::after {
+            animation: glitch-anim2 3s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(42px, 9999px, 44px, 0); transform: translate(2px, -2px); }
+            20% { clip: rect(85px, 9999px, 10px, 0); transform: translate(-2px, 2px); }
+            40% { clip: rect(24px, 9999px, 68px, 0); transform: translate(-2px, -2px); }
+            60% { clip: rect(5px, 9999px, 85px, 0); transform: translate(2px, 2px); }
+            80% { clip: rect(42px, 9999px, 44px, 0); transform: translate(-2px, 2px); }
+            100% { clip: rect(85px, 9999px, 10px, 0); transform: translate(2px, -2px); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(12px, 9999px, 18px, 0); transform: translate(-2px, 2px); }
+            20% { clip: rect(85px, 9999px, 10px, 0); transform: translate(2px, -2px); }
+            40% { clip: rect(24px, 9999px, 68px, 0); transform: translate(2px, 2px); }
+            60% { clip: rect(5px, 9999px, 85px, 0); transform: translate(-2px, -2px); }
+            80% { clip: rect(12px, 9999px, 18px, 0); transform: translate(2px, 2px); }
+            100% { clip: rect(85px, 9999px, 10px, 0); transform: translate(-2px, -2px); }
+        }
+
+        /* Enhanced Matrix Rain Animation */
+        @keyframes matrix-fall {
+            0% { transform: translateY(-100%); opacity: 0; }
+            10% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { transform: translateY(1000%); opacity: 0; }
+        }
+        .animate-matrix-fall {
+            animation: matrix-fall 18s linear infinite;
+        }
+        
+        /* Floating Particles Animation with Rotation */
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-15px) translateX(5px) rotate(10deg); }
+            50% { transform: translateY(0) translateX(10px) rotate(0deg); }
+            75% { transform: translateY(15px) translateX(5px) rotate(-10deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        /* Pulsing Nodes */
+        @keyframes pulse-node {
+            0% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.7); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 0.3; }
+        }
+        .animate-pulse-node {
+            animation: pulse-node 3s ease-in-out infinite;
+        }
+
+        /* Animated Connection Lines */
+        @keyframes pulse-line {
+            0%, 100% { stroke-width: 1; opacity: 0.2; }
+            50% { stroke-width: 2; opacity: 0.5; }
+        }
+        .animate-pulse-line {
+            animation: pulse-line 4s ease-in-out infinite;
+        }
+    </style>
+{% endblock %}
