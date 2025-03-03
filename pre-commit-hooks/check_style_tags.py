@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.stdout.reconfigure(encoding="utf-8")
+
 
 def get_staged_files():
     """Get list of staged HTML files"""
@@ -59,7 +61,7 @@ def main():
         print("\n❌ Commit blocked: `<style>` tags detected in these files:\n")
         for file in flagged_files:
             print(f"  - {file}")
-        print("\n🛠 Remove `<style>` tags or use `git commit --allow-styles` to bypass manually.\n")
+        print("\n⚠️ Remove `<style>` tags or use `git commit --allow-styles` to bypass manually.\n")
         sys.exit(1)
 
     sys.exit(0)
