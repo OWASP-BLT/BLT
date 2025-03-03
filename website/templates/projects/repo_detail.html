@@ -15,6 +15,31 @@
         </div>
     </div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumbs -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-4">
+                {% for crumb in breadcrumbs %}
+                    <li>
+                        {% if not forloop.last %}
+                            <div class="flex items-center">
+                                {% if crumb.url %}
+                                    <a href="{{ crumb.url }}" class="text-gray-500 hover:text-[#e74c3c]">{{ crumb.title }}</a>
+                                {% else %}
+                                    <span class="text-gray-500">{{ crumb.title }}</span>
+                                {% endif %}
+                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400 ml-4"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                        {% else %}
+                            <span class="text-[#e74c3c]">{{ crumb.title }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </nav>
         <!-- Repository Header -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
             <div class="flex items-start justify-between">
@@ -31,7 +56,7 @@
                             <h1 class="text-3xl font-bold text-gray-900">{{ repo.name }}</h1>
                             <div class="flex items-center gap-3 mt-2">
                                 {% if repo.project %}
-                                    <a href="{% url 'project_detail' repo.project.slug %}"
+                                    <a href="{% url 'project_detail' slug=repo.project.slug %}"
                                        class="inline-flex items-center px-3 py-1 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors">
                                         <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -1018,12 +1043,64 @@
             messageContainer.className = 'refresh-message text-sm text-green-600';
             messageContainer.textContent = data.message;
         } else if (section === 'contributor_stats') {
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
+                const statsTableBody = document.querySelector('.contributor-stats-table tbody');
+                if (!statsTableBody) return;
 
-            window.location.reload();
-        }
+                // Clear existing table content
+                statsTableBody.innerHTML = '';
+
+                // Populate new data
+                if (data.data.stats && data.data.stats.length > 0) {
+                    data.data.stats.forEach(stat => {
+                        const row = document.createElement('tr');
+                        row.className = 'hover:bg-gray-50 transition-colors';
+                        row.innerHTML = `
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <img class="h-8 w-8 rounded-full" width="20" height="20" src="${stat.contributor.avatar_url}" alt="${stat.contributor.name}">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">${stat.contributor.name}</div>
+                                        <div class="text-sm text-gray-500">@${stat.contributor.github_id}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-emerald-600 font-medium">
+                                ${stat.commits ? stat.commits.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-blue-600 font-medium">
+                                ${stat.issues_opened ? stat.issues_opened.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-purple-600 font-medium">
+                                ${stat.issues_closed ? stat.issues_closed.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-orange-600 font-medium">
+                                ${stat.pull_requests ? stat.pull_requests.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center text-cyan-600 font-medium">
+                                ${stat.comments ? stat.comments.toLocaleString() : '0'}
+                            </td>
+                            <td class="px-4 py-4 whitespace-nowrap text-center">
+                                <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stat.impact_level.class}">
+                                    ${stat.impact_level.text}
+                                </div>
+                            </td>
+                        `;
+                        statsTableBody.appendChild(row);
+                    });
+                } else {
+                    statsTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                                No contributor statistics available for this period
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                // Show success message
+                messageContainer.className = 'refresh-message text-sm text-green-600';
+                messageContainer.textContent = data.message || 'Contributor statistics refreshed successfully';
+            }
         
     } catch (error) {
         console.error('Error:', error);

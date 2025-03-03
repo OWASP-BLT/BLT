@@ -3,83 +3,151 @@
 {% load i18n %}
 {% load static %}
 {% block title %}
-    Sponsor the Monthly Leaderboard Prize
+    Support OWASP BLT - Donate & Sponsor
 {% endblock title %}
 {% block description %}
-    Support the top bug finders by sponsoring the monthly leaderboard prize. Enter your BCH address, send donations, and receive recognition within the community.
+    Support the development of OWASP BLT by donating or sponsoring our monthly leaderboard prizes. Make a difference in web security today.
 {% endblock description %}
 {% block keywords %}
-    Sponsor Leaderboard Prize, Monthly Bug Bounty, BCH Address, Send Donations, Community Recognition, Support Bug Finders
+    OWASP BLT Donation, Sponsor Security, Bug Bounty Support, Monthly Prize, BCH Donation, Community Support
 {% endblock keywords %}
 {% block og_title %}
-    Sponsor the Monthly Leaderboard Prize - Support Excellence
+    Support OWASP BLT - Make a Difference in Web Security
 {% endblock og_title %}
 {% block og_description %}
-    Help reward top bug finders by sponsoring the monthly leaderboard prize. Enter your BCH address, send donations, and get acknowledged within the community.
+    Support OWASP BLT's mission to make the web more secure. Donate to our development or sponsor monthly prizes to recognize top contributors.
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex mt-10 justify-center items-center">
-        <!-- Monthly Prize Sponsorship Section -->
-        <div class="bg-white shadow-lg p-8">
-            <h2 class="text-4xl font-semibold text-center text-gray-800 mb-6">Sponsor the Monthly Leaderboard Prize</h2>
-            <div class="mt-8">
-                <h3 class="text-3xl font-semibold mb-4 text-gray-800">Enter BCH Address</h3>
-                <form class="flex flex-col space-y-4">
-                    <label for="bchAddress" class="text-lg font-semibold text-gray-700">BCH Address:</label>
-                    <input type="text"
-                           id="bchAddress"
-                           name="bchAddress"
-                           class="p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                           placeholder="Enter BCH address here"
-                           required>
-                    <button type="submit"
-                            class="bg-blue-500 text-white p-4 rounded-lg text-center hover:bg-blue-600 transition-colors">
-                        Submit BCH Address
-                    </button>
-                </form>
-            </div>
-            <div class="mt-8">
-                <h3 class="text-3xl font-semibold mb-4 text-gray-800">How Sponsoring the Leaderboard Works</h3>
-                <p class="text-lg mb-4 text-gray-600">
-                    Help reward the top bug finders on BLT by sponsoring the monthly bug bounty prize. Here's how:
-                </p>
-                <ol class="list-decimal text-lg ml-6 text-gray-700">
-                    <li class="mb-2">
-                        <strong>Enter the BCH Address:</strong> Provide the BCH address where you'd like your donation to go.
-                    </li>
-                    <li class="mb-2">
-                        <strong>Send the BCH Donation:</strong> At the end of each month, send the BCH amount directly to the top bug finder's tip address.
-                    </li>
-                    <li>
-                        <strong>Receive Recognition:</strong> Your contribution will be acknowledged on our leaderboard, giving you visibility within the community.
-                    </li>
-                </ol>
-            </div>
-            <div class="mt-8">
-                <h3 class="text-3xl font-semibold mb-4 text-gray-800">Why Sponsor the Prize?</h3>
-                <ul class="list-disc text-lg ml-6 text-gray-700">
-                    <li class="mb-2">
-                        <strong>Incentivize Quality:</strong> Monetary rewards encourage high-quality submissions, improving overall outcomes.
-                    </li>
-                    <li class="mb-2">
-                        <strong>Boost Community Engagement:</strong> Your sponsorship fosters a vibrant, collaborative community.
-                    </li>
-                    <li>
-                        <strong>Gain Visibility:</strong> As a sponsor, you gain recognition and enhance your reputation within the BLT and OWASP communities.
-                    </li>
-                </ul>
-            </div>
-            <div class="mt-8 text-center">
-                <h3 class="text-3xl font-semibold mb-4 text-gray-800">Join Us in Supporting Excellence!</h3>
-                <p class="text-lg text-gray-600">
-                    Your support is vital to the success of BLT. Whether contributing to ongoing development or sponsoring the monthly prize, your involvement is greatly appreciated.
-                </p>
-                <p class="mt-4 text-lg text-gray-600">
-                    For more information or assistance, please <a href="[contact_link]" class="text-blue-600 hover:underline">contact our team</a>.
+    <div class="min-h-screen bg-gray-50 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header Section -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Support OWASP BLT</h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                    Help us make the web more secure by supporting our mission. Your contribution directly impacts the development of open-source security tools.
                 </p>
             </div>
-            <p class="text-center text-lg font-semibold text-gray-800 mt-8">Thank you for your support!</p>
+            <!-- Donation Options Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                <!-- Monthly Prize Sponsorship Card -->
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div class="p-8">
+                        <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-2xl mb-6">
+                            <i class="fas fa-trophy text-3xl text-[#e74c3c]"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Sponsor Monthly Prizes</h2>
+                        <p class="text-gray-600 mb-6">
+                            Reward top contributors and encourage high-quality bug reports by sponsoring our monthly leaderboard prizes.
+                        </p>
+                        <form class="space-y-4">
+                            <div>
+                                <label for="bchAddress" class="block text-sm font-medium text-gray-700 mb-2">BCH Address</label>
+                                <div class="relative">
+                                    <input type="text"
+                                           id="bchAddress"
+                                           name="bchAddress"
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-[#e74c3c] focus:border-[#e74c3c] transition-colors"
+                                           placeholder="Enter your BCH address"
+                                           required>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <i class="fas fa-bitcoin text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit"
+                                    class="w-full bg-[#e74c3c] text-white py-3 px-6 rounded-lg hover:bg-[#c0392b] transition-colors duration-200 flex items-center justify-center gap-2">
+                                <i class="fas fa-hand-holding-usd"></i>
+                                Submit Sponsorship
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Direct Project Support Card -->
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div class="p-8">
+                        <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-2xl mb-6">
+                            <i class="fas fa-heart text-3xl text-[#e74c3c]"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 mb-4">Support Development</h2>
+                        <p class="text-gray-600 mb-6">
+                            Help us maintain and improve OWASP BLT by supporting our development efforts directly.
+                        </p>
+                        <div class="space-y-4">
+                            <a href="https://github.com/sponsors/OWASP-BLT"
+                               target="_blank"
+                               class="w-full bg-[#2ecc71] text-white py-3 px-6 rounded-lg hover:bg-[#27ae60] transition-colors duration-200 flex items-center justify-center gap-2">
+                                <i class="fab fa-github"></i>
+                                Sponsor on GitHub
+                            </a>
+                            <a href="https://opencollective.com/owasp-blt"
+                               target="_blank"
+                               class="w-full bg-[#3498db] text-white py-3 px-6 rounded-lg hover:bg-[#2980b9] transition-colors duration-200 flex items-center justify-center gap-2">
+                                <i class="fas fa-users"></i>
+                                Support on Open Collective
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Benefits Section -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-16">
+                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Benefits of Supporting OWASP BLT</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="text-center">
+                        <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mx-auto mb-4">
+                            <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Strengthen Security</h3>
+                        <p class="text-gray-600">Help make the web more secure by supporting open-source security tools.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mx-auto mb-4">
+                            <i class="fas fa-users text-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Build Community</h3>
+                        <p class="text-gray-600">Foster a vibrant community of security researchers and developers.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mx-auto mb-4">
+                            <i class="fas fa-star text-2xl text-[#e74c3c]"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">Gain Recognition</h3>
+                        <p class="text-gray-600">Get acknowledged as a supporter in our community and documentation.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- FAQ Section -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Frequently Asked Questions</h2>
+                <div class="space-y-6 max-w-3xl mx-auto">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                            <i class="fas fa-question-circle text-[#e74c3c]"></i>
+                            How are donations used?
+                        </h3>
+                        <p class="text-gray-600">
+                            Donations support ongoing development, server costs, and monthly prizes for top contributors.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                            <i class="fas fa-question-circle text-[#e74c3c]"></i>
+                            Is my donation tax-deductible?
+                        </h3>
+                        <p class="text-gray-600">
+                            Yes, donations through Open Collective are tax-deductible in many countries as we're part of OWASP Foundation.
+                        </p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2 flex items-center gap-2">
+                            <i class="fas fa-question-circle text-[#e74c3c]"></i>
+                            Can I sponsor specific features?
+                        </h3>
+                        <p class="text-gray-600">Yes! Contact our team to discuss sponsoring specific feature development or improvements.</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock content %}

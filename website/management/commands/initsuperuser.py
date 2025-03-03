@@ -11,5 +11,8 @@ class Command(LoggedBaseCommand):
             EMAIL = user[1]
             PASSWORD = user[2]
             print("Creating superuser for %s (%s)" % (USERNAME, EMAIL))
-            superuser = User.objects.create_superuser(username=USERNAME, email=EMAIL, password=PASSWORD)
-            superuser.save()
+            if settings.DEBUG:
+                superuser = User.objects.create_superuser(username=USERNAME, email=EMAIL, password=PASSWORD)
+                superuser.save()
+            else:
+                print("Skipping superuser creation in non-debug mode")

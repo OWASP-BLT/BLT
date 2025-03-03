@@ -1,0 +1,50 @@
+<div class="container mx-auto mt-10 flex">
+    <main class="p-6 w-full">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-10">
+            {% for lecture in standalone_lectures %}
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
+                    <div class="p-6 flex flex-col flex-grow">
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">{{ lecture.title }}</h3>
+                        <div class="text-gray-600 text-sm mb-4 h-28 overflow-hidden">
+                            {{ lecture.description|truncatewords:25|default:"No description provided." }}
+                        </div>
+                        <div class="flex items-center text-gray-700 font-bold mb-4">
+                            <i class="fas {% if lecture.content_type == 'VIDEO' %}fa-video{% elif lecture.content_type == 'LIVE' %}fa-video{% elif lecture.content_type == 'DOCUMENT' %}fa-file-alt{% elif lecture.content_type == 'QUIZ' %}fa-question-circle{% endif %} text-blue-500 mr-2"></i>
+                            <span>
+                                <strong>Type:</strong>
+                                <span class="text-blue-600">{{ lecture.get_content_type_display }}</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center text-gray-700 font-bold mb-4">
+                            <i class="fas fa-clock text-blue-500 mr-2"></i>
+                            <span>
+                                <strong>Duration:</strong>
+                                <span class="text-blue-600">{{ lecture.duration }} minutes</span>
+                            </span>
+                        </div>
+                        <div class="h-24 overflow-hidden">
+                            <div class="flex flex-wrap mt-2">
+                                {% for tag in lecture.tags.all %}
+                                    <span class="bg-blue-100 text-blue-800 text-sm font-semibold mr-2 mb-2 px-3 py-1 rounded-sm flex items-center">
+                                        {{ tag.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if request.user.userprofile == lecture.instructor %}
+                            <a href="{% url 'edit_standalone_lecture' lecture.id %}"
+                               class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300 mb-4">
+                                <i class="fas fa-pencil-alt mr-2"></i>
+                                Edit Lecture
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'view_lecture' lecture.id %}"
+                           class="mt-auto inline-flex justify-center items-center bg-blue-600 w-full text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 hover:text-white transition-colors duration-300">
+                            <i class="fas fa-eye mr-2"></i> View
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </main>
+</div>

@@ -17,39 +17,53 @@
     Invite an organization to join and earn +5 points when they do. Provide their email address to send an invitation.
 {% endblock og_description %}
 {% block content %}
-    <style>
-.bottom-right {
-    position: absolute;
-    bottom: 10px;
-    right: 15px;
-  }    
-    </style>
-    <div class="row">
-        <div class="col-lg-10">
-            {% if exists %}
-                <p>
-                    Click <a href="mailto:{{ email }}?subject=A bug on {{ domain.name }}&body=first line\nsecond line\nthird line %3Cimg+src%3D%27newiibwhite.gif%27++%2F%3E">this
-                    link</a> to open the email in your mail program. If you use Gmail, you can use this extension.
-                </p>
-            {% endif %}
-            <h1>{% trans "Invite a Organization and get +5 points when they join" %}</h1>
-            <label>Email:</label>
+    <div class="flex w-full flex-col items-center justify-between md:py-5 py-3 px-4 md:px-0">
+        <div class="border rounded-md md:w-[800px] w-full flex flex-col gap-7 items-center justify-center shadow-lg md:py-10 p-4">
+            <div class="flex flex-col gap-3.5 items-center justify-center text-center text-sm md:text-base ">
+                <h1 class="text-3xl font-extrabold text-black/90 border-b-2 border-red-500/70 pb-1">
+                    {% trans "Invite an Organization" %}
+                </h1>
+                <div class="flex flex-col gap-3 text-black/65 ">
+                    <div class="flex flex-col items-center justify-center">
+                        <p>
+                            {% trans "Invite an organization to join and earn" %} <span class="font-bold text-red-500/70">{% trans "+5 points" %}</span> {% trans "when they do." %}
+                        </p>
+                        <p>{% trans "Provide their email address to send an invitation." %}</p>
+                    </div>
+                    {% if exists %}
+                        <div class="flex flex-col items-center justify-center ">
+                            <p>
+                                Click <a target="_blank"
+    href="mailto:{{ email }}?subject=A bug on {{ domain.name }}&body=first line\nsecond line\nthird line %3Cimg+src%3D%27newiibwhite.gif%27++%2F%3E">this
+                                link</a> to open the email in your mail program.
+                            </p>
+                            <p>If you use Gmail, you can use this extension.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
             <form role="form"
                   action="{% url 'invite' %}"
                   method="post"
-                  class="form-inline">
+                  class="flex flex-col gap-4 w-full md:w-fit items-center justify-center">
                 {% csrf_token %}
-                <input class="form-control" type="text" name="email">
-                <button type="submit" class="btn btn-danger">Invite</button>
+                <input class="md:w-[400px] w-full border-2 border-black/30 focus:outline-none focus:border-red-500 rounded-md p-2 placeholder:text-base"
+                       placeholder=" Email address"
+                       type="text"
+                       name="email">
+                <button type="submit"
+                        class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md w-full transition-all duration-200">
+                    Invite
+                </button>
             </form>
         </div>
     </div>
-    <div class="bottom-right">
+    {% comment %} <div class="bottom-right">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/invite.html">
             <i class="fab fa-github"></i>
         </a>
         <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1346&t=pqxWpF3hcYxjEDrs-1">
             <i class="fab fa-figma"></i>
         </a>
-    </div>
+    </div> {% endcomment %}
 {% endblock content %}

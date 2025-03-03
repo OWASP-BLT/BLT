@@ -16,3 +16,4 @@ if you are unsure of something, ask the user for clarification
 if you are not sure about the user's intent, ask the user for clarification
 
 dont include exceptions in error messages but be very detailed in text what the error is - don't do this: messages.error(request, f"Error: {str(e)}")
+keep javascript in separate files and don't add it to html files

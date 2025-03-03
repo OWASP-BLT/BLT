@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+{% load static %}
+{% load i18n %}
+{% block title %}bounties Dashboard - Bug Bounties & Issue Bounties{% endblock %}
+{% block description %}
+    Find bug bounty programs and GitHub issue bounties. Track your progress and view details of each opportunity.
+{% endblock %}
+{% block keywords %}
+    Hunt Dashboard, bug bounties, issue bounties, GitHub issues, bughunt, hunt details, bounty programs
+{% endblock %}
+{% block og_title %}Hunt Dashboard - Bug Bounties & Issue Bounties{% endblock %}
+{% block og_description %}
+    Find bug bounty programs and GitHub issue bounties. Track your progress and view details of each opportunity.
+{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="w-full min-h-[100vh] flex flex-col items-center bg-gray-50 pb-12">
+        <div class="w-[97%] p-5 mt-10 rounded-lg bg-white shadow-md">
+            <form action="#" method="get">
+                <div class="relative flex justify-between">
+                    <div class="relative w-[90%]">
+                        <div class="absolute flex items-center ml-2 h-full">
+                            <svg class="w-10 h-4 fill-current text-primary-gray-dark"
+                                 viewBox="0 0 16 16"
+                                 fill="none"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15.8898 15.0493L11.8588 11.0182C11.7869 10.9463 11.6932 10.9088 11.5932 10.9088H11.2713C12.3431 9.74952 12.9994 8.20272 12.9994 6.49968C12.9994 2.90923 10.0901 0 6.49968 0C2.90923 0 0 2.90923 0 6.49968C0 10.0901 2.90923 12.9994 6.49968 12.9994C8.20272 12.9994 9.74952 12.3431 10.9088 11.2744V11.5932C10.9088 11.6932 10.9495 11.7869 11.0182 11.8588L15.0493 15.8898C15.1961 16.0367 15.4336 16.0367 15.5805 15.8898L15.8898 15.5805C16.0367 15.4336 16.0367 15.1961 15.8898 15.0493ZM6.49968 11.9994C3.45921 11.9994 0.999951 9.54016 0.999951 6.49968C0.999951 3.45921 3.45921 0.999951 6.49968 0.999951C9.54016 0.999951 11.9994 3.45921 11.9994 6.49968C11.9994 9.54016 9.54016 11.9994 6.49968 11.9994Z">
+                                </path>
+                            </svg>
+                        </div>
+                        <input name="search"
+                               id="search"
+                               type="text"
+                               placeholder="Search for bounties or issues"
+                               class="px-14 py-5 w-full rounded-md bg-gray-100 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl">
+                    </div>
+                    <button type="submit"
+                            class="px-8 bg-red-500 hover:bg-red-600 text-white text-2xl font-medium rounded-md transition duration-300">
+                        {% trans "Search" %}
+                    </button>
+                </div>
+                <div class="flex items-center text-4xl justify-between mt-10">
+                    <p class="font-medium">{% trans "Filter Results" %}</p>
+                </div>
+                <div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+                        <select id="hunt_type"
+                                name="hunt_type"
+                                class="px-4 py-2 w-full rounded-md bg-gray-100 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl">
+                            <option value="all">All Types</option>
+                            <option value="upcomming">Upcoming</option>
+                            <option value="ongoing">Ongoing</option>
+                            <option value="ended">Ended</option>
+                        </select>
+                        <select id="domain"
+                                name="domain"
+                                class="px-4 py-2 rounded-md bg-gray-100 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0 text-xl">
+                            <option>Select Domain</option>
+                            {% for domain in domains %}<option value="{{ domain.id }}">{{ domain.name }}</option>{% endfor %}
+                        </select>
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.7.0/datepicker.min.js"
+                                integrity="sha384-sMp3hQy59Ay78X8c2o+5dDPZUFdUdYUKT8tbVKVfeyA735e1vIlRsH5vsjbHMDLX"
+                                crossorigin="anonymous"></script>
+                        <div date-rangepicker class="flex items-center">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="w-7 h-7 text-gray-500"
+                                         aria-hidden="true"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                                    </svg>
+                                </div>
+                                <input name="start_date"
+                                       id="start_date"
+                                       type="text"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-xl placeholder:text-xl rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-14 p-3"
+                                       placeholder="Select date start">
+                            </div>
+                            <span class="mx-4 text-gray-500">to</span>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg class="w-7 h-7 text-gray-500"
+                                         aria-hidden="true"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20">
+                                        <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z" />
+                                    </svg>
+                                </div>
+                                <input name="end_date"
+                                       id="end_date"
+                                       type="text"
+                                       class="bg-gray-50 border border-gray-300 text-gray-900 text-xl placeholder:text-xl rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-14 p-3"
+                                       placeholder="Select date end">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="w-[97%] flex flex-col lg:flex-row gap-6 mt-10">
+            <!-- Left Column: Issue Bounties -->
+            <div class="w-full lg:w-1/2">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Github Issue Bounties</h2>
+                        <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">GitHub bounties Issues</span>
+                    </div>
+                    <div id="github-issues-container">
+                        {% if github_issues %}
+                            <div class="space-y-4 mb-6">
+                                {% for issue in github_issues %}
+                                    <div class="github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300">
+                                        <h3 class="font-medium text-xl mb-3 text-gray-800">{{ issue.title }}</h3>
+                                        <div class="text-sm text-gray-600 mb-3">
+                                            <span class="font-medium">Issue #{{ issue.number }}</span> •
+                                            Opened by {{ issue.user }} •
+                                            Created {{ issue.created_at|date:"M d, Y" }}
+                                        </div>
+                                        <div class="flex flex-wrap gap-2 mb-4">
+                                            {% for label in issue.labels %}
+                                                <span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">{{ label }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="mt-4">
+                                            <a href="{{ issue.url }}"
+                                               target="_blank"
+                                               class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md transition duration-300">
+                                                <svg class="w-5 h-5 mr-2"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 20 20"
+                                                     xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M10 0C4.477 0 0 4.484 0 10c0 4.42 2.865 8.166 6.839 9.49.5.09.682-.218.682-.484 0-.236-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.157-1.11-1.465-1.11-1.465-.908-.62.069-.608.069-.608 1.003.07 1.532 1.03 1.532 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.087.636-1.337-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.578 9.578 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C17.14 18.163 20 14.418 20 10c0-5.516-4.477-10-10-10z">
+                                                    </path>
+                                                </svg>
+                                                Show on GitHub
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="text-center">
+                                <button id="load-more-issues"
+                                        data-next-page="{{ current_page|add:1 }}"
+                                        class="bg-red-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md font-medium transition duration-300">
+                                    Load More Issues
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="text-center p-8 bg-gray-50 rounded-lg">
+                                <svg class="w-16 h-16 mx-auto text-gray-400 mb-4"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                                    </path>
+                                </svg>
+                                <p class="text-xl font-medium">No GitHub issues with $5 label found</p>
+                                <p class="text-gray-500 text-sm mt-2">Issues will appear here when available.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Right Column: Bug Bounties -->
+            <div class="w-full lg:w-1/2">
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Bug Bounties</h2>
+                    <div class="space-y-6">
+                        {% for hunt in hunts %}
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition duration-300">
+                                <div class="flex flex-col md:flex-row">
+                                    <div class="w-full md:w-2 bg-gray-700 flex items-center justify-center md:rotate-180">
+                                        <p class="text-white md:rotate-90 font-bold text-xl tracking-widest">HUNT</p>
+                                    </div>
+                                    <div class="flex flex-col md:flex-row w-full p-5">
+                                        <div class="w-full md:w-1/3 flex justify-center items-center mb-4 md:mb-0">
+                                            <div class="w-[180px] h-[180px] p-2">
+                                                <img src="{{ hunt.logo }}"
+                                                     class="w-full h-full object-contain"
+                                                     alt="{{ hunt.name }} Logo"
+                                                     width="100%"
+                                                     height="100%">
+                                            </div>
+                                        </div>
+                                        <div class="w-full md:w-2/3 flex flex-col md:pl-4">
+                                            <h3 class="text-2xl font-bold text-gray-800 mb-3">{{ hunt.name }}</h3>
+                                            <div class="space-y-2 mb-4">
+                                                <div class="flex items-center">
+                                                    <svg class="w-5 h-5 text-gray-600 mr-3"
+                                                         fill="none"
+                                                         stroke="currentColor"
+                                                         viewBox="0 0 24 24"
+                                                         xmlns="http://www.w3.org/2000/svg">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                                        </path>
+                                                    </svg>
+                                                    <p class="text-gray-700">
+                                                        {{ hunt.starts_on|date:"F" }} {{ hunt.starts_on__day }} {{ hunt.starts_on__year }} - {{ hunt.end_on|date:"F" }} {{ hunt.end_on__day }} {{ hunt.end_on__year }}
+                                                    </p>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <svg class="w-5 h-5 text-gray-600 mr-3"
+                                                         fill="none"
+                                                         stroke="currentColor"
+                                                         viewBox="0 0 24 24"
+                                                         xmlns="http://www.w3.org/2000/svg">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9">
+                                                        </path>
+                                                    </svg>
+                                                    <a href="{{ hunt.url }}"
+                                                       target="_blank"
+                                                       class="text-blue-600 hover:text-blue-800 transition duration-300">
+                                                        {{ hunt.url }}
+                                                    </a>
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <svg class="w-5 h-5 text-gray-600 mr-3"
+                                                         fill="none"
+                                                         stroke="currentColor"
+                                                         viewBox="0 0 24 24"
+                                                         xmlns="http://www.w3.org/2000/svg">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                        </path>
+                                                    </svg>
+                                                    <p class="text-gray-700 font-medium">
+                                                        {% if hunt.total_prize %}
+                                                            ${{ hunt.total_prize }}
+                                                        {% else %}
+                                                            Prize details available in full description
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="mt-auto">
+                                                <a href="{% url 'show_bughunt' hunt.id %}"
+                                                   class="w-full inline-block text-center py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-medium rounded-md transition duration-300 transform hover:scale-[1.02]">
+                                                    VIEW DETAILS
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="text-center p-8 bg-gray-50 rounded-lg">
+                                <svg class="w-16 h-16 mx-auto text-gray-400 mb-4"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                                <p class="text-xl font-medium">No Bug Bounty programs found</p>
+                                <p class="text-gray-500 text-sm mt-2">Check back later for new opportunities</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cache DOM elements
+        const searchForm = document.querySelector('form[action="#"]');
+        const searchInput = document.getElementById('search');
+        const loadMoreBtn = document.getElementById('load-more-issues');
+        const githubIssuesContainer = document.getElementById('github-issues-container');
+        const bugBountyContainer = document.querySelector('.space-y-6');
+        
+        // Store original data for filtering
+        let originalGithubIssues = [];
+        let originalBugBounties = [];
+        
+        // Initialize data capture
+        originalGithubIssues = captureGithubIssues();
+        originalBugBounties = captureBugBounties();
+        
+        // Setup event listeners
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim().toLowerCase();
+                
+                if (searchTerm.length >= 2) {
+                    filterItems(searchTerm);
+                } else if (searchTerm === '') {
+                    showAllItems();
+                }
+            });
+        }
+        
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                if (searchInput.value.trim() !== '') {
+                    e.preventDefault();
+                    filterItems(searchInput.value.trim().toLowerCase());
+                }
+            });
+        }
+        
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                const nextPage = this.getAttribute('data-next-page');
+                loadMoreIssues(nextPage);
+            });
+        }
+        
+        // Helper functions
+        function captureGithubIssues() {
+            if (githubIssuesContainer) {
+                const issueElements = githubIssuesContainer.querySelectorAll('.github-issue');
+                return Array.from(issueElements).map(element => {
+                    return {
+                        element: element,
+                        title: element.querySelector('h3').textContent.trim().toLowerCase(),
+                        number: element.querySelector('.text-sm span').textContent.trim().toLowerCase(),
+                        user: element.querySelector('.text-sm').textContent.trim().toLowerCase(),
+                        labels: Array.from(element.querySelectorAll('.flex.flex-wrap.gap-2 span')).map(label => 
+                            label.textContent.trim().toLowerCase())
+                    };
+                });
+            }
+            return [];
+        }
+        
+        function captureBugBounties() {
+            if (bugBountyContainer) {
+                const bountyElements = bugBountyContainer.querySelectorAll('.bg-white.rounded-lg.shadow-sm.border.border-gray-200');
+                return Array.from(bountyElements).map(element => {
+                    return {
+                        element: element,
+                        name: element.querySelector('h3').textContent.trim().toLowerCase(),
+                        date: element.querySelector('.text-gray-700').textContent.trim().toLowerCase(),
+                        url: element.querySelector('a.text-blue-600').textContent.trim().toLowerCase(),
+                        prize: element.querySelector('.text-gray-700.font-medium')?.textContent.trim().toLowerCase() || ''
+                    };
+                });
+            }
+            return [];
+        }
+        
+        function filterItems(searchTerm) {
+            // Refresh data if needed
+            if (originalGithubIssues.length === 0 || document.querySelectorAll('.github-issue').length !== originalGithubIssues.length) {
+                originalGithubIssues = captureGithubIssues();
+            }
+            
+            if (originalBugBounties.length === 0 || document.querySelectorAll('.bg-white.rounded-lg.shadow-sm.border.border-gray-200').length !== originalBugBounties.length) {
+                originalBugBounties = captureBugBounties();
+            }
+            
+            // Filter GitHub Issues
+            let visibleGithubIssues = 0;
+            originalGithubIssues.forEach(issue => {
+                const isMatch = 
+                    issue.title.includes(searchTerm) || 
+                    issue.number.includes(searchTerm) ||
+                    issue.user.includes(searchTerm) ||
+                    issue.labels.some(label => label.includes(searchTerm));
+                
+                if (isMatch) {
+                    issue.element.style.display = '';
+                    visibleGithubIssues++;
+                } else {
+                    issue.element.style.display = 'none';
+                }
+            });
+            
+            // Filter Bug Bounties
+            let visibleBugBounties = 0;
+            originalBugBounties.forEach(bounty => {
+                const isMatch = 
+                    bounty.name.includes(searchTerm) || 
+                    bounty.date.includes(searchTerm) ||
+                    bounty.url.includes(searchTerm) ||
+                    bounty.prize.includes(searchTerm);
+                
+                if (isMatch) {
+                    bounty.element.style.display = '';
+                    visibleBugBounties++;
+                } else {
+                    bounty.element.style.display = 'none';
+                }
+            });
+            
+            handleEmptyState(
+                githubIssuesContainer, 
+                visibleGithubIssues,
+                'No GitHub issues found for "' + searchTerm + '"',
+                'Try a different search term.'
+            );
+            
+            handleEmptyState(
+                bugBountyContainer, 
+                visibleBugBounties,
+                'No Bug Bounty programs found for "' + searchTerm + '"',
+                'Try a different search term.'
+            );
+            
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = visibleGithubIssues > 0 ? '' : 'none';
+            }
+        }
+        
+        function handleEmptyState(container, visibleCount, mainText, subText) {
+            if (!container) return;
+            
+            const existingEmptyState = container.querySelector('.search-empty-state');
+            const itemsWrapper = container.querySelector('.space-y-4, .space-y-6');
+            
+            if (visibleCount === 0) {
+                if (!existingEmptyState) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'text-center p-8 bg-gray-50 rounded-lg search-empty-state';
+                    emptyState.innerHTML = `
+                        <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                        <p class="text-xl font-medium">${mainText}</p>
+                        <p class="text-gray-500 text-sm mt-2">${subText}</p>
+                    `;
+                    container.appendChild(emptyState);
+                } else {
+                    const mainMessage = existingEmptyState.querySelector('.text-xl.font-medium');
+                    const subMessage = existingEmptyState.querySelector('.text-gray-500.text-sm.mt-2');
+                    if (mainMessage) mainMessage.textContent = mainText;
+                    if (subMessage) subMessage.textContent = subText;
+                }
+                
+                if (itemsWrapper) itemsWrapper.style.display = 'none';
+            } else {
+                if (existingEmptyState) {
+                    existingEmptyState.remove();
+                }
+                
+                if (itemsWrapper) itemsWrapper.style.display = '';
+            }
+        }
+        
+        function showAllItems() {
+            originalGithubIssues.forEach(issue => {
+                issue.element.style.display = '';
+            });
+            
+            originalBugBounties.forEach(bounty => {
+                bounty.element.style.display = '';
+            });
+            
+            document.querySelectorAll('.search-empty-state').forEach(element => {
+                element.remove();
+            });
+            
+            if (originalGithubIssues.length === 0) {
+                const emptyGithub = githubIssuesContainer?.querySelector('.text-center.p-8.bg-gray-50.rounded-lg:not(.search-empty-state)');
+                if (emptyGithub) emptyGithub.style.display = '';
+            }
+            
+            if (originalBugBounties.length === 0) {
+                const emptyBounties = bugBountyContainer?.querySelector('.text-center.p-8.bg-gray-50.rounded-lg:not(.search-empty-state)');
+                if (emptyBounties) emptyBounties.style.display = '';
+            }
+            
+            const githubWrapper = githubIssuesContainer?.querySelector('.space-y-4');
+            const bountyWrapper = bugBountyContainer?.querySelector('.space-y-6');
+            if (githubWrapper) githubWrapper.style.display = '';
+            if (bountyWrapper) bountyWrapper.style.display = '';
+            
+            if (loadMoreBtn) loadMoreBtn.style.display = '';
+        }
+        
+        function loadMoreIssues(page) {
+            if (!loadMoreBtn) return;
+            
+            loadMoreBtn.textContent = 'Loading...';
+            loadMoreBtn.disabled = true;
+            
+            fetch(`/api/load-more-issues/?page=${page}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.issues && data.issues.length > 0) {
+                        const container = document.querySelector('#github-issues-container .space-y-4');
+                        
+                        data.issues.forEach(issue => {
+                            const issueElement = document.createElement('div');
+                            issueElement.className = 'github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300';
+                            
+                            let labelsHtml = '';
+                            issue.labels.forEach(label => {
+                                labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${label}</span>`;
+                            });
+                            
+                            const createdDate = new Date(issue.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                            });
+                            
+                            issueElement.innerHTML = `
+                                <h3 class="font-medium text-xl mb-3 text-gray-800">
+                                    ${issue.title}
+                                </h3>
+                                <div class="text-sm text-gray-600 mb-3">
+                                    <span class="font-medium">Issue #${issue.number}</span> • 
+                                    Opened by ${issue.user} • 
+                                    Created ${createdDate}
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    ${labelsHtml}
+                                </div>
+                                <div class="mt-4">
+                                    <a href="${issue.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md transition duration-300">
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M10 0C4.477 0 0 4.484 0 10c0 4.42 2.865 8.166 6.839 9.49.5.09.682-.218.682-.484 0-.236-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.157-1.11-1.465-1.11-1.465-.908-.62.069-.608.069-.608 1.003.07 1.532 1.03 1.532 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.087.636-1.337-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.578 9.578 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C17.14 18.163 20 14.418 20 10c0-5.516-4.477-10-10-10z"></path>
+                                        </svg>
+                                        Show on GitHub
+                                    </a>
+                                </div>
+                            `;
+                            
+                            container.appendChild(issueElement);
+                        
+                            originalGithubIssues.push({
+                                element: issueElement,
+                                title: issue.title.toLowerCase(),
+                                number: `issue #${issue.number}`.toLowerCase(),
+                                user: `opened by ${issue.user}`.toLowerCase(),
+                                labels: issue.labels.map(label => label.toLowerCase())
+                            });
+                        });
+                        
+                        const searchTerm = searchInput.value.trim().toLowerCase();
+                        if (searchTerm !== '') {
+                            filterItems(searchTerm);
+                        }
+                        
+                        if (data.next_page) {
+                            loadMoreBtn.setAttribute('data-next-page', data.next_page);
+                            loadMoreBtn.textContent = 'Load More Issues';
+                            loadMoreBtn.disabled = false;
+                        } else {
+                            loadMoreBtn.textContent = 'No More Issues';
+                            loadMoreBtn.disabled = true;
+                        }
+                    } else {
+                        loadMoreBtn.textContent = 'No More Issues';
+                        loadMoreBtn.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading more issues:', error);
+                    loadMoreBtn.textContent = 'Error Loading Issues. Try Again.';
+                    loadMoreBtn.disabled = false;
+                });
+        }
+    });
+    </script>
+{% endblock content %}
