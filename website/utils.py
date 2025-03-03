@@ -16,6 +16,8 @@ import numpy as np
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -119,6 +121,13 @@ def image_validator(img):
     else:
         return True
 
+def is_valid_https_url(url):
+    validate = URLValidator(schemes=["https"])
+    try:
+        validate(url)
+        return True
+    except ValidationError:
+        return False
 
 def is_dns_safe(hostname):
     try:
