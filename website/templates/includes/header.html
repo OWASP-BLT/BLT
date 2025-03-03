@@ -293,7 +293,7 @@ right: 10.5%;{% endcomment %}
             {% if request.user.is_authenticated %}
                 <div class=" flex justify-center items-center">
                     <button id="dropdownButton"
-                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2  bg-gray-200  md:rounded-xl  rounded-full  md:hover:bg-red-500/95 hover:text-white transition-colors duration-200"
+                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2  bg-gray-200  md:rounded-lg  rounded-full  md:hover:bg-gray-200/70 transition-colors duration-200"
                             type="button">
                         {% if request.user.userprofile.avatar %}
                             <img src="{{ request.user.userprofile.avatar }}"
@@ -317,49 +317,58 @@ right: 10.5%;{% endcomment %}
                     </button>
                     <!-- Dropdown for User Avatar -->
                     <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white top-32 right-5">
-                        <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5">
+                        <ul class="flex flex-col gap-1 px-4 py-4 border shadow-md rounded-md left-auto">
                             <li>
-                                <a href="{% url 'account_profile' %}">
+                                <a href="{% url 'account_profile' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                 </a>
                             </li>
                             {% if user.is_superuser %}
                                 <li>
                                     <a href="{% url 'admin:index' %}"
-                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                        <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
+                                    </a>
                                 </li>
                             {% endif %}
                             <li>
-                                <a href="{% url 'start_hunt' %}">
+                                <a href="{% url 'start_hunt' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'social' %}">
+                                <a href="{% url 'social' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-share fa-fw"></i>
                                     {% trans "Social" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'account_change_password' %}">
+                                <a href="{% url 'account_change_password' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'invite' %}">
-                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                                <a href="{% url 'invite' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an Organization" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'organization_view' %}">
+                                <a href="{% url 'organization_view' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <!-- divider -->
-                            <li class="border my-4 -mx-8"></li>
+                            <li class="border my-2 w-full"></li>
                             <li>
-                                <a href="{% url 'account_logout' %}">
+                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white  rounded-md text-white transition-colors duration-200 font-bold"
+                                   href="{% url 'account_logout' %}">
                                     <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                 </a>
                             </li>
