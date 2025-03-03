@@ -22,7 +22,8 @@ class RepoListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        queryset = Repo.objects.filter(is_owasp_repo=True)
+        # Start with all repos instead of just OWASP repos
+        queryset = Repo.objects.all()
 
         # Handle language filter
         language = self.request.GET.get("language")
@@ -33,6 +34,15 @@ class RepoListView(ListView):
         organization = self.request.GET.get("organization")
         if organization:
             queryset = queryset.filter(organization__id=organization)
+
+        # Handle search query
+        search_query = self.request.GET.get("q")
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(primary_language__icontains=search_query)
+            )
 
         # Get sort parameter from URL, default to -stars
         sort_by = self.request.GET.get("sort", "-stars")
@@ -48,33 +58,27 @@ class RepoListView(ListView):
             "open_issues",
             "closed_issues",
             "open_pull_requests",
-            "contributor_count",
-            "commit_count",
+            "closed_pull_requests",
             "primary_language",
-            "size",
-            "created",
+            "contributor_count",
             "last_updated",
-            "repo_visit_count",
         ]
 
         if field in valid_fields:
+            # Apply the sort
             queryset = queryset.order_by(f"{direction}{field}")
-
-        # Handle search
-        search_query = self.request.GET.get("q")
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query)
-                | Q(description__icontains=search_query)
-                | Q(primary_language__icontains=search_query)
-            )
+        else:
+            # Default sort
+            queryset = queryset.order_by("-stars")
 
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_sort"] = self.request.GET.get("sort", "-stars")
-        context["total_repos"] = Repo.objects.count()
+
+        # Get the filtered queryset count instead of all repos
+        context["total_repos"] = self.get_queryset().count()
 
         # Get language counts
         language_counts = (
@@ -91,9 +95,18 @@ class RepoListView(ListView):
 
         # Get organizations from related Organization model
         organizations = Organization.objects.filter(repos__isnull=False).distinct()
-
         context["organizations"] = organizations
+
+        # Get current organization filter
         context["current_organization"] = self.request.GET.get("organization")
+
+        # Get organization name if filtered by organization
+        if context["current_organization"]:
+            try:
+                org = Organization.objects.get(id=context["current_organization"])
+                context["current_organization_name"] = org.name
+            except Organization.DoesNotExist:
+                context["current_organization_name"] = None
 
         return context
 

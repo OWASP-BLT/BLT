@@ -229,6 +229,7 @@ from website.views.organization import (
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
+    update_organization_repos,
     update_role,
     user_sizzle_report,
     view_hunt,
@@ -1014,6 +1015,7 @@ urlpatterns = [
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),

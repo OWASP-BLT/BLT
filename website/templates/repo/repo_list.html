@@ -11,12 +11,8 @@
                     {% if current_language %}
                         <span class="text-lg font-normal text-gray-600">(Filtered by {{ current_language }})</span>
                     {% endif %}
-                    {% if current_organization %}
-                        {% for org in organizations %}
-                            {% if current_organization == org.id|stringformat:'s' %}
-                                <span class="text-lg font-normal text-gray-600">(Organization: {{ org.name }})</span>
-                            {% endif %}
-                        {% endfor %}
+                    {% if current_organization_name %}
+                        <span class="text-lg font-normal text-gray-600">(Organization: {{ current_organization_name }})</span>
                     {% endif %}
                     <span class="text-lg font-normal text-gray-600">
                         (Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ total_repos }})
