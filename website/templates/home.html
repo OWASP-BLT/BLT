@@ -379,7 +379,7 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Top Referrals -->
+                                        <!-- Top Referrals -->
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                         <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
@@ -389,45 +389,69 @@
                         </div>
                         <div class="p-4">
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[#e74c3c] font-bold">1</span>
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             class="w-8 h-8 rounded-full"
-                                             alt="Default User Avatar"
-                                             width="24"
-                                             height="24">
-                                        <span class="font-medium">Jack Brown</span>
+                                {% for invite in top_referrals %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
+                                            {% if invite.sender.userprofile.avatar %}
+                                                <img src="{{ invite.sender.userprofile.avatar }}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ invite.sender.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% elif invite.sender.socialaccount_set.all.0.get_avatar_url %}
+                                                <img src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ invite.sender.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% else %}
+                                                <img src="{% gravatar_url invite.sender.email 50 %}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ invite.sender.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% endif %}
+                                            <a href="{% url 'profile' invite.sender.username %}" class="font-medium hover:text-[#e74c3c]">
+                                                {{ invite.sender.username }}
+                                            </a>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-500 mr-3">
+                                                <i class="fas fa-envelope-open text-gray-400 mr-1"></i>
+                                                {{ invite.sender.userprofile.referral_clicks|default:"0" }}
+                                            </span>
+                                            <span class="font-medium">
+                                                <i class="fas fa-user-check text-green-500 mr-1"></i>
+                                                {{ invite.signup_count }}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <span class="font-medium">20 refs</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[#e74c3c] font-bold">2</span>
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             class="w-8 h-8 rounded-full"
-                                             alt="Default User Avatar"
-                                             width="24"
-                                             height="24">
-                                        <span class="font-medium">Kelly Green</span>
+                                {% empty %}
+                                    <div class="text-center text-gray-500">
+                                        <p>No referrals recorded yet</p>
+                                        <a href="{% url 'invite' %}" class="text-[#e74c3c] hover:text-[#c0392b] font-medium mt-2 inline-block">
+                                            <i class="fas fa-plus-circle mr-1"></i>
+                                            Invite friends
+                                        </a>
                                     </div>
-                                    <span class="font-medium">18 refs</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[#e74c3c] font-bold">3</span>
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             class="w-8 h-8 rounded-full"
-                                             alt="Default User Avatar"
-                                             width="24"
-                                             height="24">
-                                        <span class="font-medium">Liam Taylor</span>
-                                    </div>
-                                    <span class="font-medium">15 refs</span>
-                                </div>
+                                {% endfor %}
                             </div>
+                            {% if top_referrals %}
+                                <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                                    <span class="text-xs text-gray-500">
+                                        <i class="fas fa-envelope-open text-gray-400 mr-1"></i> Clicks
+                                        <i class="fas fa-user-check text-green-500 ml-3 mr-1"></i> Signups
+                                    </span>
+                                    <a href="{% url 'invite' %}" class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
+                                        <i class="fas fa-plus-circle mr-1"></i>
+                                        Invite Friends
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
+
                 </div>
             </div>
         </section>

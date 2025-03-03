@@ -54,6 +54,7 @@ from website.models import (
     ForumPost,
     ForumVote,
     Hunt,
+    InviteFriend,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -1245,6 +1246,13 @@ def home(request):
     # Get top earners
     top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
 
+    # Get top referrals - users with the most successful signups
+    top_referrals = (
+        InviteFriend.objects.annotate(
+            signup_count=Count('recipients')
+        ).select_related('sender').order_by('-signup_count')[:5]
+    )
+
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
@@ -1285,6 +1293,8 @@ def home(request):
             "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,  # Add top earners to context
             "repo_stars": repo_stars,  # Add repository star counts to context
+            "top_referrals": top_referrals,
+
         },
     )
 
