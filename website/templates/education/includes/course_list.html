@@ -4,11 +4,17 @@
             {% for course in courses %}
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
                     <a href="{% url 'view_course' course.id %}">
-                        <img src="{{ course.thumbnail.url }}"
-                             class="w-full h-56"
-                             alt="{{ course.title }}"
-                             width="400"
-                             height="224">
+                        {% if course.thumbnail %}
+                            <img src="{{ course.thumbnail.url }}"
+                                 class="w-full h-56"
+                                 alt="{{ course.title }}"
+                                 width="400"
+                                 height="224">
+                        {% else %}
+                            <div class="w-full h-56 bg-gray-200 flex items-center justify-center">
+                                <i class="fas fa-book text-gray-400 text-5xl"></i>
+                            </div>
+                        {% endif %}
                     </a>
                     <div class="p-6 flex flex-col flex-grow">
                         <a href="{% url 'view_course' course.id %}">
