@@ -39,14 +39,16 @@
                 <div class="absolute bottom-0 left-0 right-0 px-6 py-4">
                     <div class="flex items-center space-x-4">
                         {% if organization.logo %}
-                            <img src="{{ MEDIA_URL }}{{ organization.logo }}"
-                                 alt="{{ organization.name }} logo"
-                                 width="96"
-                                 height="96"
-                                 class="w-24 h-24 rounded-full border-4 border-white object-cover">
+                            <div class="w-24 h-24 bg-white rounded-lg shadow-md p-2 flex items-center justify-center">
+                                <img src="{{ MEDIA_URL }}{{ organization.logo }}"
+                                     alt="{{ organization.name }} logo"
+                                     width="96"
+                                     height="96"
+                                     class="max-w-full max-h-full object-contain">
+                            </div>
                         {% else %}
-                            <div class="w-24 h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-building text-4xl text-gray-400"></i>
+                            <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md">
+                                <i class="fas fa-building text-[#e74c3c] text-3xl"></i>
                             </div>
                         {% endif %}
                         <div class="text-white">
