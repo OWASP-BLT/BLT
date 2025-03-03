@@ -3,13 +3,13 @@ import difflib
 import hashlib
 import logging
 import os
+import posixpath
 import re
+import socket
 import time
 from collections import deque
-import posixpath
-from urllib.parse import urlparse, urlunparse, quote
 from ipaddress import ip_address
-import socket
+from urllib.parse import quote, urlparse, urlunparse
 
 import markdown
 import numpy as np
