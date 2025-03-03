@@ -1248,9 +1248,9 @@ def home(request):
 
     # Get top referrals - users with the most successful signups
     top_referrals = (
-        InviteFriend.objects.annotate(
-            signup_count=Count('recipients')
-        ).select_related('sender').order_by('-signup_count')[:5]
+        InviteFriend.objects.annotate(signup_count=Count("recipients"))
+        .select_related("sender")
+        .order_by("-signup_count")[:5]
     )
 
     # Get latest blog posts
@@ -1294,7 +1294,6 @@ def home(request):
             "top_earners": top_earners,  # Add top earners to context
             "repo_stars": repo_stars,  # Add repository star counts to context
             "top_referrals": top_referrals,
-
         },
     )
 
