@@ -119,7 +119,7 @@
                 if (messageContainer) {
                     // Handle close button clicks
                     messageContainer.addEventListener('click', function(e) {
-                        if (e.target.classList.contains('close-message')) {
+                        if (e.target && e.target.classList && e.target.classList.contains('close-message')) {
                             const messageAlert = e.target.closest('.message-alert');
                             if (messageAlert) {
                                 messageAlert.style.opacity = '0';
@@ -202,178 +202,192 @@
         <script src="{% static 'js/ui.js' %}"></script>
         {% block after_js %}
         {% endblock after_js %}
-    </body>
-    <script>
-        $("#report-bug-btn").click(function () {
-            $("#spinner").show()
-        });
-    </script>
-    <script>
-        (function (i, s, o, g, r, a, m) {
-            i['GoogleAnalyticsObject'] = r;
-            i[r] = i[r] || function () {
-                (i[r].q = i[r].q || []).push(arguments)
-            }, i[r].l = 1 * new Date();
-            a = s.createElement(o),
-                m = s.getElementsByTagName(o)[0];
-            a.async = 1;
-            a.src = g;
-            m.parentNode.insertBefore(a, m)
-        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
-        ga('create', 'UA-66634107-1', 'auto');
-        ga('send', 'pageview');
-    </script>
-    <script type="text/javascript">
-    /* eslint-disable */
-    $(".mbug").click(function () {
-        $(this).addClass("hidden-xs").addClass("hidden-sm");
-        $(".mnav").removeClass("hidden-xs").removeClass("hidden-sm");
-    });
-    $(document).ready(function() {
-        $('button[name="test_files"]').on('click', function() {
-            $(this).parent().find('input[type=file]').click();
-        });
-        $('input[name="screenshot"]').on('change', function() {
-            var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
-            $(this).parent().find('span').html(file);
-        });
-    });
-    /* eslint-enable */
-    </script>
-    <script type="text/javascript">
-        window._mfq = window._mfq || [];
-        (function () {
-            var mf = document.createElement("script");
-            mf.type = "text/javascript";
-            mf.async = true;
-            mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
-            document.getElementsByTagName("head")[0].appendChild(mf);
-        })();
-    </script>
-    <script type="text/javascript">
-        document.addEventListener('DOMContentLoaded', function() {
-              // logic to toggle password visibility for all password fields
-              const passwordToggles = document.querySelectorAll(".password-toggle");
-
-              passwordToggles.forEach((toggle) => {
-                toggle.addEventListener("click", function () {
-                  const input = document.querySelector(`#${toggle.dataset.target}`);
-                  const isPassword = input.type === "password";
-            
-                  // Toggle input type
-                  input.type = isPassword ? "text" : "password";
-            
-                  // Toggle icon
-                  const icon = toggle.querySelector("svg");
-                  if (isPassword) {
-                    icon.innerHTML = `
-                      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
-                      <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
-                    `; // Eye open icon
-                  } else {
-                    icon.innerHTML = `
-                      <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577a11.217 11.217 0 0 1 4.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113Z" />
-                      <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0 1 15.75 12ZM12.53 15.713l-4.243-4.244a3.75 3.75 0 0 0 4.244 4.243Z" />
-                      <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
-                    `; // Eye closed icon
-                  }
-                });
+        <script>
+            $("#report-bug-btn").click(function () {
+                const spinner = $("#spinner");
+                if (spinner.length) {
+                    spinner.show();
+                }
             });
-        // Check if the modal exists in the DOM
-        const modal = document.getElementById('cardModalDailyStatus');
-        const closeButton = modal ? modal.querySelector('.close-button') : null;
-        const openCheckInButton = document.getElementById('openCheckIn');
-        const checkInForm = document.getElementById('checkInForm');
-
-        // Exit if required modal elements are not present
-        if (!modal || !closeButton) {
-            return;
-        }
-        // Function to check if form was submitted today
-        function isFormSubmittedToday() {
-            const submittedDate = localStorage.getItem('formSubmittedDateCard');
-            const today = new Date().toISOString().split('T')[0];
-            return submittedDate === today;
-        }
-
-        // Function to show modal
-        function showModal() {
-            if (!modal) return;
-            modal.classList.remove('hidden');
-            document.body.classList.add('modal-open'); // Prevent background scrolling
-            // Focus on the first input field
-            const firstInput = modal.querySelector('input, textarea');
-            if (firstInput) {
-                firstInput.focus();
-            }
-        }
-
-        // Function to hide modal
-        function hideModal() {
-            if (!modal) return;
-            modal.classList.add('hidden');
-            document.body.classList.remove('modal-open'); // Restore background scrolling
-        }
-
-        // Event listener to close modal when clicking the close button
-        closeButton.addEventListener('click', hideModal);
-
-        // Close modal when clicking outside the modal content
-        const modalOverlay = modal.querySelector('.modal-overlay');
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', hideModal);
-        }
-            
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-                hideModal();
-            }
+        </script>
+        <script>
+            (function (i, s, o, g, r, a, m) {
+                i['GoogleAnalyticsObject'] = r;
+                i[r] = i[r] || function () {
+                    (i[r].q = i[r].q || []).push(arguments)
+                }, i[r].l = 1 * new Date();
+                a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0];
+                a.async = 1;
+                a.src = g;
+                m.parentNode.insertBefore(a, m)
+            })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+            ga('create', 'UA-66634107-1', 'auto');
+            ga('send', 'pageview');
+        </script>
+        <script type="text/javascript">
+        /* eslint-disable */
+        $(".mbug").click(function () {
+            $(this).addClass("hidden-xs").addClass("hidden-sm");
+            $(".mnav").removeClass("hidden-xs").removeClass("hidden-sm");
         });
+        $(document).ready(function() {
+            $('button[name="test_files"]').on('click', function() {
+                $(this).parent().find('input[type=file]').click();
+            });
+            $('input[name="screenshot"]').on('change', function() {
+                var file = $(this).val().replace(/^C:\\fakepath\\/i, '');
+                $(this).parent().find('span').html(file);
+            });
+        });
+        /* eslint-enable */
+        </script>
+        <script type="text/javascript">
+            window._mfq = window._mfq || [];
+            (function () {
+                var mf = document.createElement("script");
+                mf.type = "text/javascript";
+                mf.async = true;
+                mf.src = "//cdn.mouseflow.com/projects/efbbebea-436f-4b6f-9290-14ab36c8f636.js";
+                document.getElementsByTagName("head")[0].appendChild(mf);
+            })();
+        </script>
+        <script type="text/javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                // logic to toggle password visibility for all password fields
+                const passwordToggles = document.querySelectorAll(".password-toggle");
 
-        // Event listener to open modal when clicking the openCheckIn button
-        if (openCheckInButton) {
-            openCheckInButton.addEventListener('click', showModal);
-        }
+                passwordToggles.forEach((toggle) => {
+                    toggle.addEventListener("click", function () {
+                        const input = document.querySelector(`#${toggle.dataset.target}`);
+                        if (!input) return;
+                        
+                        const isPassword = input.type === "password";
+                  
+                        // Toggle input type
+                        input.type = isPassword ? "text" : "password";
+                  
+                        // Toggle icon
+                        const icon = toggle.querySelector("svg");
+                        if (!icon) return;
+                        
+                        if (isPassword) {
+                            icon.innerHTML = `
+                            <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                            <path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 0 1 0-1.113ZM17.25 12a5.25 5.25 0 1 1-10.5 0 5.25 5.25 0 0 1 10.5 0Z" clip-rule="evenodd" />
+                            `; // Eye open icon
+                        } else {
+                            icon.innerHTML = `
+                            <path d="M3.53 2.47a.75.75 0 0 0-1.06 1.06l18 18a.75.75 0 1 0 1.06-1.06l-18-18ZM22.676 12.553a11.249 11.249 0 0 1-2.631 4.31l-3.099-3.099a5.25 5.25 0 0 0-6.71-6.71L7.759 4.577a11.217 11.217 0 0 1 4.242-.827c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113Z" />
+                            <path d="M15.75 12c0 .18-.013.357-.037.53l-4.244-4.243A3.75 3.75 0 0 1 15.75 12ZM12.53 15.713l-4.243-4.244a3.75 3.75 0 0 0 4.244 4.243Z" />
+                            <path d="M6.75 12c0-.619.107-1.213.304-1.764l-3.1-3.1a11.25 11.25 0 0 0-2.63 4.31c-.12.362-.12.752 0 1.114 1.489 4.467 5.704 7.69 10.675 7.69 1.5 0 2.933-.294 4.242-.827l-2.477-2.477A5.25 5.25 0 0 1 6.75 12Z" />
+                            `; // Eye closed icon
+                        }
+                    });
+                });
+                
+                // Check if the modal exists in the DOM
+                const modal = document.getElementById('cardModalDailyStatus');
+                const closeButton = modal ? modal.querySelector('.close-button') : null;
+                const openCheckInButton = document.getElementById('openCheckIn');
+                const checkInForm = document.getElementById('checkInForm');
 
-        // Handle check-in form submission with AJAX
-        if (checkInForm) {
-            checkInForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // Prevent the default form submission
+                // Exit if required modal elements are not present
+                if (!modal || !closeButton) {
+                    return;
+                }
+                
+                // Function to check if form was submitted today
+                function isFormSubmittedToday() {
+                    const submittedDate = localStorage.getItem('formSubmittedDateCard');
+                    const today = new Date().toISOString().split('T')[0];
+                    return submittedDate === today;
+                }
 
-                const formData = new FormData(checkInForm); // Gather form data
-                const submitButton = checkInForm.querySelector('.submit-button');
-
-                // Disable the submit button and show a loading state
-                submitButton.disabled = true;
-                submitButton.textContent = 'Submitting...';
-
-                fetch(checkInForm.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: formData
-                })
-                .then(response => response.json()) // Expect a JSON response from the server
-                .then(data => {
-                    if (data.success) {
-                        hideModal(); // Hide the modal on successful submission
-                        localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
-                        alert('Your report has been submitted successfully!');
-                    } else {
-                        throw new Error(data.error || 'Submission failed');
+                // Function to show modal
+                function showModal() {
+                    if (!modal) return;
+                    modal.classList.remove('hidden');
+                    document.body.classList.add('modal-open'); // Prevent background scrolling
+                    // Focus on the first input field
+                    const firstInput = modal.querySelector('input, textarea');
+                    if (firstInput) {
+                        firstInput.focus();
                     }
-                })
-                .catch(error => {
-                    alert(`There was an error submitting your report: ${error.message}. Please try again.`);
-                })
-                .finally(() => {
-                    // Re-enable the submit button and reset its text
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Submit';
+                }
+
+                // Function to hide modal
+                function hideModal() {
+                    if (!modal) return;
+                    modal.classList.add('hidden');
+                    document.body.classList.remove('modal-open'); // Restore background scrolling
+                }
+
+                // Event listener to close modal when clicking the close button
+                closeButton.addEventListener('click', hideModal);
+
+                // Close modal when clicking outside the modal content
+                const modalOverlay = modal.querySelector('.modal-overlay');
+                if (modalOverlay) {
+                    modalOverlay.addEventListener('click', hideModal);
+                }
+                
+                document.addEventListener('keydown', function(event) {
+                    if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                        hideModal();
+                    }
                 });
+
+                // Event listener to open modal when clicking the openCheckIn button
+                if (openCheckInButton) {
+                    openCheckInButton.addEventListener('click', showModal);
+                }
+
+                // Handle check-in form submission with AJAX
+                if (checkInForm) {
+                    checkInForm.addEventListener('submit', function(e) {
+                        e.preventDefault(); // Prevent the default form submission
+
+                        const formData = new FormData(checkInForm); // Gather form data
+                        const submitButton = checkInForm.querySelector('.submit-button');
+                        if (!submitButton) return;
+
+                        // Disable the submit button and show a loading state
+                        submitButton.disabled = true;
+                        submitButton.textContent = 'Submitting...';
+
+                        fetch(checkInForm.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            },
+                            body: formData
+                        })
+                        .then(response => response.json()) // Expect a JSON response from the server
+                        .then(data => {
+                            if (data.success) {
+                                hideModal(); // Hide the modal on successful submission
+                                localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
+                                alert('Your report has been submitted successfully!');
+                            } else {
+                                throw new Error(data.error || 'Submission failed');
+                            }
+                        })
+                        .catch(error => {
+                            alert(`There was an error submitting your report: ${error.message}. Please try again.`);
+                        })
+                        .finally(() => {
+                            // Re-enable the submit button and reset its text
+                            submitButton.disabled = false;
+                            submitButton.textContent = 'Submit';
+                        });
+                    });
+                }
             });
-        }
-    });
-    </script>
+        </script>
+        <!-- Add Chart.js library before the closing body tag -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- Include the page stats widget -->
+        {% include 'includes/page_stats.html' %}
+    </body>
 </html>

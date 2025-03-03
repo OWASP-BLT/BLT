@@ -1,4 +1,5 @@
 import logging
+import re
 
 import requests
 from django.core.files.base import ContentFile
@@ -52,11 +53,12 @@ class Command(BaseCommand):
                     "url": data.get("website_url"),
                     "tagline": data.get("tagline", ""),
                     "license": data.get("license", ""),
-                    "categories": data.get("categories") or None,
+                    "categories": data.get("categories") or [],
                     "contributor_guidance_url": data.get("contributor_guidance_url", ""),
-                    "tech_tags": data.get("tech_tags") or None,
-                    "topic_tags": data.get("topic_tags") or None,
-                    "source_code": data.get("website_url"),
+                    "tech_tags": data.get("tech_tags") or [],
+                    "topic_tags": data.get("topic_tags") or [],
+                    "source_code": data.get("source_code", ""),
+                    "ideas_link": data.get("ideas_link", ""),
                     "is_active": True,
                 },
             )
@@ -104,11 +106,31 @@ class Command(BaseCommand):
         tag, _ = Tag.objects.get_or_create(slug="gsoc25", defaults={"name": "GSoC 2025"})
         org.tags.add(tag)
 
-    def assign_contacts(self, org, contacts):
-        for contact in contacts:
-            if contact["name"].lower() == "email":
-                org.email = contact["value"]
-            elif contact["name"].lower() == "chat":
-                org.twitter = contact["value"]  # Adjust this if needed
+    def assign_contacts(self, org, social_links):
+        social_mapping = {
+            "matrix": "matrix_url",
+            "slack": "slack_url",
+            "discord": "discord_url",
+            "gitter": "gitter_url",
+            "zulipchat": "zulipchat_url",
+            "element": "element_url",
+            "twitter": "twitter",
+            "facebook": "facebook",
+        }
 
-        org.save()
+        for link in social_links:
+            name = link.get("name", "").lower()
+            value = link.get("value", "")
+            if name in social_mapping:
+                if name == "twitter":
+                    match = re.search(r"twitter\.com/([A-Za-z0-9_]+)", value)
+                    org.twitter = match.group(1) if match else ""
+                else:
+                    setattr(org, social_mapping[name], value)
+            elif "element" + ".io" in value:
+                org.element_url = value
+            elif "gitter" + ".im" in value:
+                org.gitter_url = value
+            elif "discord" in value:
+                org.discord_url = value
+            org.save()

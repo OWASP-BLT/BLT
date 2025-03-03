@@ -584,5 +584,90 @@
             screenshotsInput.setAttribute('required', '');
         }
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const pasteArea = document.getElementById('pasteArea');
+        if (pasteArea) {
+            pasteArea.addEventListener('paste', function (e) {
+                var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (var index in items) {
+                    var item = items[index];
+                    if (item.kind === 'file') {
+                        var blob = item.getAsFile();
+                        var reader = new FileReader();
+                        reader.onload = function(event){
+                            var img = new Image();
+                            img.src = event.target.result;
+
+                            var file = new File([blob], "pasted-image.png", {type: blob.type});
+
+                            var dt = new DataTransfer();
+                            var file_input = document.getElementById('screenshots');
+
+                            // Add the existing files to the DataTransfer
+                            for (var i = 0; i < file_input.files.length; i++) {
+                                dt.items.add(file_input.files[i]);
+                            }
+
+                            // Add the new file to the DataTransfer
+                            dt.items.add(file);
+
+                            // Replace the file input's FileList with the new one
+                            file_input.files = dt.files;
+                            file_input.dispatchEvent(new Event('change'));
+
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+                }
+            });
+        }
+
+        // Add paste event handling to more relevant elements
+        const screenshotContainer = document.getElementById('screenshot-container');
+        if (screenshotContainer) {
+            screenshotContainer.addEventListener('paste', handleImagePaste);
+        }
+
+        const markdownInput = document.getElementById('markdownInput');
+        if (markdownInput) {
+            markdownInput.addEventListener('paste', handleImagePaste);
+        }
+
+        function handleImagePaste(e) {
+            var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (var index in items) {
+                var item = items[index];
+                if (item.kind === 'file') {
+                    var blob = item.getAsFile();
+                    var reader = new FileReader();
+                    reader.onload = function(event){
+                        var img = new Image();
+                        img.src = event.target.result;
+
+                        var file = new File([blob], "pasted-image.png", {type: blob.type});
+
+                        var dt = new DataTransfer();
+                        var file_input = document.getElementById('screenshots');
+                        
+                        if (file_input) {
+                            // Add the existing files to the DataTransfer
+                            for (var i = 0; i < file_input.files.length; i++) {
+                                dt.items.add(file_input.files[i]);
+                            }
+
+                            // Add the new file to the DataTransfer
+                            dt.items.add(file);
+
+                            // Replace the file input's FileList with the new one
+                            file_input.files = dt.files;
+                            file_input.dispatchEvent(new Event('change'));
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                }
+            }
+        }
+    });
     </script>
 {% endblock after_js %}

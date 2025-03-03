@@ -10,18 +10,22 @@ from urllib.parse import urlparse, urlsplit, urlunparse
 
 import markdown
 import numpy as np
-from openai import OpenAI
-
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from openai import OpenAI
+from PIL import Image
+
+from website.models import DailyStats
 
 from .models import PRAnalysisReport
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -61,7 +65,7 @@ def get_email_from_domain(domain_name):
         path = url[: url.rfind("/") + 1] if "/" in parts.path else url
         try:
             response = requests.get(url)
-        except:
+        except Exception:
             continue
         new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
         if new_emails:
@@ -82,12 +86,8 @@ def get_email_from_domain(domain_name):
             emails_out.add(email)
     try:
         return list(emails_out)[0]
-    except:
+    except Exception:
         return False
-
-
-import numpy as np
-from PIL import Image
 
 
 def image_validator(img):
@@ -258,39 +258,15 @@ def generate_embedding(text, retries=2, backoff_factor=2):
     """
     for attempt in range(retries):
         try:
-            response = openai.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
-            # response = {
-            # "object": "list",
-            # "data": [
-            #     {
-            #     "object": "embedding",
-            #     "embedding": [
-            #         0.0023064255,
-            #         -0.009327292,
-            #         -0.0028842222,
-            #     ],
-            #     "index": 0
-            #     }
-            #     ],
-            #     "model": "text-embedding-ada-002",
-            #     "usage": {
-            #         "prompt_tokens": 8,
-            #         "total_tokens": 8
-            #     }
-            # }
+            response = client.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
             # Extract the embedding from the response
             embedding = response.data[0].embedding
             return np.array(embedding)
 
-        except openai.RateLimitError as e:
-            # If rate-limiting error occurs, wait and retry
-            print(f"Rate-limiting error encountered: {e}. Retrying in {2 ** attempt} seconds.")
-            time.sleep(2**attempt)  # Exponential backoff
-
         except Exception as e:
-            # For other errors, print the error and return None
-            print(f"An error occurred: {e}")
-            return None
+            # If rate-limiting error occurs, wait and retry
+            print(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            time.sleep(2**attempt)  # Exponential backoff
 
     print(f"Failed to complete request after {retries} attempts.")
     return None
@@ -670,7 +646,10 @@ def markdown_to_text(markdown_content):
 def ai_summary(text):
     """Generate an AI-driven summary using OpenAI's GPT"""
     try:
-        prompt = f"Generate a brief summary of the following text, focusing on key aspects such as purpose, features, technologies used, and current status. Consider the following readme content: {text}"
+        prompt = (
+            f"Generate a brief summary of the following text, focusing on key aspects such as purpose, "
+            f"features, technologies used, and current status. Consider the following readme content: {text}"
+        )
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -693,3 +672,38 @@ def gravatar_url(email, size=80):
     email = email.lower().encode("utf-8")
     gravatar_hash = hashlib.md5(email).hexdigest()
     return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"
+
+
+def get_page_votes(template_name):
+    """
+    Get the upvotes and downvotes for a specific template.
+
+    Args:
+        template_name (str): The name of the template to get votes for
+
+    Returns:
+        tuple: A tuple containing (upvotes, downvotes)
+    """
+    if not template_name:
+        return 0, 0
+
+    # Sanitize the template name to create a consistent key
+    page_key = template_name.replace("/", "_").replace(".html", "")
+
+    # Get today's stats for upvotes
+    upvotes = (
+        DailyStats.objects.filter(name=f"upvote_{page_key}")
+        .values_list("value", flat=True)
+        .aggregate(total=models.Sum("value"))["total"]
+        or 0
+    )
+
+    # Get today's stats for downvotes
+    downvotes = (
+        DailyStats.objects.filter(name=f"downvote_{page_key}")
+        .values_list("value", flat=True)
+        .aggregate(total=models.Sum("value"))["total"]
+        or 0
+    )
+
+    return upvotes, downvotes

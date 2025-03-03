@@ -109,15 +109,22 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-shield-alt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">Django Core</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Django Core</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">The main engine powering OWASP BLT's system API and Slack Bot.</p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="blt-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'blt' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="{% url 'report' %}"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -129,15 +136,22 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-mobile-alt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">Flutter iOS App</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-flutter' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Flutter iOS App</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">Mobile application for on-the-go bug reporting and management.</p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="flutter-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'flutter' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="#"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -149,15 +163,22 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-puzzle-piece text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">Chrome Extension</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-extension' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">Chrome Extension</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">Browser extension for quick bug reporting and screenshots.</p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="extension-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'extension' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="#"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -169,15 +190,22 @@
                     <div class="bg-white rounded-xl shadow-md p-6 flex flex-col">
                         <div class="flex items-center gap-3 mb-4">
                             <i class="fas fa-bolt text-2xl text-[#e74c3c]"></i>
-                            <h4 class="font-bold text-lg">GitHub Action</h4>
+                            <h4 class="font-bold text-lg">
+                                <a href="{% url 'repo_detail' 'blt-action' %}"
+                                   class="hover:text-[#e74c3c] transition-colors">GitHub Action</a>
+                            </h4>
                         </div>
                         <p class="text-gray-600 text-sm mb-4 flex-grow">GitHub Action for automated security checks and reporting.</p>
                         <div class="flex flex-col gap-2">
                             <a href="https://github.com/OWASP-BLT/BLT-Action"
                                target="_blank"
                                class="inline-flex items-center text-gray-700 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors">
-                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star <span id="action-star-count"
-       class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">...</span>
+                                <i class="fab fa-github mr-2"></i><i class="fas fa-star text-yellow-400 mr-2"></i> Star
+                                {% for repo in repo_stars %}
+                                    {% if repo.key == 'action' %}
+                                        <span class="ml-2 bg-gray-100 px-2 py-0.5 rounded-full text-sm">{{ repo.stars }}</span>
+                                    {% endif %}
+                                {% endfor %}
                             </a>
                             <a href="#"
                                class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
@@ -232,7 +260,8 @@
                                                      width="32"
                                                      height="32">
                                             {% endif %}
-                                            <span class="font-medium">{{ profile.user.username }}</span>
+                                            <a href="{% url 'profile' profile.user.username %}"
+                                               class="font-medium hover:text-[#e74c3c]">{{ profile.user.username }}</a>
                                         </div>
                                         <span class="text-green-600 font-medium">${{ profile.winnings|floatformat:2 }}</span>
                                     </div>
@@ -705,37 +734,40 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <!-- OWASP -->
                     <div class="flex flex-col items-center text-center">
-                        <div class="w-32 h-32 flex items-center justify-center mb-4">
+                        <a href="{% url 'organization_detail' slug='owasp' %}"
+                           class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/OWASP_black_logo.svg' %}"
                                  alt="OWASP Logo"
                                  width="128"
                                  height="128"
                                  class="max-w-full max-h-full">
-                        </div>
+                        </a>
                         <p class="text-gray-700">
                             BLT is an official OWASP project, adhering to the highest standards of open-source security.
                         </p>
                     </div>
                     <!-- Sentry -->
                     <div class="flex flex-col items-center text-center">
-                        <div class="w-32 h-32 flex items-center justify-center mb-4">
+                        <a href="{% url 'organization_detail' slug='sentry' %}"
+                           class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/sentry-logo.svg' %}"
                                  alt="Sentry Logo"
                                  width="128"
                                  height="128"
                                  class="max-w-full max-h-full">
-                        </div>
+                        </a>
                         <p class="text-gray-700">Sentry provides BLT with a free plan for error monitoring and performance tracking.</p>
                     </div>
                     <!-- Google -->
                     <div class="flex flex-col items-center text-center">
-                        <div class="w-32 h-32 flex items-center justify-center mb-4">
+                        <a href="{% url 'organization_detail' slug='google' %}"
+                           class="w-32 h-32 flex items-center justify-center mb-4 hover:opacity-80 transition-opacity">
                             <img src="{% static 'images/googlelogo_color_272x92dp.png' %}"
                                  alt="Google Logo"
                                  width="272"
                                  height="92"
                                  class="max-w-full max-h-full">
-                        </div>
+                        </a>
                         <p class="text-gray-700">
                             Google supports BLT through <a href="{% url 'gsoc' %}" class="text-[#e74c3c] hover:text-[#c0392b]">Google Summer of Code</a>, fostering student contributions.
                         </p>
@@ -761,20 +793,20 @@
                 <p class="mb-8">Join our community and help make the internet a safer place.</p>
                 <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6">
                     <a href="{% url 'contribution_guidelines' %}"
-                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
-                        <i class="fas fa-users"></i> Join the Community
+                       class="inline-flex select-none items-center justify-center px-4 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                        <i class="fas fa-users mr-2"></i> Join the Community
                     </a>
                     <a href="{% url 'project_list' %}"
-                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
-                        <i class="fas fa-project-diagram"></i> Explore Projects
+                       class="inline-flex select-none items-center justify-center px-4 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                        <i class="fas fa-project-diagram mr-2"></i> Explore Projects
                     </a>
                     <a href="{% url 'roadmap' %}"
-                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
-                        <i class="fas fa-road"></i> Roadmap
+                       class="inline-flex select-none items-center justify-center px-4 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                        <i class="fas fa-road mr-2"></i> Roadmap
                     </a>
                     <a href="{% url 'sponsor' %}"
-                       class="bg-[#e74c3c] text-white hover:bg-opacity-90 transition-all font-semibold py-3 px-6 rounded-lg inline-flex items-center gap-2">
-                        <i class="fas fa-donate"></i> Support Us
+                       class="inline-flex select-none items-center justify-center px-4 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                        <i class="fas fa-donate mr-2"></i> Support Us
                     </a>
                 </div>
             </div>
@@ -794,49 +826,4 @@
     </div>
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
-    <!-- Add GitHub Star Count Script -->
-    <script>
-        const repos = {
-            'blt': 'OWASP-BLT/BLT',
-            'flutter': 'OWASP-BLT/BLT-Flutter',
-            'extension': 'OWASP-BLT/BLT-Extension',
-            'action': 'OWASP-BLT/BLT-Action'
-        };
-
-        // Display star counts from the database
-        {% for repo in repo_stars %}
-            const countElement = document.getElementById(`{{ repo.key }}-star-count`);
-            if (countElement) {
-                countElement.textContent = {{ repo.stars }};
-            }
-        {% endfor %}
-
-        // Fallback to GitHub API if no data in database
-        Object.entries(repos).forEach(([key, repo]) => {
-            const countElement = document.getElementById(`${key}-star-count`);
-            if (!countElement || countElement.textContent.trim() !== '') return;
-
-            // If we don't have data from the database, fetch from GitHub API
-            fetch(`https://api.github.com/repos/${repo}`, {
-                headers: {
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data && typeof data.stargazers_count === 'number') {
-                    countElement.textContent = data.stargazers_count;
-                }
-            })
-            .catch(error => {
-                console.error(`Error fetching star count for ${repo}:`, error);
-                countElement.textContent = '...';
-            });
-        });
-    </script>
 {% endblock content %}
