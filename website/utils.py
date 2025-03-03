@@ -121,6 +121,7 @@ def image_validator(img):
     else:
         return True
 
+
 def is_valid_https_url(url):
     validate = URLValidator(schemes=["https"])
     try:
@@ -128,6 +129,7 @@ def is_valid_https_url(url):
         return True
     except ValidationError:
         return False
+
 
 def is_dns_safe(hostname):
     try:
