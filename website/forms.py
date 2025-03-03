@@ -185,3 +185,26 @@ class GitHubIssueForm(forms.Form):
             raise forms.ValidationError("Invalid issue number in URL")
 
         return url
+
+
+class YouTubeVideoForm(forms.Form):
+    youtube_url = forms.URLField(
+        label="YouTube Video URL",
+        widget=forms.URLInput(
+            attrs={
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                "placeholder": "https://www.youtube.com/watch?v=example",
+            }
+        ),
+        help_text="Enter the full URL to the YouTube video",
+    )
+    description = forms.CharField(
+        label="Description",
+        widget=forms.Textarea(
+            attrs={
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                "placeholder": "Enter a brief description of the video",
+            }
+        ),
+        required=False,
+    )

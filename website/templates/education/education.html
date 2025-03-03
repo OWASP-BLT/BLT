@@ -203,5 +203,22 @@
                 </div>
             </div>
         </div>
+        <div class="mt-10">
+            <h2 class="text-3xl font-bold text-center mb-6">Add YouTube Video</h2>
+            <form method="post" action="{% url 'add_youtube_video' %}" class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="youtube_url" class="block text-sm font-medium text-gray-700">YouTube Video URL</label>
+                    <input type="url" id="youtube_url" name="youtube_url" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="description" name="description" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">Add Video</button>
+                </div>
+            </form>
+        </div>
     </div>
 {% endblock content %}
