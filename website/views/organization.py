@@ -721,8 +721,16 @@ class DomainDetailView(ListView):
                     return Domain.objects.get(url__icontains=hostname)
                 except Domain.DoesNotExist:
                     # Try one last time with the original slug
-                    return get_object_or_404(Domain, url__icontains=slug)
+                    try:
+                        return Domain.objects.get(url__icontains=slug)
+                    except Domain.DoesNotExist:
+                        # If we've tried everything and still can't find it, return 404
+                        raise Http404(f"No domain found matching '{slug}'")
+        except Http404:
+            # Re-raise Http404 exceptions
+            raise
         except Exception as e:
+            # Log the error but return a 404 instead of propagating the exception
             logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
             raise Http404("Invalid domain format")
 
@@ -846,8 +854,10 @@ class DomainDetailView(ListView):
 
             return context
         except Http404:
+            # Re-raise Http404 exceptions directly
             raise
         except Exception as e:
+            # Log the error but return a 404 instead of propagating the exception
             logger.error(f"Error in DomainDetailView: {str(e)}")
             raise Http404("Domain not found")
 
