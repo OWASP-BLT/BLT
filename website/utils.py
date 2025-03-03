@@ -170,11 +170,6 @@ def rebuild_safe_url(url):
     return safe_url
 
 
-def rebuild_safe_url(url):
-    parsed_url = urlparse(url)
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
-
-
 def get_github_issue_title(github_issue_url):
     """Helper function to fetch the title of a GitHub issue."""
     try:
@@ -188,21 +183,6 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
-
-
-def is_safe_url(url, allowed_hosts, allowed_paths=None):
-    if not is_valid_https_url(url):
-        return False
-
-    parsed_url = urlparse(url)
-
-    if parsed_url.netloc not in allowed_hosts:
-        return False
-
-    if allowed_paths and parsed_url.path not in allowed_paths:
-        return False
-
-    return True
 
 
 def safe_redirect_allowed(url, allowed_hosts, allowed_paths=None):
