@@ -412,7 +412,7 @@
                                                      width="32"
                                                      height="32">
                                             {% endif %}
-                                            <a href="{% url 'profile' invite.sender.username %}" 
+                                            <a href="{% url 'profile' invite.sender.username %}"
                                                class="font-medium hover:text-[#e74c3c]">
                                                 {{ invite.sender.username }}
                                             </a>
@@ -431,7 +431,7 @@
                                 {% empty %}
                                     <div class="text-center text-gray-500">
                                         <p>No referrals recorded yet</p>
-                                        <a href="{% url 'invite' %}" 
+                                        <a href="{% url 'invite' %}"
                                            class="text-[#e74c3c] hover:text-[#c0392b] font-medium mt-2 inline-block">
                                             <i class="fas fa-plus-circle mr-1"></i>
                                             Invite friends
@@ -454,7 +454,6 @@
                             {% endif %}
                         </div>
                     </div>
-
                 </div>
             </div>
         </section>
