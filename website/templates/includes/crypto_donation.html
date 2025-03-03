@@ -1,24 +1,24 @@
 {% load static %}
-<div class=" {% if included_in_issue_page %} max-sm:ml-[3.45%] ml-[10%] {% else %} ml-0 {% endif %} ">
-    <div class="flex justify-start items-center">
-        <img class="w-[80px] h-[80px] p-1 object-cover border-2 border-[#7e22ce] border-solid"
+<div class="{% if included_in_issue_page %} max-sm:ml-[3.45%] ml-[10%] {% else %} ml-0 {% endif %}">
+    <div class="flex flex-col md:flex-row items-start gap-4">
+        <img class="w-[80px] h-[80px] p-1 object-cover border-2 border-[#e74c3c] border-solid rounded-md"
              src="{% static 'gif/loader.gif' %}"
              alt="crypto address qr code"
              id="crypto-qr-image"
              width="32px"
              height="32px">
-        <div class="ml-3" id="crypto">
+        <div class="w-full" id="crypto">
             {% if user.userprofile.btc_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address|slice:":40" lessWidth=True editCrypto=True %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address lessWidth=True editCrypto=True %}
             {% endif %}
             {% if user.userprofile.bch_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address|slice:":40" lessWidth=True editCrypto=True %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address lessWidth=True editCrypto=True %}
             {% endif %}
             {% if user.userprofile.eth_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address|slice:":40" lessWidth=True editCrypto=True %}
+                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address lessWidth=True editCrypto=True %}
             {% endif %}
         </div>
-        <div class="hidden max-sm:w-[100%] max-sm:overflow-hidden" id="no-crypto">
+        <div class="hidden w-full" id="no-crypto">
             {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
             <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
         </div>
@@ -50,13 +50,16 @@
     }
     loadQRCode();
 
-    const copyText = document.getElementsByClassName("copy_text")[0];
-
-    copyText.addEventListener("click", ()=>{
-        navigator.clipboard.writeText(copyText.innerText);
-        $.notify("Crypto Address Copied to Clipboard!", {
-            className: "success"
-        }); 
-    })
+    // Update to handle all copy buttons
+    const copyTextElements = document.getElementsByClassName("copy_text");
     
+    Array.from(copyTextElements).forEach(element => {
+        element.addEventListener("click", () => {
+            navigator.clipboard.writeText(element.innerText);
+            $.notify("Crypto Address Copied to Clipboard!", {
+                className: "success",
+                position: "top right"
+            }); 
+        });
+    });
 </script>

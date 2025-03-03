@@ -47,6 +47,7 @@ from website.models import (
     IP,
     Activity,
     Badge,
+    DailyStats,
     Domain,
     ForumCategory,
     ForumComment,
@@ -1242,10 +1243,33 @@ def home(request):
     )
 
     # Get top earners
-    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:3]
+    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
 
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
+    # Get repository star counts for the specific repositories shown on the homepage
+    repo_stars = []
+    repo_mappings = {
+        "blt": "OWASP-BLT/BLT",
+        "flutter": "OWASP-BLT/BLT-Flutter",
+        "extension": "OWASP-BLT/BLT-Extension",
+        "action": "OWASP-BLT/BLT-Action",
+    }
+
+    for key, repo_name in repo_mappings.items():
+        try:
+            # Try to find the repository by name
+            repo_parts = repo_name.split("/")
+            if len(repo_parts) > 1:
+                repo = Repo.objects.filter(name__icontains=repo_parts[1]).first()
+            else:
+                repo = Repo.objects.filter(name__icontains=repo_name).first()
+
+            if repo:
+                repo_stars.append({"key": key, "stars": repo.stars})
+        except Exception as e:
+            print(f"Error getting star count for {repo_name}: {e}")
 
     return render(
         request,
@@ -1260,6 +1284,7 @@ def home(request):
             "top_pr_contributors": top_pr_contributors,
             "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,  # Add top earners to context
+            "repo_stars": repo_stars,  # Add repository star counts to context
         },
     )
 
@@ -1486,6 +1511,10 @@ def check_owasp_compliance(request):
 def management_commands(request):
     # Get list of available management commands
     available_commands = []
+
+    # Get the date 30 days ago for stats
+    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+
     for name, app_name in get_commands().items():
         # Only include commands from the website app and exclude initsuperuser
         if (
@@ -1512,6 +1541,19 @@ def management_commands(request):
                     }
                 )
 
+            # Get stats data for the past 30 days if it exists
+            stats_data = []
+            daily_stats = DailyStats.objects.filter(name=name, created__gte=thirty_days_ago).order_by("created")
+
+            if daily_stats.exists():
+                for stat in daily_stats:
+                    try:
+                        value = int(stat.value)
+                    except (ValueError, TypeError):
+                        value = 0
+                    stats_data.append({"date": stat.created.date().isoformat(), "value": value})
+
+            command_info["stats_data"] = stats_data
             available_commands.append(command_info)
 
     commands = sorted(available_commands, key=lambda x: x["name"])

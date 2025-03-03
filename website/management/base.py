@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from website.models import ManagementCommandLog
+from website.models import DailyStats, ManagementCommandLog
 
 
 class LoggedBaseCommand(BaseCommand):
@@ -28,6 +28,22 @@ class LoggedBaseCommand(BaseCommand):
                     command_name=command_name, success=True, run_count=1, last_run=timezone.now()
                 )
 
+            # Update DailyStats for this command
+            today = timezone.now().date()
+            try:
+                # Try to find an existing entry for today
+                daily_stat = DailyStats.objects.get(name=command_name, created__date=today)
+                # Increment the value
+                try:
+                    current_value = int(daily_stat.value)
+                    daily_stat.value = str(current_value + 1)
+                except (ValueError, TypeError):
+                    daily_stat.value = "1"
+                daily_stat.save()
+            except DailyStats.DoesNotExist:
+                # Create a new entry
+                DailyStats.objects.create(name=command_name, value="1")
+
             return result
         except Exception as e:
             # Handle error case
@@ -45,5 +61,20 @@ class LoggedBaseCommand(BaseCommand):
                 ManagementCommandLog.objects.create(
                     command_name=command_name, success=False, error_message=str(e), run_count=1, last_run=timezone.now()
                 )
+
+            # Still update DailyStats even if there was an error
+            today = timezone.now().date()
+            try:
+                daily_stat = DailyStats.objects.get(name=command_name, created__date=today)
+                # Increment the value
+                try:
+                    current_value = int(daily_stat.value)
+                    daily_stat.value = str(current_value + 1)
+                except (ValueError, TypeError):
+                    daily_stat.value = "1"
+                daily_stat.save()
+            except DailyStats.DoesNotExist:
+                # Create a new entry
+                DailyStats.objects.create(name=command_name, value="1")
 
             raise

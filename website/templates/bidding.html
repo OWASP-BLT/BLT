@@ -35,6 +35,12 @@
                     <p class="text-gray-700 leading-relaxed">
                         OWASP BLT is proud to be the first platform to offer a revolutionary bidding system for open source contributions. Instead of relying on code maintainers to assign bounties on issues, you can take initiative by bidding on issues that interest you. This groundbreaking approach creates a dynamic marketplace where developers can choose their work and set their own prices, making open source contribution more accessible and rewarding than ever before.
                     </p>
+                    <div class="mt-4 p-3 bg-[#e74c3c] bg-opacity-10 rounded-lg border border-[#e74c3c] border-opacity-20">
+                        <p class="text-gray-800 flex items-start">
+                            <i class="fas fa-info-circle text-[#e74c3c] mt-1 mr-2"></i>
+                            <span><strong>No account required!</strong> You can place bids with just a valid GitHub username and issue URL. Simply enter your GitHub username and the issue you want to bid on.</span>
+                        </p>
+                    </div>
                 </div>
                 <form method="post" action="{% url 'BiddingData' %}" class="space-y-6">
                     {% csrf_token %}
@@ -65,6 +71,35 @@
                                 Fetch Current Bid
                             </button>
                         </div>
+                    </div>
+                    <!-- GitHub Username Input -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fab fa-github mr-2"></i>GitHub Username
+                        </label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="githubUsername"
+                                   name="user"
+                                   class="block w-full rounded-lg border-2 border-gray-200 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50 pl-10 pr-4 py-3 transition-all duration-200"
+                                   placeholder="Enter GitHub username"
+                                   value="{% if request.user.is_authenticated %}{{ request.user.username }}{% endif %}">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fab fa-github text-gray-400"></i>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">
+                            {% if request.user.is_authenticated %}
+                                {% if request.user.userprofile.github_url %}
+                                    We'll use your GitHub username from your profile if this field is left empty
+                                {% else %}
+                                    Enter your GitHub username or <a href="{% url 'profile_edit' %}"
+    class="text-[#e74c3c] hover:underline">add it to your profile</a>
+                                {% endif %}
+                            {% else %}
+                                Enter your GitHub username (required)
+                            {% endif %}
+                        </p>
                     </div>
                     <!-- Current Bid Display -->
                     <div id="BidDisplay" class="text-lg font-medium text-gray-900"></div>
@@ -189,8 +224,13 @@
                                             {{ bid.issue_url|truncatechars:50 }}
                                         </a>
                                         <p class="text-sm text-gray-500">
-                                            by <a href="{{ bid.user.get_absolute_url }}"
-    class="text-[#e74c3c] hover:underline">{{ bid.user.username }}</a>
+                                            by
+                                            {% if bid.user %}
+                                                <a href="{{ bid.user.get_absolute_url }}"
+                                                   class="text-[#e74c3c] hover:underline">{{ bid.user.username }}</a>
+                                            {% else %}
+                                                <span class="text-[#e74c3c]">{{ bid.github_username }}</span>
+                                            {% endif %}
                                         </p>
                                     </div>
                                 </div>

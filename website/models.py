@@ -34,6 +34,21 @@ from rest_framework.authtoken.models import Token
 logger = logging.getLogger(__name__)
 
 
+# Custom validators for cryptocurrency addresses
+def validate_bch_address(value):
+    """Validates that a BCH address is in the new CashAddr format."""
+    if not value.startswith("bitcoincash:"):
+        raise ValidationError('BCH address must be in the new CashAddr format starting with "bitcoincash:"')
+    # Additional validation for the rest of the address could be added here
+
+
+def validate_btc_address(value):
+    """Validates that a BTC address is in the new SegWit format."""
+    if not (value.startswith("bc1") or value.startswith("3") or value.startswith("1")):
+        raise ValidationError('BTC address must be in a valid format (SegWit addresses start with "bc1")')
+    # Additional validation for the rest of the address could be added here
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -125,7 +140,13 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
-    twitter = models.CharField(max_length=30, null=True, blank=True)
+    twitter = models.URLField(null=True, blank=True)
+    matrix_url = models.URLField(null=True, blank=True)
+    slack_url = models.URLField(null=True, blank=True)
+    discord_url = models.URLField(null=True, blank=True)
+    gitter_url = models.URLField(null=True, blank=True)
+    zulipchat_url = models.URLField(null=True, blank=True)
+    element_url = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -136,6 +157,15 @@ class Organization(models.Model):
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
+    tagline = models.CharField(max_length=255, blank=True, null=True)
+    license = models.CharField(max_length=100, blank=True, null=True)
+    categories = models.JSONField(default=list)
+    contributor_guidance_url = models.URLField(blank=True, null=True)
+    tech_tags = models.JSONField(default=list)
+    topic_tags = models.JSONField(default=list)
+    source_code = models.URLField(blank=True, null=True)
+    ideas_link = models.URLField(blank=True, null=True)
+    repos_updated_at = models.DateTimeField(null=True, blank=True, help_text="When repositories were last updated")
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
@@ -408,6 +438,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
@@ -678,8 +709,8 @@ class UserProfile(models.Model):
 
     subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
     subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
-    btc_address = models.CharField(max_length=100, blank=True, null=True)
-    bch_address = models.CharField(max_length=100, blank=True, null=True)
+    btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
+    bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
@@ -906,7 +937,8 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    github_username = models.CharField(max_length=100, blank=True, null=True)
     # link this to our issue model
     issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
@@ -914,7 +946,7 @@ class Bid(models.Model):
     amount_bch = models.DecimalField(max_digits=16, decimal_places=8, default=0)
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
-    bch_address = models.CharField(blank=True, null=True, max_length=45)
+    bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1578,6 +1610,18 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    # Peer-to-Peer Payment Fields
+    p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
+    p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    p2p_amount_bch = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
+    sent_by_user = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issue_p2p_payments",
+    )
+    bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} by {self.user_profile.user.username} - {self.state}"
@@ -1961,3 +2005,49 @@ class BaconSubmission(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.status}"
+
+
+class DailyStats(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    value = models.CharField(max_length=255)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Daily Statistic"
+        verbose_name_plural = "Daily Statistics"
+        ordering = ["-modified"]
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+
+
+class Queue(models.Model):
+    """
+    Model to store queue items with a message, image, and launch status.
+    """
+
+    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    image = models.ImageField(upload_to="queue_images", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    launched = models.BooleanField(default=False)
+    launched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="queue_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
+
+    def launch(self):
+        """
+        Mark the queue item as launched and set the launched_at timestamp.
+        """
+        if not self.launched:
+            self.launched = True
+            self.launched_at = timezone.now()
+            self.save()

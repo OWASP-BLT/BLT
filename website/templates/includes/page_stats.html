@@ -1,0 +1,183 @@
+{% load custom_tags %}
+{% get_current_template as current_template %}
+{% get_page_views current_template 30 as page_views %}
+{% get_page_votes current_template as upvotes %}
+{% get_page_votes current_template "downvote" as downvotes %}
+<div id="pageStatsContainer"
+     class="fixed bottom-0 left-4 z-50 transition-all duration-300 transform translate-y-[calc(100%-40px)] hover:translate-y-0 group">
+    <!-- Chart Icon and Handle -->
+    <div class="flex justify-center items-center h-10 w-16 mx-auto bg-white rounded-t-lg shadow-md cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-6 w-6 text-[#e74c3c]"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+    </div>
+    <!-- Stats Content -->
+    <div class="bg-white shadow-lg rounded-lg p-3 w-64">
+        <div class="text-sm font-medium text-gray-700 mb-2">Page Statistics</div>
+        <!-- Sparkline Chart -->
+        <div class="mb-3">
+            <canvas id="sparklineChart" height="40"></canvas>
+        </div>
+        <!-- Vote Buttons -->
+        <div class="flex justify-between items-center">
+            <div class="flex items-center">
+                <button id="upvoteBtn"
+                        class="text-gray-600 hover:text-[#e74c3c] focus:outline-none mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-5 w-5"
+                         viewBox="0 0 20 20"
+                         fill="currentColor">
+                        <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z" />
+                    </svg>
+                </button>
+                <span id="upvoteCount" class="text-sm">{{ upvotes }}</span>
+            </div>
+            <div class="flex items-center">
+                <button id="downvoteBtn"
+                        class="text-gray-600 hover:text-[#e74c3c] focus:outline-none mr-2">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-5 w-5"
+                         viewBox="0 0 20 20"
+                         fill="currentColor">
+                        <path d="M18 9.5a1.5 1.5 0 11-3 0v-6a1.5 1.5 0 013 0v6zM14 9.667v-5.43a2 2 0 00-1.105-1.79l-.05-.025A4 4 0 0011.055 2H5.64a2 2 0 00-1.962 1.608l-1.2 6A2 2 0 004.44 12H8v4a2 2 0 002 2 1 1 0 001-1v-.667a4 4 0 01.8-2.4l1.4-1.866a4 4 0 00.8-2.4z" />
+                    </svg>
+                </button>
+                <span id="downvoteCount" class="text-sm">{{ downvotes }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Function to initialize chart when Chart.js is available
+    function initializeChart() {
+      if (typeof Chart === 'undefined') {
+        console.log('Chart.js not yet loaded, retrying...');
+        setTimeout(initializeChart, 100);
+        return;
+      }
+      
+      // Set up the sparkline chart
+      const ctx = document.getElementById('sparklineChart').getContext('2d');
+      const pageViews = {{ page_views|safe }};
+      
+      const sparklineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: pageViews.length }, (_, i) => i + 1),
+          datasets: [{
+            label: 'Page Views',
+            data: pageViews,
+            borderColor: '#e74c3c',
+            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: true
+            }
+          },
+          scales: {
+            x: {
+              display: false
+            },
+            y: {
+              display: false,
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+    
+    // Start initialization process
+    initializeChart();
+    
+    // Handle voting
+    const upvoteBtn = document.getElementById('upvoteBtn');
+    const downvoteBtn = document.getElementById('downvoteBtn');
+    const upvoteCount = document.getElementById('upvoteCount');
+    const downvoteCount = document.getElementById('downvoteCount');
+    const currentTemplate = '{{ current_template }}';
+    const pageStatsContainer = document.getElementById('pageStatsContainer');
+    
+    // Mobile touch support
+    pageStatsContainer.addEventListener('touchstart', function() {
+      if (pageStatsContainer.classList.contains('translate-y-0')) {
+        pageStatsContainer.classList.remove('translate-y-0');
+        pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
+      } else {
+        pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
+        pageStatsContainer.classList.add('translate-y-0');
+      }
+    });
+    
+    // Get CSRF token from cookie
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+    
+    function submitVote(voteType) {
+      const formData = new FormData();
+      formData.append('template_name', currentTemplate);
+      formData.append('vote_type', voteType);
+      
+      fetch('{% url "page_vote" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': csrftoken
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          upvoteCount.textContent = data.upvotes;
+          downvoteCount.textContent = data.downvotes;
+        } else {
+          console.error('Error:', data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    }
+    
+    upvoteBtn.addEventListener('click', function(e) {
+      e.stopPropagation(); // Prevent triggering container's click event
+      submitVote('upvote');
+    });
+    
+    downvoteBtn.addEventListener('click', function(e) {
+      e.stopPropagation(); // Prevent triggering container's click event
+      submitVote('downvote');
+    });
+  });
+</script>
