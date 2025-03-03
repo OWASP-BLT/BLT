@@ -150,7 +150,11 @@
                     <!-- Project Header -->
                     <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                         <div class="flex items-start gap-6">
-                            <a href="{% url 'project_detail' slug=project.slug %}" class="block">
+                            {% if project.slug %}
+                                <a href="{% url 'project_detail' slug=project.slug %}" class="block">
+                            {% else %}
+                                <a href="#" class="block">
+                            {% endif %}
                                 {% if project.logo %}
                                     <img src="{{ project.logo.url }}"
                                          alt="{{ project.name }}"
