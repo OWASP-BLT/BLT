@@ -79,24 +79,58 @@ def add_domain_to_organization(request):
                 url = domain.url
                 if not url.startswith(("http://", "https://")):
                     url = "http://" + url
-                response = requests.get(url)
-                soup = BeautifulSoup(response.text, "html.parser")
-                if organization_name in soup.get_text():
-                    organization = Organization.objects.create(name=organization_name)
-                    domain.organization = organization
-                    domain.save()
-                    messages.success(request, "Organization added successfully")
+
+                # SSRF Protection: Validate the URL before making the request
+                parsed_url = urlparse(url)
+                hostname = parsed_url.netloc.split(":")[0]
+
+                # Check if hostname is a private/internal address
+                is_private = False
+
+                # Check for localhost and special domains
+                private_domains = [".local", ".internal", ".localhost"]
+                if hostname == "localhost" or any(hostname.endswith(domain) for domain in private_domains):
+                    is_private = True
+
+                # Try to parse as IP address
+                if not is_private:
+                    try:
+                        ip = ipaddress.ip_address(hostname)
+                        # Check if IP is private
+                        is_private = ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local
+                    except ValueError:
+                        # Not a valid IP address, continue with hostname checks
+                        pass
+
+                if is_private:
+                    messages.error(request, "Invalid domain: Cannot use internal or private addresses")
                     return redirect("domain", slug=domain.url)
-                else:
-                    messages.error(request, "Organization not found in the domain")
+
+                try:
+                    response = requests.get(url, timeout=5)
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    if organization_name in soup.get_text():
+                        organization = Organization.objects.create(name=organization_name)
+                        domain.organization = organization
+                        domain.save()
+                        messages.success(request, "Organization added successfully")
+                        return redirect("domain", slug=domain.url)
+                    else:
+                        messages.error(request, "Organization not found in the domain")
+                        return redirect("domain", slug=domain.url)
+                except requests.RequestException:
+                    messages.error(request, "Could not connect to the domain")
                     return redirect("domain", slug=domain.url)
             else:
                 domain.organization = organization
                 domain.save()
                 messages.success(request, "Organization added successfully")
                 return redirect("domain", slug=domain.url)
-        except (Domain.DoesNotExist, requests.RequestException) as e:
-            messages.error(request, f"Error: {str(e)}")
+        except Domain.DoesNotExist:
+            messages.error(request, "Domain does not exist")
+            return redirect("home")
+        except requests.RequestException:
+            messages.error(request, "Could not connect to the domain")
             return redirect("home")
     else:
         return redirect("home")
@@ -2346,7 +2380,10 @@ def update_organization_repos(request, slug):
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        yield (
+                            f"data: $ Error: GitHub API returned {response.status_code}. "
+                            f"Response: {response_text}\n\n"
+                        )
                         yield "data: DONE\n\n"
                         return
 
@@ -2420,7 +2457,8 @@ def update_organization_repos(request, slug):
                                 f"data: $ Error: GitHub API returned {response.status_code}. "
                                 f"Response: {response_text}\n\n"
                             )
-                            break
+                            yield "data: DONE\n\n"
+                            return
 
                         repos = response.json()
                         if not repos:

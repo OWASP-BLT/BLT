@@ -484,19 +484,19 @@
         var all_months = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"];
         var months = [],
         data = [];
-    var all_data = new Array(12).fill(0);
-    var current_month = {{ current_month }};
-    {% for i in domain_graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
+        var all_data = new Array(12).fill(0);
+        var current_month = {{ current_month }};
+        {% for i in domain_graph %}all_data['{{i.month}}' - 1] = {{ i.c }};{% endfor %}
 
-    if (current_month - 6 < 0) {
-        months = all_months.slice(current_month - 6);
-        months = months.concat(all_months.slice(0, current_month));
-        data = all_data.slice(current_month - 6);
-        data = data.concat(all_data.slice(0, current_month));
-    } else {
-        months = all_months.slice(current_month - 6, current_month);
-        data = all_data.slice(current_month - 6, current_month);
-    }
+        if (current_month - 6 < 0) {
+            months = all_months.slice(current_month - 6);
+            months = months.concat(all_months.slice(0, current_month));
+            data = all_data.slice(current_month - 6);
+            data = data.concat(all_data.slice(0, current_month));
+        } else {
+            months = all_months.slice(current_month - 6, current_month);
+            data = all_data.slice(current_month - 6, current_month);
+        }
         var options = {
             series: [{
             name: 'Monthly Activity',

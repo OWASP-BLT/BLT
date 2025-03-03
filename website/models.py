@@ -438,6 +438,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
