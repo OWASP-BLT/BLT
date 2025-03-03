@@ -7,8 +7,174 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<link href="{% static 'css/header.css' %}" rel="stylesheet">
-<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-0 px-1">
+      <style>
+        a {
+            color: black;
+        }
+    
+        @media (min-width: 700px) {
+            #selected-filter {
+                display: inline;
+            }
+        }
+    
+        @media (max-width: 699px) {
+            #selected-filter {
+                display: none;
+            }
+    
+            #organizations-btn {
+                padding: 0.1rem;
+            }
+        }
+    
+        .chatbot {
+            display: none;
+            position: fixed;
+            bottom: 3%;
+            right: 1%;
+            max-width: 400px;
+            width: 100%;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            height: 520px;
+            z-index: 9999;
+            overflow: hidden;
+        }
+    
+        @media (max-width: 768px) {
+            .chatbot {
+                right: 50%;
+                transform: translateX(50%);
+                max-width: 95%;
+            }
+        }
+    
+        .chat-icon {
+            position: fixed;
+            bottom: 3%;
+            right: 2%;
+            background-color: rgb(209, 16, 16);
+            transition: opacity 0.2s;
+            border-radius: 50%;
+            padding: 10px;
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        .chat-icon:hover {
+            opacity: 0.8;
+        }
+    
+        .chat-header {
+            background-color: #e11d48;
+            color: white;
+            padding: 12px;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+    
+        .chat-log {
+            max-height: 295px;
+            overflow-y: auto;
+            height: 295px;
+        }
+    
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 2xl;
+            padding: 10px;
+            background-color: #ffffffe6;
+            border-radius: 8px;
+        }
+    
+        .chat-Zindex {
+            z-index: 9999;
+        }
+    
+        #quick-commands {
+            overflow-x: auto;
+        }
+    
+        #mobile-search {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 40;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+    
+        #mobile-search.active {
+            display: block;
+        }
+    </style>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const desktopDropdownButton = document.getElementById('dropdownButton');
+            const desktopDropdownMenu = document.getElementById('dropdownMenu');
+    
+            if (desktopDropdownButton && desktopDropdownMenu) {
+                desktopDropdownButton.addEventListener('click', () => {
+                    desktopDropdownMenu.classList.toggle('hidden');
+                });
+    
+                document.addEventListener('click', (e) => {
+                    if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+                        desktopDropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
+    
+            const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
+            const mobileDropdownMenu = document.getElementById('dropdown-mobile');
+    
+            if (mobileDropdownButton && mobileDropdownMenu) {
+                mobileDropdownButton.addEventListener('click', () => {
+                    mobileDropdownMenu.classList.toggle('hidden');
+                });
+    
+                document.addEventListener('click', (e) => {
+                    if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
+                        mobileDropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
+    
+            const hamburgerButton = document.getElementById('hamburger-button');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('#page-wrapper');
+            let sidebarOpen = false;
+    
+            if (hamburgerButton && sidebar) {
+                hamburgerButton.addEventListener('click', () => {
+                    sidebarOpen = !sidebarOpen;
+                    if (sidebarOpen) {
+                        sidebar.classList.remove('-translate-x-full');
+                        sidebar.classList.add('translate-x-0');
+                        if (mainContent) {
+                            mainContent.classList.add('lg:ml-[210px]');
+                        }
+                    } else {
+                        sidebar.classList.add('-translate-x-full');
+                        sidebar.classList.remove('translate-x-0');
+                        if (mainContent) {
+                            mainContent.classList.remove('lg:ml-[210px]');
+                        }
+                    }
+                });
+            }
+        });
+    </script>    
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
