@@ -6,7 +6,10 @@ import os
 import re
 import time
 from collections import deque
-from urllib.parse import urlparse, urlsplit, urlunparse
+import posixpath
+from urllib.parse import urlparse, urlunparse, quote
+from ipaddress import ip_address
+import socket
 
 import markdown
 import numpy as np
@@ -119,13 +122,58 @@ def image_validator(img):
         return True
 
 
-def is_valid_https_url(url):
-    validate = URLValidator(schemes=["https"])
+def is_dns_safe(hostname):
     try:
-        validate(url)
-        return True
-    except ValidationError:
-        return False
+        resolved = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False  # Unable to resolve hostname; treat as unsafe.
+    for result in resolved:
+        ip_str = result[4][0]
+        try:
+            ip = ip_address(ip_str)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                return False
+        except ValueError:
+            continue
+    return True
+
+def rebuild_safe_url(url):
+    parsed_url = urlparse(url)
+
+    if parsed_url.scheme not in ('http', 'https'):
+        return None
+
+    netloc = parsed_url.netloc.split('@')[-1]
+
+    hostname = urlparse(f"http://{netloc}").hostname
+    if not hostname:
+        return None 
+
+    try:
+        ip = ip_address(hostname)
+        if ip.is_private or ip.is_loopback:
+            return None
+    except ValueError:
+        if not is_dns_safe(hostname):
+            return None
+
+    path = parsed_url.path
+    path = path.replace('\r', '').replace('\n', '')  
+    normalized_path = posixpath.normpath(path)
+    if normalized_path == '.':
+        normalized_path = '/'
+    if not normalized_path.startswith('/'):
+        normalized_path = '/' + normalized_path
+    encoded_path = quote(normalized_path, safe='/')
+
+    safe_url = urlunparse((
+        parsed_url.scheme,
+        netloc,
+        encoded_path,
+        '', '', ''
+    ))
+
+    return safe_url
 
 
 def rebuild_safe_url(url):
