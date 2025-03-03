@@ -675,6 +675,39 @@ class RepoDetailView(DetailView):
     template_name = "projects/repo_detail.html"
     context_object_name = "repo"
 
+    def fetch_github_milestones(self, repo):
+        """
+        Fetch milestones from the GitHub API for the given repository.
+        """
+        try:
+            repo_url = repo.repo_url.strip("/")
+
+            # Extract owner/repo from URL in a more robust way
+            if "github.com" in repo_url:
+                path_parts = repo_url.split("github.com/")[-1].split("/")
+                if len(path_parts) >= 2:
+                    owner, repo_name = path_parts[0], path_parts[1]
+
+                    # API URL for public repository milestones
+                    api_url = f"https://api.github.com/repos/{owner}/{repo_name}/milestones?state=all"
+
+                    headers = {"Accept": "application/vnd.github.v3+json"}
+
+                    # Add GitHub token if available for higher rate limits
+                    if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                        headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                    response = requests.get(api_url, headers=headers, timeout=10)
+
+                    if response.status_code == 200:
+                        return response.json()
+                    return []
+                return []
+            return []
+
+        except Exception:
+            return []
+
     def get_github_top_contributors(self, repo_url):
         """Fetch top contributors directly from GitHub API"""
         try:
@@ -900,6 +933,58 @@ class RepoDetailView(DetailView):
                 "is_paginated": paginator.num_pages > 1,  # Add this
             }
         )
+
+        milestones = self.fetch_github_milestones(repo)
+
+        # Get the current page from query parameters
+        milestone_page = self.request.GET.get("milestone_page", 1)
+        try:
+            milestone_page = int(milestone_page)
+        except (TypeError, ValueError):
+            milestone_page = 1
+
+        # Calculate activity score for each milestone (open_issues + closed_issues)
+        for milestone in milestones:
+            milestone["activity_score"] = milestone.get("open_issues", 0) + milestone.get("closed_issues", 0)
+
+        # Sort milestones: first by state (open first), then by activity score (highest first)
+        milestones.sort(
+            key=lambda x: (
+                0 if x.get("state") == "open" else 1,  # Open milestones first
+                -x.get("activity_score", 0),  # Higher activity score first
+                x.get("due_on", "") or "9999-12-31T23:59:59Z",  # Then by due date
+            )
+        )
+
+        # Paginate the milestones - 5 per page
+        milestones_per_page = 5
+        total_milestones = len(milestones)
+        total_pages = (total_milestones + milestones_per_page - 1) // milestones_per_page
+
+        # Ensure the page number is within valid range
+        if milestone_page < 1:
+            milestone_page = 1
+        elif milestone_page > total_pages and total_pages > 0:
+            milestone_page = total_pages
+
+        # Calculate start and end indices for slicing
+        start_idx = (milestone_page - 1) * milestones_per_page
+        end_idx = min(start_idx + milestones_per_page, total_milestones)
+
+        # Slice the milestones list
+        paginated_milestones = milestones[start_idx:end_idx] if milestones else []
+
+        # Add the paginated milestones and pagination info to context
+        context["milestones"] = paginated_milestones
+        context["milestone_pagination"] = {
+            "current_page": milestone_page,
+            "total_pages": total_pages,
+            "has_previous": milestone_page > 1,
+            "has_next": milestone_page < total_pages,
+            "previous_page": milestone_page - 1 if milestone_page > 1 else None,
+            "next_page": milestone_page + 1 if milestone_page < total_pages else None,
+            "page_range": range(1, total_pages + 1),
+        }
 
         return context
 
