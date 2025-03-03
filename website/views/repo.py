@@ -167,9 +167,24 @@ class RepoDetailView(DetailView):
         # Handle other section refreshes...
         return JsonResponse({"status": "error", "message": "Invalid section"}, status=400)
 
+    def fetch_github_milestones(self, repo):
+        """
+        Fetch milestones from the GitHub API for the given repository.
+        """
+        milestones_url = f"https://api.github.com/repos/{repo.repo_url.split('github.com/')[-1]}/milestones"
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+        }
+        response = requests.get(milestones_url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        return []
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # ... existing context data ...
+        repo = self.get_object()
+        context["milestones"] = self.fetch_github_milestones(repo)
         return context
 
 
