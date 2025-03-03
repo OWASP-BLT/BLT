@@ -147,3 +147,41 @@ class RoomForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if is_anonymous:
             self.fields["captcha"].required = True
+
+
+class GitHubIssueForm(forms.Form):
+    github_url = forms.URLField(
+        label="GitHub Issue URL",
+        widget=forms.URLInput(
+            attrs={
+                "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                "placeholder": "https://github.com/owner/repo/issues/123",
+            }
+        ),
+        help_text=("Enter the full URL to the GitHub issue with a bounty label " "(containing a $ sign)"),
+    )
+
+    def clean_github_url(self):
+        url = self.cleaned_data.get("github_url")
+
+        # Validate that it's a GitHub URL
+        if not url.startswith("https://github.com/") or "/issues/" not in url:
+            raise forms.ValidationError(
+                "Please enter a valid GitHub issue URL (https://github.com/owner/repo/issues/number)"
+            )
+
+        # Extract parts from the URL
+        parts = url.split("/")
+        if len(parts) < 7:
+            raise forms.ValidationError("Invalid GitHub issue URL format")
+
+        # Validate that the URL points to an issue, not a PR
+        try:
+            issue_number = int(parts[6])
+            # We don't use issue_number further, but this validates it's an integer
+            if issue_number <= 0:
+                raise forms.ValidationError("Issue number must be positive")
+        except ValueError:
+            raise forms.ValidationError("Invalid issue number in URL")
+
+        return url

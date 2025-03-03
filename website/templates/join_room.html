@@ -4,8 +4,10 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="max-w-4xl mx-auto py-8">
-        <div class="flex items-center justify-between">
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <!-- Breadcrumbs -->
+        {% include "includes/breadcrumbs.html" %}
+        <div class="flex items-center justify-between mt-4">
             <h1 class="text-3xl font-bold text-gray-900">{{ room.name }}</h1>
             <div class="flex items-center gap-2">
                 <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
@@ -15,10 +17,28 @@
         <div id="log-history"
              class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
             {% for message in room_messages %}
-                <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm">
-                    <div class="flex justify-between items-center">
+                <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm relative group"
+                     id="message-{{ message.id }}">
+                    <div class="flex justify-between items-end">
                         <strong>{{ message.username }}</strong>
-                        <span class="text-xs text-gray-500">{{ message.timestamp|date:"M d, Y H:i" }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-500">{{ message.timestamp|date:"M d, Y H:i" }}</span>
+                            {% if message.username == request.user.username %}
+                                <!-- Three dots button (Fixed: added class="menu-button") -->
+                                <button class="menu-button text-gray-500 hover:text-gray-700 p-1"
+                                        onclick="toggleMenu(event, 'menu-{{ message.id }}')">
+                                    ⋮  <!-- Unicode for 3 vertical dots (⋮) -->
+                                </button>
+                                <!-- Dropdown menu (hidden by default) -->
+                                <div id="menu-{{ message.id }}"
+                                     class="dropdown-menu hidden absolute right-0 bg-white shadow-md rounded-md p-2 w-32 z-10">
+                                    <button onclick="deleteMessage('{{ message.username }}','{{ message.id }}')"
+                                            class="delete-button block text-red-600 hover:text-red-800 text-sm w-full text-left px-2 py-1">
+                                        🗑️ Delete Message
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="mt-1">{{ message.content }}</div>
                 </div>
@@ -113,31 +133,78 @@
 
     function appendMessage(data) {
         const newMessage = document.createElement('div');
-        newMessage.classList.add('py-1', 'px-2', 'bg-white', 'rounded-lg', 'mb-2', 'shadow-sm');
-        
+        newMessage.classList.add('py-1', 'px-2', 'bg-white', 'rounded-lg', 'mb-2', 'shadow-sm', 'relative', 'group');
+
+        // Assign temporary ID if message_id is not yet received
+        const tempId = `message-${data.message_id}`;
+        newMessage.id = tempId;
+
         const header = document.createElement('div');
         header.classList.add('flex', 'justify-between', 'items-center');
-        
-        const username = document.createElement('strong');
-        username.textContent = data.username;
-        
-        const timestamp = document.createElement('span');
-        timestamp.classList.add('text-xs', 'text-gray-500');
+
+        const usernameElement = document.createElement('strong');
+        usernameElement.textContent = data.username;
+
+        // Ensure Timestamp format matches Django template
+        const timestampElement = document.createElement('span');
+        timestampElement.classList.add('text-xs', 'text-gray-500');
+
         if (data.timestamp) {
             const date = new Date(data.timestamp);
-            timestamp.textContent = date.toLocaleString();
+            timestampElement.textContent = date.toLocaleString('en-US', { 
+                month: 'short', day: '2-digit', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit', hour12: false
+            }).replace(/(\d{4}),/, '$1'); // Removes comma after year
         }
-        
-        header.appendChild(username);
-        header.appendChild(timestamp);
-        
-        const content = document.createElement('div');
-        content.classList.add('mt-1');
-        content.textContent = data.message;
-        
+
+        // Container for timestamp & menu
+        const timestampMenuContainer = document.createElement('div');
+        timestampMenuContainer.classList.add('flex', 'items-center', 'gap-2');
+        timestampMenuContainer.appendChild(timestampElement);
+
+        header.appendChild(usernameElement);
+        header.appendChild(timestampMenuContainer);
+
+        const contentElement = document.createElement('div');
+        contentElement.classList.add('mt-1');
+        contentElement.textContent = data.message;
+
         newMessage.appendChild(header);
-        newMessage.appendChild(content);
-        
+        newMessage.appendChild(contentElement);
+
+        if (data.username === username) {
+            const menuContainer = document.createElement('div');
+            menuContainer.classList.add('relative');
+
+            // Three dots button (⋮)
+            const menuButton = document.createElement('button');
+            menuButton.classList.add('menu-button', 'text-gray-500', 'hover:text-gray-700', 'p-1');
+            menuButton.innerHTML = "&#x22EE;"; // ⋮ icon
+            menuButton.onclick = function(event) {
+                toggleMenu(event, `menu-${data.message_id}`);
+            };
+
+            // Dropdown menu
+            const dropdownMenu = document.createElement('div');
+            dropdownMenu.id = `menu-${data.message_id}`;
+            dropdownMenu.classList.add('dropdown-menu', 'hidden', 'absolute', 'right-0', 'bg-white', 'shadow-md', 'rounded-md', 'p-2', 'w-32', 'z-10');
+
+            // Delete button inside dropdown
+            const deleteButton = document.createElement('button');
+            deleteButton.classList.add('delete-button', 'block', 'text-red-600', 'hover:text-red-800', 'text-sm', 'w-full', 'text-left', 'px-2', 'py-1');
+            deleteButton.textContent = "🗑️ Delete Message";
+
+            deleteButton.onclick = function () {
+                deleteMessage(data.username, data.message_id);
+            };
+
+            dropdownMenu.appendChild(deleteButton);
+            menuContainer.appendChild(menuButton);
+            menuContainer.appendChild(dropdownMenu);
+
+            timestampMenuContainer.appendChild(menuContainer);
+        }
+
         chatLog.appendChild(newMessage);
         chatLog.scrollTop = chatLog.scrollHeight;
     }
@@ -200,7 +267,12 @@
             case 'message_ack':
                 lastMessageId = data.message_id;
                 break;
-                
+
+            case 'delete_ack':
+                console.log("Received delete_ack for:", data.message_id);
+                removeMessageFromUI(data.message_id);
+                break;    
+            
             case 'error':
                 showError(data.message);
                 break;
@@ -223,6 +295,67 @@
             messageInput.value = '';
         }
     }
+
+    // Function to toggle the dropdown menu for a specific message
+    function toggleMenu(event, menuId) {
+        event.stopPropagation(); // Prevent click event from bubbling
+
+        let clickedMenu = document.getElementById(menuId);
+        
+        // Close all other open menus before opening the clicked one
+        document.querySelectorAll(".dropdown-menu").forEach(menu => {
+            if (menu !== clickedMenu) {
+                menu.classList.add("hidden");
+            }
+        });
+
+        // Toggle visibility of the clicked menu
+        clickedMenu.classList.toggle("hidden");
+    }
+
+    // Function to handle message deletion (for future implementation)
+    function deleteMessage(username, messageId) {
+        if (!messageId) {
+            console.error("Error: Message ID is required but not provided!");
+            return;
+        }
+
+        console.log("Deleting Message:", messageId);
+
+        sendDeleteMessage(username, messageId);
+    }
+
+    function sendDeleteMessage(username, messageId) {
+        if (messageId !== "" && socket && socket.readyState === WebSocket.OPEN) {
+            const data = {
+                'type': 'deleteMessage',
+                'messageId': messageId.toString(),  // Ensure messageId is a string
+                'username': username
+            };
+            socket.send(JSON.stringify(data));
+        }
+    }
+
+
+    // Function to remove a message from the UI
+    function removeMessageFromUI(messageId) {
+        const messageElement = document.getElementById(`message-${messageId}`);
+        if (messageElement) {
+            messageElement.remove();
+        }
+    }
+
+    // Function to close all dropdown menus when clicking outside
+    document.addEventListener("click", function(event) {
+        let isClickInside = event.target.closest(".menu-button, .dropdown-menu");
+
+        if (!isClickInside) {
+            document.querySelectorAll(".dropdown-menu").forEach(menu => {
+                menu.classList.add("hidden");
+            });
+        }
+    });
+
 
     sendButton.addEventListener('click', sendMessage);
 

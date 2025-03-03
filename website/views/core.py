@@ -32,7 +32,8 @@ from django.core.exceptions import FieldError, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
-from django.db import connection, models, transaction
+from django.core.paginator import EmptyPage, PageNotAnInteger
+from django.db import connection, models
 from django.db.models import Count, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
@@ -42,13 +43,18 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
-from django.views.generic import TemplateView, View
+from django.views.generic import ListView, TemplateView, View
 
 from website.models import (
     IP,
     Activity,
     Badge,
+    DailyStats,
     Domain,
+    ForumCategory,
+    ForumComment,
+    ForumPost,
+    ForumVote,
     Hunt,
     Issue,
     ManagementCommandLog,
@@ -58,8 +64,6 @@ from website.models import (
     Project,
     Repo,
     SlackBotActivity,
-    Suggestion,
-    SuggestionVotes,
     Tag,
     User,
     UserBadge,
@@ -498,14 +502,11 @@ def find_key(request, token):
 
 
 def search(request, template="search.html"):
-    query = request.GET.get("query")
-    stype = request.GET.get("type", "all")
-    context = None
-    if query is None:
-        return render(request, template, {"request": request})
-    query = query.strip()
+    query = request.GET.get("query", "").strip()
+    stype = request.GET.get("type", "").strip()
+    context = {}
 
-    if stype == "all":
+    if query:
         # Search across multiple models
         organizations = Organization.objects.filter(name__icontains=query)
         issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
@@ -515,14 +516,15 @@ def search(request, template="search.html"):
         users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
         projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
         repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
         context = {
             "request": request,
             "query": query,
             "type": stype,
             "organizations": organizations,
-            "issues": issues,
             "domains": domains,
             "users": users,
+            "issues": issues,
             "projects": projects,
             "repos": repos,
         }
@@ -720,92 +722,121 @@ def search(request, template="search.html"):
 
 
 @login_required
-def vote_suggestions(request):
-    if request.method != "POST":
-        return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+def vote_forum_post(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+            up_vote = data.get("up_vote", False)
+            down_vote = data.get("down_vote", False)
 
-    try:
-        data = json.loads(request.body)
-        suggestion_id = data.get("suggestion_id")
-        up_vote = data.get("up_vote", False)
-        down_vote = data.get("down_vote", False)
+            post = ForumPost.objects.get(id=post_id)
+            vote, created = ForumVote.objects.get_or_create(
+                post=post, user=request.user, defaults={"up_vote": up_vote, "down_vote": down_vote}
+            )
 
-        suggestion = Suggestion.objects.get(id=suggestion_id)
-
-        with transaction.atomic():
-            vote, created = SuggestionVotes.objects.get_or_create(user=request.user, suggestion=suggestion)
-
-            old_up_vote = vote.up_vote
-            old_down_vote = vote.down_vote
-
-            if not up_vote and not down_vote:
-                vote.delete()
-            else:
+            if not created:
                 vote.up_vote = up_vote
                 vote.down_vote = down_vote
                 vote.save()
 
-            if old_up_vote != up_vote:
-                suggestion.up_votes += 1 if up_vote else -1
-            if old_down_vote != down_vote:
-                suggestion.down_votes += 1 if down_vote else -1
+            # Update vote counts
+            post.up_votes = ForumVote.objects.filter(post=post, up_vote=True).count()
+            post.down_votes = ForumVote.objects.filter(post=post, down_vote=True).count()
+            post.save()
 
-            suggestion.save()
+            return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
 
-        return JsonResponse({"success": True, "up_vote": suggestion.up_votes, "down_vote": suggestion.down_votes})
-
-    except Suggestion.DoesNotExist:
-        return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
-    except json.JSONDecodeError:
-        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
-    except Exception as e:
-        print(f"Unexpected error in vote_suggestions: {e}", exc_info=True)
-        return JsonResponse({"success": False, "error": "An unexpected error occurred"}, status=500)
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
 @login_required
 def set_vote_status(request):
     if request.method == "POST":
-        user = request.user
         try:
             data = json.loads(request.body)
-            id = data.get("id")
+            post_id = data.get("id")
+            vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
 
-            # Ensure the id is a valid integer
-            if not id or not str(id).isdigit():
-                return JsonResponse({"success": False, "error": f"ID = {id} is invalid."}, status=400)
-
-            suggestion = Suggestion.objects.get(id=int(id))
-
-            up_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, up_vote=True).exists()
-            down_vote = SuggestionVotes.objects.filter(suggestion=suggestion, user=user, down_vote=True).exists()
-
-            return JsonResponse({"up_vote": up_vote, "down_vote": down_vote})
-
-        except Suggestion.DoesNotExist:
-            return JsonResponse({"success": False, "error": "Suggestion not found"}, status=404)
+            return JsonResponse(
+                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+            )
         except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
 
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=400)
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
 
 
-def add_suggestions(request):
+@login_required
+def add_forum_post(request):
     if request.method == "POST":
-        user = request.user if request.user.is_authenticated else None
-        data = json.loads(request.body)
-        title = data.get("title")
-        description = data.get("description", "")
-        if title and description:
-            suggestion = Suggestion(user=user, title=title, description=description)
-            suggestion.save()
-            messages.success(request, "Suggestion added successfully.")
-            return JsonResponse({"status": "success"})
-        else:
-            messages.error(request, "Please fill all the fields.")
-            return JsonResponse({"status": "error"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Method not allowed"}, status=405)
+        try:
+            data = json.loads(request.body)
+            title = data.get("title")
+            category = data.get("category")
+            description = data.get("description")
+
+            if not all([title, category, description]):
+                return JsonResponse({"status": "error", "message": "Missing required fields"})
+
+            post = ForumPost.objects.create(
+                user=request.user, title=title, category_id=category, description=description
+            )
+
+            return JsonResponse({"status": "success", "post_id": post.id})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+@login_required
+def add_forum_comment(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            post_id = data.get("post_id")
+            content = data.get("content")
+
+            if not all([post_id, content]):
+                return JsonResponse({"status": "error", "message": "Missing required fields"})
+
+            post = ForumPost.objects.get(id=post_id)
+            comment = ForumComment.objects.create(post=post, user=request.user, content=content)
+
+            return JsonResponse({"status": "success", "comment_id": comment.id})
+        except ForumPost.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Post not found"})
+        except json.JSONDecodeError:
+            return JsonResponse({"status": "error", "message": "Invalid JSON data"})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "Server error occurred"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+def view_forum(request):
+    categories = ForumCategory.objects.all()
+    selected_category = request.GET.get("category")
+
+    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+
+    if selected_category:
+        posts = posts.filter(category_id=selected_category)
+
+    return render(
+        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+    )
 
 
 class GoogleLogin(SocialLoginView):
@@ -987,7 +1018,7 @@ class StatsDetailView(TemplateView):
                 dates, counts = self.get_historical_counts(model, start_date)
                 trend = counts[-1] - counts[-2] if len(counts) >= 2 else 0
 
-                # Get filtered count and total count
+                # Get filtered count and total counts
                 total_count = model.objects.count()
                 filtered_count = counts[-1] if counts else 0
 
@@ -1024,8 +1055,38 @@ class StatsDetailView(TemplateView):
 
 
 def view_suggestions(request):
-    suggestion = Suggestion.objects.all()
-    return render(request, "feature_suggestion.html", {"suggestions": suggestion})
+    category_id = request.GET.get("category")
+    status = request.GET.get("status")
+    sort = request.GET.get("sort", "newest")
+
+    suggestions = ForumPost.objects.all()
+
+    # Apply filters
+    if category_id:
+        suggestions = suggestions.filter(category_id=category_id)
+    if status:
+        suggestions = suggestions.filter(status=status)
+
+    # Apply sorting
+    if sort == "oldest":
+        suggestions = suggestions.order_by("created")
+    elif sort == "most_votes":
+        suggestions = suggestions.order_by("-up_votes")
+    elif sort == "most_comments":
+        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
+    else:  # newest
+        suggestions = suggestions.order_by("-created")
+
+    categories = ForumCategory.objects.all()
+
+    return render(
+        request,
+        "feature_suggestion.html",
+        {
+            "suggestions": suggestions,
+            "categories": categories,
+        },
+    )
 
 
 def sitemap(request):
@@ -1035,7 +1096,7 @@ def sitemap(request):
 
 def badge_list(request):
     badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge"))
+    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
     return render(request, "badges.html", {"badges": badges})
 
 
@@ -1148,9 +1209,10 @@ def view_pr_analysis(request):
 
 
 def home(request):
+    from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import Repo
+    from website.models import ForumPost, GitHubIssue, Post, Repo, User, UserProfile  # Add UserProfile model
 
     # Get last commit date
     try:
@@ -1163,6 +1225,54 @@ def home(request):
     latest_repos = Repo.objects.order_by("-created")[:5]
     total_repos = Repo.objects.count()
 
+    # Get recent forum posts
+    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+
+    # Get top bug reporters for current month
+    current_time = timezone.now()
+    top_bug_reporters = (
+        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
+        .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
+        .order_by("-total_score")[:5]
+    )
+
+    # Get top PR contributors using the leaderboard method
+    top_pr_contributors = (
+        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        .annotate(total_prs=Count("id"))
+        .order_by("-total_prs")[:5]
+    )
+
+    # Get top earners
+    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
+
+    # Get latest blog posts
+    latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
+    # Get repository star counts for the specific repositories shown on the homepage
+    repo_stars = []
+    repo_mappings = {
+        "blt": "OWASP-BLT/BLT",
+        "flutter": "OWASP-BLT/BLT-Flutter",
+        "extension": "OWASP-BLT/BLT-Extension",
+        "action": "OWASP-BLT/BLT-Action",
+    }
+
+    for key, repo_name in repo_mappings.items():
+        try:
+            # Try to find the repository by name
+            repo_parts = repo_name.split("/")
+            if len(repo_parts) > 1:
+                repo = Repo.objects.filter(name__icontains=repo_parts[1]).first()
+            else:
+                repo = Repo.objects.filter(name__icontains=repo_name).first()
+
+            if repo:
+                repo_stars.append({"key": key, "stars": repo.stars})
+        except Exception as e:
+            print(f"Error getting star count for {repo_name}: {e}")
+
     return render(
         request,
         "home.html",
@@ -1171,6 +1281,12 @@ def home(request):
             "current_year": timezone.now().year,
             "latest_repos": latest_repos,
             "total_repos": total_repos,
+            "recent_posts": recent_posts,
+            "top_bug_reporters": top_bug_reporters,
+            "top_pr_contributors": top_pr_contributors,
+            "latest_blog_posts": latest_blog_posts,
+            "top_earners": top_earners,  # Add top earners to context
+            "repo_stars": repo_stars,  # Add repository star counts to context
         },
     )
 
@@ -1422,6 +1538,10 @@ def check_owasp_compliance(request):
 def management_commands(request):
     # Get list of available management commands
     available_commands = []
+
+    # Get the date 30 days ago for stats
+    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+
     for name, app_name in get_commands().items():
         # Only include commands from the website app and exclude initsuperuser
         if (
@@ -1448,6 +1568,19 @@ def management_commands(request):
                     }
                 )
 
+            # Get stats data for the past 30 days if it exists
+            stats_data = []
+            daily_stats = DailyStats.objects.filter(name=name, created__gte=thirty_days_ago).order_by("created")
+
+            if daily_stats.exists():
+                for stat in daily_stats:
+                    try:
+                        value = int(stat.value)
+                    except (ValueError, TypeError):
+                        value = 0
+                    stats_data.append({"date": stat.created.date().isoformat(), "value": value})
+
+            command_info["stats_data"] = stats_data
             available_commands.append(command_info)
 
     commands = sorted(available_commands, key=lambda x: x["name"])
@@ -1456,6 +1589,11 @@ def management_commands(request):
 
 def run_management_command(request):
     if request.method == "POST":
+        # Check if user is superuser
+        if not request.user.is_superuser:
+            messages.error(request, "Only superusers can run management commands.")
+            return redirect("management_commands")
+
         command = request.POST.get("command")
         logging.info(f"Running command: {command}")
         print(f"Running command: {command}")
@@ -1506,118 +1644,77 @@ def run_management_command(request):
 
 
 def template_list(request):
+    from django.core.cache import cache
+    from django.core.paginator import Paginator
     from django.db.models import Sum
     from django.urls import URLPattern, URLResolver, get_resolver
 
+    # Get search and filter parameters
+    search_query = request.GET.get("search", "")
+    filter_by = request.GET.get("filter", "all")
+    sort = request.GET.get("sort", "name")
+    direction = request.GET.get("dir", "asc")
+    page = request.GET.get("page", 1)
+
     def get_templates_from_dir(directory):
+        # Try to get from cache first
+        cache_key = f"template_list_{directory}_{search_query}_{filter_by}"
+        cached_templates = cache.get(cache_key)
+        if cached_templates is not None:
+            return cached_templates
+
         templates = []
         for template_name in os.listdir(directory):
             if template_name.endswith(".html"):
-                template_path = os.path.join(directory, template_name)
+                if search_query and search_query.lower() not in template_name.lower():
+                    continue
 
-                # Get last modified time
+                template_path = os.path.join(directory, template_name)
                 modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
 
-                # Get view count from IP table
-                view_count = (
-                    IP.objects.filter(
-                        Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
-                    ).aggregate(total_views=Sum("count"))["total_views"]
-                    or 0
-                )
+                # Get view count from IP table with caching
+                view_count_key = f"template_views_{template_name}"
+                view_count = cache.get(view_count_key)
+                if view_count is None:
+                    view_count = (
+                        IP.objects.filter(
+                            Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
+                        ).aggregate(total_views=Sum("count"))["total_views"]
+                        or 0
+                    )
+                    cache.set(view_count_key, view_count, 3600)  # Cache for 1 hour
 
-                # Get GitHub URL
                 github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
 
-                # Check template contents for sidenav and base.html extension
-                has_sidenav = False
-                extends_base = False
-                has_style_tags = False
-                with open(template_path, "r") as f:
-                    content = f.read()
-                    if '{% include "includes/sidenav.html" %}' in content:
-                        has_sidenav = True
-                    if '{% extends "base.html" %}' in content:
-                        extends_base = True
-                    if "<style" in content:
-                        has_style_tags = True
+                # Check template contents with caching
+                template_info_key = f"template_info_{template_name}"
+                template_info = cache.get(template_info_key)
 
-                # Check if template has a URL
-                template_url = None
-                resolver = get_resolver()
+                if template_info is None:
+                    with open(template_path, "r") as f:
+                        content = f.read()
+                        template_info = {
+                            "has_sidenav": '{% include "includes/sidenav.html" %}' in content,
+                            "extends_base": '{% extends "base.html" %}' in content,
+                            "has_style_tags": "<style" in content,
+                        }
+                    cache.set(template_info_key, template_info, 3600)  # Cache for 1 hour
 
-                def check_urlpatterns(urlpatterns, template_name):
-                    # Get template name without .html extension for comparison
-                    template_base_name = template_name.replace(".html", "")
+                # Filter based on user selection
+                if filter_by != "all":
+                    if filter_by == "with_sidenav" and not template_info["has_sidenav"]:
+                        continue
+                    if filter_by == "with_base" and not template_info["extends_base"]:
+                        continue
+                    if filter_by == "with_styles" and not template_info["has_style_tags"]:
+                        continue
 
-                    for pattern in urlpatterns:
-                        if isinstance(pattern, URLResolver):
-                            match = check_urlpatterns(pattern.url_patterns, template_name)
-                            if match:
-                                return match
-                        elif isinstance(pattern, URLPattern):
-                            # Get pattern path and name for comparison
-                            pattern_path = str(pattern.pattern) if pattern.pattern else ""
-                            pattern_name = getattr(pattern, "name", "")
-
-                            # Check class-based views
-                            if hasattr(pattern.callback, "view_class"):
-                                view_class = pattern.callback.view_class
-                                pattern_path = str(pattern.pattern) if pattern.pattern else ""
-                                pattern_name = getattr(pattern, "name", "")
-
-                                # Check template_name attribute
-                                if hasattr(view_class, "template_name"):
-                                    view_template = view_class.template_name
-                                    if view_template == template_name or view_template == template_base_name:
-                                        return pattern.pattern
-
-                                # Check if pattern path or name matches template name
-                                path_match = pattern_path == template_base_name
-                                path_replace_match = (
-                                    pattern_path and pattern_path.replace("-", "_") == template_base_name
-                                )
-                                name_match = pattern_name == template_base_name
-                                name_replace_match = (
-                                    pattern_name and pattern_name.replace("-", "_") == template_base_name
-                                )
-
-                                if path_match or path_replace_match or name_match or name_replace_match:
-                                    return pattern.pattern
-
-                            # Check function-based views
-                            elif hasattr(pattern.callback, "__code__"):
-                                func_code = pattern.callback.__code__
-                                pattern_path = str(pattern.pattern) if pattern.pattern else ""
-                                pattern_name = getattr(pattern, "name", "")
-
-                                if (
-                                    template_name in func_code.co_names
-                                    or template_base_name in func_code.co_names
-                                    or pattern.callback.__name__ == template_base_name
-                                    or pattern_path == template_base_name
-                                    or (pattern_path and pattern_path.replace("-", "_") == template_base_name)
-                                    or pattern_name == template_base_name
-                                    or (pattern_name and pattern_name.replace("-", "_") == template_base_name)
-                                ):
-                                    return pattern.pattern
-
-                            # Check closure-based views
-                            elif hasattr(pattern.callback, "__closure__") and pattern.callback.__closure__:
-                                for cell in pattern.callback.__closure__:
-                                    if isinstance(cell.cell_contents, str):
-                                        matches_template = cell.cell_contents.endswith(
-                                            template_name
-                                        ) or cell.cell_contents.endswith(template_base_name)
-                                        if matches_template:
-                                            return pattern.pattern
-                    return None
-
-                url_pattern = check_urlpatterns(resolver.url_patterns, template_name)
-                if url_pattern:
-                    template_url = "/" + str(url_pattern).lstrip("^").rstrip("$")
-                    if template_url.endswith("/"):
-                        template_url = template_url[:-1]
+                # Check if template has a URL (cached)
+                url_key = f"template_url_{template_name}"
+                template_url = cache.get(url_key)
+                if template_url is None:
+                    template_url = check_template_url(template_name)
+                    cache.set(url_key, template_url, 3600)  # Cache for 1 hour
 
                 templates.append(
                     {
@@ -1627,12 +1724,64 @@ def template_list(request):
                         "modified": modified_time,
                         "views": view_count,
                         "github_url": github_url,
-                        "has_sidenav": has_sidenav,
-                        "extends_base": extends_base,
-                        "has_style_tags": has_style_tags,
+                        "has_sidenav": template_info["has_sidenav"],
+                        "extends_base": template_info["extends_base"],
+                        "has_style_tags": template_info["has_style_tags"],
                     }
                 )
+
+        # Cache the results
+        cache.set(cache_key, templates, 300)  # Cache for 5 minutes
         return templates
+
+    def check_template_url(template_name):
+        resolver = get_resolver()
+        template_base_name = template_name.replace(".html", "")
+
+        for pattern in resolver.url_patterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
+
+    def check_pattern(pattern, template_name, template_base_name):
+        pattern_path = str(pattern.pattern) if pattern.pattern else ""
+        pattern_name = getattr(pattern, "name", "")
+
+        if hasattr(pattern.callback, "view_class"):
+            view_class = pattern.callback.view_class
+            if hasattr(view_class, "template_name") and view_class.template_name in (template_name, template_base_name):
+                return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
+
+        if any(
+            [
+                pattern_path == template_base_name,
+                pattern_path and pattern_path.replace("-", "_") == template_base_name,
+                pattern_name == template_base_name,
+                pattern_name and pattern_name.replace("-", "_") == template_base_name,
+            ]
+        ):
+            return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
+
+        return None
+
+    def check_template_url_in_patterns(urlpatterns, template_name):
+        template_base_name = template_name.replace(".html", "")
+        for pattern in urlpatterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
 
     template_dirs = []
     main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
@@ -1650,13 +1799,21 @@ def template_list(request):
     # Calculate total templates
     total_templates = sum(len(dir["templates"]) for dir in template_dirs)
 
-    # Get sort parameters
-    sort = request.GET.get("sort", "name")
-    direction = request.GET.get("dir", "asc")
-
     # Sort templates in each directory
     for dir in template_dirs:
         dir["templates"].sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
+
+    # Flatten templates for pagination
+    all_templates = []
+    for dir in template_dirs:
+        all_templates.extend([(dir["name"], template) for template in dir["templates"]])
+
+    # Paginate results
+    paginator = Paginator(all_templates, 20)  # Show 20 templates per page
+    try:
+        templates_page = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        templates_page = paginator.page(1)
 
     return render(
         request,
@@ -1667,6 +1824,15 @@ def template_list(request):
             "sort": sort,
             "direction": direction,
             "base_dir": settings.BASE_DIR,
+            "search_query": search_query,
+            "filter_by": filter_by,
+            "page_obj": templates_page,
+            "filter_options": [
+                {"value": "all", "label": "All Templates"},
+                {"value": "with_sidenav", "label": "With Sidenav"},
+                {"value": "with_base", "label": "Extends Base"},
+                {"value": "with_styles", "label": "With Style Tags"},
+            ],
         },
     )
 
@@ -1731,7 +1897,7 @@ def website_stats(request):
         views.append(day["daily_count"])
 
     # Get unique visitors (unique IPs), excluding admin URLs
-    unique_visitors = IP.objects.exclude(path__startswith=f"/{admin_url}/").values("address").distinct().count()
+    unique_visitors = IP.objects.exclude(path__startswith=admin_url).values("address").distinct().count()
 
     total_views = sum(view_stats.values())
 
@@ -1831,3 +1997,497 @@ class CustomSocialAccountDisconnectView(BaseSocialAccountDisconnectView):
         if getattr(self, "swagger_fake_view", False):
             return SocialAccount.objects.none()
         return super().get_queryset()
+
+
+class MapView(ListView):
+    template_name = "map.html"
+    context_object_name = "locations"
+
+    def get_queryset(self):
+        # Get the marker type from query params, default to 'organizations'
+        marker_type = self.request.GET.get("type", "organizations")
+
+        if marker_type == "organizations":
+            return Organization.objects.filter(
+                latitude__isnull=False, longitude__isnull=False, is_active=True
+            ).order_by("-created")
+        # Add more types here as needed
+        return []
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        marker_type = self.request.GET.get("type", "organizations")
+
+        context["marker_type"] = marker_type
+        context["marker_types"] = [
+            {
+                "id": "organizations",
+                "name": "Organizations",
+                "icon": "fa-building",
+                "description": "View organizations around the world",
+            },
+            # Add more marker types here as needed
+        ]
+
+        return context
+
+
+class RoadmapView(TemplateView):
+    template_name = "roadmap.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        milestones = [
+            {
+                "title": "📺 BLTV - BLT Eduction",
+                "due_date": "No due date",
+                "last_updated": "about 3 hours ago",
+                "description": "Add an educational component to BLT so that users can learn along w…",
+                "progress": "100%",
+                "open": 0,
+                "closed": 1,
+            },
+            {
+                "title": "🚀 Code Reviewer Leaderboard",
+                "due_date": "No due date",
+                "last_updated": "1 day ago",
+                "description": "Here's an Emoji Code Reviewer Leaderboard idea, ranking reviewers b…",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "Bid on Issues",
+                "due_date": "No due date",
+                "last_updated": "1 day ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🏠 Improvements",
+                "due_date": "No due date",
+                "last_updated": "5 days ago",
+                "description": "",
+                "progress": "46%",
+                "open": 7,
+                "closed": 6,
+            },
+            {
+                "title": "🔒 Protection Of Online Privacy",
+                "due_date": "No due date",
+                "last_updated": "8 days ago",
+                "description": "Web Monitoring System Implementation Plan Overview Enhances user tr…",
+                "progress": "88%",
+                "open": 1,
+                "closed": 8,
+            },
+            {
+                "title": "🧠 AI",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "🔧 App Improvements",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 16,
+                "closed": 0,
+            },
+            {
+                "title": "🛡️ OWASP tools",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 2,
+                "closed": 0,
+            },
+            {
+                "title": "🧰 Extension Improvements",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 4,
+                "closed": 0,
+            },
+            {
+                "title": "🏆 Sponsorship in app",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🎤 GitHub Sportscaster",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🥗 Daily Check-ins",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "New Project: Fresh - Daily Check-In Component for BLT Fresh is a pr…",
+                "progress": "18%",
+                "open": 9,
+                "closed": 2,
+            },
+            {
+                "title": "🔥 Time Tracking",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "Simplified Project: Sizzle - Multi-Platform Time Tracking for BLT P…",
+                "progress": "12%",
+                "open": 14,
+                "closed": 2,
+            },
+            {
+                "title": "🛡️ Trademark Defense",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "Protects brand integrity and legal standing, important for long-ter…",
+                "progress": "30%",
+                "open": 7,
+                "closed": 3,
+            },
+            {
+                "title": "🏢 Organization Portal in App",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "💌 Invites in app",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌍 Banned Apps Simulation in app",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Simulate app behavior in countries with restrictions to ensure compliance "
+                "and accessibility.",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🤖 Slack Bot 2.0",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 12,
+                "closed": 0,
+            },
+            {
+                "title": "🚀 OWASP BLT Adventures",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌐 Organizations",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Project: Refactor BLT Website to Combine Companies and Teams into O…",
+                "progress": "0%",
+                "open": 4,
+                "closed": 0,
+            },
+            {
+                "title": "🔧 Maintenance",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "General maintenance issues",
+                "progress": "50%",
+                "open": 16,
+                "closed": 16,
+            },
+            {
+                "title": "Bug / Issue / Project tools",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🏆 Gamification",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Project Summary: Gamification Integration for BLT Platform The gami…",
+                "progress": "15%",
+                "open": 17,
+                "closed": 3,
+            },
+            {
+                "title": "GSOC tools",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 3,
+                "closed": 0,
+            },
+            {
+                "title": "🚀🎨🔄 Tailwind Migration",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Migrate the remaining pages to tailwind "
+                "https://blt.owasp.org/template_list/?sort=has_style_tags",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🐞 New Issue Detail Page",
+                "due_date": "No due date",
+                "last_updated": "13 days ago",
+                "description": "Improves issue tracking efficiency and developer experience on the site.",
+                "progress": "66%",
+                "open": 3,
+                "closed": 6,
+            },
+            {
+                "title": "🥓 BACON",
+                "due_date": "No due date",
+                "last_updated": "21 days ago",
+                "description": "🥓 BACON: Blockchain Assisted Contribution Network BACON is a cuttin…",
+                "progress": "50%",
+                "open": 7,
+                "closed": 7,
+            },
+            {
+                "title": "💰 Multi-Crypto Donations",
+                "due_date": "No due date",
+                "last_updated": "about 1 month ago",
+                "description": "Overview: The Decentralized Multi-Crypto Payment Integration featur…",
+                "progress": "25%",
+                "open": 6,
+                "closed": 2,
+            },
+            {
+                "title": "💡 Suggestions",
+                "due_date": "No due date",
+                "last_updated": "about 1 month ago",
+                "description": "",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "💸 Pledge",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌘Dark Mode",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "👷 Contributor Ranking",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "🌞💻🥉 Shows contributor github username, commits, issues opened, issu…",
+                "progress": "80%",
+                "open": 1,
+                "closed": 4,
+            },
+            {
+                "title": "✅ Bug Verifiers",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "Ensures bug fixes are valid and effective, maintaining site integrity.",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "🤖 Artificial Intelligence",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "",
+                "progress": "100%",
+                "open": 0,
+                "closed": 2,
+            },
+            {
+                "title": "🕹️ Penteston Integration",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Enhances site security through integrated pentesting tools. We will…",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🔔 Follower notifications",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "The feature would allow users to follow a company's bug reports and…",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "📊 Review Queue",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Streamlines content moderation, improving site quality.",
+                "progress": "0%",
+                "open": 3,
+                "closed": 0,
+            },
+            {
+                "title": "🕵️ Private Bug Bounties",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Allows companies to conduct private, paid bug bounties in a non-com…",
+                "progress": "25%",
+                "open": 3,
+                "closed": 1,
+            },
+            {
+                "title": "📡 Cyber Dashboard",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "🌞💻🥉 a comprehensive dashboard of stats and information for organiza…",
+                "progress": "0%",
+                "open": 13,
+                "closed": 0,
+            },
+            {
+                "title": "🪝 Webhooks",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "automate the synchronization of issue statuses between GitHub and t…",
+                "progress": "0%",
+                "open": 2,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Modern Front-End Redesign with React & Tailwind CSS (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "A complete redesign of BLT's interface, improving accessibility, usability, "
+                "and aesthetics. The new front-end will be built with React and Tailwind CSS, "
+                "ensuring high performance while maintaining a lightweight architecture under "
+                "100MB. Dark mode will be the default, with full responsiveness and an enhanced "
+                "user experience.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Organization Dashboard – Enhanced Vulnerability & Bug Management (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Redesign and expand the organization dashboard to provide seamless management of bug "
+                "bounties, security reports, and contributor metrics. Features will include advanced "
+                "filtering, real-time analytics, and improved collaboration tools for security teams.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Secure API Development & Migration to Django Ninja (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Migrate our existing and develop a secure, well-documented API with automated "
+                "security tests to support the new front-end. This may involve migrating from Django "
+                "Rest Framework to Django Ninja for improved performance, maintainability, and API "
+                "efficiency.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Gamification & Blockchain Rewards System (Ordinals & Solana) (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Introduce GitHub-integrated contribution tracking that rewards security "
+                "researchers with Bitcoin Ordinals and Solana-based incentives. This will "
+                "integrate with other parts of the website as well such as daily check-ins "
+                "and code quality. Gamification elements such as badges, leaderboards, and "
+                "contribution tiers will encourage engagement and collaboration in "
+                "open-source security.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Decentralized Bidding System for Issues (Bitcoin Cash Integration) (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Create a decentralized system where developers can bid on GitHub issues "
+                "using Bitcoin Cash, ensuring direct transactions between contributors and "
+                "project owners without BLT handling funds.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 AI-Powered Code Review & Smart Prioritization System for Maintainers (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Develop an AI-driven GitHub assistant that analyzes pull requests, detects "
+                "security vulnerabilities, and provides real-time suggestions for improving "
+                "code quality. A smart prioritization system will help maintainers rank issues "
+                "based on urgency, community impact, and dependencies.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Enhanced Slack Bot & Automation System (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Expand the BLT Slack bot to automate vulnerability tracking, send real-time "
+                "alerts for new issues, and integrate GitHub notifications and contributor "
+                "activity updates for teams. prioritize them based on community engagement, "
+                "growth and securing worldwide applications",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+        ]
+
+        context["milestones"] = milestones
+        context["milestone_count"] = len(milestones)
+        return context

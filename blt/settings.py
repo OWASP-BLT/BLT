@@ -334,14 +334,13 @@ ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+
 ALLOWED_HOSTS = [
-    "." + DOMAIN_NAME,
     "127.0.0.1",
     "localhost",
     "0.0.0.0",
-    "blt.owasp.org",
-    "." + DOMAIN_NAME_PREVIOUS,
 ]
+ALLOWED_HOSTS.extend(os.environ.get("ALLOWED_HOSTS", "").split(","))
 
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
