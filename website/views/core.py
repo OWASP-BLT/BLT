@@ -1462,7 +1462,11 @@ def check_owasp_compliance(request):
 
             # Parse URL to determine if it's a GitHub repository
             is_github = hostname and (hostname == "github.com" or hostname.endswith(".github.com"))
-            is_owasp_org = hostname and (hostname == "github.com" or hostname.endswith(".github.com")) and "/owasp" in parsed.path.lower()
+            is_owasp_org = (
+                hostname
+                and (hostname == "github.com" or hostname.endswith(".github.com"))
+                and "/owasp" in parsed.path.lower()
+            )
 
             # Fetch and analyze website content with proper verification
             response = requests.get(safe_url, timeout=10, verify=True)
