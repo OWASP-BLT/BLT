@@ -150,7 +150,7 @@
                     <!-- Project Header -->
                     <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                         <div class="flex items-start gap-6">
-                            <a href="{% url 'project_detail' project.slug %}" class="block">
+                            <a href="{% url 'project_detail' slug=project.slug %}" class="block">
                                 {% if project.logo %}
                                     <img src="{{ project.logo.url }}"
                                          alt="{{ project.name }}"
@@ -164,7 +164,8 @@
                                 {% endif %}
                             </a>
                             <div class="flex-grow">
-                                <a href="{% url 'project_detail' project.slug %}" class="block group">
+                                <a href="{% url 'project_detail' slug=project.slug %}"
+                                   class="block group">
                                     <h2 class="text-3xl font-bold text-white mb-2 group-hover:underline">{{ project.name }}</h2>
                                     <p class="text-lg text-white/90 leading-relaxed group-hover:text-white">{{ project.description|truncatechars:200 }}</p>
                                 </a>
