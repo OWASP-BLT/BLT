@@ -2028,22 +2028,24 @@ def delete_room(request, room_id):
 class OrganizationDetailView(DetailView):
     model = Organization
     template_name = "organization/organization_detail.html"
-    context_object_name = "organization"
 
     def get_queryset(self):
-        return Organization.objects.prefetch_related(
-            "domain_set",
-            "domain_set__issue_set",
-            Prefetch(
-                "domain_set__issue_set",
-                queryset=Issue.objects.filter(status="open"),
-                to_attr="open_issues_list",
-            ),
-            Prefetch(
-                "domain_set__issue_set",
-                queryset=Issue.objects.filter(status="closed"),
-                to_attr="closed_issues_list",
-            ),
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch("domain_set", queryset=Domain.objects.prefetch_related("issue_set")),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="open"),
+                    to_attr="open_issues_list",
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+            )
         )
 
     def get_context_data(self, **kwargs):
@@ -2079,6 +2081,11 @@ class OrganizationDetailView(DetailView):
         # Get view count
         view_count = IP.objects.filter(path=self.request.path).count()
 
+        # Check if GitHub URL exists
+        github_url = None
+        if organization.source_code and "github.com" in organization.source_code:
+            github_url = organization.source_code
+
         context.update(
             {
                 "total_domains": domains.count(),
@@ -2087,6 +2094,7 @@ class OrganizationDetailView(DetailView):
                 "total_issues": total_open_issues + total_closed_issues,
                 "view_count": view_count,
                 "total_repos": total_repos,
+                "github_url": github_url,
             }
         )
 
@@ -2200,182 +2208,77 @@ class OrganizationListView(ListView):
 @login_required
 def update_organization_repos(request, slug):
     """Update repositories for an organization from GitHub."""
-    import logging
+    try:
+        organization = get_object_or_404(Organization, slug=slug)
 
-    import requests
-    from django.conf import settings
+        # Check if repositories were updated in the last 24 hours
+        one_day_ago = timezone.timedelta(days=1)
+        if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
+            time_since_update = timezone.now() - organization.repos_updated_at
+            hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
+            messages.warning(
+                request,
+                f"Repositories were updated recently. Please wait {int(hours_remaining)} hours before updating again.",
+            )
+            return redirect("organization_detail", slug=slug)
 
-    logger = logging.getLogger(__name__)
+        # Check if the organization has a GitHub URL
+        if not organization.source_code:
+            # If GitHub URL was submitted in the form
+            if request.method == "POST" and request.POST.get("github_url"):
+                github_url = request.POST.get("github_url")
+                # Validate GitHub URL
+                if not re.match(r"https?://github\.com/([^/]+)/?.*", github_url):
+                    messages.error(
+                        request,
+                        "Invalid GitHub URL. Please ensure it's in the format: https://github.com/organization-name",
+                    )
+                    return redirect("organization_detail", slug=slug)
 
-    organization = get_object_or_404(Organization, slug=slug)
+                # Save the GitHub URL
+                organization.source_code = github_url
+                organization.save()
+                messages.success(request, "GitHub URL added successfully.")
+            else:
+                messages.error(request, "This organization doesn't have a GitHub URL set.")
+                return redirect("organization_detail", slug=slug)
 
-    # Check permissions
-    if not (
-        request.user.is_staff
-        or request.user == organization.admin
-        or organization.managers.filter(id=request.user.id).exists()
-    ):
-        messages.error(request, "You don't have permission to update repositories for this organization.")
-        return redirect("organization_detail", slug=slug)
+        # Extract GitHub organization name from URL
+        github_url_pattern = r"https?://github\.com/([^/]+)/?.*"
+        match = re.match(github_url_pattern, organization.source_code)
+        if not match:
+            messages.error(
+                request, "Invalid GitHub URL. Please ensure it's in the format: https://github.com/organization-name"
+            )
+            return redirect("organization_detail", slug=slug)
 
-    # Check if organization has a GitHub URL
-    if not organization.source_code:
-        messages.error(request, "This organization doesn't have a GitHub URL set. Please add a source code URL first.")
-        return redirect("organization_detail", slug=slug)
+        github_org_name = match.group(1)
 
-    # Extract GitHub organization name from URL
-    github_url = organization.source_code
-    github_org_match = re.match(r"https?://github\.com/([^/]+)/?.*", github_url)
+        # Check if GitHub token is set
+        if not hasattr(settings, "GITHUB_TOKEN") or not settings.GITHUB_TOKEN:
+            logger.error("GitHub token not set in settings")
+            messages.error(
+                request,
+                "GitHub API token not configured. Please contact the administrator.",
+            )
+            return redirect("organization_detail", slug=slug)
 
-    if not github_org_match:
-        messages.error(request, "Invalid GitHub URL. Please provide a valid GitHub organization URL.")
-        return redirect("organization_detail", slug=slug)
-
-    github_org_name = github_org_match.group(1)
-
-    # Check if GitHub token is set
-    if not hasattr(settings, "GITHUB_TOKEN") or not settings.GITHUB_TOKEN or settings.GITHUB_TOKEN == "blank":
-        logger.error("GITHUB_TOKEN is not set in settings or is set to 'blank'")
+        # Update the repos_updated_at timestamp
+        organization.repos_updated_at = timezone.now()
+        organization.save()
 
         def error_stream():
-            yield "data: $ GitHub token not configured\n\n"
-            yield "data: DONE\n\n"
+            yield "data: $ Starting repository update for organization: %s\n\n" % organization.name
+            yield "data: $ Using GitHub organization: %s\n\n" % github_org_name
 
-        return StreamingHttpResponse(error_stream(), content_type="text/event-stream")
-
-    logger.info(f"Starting repository update for organization: {organization.name} ({github_org_name})")
-
-    def event_stream():
-        """Generate server-sent events"""
-        try:
-            yield f"data: $ Updating repos for {github_org_name}\n\n"
-
-            # Test GitHub token validity
+        def event_stream():
             try:
+                # Test GitHub API token validity
                 yield "data: $ Testing GitHub API token...\n\n"
-                test_response = requests.get(
-                    "https://api.github.com/rate_limit",
-                    headers={
-                        "Authorization": f"token {settings.GITHUB_TOKEN}",
-                        "Accept": "application/vnd.github.v3+json",
-                    },
-                    timeout=5,
-                )
-
-                if test_response.status_code == 200:
-                    rate_data = test_response.json()
-                    core_rate = rate_data.get("resources", {}).get("core", {})
-                    remaining = core_rate.get("remaining", 0)
-
-                    if remaining <= 0:
-                        reset_time = core_rate.get("reset", 0)
-                        reset_datetime = datetime.fromtimestamp(reset_time)
-                        minutes_to_reset = max(1, int((reset_datetime - datetime.now()).total_seconds() / 60))
-                        yield (
-                            f"data: $ Error: GitHub API rate limit exceeded. "
-                            f"Resets in approximately {minutes_to_reset} minutes\n\n"
-                        )
-                        yield "data: DONE\n\n"
-                        return
-
-                    yield f"data: $ Token valid. Rate limit: {remaining} remaining\n\n"
-                else:
-                    response_text = (
-                        test_response.text[:200] + "..." if len(test_response.text) > 200 else test_response.text
-                    )
-
-                    if test_response.status_code == 401:
-                        yield (f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n")
-                        yield "data: DONE\n\n"
-                        return
-                    elif test_response.status_code == 403 and "rate limit" in test_response.text.lower():
-                        yield (f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n")
-                        yield "data: DONE\n\n"
-                        return
-                    else:
-                        yield (
-                            f"data: $ Warning: GitHub API returned {test_response.status_code}. "
-                            f"Response: {response_text}\n\n"
-                        )
-            except requests.exceptions.RequestException:
-                yield "data: $ Error: Cannot connect to GitHub API\n\n"
-                yield "data: DONE\n\n"
-                return
-
-            # Fetch organization details
-            try:
-                api_url = f"https://api.github.com/orgs/{github_org_name}"
-                yield f"data: $ Fetching: {api_url}\n\n"
-
-                org_response = requests.get(
-                    api_url,
-                    headers={
-                        "Authorization": f"token {settings.GITHUB_TOKEN}",
-                        "Accept": "application/vnd.github.v3+json",
-                    },
-                    timeout=10,
-                )
-
-                if org_response.status_code != 200:
-                    response_text = (
-                        org_response.text[:200] + "..." if len(org_response.text) > 200 else org_response.text
-                    )
-
-                    if org_response.status_code == 404:
-                        yield (
-                            f"data: $ Error: Organization '{github_org_name}' not found. "
-                            f"Response: {response_text}\n\n"
-                        )
-                    elif org_response.status_code == 401:
-                        yield (f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n")
-                    else:
-                        yield (
-                            f"data: $ Error: GitHub API returned {org_response.status_code}. "
-                            f"Response: {response_text}\n\n"
-                        )
-                    yield "data: DONE\n\n"
-                    return
-
-                # Update logo if needed (without verbose output)
-                if org_response.json().get("avatar_url") and not organization.logo:
-                    try:
-                        logo_url = org_response.json().get("avatar_url")
-                        logo_response = requests.get(logo_url, stream=True, timeout=10)
-                        if logo_response.status_code == 200:
-                            from io import BytesIO
-
-                            from django.core.files.base import ContentFile
-
-                            img_temp = BytesIO()
-                            for chunk in logo_response.iter_content(chunk_size=1024):
-                                img_temp.write(chunk)
-                            img_temp.seek(0)
-
-                            file_name = f"{organization.slug}_logo.png"
-                            organization.logo.save(file_name, ContentFile(img_temp.read()), save=True)
-                            yield "data: $ Updated organization logo\n\n"
-                    except Exception:
-                        pass  # Silently continue if logo update fails
-
-            except requests.exceptions.RequestException:
-                yield "data: $ Error: Failed to connect to GitHub\n\n"
-                yield "data: DONE\n\n"
-                return
-
-            # Fetch repositories
-            page = 1
-            repos_processed = 0
-            repos_updated = 0
-            repos_created = 0
-
-            while True:
                 try:
-                    repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
-                    yield f"data: $ Fetching: {repos_api_url}?page={page}\n\n"
-
+                    rate_limit_url = "https://api.github.com/rate_limit"
                     response = requests.get(
-                        repos_api_url,
-                        params={"page": page, "per_page": 100, "type": "public"},
+                        rate_limit_url,
                         headers={
                             "Authorization": f"token {settings.GITHUB_TOKEN}",
                             "Accept": "application/vnd.github.v3+json",
@@ -2383,90 +2286,200 @@ def update_organization_repos(request, slug):
                         timeout=10,
                     )
 
-                    if response.status_code == 403:
+                    if response.status_code == 200:
+                        rate_data = response.json()
+                        core_rate = rate_data.get("resources", {}).get("core", {})
+                        remaining = core_rate.get("remaining", 0)
+                        limit = core_rate.get("limit", 0)
+                        reset_time = core_rate.get("reset", 0)
+                        reset_datetime = datetime.fromtimestamp(reset_time)
+                        reset_str = reset_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+                        yield (
+                            f"data: $ GitHub API token is valid. Rate limit: {remaining}/{limit}, "
+                            f"resets at {reset_str}\n\n"
+                        )
+
+                        if remaining < 50:
+                            yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
+                    else:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        if "rate limit" in response.text.lower():
-                            yield (f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n")
-                        else:
-                            yield (
-                                f"data: $ Error: GitHub API access forbidden (403). " f"Response: {response_text}\n\n"
-                            )
-                        break
+                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        yield "data: DONE\n\n"
+                        return
+                except requests.exceptions.RequestException as e:
+                    yield f"data: $ Error testing GitHub API: {str(e)[:50]}\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                # Fetch organization details
+                try:
+                    org_api_url = f"https://api.github.com/orgs/{github_org_name}"
+                    yield f"data: $ Fetching organization details: {org_api_url}\n\n"
+
+                    response = requests.get(
+                        org_api_url,
+                        headers={
+                            "Authorization": f"token {settings.GITHUB_TOKEN}",
+                            "Accept": "application/vnd.github.v3+json",
+                        },
+                        timeout=10,
+                    )
+
+                    if response.status_code == 404:
+                        yield f"data: $ Error: GitHub organization '{github_org_name}' not found\n\n"
+                        yield "data: DONE\n\n"
+                        return
                     elif response.status_code == 401:
-                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield (f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n")
+                        yield "data: $ Error: GitHub authentication failed\n\n"
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
                         response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
-                        yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. "
-                            f"Response: {response_text}\n\n"
-                        )
-                        break
+                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        yield "data: DONE\n\n"
+                        return
 
-                    repos = response.json()
-                    if not repos:
-                        break
+                    org_data = response.json()
 
-                    for repo_data in repos:
-                        repos_processed += 1
-                        repo_name = repo_data.get("name", "Unknown")
-
+                    # Update organization logo if not already set
+                    if not organization.logo and org_data.get("avatar_url"):
                         try:
-                            # Check if repo already exists
-                            repo, created = Repo.objects.update_or_create(
-                                repo_url=repo_data["html_url"],
-                                defaults={
-                                    "name": repo_name,
-                                    "description": repo_data.get("description") or "",
-                                    "primary_language": repo_data.get("language") or "",
-                                    "organization": organization,
-                                    "stars": repo_data.get("stargazers_count", 0),
-                                    "forks": repo_data.get("forks_count", 0),
-                                    "open_issues": repo_data.get("open_issues_count", 0),
-                                    "watchers": repo_data.get("watchers_count", 0),
-                                    "is_archived": repo_data.get("archived", False),
-                                    "size": repo_data.get("size", 0),
-                                },
-                            )
+                            yield "data: $ Updating organization logo...\n\n"
+                            logo_url = org_data["avatar_url"]
+                            logo_response = requests.get(logo_url, timeout=10)
+                            if logo_response.status_code == 200:
+                                from django.core.files.base import ContentFile
 
-                            # Create slug if it doesn't exist
-                            if not repo.slug:
-                                base_slug = slugify(repo.name)
-                                repo.slug = base_slug
-                                repo.save()
-
-                            if created:
-                                repos_created += 1
-                                yield f"data: $ {repo.name} [created]\n\n"
+                                logo_filename = f"{github_org_name}_logo.png"
+                                logo_content = ContentFile(logo_response.content)
+                                organization.logo.save(logo_filename, logo_content, save=True)
+                                yield "data: $ Organization logo updated successfully\n\n"
                             else:
-                                repos_updated += 1
-                                yield f"data: $ {repo.name} [updated]\n\n"
-
-                            # Add topics as tags (without verbose output)
-                            if repo_data.get("topics"):
-                                for topic in repo_data["topics"]:
-                                    tag_slug = slugify(topic)
-                                    tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
-                                    repo.tags.add(tag)
-
+                                yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
                         except Exception as e:
-                            yield f"data: $ Error with {repo_name}: {str(e)[:50]}\n\n"
+                            yield f"data: $ Error updating logo: {str(e)[:50]}\n\n"
+                except requests.exceptions.RequestException:
+                    yield "data: $ Error: Failed to connect to GitHub\n\n"
+                    yield "data: DONE\n\n"
+                    return
 
-                except requests.exceptions.RequestException as e:
-                    yield f"data: $ Network error: {str(e)[:50]}\n\n"
-                    break
+                # Fetch repositories
+                page = 1
+                repos_processed = 0
+                repos_updated = 0
+                repos_created = 0
 
-                page += 1
-                time.sleep(1)  # Avoid hitting rate limits
+                while True:
+                    try:
+                        repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
+                        yield f"data: $ Fetching: {repos_api_url}?page={page}\n\n"
 
-            # Final status message
-            yield f"data: $ Done. Processed: {repos_processed}, Updated: {repos_updated}, Created: {repos_created}\n\n"
-            yield "data: DONE\n\n"
+                        response = requests.get(
+                            repos_api_url,
+                            params={"page": page, "per_page": 100, "type": "public"},
+                            headers={
+                                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                                "Accept": "application/vnd.github.v3+json",
+                            },
+                            timeout=10,
+                        )
 
-        except Exception as e:
-            yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
-            yield "data: DONE\n\n"
+                        if response.status_code == 403:
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            if "rate limit" in response.text.lower():
+                                yield (
+                                    f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n"
+                                )
+                            else:
+                                yield (
+                                    f"data: $ Error: GitHub API access forbidden (403). "
+                                    f"Response: {response_text}\n\n"
+                                )
+                            break
+                        elif response.status_code == 401:
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            yield (
+                                f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n"
+                            )
+                            yield "data: DONE\n\n"
+                            return
+                        elif response.status_code != 200:
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            yield (
+                                f"data: $ Error: GitHub API returned {response.status_code}. "
+                                f"Response: {response_text}\n\n"
+                            )
+                            break
 
-    return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+                        repos = response.json()
+                        if not repos:
+                            break
+
+                        for repo_data in repos:
+                            repos_processed += 1
+                            repo_name = repo_data.get("name", "Unknown")
+
+                            try:
+                                # Check if repo already exists
+                                repo, created = Repo.objects.update_or_create(
+                                    repo_url=repo_data["html_url"],
+                                    defaults={
+                                        "name": repo_name,
+                                        "description": repo_data.get("description") or "",
+                                        "primary_language": repo_data.get("language") or "",
+                                        "organization": organization,
+                                        "stars": repo_data.get("stargazers_count", 0),
+                                        "forks": repo_data.get("forks_count", 0),
+                                        "open_issues": repo_data.get("open_issues_count", 0),
+                                        "watchers": repo_data.get("watchers_count", 0),
+                                        "is_archived": repo_data.get("archived", False),
+                                        "size": repo_data.get("size", 0),
+                                    },
+                                )
+
+                                # Create slug if it doesn't exist
+                                if not repo.slug:
+                                    base_slug = slugify(repo.name)
+                                    repo.slug = base_slug
+                                    repo.save()
+
+                                if created:
+                                    repos_created += 1
+                                    yield f"data: $ {repo.name} [created]\n\n"
+                                else:
+                                    repos_updated += 1
+                                    yield f"data: $ {repo.name} [updated]\n\n"
+
+                                # Add topics as tags (without verbose output)
+                                if repo_data.get("topics"):
+                                    for topic in repo_data["topics"]:
+                                        tag_slug = slugify(topic)
+                                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
+                                        repo.tags.add(tag)
+
+                            except Exception as e:
+                                yield f"data: $ Error with {repo_name}: {str(e)[:50]}\n\n"
+
+                    except requests.exceptions.RequestException as e:
+                        yield f"data: $ Network error: {str(e)[:50]}\n\n"
+                        break
+
+                    page += 1
+                    time.sleep(1)  # Avoid hitting rate limits
+
+                # Final status message
+                yield (
+                    f"data: $ Done. Processed: {repos_processed}, Updated: {repos_updated}, "
+                    f"Created: {repos_created}\n\n"
+                )
+                yield "data: DONE\n\n"
+
+            except Exception as e:
+                yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
+                yield "data: DONE\n\n"
+
+        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
+        return redirect("organization_detail", slug=slug)

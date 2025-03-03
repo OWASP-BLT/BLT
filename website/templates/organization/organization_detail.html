@@ -255,38 +255,68 @@
                                     </div>
                                 </div>
                             {% endif %}
-                            <!-- GitHub Information -->
-                            {% if organization.source_code %}
-                                <div class="flex items-start space-x-3 mt-4">
-                                    <i class="fab fa-github text-[#e74c3c] mt-1"></i>
-                                    <div>
-                                        <p class="text-gray-600">
-                                            <a href="{{ organization.source_code }}"
-                                               target="_blank"
-                                               rel="noopener noreferrer"
-                                               class="hover:text-[#e74c3c]">{{ organization.source_code }}</a>
-                                        </p>
-                                        {% if user.is_staff or user == organization.admin or user in organization.managers.all %}
-                                            <button id="updateReposBtn"
-                                                    onclick="updateGithubRepos('{{ organization.slug }}')"
-                                                    class="mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
-                                                <i class="fas fa-sync-alt mr-2"></i>
-                                                Update GitHub Repositories
-                                            </button>
-                                            <div id="repoUpdateStatus" class="mt-2 hidden">
-                                                <div class="bg-gray-100 p-3 rounded-md">
-                                                    <div class="flex items-center mb-2">
-                                                        <i class="fas fa-spinner fa-spin text-[#e74c3c] mr-2"></i>
-                                                        <span class="font-medium">Updating repositories...</span>
-                                                    </div>
-                                                    <div id="statusMessages"
-                                                         class="text-sm text-gray-600 max-h-40 overflow-y-auto"></div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
+                            <!-- GitHub Integration -->
+                            <div class="mt-4 space-y-3">
+                                <h3 class="text-lg font-medium text-gray-900">GitHub Integration</h3>
+                                {% if github_url %}
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fab fa-github text-[#e74c3c]"></i>
+                                        <a href="{{ github_url }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="text-gray-600 hover:text-[#e74c3c]">{{ github_url }}</a>
                                     </div>
-                                </div>
-                            {% endif %}
+                                    <button id="updateReposBtn"
+                                            onclick="updateGithubRepos('{{ organization.slug }}')"
+                                            class="mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                        <i class="fas fa-sync-alt mr-2"></i>
+                                        Update GitHub Repositories
+                                    </button>
+                                    {% if organization.repos_updated_at %}
+                                        <div class="mt-2 text-sm text-gray-600">
+                                            <i class="fas fa-clock text-[#e74c3c] mr-1"></i>
+                                            Last updated: {{ organization.repos_updated_at|date:"F j, Y, g:i a" }}
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Repository updates are limited to once per day.
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    <div id="repoUpdateStatus" class="mt-2 hidden">
+                                        <div class="bg-gray-100 p-3 rounded-md">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-spinner fa-spin text-[#e74c3c] mr-2"></i>
+                                                <span class="font-medium">Updating repositories...</span>
+                                            </div>
+                                            <div id="statusMessages"
+                                                 class="text-sm text-gray-600 max-h-40 overflow-y-auto"></div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="bg-gray-50 p-4 rounded-md">
+                                        <p class="text-gray-700 mb-3">No GitHub URL set for this organization. Add one to sync repositories.</p>
+                                        <form method="post"
+                                              action="{% url 'update_organization_repos' organization.slug %}">
+                                            {% csrf_token %}
+                                            <div class="flex flex-col space-y-2">
+                                                <label for="github_url" class="text-sm font-medium text-gray-700">GitHub URL</label>
+                                                <input type="url"
+                                                       id="github_url"
+                                                       name="github_url"
+                                                       placeholder="https://github.com/organization-name"
+                                                       class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                                       required>
+                                                <p class="text-xs text-gray-500">Example: https://github.com/OWASP</p>
+                                            </div>
+                                            <button type="submit"
+                                                    class="mt-3 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                                <i class="fab fa-github mr-2"></i>
+                                                Add GitHub URL
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
                             <!-- Contributor Resources -->
                             <div class="mt-4 space-y-3">
                                 <h3 class="text-lg font-medium text-gray-900">Contributor Resources</h3>

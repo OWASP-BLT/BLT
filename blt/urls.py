@@ -255,6 +255,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.queue import queue_list
 from website.views.repo import RepoListView, add_repo
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
@@ -1027,6 +1028,13 @@ urlpatterns = [
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
     path("page-vote/", page_vote, name="page_vote"),
+    # Queue Management URLs
+    path("queue/", queue_list, name="queue_list"),
+    path("queue/create/", queue_list, name="queue_create"),
+    path("queue/<int:queue_id>/edit/", queue_list, name="queue_edit"),
+    path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
+    path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
+    path("queue/launch-control/", queue_list, name="queue_launch_page"),
 ]
 
 if settings.DEBUG:
