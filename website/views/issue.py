@@ -343,6 +343,7 @@ def newhome(request, template="bugs_list.html"):
     return render(request, template, context)
 
 
+# The delete_issue function performs delete operation from the database
 @login_required
 @require_POST
 def delete_issue(request, id):
