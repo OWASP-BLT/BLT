@@ -379,7 +379,7 @@
                             </div>
                         </div>
                     </div>
-                                        <!-- Top Referrals -->
+                            <!-- Top Referrals -->
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                         <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
@@ -412,7 +412,8 @@
                                                      width="32"
                                                      height="32">
                                             {% endif %}
-                                            <a href="{% url 'profile' invite.sender.username %}" class="font-medium hover:text-[#e74c3c]">
+                                            <a href="{% url 'profile' invite.sender.username %}" 
+                                            class="font-medium hover:text-[#e74c3c]">
                                                 {{ invite.sender.username }}
                                             </a>
                                         </div>
@@ -430,7 +431,8 @@
                                 {% empty %}
                                     <div class="text-center text-gray-500">
                                         <p>No referrals recorded yet</p>
-                                        <a href="{% url 'invite' %}" class="text-[#e74c3c] hover:text-[#c0392b] font-medium mt-2 inline-block">
+                                        <a href="{% url 'invite' %}" 
+                                        class="text-[#e74c3c] hover:text-[#c0392b] font-medium mt-2 inline-block">
                                             <i class="fas fa-plus-circle mr-1"></i>
                                             Invite friends
                                         </a>
@@ -443,7 +445,8 @@
                                         <i class="fas fa-envelope-open text-gray-400 mr-1"></i> Clicks
                                         <i class="fas fa-user-check text-green-500 ml-3 mr-1"></i> Signups
                                     </span>
-                                    <a href="{% url 'invite' %}" class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
+                                    <a href="{% url 'invite' %}"
+                                     class="text-sm text-[#e74c3c] hover:text-[#c0392b] font-medium">
                                         <i class="fas fa-plus-circle mr-1"></i>
                                         Invite Friends
                                     </a>
