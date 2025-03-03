@@ -6,7 +6,7 @@
 {% providers_media_js %}
 {% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -70,6 +70,9 @@
               crossorigin="anonymous"
               referrerpolicy="no-referrer" />
         <link href="{% static 'css/checkInModal.css' %}" rel="stylesheet">
+        <link href="{% static 'css/dark-mode.css' %}" rel="stylesheet">
+        <link href="{% static 'css/header.css' %}" rel="stylesheet">
+        <link href="{% static 'css/message-animations.css' %}" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"
                 integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
                 crossorigin="anonymous"></script>
@@ -86,6 +89,30 @@
         {% endblock style %}
     </head>
     <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
+        <script>
+            // Check for saved theme preference, otherwise use system preference
+            const getPreferredTheme = () => {
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme) {
+                    return savedTheme;
+                }
+                return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            };
+
+            // Apply theme
+            const setTheme = (theme) => {
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+                // Update toggle button icon
+                const toggleIcon = document.getElementById('theme-toggle-icon');
+                if (toggleIcon) {
+                    toggleIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+            };
+
+            // Set initial theme
+            setTheme(getPreferredTheme());
+        </script>
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
@@ -176,26 +203,6 @@
                 };
             });
         </script>
-        <style>
-            .animate-slide-in {
-                animation: slideIn 0.3s ease-out;
-            }
-            
-            @keyframes slideIn {
-                from {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            .message-alert {
-                transition: opacity 0.3s ease-out;
-            }
-        </style>
         {% block extra_js %}
         {% endblock extra_js %}
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

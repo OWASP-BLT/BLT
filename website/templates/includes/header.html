@@ -7,177 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<style>
-    a {
-        color: black;
-    }
-
-    @media (min-width: 700px) {
-        #selected-filter {
-            display: inline;
-        }
-    }
-
-    @media (max-width: 699px) {
-        #selected-filter {
-            display: none;
-        }
-
-        #organizations-btn {
-            padding: 0.1rem;
-        }
-    }
-
-    .chatbot {
-        display: none;
-        position: fixed;
-        bottom: 3%;
-        right: 1%;
-        max-width: 400px;
-        width: 100%;
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 520px;
-        z-index: 9999;
-        overflow: hidden;
-        @media (max-width: 768px) {
-            right: 50%;
-            transform: translateX(50%);
-            max-width: 95%;
-        }
-        
-    }
-
-    .chat-icon {
-        position: fixed;
-        bottom: 3%;
-        right: 2%;
-        background-color: rgb(209, 16, 16);
-        transition: opacity 0.2s;
-        &:hover {
-            opacity: 0.8;
-        }
-        border-radius: 50%;
-        padding: 10px;
-        width: 55px;
-        height: 55px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .chat-header {
-        background-color: #e11d48;
-        /* Red color */
-        color: white;
-        padding: 12px;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
-
-    .chat-log {
-        max-height: 295px;
-        /* Adjusted height */
-        overflow-y: auto;
-        height: 295px;
-        /* Fixed height */
-    }
-
-    .loading {
-        display: none;
-        {% comment %} position: fixed;
-        bottom: 100px;
-right: 10.5%;{% endcomment %}
-        justify-content: center;
-        align-items: center;
-        font-size: 2xl;
-        padding: 10px; 
-        background-color: #ffffffe6;
-        /* Semi-transparent background */
-       border-radius: 8px;
-    }
-
-    .chat-Zindex {
-        z-index: 9999;
-    }
-
-    #quick-commands {
-        overflow-x: auto; /* Ensure buttons do not overflow */
-    }
-
-    #mobile-search {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 40;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    #mobile-search.active {
-        display: block;
-    }
-    
-</style>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        const desktopDropdownButton = document.getElementById('dropdownButton');
-        const desktopDropdownMenu = document.getElementById('dropdownMenu');
-
-        if (desktopDropdownButton && desktopDropdownMenu) {
-            desktopDropdownButton.addEventListener('click', () => {
-                desktopDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
-                    desktopDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
-        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
-        if (mobileDropdownButton && mobileDropdownMenu) {
-            mobileDropdownButton.addEventListener('click', () => {
-                mobileDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
-                    mobileDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        // Add sidebar toggle functionality
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('#page-wrapper');
-        let sidebarOpen = false;
-
-        if (hamburgerButton && sidebar) {
-            hamburgerButton.addEventListener('click', () => {
-                sidebarOpen = !sidebarOpen;
-                if (sidebarOpen) {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.classList.add('translate-x-0');
-                    if (mainContent) {
-                        mainContent.classList.add('lg:ml-[210px]');
-                    }
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    sidebar.classList.remove('translate-x-0');
-                    if (mainContent) {
-                        mainContent.classList.remove('lg:ml-[210px]');
-                    }
-                }
-            });
-        }
-    });
-</script>
+<link href="{% static 'css/header.css' %}" rel="stylesheet">
 <nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-0 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -384,6 +214,12 @@ right: 10.5%;{% endcomment %}
                     </a>
                 </div>
             {% endif %}
+            <div class="flex items-center">
+                <!-- Theme toggle button -->
+                <button class="theme-toggle mr-4" onclick="toggleTheme()">
+                    <i id="theme-toggle-icon" class="fas fa-moon"></i>
+                </button>
+            </div>
         </div>
     </div>
     <!-- Mobile Search Bar - Moved inside nav -->
@@ -469,104 +305,59 @@ right: 10.5%;{% endcomment %}
 <!--Script for Dropdown button-->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const organizationsBtn = document.getElementById("organizations-btn");
-        const organizationsDropdown = document.getElementById("organizations-dropdown");
-        const queryInput = document.getElementById("query-input");
+        const desktopDropdownButton = document.getElementById('dropdownButton');
+        const desktopDropdownMenu = document.getElementById('dropdownMenu');
 
-        // Function to get URL parameters
-        function getUrlParameter(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name);
-        }
-
-        // Set initial values from URL parameters if they exist
-        const savedQuery = getUrlParameter('query');
-        const savedType = getUrlParameter('type');
-
-        if (queryInput && savedQuery) {
-            queryInput.value = savedQuery;
-        }
-
-        if (savedType) {
-            // Find the matching filter option
-            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
-            if (matchingOption) {
-                const iconElement = matchingOption.querySelector('i');
-                const textContent = matchingOption.textContent.trim();
-                
-                const selectedIcon = document.getElementById('selected-icon');
-                const selectedFilter = document.getElementById('selected-filter');
-                const filterType = document.getElementById('filter-type');
-                
-                // Update the button display if elements exist
-                if (selectedIcon && selectedFilter && filterType) {
-                    selectedIcon.className = iconElement.className + ' mr-2';
-                    selectedFilter.textContent = textContent;
-                    filterType.value = savedType;
+        if (desktopDropdownButton && desktopDropdownMenu) {
+            desktopDropdownButton.addEventListener('click', () => {
+                desktopDropdownMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
+                    desktopDropdownMenu.classList.add('hidden');
                 }
-            }
+            });
         }
 
-        if (organizationsBtn && organizationsDropdown) {
-            organizationsBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
+        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
+        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
+        if (mobileDropdownButton && mobileDropdownMenu) {
+            mobileDropdownButton.addEventListener('click', () => {
+                mobileDropdownMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
+                    mobileDropdownMenu.classList.add('hidden');
+                }
+            });
+        }
 
-                const isHidden = organizationsDropdown.classList.toggle('hidden');
+        // Add sidebar toggle functionality
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('#page-wrapper');
+        let sidebarOpen = false;
 
-                if (!isHidden) {
-                    const btnRect = organizationsBtn.getBoundingClientRect();
-                    Object.assign(organizationsDropdown.style, {
-                        position: 'fixed',
-                        top: `${btnRect.bottom}px`,
-                        left: `${btnRect.left}px`,
-                        minWidth: `${btnRect.width}px`,
-                        display: 'block',
-                    });
+        if (hamburgerButton && sidebar) {
+            hamburgerButton.addEventListener('click', () => {
+                sidebarOpen = !sidebarOpen;
+                if (sidebarOpen) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    if (mainContent) {
+                        mainContent.classList.add('lg:ml-[210px]');
+                    }
                 } else {
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener("click", function (e) {
-                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
-                    organizationsDropdown.classList.add('hidden');
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-        }
-
-        // Only add event listeners to filter options if they exist
-        const filterOptions = document.querySelectorAll('.filter-option');
-        if (filterOptions.length > 0) {
-            filterOptions.forEach(option => {
-                option.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const iconElement = this.querySelector('i');
-                    const textContent = this.textContent.trim();
-                    const filterValue = this.getAttribute('data-value');
-                    
-                    const selectedIcon = document.getElementById('selected-icon');
-                    const selectedFilter = document.getElementById('selected-filter');
-                    const filterType = document.getElementById('filter-type');
-                    
-                    if (selectedIcon && selectedFilter && filterType) {
-                        selectedIcon.className = iconElement.className + ' mr-2';
-                        selectedFilter.textContent = textContent;
-                        filterType.value = filterValue;
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                    if (mainContent) {
+                        mainContent.classList.remove('lg:ml-[210px]');
                     }
-
-                    if (organizationsDropdown) {
-                        organizationsDropdown.classList.add('hidden');
-                        organizationsDropdown.style.display = 'none';
-                    }
-                });
+                }
             });
         }
     });
 </script>
-<!--Script for ChatBot -->
 <script>
     document.getElementById('chatIcon').addEventListener('click', function () {
         document.getElementById('chatbot').style.display = 'block';
@@ -721,9 +512,116 @@ right: 10.5%;{% endcomment %}
     });
 </script>
 <script>
+    // Theme toggle function
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+    }
+</script>
+<script>
     function toggleMobileSearch() {
         const mobileSearch = document.getElementById('mobile-search');
         mobileSearch.classList.toggle('hidden');
         mobileSearch.classList.toggle('active');
     }
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const organizationsBtn = document.getElementById("organizations-btn");
+        const organizationsDropdown = document.getElementById("organizations-dropdown");
+        const queryInput = document.getElementById("query-input");
+
+        // Function to get URL parameters
+        function getUrlParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        // Set initial values from URL parameters if they exist
+        const savedQuery = getUrlParameter('query');
+        const savedType = getUrlParameter('type');
+
+        if (queryInput && savedQuery) {
+            queryInput.value = savedQuery;
+        }
+
+        if (savedType) {
+            // Find the matching filter option
+            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
+            if (matchingOption) {
+                const iconElement = matchingOption.querySelector('i');
+                const textContent = matchingOption.textContent.trim();
+                
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+                const filterType = document.getElementById('filter-type');
+                
+                // Update the button display if elements exist
+                if (selectedIcon && selectedFilter && filterType) {
+                    selectedIcon.className = iconElement.className + ' mr-2';
+                    selectedFilter.textContent = textContent;
+                    filterType.value = savedType;
+                }
+            }
+        }
+
+        if (organizationsBtn && organizationsDropdown) {
+            organizationsBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isHidden = organizationsDropdown.classList.toggle('hidden');
+
+                if (!isHidden) {
+                    const btnRect = organizationsBtn.getBoundingClientRect();
+                    Object.assign(organizationsDropdown.style, {
+                        position: 'fixed',
+                        top: `${btnRect.bottom}px`,
+                        left: `${btnRect.left}px`,
+                        minWidth: `${btnRect.width}px`,
+                        display: 'block',
+                    });
+                } else {
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", function (e) {
+                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
+                    organizationsDropdown.classList.add('hidden');
+                    organizationsDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // Only add event listeners to filter options if they exist
+        const filterOptions = document.querySelectorAll('.filter-option');
+        if (filterOptions.length > 0) {
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const iconElement = this.querySelector('i');
+                    const textContent = this.textContent.trim();
+                    const filterValue = this.getAttribute('data-value');
+                    
+                    const selectedIcon = document.getElementById('selected-icon');
+                    const selectedFilter = document.getElementById('selected-filter');
+                    const filterType = document.getElementById('filter-type');
+                    
+                    if (selectedIcon && selectedFilter && filterType) {
+                        selectedIcon.className = iconElement.className + ' mr-2';
+                        selectedFilter.textContent = textContent;
+                        filterType.value = filterValue;
+                    }
+
+                    if (organizationsDropdown) {
+                        organizationsDropdown.classList.add('hidden');
+                        organizationsDropdown.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
 </script>
