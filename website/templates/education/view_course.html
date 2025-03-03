@@ -12,11 +12,9 @@
                          width="176"
                          height="176">
                 {% else %}
-                    <img src="{% static 'images/default_course_thumbnail.jpg' %}"
-                         alt="Default Course Thumbnail"
-                         class="w-44 h-44 rounded-sm shadow-md"
-                         width="176"
-                         height="176">
+                    <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-blue-600 text-6xl"></i>
+                    </div>
                 {% endif %}
                 <div class="flex flex-col space-y-4 w-full">
                     <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
