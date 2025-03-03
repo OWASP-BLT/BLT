@@ -96,25 +96,33 @@ class Command(LoggedBaseCommand):
 
                         # Fetch reviews for this pull request
                         reviews_url = pr["pull_request"]["url"] + "/reviews"
-                        reviews_response = requests.get(reviews_url, headers=headers)
-                        reviews_data = reviews_response.json()
+                        try:
+                            reviews_response = requests.get(reviews_url, headers=headers)
+                            reviews_response.raise_for_status()  # Check for HTTP errors
+                            reviews_data = reviews_response.json()
 
-                        # Store reviews made by the user
-                        for review in reviews_data:
-                            if review["user"]["login"] == github_username:
-                                GitHubReview.objects.update_or_create(
-                                    review_id=review["id"],
-                                    defaults={
-                                        "pull_request": github_issue,
-                                        "reviewer": user,
-                                        "body": review.get("body", ""),
-                                        "state": review["state"],
-                                        "submitted_at": timezone.make_aware(
-                                            datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
-                                        ),
-                                        "url": review["html_url"],
-                                    },
-                                )
+                            # Store reviews made by the user
+                            if isinstance(reviews_data, list):
+                                for review in reviews_data:
+                                    if review.get("user") and review["user"].get("login") == github_username:
+                                        GitHubReview.objects.update_or_create(
+                                            review_id=review["id"],
+                                            defaults={
+                                                "pull_request": github_issue,
+                                                "reviewer": user,
+                                                "body": review.get("body", ""),
+                                                "state": review["state"],
+                                                "submitted_at": timezone.make_aware(
+                                                    datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                                ),
+                                                "url": review["html_url"],
+                                            },
+                                        )
+                        except requests.exceptions.RequestException as e:
+                            self.stdout.write(
+                                self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {str(e)}")
+                            )
+                            continue
 
                     except Repo.DoesNotExist:
                         self.stdout.write(
