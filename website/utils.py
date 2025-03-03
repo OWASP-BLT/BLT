@@ -16,8 +16,6 @@ import numpy as np
 import requests
 from bs4 import BeautifulSoup
 from django.conf import settings
-from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -137,17 +135,18 @@ def is_dns_safe(hostname):
             continue
     return True
 
+
 def rebuild_safe_url(url):
     parsed_url = urlparse(url)
 
-    if parsed_url.scheme not in ('http', 'https'):
+    if parsed_url.scheme not in ("http", "https"):
         return None
 
-    netloc = parsed_url.netloc.split('@')[-1]
+    netloc = parsed_url.netloc.split("@")[-1]
 
     hostname = urlparse(f"http://{netloc}").hostname
     if not hostname:
-        return None 
+        return None
 
     try:
         ip = ip_address(hostname)
@@ -158,20 +157,15 @@ def rebuild_safe_url(url):
             return None
 
     path = parsed_url.path
-    path = path.replace('\r', '').replace('\n', '')  
+    path = path.replace("\r", "").replace("\n", "")
     normalized_path = posixpath.normpath(path)
-    if normalized_path == '.':
-        normalized_path = '/'
-    if not normalized_path.startswith('/'):
-        normalized_path = '/' + normalized_path
-    encoded_path = quote(normalized_path, safe='/')
+    if normalized_path == ".":
+        normalized_path = "/"
+    if not normalized_path.startswith("/"):
+        normalized_path = "/" + normalized_path
+    encoded_path = quote(normalized_path, safe="/")
 
-    safe_url = urlunparse((
-        parsed_url.scheme,
-        netloc,
-        encoded_path,
-        '', '', ''
-    ))
+    safe_url = urlunparse((parsed_url.scheme, netloc, encoded_path, "", "", ""))
 
     return safe_url
 
