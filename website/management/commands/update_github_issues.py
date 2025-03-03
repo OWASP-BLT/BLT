@@ -94,7 +94,6 @@ class Command(LoggedBaseCommand):
                         if merged:
                             merged_pr_counts[user.id] += 1
 
-
                         # Fetch reviews for this pull request
                         reviews_url = pr["pull_request"]["url"] + "/reviews"
                         try:
@@ -120,7 +119,9 @@ class Command(LoggedBaseCommand):
                                             },
                                         )
                         except requests.exceptions.RequestException as e:
-                            self.stdout.write(self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {str(e)}"))
+                            self.stdout.write(
+                                self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {str(e)}")
+                            )
                             continue
 
                     except Repo.DoesNotExist:
