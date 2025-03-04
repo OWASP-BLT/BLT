@@ -237,17 +237,22 @@ MEDIA_URL = "/media/"
 db_from_env = dj_database_url.config(conn_max_age=500)
 
 
+# Fetch the Sentry DSN from environment variables
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
+
 if SENTRY_DSN:
+    print(f"Initializing Sentry with DSN: {SENTRY_DSN}")
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
         send_default_pii=True,
-        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
+        traces_sample_rate=1.0 if DEBUG else 0.2,
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
         release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
     )
+else:
+    print("Sentry DSN not set. Skipping Sentry initialization.")
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
@@ -602,3 +607,9 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Add these CAPTCHA settings
+CAPTCHA_FONT_PATH = '/fonts/arial.ttf'  # Path in container
+CAPTCHA_FONT_SIZE = 52
+CAPTCHA_LETTER_ROTATION = (-35, 35)
+CAPTCHA_NOISE_FUNCTIONS = ('captcha.helpers.noise_dots',)

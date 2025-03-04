@@ -3,12 +3,16 @@ import math
 import os
 import re
 import time
+import json
 
 import requests
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from slack_bolt import App
 from slack_bolt.adapter.django import SlackRequestHandler
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+from website.models import Issue  # Import the Issue model
 
 if os.getenv("ENV") != "production":
     from dotenv import load_dotenv
@@ -33,6 +37,26 @@ pagination_data = {}
 
 repo_cache = {"timestamp": 0, "data": []}
 CACHE_DURATION = 3600
+
+# Initialize Slack client
+client = WebClient(token=SLACK_BOT_TOKEN)
+
+@csrf_exempt
+def slack_events(request):
+    """Handle incoming Slack events."""
+    if request.method == "POST":
+        event_data = json.loads(request.body)
+        if "event" in event_data:
+            event_type = event_data["event"].get("type")
+            if event_type == "team_join":
+                user_id = event_data["event"]["user"]["id"]
+                # Send a welcome message to the new user
+                client.chat_postMessage(
+                    channel='#project-blt-bacon',
+                    text=f"Welcome to the team, <@{user_id}>! 🎉"
+                )
+        return HttpResponse("Event received", status=200)
+
 
 
 def get_all_owasp_repos():
@@ -392,3 +416,34 @@ def slack_commands(request):
             return JsonResponse({"error": "Invalid content type"}, status=415)
         return HttpResponse(handler.handle(request))
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+@csrf_exempt
+def submit_bug(request):
+    if request.method == "POST":
+        # Extract bug details from the request
+        bug_description = request.POST.get("description", "No description provided.")
+        
+        # Logic to save the bug to the database
+        try:
+            # Create a new Issue instance and save it
+            new_bug = Issue(description=bug_description)
+            new_bug.save()
+            logger.info("Bug saved to the database successfully.")
+        except Exception as e:
+            logger.error(f"Error saving bug to the database: {e}")
+            return HttpResponse("Failed to save bug.", status=500)
+
+        # Send a message to Slack
+        try:
+            response = client.chat_postMessage(
+                channel='#project-blt-bacon',
+                text=f"A new bug has been reported: {bug_description}"
+            )
+            logger.info(f"Message sent to Slack successfully: {response['ts']}")
+        except SlackApiError as e:
+            # Handle error
+            logger.error(f"Error sending message: {e.response['error']}")
+
+        return HttpResponse("Bug submitted successfully.")
+    else:
+        return HttpResponse("Invalid request method.", status=405)

@@ -69,3 +69,5 @@ RUN chmod +x /blt/entrypoint.sh
 
 ENTRYPOINT ["/blt/entrypoint.sh"]
 CMD ["poetry", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+RUN mkdir -p /fonts && echo "Placeholder" > /fonts/arial.ttf
