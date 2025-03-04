@@ -1,9 +1,137 @@
 {% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}404 - Page Not Found{% endblock %}
+{% block description %}The page you are looking for could not be found.{% endblock %}
 {% block content %}
-    <div class="font-serif">
-        <center>
-            <h1>The Page you are looking for can't be found.</h1>
-            {% if exception %}Error message: {{ exception }}{% endif %}
-        </center>
+    <div class="min-h-screen flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <!-- 404 Error Section -->
+        <div class="text-center mb-12">
+            <h1 class="text-9xl font-bold text-[#e74c3c] mb-4">404</h1>
+            <h2 class="text-3xl font-semibold text-gray-900 mb-4">Page Not Found</h2>
+            <p class="text-lg text-gray-600 mb-4">The page you are looking for doesn't exist or has been moved.</p>
+            <a href="{% url 'home' %}"
+               class="inline-flex items-center px-6 py-3 border-2 border-[#e74c3c] text-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors duration-200">
+                <i class="fas fa-home mr-2"></i>
+                Return to Home
+            </a>
+        </div>
+
+        <!-- Tools for Organizations Section -->
+        <section class="w-full max-w-7xl mb-12">
+            <h2 class="text-3xl font-bold text-center mb-8">Tools for Organizations</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+                <a href="{% url 'organizations' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-building text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Organizations</span>
+                </a>
+                <a href="{% url 'domains' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Domains</span>
+                </a>
+                <a href="{% url 'issues' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Bugs</span>
+                </a>
+                <a href="{% url 'github_issues' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Issues</span>
+                </a>
+                <a href="{% url 'hunts' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Bounties</span>
+                </a>
+                <a href="{% url 'checkIN' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Check-ins</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Tools for Projects Section -->
+        <section class="w-full max-w-7xl mb-12">
+            <h2 class="text-3xl font-bold text-center mb-8">Tools for Projects</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                <a href="{% url 'project_list' %}"
+                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-project-diagram text-2xl text-[#e74c3c] mb-2"></i>
+                    <span class="text-base font-medium text-center">Projects</span>
+                    <p class="text-xs text-gray-600 text-center mt-1">Manage your security projects</p>
+                </a>
+                <a href="{% url 'repo_list' %}"
+                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-code-branch text-2xl text-[#e74c3c] mb-2"></i>
+                    <span class="text-base font-medium text-center">Repositories</span>
+                    <p class="text-xs text-gray-600 text-center mt-1">Connect and monitor GitHub repos</p>
+                </a>
+                <a href="{% url 'BiddingData' %}"
+                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-gavel text-2xl text-[#e74c3c] mb-2"></i>
+                    <span class="text-base font-medium text-center">Bid on Issues</span>
+                    <p class="text-xs text-gray-600 text-center mt-1">Place bids on open issues</p>
+                </a>
+                <a href="{% url 'sponsor' %}"
+                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-hand-holding-usd text-2xl text-[#e74c3c] mb-2"></i>
+                    <span class="text-base font-medium text-center">Funding</span>
+                    <p class="text-xs text-gray-600 text-center mt-1">Manage project funding & rewards</p>
+                </a>
+                <a href="{% url 'bacon' %}"
+                   class="bg-gray-50 rounded-xl shadow-md p-4 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-bacon text-2xl text-[#e74c3c] mb-2"></i>
+                    <span class="text-base font-medium text-center">Bacon</span>
+                    <p class="text-xs text-gray-600 text-center mt-1">Earn & manage Bacon tokens</p>
+                </a>
+            </div>
+        </section>
+
+        <!-- Tools for Users & Teams Section -->
+        <section class="w-full max-w-7xl">
+            <h2 class="text-3xl font-bold text-center mb-8">Tools for Users & Teams</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+                <a href="{% url 'users' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-users text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Users</span>
+                    <p class="text-sm text-gray-600 text-center mt-2">Manage team members</p>
+                </a>
+                <a href="{% url 'team_overview' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-user-friends text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Teams</span>
+                    <p class="text-sm text-gray-600 text-center mt-2">Create & manage teams</p>
+                </a>
+                <a href="{% url 'team_challenges' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-flag text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Challenges</span>
+                    <p class="text-sm text-gray-600 text-center mt-2">Security challenges</p>
+                </a>
+                <a href="{% url 'team_leaderboard' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-trophy text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Leaderboards</span>
+                    <p class="text-sm text-gray-600 text-center mt-2">Track achievements</p>
+                </a>
+                <a href="{% url 'badges' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-medal text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Badges</span>
+                    <p class="text-sm text-gray-600 text-center mt-2">Earn achievements</p>
+                </a>
+                <a href="{% url 'team_leaderboard' %}"
+                   class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                    <i class="fas fa-chart-line text-3xl text-[#e74c3c] mb-3"></i>
+                    <span class="text-lg font-medium text-center">Analytics</span>
+                    <p class="text-sm text-gray-600 text-center mt-2">Team performance</p>
+                </a>
+            </div>
+        </section>
     </div>
 {% endblock content %}
