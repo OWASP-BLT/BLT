@@ -32,7 +32,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db import connection, models
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -1248,10 +1248,15 @@ def home(request):
 
     # Get top referrals - users with the most successful signups
     top_referrals = (
-        InviteFriend.objects.annotate(signup_count=Count("recipients"))
-        .select_related("sender")
-        .order_by("-signup_count")[:5]
+        InviteFriend.objects.annotate(signup_count=Count("recipients"), total_points=F("point_by_referral"))
+        .select_related("sender", "sender__userprofile")
+        .order_by("-point_by_referral")[:5]
     )
+    # Get or Create InviteFriend object for logged in user
+    referral_code = None
+    if request.user.is_authenticated:
+        invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
+        referral_code = invite_friend.referral_code
 
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
@@ -1294,6 +1299,7 @@ def home(request):
             "top_earners": top_earners,  # Add top earners to context
             "repo_stars": repo_stars,  # Add repository star counts to context
             "top_referrals": top_referrals,
+            "referral_code": referral_code,
         },
     )
 
