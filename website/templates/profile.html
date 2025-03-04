@@ -327,8 +327,132 @@
     }
     </style>
 {% endblock style %}
+
+
+
+
+
+
 {% block content %}
     {% include "includes/sidenav.html" %}
+
+
+
+    <div class=" flex md:flex-row flex-col my-10 border-2 border-red-500  w-full md:max-w-[1700px] mx-auto p-4  min-h-[500px]">
+        <div class="flex flex-col gap-5 md:w-[25%] w-full border-2 border-green-500 p-4">
+            <div class=" w-full rounded-lg select-none">
+                {% if user.userprofile.avatar %}
+                <img src="{{ user.userprofile.avatar }}"
+                     class="object-cover w-full h-full rounded-lg"
+                     alt="avatar"
+                     width="200"
+                     height="200">
+            {% else %}
+                <img src="{% gravatar_url user.email 200 %}"
+                     class="object-cover w-full h-full rounded-lg"
+                     alt="avatar"
+                     width="200"
+                     height="200">
+            {% endif %}
+            </div>
+        <div class="flex justify-between items-start ">
+            <div class="flex flex-col">
+                <div class="text-2xl font-bold text-black/90">Rinkit Adhana</div>
+                <div class="font-medium text-gray-800">@{{ user.username }}</div>
+                {% if user.userprofile.role %}
+                <div class="flex flex-row gap-2 mt-2"><p class="font-medium">{% trans "Role" %}: </p> <p class="select-none w-fit px-2 py-1 text-sm bg-green-400/80 rounded-lg">{{ user.userprofile.role }}</P></div>
+                 {% endif %}
+            </div>
+            {% if request.user == user %}        
+                    <a href="{% url 'profile_edit' %}" class="select-none px-3 py-1 rounded-lg bg-red-500 text-white hover:bg-red-600 hover:text-white"> {% trans "Edit Profile"%}</a>
+            {% endif %}
+        </div>
+            <div class="w-full border-b border-gray-300/80 "></div>
+        <div class="flex flex-col gap-4">
+            <div class="flex flex-row gap-4"> 
+                <button onclick="openFollowingModal();" class="font-medium font-lg text-black hover:text-red-600 group/f transition-all duration-200"> {{ followings|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800"> {% trans "Follwings" %} </span></button>
+                <button onclick="openFollowers();" class="font-medium font-lg text-black hover:text-red-600 group/f transition-all duration-200"> {{ followers|length }} <span class="transition-all duration-200 group-hover/f:text-red-600 cursor-pointer font-normal text-gray-800"> {% trans "Followers" %} </span></button>
+            </div>
+            <div class="select-none flex flex-wrap gap-2"> 
+                <button class="px-3 py-1 rounded-lg border-2 border-red-400 text-sm ">
+                    {{ user.userprofile.visit_count }} {% trans "Profile Views" %} 
+                </button>
+                <button class="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200" onclick="openBookmarkModal();">
+                    {{ bookmarks|length }} {% trans "Bookmarks" %}
+                </button>
+                <button class="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200" onclick="openKudosModal();">
+                   {{ user.kudos_received.count }} {% trans "Kudos" %} 
+                </button>
+            </div>
+            <div class="flex flex-row gap-2">
+                <button class=" select-none flex gap-2 items-center px-4 py-2 bg-pink-400 hover:bg-pink-500 text-white font-medium rounded-lg transition-all duration-200"> 
+                    <i class="fa-regular fa-heart text-white text-lg"></i>
+                    {% trans "Sponsor on GitHub"%} 
+                </button>
+                <button class=" select-none flex-1 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200"> 
+                    {% trans "Follow"%} 
+                </button>
+            </div>
+        </div>
+             <!-- Social Links Section -->
+             <div>
+                <div class="font-bold text-black/90 mb-3">{% trans "Social Links" %} </div>
+                <div class="flex flex-col gap-2">
+                    {% if user.userprofile.github_url %}
+                        <a href="{{ user.userprofile.github_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                            <i class="fab fa-github text-xl"></i>
+                            <span>{% trans "GitHub" %}</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.x_username %}
+                        <a href="https://x.com/{{ user.userprofile.x_username }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                            <i class="fab fa-x-twitter text-xl"></i>
+                            <span>{% trans "X (Twitter)" %}</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.linkedin_url %}
+                        <a href="{{ user.userprofile.linkedin_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                            <i class="fab fa-linkedin text-xl"></i>
+                            <span>{% trans "LinkedIn" %}</span>
+                        </a>
+                    {% endif %}
+                    {% if user.userprofile.website_url %}
+                        <a href="{{ user.userprofile.website_url }}"
+                           target="_blank"
+                           class="flex items-center gap-2 text-gray-700 hover:text-red-600 w-fit">
+                            <i class="fas fa-globe text-xl"></i>
+                            <span>{% trans "Website" %}</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div>{% include "./includes/crypto_donation.html" %}</div>
+
+        </div>
+        <div class=" md:w-[85%] w-full border-2 border-green-500">
+            hello
+        </div>
+    </div>
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
     <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
         <div class="max-sm:w-[100vw] w-[20vw] flex flex-col">
             <div class="w-[20vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
