@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0210_merge_0209_baconsubmission_0209_repo_organization"),
+        ("website", "0219_organization_repos_updated_at"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
