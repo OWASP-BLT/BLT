@@ -5,11 +5,17 @@
     <div class="container mx-auto mt-10 bg-gray-2 rounded-sm shadow-md p-7">
         <div class="flex items-center justify-center">
             <div class="flex items-center space-x-8 max-w-4xl mx-auto p-8 bg-white relative">
-                <img src="{{ course.thumbnail.url }}"
-                     alt="Course Thumbnail"
-                     class="w-44 h-44 rounded-sm shadow-md"
-                     width="176"
-                     height="176">
+                {% if course.thumbnail %}
+                    <img src="{{ course.thumbnail.url }}"
+                         alt="Course Thumbnail"
+                         class="w-44 h-44 rounded-sm shadow-md"
+                         width="176"
+                         height="176">
+                {% else %}
+                    <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-blue-600 text-6xl"></i>
+                    </div>
+                {% endif %}
                 <div class="flex flex-col space-y-4 w-full">
                     <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
                         <i class="fas fa-graduation-cap text-blue-600"></i>

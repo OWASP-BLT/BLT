@@ -165,6 +165,7 @@ class Organization(models.Model):
     topic_tags = models.JSONField(default=list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
+    repos_updated_at = models.DateTimeField(null=True, blank=True, help_text="When repositories were last updated")
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
@@ -437,6 +438,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
@@ -2018,3 +2020,34 @@ class DailyStats(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.value}"
+
+
+class Queue(models.Model):
+    """
+    Model to store queue items with a message, image, and launch status.
+    """
+
+    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    image = models.ImageField(upload_to="queue_images", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    launched = models.BooleanField(default=False)
+    launched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="queue_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
+
+    def launch(self):
+        """
+        Mark the queue item as launched and set the launched_at timestamp.
+        """
+        if not self.launched:
+            self.launched = True
+            self.launched_at = timezone.now()
+            self.save()

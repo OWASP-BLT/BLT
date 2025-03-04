@@ -178,7 +178,7 @@ right: 10.5%;{% endcomment %}
         }
     });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-0 px-1">
+<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-2 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -293,73 +293,82 @@ right: 10.5%;{% endcomment %}
             {% if request.user.is_authenticated %}
                 <div class=" flex justify-center items-center">
                     <button id="dropdownButton"
-                            class="relative flex items-center sm:gap-3 mr-[30px]"
+                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2  bg-gray-200  md:rounded-lg  rounded-full  md:hover:bg-gray-200/70 transition-colors duration-200"
                             type="button">
                         {% if request.user.userprofile.avatar %}
                             <img src="{{ request.user.userprofile.avatar }}"
-                                 class="h-[30px] w-[30px] rounded-full "
+                                 class="md:size-8 size-10 rounded-full "
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
                         {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="h-[30px] w-[30px] rounded-full "
+                                 class="md:size-8 size-10 rounded-full "
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
                         {% else %}
-                            {% gravatar request.user.email 30 '' 'gravatar rounded-full' %}
+                            {% gravatar request.user.email 30 '' 'gravatar rounded-full size-10 md:size-8' %}
                         {% endif %}
-                        <span class="absolute -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
-                            <span>{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                            <i class="fa fa-caret-down text-red-500"></i>
+                        <span class="absolute md:block hidden -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
+                            <span>@{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
+                            {% comment %} <i class="fa fa-caret-down text-red-500"></i> {% endcomment %}
                         </span>
                     </button>
                     <!-- Dropdown for User Avatar -->
                     <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white top-32 right-5">
-                        <ul class="flex flex-col gap-2 px-8 py-4 border shadow-xl rounded-lg left-auto">
+                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5">
+                        <ul class="flex flex-col gap-1 px-4 py-4 border shadow-md rounded-md left-auto">
                             <li>
-                                <a href="{% url 'account_profile' %}">
+                                <a href="{% url 'account_profile' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                 </a>
                             </li>
                             {% if user.is_superuser %}
                                 <li>
                                     <a href="{% url 'admin:index' %}"
-                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                        <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
+                                    </a>
                                 </li>
                             {% endif %}
                             <li>
-                                <a href="{% url 'start_hunt' %}">
+                                <a href="{% url 'start_hunt' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'social' %}">
+                                <a href="{% url 'social' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-share fa-fw"></i>
                                     {% trans "Social" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'account_change_password' %}">
+                                <a href="{% url 'account_change_password' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'invite' %}">
-                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
+                                <a href="{% url 'invite' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an Organization" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'organization_view' %}">
+                                <a href="{% url 'organization_view' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <!-- divider -->
-                            <li class="border my-4 -mx-8"></li>
+                            <li class="border my-2 w-full"></li>
                             <li>
-                                <a href="{% url 'account_logout' %}">
+                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white  rounded-md text-white transition-colors duration-200 font-bold"
+                                   href="{% url 'account_logout' %}">
                                     <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                 </a>
                             </li>
@@ -483,7 +492,7 @@ right: 10.5%;{% endcomment %}
         const savedQuery = getUrlParameter('query');
         const savedType = getUrlParameter('type');
 
-        if (savedQuery) {
+        if (queryInput && savedQuery) {
             queryInput.value = savedQuery;
         }
 
@@ -493,11 +502,17 @@ right: 10.5%;{% endcomment %}
             if (matchingOption) {
                 const iconElement = matchingOption.querySelector('i');
                 const textContent = matchingOption.textContent.trim();
-
-                // Update the button display
-                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
-                document.getElementById('selected-filter').textContent = textContent;
-                document.getElementById('filter-type').value = savedType;
+                
+                const selectedIcon = document.getElementById('selected-icon');
+                const selectedFilter = document.getElementById('selected-filter');
+                const filterType = document.getElementById('filter-type');
+                
+                // Update the button display if elements exist
+                if (selectedIcon && selectedFilter && filterType) {
+                    selectedIcon.className = iconElement.className + ' mr-2';
+                    selectedFilter.textContent = textContent;
+                    filterType.value = savedType;
+                }
             }
         }
 
@@ -529,25 +544,35 @@ right: 10.5%;{% endcomment %}
                     organizationsDropdown.style.display = 'none';
                 }
             });
-        } else {
-            console.error('Required elements not found!');
         }
 
-        document.querySelectorAll('.filter-option').forEach(option => {
-            option.addEventListener('click', function (e) {
-                e.preventDefault();
-                const iconElement = this.querySelector('i');
-                const textContent = this.textContent.trim();
-                const filterValue = this.getAttribute('data-value');
+        // Only add event listeners to filter options if they exist
+        const filterOptions = document.querySelectorAll('.filter-option');
+        if (filterOptions.length > 0) {
+            filterOptions.forEach(option => {
+                option.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const iconElement = this.querySelector('i');
+                    const textContent = this.textContent.trim();
+                    const filterValue = this.getAttribute('data-value');
+                    
+                    const selectedIcon = document.getElementById('selected-icon');
+                    const selectedFilter = document.getElementById('selected-filter');
+                    const filterType = document.getElementById('filter-type');
+                    
+                    if (selectedIcon && selectedFilter && filterType) {
+                        selectedIcon.className = iconElement.className + ' mr-2';
+                        selectedFilter.textContent = textContent;
+                        filterType.value = filterValue;
+                    }
 
-                document.getElementById('selected-icon').className = iconElement.className + ' mr-2';
-                document.getElementById('selected-filter').textContent = textContent;
-                document.getElementById('filter-type').value = filterValue;
-
-                organizationsDropdown.classList.add('hidden');
-                organizationsDropdown.style.display = 'none';
+                    if (organizationsDropdown) {
+                        organizationsDropdown.classList.add('hidden');
+                        organizationsDropdown.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
     });
 </script>
 <!--Script for ChatBot -->
@@ -597,7 +622,7 @@ right: 10.5%;{% endcomment %}
                     return false;
                 case '/gsoc':
                     response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                        'Explore OWASP's GSoC participation:<br>' +
+                        'Explore OWASP\'s GSoC participation:<br>' +
                         '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
                         'Get involved with open-source at OWASP!';
                     chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';

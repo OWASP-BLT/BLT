@@ -39,18 +39,21 @@
                 <div class="absolute bottom-0 left-0 right-0 px-6 py-4">
                     <div class="flex items-center space-x-4">
                         {% if organization.logo %}
-                            <img src="{{ MEDIA_URL }}{{ organization.logo }}"
-                                 alt="{{ organization.name }} logo"
-                                 width="96"
-                                 height="96"
-                                 class="w-24 h-24 rounded-full border-4 border-white object-cover">
+                            <div class="w-24 h-24 bg-white rounded-lg shadow-md p-2 flex items-center justify-center">
+                                <img src="{{ MEDIA_URL }}{{ organization.logo }}"
+                                     alt="{{ organization.name }} logo"
+                                     width="96"
+                                     height="96"
+                                     class="max-w-full max-h-full object-contain">
+                            </div>
                         {% else %}
-                            <div class="w-24 h-24 rounded-full border-4 border-white bg-gray-200 flex items-center justify-center">
-                                <i class="fas fa-building text-4xl text-gray-400"></i>
+                            <div class="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-md">
+                                <i class="fas fa-building text-[#e74c3c] text-3xl"></i>
                             </div>
                         {% endif %}
                         <div class="text-white">
                             <h1 class="text-3xl font-bold">{{ organization.name }}</h1>
+                            {% if organization.tagline %}<p class="text-white/90 mt-1">{{ organization.tagline }}</p>{% endif %}
                             {% if organization.url %}
                                 <a href="{{ organization.url }}"
                                    target="_blank"
@@ -59,6 +62,11 @@
                                     <i class="fas fa-globe"></i>
                                     <span>{{ organization.url }}</span>
                                 </a>
+                            {% endif %}
+                            {% if organization.type %}
+                                <div class="mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
+                                    {{ organization.get_type_display }}
+                                </div>
                             {% endif %}
                         </div>
                     </div>
@@ -78,14 +86,76 @@
                                        class="text-gray-600 hover:text-[#e74c3c]">{{ organization.email }}</a>
                                 </div>
                             {% endif %}
-                            {% if organization.twitter %}
-                                <div class="flex items-center space-x-3">
-                                    <i class="fab fa-twitter text-[#e74c3c]"></i>
-                                    <a href="https://twitter.com/{{ organization.twitter }}"
-                                       target="_blank"
-                                       class="text-gray-600 hover:text-[#e74c3c]">@{{ organization.twitter }}</a>
+                            <!-- Social Media Links -->
+                            <div class="mt-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Social Media & Community</h3>
+                                <div class="grid grid-cols-2 gap-2">
+                                    {% if organization.twitter %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fab fa-twitter text-[#e74c3c]"></i>
+                                            <a href="{{ organization.twitter }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Twitter</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.facebook %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fab fa-facebook text-[#e74c3c]"></i>
+                                            <a href="{{ organization.facebook }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Facebook</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.matrix_url %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-comments text-[#e74c3c]"></i>
+                                            <a href="{{ organization.matrix_url }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Matrix</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.slack_url %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fab fa-slack text-[#e74c3c]"></i>
+                                            <a href="{{ organization.slack_url }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Slack</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.discord_url %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fab fa-discord text-[#e74c3c]"></i>
+                                            <a href="{{ organization.discord_url }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Discord</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.gitter_url %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fab fa-gitter text-[#e74c3c]"></i>
+                                            <a href="{{ organization.gitter_url }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Gitter</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.zulipchat_url %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-comment-dots text-[#e74c3c]"></i>
+                                            <a href="{{ organization.zulipchat_url }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Zulip</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if organization.element_url %}
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-comment-alt text-[#e74c3c]"></i>
+                                            <a href="{{ organization.element_url }}"
+                                               target="_blank"
+                                               class="text-gray-600 hover:text-[#e74c3c]">Element</a>
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
+                            </div>
                             <!-- Location Information -->
                             {% if organization.country or organization.address_line_1 %}
                                 <div class="mt-4">
@@ -129,7 +199,7 @@
                         <div class="space-y-3">
                             <div class="flex items-center space-x-3">
                                 <i class="fas fa-calendar text-[#e74c3c]"></i>
-                                <span class="text-gray-600">Joined {{ organization.created|date:"F j, Y" }}</span>
+                                <span class="text-gray-600">Added on {{ organization.created|date:"F j, Y" }}</span>
                             </div>
                             {% if organization.description %}
                                 <div class="flex items-start space-x-3">
@@ -137,18 +207,152 @@
                                     <p class="text-gray-600">{{ organization.description }}</p>
                                 </div>
                             {% endif %}
+                            {% if organization.license %}
+                                <div class="flex items-start space-x-3">
+                                    <i class="fas fa-file-contract text-[#e74c3c] mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-600">
+                                            <span class="font-medium">License:</span> {{ organization.license }}
+                                        </p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- Categories, Tech Tags, Topic Tags -->
+                            {% if organization.categories %}
+                                <div class="flex items-start space-x-3 mt-2">
+                                    <i class="fas fa-tags text-[#e74c3c] mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-600 font-medium mb-1">Categories:</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for category in organization.categories %}
+                                                <span class="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-700">{{ category }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if organization.tech_tags %}
+                                <div class="flex items-start space-x-3 mt-2">
+                                    <i class="fas fa-code text-[#e74c3c] mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-600 font-medium mb-1">Technologies:</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for tag in organization.tech_tags %}
+                                                <span class="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-700">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if organization.topic_tags %}
+                                <div class="flex items-start space-x-3 mt-2">
+                                    <i class="fas fa-bookmark text-[#e74c3c] mt-1"></i>
+                                    <div>
+                                        <p class="text-gray-600 font-medium mb-1">Topics:</p>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for tag in organization.topic_tags %}
+                                                <span class="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-700">{{ tag }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- GitHub Integration -->
+                            <div class="mt-4 space-y-3">
+                                <h3 class="text-lg font-medium text-gray-900">GitHub Integration</h3>
+                                {% if github_url %}
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fab fa-github text-[#e74c3c]"></i>
+                                        <a href="{{ github_url }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="text-gray-600 hover:text-[#e74c3c]">{{ github_url }}</a>
+                                    </div>
+                                    <button id="updateReposBtn"
+                                            onclick="updateGithubRepos('{{ organization.slug }}')"
+                                            class="mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                        <i class="fas fa-sync-alt mr-2"></i>
+                                        Update GitHub Repositories
+                                    </button>
+                                    {% if organization.repos_updated_at %}
+                                        <div class="mt-2 text-sm text-gray-600">
+                                            <i class="fas fa-clock text-[#e74c3c] mr-1"></i>
+                                            Last updated: {{ organization.repos_updated_at|date:"F j, Y, g:i a" }}
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Repository updates are limited to once per day.
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                    <div id="repoUpdateStatus" class="mt-2 hidden">
+                                        <div class="bg-gray-100 p-3 rounded-md">
+                                            <div class="flex items-center mb-2">
+                                                <i class="fas fa-spinner fa-spin text-[#e74c3c] mr-2"></i>
+                                                <span class="font-medium">Updating repositories...</span>
+                                            </div>
+                                            <div id="statusMessages"
+                                                 class="text-sm text-gray-600 max-h-40 overflow-y-auto"></div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="bg-gray-50 p-4 rounded-md">
+                                        <p class="text-gray-700 mb-3">No GitHub URL set for this organization. Add one to sync repositories.</p>
+                                        <form method="post"
+                                              action="{% url 'update_organization_repos' organization.slug %}">
+                                            {% csrf_token %}
+                                            <div class="flex flex-col space-y-2">
+                                                <label for="github_url" class="text-sm font-medium text-gray-700">GitHub URL</label>
+                                                <input type="url"
+                                                       id="github_url"
+                                                       name="github_url"
+                                                       placeholder="https://github.com/organization-name"
+                                                       class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                                       required>
+                                                <p class="text-xs text-gray-500">Example: https://github.com/OWASP</p>
+                                            </div>
+                                            <button type="submit"
+                                                    class="mt-3 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                                                <i class="fab fa-github mr-2"></i>
+                                                Add GitHub URL
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Contributor Resources -->
+                            <div class="mt-4 space-y-3">
+                                <h3 class="text-lg font-medium text-gray-900">Contributor Resources</h3>
+                                {% if organization.contributor_guidance_url %}
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-book text-[#e74c3c]"></i>
+                                        <a href="{{ organization.contributor_guidance_url }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="text-gray-600 hover:text-[#e74c3c]">Contributor Guidelines</a>
+                                    </div>
+                                {% endif %}
+                                {% if organization.ideas_link %}
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fas fa-lightbulb text-[#e74c3c]"></i>
+                                        <a href="{{ organization.ideas_link }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="text-gray-600 hover:text-[#e74c3c]">Project Ideas</a>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
                 <!-- Statistics -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-gray-50 rounded-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">Domains</h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.domain_set.count }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
                                 <h3 class="text-lg font-semibold text-gray-900">Team Members</h3>
@@ -161,19 +365,87 @@
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.members.count }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">Total Points</h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ organization.team_points }}</span>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
                         <div class="flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-gray-900">
                                 <i class="fas fa-eye mr-2 text-[#e74c3c]"></i>Views
                             </h3>
                             <span class="text-2xl font-bold text-[#e74c3c]">{{ view_count }}</span>
                         </div>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-semibold text-gray-900">
+                                <i class="fas fa-code-branch mr-2 text-[#e74c3c]"></i>Repositories
+                            </h3>
+                            <a href="{% url 'repo_list' %}?organization={{ organization.id }}"
+                               class="text-2xl font-bold text-[#e74c3c] hover:text-red-700">
+                                {{ total_repos|default:"0" }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tags -->
+                {% if organization.tags.all %}
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Tags</h2>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in organization.tags.all %}
+                                <span class="px-3 py-1.5 bg-gray-100 rounded-full text-sm text-gray-700 hover:bg-gray-200 transition-colors duration-200">
+                                    {{ tag.name }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Organization Leadership -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Leadership</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% if organization.admin %}
+                            <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                <h3 class="font-semibold text-gray-900 mb-2">Administrator</h3>
+                                <div class="flex items-center space-x-3">
+                                    <img src="{% gravatar_url organization.admin.email 40 %}"
+                                         alt="{{ organization.admin.username }}"
+                                         width="40"
+                                         height="40"
+                                         class="w-10 h-10 rounded-full">
+                                    <div>
+                                        <p class="font-medium">{{ organization.admin.username }}</p>
+                                        {% if organization.admin.profile.user_title %}
+                                            <p class="text-sm text-gray-600">{{ organization.admin.profile.user_title }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if organization.managers.all %}
+                            <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                <h3 class="font-semibold text-gray-900 mb-2">Managers</h3>
+                                <div class="space-y-3">
+                                    {% for manager in organization.managers.all %}
+                                        <div class="flex items-center space-x-3">
+                                            <img src="{% gravatar_url manager.email 32 %}"
+                                                 alt="{{ manager.username }}"
+                                                 width="32"
+                                                 height="32"
+                                                 class="w-8 h-8 rounded-full">
+                                            <div>
+                                                <p class="font-medium">{{ manager.username }}</p>
+                                                {% if manager.profile.user_title %}<p class="text-xs text-gray-600">{{ manager.profile.user_title }}</p>{% endif %}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
                 <!-- Top Projects -->
@@ -227,6 +499,64 @@
                                     </div>
                                 </div>
                             {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Top Contributors -->
+                {% if top_contributors %}
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Contributors</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% for contributor in top_contributors %}
+                                <div class="bg-gray-50 rounded-lg p-4 hover:shadow-md transition-shadow duration-200">
+                                    <div class="flex items-center space-x-3">
+                                        {% if contributor.avatar_url %}
+                                            <img src="{{ contributor.avatar_url }}"
+                                                 alt="{{ contributor.username }}"
+                                                 width="40"
+                                                 height="40"
+                                                 class="w-10 h-10 rounded-full object-cover">
+                                        {% else %}
+                                            <div class="w-10 h-10 rounded-full bg-[#e74c3c] flex items-center justify-center">
+                                                <i class="fas fa-user text-white"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="flex items-center space-x-2">
+                                                <p class="font-medium">{{ contributor.username }}</p>
+                                                {% if contributor.is_member %}
+                                                    <span class="px-2 py-0.5 bg-[#e74c3c] text-white text-xs rounded-full">Team</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex items-center space-x-4 mt-1 text-sm text-gray-600">
+                                                <div class="flex items-center space-x-1">
+                                                    <i class="fas fa-code-commit text-[#e74c3c] text-xs"></i>
+                                                    <span>{{ contributor.contributions|intcomma }}</span>
+                                                </div>
+                                                {% if contributor.github_url %}
+                                                    <a href="{{ contributor.github_url }}"
+                                                       target="_blank"
+                                                       rel="noopener noreferrer"
+                                                       class="text-[#e74c3c] hover:text-red-700">
+                                                        <i class="fab fa-github"></i>
+                                                    </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Placeholder for future top contributors implementation -->
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Contributors</h2>
+                        <div class="bg-gray-50 rounded-lg p-6 text-center">
+                            <p class="text-gray-600">
+                                <i class="fas fa-users text-[#e74c3c] text-4xl mb-3 block mx-auto"></i>
+                                Contributor data is being collected. Check back soon to see the top contributors for this organization.
+                            </p>
                         </div>
                     </div>
                 {% endif %}
@@ -319,6 +649,111 @@ function syncGithubProjects() {
         button.disabled = false;
         button.innerHTML = originalContent;
     });
+}
+
+function updateGithubRepos(slug) {
+    const button = document.getElementById('updateReposBtn');
+    const statusArea = document.getElementById('repoUpdateStatus');
+    const statusMessages = document.getElementById('statusMessages');
+    
+    // Disable button and show status area
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+    statusArea.classList.remove('hidden');
+    statusMessages.innerHTML = '';
+    
+    // Style the status area to look like a terminal
+    statusMessages.className = 'text-sm font-mono bg-gray-900 text-green-400 p-3 rounded max-h-96 overflow-y-auto';
+    
+    // Connect to the server-sent events endpoint
+    let eventSource;
+    try {
+        eventSource = new EventSource(`/organization/${slug}/update-repos/`);
+        console.log('EventSource created:', eventSource);
+    } catch (err) {
+        console.error('Error creating EventSource:', err);
+        statusMessages.innerHTML = `<div class="text-red-500">Error: ${err.message}</div>`;
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+        return;
+    }
+    
+    // Set a timeout to detect connection issues
+    const connectionTimeout = setTimeout(() => {
+        if (eventSource.readyState !== EventSource.OPEN) {
+            statusMessages.innerHTML += '<div class="text-red-500">Error: Connection timeout</div>';
+            eventSource.close();
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+        }
+    }, 10000); // 10 second timeout
+    
+    // Handle connection open
+    eventSource.onopen = function() {
+        clearTimeout(connectionTimeout);
+        console.log('EventSource connection opened');
+    };
+    
+    // Handle incoming messages
+    eventSource.onmessage = function(event) {
+        console.log('EventSource message received:', event.data);
+        const message = event.data;
+        
+        // Check if the update is complete
+        if (message.includes('DONE')) {
+            clearTimeout(connectionTimeout);
+            eventSource.close();
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+            
+            // Add a refresh button
+            const refreshBtn = document.createElement('button');
+            refreshBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+            refreshBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Refresh Page';
+            refreshBtn.onclick = function() { location.reload(); };
+            statusArea.appendChild(refreshBtn);
+            
+            return;
+        }
+        
+        // Add the message to the terminal
+        const line = document.createElement('div');
+        
+        // Style based on message content
+        if (message.includes('Error:') || message.includes('[error]')) {
+            line.className = 'text-red-500';
+        } else if (message.includes('[created]')) {
+            line.className = 'text-blue-400';
+        } else if (message.includes('[updated]')) {
+            line.className = 'text-yellow-400';
+        }
+        
+        line.textContent = message;
+        statusMessages.appendChild(line);
+        
+        // Auto-scroll to the bottom
+        statusMessages.scrollTop = statusMessages.scrollHeight;
+    };
+    
+    // Handle errors
+    eventSource.onerror = function(error) {
+        clearTimeout(connectionTimeout);
+        console.error('EventSource error:', error);
+        
+        eventSource.close();
+        
+        statusMessages.innerHTML += '<div class="text-red-500">Error: Connection to the server was lost</div>';
+        
+        // Add a retry button
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'mt-2 inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200';
+        retryBtn.innerHTML = '<i class="fas fa-redo mr-2"></i>Retry';
+        retryBtn.onclick = function() { updateGithubRepos(slug); };
+        statusArea.appendChild(retryBtn);
+        
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>Update GitHub Repositories';
+    };
 }
     </script>
     <!-- Add Leaflet JavaScript -->
