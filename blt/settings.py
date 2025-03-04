@@ -236,10 +236,8 @@ MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
 db_from_env = dj_database_url.config(conn_max_age=500)
 
-
 # Fetch the Sentry DSN from environment variables
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
-
 if SENTRY_DSN:
     print(f"Initializing Sentry with DSN: {SENTRY_DSN}")
     sentry_sdk.init(
