@@ -682,27 +682,37 @@ class RepoDetailView(DetailView):
         try:
             repo_url = repo.repo_url.strip("/")
 
-            # Extract owner/repo from URL in a more robust way
-            if "github.com" in repo_url:
-                path_parts = repo_url.split("github.com/")[-1].split("/")
-                if len(path_parts) >= 2:
-                    owner, repo_name = path_parts[0], path_parts[1]
+            # Parse the URL properly using urllib
+            parsed_url = urlparse(repo_url)
 
-                    # API URL for public repository milestones
-                    api_url = f"https://api.github.com/repos/{owner}/{repo_name}/milestones?state=all"
-
-                    headers = {"Accept": "application/vnd.github.v3+json"}
-
-                    # Add GitHub token if available for higher rate limits
-                    if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
-                        headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
-
-                    response = requests.get(api_url, headers=headers, timeout=10)
-
-                    if response.status_code == 200:
-                        return response.json()
-                    return []
+            # Verify it's actually a GitHub domain
+            if parsed_url.netloc != "github.com":
                 return []
+
+            # Extract the path and remove leading slash
+            path = parsed_url.path.strip("/")
+
+            # Split path into components
+            path_parts = path.split("/")
+
+            # Verify we have at least owner/repo in the path
+            if len(path_parts) >= 2:
+                owner, repo_name = path_parts[0], path_parts[1]
+
+                # API URL for public repository milestones
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}/milestones?state=all"
+
+                headers = {"Accept": "application/vnd.github.v3+json"}
+
+                # Add GitHub token if available for higher rate limits
+                if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                    headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                response = requests.get(api_url, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    return response.json()
+
             return []
 
         except Exception:
