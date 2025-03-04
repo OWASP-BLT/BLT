@@ -608,8 +608,4 @@ if DEBUG:
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
 
-# Add these CAPTCHA settings
-CAPTCHA_FONT_PATH = '/fonts/arial.ttf'  # Path in container
-CAPTCHA_FONT_SIZE = 52
-CAPTCHA_LETTER_ROTATION = (-35, 35)
-CAPTCHA_NOISE_FUNCTIONS = ('captcha.helpers.noise_dots',)
+
