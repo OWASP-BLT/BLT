@@ -4,7 +4,6 @@ import { WebClient } from "@slack/web-api";
 
 async function run() {
     try {
-        // Read GitHub context from the JSON file
         const githubContextPath = process.argv[2];
         if (!githubContextPath || !fs.existsSync(githubContextPath)) {
             console.error('GitHub context file missing or not provided');
@@ -14,7 +13,6 @@ async function run() {
         const contextData = fs.readFileSync(githubContextPath, 'utf8');
         const context = JSON.parse(contextData);
 
-        console.log('Parsed GitHub Context:', context);
 
         const event = context.event || {};
         const comment = event.comment || {};
@@ -26,12 +24,12 @@ async function run() {
             process.exit(1);
         }
 
-        // Bounty command regex
+
         const bountyRegex = /\/bounty\s+\$(\d+)/;
         const match = comment.body.match(bountyRegex);
 
         if (!match) {
-            console.log('No bounty command found');
+            // console.log('No bounty command found');
             return;
         }
 
@@ -43,7 +41,7 @@ async function run() {
         const github = new Octokit({ auth: process.env.PERSONAL_ACCESS_TOKEN });
         const slack = new WebClient(process.env.SLACK_BOT_TOKEN);
 
-        // Retrieve existing labels
+
         const { data: labels } = await github.issues.listLabelsOnIssue({
             owner: repoOwner,
             repo: repoName,
@@ -81,7 +79,7 @@ async function run() {
             console.error('Label Update Error:', labelError);
         }
 
-        // Track the number of developers the user has sponsored
+ 
         const sponsorshipHistory = {};
         if (!sponsorshipHistory[commenter]) {
             sponsorshipHistory[commenter] = 1;
@@ -89,7 +87,7 @@ async function run() {
             sponsorshipHistory[commenter] += 1;
         }
 
-        // Find existing bounty comment
+
         const { data: comments } = await github.issues.listComments({
             owner: repoOwner,
             repo: repoName,
@@ -129,7 +127,7 @@ async function run() {
             console.error('Slack Notification Error:', slackError);
         }
 
-        console.log(`Bounty processed: $${bountyAmount} added by ${commenter}`);
+        // console.log(`Bounty processed: $${bountyAmount} added by ${commenter}`);
     } catch (error) {
         console.error('Bounty Bot Unexpected Error:', error);
         process.exit(1);
