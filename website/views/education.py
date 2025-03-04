@@ -1,4 +1,6 @@
 import json
+import re
+import requests
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,8 +11,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
-
+from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile, EducationalVideo
+from website.forms import VideoSubmissionForm
 
 def education_home(request):
     template = "education/education.html"
@@ -532,3 +534,102 @@ def create_or_update_course(request):
     except Exception as e:
         print(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
+
+
+@require_POST
+def add_video(request):
+    form = VideoSubmissionForm(request.POST)
+    if form.is_valid():
+        video_url = form.cleaned_data["video_url"]
+
+        # Validate the video URL to ensure it is from YouTube or Vimeo
+        if not re.match(r"(https?://)?(www\.)?(youtube|vimeo)\.com/", video_url):
+            return JsonResponse({"success": False, "message": "Only YouTube or Vimeo URLs are allowed."}, status=400)
+
+        # Fetch the video title and description using the YouTube or Vimeo API
+        video_data = fetch_video_data(video_url)
+        if not video_data:
+            return JsonResponse({"success": False, "message": "Failed to fetch video data."}, status=400)
+
+        # Check with OpenAI if the video is educational
+        if not is_educational_video(video_data["title"], video_data["description"]):
+            return JsonResponse({"success": False, "message": "The video is not educational."}, status=400)
+
+        # Save the video details to the database
+        EducationalVideo.objects.create(
+            url=video_url,
+            title=video_data["title"],
+            description=video_data["description"],
+            is_educational=True,
+        )
+
+        return JsonResponse({"success": True, "message": "Video added successfully."}, status=201)
+
+    return JsonResponse({"success": False, "message": "Invalid form data."}, status=400)
+
+
+def fetch_video_data(video_url):
+    if "youtube.com" in video_url or "youtu.be" in video_url:
+        return fetch_youtube_video_data(video_url)
+    elif "vimeo.com" in video_url:
+        return fetch_vimeo_video_data(video_url)
+    return None
+
+
+def fetch_youtube_video_data(video_url):
+    api_key = "YOUR_YOUTUBE_API_KEY"
+    video_id = extract_youtube_video_id(video_url)
+    if not video_id:
+        return None
+
+    api_url = f"https://www.googleapis.com/youtube/v3/videos?id={video_id}&key={api_key}&part=snippet"
+    response = requests.get(api_url)
+    if response.status_code != 200:
+        return None
+
+    data = response.json()
+    if "items" not in data or not data["items"]:
+        return None
+
+    snippet = data["items"][0]["snippet"]
+    return {"title": snippet["title"], "description": snippet["description"]}
+
+
+def extract_youtube_video_id(video_url):
+    match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", video_url)
+    return match.group(1) if match else None
+
+
+def fetch_vimeo_video_data(video_url):
+    video_id = extract_vimeo_video_id(video_url)
+    if not video_id:
+        return None
+
+    api_url = f"https://api.vimeo.com/videos/{video_id}"
+    headers = {"Authorization": "Bearer YOUR_VIMEO_ACCESS_TOKEN"}
+    response = requests.get(api_url, headers=headers)
+    if response.status_code != 200:
+        return None
+
+    data = response.json()
+    return {"title": data["name"], "description": data["description"]}
+
+
+def extract_vimeo_video_id(video_url):
+    match = re.search(r"vimeo\.com\/(\d+)", video_url)
+    return match.group(1) if match else None
+
+
+def is_educational_video(title, description):
+    openai_api_key = "YOUR_OPENAI_API_KEY"
+    prompt = f"Is the following video educational?\n\nTitle: {title}\n\nDescription: {description}\n\nAnswer with 'yes' or 'no'."
+    response = requests.post(
+        "https://api.openai.com/v1/engines/davinci-codex/completions",
+        headers={"Authorization": f"Bearer {openai_api_key}"},
+        json={"prompt": prompt, "max_tokens": 5},
+    )
+    if response.status_code != 200:
+        return False
+
+    answer = response.json()["choices"][0]["text"].strip().lower()
+    return answer == "yes"

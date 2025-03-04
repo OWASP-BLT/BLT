@@ -2051,3 +2051,14 @@ class Queue(models.Model):
             self.launched = True
             self.launched_at = timezone.now()
             self.save()
+
+
+class EducationalVideo(models.Model):
+    url = models.URLField()
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    is_educational = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title

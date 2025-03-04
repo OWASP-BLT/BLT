@@ -137,6 +137,7 @@ from website.views.education import (
     update_sections_order,
     view_course,
     view_lecture,
+    add_video,
 )
 from website.views.issue import (
     AllIssuesView,
@@ -671,6 +672,7 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
+    path("education/add-video/", add_video, name="add_video"),
     re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
     re_path(
         r"^privacypolicy/$",
