@@ -446,7 +446,11 @@ class UserProfileDetailView(DetailView):
             user_issues.update(is_hidden=hide)
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
-        return redirect(self.request.path_info)
+        redirect_url = request.META.get("HTTP_REFERER", "/")
+        if is_safe_url(redirect_url):
+            return redirect(redirect_url)
+        else:
+            return redirect("/")
 
 
 @login_required
