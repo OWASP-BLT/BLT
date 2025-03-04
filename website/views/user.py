@@ -69,7 +69,7 @@ def handle_user_signup(request, user, **kwargs):
 
 def is_safe_url(url):
     parsed_url = urlparse(url)
-    allowed_domains = ["yourdomain.com", "blt.owasp.org"]
+    allowed_domains = [settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else "localhost", "blt.owasp.org"]
     return parsed_url.scheme in ["http", "https"] and parsed_url.netloc in allowed_domains
 
 
@@ -448,7 +448,8 @@ class UserProfileDetailView(DetailView):
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
         redirect_url = request.META.get("HTTP_REFERER", "/")
-        if is_safe_url(redirect_url):
+        parsed_url = urlparse(redirect_url)
+        if parsed_url.netloc == "" or parsed_url.netloc == request.get_host():
             return redirect(redirect_url)
         else:
             return redirect("/")
@@ -472,7 +473,8 @@ def recommend_user(request, user_id):
     except User.DoesNotExist:
         messages.error(request, "User not found.")
     redirect_url = request.META.get("HTTP_REFERER", "/")
-    if is_safe_url(redirect_url):
+    parsed_url = urlparse(redirect_url)
+    if parsed_url.netloc == "" or parsed_url.netloc == request.get_host():
         return redirect(redirect_url)
     else:
         return redirect("/")
