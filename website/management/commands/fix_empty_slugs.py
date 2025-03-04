@@ -18,7 +18,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Found {count} projects with empty slugs. Fixing...")
 
         for project in projects_with_empty_slugs:
-            # Generate a slug based on the project name here
+            # Generate a slug based on the project name
             if project.name:
                 base_slug = slugify(project.name)
                 if not base_slug:
