@@ -18,14 +18,6 @@
 {% load gravatar %}
 {% block style %}
     <style>
-        {% comment %} .list-group {
-            border: 2px solid rgb(212 212 216);
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-            border-top: 0;
-            border-bottom-left-radius: 0.5rem;
-            border-bottom-right-radius: 0.5rem;
-} {% endcomment %}
         .list-group-item img {
             width: 50px;
             height: 50px;
@@ -81,9 +73,45 @@
         .profileimage {
             border: 1px solid rgb(229 231 235);
             border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
         }
 
-        
+        .profileimage[src=""] {
+            display: none;
+        }
+
+        .fallback-avatar {
+            width: 50px;
+            height: 50px;
+            background-color: #f0f0f0;
+            border-radius: 50%;
+            display: inline-block;
+            text-align: center;
+            line-height: 50px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .list-group-item img[alt]:not([src]) {
+            display: none;
+        }
+
+        .list-group-item .fallback-text {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            background-color: #f0f0f0;
+            border-radius: 50%;
+            color: #666;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         /* Styles for tag pills */
         .tag-pill {
@@ -187,19 +215,22 @@
                                                  class=" size-11 select-none profileimage"
                                                  alt="{{ leader.username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
                                                  class=" size-11 select-none profileimage"
-                                                 alt="username"
+                                                 alt="{{ leader.username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% else %}
                                             <img src="{% gravatar_url leader.email 50 %}"
                                                  class=" size-11 select-none profileimage"
-                                                 alt="username"
+                                                 alt="{{ leader.username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% endif %}
                                         <a href="{% url 'profile' slug=leader.username %}"
                                            class="text-lg transition-all duration-200">{{ leader.username }}</a>
@@ -229,13 +260,15 @@
                                                  class=" size-11 select-none profileimage"
                                                  alt="{{ leader.user_profile__user__username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% else %}
                                             <img src="{% gravatar_url leader.user_profile__user__email 50 %}"
                                                  class=" size-11 select-none profileimage"
-                                                 alt="username"
+                                                 alt="{{ leader.user_profile__user__username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% endif %}
                                         <a href="{% url 'profile' slug=leader.user_profile__user__username %}"
                                            class="text-lg transition-all duration-200">{{ leader.user_profile__user__username }}</a>
@@ -268,13 +301,15 @@
                                                  class=" size-11 select-none profileimage"
                                                  alt="{{ leader.reviews__reviewer__user__username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% else %}
                                             <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
                                                  class=" size-11 select-none profileimage"
-                                                 alt="username"
+                                                 alt="{{ leader.reviews__reviewer__user__username }}"
                                                  width="50px"
-                                                 height="50px">
+                                                 height="50px"
+                                                 onerror="this.src='{% static "images/default-avatar.png" %}'; this.onerror=null;">
                                         {% endif %}
                                         <a href="{% url 'profile' slug=leader.reviews__reviewer__user__username %}"
                                            class="text-lg transition-all duration-200">
