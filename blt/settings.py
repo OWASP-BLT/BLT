@@ -238,8 +238,8 @@ db_from_env = dj_database_url.config(conn_max_age=500)
 
 # Fetch the Sentry DSN from environment variables
 SENTRY_DSN = os.environ.get("SENTRY_DSN")
+
 if SENTRY_DSN:
-    print(f"Initializing Sentry with DSN: {SENTRY_DSN}")
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
@@ -249,8 +249,6 @@ if SENTRY_DSN:
         environment="development" if DEBUG else "production",
         release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),
     )
-else:
-    print("Sentry DSN not set. Skipping Sentry initialization.")
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
@@ -605,5 +603,3 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
-
-
