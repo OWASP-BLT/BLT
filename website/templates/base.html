@@ -195,6 +195,36 @@
             .message-alert {
                 transition: opacity 0.3s ease-out;
             }
+            /* Global Styles */
+            body {
+                transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+            }
+            body.dark {
+                background-color: #1a1a1a; /* Dark background */
+                color: #f9fafb; /* Light text */
+            }
+            /* Button Styles */
+            button {
+                transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+            }
+            body.dark button {
+                background-color: #2d3748; /* Dark button background */
+                color: #f9fafb; /* Light button text */
+            }
+            /* Link Styles */
+            a {
+                transition: color 0.3s ease; /* Smooth transition */
+            }
+            body.dark a {
+                color: #e74c3c; /* Red color for links in dark mode */
+            }
+            /* Additional component styles */
+            .bg-white {
+                transition: background-color 0.3s ease; /* Smooth transition */
+            }
+            body.dark .bg-white {
+                background-color: #1f2937; /* Dark background for white elements */
+            }
         </style>
         {% block extra_js %}
         {% endblock extra_js %}

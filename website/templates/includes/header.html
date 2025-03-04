@@ -8,8 +8,35 @@
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
 <style>
+    /* Text Improvements for Light and Dark Modes */
+    body {
+        font-family: Arial, sans-serif; /* Ensure a clean font for readability */
+    }
+
     a {
-        color: black;
+        color: #1a73e8; /* Default link color for light mode */
+        transition: color 0.3s ease;
+    }
+
+    body.dark a {
+        color: #bb86fc; /* Light purple for links in dark mode */
+    }
+
+    a:hover {
+        color: #e11d48; /* Red color on hover for links */
+    }
+
+    .chat-header h3 {
+        font-weight: bold; /* Bold font for chat header */
+        font-size: 1.5rem; /* Larger font size for better visibility */
+    }
+
+    .chat-log p {
+        font-size: 1rem; /* Standard font size for chat messages */
+    }
+
+    button {
+        font-weight: 600; /* Semi-bold font for buttons */
     }
 
     @media (min-width: 700px) {
@@ -41,12 +68,14 @@
         height: 520px;
         z-index: 9999;
         overflow: hidden;
-        @media (max-width: 768px) {
+    }
+
+    @media (max-width: 768px) {
+        .chatbot {
             right: 50%;
             transform: translateX(50%);
             max-width: 95%;
         }
-        
     }
 
     .chat-icon {
@@ -55,9 +84,6 @@
         right: 2%;
         background-color: rgb(209, 16, 16);
         transition: opacity 0.2s;
-        &:hover {
-            opacity: 0.8;
-        }
         border-radius: 50%;
         padding: 10px;
         width: 55px;
@@ -67,6 +93,10 @@
         justify-content: center;
         cursor: pointer;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .chat-icon:hover {
+        opacity: 0.8; /* Change opacity on hover */
     }
 
     .chat-header {
@@ -88,16 +118,12 @@
 
     .loading {
         display: none;
-        {% comment %} position: fixed;
-        bottom: 100px;
-right: 10.5%;{% endcomment %}
         justify-content: center;
         align-items: center;
         font-size: 2xl;
-        padding: 10px; 
-        background-color: #ffffffe6;
-        /* Semi-transparent background */
-       border-radius: 8px;
+        padding: 10px;
+        background-color: #ffffffe6; /* Semi-transparent background */
+        border-radius: 8px;
     }
 
     .chat-Zindex {
@@ -121,6 +147,49 @@ right: 10.5%;{% endcomment %}
         display: block;
     }
     
+    /* Dark Mode Styles */
+    body.dark {
+        background-color: #181818; /* Darker background for better contrast */
+        color: #e0e0e0; /* Light text color */
+    }
+
+    body.dark a {
+        color: #bb86fc; /* Light purple for links */
+    }
+
+    .chatbot {
+        background-color: #1e1e1e; /* Darker background for chatbot */
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
+    }
+
+    .chat-header {
+        background-color: #3700b3; /* Dark purple for chat header */
+        border-bottom: 2px solid #bb86fc; /* Light purple border for separation */
+    }
+
+    .chat-log {
+        background-color: #1e1e1e; /* Dark background for chat log */
+    }
+
+    .loading {
+        background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white for loading */
+    }
+
+    .chat-icon {
+        background-color: #bb86fc; /* Light purple for chat icon */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Shadow for better visibility */
+    }
+
+    button {
+        transition: background-color 0.3s ease, color 0.3s ease;
+        border-radius: 8px; /* Rounded corners for buttons */
+    }
+
+    button:hover {
+        background-color: #3700b3; /* Dark purple on hover */
+        color: white;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Shadow on hover */
+    }
 </style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -393,6 +462,15 @@ right: 10.5%;{% endcomment %}
                     </a>
                 </div>
             {% endif %}
+            <button id="dark-mode-toggle"
+                    class="flex items-center p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors duration-200">
+                <svg id="theme-icon"
+                     class="w-6 h-6 text-gray-800"
+                     fill="currentColor"
+                     viewBox="0 0 24 24">
+                    <path id="sun-icon" d="M12 4.5a1 1 0 011 1v1a1 1 0 11-2 0V5.5a1 1 0 011-1zm0 13a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8.5-6.5a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-13 0a1 1 0 01-1 1H5a1 1 0 110-2h1a1 1 0 011 1zm10.36-7.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-10.36 10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm12.72 0a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-12.72-10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zM12 15a3 3 0 100-6 3 3 0 000 6z" />
+                </svg>
+            </button>
         </div>
     </div>
     <!-- Mobile Search Bar - Moved inside nav -->
@@ -735,4 +813,32 @@ right: 10.5%;{% endcomment %}
         mobileSearch.classList.toggle('hidden');
         mobileSearch.classList.toggle('active');
     }
+</script>
+<script>
+    document.getElementById('dark-mode-toggle').addEventListener('click', function() {
+        document.body.classList.toggle('dark');
+        const themeIcon = document.getElementById('theme-icon');
+        if (document.body.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+            themeIcon.innerHTML = '<path d="M12 4.5a1 1 0 011 1v1a1 1 0 11-2 0V5.5a1 1 0 011-1zm0 13a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8.5-6.5a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-13 0a1 1 0 01-1 1H5a1 1 0 110-2h1a1 1 0 011 1zm10.36-7.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-10.36 10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm12.72 0a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-12.72-10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zM12 15a3 3 0 100-6 3 3 0 000 6z" />';
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeIcon.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />';
+        }
+    });
+</script>
+<script>
+    // Check for saved theme in localStorage and apply it
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.body.classList.toggle('dark', savedTheme === 'dark');
+            const themeIcon = document.getElementById('theme-icon');
+            if (themeIcon) {
+                themeIcon.innerHTML = savedTheme === 'dark' ?
+                    '<path d="M12 4.5a1 1 0 011 1v1a1 1 0 11-2 0V5.5a1 1 0 011-1zm0 13a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8.5-6.5a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-13 0a1 1 0 01-1 1H5a1 1 0 110-2h1a1 1 0 011 1zm10.36-7.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-10.36 10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm12.72 0a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-12.72-10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zM12 15a3 3 0 100-6 3 3 0 000 6z" />' :
+                    '<path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />';
+            }
+        }
+    });
 </script>
