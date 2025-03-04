@@ -1092,7 +1092,7 @@ class Project(models.Model):
             # Ensure we have a valid slug
             if not base_slug:
                 base_slug = f"project-{int(time.time())}"
-                
+
             # Ensure slug uniqueness
             unique_slug = base_slug
             counter = 1
@@ -1100,14 +1100,14 @@ class Project(models.Model):
                 suffix = f"-{counter}"
                 # Make sure base_slug + suffix doesn't exceed 50 chars
                 if len(base_slug) + len(suffix) > 50:
-                    base_slug = base_slug[:50-len(suffix)]
+                    base_slug = base_slug[: 50 - len(suffix)]
                 unique_slug = f"{base_slug}{suffix}"
                 counter += 1
             self.slug = unique_slug
         elif not self.slug:
             # Fallback if no name is available
             self.slug = f"project-{int(time.time())}"
-            
+
         super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
