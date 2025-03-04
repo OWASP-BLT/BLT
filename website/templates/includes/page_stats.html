@@ -53,47 +53,59 @@
 </div>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Set up the sparkline chart
-    const ctx = document.getElementById('sparklineChart').getContext('2d');
-    const pageViews = {{ page_views|safe }};
-    
-    const sparklineChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: Array.from({ length: pageViews.length }, (_, i) => i + 1),
-        datasets: [{
-          label: 'Page Views',
-          data: pageViews,
-          borderColor: '#e74c3c',
-          backgroundColor: 'rgba(231, 76, 60, 0.1)',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: true,
-          tension: 0.4
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            enabled: true
-          }
+    // Function to initialize chart when Chart.js is available
+    function initializeChart() {
+      if (typeof Chart === 'undefined') {
+        console.log('Chart.js not yet loaded, retrying...');
+        setTimeout(initializeChart, 100);
+        return;
+      }
+      
+      // Set up the sparkline chart
+      const ctx = document.getElementById('sparklineChart').getContext('2d');
+      const pageViews = {{ page_views|safe }};
+      
+      const sparklineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({ length: pageViews.length }, (_, i) => i + 1),
+          datasets: [{
+            label: 'Page Views',
+            data: pageViews,
+            borderColor: '#e74c3c',
+            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.4
+          }]
         },
-        scales: {
-          x: {
-            display: false
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: true
+            }
           },
-          y: {
-            display: false,
-            beginAtZero: true
+          scales: {
+            x: {
+              display: false
+            },
+            y: {
+              display: false,
+              beginAtZero: true
+            }
           }
         }
-      }
-    });
+      });
+    }
+    
+    // Start initialization process
+    initializeChart();
     
     // Handle voting
     const upvoteBtn = document.getElementById('upvoteBtn');

@@ -89,7 +89,8 @@ def queue_list(request):
     authorized_user_id = os.environ.get("Q_ID")
     is_auth = authorized_user_id and request.user.is_authenticated
     is_launch_authorized = is_auth and str(request.user.id) == authorized_user_id
-
+    if not is_launch_authorized:
+        return None
     # Get pending and launched items for launch control section
     pending_items = Queue.objects.filter(launched=False).order_by("-created")
     launched_items = Queue.objects.filter(launched=True).order_by("-launched_at")[:10]
