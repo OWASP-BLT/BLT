@@ -69,7 +69,8 @@ def handle_user_signup(request, user, **kwargs):
 
 def is_safe_url(url):
     parsed_url = urlparse(url)
-    return parsed_url.scheme in ["http", "https"] and parsed_url.netloc in ["owasp.org", "blt.owasp.org"]
+    allowed_domains = ["yourdomain.com", "blt.owasp.org"]
+    return parsed_url.scheme in ["http", "https"] and parsed_url.netloc in allowed_domains
 
 
 def update_bch_address(request):
