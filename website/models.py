@@ -838,6 +838,35 @@ class UserProfile(models.Model):
     def __str__(self):
         return self.user.username
 
+    def check_merged_pr_badges(self):
+        """
+        Check and award badges based on merged PR thresholds
+        """
+        badge_thresholds = [
+            (1, "1 Merged Pull Request"),
+            (10, "10 Merged Pull Requests"),
+            (25, "25 Merged Pull Requests"),
+            (50, "50 Merged Pull Requests"),
+            (100, "100 Merged Pull Requests"),
+        ]
+
+        for threshold, badge_title in badge_thresholds:
+            if self.merged_pr_count >= threshold:
+                badge, _ = Badge.objects.get_or_create(
+                    title=badge_title,
+                    defaults={
+                        "description": f"Badge for merging {threshold} pull requests",
+                        "type": "automatic",
+                    },
+                )
+                UserBadge.objects.get_or_create(
+                    user=self.user, badge=badge, defaults={"reason": f"Awarded for merging {threshold} pull requests"}
+                )
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.check_merged_pr_badges()
+
 
 def create_profile(sender, **kwargs):
     user = kwargs["instance"]
