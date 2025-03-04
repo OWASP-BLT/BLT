@@ -2,6 +2,7 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from allauth.account.signals import user_signed_up
 from django.conf import settings
@@ -66,6 +67,11 @@ def handle_user_signup(request, user, **kwargs):
             pass
 
 
+def is_safe_url(url):
+    parsed_url = urlparse(url)
+    return parsed_url.scheme in ["http", "https"] and parsed_url.netloc in ["owasp.org", "blt.owasp.org"]
+
+
 def update_bch_address(request):
     if request.method == "POST":
         selected_crypto = request.POST.get("selected_crypto")
@@ -91,8 +97,13 @@ def update_bch_address(request):
     else:
         messages.error(request, "Invalid request method.")
 
-        username = request.user.username if request.user.username else "default_username"
-        return redirect(reverse("profile", args=[username]))
+    username = request.user.username if request.user.username else "default_username"
+    redirect_url = reverse("profile", args=[username])
+
+    if is_safe_url(redirect_url):
+        return redirect(redirect_url)
+    else:
+        return redirect("/")
 
 
 @login_required
@@ -455,7 +466,11 @@ def recommend_user(request, user_id):
                 messages.success(request, "Recommendation removed successfully!")
     except User.DoesNotExist:
         messages.error(request, "User not found.")
-    return redirect(request.META.get("HTTP_REFERER", "/"))
+    redirect_url = request.META.get("HTTP_REFERER", "/")
+    if is_safe_url(redirect_url):
+        return redirect(redirect_url)
+    else:
+        return redirect("/")
 
 
 @login_required
