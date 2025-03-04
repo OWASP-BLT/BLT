@@ -3,10 +3,10 @@ mode: separate-outputs
 etching:
   rune: BLT.BACON.TOKENS
   turbo: true
-  divisibility: 8
-  premine: 1000000
-  supply: 1000000
+  divisibility: 0
+  premine: 1000000000000
+  supply:  1000000000000
   symbol: 🥓
 
 inscriptions:
-- file: /blockchain/bacon.png
+- file: /blockchain/bacon-images/bacon-24kb.jpeg
