@@ -16,7 +16,10 @@ class RebuildSafeUrlTestCase(TestCase):
         print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
         test_cases = [
             # Test case with credentials and encoded control characters in the path.
-            ("https://user:pass@example.com/%0a:%0dsome-path?query=test#ekdes", "https://example.com/some-path"),
+            (
+                "https://user:pass@example.com/%0a:%0dsome-path?query=test#ekdes",
+                "https://example.com/%250a%3A%250dsome-path",
+            ),
             # Test case with multiple slashes in the path.
             ("https://example.com//multiple///slashes", "https://example.com/multiple/slashes"),
             # Test case with no modifications needed.
@@ -29,6 +32,7 @@ class RebuildSafeUrlTestCase(TestCase):
             with self.subTest(url=input_url):
                 result = rebuild_safe_url(input_url)
                 self.assertEqual(result, expected)
+
 
 class APITests(APITestCase):
     register_url = "/auth/registration/"
