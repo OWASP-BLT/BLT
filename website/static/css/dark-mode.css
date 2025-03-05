@@ -1,0 +1,621 @@
+/* Dark Mode Styles */
+
+/* Smooth transitions for light/dark mode */
+* {
+    transition: background-color 0.3s ease-in-out,
+                color 0.3s ease-in-out,
+                border-color 0.3s ease-in-out;
+}
+
+/* Light mode styles */
+html:not(.dark) {
+    color-scheme: light !important;
+}
+
+html:not(.dark) body {
+    background-color: #f9fafb !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) header {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+}
+
+html:not(.dark) .sidebar {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+}
+
+html:not(.dark) .chatbot {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+html:not(.dark) .chat-header {
+    background-color: #f9fafb !important;
+    border-color: #e5e7eb !important;
+}
+
+html:not(.dark) .chat-log {
+    background-color: #ffffff !important;
+}
+
+html:not(.dark) .message-user {
+    background-color: #e5e7eb !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) .message-bot {
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) .card,
+html:not(.dark) .panel,
+html:not(.dark) .dropdown-menu,
+html:not(.dark) .dropdown-content {
+    background-color: #ffffff !important;
+    border-color: #e5e7eb !important;
+}
+
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+    background-color: #ffffff !important;
+    border-color: #d1d5db !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) table {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) thead {
+    background-color: #f9fafb !important;
+}
+
+html:not(.dark) nav {
+    background-color: #ffffff !important; 
+}
+
+/* Dark mode styles */
+html.dark {
+    color-scheme: dark !important;
+}
+
+html.dark body {
+    background-color: #1a202c !important;
+    color: #f7fafc !important;
+}
+
+html.dark header {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+}
+
+html.dark .card,
+html.dark .panel,
+html.dark nav.bg-white,
+html.dark .bg-white,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100 {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+html.dark .dropdown-menu,
+html.dark .dropdown-content {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+html.dark button:not(.bg-red-600):not(.bg-red-500),
+html.dark .btn:not(.bg-red-600):not(.bg-red-500) {
+    background-color: #4a5568 !important;
+    color: #f7fafc !important;
+    border-color: #718096 !important;
+}
+
+html.dark button.bg-red-600,
+html.dark button.bg-red-500,
+html.dark .btn.bg-red-600,
+html.dark .btn.bg-red-500 {
+    background-color: #e74c3c !important;
+    color: #ffffff !important;
+}
+
+html.dark a {
+    color: #90cdf4 !important;
+}
+
+html.dark .text-gray-800,
+html.dark .text-gray-900,
+html.dark .text-black {
+    color: #f7fafc !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+    color: #a0aec0 !important;
+}
+
+html.dark table {
+    background-color: #2d3748 !important;
+    color: #f7fafc !important;
+    border-color: #4a5568 !important;
+}
+
+html.dark thead {
+    background-color: #1a202c !important;
+}
+
+html.dark tr {
+    border-color: #4a5568 !important;
+}
+
+html.dark td,
+html.dark th {
+    border-color: #4a5568 !important;
+}
+
+html.dark .sidebar {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+}
+
+/* Chatbot specific styles */
+html.dark .chatbot {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .chat-header {
+    background-color: #1a202c !important;
+    border-color: #4a5568 !important;
+}
+
+html.dark .chat-log {
+    background-color: #2d3748 !important;
+}
+
+html.dark .message-user {
+    background-color: #4a5568 !important;
+    color: #f7fafc !important;
+}
+
+html.dark .message-bot {
+    background-color: #374151 !important;
+    color: #f7fafc !important;
+}
+
+/* Color background fixes for specific elements */
+html.dark .bg-green-100,
+html.dark .bg-green-200,
+html.dark .bg-green-300 {
+    background-color: #1a4731 !important;
+    color: #f7fafc !important;
+}
+
+html.dark .bg-blue-100,
+html.dark .bg-blue-200,
+html.dark .bg-blue-300 {
+    background-color: #1a365d !important;
+    color: #f7fafc !important;
+}
+
+html.dark .bg-red-100,
+html.dark .bg-red-200,
+html.dark .bg-red-300 {
+    background-color: #742a2a !important;
+    color: #f7fafc !important;
+}
+
+html.dark .bg-yellow-100,
+html.dark .bg-yellow-200,
+html.dark .bg-yellow-300 {
+    background-color: #744210 !important;
+    color: #f7fafc !important;
+}
+
+/* Add any other specific element styles as needed */
+
+/* Light Mode Explicit Styles */
+:root {
+    color-scheme: light;
+}
+
+html:not(.dark) {
+    color-scheme: light;
+}
+
+body {
+    @apply bg-white text-gray-900;
+}
+
+/* Light mode specific styles */
+html:not(.dark) body {
+    background-color: #f9fafb !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) .bg-white {
+    background-color: #ffffff !important;
+}
+
+html:not(.dark) .bg-gray-50 {
+    background-color: #f9fafb !important;
+}
+
+html:not(.dark) .bg-gray-100 {
+    background-color: #f3f4f6 !important;
+}
+
+html:not(.dark) .text-gray-700 {
+    color: #374151 !important;
+}
+
+html:not(.dark) .text-gray-900 {
+    color: #111827 !important;
+}
+
+/* Header Dark Mode */
+.dark nav.fixed {
+    background-color: rgba(17, 24, 39, 0.8) !important;
+    border-color: #2d3748 !important;
+}
+
+/* Restore light mode navigation */
+html:not(.dark) nav.fixed {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    border-color: #e5e7eb !important;
+}
+
+/* Inputs Dark Mode */
+.dark input::placeholder {
+    color: #a0aec0;
+}
+
+/* Cards and Panels Dark Mode */
+.dark .border {
+    border-color: #4a5568;
+}
+
+.dark .shadow {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Buttons with red color */
+.dark .hover\:bg-red-50:hover {
+    background-color: rgba(231, 76, 60, 0.15);
+}
+
+.dark .bg-red-500, .dark .hover\:bg-red-500:hover {
+    background-color: #e74c3c;
+}
+
+.dark .border-red-500 {
+    border-color: #e74c3c;
+}
+
+.dark .text-red-500 {
+    color: #e74c3c;
+}
+
+/* Text Colors */
+.dark .text-gray-700 {
+    color: #e2e8f0;
+}
+
+.dark .text-gray-500 {
+    color: #a0aec0;
+}
+
+.dark .text-gray-900 {
+    color: #f7fafc;
+}
+
+.dark .text-black {
+    color: #f7fafc;
+}
+
+/* Dark Mode Toggle */
+/* Desktop Toggle */
+#dark-mode-toggle:checked + .toggle-bg {
+    background-color: #e74c3c; /* Red color */
+}
+
+#dark-mode-toggle:checked ~ .toggle-dot {
+    transform: translateX(100%);
+}
+
+.dark .toggle-dot {
+    transform: translateX(100%);
+}
+
+/* Mobile Toggle */
+#dark-mode-toggle-mobile:checked + .toggle-bg-mobile {
+    background-color: #e74c3c; /* Red color */
+}
+
+#dark-mode-toggle-mobile:checked ~ .toggle-dot-mobile {
+    transform: translateX(100%);
+}
+
+.dark .toggle-dot-mobile {
+    transform: translateX(100%);
+}
+
+/* Dropdown menus */
+.dark #dropdownMenu, 
+.dark #dropdown-mobile,
+.dark #organizations-dropdown {
+    background-color: #2d3748;
+    border-color: #4a5568;
+}
+
+.dark #dropdownMenu a,
+.dark #dropdown-mobile a,
+.dark #organizations-dropdown button {
+    color: #f7fafc;
+}
+
+.dark #dropdownMenu a:hover,
+.dark #dropdown-mobile a:hover,
+.dark #organizations-dropdown button:hover {
+    background-color: rgba(231, 76, 60, 0.15);
+}
+
+/* Tables */
+.dark th {
+    background-color: #1a202c;
+}
+
+.dark tr:nth-child(even) {
+    background-color: #283141;
+}
+
+/* Sidebar Dark Mode */
+.dark .sidebar a {
+    color: #f7fafc;
+}
+
+.dark .sidebar a:hover {
+    color: #e74c3c;
+}
+
+.dark .sidebar .bg-gray-200 {
+    background-color: #2d3748;
+}
+
+/* Fix for message boxes */
+.dark .message-alert {
+    background-color: #2d3748;
+    color: #f7fafc;
+}
+
+/* Chat-bot dark mode */
+.dark .chatbot {
+    background-color: #1a202c;
+    color: #f7fafc;
+    border: 1px solid #4a5568;
+}
+
+.dark .chat-log {
+    background-color: #2d3748;
+}
+
+.dark .bg-green-300 {
+    background-color: #065f46 !important;
+    color: #f7fafc !important;
+}
+
+.dark .bg-blue-300 {
+    background-color: #1e40af !important;
+    color: #f7fafc !important;
+}
+
+.dark .bg-red-300 {
+    background-color: #991b1b !important;
+    color: #f7fafc !important;
+}
+
+/* Fix for search bar */
+.dark .border-2.border-red-500 {
+    border-color: #e74c3c;
+}
+
+.dark .text-gray-700.placeholder-gray-400 {
+    color: #f7fafc;
+}
+
+.dark .placeholder-gray-400::placeholder {
+    color: #a0aec0;
+}
+
+/* Light Mode Chatbot */
+html:not(.dark) #chatbot {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+}
+
+html:not(.dark) .chat-header {
+    background-color: #e74c3c !important;
+    color: white !important;
+}
+
+html:not(.dark) .chat-log {
+    background-color: #f3f4f6 !important;
+}
+
+html:not(.dark) .bg-green-300 {
+    background-color: #86efac !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) .bg-blue-300 {
+    background-color: #93c5fd !important;
+    color: #111827 !important;
+}
+
+html:not(.dark) .bg-red-300 {
+    background-color: #fca5a5 !important;
+    color: #111827 !important;
+}
+
+/* Dark Mode Chatbot */
+.dark #chatbot {
+    background-color: #1a202c !important;
+    color: #f7fafc !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+.dark .chat-header {
+    background-color: #e74c3c !important;
+}
+
+.dark .chat-log {
+    background-color: #2d3748 !important;
+}
+
+.dark .bg-green-300 {
+    background-color: #065f46 !important;
+    color: #f7fafc !important;
+}
+
+.dark .bg-blue-300 {
+    background-color: #1e40af !important;
+    color: #f7fafc !important;
+}
+
+.dark .bg-red-300 {
+    background-color: #991b1b !important;
+    color: #f7fafc !important;
+}
+
+/* Dark Mode Transitions */
+* {
+    transition: background-color 0.3s ease-in-out,
+                color 0.3s ease-in-out,
+                border-color 0.3s ease-in-out;
+}
+
+/* Light Mode (Default) */
+:root {
+    color-scheme: light;
+}
+
+body {
+    @apply bg-white text-gray-900;
+}
+
+/* Dark Mode */
+.dark {
+    color-scheme: dark;
+}
+
+.dark body {
+    @apply bg-gray-900 text-gray-100;
+}
+
+/* Dark mode styles for common elements */
+.dark input,
+.dark textarea,
+.dark select {
+    @apply bg-gray-800 text-gray-100 border-gray-700;
+}
+
+.dark .card {
+    @apply bg-gray-800 border-gray-700;
+}
+
+.dark .nav-link {
+    @apply text-gray-300 hover:text-white;
+}
+
+.dark .sidebar {
+    @apply bg-gray-800 border-gray-700;
+}
+
+.dark .dropdown-menu {
+    @apply bg-gray-800 border-gray-700;
+}
+
+/* Chatbot dark mode styles */
+.dark .chatbot {
+    @apply bg-gray-800;
+}
+
+.dark .chat-header {
+    @apply bg-gray-900 text-white border-gray-700;
+}
+
+.dark .chat-log {
+    @apply bg-gray-800;
+}
+
+/* Dark mode toggle button styles */
+#dark-mode-toggle {
+    @apply transition-transform duration-300 ease-in-out;
+}
+
+#dark-mode-toggle:hover {
+    @apply transform scale-110;
+}
+
+.dark #dark-mode-toggle {
+    @apply bg-primary;
+}
+
+/* Tables in dark mode */
+.dark table {
+    @apply bg-gray-800 text-gray-100;
+}
+
+.dark th,
+.dark td {
+    @apply border-gray-700;
+}
+
+.dark thead {
+    @apply bg-gray-900;
+}
+
+/* Buttons in dark mode */
+.dark .btn-primary {
+    background-color: #e74c3c !important;
+    @apply text-white;
+}
+
+.dark .btn-primary:hover {
+    background-color: #d44333 !important;
+}
+
+/* Messages in dark mode */
+.dark .message-alert {
+    @apply bg-gray-800 border-gray-700;
+}
+
+/* Modal in dark mode */
+.dark .modal-content {
+    @apply bg-gray-800 border-gray-700;
+}
+
+/* Fix for any elements that might need specific dark mode styles */
+.dark .dark-mode-fixed {
+    @apply bg-gray-800 text-gray-100 border-gray-700;
+} 
