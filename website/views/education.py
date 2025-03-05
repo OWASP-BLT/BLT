@@ -569,9 +569,11 @@ def add_video(request):
 
 
 def fetch_video_data(video_url):
-    if "youtube.com" in video_url or "youtu.be" in video_url:
+    parsed_url = urlparse(video_url)
+    host = parsed_url.hostname
+    if host and (host.endswith("youtube.com") or host == "youtu.be"):
         return fetch_youtube_video_data(video_url)
-    elif "vimeo.com" in video_url:
+    elif host and host.endswith("vimeo.com"):
         return fetch_vimeo_video_data(video_url)
     return None
 
