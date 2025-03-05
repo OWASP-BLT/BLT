@@ -1,8 +1,11 @@
 from django.test import TestCase
+
 from website.utils import rebuild_safe_url
+
 
 class RebuildSafeUrlTestCase(TestCase):
     def test_rebuild_safe_url(self):
+        print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
         test_cases = [
             # Test case with credentials and encoded control characters in the path.
             ("https://user:pass@example.com/%0a:%0dsome-path?query=test#ekdes", "https://example.com/some-path"),
@@ -13,7 +16,7 @@ class RebuildSafeUrlTestCase(TestCase):
             # Test with CRLF characters.
             ("https://example.com/%0d%0a", "https://example.com/"),
         ]
-        
+
         for input_url, expected in test_cases:
             with self.subTest(url=input_url):
                 result = rebuild_safe_url(input_url)
