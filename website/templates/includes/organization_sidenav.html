@@ -1,13 +1,4 @@
-<style>
-    .sidebar{
-        position: fixed;
-        top: 0;
-        left:0;
-        height: 100%;
-        background-color: black;
-    }
-</style>
-<div class="sidebar">
+<div class="sidebar fixed top-0 left-0 h-full bg-black dark:bg-gray-950">
     <ul class="nav nav-pills nav-stacked custom-nav">
         <li class="{% if request.resolver_match.url_name == 'organization_dashboar_home' %}active{% endif %}">
             <a href="{% url 'organization_dashboar_home' %}"><i class="lnr lnr-power-switch"></i><span>Home</span></a>
