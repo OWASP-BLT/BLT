@@ -1,10 +1,8 @@
 import json
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.management import call_command
 from django.test import RequestFactory, TestCase
 from slack_sdk.errors import SlackApiError
 
