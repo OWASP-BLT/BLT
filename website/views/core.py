@@ -1246,9 +1246,10 @@ def home(request):
     # Get top earners
     top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
 
-    # Get top referrals - users with the most successful signups
+    # Get top referrals
     top_referrals = (
-        InviteFriend.objects.filter(point_by_referral__gt=0).annotate(signup_count=Count("recipients"), total_points=F("point_by_referral"))
+        InviteFriend.objects.filter(point_by_referral__gt=0)
+        .annotate(signup_count=Count("recipients"), total_points=F("point_by_referral"))
         .select_related("sender", "sender__userprofile")
         .order_by("-point_by_referral")[:5]
     )
