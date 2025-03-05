@@ -236,15 +236,14 @@ MEDIA_ROOT = "media"
 MEDIA_URL = "/media/"
 db_from_env = dj_database_url.config(conn_max_age=500)
 
-# Fetch the Sentry DSN from environment variables
-SENTRY_DSN = os.environ.get("SENTRY_DSN")
 
+SENTRY_DSN = os.environ.get("SENTRY_DSN")
 if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration()],
         send_default_pii=True,
-        traces_sample_rate=1.0 if DEBUG else 0.2,
+        traces_sample_rate=1.0 if DEBUG else 0.2,  # Lower sampling rate in production
         profiles_sample_rate=1.0 if DEBUG else 0.2,
         environment="development" if DEBUG else "production",
         release=os.environ.get("HEROKU_RELEASE_VERSION", "local"),

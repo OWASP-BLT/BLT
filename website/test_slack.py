@@ -1,88 +1,131 @@
 import json
-import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from django.contrib.auth.models import User
-from django.test import RequestFactory, TestCase
-from slack_sdk.errors import SlackApiError
+from django.test import TestCase
 
-from website.views.slackbot import slack_events, submit_bug  # Import the submit_bug and slack_events functions
-
-# Set the DJANGO_SETTINGS_MODULE environment variable
-os.environ["DJANGO_SETTINGS_MODULE"] = "blt.settings"
+from website.models import Integration, Organization, SlackBotActivity, SlackIntegration
+from website.views.slack_handlers import slack_commands, slack_events
 
 
-class SlackTests(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        # No need to call settings.configure() here
-
+class SlackHandlerTests(TestCase):
     def setUp(self):
-        # Create a test user for authentication
-        self.user = User.objects.create_user(username="testuser", email="test@example.com", password="testpassword")
-        # Log the user in
-        self.client.login(username="testuser", password="testpassword")
-        # Set up RequestFactory
-        self.factory = RequestFactory()
-
-    @patch("website.views.slackbot.client.chat_postMessage")
-    def test_submit_bug_sends_message(self, mock_chat_post):
-        """Test that submitting a bug sends a message to Slack."""
-        mock_chat_post.return_value = {"ok": True, "ts": "1234567890.123456"}  # Mock successful response
-
-        # Submit directly to the slackbot.submit_bug function using the view function directly
-        from django.http import HttpRequest
-
-        request = HttpRequest()
-        request.method = "POST"
-        request.POST = {"description": "Test bug description"}
-
-        response = submit_bug(request)
-        self.assertEqual(response.status_code, 200)
-
-        # Verify the mock was called correctly
-        mock_chat_post.assert_called_once_with(
-            channel="#project-blt-bacon", text="A new bug has been reported: Test bug description"
+        # Create test organization and integration
+        self.organization = Organization.objects.create(name="Test Org", url="https://test.org")
+        self.integration = Integration.objects.create(organization=self.organization, service_name="slack")
+        self.slack_integration = SlackIntegration.objects.create(
+            integration=self.integration,
+            bot_access_token="xoxb-test-token",
+            workspace_name="T070JPE5BQQ",  # Test workspace ID
+            welcome_message="Welcome {user} to our workspace!",
         )
 
-    @patch("website.views.slackbot.client.chat_postMessage")
-    def test_team_join_with_custom_message(self, mock_chat_post):
-        """Test that a team_join event sends a welcome message."""
-        mock_chat_post.return_value = {"ok": True, "ts": "1234567890.123456"}  # Mock successful response
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_team_join_with_custom_message(self, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
 
-        # Create a request with team_join event
-        request_data = {"event": {"type": "team_join", "user": {"id": "U01234567"}}}
+        # Create test event data
+        event_data = {
+            "token": "test-token",
+            "team_id": "T070JPE5BQQ",  # Using the workspace_name from setUp
+            "event": {"type": "team_join", "user": {"id": "U123"}},
+            "type": "event_callback",
+        }
 
-        # Use RequestFactory to create a proper request
-        json_data = json.dumps(request_data)
-        request = self.factory.post("/slack/events/", data=json_data, content_type="application/json")
+        # Create test request
+        request = MagicMock()
+        request.body = json.dumps(event_data).encode()
+        request.method = "POST"
+        request.content_type = "application/json"
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
 
-        # Call the slack_events view function
+        # Call the event handler
         response = slack_events(request)
 
-        # Verify the welcome message was sent
-        mock_chat_post.assert_called_once_with(
-            channel="#project-blt-bacon", text="Welcome to the team, <@U01234567>! 🎉"
-        )
-
+        # Verify response
         self.assertEqual(response.status_code, 200)
 
-    @patch("website.views.slackbot.client.chat_postMessage")
-    def test_submit_bug_handles_slack_error(self, mock_chat_post):
-        """Test that submitting a bug handles Slack API errors."""
-        mock_chat_post.side_effect = SlackApiError("Slack API error", response={"error": "error"})
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.last()
+        self.assertEqual(activity.activity_type, "team_join")
+        self.assertEqual(activity.user_id, "U123")
+        self.assertEqual(activity.workspace_id, "T070JPE5BQQ")
+        self.assertEqual(activity.workspace_name, "Test Org")  # Using organization name from setUp
 
-        # Submit directly to the slackbot.submit_bug function using the view function directly
-        from django.http import HttpRequest
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_team_join_owasp_workspace(self, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
 
-        request = HttpRequest()
+        # Create test event data for OWASP workspace
+        event_data = {
+            "token": "test-token",
+            "team_id": "T04T40NHX",  # OWASP workspace ID
+            "event": {"type": "team_join", "user": {"id": "U123"}},
+            "type": "event_callback",
+        }
+
+        # Create test request
+        request = MagicMock()
+        request.body = json.dumps(event_data).encode()
         request.method = "POST"
-        request.POST = {"description": "Test bug description"}
+        request.content_type = "application/json"
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
 
-        response = submit_bug(request)
+        # Call the event handler
+        response = slack_events(request)
 
-        # Even with Slack error, the HTTP response should be successful
+        # Verify response
         self.assertEqual(response.status_code, 200)
-        # Verify the mock was called
-        mock_chat_post.assert_called_once()
+
+        # Verify activity was logged
+        activity = SlackBotActivity.objects.last()
+        self.assertEqual(activity.activity_type, "team_join")
+        self.assertEqual(activity.user_id, "U123")
+        self.assertEqual(activity.workspace_id, "T04T40NHX")
+
+    @patch("website.views.slack_handlers.verify_slack_signature", return_value=True)
+    @patch("website.views.slack_handlers.WebClient")
+    def test_slack_command_contrib(self, mock_webclient, mock_verify):
+        # Mock the Slack client
+        mock_client = MagicMock()
+        mock_webclient.return_value = mock_client
+        mock_client.conversations_open.return_value = {"ok": True, "channel": {"id": "D123"}}
+        mock_client.chat_postMessage.return_value = {"ok": True}
+
+        # Create test request
+        request = MagicMock()
+        request.method = "POST"
+        request.POST = {
+            "command": "/contrib",
+            "user_id": "U123",
+            "team_id": "T070JPE5BQQ",
+            "team_domain": "test",
+        }
+        request.headers = {
+            "X-Slack-Request-Timestamp": "1234567890",
+            "X-Slack-Signature": "v0=test",
+        }
+
+        response = slack_commands(request)
+
+        # Verify DM was opened
+        mock_client.conversations_open.assert_called_once_with(users=["U123"])
+
+        # Verify contribute message was sent
+        mock_client.chat_postMessage.assert_called_once()
+        self.assertEqual(response.status_code, 200)
