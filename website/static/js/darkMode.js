@@ -1,11 +1,17 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    const sunIcon = darkModeToggle.querySelector('.sun-icon');
-    const moonIcon = darkModeToggle.querySelector('.moon-icon');
-    const html = document.documentElement;
+// Check for saved dark mode preference or use system preference
+if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark')
+} else {
+    document.documentElement.classList.remove('dark')
+}
+
+// Function to update icons
+function updateIcons() {
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    const isDark = document.documentElement.classList.contains('dark');
     
-    // Function to toggle icons
-    function toggleIcons(isDark) {
+    if (sunIcon && moonIcon) {
         if (isDark) {
             sunIcon.classList.add('hidden');
             moonIcon.classList.remove('hidden');
@@ -14,7 +20,49 @@ document.addEventListener('DOMContentLoaded', function() {
             moonIcon.classList.add('hidden');
         }
     }
+}
 
+// Function to toggle dark mode
+function toggleDarkMode() {
+    if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark')
+        localStorage.theme = 'light'
+    } else {
+        document.documentElement.classList.add('dark')
+        localStorage.theme = 'dark'
+    }
+    updateIcons()
+}
+
+// Listen for system dark mode changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+    if (!('theme' in localStorage)) {
+        if (event.matches) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+        updateIcons()
+    }
+})
+
+// Initialize icons on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateIcons()
+    
+    // Add click event listener to the toggle button
+    const darkModeToggle = document.getElementById('dark-mode-toggle')
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', toggleDarkMode)
+    }
+})
+
+document.addEventListener('DOMContentLoaded', function() {
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const sunIcon = darkModeToggle.querySelector('.sun-icon');
+    const moonIcon = darkModeToggle.querySelector('.moon-icon');
+    const html = document.documentElement;
+    
     // Function to set dark mode
     function setDarkMode(isDark) {
         if (isDark) {
@@ -24,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
             html.classList.remove('dark');
             localStorage.setItem('darkMode', 'false');
         }
-        toggleIcons(isDark);
+        updateIcons();
         fixDarkModeInconsistencies();
     }
 
@@ -72,12 +120,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setDarkMode(savedDarkMode);
 
-    // Toggle dark mode on button click
-    darkModeToggle.addEventListener('click', function() {
-        const isDark = html.classList.contains('dark');
-        setDarkMode(!isDark);
-    });
-
     // Handle window resize to recheck inconsistencies
     let resizeTimeout;
     window.addEventListener('resize', function() {
@@ -89,4 +131,21 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Dark mode script loaded');
     window.toggleDarkMode = setDarkMode;
     window.fixDarkMode = fixDarkModeInconsistencies;
+
+    // Chatbot functionality
+    const chatIcon = document.getElementById('chatIcon');
+    const chatbot = document.getElementById('chatbot');
+    const closeChatbot = document.getElementById('closeChatbot');
+
+    if (chatIcon && chatbot && closeChatbot) {
+        chatIcon.addEventListener('click', function() {
+            chatbot.classList.remove('hidden');
+            chatIcon.classList.add('hidden');
+        });
+
+        closeChatbot.addEventListener('click', function() {
+            chatbot.classList.add('hidden');
+            chatIcon.classList.remove('hidden');
+        });
+    }
 });

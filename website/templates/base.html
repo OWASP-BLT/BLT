@@ -105,19 +105,27 @@
                     extend: {
                         colors: {
                             primary: '#e74c3c'
+                        },
+                        keyframes: {
+                            slideIn: {
+                                'from': { transform: 'translateX(-100%)', opacity: '0' },
+                                'to': { transform: 'translateX(0)', opacity: '1' }
+                            }
+                        },
+                        animation: {
+                            'slide-in': 'slideIn 0.3s ease-out'
                         }
                     }
                 }
             }
         </script>
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 font-['Inter'] transition-colors duration-300">
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-['Inter'] transition-colors duration-300">
         {% include "includes/header.html" %}
-        <div class="w-full h-[50px]"></div>
         <!-- Dark Mode Toggle -->
         <div class="fixed top-20 right-4 z-50">
             <button id="dark-mode-toggle" 
-                    class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-300 focus:outline-none">
+                    class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none">
                 <svg class="w-6 h-6 text-gray-800 dark:text-white sun-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path>
                 </svg>
@@ -127,14 +135,18 @@
             </button>
         </div>
         <!-- Main content starts here -->
-        <main class="min-h-screen pb-[70px] mt-[20px]">
+        <main class="flex-grow bg-white dark:bg-gray-900 pt-[80px] md:pt-[70px]">
             {% block content %}
             {% endblock content %}
             {% block natural_content %}
             {% endblock natural_content %}
             {% include "includes/checkInModal.html" %}
         </main>
-        <div class="pb-[50px]">
+        <!-- Footer content -->
+        {% comment %}
+        {% include "includes/footer.html" %}
+        {% endcomment %}
+        <div class="pb-[20px]">
             <!-- Adding bottom padding to prevent content overlap with footer -->
         </div>
         {% block scripts %}
@@ -143,9 +155,18 @@
         <div id="messages-container" class="fixed bottom-5 left-5 z-50 max-w-md">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500{% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500{% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
+                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in 
+                        {% if message.tags == 'success' %}
+                            bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-100 border-l-4 border-green-500
+                        {% elif message.tags == 'error' %}
+                            bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 border-l-4 border-red-500
+                        {% elif message.tags == 'warning' %}
+                            bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-100 border-l-4 border-yellow-500
+                        {% else %}
+                            bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-100 border-l-4 border-blue-500
+                        {% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
-                        <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
+                        <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none close-message">×</button>
                     </div>
                 {% endfor %}
             {% endif %}
@@ -214,26 +235,20 @@
                 };
             });
         </script>
-        <style>
-            .animate-slide-in {
-                animation: slideIn 0.3s ease-out;
-            }
-            
-            @keyframes slideIn {
-                from {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            .message-alert {
-                transition: opacity 0.3s ease-out;
-            }
-        </style>
+        <!-- Add Tailwind animation utility classes to the messages container in the DOM -->
+        <script>
+            // Add animation classes to message alerts after DOM is loaded
+            document.addEventListener('DOMContentLoaded', function() {
+                const messageAlerts = document.querySelectorAll('.message-alert');
+                messageAlerts.forEach(function(alert) {
+                    // Add Tailwind transition class for fade out
+                    alert.classList.add('transition-all', 'duration-300', 'ease-in-out');
+                    // Add slide-in animation class
+                    alert.classList.add('animate-[slideIn_0.3s_ease-out]');
+                });
+            });
+        </script>
+        <!-- Animations are now handled through Tailwind CSS classes and custom animations in the tailwind.config -->
         {% block extra_js %}
         {% endblock extra_js %}
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
