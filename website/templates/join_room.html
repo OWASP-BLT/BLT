@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load humanize %}
 {% block title %}
     {{ room.name }}
 {% endblock title %}
@@ -15,370 +16,256 @@
             </div>
         </div>
         <div id="log-history"
-             class="mt-4 p-4 bg-gray-100 rounded-lg h-96 overflow-y-auto">
-            {% for message in room_messages %}
-                <div class="py-1 px-2 bg-white rounded-lg mb-2 shadow-sm relative group"
-                     id="message-{{ message.id }}">
-                    <div class="flex justify-between items-end">
-                        <strong>{{ message.username }}</strong>
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500">{{ message.timestamp|date:"M d, Y H:i" }}</span>
-                            {% if message.username == request.user.username %}
-                                <!-- Three dots button (Fixed: added class="menu-button") -->
-                                <button class="menu-button text-gray-500 hover:text-gray-700 p-1"
-                                        onclick="toggleMenu(event, 'menu-{{ message.id }}')">
-                                    ⋮  <!-- Unicode for 3 vertical dots (⋮) -->
+             class="mt-4 p-3 bg-gray-100 rounded-lg h-96 overflow-y-auto scroll-smooth">
+            <div id="messages-container" class="space-y-1.5">
+                {% for message in room_messages reversed %}
+                    <div class="py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item"
+                         data-message-id="{{ message.id }}">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium">{{ message.username }}</p>
+                                <p class="text-sm text-gray-700">{{ message.content }}</p>
+                                <span class="text-xs text-gray-500">{{ message.timestamp|naturaltime }}</span>
+                            </div>
+                            {% if request.user.is_authenticated and message.user == request.user %}
+                                <button class="delete-message-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
                                 </button>
-                                <!-- Dropdown menu (hidden by default) -->
-                                <div id="menu-{{ message.id }}"
-                                     class="dropdown-menu hidden absolute right-0 bg-white shadow-md rounded-md p-2 w-32 z-10">
-                                    <button onclick="deleteMessage('{{ message.username }}','{{ message.id }}')"
-                                            class="delete-button block text-red-600 hover:text-red-800 text-sm w-full text-left px-2 py-1">
-                                        🗑️ Delete Message
-                                    </button>
-                                </div>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="mt-1">{{ message.content }}</div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
-        <div class="mt-4 flex gap-2">
-            <input id="message-field"
-                   type="text"
-                   placeholder="Type a message..."
-                   class="border rounded-lg px-4 py-2 flex-1"
-                   disabled />
-            <button id="send-button"
-                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
-                    disabled>Send</button>
-        </div>
-        <div id="error-message" class="mt-2 text-sm text-red-600 hidden"></div>
+        <form id="chat-form" class="mt-4 flex gap-2">
+            <input type="text"
+                   id="message-input"
+                   class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                   placeholder="Type your message..."
+                   required>
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                Send
+            </button>
+        </form>
     </div>
+{% endblock content %}
+{% block extra_js %}
     <script>
-    const roomId = {{ room.id }};
-    const username = {% if request.user.is_authenticated %}"{{ request.user.username|escapejs }}"{% else %}"anon_{{ request.session.session_key|slice:'-4:'|escapejs }}"{% endif %};
-    let socket;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 10;
-    const baseDelay = 1000; // Start with 1 second delay
-    const maxDelay = 30000; // Maximum delay of 30 seconds
-    let pingInterval;
-    let lastMessageId = null;
+// WebSocket connection management
+let chatSocket = null;
+let isConnecting = false;
+let reconnectAttempts = 0;
+const maxReconnectAttempts = 5;
+const reconnectDelay = 2000; // 2 seconds
 
-    const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
-    const wsUrl = `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`;
+const connectionStatus = document.getElementById('connection-status');
+const connectionText = document.getElementById('connection-text');
+const messageInput = document.getElementById('message-input');
+const chatForm = document.getElementById('chat-form');
+const messagesContainer = document.getElementById('messages-container');
+const logHistory = document.getElementById('log-history');
 
-    const sendButton = document.getElementById("send-button");
-    const messageInput = document.getElementById('message-field');
-    const chatLog = document.getElementById('log-history');
-    const connectionStatus = document.getElementById('connection-status');
-    const connectionText = document.getElementById('connection-text');
-    const errorMessage = document.getElementById('error-message');
+function updateConnectionStatus(connected) {
+    if (connected) {
+        connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
+        connectionText.textContent = 'Connected';
+        connectionText.className = 'text-sm text-green-600';
+        messageInput.disabled = false;
+    } else {
+        connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
+        connectionText.textContent = 'Disconnected';
+        connectionText.className = 'text-sm text-red-600';
+        messageInput.disabled = true;
+    }
+}
 
-    function showError(message, duration = 5000) {
-        errorMessage.textContent = message;
-        errorMessage.classList.remove('hidden');
-        setTimeout(() => {
-            errorMessage.classList.add('hidden');
-        }, duration);
+function connectWebSocket() {
+    if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
+        return;
     }
 
-    function updateConnectionStatus(status, message = null) {
-        if (status === 'connected') {
-            connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
-            connectionText.textContent = 'Connected';
-            connectionText.className = 'text-sm text-green-600';
-            sendButton.disabled = false;
-            messageInput.disabled = false;
-            reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-            startPingInterval();
-        } else if (status === 'disconnected') {
-            connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
-            connectionText.textContent = message || 'Disconnected';
-            connectionText.className = 'text-sm text-red-600';
-            sendButton.disabled = true;
-            messageInput.disabled = true;
-            stopPingInterval();
-        } else {
-            connectionStatus.className = 'w-3 h-3 rounded-full bg-yellow-500';
-            connectionText.textContent = message || 'Connecting...';
-            connectionText.className = 'text-sm text-yellow-600';
-            sendButton.disabled = true;
-            messageInput.disabled = true;
-        }
+    if (isConnecting) {
+        return;
     }
 
-    function getReconnectDelay() {
-        const delay = baseDelay * Math.pow(2, reconnectAttempts);
-        return Math.min(delay, maxDelay);
-    }
+    isConnecting = true;
+    updateConnectionStatus(false);
+    
+    try {
+        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+        chatSocket = new WebSocket(protocol + window.location.host + '/ws/discussion-rooms/chat/{{ room.id }}/');
+        
+        chatSocket.onopen = function() {
+            isConnecting = false;
+            reconnectAttempts = 0;
+            updateConnectionStatus(true);
+        };
 
-    function startPingInterval() {
-        stopPingInterval();
-        pingInterval = setInterval(() => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({ type: 'ping' }));
-            }
-        }, 30000);
-    }
-
-    function stopPingInterval() {
-        if (pingInterval) {
-            clearInterval(pingInterval);
-            pingInterval = null;
-        }
-    }
-
-    function appendMessage(data) {
-        const newMessage = document.createElement('div');
-        newMessage.classList.add('py-1', 'px-2', 'bg-white', 'rounded-lg', 'mb-2', 'shadow-sm', 'relative', 'group');
-
-        // Assign temporary ID if message_id is not yet received
-        const tempId = `message-${data.message_id}`;
-        newMessage.id = tempId;
-
-        const header = document.createElement('div');
-        header.classList.add('flex', 'justify-between', 'items-center');
-
-        const usernameElement = document.createElement('strong');
-        usernameElement.textContent = data.username;
-
-        // Ensure Timestamp format matches Django template
-        const timestampElement = document.createElement('span');
-        timestampElement.classList.add('text-xs', 'text-gray-500');
-
-        if (data.timestamp) {
-            const date = new Date(data.timestamp);
-            timestampElement.textContent = date.toLocaleString('en-US', { 
-                month: 'short', day: '2-digit', year: 'numeric', 
-                hour: '2-digit', minute: '2-digit', hour12: false
-            }).replace(/(\d{4}),/, '$1'); // Removes comma after year
-        }
-
-        // Container for timestamp & menu
-        const timestampMenuContainer = document.createElement('div');
-        timestampMenuContainer.classList.add('flex', 'items-center', 'gap-2');
-        timestampMenuContainer.appendChild(timestampElement);
-
-        header.appendChild(usernameElement);
-        header.appendChild(timestampMenuContainer);
-
-        const contentElement = document.createElement('div');
-        contentElement.classList.add('mt-1');
-        contentElement.textContent = data.message;
-
-        newMessage.appendChild(header);
-        newMessage.appendChild(contentElement);
-
-        if (data.username === username) {
-            const menuContainer = document.createElement('div');
-            menuContainer.classList.add('relative');
-
-            // Three dots button (⋮)
-            const menuButton = document.createElement('button');
-            menuButton.classList.add('menu-button', 'text-gray-500', 'hover:text-gray-700', 'p-1');
-            menuButton.innerHTML = "&#x22EE;"; // ⋮ icon
-            menuButton.onclick = function(event) {
-                toggleMenu(event, `menu-${data.message_id}`);
-            };
-
-            // Dropdown menu
-            const dropdownMenu = document.createElement('div');
-            dropdownMenu.id = `menu-${data.message_id}`;
-            dropdownMenu.classList.add('dropdown-menu', 'hidden', 'absolute', 'right-0', 'bg-white', 'shadow-md', 'rounded-md', 'p-2', 'w-32', 'z-10');
-
-            // Delete button inside dropdown
-            const deleteButton = document.createElement('button');
-            deleteButton.classList.add('delete-button', 'block', 'text-red-600', 'hover:text-red-800', 'text-sm', 'w-full', 'text-left', 'px-2', 'py-1');
-            deleteButton.textContent = "🗑️ Delete Message";
-
-            deleteButton.onclick = function () {
-                deleteMessage(data.username, data.message_id);
-            };
-
-            dropdownMenu.appendChild(deleteButton);
-            menuContainer.appendChild(menuButton);
-            menuContainer.appendChild(dropdownMenu);
-
-            timestampMenuContainer.appendChild(menuContainer);
-        }
-
-        chatLog.appendChild(newMessage);
-        chatLog.scrollTop = chatLog.scrollHeight;
-    }
-
-    function connectWebSocket() {
-        return new Promise((resolve, reject) => {
-            if (reconnectAttempts >= maxReconnectAttempts) {
-                updateConnectionStatus('disconnected', 'Max reconnection attempts reached. Please refresh the page.');
-                reject(new Error('Max reconnection attempts reached'));
-                return;
-            }
-
-            updateConnectionStatus('connecting', `Connecting... Attempt ${reconnectAttempts + 1}`);
-            socket = new WebSocket(wsUrl);
-
-            socket.onopen = () => {
-                resolve();
-            };
-
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleSocketMessage(data);
-            };
-
-            socket.onerror = (error) => {
-                updateConnectionStatus('disconnected', 'Connection error');
-                reject(error);
-            };
-
-            socket.onclose = () => {
-                const delay = getReconnectDelay();
+        chatSocket.onclose = function(e) {
+            isConnecting = false;
+            updateConnectionStatus(false);
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
                 reconnectAttempts++;
-                updateConnectionStatus('disconnected', 
-                    `Connection lost. Reconnecting in ${Math.round(delay/1000)} seconds... (Attempt ${reconnectAttempts}/${maxReconnectAttempts})`
-                );
-                
-                setTimeout(() => {
-                    connectWebSocket().catch(error => {
-                        console.error('WebSocket reconnection failed:', error);
-                    });
-                }, delay);
-            };
-        });
-    }
+                setTimeout(connectWebSocket, reconnectDelay);
+            }
+        };
 
-    function handleSocketMessage(data) {
-        switch(data.type) {
-            case 'connection_status':
-                if (data.status === 'connected') {
-                    updateConnectionStatus('connected');
-                } else {
-                    updateConnectionStatus('disconnected');
-                }
-                break;
-                
-            case 'message':
+        chatSocket.onerror = function(error) {
+            isConnecting = false;
+            updateConnectionStatus(false);
+        };
+
+        chatSocket.onmessage = handleWebSocketMessage;
+    } catch (error) {
+        isConnecting = false;
+        updateConnectionStatus(false);
+    }
+}
+
+function handleWebSocketMessage(event) {
+    try {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+            case 'chat_message':
                 appendMessage(data);
                 break;
-                
-            case 'message_ack':
-                lastMessageId = data.message_id;
+            case 'delete_message':
+                handleDeleteMessage(data);
                 break;
-
-            case 'delete_ack':
-                console.log("Received delete_ack for:", data.message_id);
-                removeMessageFromUI(data.message_id);
-                break;    
-            
+            case 'connection_status':
+                updateConnectionStatus(data.status === 'connected');
+                break;
             case 'error':
-                showError(data.message);
-                break;
-                
-            case 'pong':
-                // Received pong, connection is alive
                 break;
         }
+    } catch (error) {
+        // Error handling
     }
+}
 
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message !== "" && socket && socket.readyState === WebSocket.OPEN) {
-            const data = {
-                'type': 'message',
-                'message': message,
-                'username': username
-            };
-            socket.send(JSON.stringify(data));
-            messageInput.value = '';
+function appendMessage(data) {
+    if (!messagesContainer) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
+    messageDiv.dataset.messageId = data.message_id;
+    
+    const isCurrentUser = data.username === '{{ request.user.username }}';
+    
+    messageDiv.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <p class="text-sm font-medium">${escapeHtml(data.username)}</p>
+                <p class="text-sm text-gray-700">${escapeHtml(data.message)}</p>
+                <span class="text-xs text-gray-500">just now</span>
+            </div>
+            ${isCurrentUser ? `
+                <button class="delete-message-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    
+    // Scroll to the new message
+    logHistory.scrollTop = logHistory.scrollHeight;
+    
+    // Add delete event listener if it's the current user's message
+    if (isCurrentUser) {
+        const deleteBtn = messageDiv.querySelector('.delete-message-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => deleteMessage(data.message_id));
         }
     }
+}
 
-    // Function to toggle the dropdown menu for a specific message
-    function toggleMenu(event, menuId) {
-        event.stopPropagation(); // Prevent click event from bubbling
+function handleDeleteMessage(data) {
+    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+    if (messageElement) {
+        messageElement.remove();
+    }
+}
 
-        let clickedMenu = document.getElementById(menuId);
-        
-        // Close all other open menus before opening the clicked one
-        document.querySelectorAll(".dropdown-menu").forEach(menu => {
-            if (menu !== clickedMenu) {
-                menu.classList.add("hidden");
+function deleteMessage(messageId) {
+    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+        return;
+    }
+
+    chatSocket.send(JSON.stringify({
+        'type': 'delete_message',
+        'message_id': messageId,
+        'room_id': '{{ room.id }}'
+    }));
+}
+
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g , "&lt;") .replace( />/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Initialize WebSocket connection
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+    
+    // Set up form handler
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!messageInput) return;
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+            
+            // Check WebSocket connection
+            if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+                connectWebSocket();
+                return;
+            }
+            
+            try {
+                chatSocket.send(JSON.stringify({
+                    'type': 'chat_message',
+                    'message': message,
+                    'room_id': '{{ room.id }}'
+                }));
+                messageInput.value = '';
+            } catch (error) {
+                // Error handling
             }
         });
-
-        // Toggle visibility of the clicked menu
-        clickedMenu.classList.toggle("hidden");
     }
-
-    // Function to handle message deletion (for future implementation)
-    function deleteMessage(username, messageId) {
-        if (!messageId) {
-            console.error("Error: Message ID is required but not provided!");
-            return;
-        }
-
-        console.log("Deleting Message:", messageId);
-
-        sendDeleteMessage(username, messageId);
-    }
-
-    function sendDeleteMessage(username, messageId) {
-        if (messageId !== "" && socket && socket.readyState === WebSocket.OPEN) {
-            const data = {
-                'type': 'deleteMessage',
-                'messageId': messageId.toString(),  // Ensure messageId is a string
-                'username': username
-            };
-            socket.send(JSON.stringify(data));
-        }
-    }
-
-
-    // Function to remove a message from the UI
-    function removeMessageFromUI(messageId) {
-        const messageElement = document.getElementById(`message-${messageId}`);
-        if (messageElement) {
-            messageElement.remove();
-        }
-    }
-
-    // Function to close all dropdown menus when clicking outside
-    document.addEventListener("click", function(event) {
-        let isClickInside = event.target.closest(".menu-button, .dropdown-menu");
-
-        if (!isClickInside) {
-            document.querySelectorAll(".dropdown-menu").forEach(menu => {
-                menu.classList.add("hidden");
-            });
+    
+    // Set up delete message handlers
+    document.querySelectorAll('.delete-message-btn').forEach(btn => {
+        const messageItem = btn.closest('[data-message-id]');
+        if (messageItem) {
+            btn.addEventListener('click', () => deleteMessage(messageItem.dataset.messageId));
         }
     });
+});
 
-
-    sendButton.addEventListener('click', sendMessage);
-
-    messageInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    window.addEventListener('beforeunload', () => {
-        if (socket) {
-            socket.close();
-        }
-    });
-
-    // Initial connection
-    updateConnectionStatus('connecting');
-    connectWebSocket().catch(error => {
-        console.error('Initial WebSocket connection failed:', error);
-    });
-
-    // Auto-scroll to bottom on page load
-    chatLog.scrollTop = chatLog.scrollHeight;
+// Clean up WebSocket connection when leaving the page
+window.addEventListener('beforeunload', function() {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+        chatSocket.close();
+    }
+});
     </script>
-{% endblock content %}
+{% endblock extra_js %}
