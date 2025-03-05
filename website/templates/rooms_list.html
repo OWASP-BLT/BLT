@@ -352,14 +352,12 @@
                 chatSocket = new WebSocket(`${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`);
                 
                 chatSocket.onopen = function() {
-                    console.log('WebSocket connected');
                     isConnecting = false;
                     reconnectAttempts = 0;
                     updateConnectionStatus(true);
                 };
 
                 chatSocket.onclose = function(e) {
-                    console.log('WebSocket closed. Attempting to reconnect...');
                     isConnecting = false;
                     updateConnectionStatus(false);
                     
@@ -370,12 +368,10 @@
                 };
 
                 chatSocket.onerror = function(error) {
-                    console.error('WebSocket error:', error);
                     isConnecting = false;
                     updateConnectionStatus(false);
                 };
             } catch (error) {
-                console.error('Error creating WebSocket:', error);
                 isConnecting = false;
                 updateConnectionStatus(false);
             }
@@ -431,12 +427,10 @@
                             
                             // Fetch the latest messages to update the UI
                             fetchRoomMessages(roomId);
-                        } else {
-                            console.error('Error sending message:', data.error);
                         }
                     })
                     .catch(error => {
-                        console.error('Error sending message:', error);
+                        // Error handling
                     });
                 });
             });
@@ -452,28 +446,22 @@
 
         // Fetch messages for a specific room
         function fetchRoomMessages(roomId) {
-            console.log(`Fetching messages for room ${roomId}`);
             fetch(`/api/room-messages/${roomId}/`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('API response:', data);
                     if (data.success) {
                         updateRoomMessages(roomId, data.messages, data.count);
-                    } else {
-                        console.error('Error in API response:', data.error);
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching messages:', error);
+                    // Error handling
                 });
         }
 
         // Update room messages in the UI
         function updateRoomMessages(roomId, messages, count) {
-            console.log(`Updating UI for room ${roomId} with ${messages.length} messages`);
             const roomContainer = document.querySelector(`[data-room-id="${roomId}"]`);
             if (!roomContainer) {
-                console.error(`Room container not found for room ID: ${roomId}`);
                 return;
             }
 
@@ -481,29 +469,19 @@
             const countBadge = roomContainer.querySelector('.bg-red-100.text-red-800');
             if (countBadge) {
                 countBadge.textContent = `${count} message${count !== 1 ? 's' : ''}`;
-                console.log(`Updated count badge: ${countBadge.textContent}`);
-            } else {
-                console.error('Count badge element not found');
             }
 
             // Update messages
             const messagesContainer = roomContainer.querySelector('.messages-container');
             if (!messagesContainer) {
-                console.error('Messages container not found');
                 return;
             }
 
-            console.log(`Clearing and updating messages container: ${messagesContainer.id}`);
             // Clear existing messages
             messagesContainer.innerHTML = '';
 
             // Add messages in reverse order (newest last)
-            if (messages.length === 0) {
-                console.log('No messages to display');
-            }
-            
-            messages.reverse().forEach((message, index) => {
-                console.log(`Creating message element ${index + 1}/${messages.length}:`, message);
+            messages.reverse().forEach((message) => {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message p-2 rounded-lg ${
                     message.username === '{{ request.user.username }}' ? 'bg-red-50 ml-auto' : 'bg-gray-50'
@@ -516,12 +494,10 @@
                 `;
                 
                 messagesContainer.appendChild(messageDiv);
-                console.log('Message element added to container');
             });
             
             // Scroll to the bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            console.log('Messages container scrolled to bottom');
         }
 
         // Get CSRF token from cookies
