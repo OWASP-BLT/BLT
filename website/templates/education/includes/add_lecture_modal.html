@@ -25,6 +25,7 @@
                         <option value="VIDEO" selected>Video Lecture</option>
                         <option value="LIVE">Live Session</option>
                         <option value="DOCUMENT">Document</option>
+                        <option value="YOUTUBE">YouTube Video</option>
                     </select>
                 </div>
                 <div>
@@ -83,6 +84,15 @@
                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                     </div>
                 </div>
+                <div id="youtubeFields" class="content-fields hidden space-y-4">
+                    <div>
+                        <label for="youtubeUrl" class="block text-sm font-medium text-gray-700">YouTube Video URL</label>
+                        <input type="url"
+                               id="youtubeUrl"
+                               name="youtube_url"
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
             </div>
             <div class="p-6 border-t flex justify-end space-x-3">
                 <button type="button"
@@ -109,6 +119,8 @@
             document.getElementById('liveFields').classList.remove('hidden');
         } else if (contentType === 'DOCUMENT') {
             document.getElementById('documentFields').classList.remove('hidden');
+        } else if (contentType === 'YOUTUBE') {
+            document.getElementById('youtubeFields').classList.remove('hidden');
         }
         }
         document.addEventListener('DOMContentLoaded', function () {

@@ -1,4 +1,6 @@
 import json
+import re
+import requests
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,7 +12,8 @@ from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
-
+from website.forms import YouTubeVideoForm
+from website.utils import client
 
 def education_home(request):
     template = "education/education.html"
@@ -532,3 +535,69 @@ def create_or_update_course(request):
     except Exception as e:
         print(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
+
+
+@login_required(login_url="/accounts/login")
+def add_youtube_video(request):
+    if request.method == "POST":
+        form = YouTubeVideoForm(request.POST)
+        if form.is_valid():
+            youtube_url = form.cleaned_data["youtube_url"]
+            description = form.cleaned_data["description"]
+
+            # Validate YouTube URL
+            youtube_regex = (
+                r"^(https?\:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$"
+            )
+            if not re.match(youtube_regex, youtube_url):
+                messages.error(request, "Invalid YouTube URL")
+                return redirect("education_home")
+
+            # Extract video ID from URL
+            video_id = None
+            if "youtu.be" in youtube_url:
+                video_id = youtube_url.split("/")[-1]
+            else:
+                query = urlparse(youtube_url).query
+                params = parse_qs(query)
+                video_id = params.get("v", [None])[0]
+
+            if not video_id:
+                messages.error(request, "Unable to extract video ID from URL")
+                return redirect("education_home")
+
+            # Use OpenAI to process the video transcript and generate quiz
+            try:
+                transcript = client.transcriptions.create(video_id=video_id)
+                if not transcript:
+                    messages.error(request, "Unable to retrieve video transcript")
+                    return redirect("education_home")
+
+                # Generate quiz from transcript
+                quiz = client.quizzes.create(transcript=transcript)
+                if not quiz:
+                    messages.error(request, "Unable to generate quiz from transcript")
+                    return redirect("education_home")
+
+                # Save the lecture with the generated quiz
+                user_profile = request.user.userprofile
+                lecture = Lecture.objects.create(
+                    title=f"YouTube Video: {video_id}",
+                    instructor=user_profile,
+                    content_type="VIDEO",
+                    video_url=youtube_url,
+                    description=description,
+                    content=json.dumps(quiz),
+                )
+
+                messages.success(request, "YouTube video added successfully with AI-generated quiz")
+                return redirect("education_home")
+
+            except Exception as e:
+                messages.error(request, f"Error processing video: {str(e)}")
+                return redirect("education_home")
+
+    else:
+        form = YouTubeVideoForm()
+
+    return render(request, "education/add_youtube_video.html", {"form": form})
