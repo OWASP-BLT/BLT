@@ -7,190 +7,6 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<style>
-    /* Text Improvements for Light and Dark Modes */
-    body {
-        font-family: Arial, sans-serif; /* Ensure a clean font for readability */
-    }
-
-    a {
-        color: #1a73e8; /* Default link color for light mode */
-        transition: color 0.3s ease;
-    }
-
-    body.dark a {
-        color: #bb86fc; /* Light purple for links in dark mode */
-    }
-
-    a:hover {
-        color: #e11d48; /* Red color on hover for links */
-    }
-
-    .chat-header h3 {
-        font-weight: bold; /* Bold font for chat header */
-        font-size: 1.5rem; /* Larger font size for better visibility */
-    }
-
-    .chat-log p {
-        font-size: 1rem; /* Standard font size for chat messages */
-    }
-
-    button {
-        font-weight: 600; /* Semi-bold font for buttons */
-    }
-
-    @media (min-width: 700px) {
-        #selected-filter {
-            display: inline;
-        }
-    }
-
-    @media (max-width: 699px) {
-        #selected-filter {
-            display: none;
-        }
-
-        #organizations-btn {
-            padding: 0.1rem;
-        }
-    }
-
-    .chatbot {
-        display: none;
-        position: fixed;
-        bottom: 3%;
-        right: 1%;
-        max-width: 400px;
-        width: 100%;
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 520px;
-        z-index: 9999;
-        overflow: hidden;
-    }
-
-    @media (max-width: 768px) {
-        .chatbot {
-            right: 50%;
-            transform: translateX(50%);
-            max-width: 95%;
-        }
-    }
-
-    .chat-icon {
-        position: fixed;
-        bottom: 3%;
-        right: 2%;
-        background-color: rgb(209, 16, 16);
-        transition: opacity 0.2s;
-        border-radius: 50%;
-        padding: 10px;
-        width: 55px;
-        height: 55px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .chat-icon:hover {
-        opacity: 0.8; /* Change opacity on hover */
-    }
-
-    .chat-header {
-        background-color: #e11d48;
-        /* Red color */
-        color: white;
-        padding: 12px;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
-
-    .chat-log {
-        max-height: 295px;
-        /* Adjusted height */
-        overflow-y: auto;
-        height: 295px;
-        /* Fixed height */
-    }
-
-    .loading {
-        display: none;
-        justify-content: center;
-        align-items: center;
-        font-size: 2xl;
-        padding: 10px;
-        background-color: #ffffffe6; /* Semi-transparent background */
-        border-radius: 8px;
-    }
-
-    .chat-Zindex {
-        z-index: 9999;
-    }
-
-    #quick-commands {
-        overflow-x: auto; /* Ensure buttons do not overflow */
-    }
-
-    #mobile-search {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 40;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    #mobile-search.active {
-        display: block;
-    }
-    
-    /* Dark Mode Styles */
-    body.dark {
-        background-color: #181818; /* Darker background for better contrast */
-        color: #e0e0e0; /* Light text color */
-    }
-
-    body.dark a {
-        color: #bb86fc; /* Light purple for links */
-    }
-
-    .chatbot {
-        background-color: #1e1e1e; /* Darker background for chatbot */
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5); /* Subtle shadow for depth */
-    }
-
-    .chat-header {
-        background-color: #3700b3; /* Dark purple for chat header */
-        border-bottom: 2px solid #bb86fc; /* Light purple border for separation */
-    }
-
-    .chat-log {
-        background-color: #1e1e1e; /* Dark background for chat log */
-    }
-
-    .loading {
-        background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent white for loading */
-    }
-
-    .chat-icon {
-        background-color: #bb86fc; /* Light purple for chat icon */
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); /* Shadow for better visibility */
-    }
-
-    button {
-        transition: background-color 0.3s ease, color 0.3s ease;
-        border-radius: 8px; /* Rounded corners for buttons */
-    }
-
-    button:hover {
-        background-color: #3700b3; /* Dark purple on hover */
-        color: white;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Shadow on hover */
-    }
-</style>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
@@ -450,14 +266,23 @@
                     </a>
                 </div>
             {% endif %}
+            <!-- Replace the theme toggle button -->
             <button id="dark-mode-toggle"
-                    class="flex items-center p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors duration-200 dark:bg-gray-600 dark:hover:bg-gray-500"
+                    class="flex items-center p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
                     aria-label="Toggle dark mode">
-                <svg id="theme-icon"
-                     class="w-6 h-6 text-gray-800 dark:text-gray-200"
+                <!-- Sun icon -->
+                <svg id="sun-icon"
+                     class="w-6 h-6 text-amber-500 hidden dark:block"
                      fill="currentColor"
-                     viewBox="0 0 24 24">
-                    <path id="sun-icon" d="M12 4.5a1 1 0 011 1v1a1 1 0 11-2 0V5.5a1 1 0 011-1zm0 13a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8.5-6.5a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-13 0a1 1 0 01-1 1H5a1 1 0 110-2h1a1 1 0 011 1zm10.36-7.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-10.36 10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm12.72 0a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-12.72-10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zM12 15a3 3 0 100-6 3 3 0 000 6z" />
+                     viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" />
+                </svg>
+                <!-- Moon icon -->
+                <svg id="moon-icon"
+                     class="w-6 h-6 text-gray-700 block dark:hidden"
+                     fill="currentColor"
+                     viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                 </svg>
             </button>
         </div>
@@ -481,30 +306,25 @@
     </div>
 </nav>
 <div class="bg-gray-100 chat-Zindex dark:bg-gray-900">
-    <div id="chatbot" class="chatbot">
-        <div class="chat-header flex justify-between items-center bg-red-500 text-white p-3 rounded-t-lg dark:bg-red-600">
-            <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
-            <button id="closeChatbot" class="text-white text-2xl">x</button>
+    <div id="chatbot"
+         class="chatbot hidden fixed bottom-[3%] right-[1%] max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg h-[520px] z-[9999] overflow-hidden">
+        <div class="chat-header bg-red-600 dark:bg-purple-700 text-white p-3 flex justify-between items-center rounded-t-xl border-b-2 border-red-700 dark:border-purple-400">
+            <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
+            <button id="closeChatbot" class="text-white text-2xl">&times;</button>
         </div>
         <div class="p-4">
-            <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700 dark:bg-red-600 dark:text-white">
+            <div class="bg-red-100 dark:bg-red-600 p-3 rounded-lg mb-2 text-red-700 dark:text-white">
                 <p class="text-base">We respond instantly!</p>
             </div>
             <div id="chat-log"
-                 class="relative chat-log bg-gray-100 p-3 rounded-lg max-h-72 overflow-y-auto dark:bg-gray-800 dark:text-gray-300">
-                <div id="loading" class="loading absolute bottom-1 left-1">
-                    <svg class="animate-spin h-5 w-5 text-red-600"
-                         xmlns="http://www.w3.org/2000/svg"
-                         fill="none"
-                         viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
-                    <span class="ml-2 text-gray-600 dark:text-gray-400">Loading...</span>
+                 class="relative chat-log bg-gray-100 dark:bg-gray-800 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto">
+                <div id="loading"
+                     class="hidden justify-center items-center text-2xl p-2.5 bg-white/90 dark:bg-gray-800/90 rounded-lg absolute bottom-1 left-1">
+                    <!-- Loading spinner content -->
                 </div>
             </div>
-            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
+            <div id="quick-commands"
+                 class="flex flex-wrap gap-2 mb-2 mt-2 overflow-x-auto">
                 <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
                         data-command="/help">/help</button>
                 <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
@@ -514,11 +334,10 @@
                 <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
                         data-command="/bacon">/bacon</button>
             </div>
-            <div class="flex flex-row gap-4 items-center mt-1 w-full"
-                 id="chat-message-input-container">
+            <div class="flex flex-row gap-4 items-center mt-1 w-full">
                 <input id="chat-message-input"
                        type="text"
-                       class="w-full p-2 border-2 border-gray-300 placeholder:text-base rounded-lg dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300"
+                       class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-gray-300"
                        placeholder="Enter your message...">
                 <div class="flex flex-row gap-2 items-center shrink-0">
                     <button id="chat-message-submit"
@@ -533,7 +352,8 @@
             </div>
         </div>
     </div>
-    <div id="chatIcon" class="chat-icon">
+    <div id="chatIcon"
+         class="fixed bottom-[3%] right-[2%] bg-red-600 dark:bg-purple-400 hover:opacity-80 transition-opacity duration-200 rounded-full p-2.5 w-[55px] h-[55px] flex items-center justify-center cursor-pointer shadow-lg">
         <svg class="w-10 h-10 text-white"
              aria-hidden="true"
              xmlns="http://www.w3.org/2000/svg"
@@ -804,18 +624,55 @@
         mobileSearch.classList.toggle('active');
     }
 </script>
+<!-- Replace the theme switcher scripts -->
 <script>
-    document.getElementById('dark-mode-toggle').addEventListener('click', function() {
-        document.body.classList.toggle('dark');
-        const themeIcon = document.getElementById('theme-icon');
-        if (document.body.classList.contains('dark')) {
+    // Theme switcher functionality
+    const html = document.documentElement;
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    
+    // Function to get system preference
+    function getSystemThemePreference() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    
+    // Function to set theme
+    function setTheme(theme) {
+        if (theme === 'dark') {
+            html.classList.add('dark');
             localStorage.setItem('theme', 'dark');
-            themeIcon.innerHTML = '<path d="M12 4.5a1 1 0 011 1v1a1 1 0 11-2 0V5.5a1 1 0 011-1zm0 13a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm8.5-6.5a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zm-13 0a1 1 0 01-1 1H5a1 1 0 110-2h1a1 1 0 011 1zm10.36-7.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-10.36 10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm12.72 0a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zm-12.72-10.36a1 1 0 01-1.42 0l-.71-.71a1 1 0 011.42-1.42l.71.71a1 1 0 010 1.42zM12 15a3 3 0 100-6 3 3 0 000 6z" />';
         } else {
+            html.classList.remove('dark');
             localStorage.setItem('theme', 'light');
-            themeIcon.innerHTML = '<path d="M12 2C6.48 2 2 6.48 2 12c0 5.52 4.48 10 10 10 5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />';
+        }
+    }
+    
+    // Initialize theme
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            setTheme(getSystemThemePreference());
+        }
+    }
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        if (!localStorage.getItem('theme')) {
+            setTheme(e.matches ? 'dark' : 'light');
         }
     });
+    
+    // Toggle theme on button click
+    if (darkModeToggle) {
+        darkModeToggle.addEventListener('click', () => {
+            const isDark = html.classList.contains('dark');
+            setTheme(isDark ? 'light' : 'dark');
+        });
+    }
+    
+    // Initialize theme on page load
+    document.addEventListener('DOMContentLoaded', initializeTheme);
 </script>
 <script>
     // Check for saved theme in localStorage and apply it
