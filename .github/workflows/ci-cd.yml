@@ -103,9 +103,6 @@ jobs:
       - run: poetry lock
       - run: poetry install --with dev
       - run: poetry run python manage.py collectstatic --noinput
-      - name: Run pytest
-        run: pip install pytest
-        run: poetry run pytest
       - name: Run tests
         run: poetry run xvfb-run --auto-servernum python manage.py test -v 3 --failfast
 
