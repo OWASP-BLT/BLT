@@ -295,6 +295,8 @@ from website.views.user import (
     invite_friend,
     profile,
     profile_edit,
+    recommend_user,
+    recommend_via_blurb,
     referral_signup,
     update_bch_address,
     user_dashboard,
@@ -1040,7 +1042,9 @@ urlpatterns = [
     # Chat room API endpoints
     path("api/send-message/", send_message_api, name="send_message_api"),
     path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
-]
+    path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
+    path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
+
 
 if settings.DEBUG:
     import debug_toolbar
