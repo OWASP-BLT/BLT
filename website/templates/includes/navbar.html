@@ -49,13 +49,15 @@
                 <ul id="dropdown-mobile"
                     class="z-50 fixed top-32 flex flex-col gap-2 shadow-xl rounded py-4 px-6 bg-white dark:bg-gray-800 left-1 hidden">
                     <li>
-                        <a href="{% url 'report' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                        <a href="{% url 'report' %}"
+                           class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                             <i class="fa fa-bug fa-fw"></i>
                             {% trans "Report a Bug" %}
                         </a>
                     </li>
                     <li>
-                        <a href="{% url 'search' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                        <a href="{% url 'search' %}"
+                           class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                             <i class="fa fa-search fa-fw"></i>
                             {% trans "Search" %}
                         </a>
@@ -63,19 +65,23 @@
                     {% if request.user.is_authenticated %}
                         <li class="border-t border-gray-200 dark:border-gray-700 my-2 -mx-4"></li>
                         <li>
-                            <a href="{% url 'account_logout' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                            <a href="{% url 'account_logout' %}"
+                               class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                 <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                             </a>
                         </li>
                     {% else %}
                         <li>
-                            <a href="{% url 'account_signup' %}" target="_new" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                            <a href="{% url 'account_signup' %}"
+                               target="_new"
+                               class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                 <i class="fa fa-user-plus fa-fw"></i>
                                 {% trans "Sign Up" %}
                             </a>
                         </li>
                         <li>
-                            <a href="{% url 'account_login' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                            <a href="{% url 'account_login' %}"
+                               class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                 <i class="fa fa-sign-in fa-fw"></i> {% trans "Login" %}
                             </a>
                         </li>
@@ -90,7 +96,9 @@
                          width="auto"
                          height="auto">
                 </a>
-                <p class="text-center sm:!inline text-base lg:text-2xl pl-1 text-gray-700 dark:text-gray-200">{% trans "Report Issues, Win Prizes" %}</p>
+                <p class="text-center sm:!inline text-base lg:text-2xl pl-1 text-gray-700 dark:text-gray-200">
+                    {% trans "Report Issues, Win Prizes" %}
+                </p>
             </div>
         </div>
         <!-- Search Bar -->
@@ -147,7 +155,8 @@
                          class="z-50 hidden absolute bg-white dark:bg-gray-800 top-32 right-5">
                         <ul class="flex flex-col gap-2 px-8 py-4 border border-gray-200 dark:border-gray-700 shadow-xl rounded-lg left-auto">
                             <li>
-                                <a href="{% url 'account_profile' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'account_profile' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                 </a>
                             </li>
@@ -161,35 +170,41 @@
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'start_hunt' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'start_hunt' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'social' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'social' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-share fa-fw"></i>
                                     {% trans "Social" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'account_change_password' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'account_change_password' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'invite' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'invite' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite Friends" %}
                                 </a>
                             </li>
                             <li>
-                                <a href="{% url 'organization_view' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'organization_view' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <!-- divider -->
                             <li class="border-t border-gray-200 dark:border-gray-700 my-4 -mx-8"></li>
                             <li>
-                                <a href="{% url 'account_logout' %}" class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
+                                <a href="{% url 'account_logout' %}"
+                                   class="text-gray-700 dark:text-gray-200 hover:text-red-500 dark:hover:text-red-400">
                                     <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                 </a>
                             </li>

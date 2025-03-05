@@ -126,7 +126,7 @@
         {% include "includes/header.html" %}
         <!-- Dark Mode Toggle -->
         <div class="fixed top-20 right-4 z-50">
-            <button id="dark-mode-toggle" 
+            <button id="dark-mode-toggle"
                     class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none">
                 <svg class="w-6 h-6 text-gray-800 dark:text-white sun-icon"
                      fill="none"
@@ -165,18 +165,11 @@
         <div id="messages-container" class="fixed bottom-5 left-5 z-50 max-w-md">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in 
-                        {% if message.tags == 'success' %}
-                            bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-100 border-l-4 border-green-500
-                        {% elif message.tags == 'error' %}
-                            bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 border-l-4 border-red-500
-                        {% elif message.tags == 'warning' %}
-                            bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-100 border-l-4 border-yellow-500
-                        {% else %}
-                            bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-100 border-l-4 border-blue-500
-                        {% endif %}">
+                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %} bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-100 border-l-4 border-green-500 {% elif message.tags == 'error' %} bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-100 border-l-4 border-red-500 {% elif message.tags == 'warning' %} bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-100 border-l-4 border-yellow-500 {% else %} bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-100 border-l-4 border-blue-500 {% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
-                        <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none close-message">×</button>
+                        <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none close-message">
+                            ×
+                        </button>
                     </div>
                 {% endfor %}
             {% endif %}

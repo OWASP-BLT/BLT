@@ -7,41 +7,53 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-
 <!-- Chatbot containers - hidden by default -->
-<div id="chatbot" class="chatbot hidden fixed bottom-[3%] right-[1%] max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg h-[520px] z-[9999] overflow-hidden sm:right-[1%] sm:transform-none">
+<div id="chatbot"
+     class="chatbot hidden fixed bottom-[3%] right-[1%] max-w-[400px] w-full bg-white dark:bg-gray-800 rounded-xl shadow-lg h-[520px] z-[9999] overflow-hidden sm:right-[1%] sm:transform-none">
     <div class="chat-header bg-[#e74c3c] text-white p-3 rounded-t-xl flex justify-between items-center">
         <h3 class="font-bold">BLT Assistant</h3>
-        <button id="closeChatbot" class="text-white hover:text-gray-200" onclick="document.getElementById('chatbot').style.display='none';document.getElementById('chatIcon').style.display='flex';">
+        <button id="closeChatbot"
+                class="text-white hover:text-gray-200"
+                onclick="document.getElementById('chatbot').style.display='none';document.getElementById('chatIcon').style.display='flex';">
             <i class="fas fa-times"></i>
         </button>
     </div>
-    <div id="chat-log" class="chat-log max-h-[295px] overflow-y-auto h-[295px] p-4 bg-gray-50 dark:bg-gray-700"></div>
-    <div id="loading" class="loading hidden justify-center items-center text-2xl p-[10px] bg-white/90 dark:bg-gray-800/90 rounded-lg">
+    <div id="chat-log"
+         class="chat-log max-h-[295px] overflow-y-auto h-[295px] p-4 bg-gray-50 dark:bg-gray-700"></div>
+    <div id="loading"
+         class="loading hidden justify-center items-center text-2xl p-[10px] bg-white/90 dark:bg-gray-800/90 rounded-lg">
         <i class="fas fa-spinner fa-spin text-[#e74c3c]"></i>
     </div>
     <div class="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
         <div class="flex mb-3 gap-2">
-            <button class="quick-command px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600" data-command="/help">Help</button>
-            <button class="quick-command px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600" data-command="/report">Report Bug</button>
-            <button class="quick-command px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600" data-command="/gsoc">GSoC Info</button>
+            <button class="quick-command px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                    data-command="/help">Help</button>
+            <button class="quick-command px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                    data-command="/report">Report Bug</button>
+            <button class="quick-command px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                    data-command="/gsoc">GSoC Info</button>
         </div>
         <div class="flex">
-            <input id="chat-message-input" type="text" placeholder="Type a message..." class="flex-1 p-2 border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-[#e74c3c]">
-            <button id="chat-message-submit" class="bg-[#e74c3c] text-white px-4 rounded-r-lg hover:bg-opacity-90">
+            <input id="chat-message-input"
+                   type="text"
+                   placeholder="Type a message..."
+                   class="flex-1 p-2 border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-[#e74c3c]">
+            <button id="chat-message-submit"
+                    class="bg-[#e74c3c] text-white px-4 rounded-r-lg hover:bg-opacity-90">
                 <i class="fas fa-paper-plane"></i>
             </button>
         </div>
         <div class="flex justify-between mt-3">
-            <button id="chat-message-clear" class="text-xs text-gray-500 hover:text-[#e74c3c]">Clear conversation</button>
+            <button id="chat-message-clear"
+                    class="text-xs text-gray-500 hover:text-[#e74c3c]">Clear conversation</button>
         </div>
     </div>
 </div>
-
-<div id="chatIcon" class="chat-icon fixed bottom-[3%] right-[2%] bg-[#e74c3c] hover:opacity-80 transition-opacity rounded-full p-[10px] w-[55px] h-[55px] flex items-center justify-center cursor-pointer shadow-lg z-[9999]" onclick="document.getElementById('chatbot').style.display='block';document.getElementById('chatbot').classList.remove('hidden');this.style.display='none';">
+<div id="chatIcon"
+     class="chat-icon fixed bottom-[3%] right-[2%] bg-[#e74c3c] hover:opacity-80 transition-opacity rounded-full p-[10px] w-[55px] h-[55px] flex items-center justify-center cursor-pointer shadow-lg z-[9999]"
+     onclick="document.getElementById('chatbot').style.display='block';document.getElementById('chatbot').classList.remove('hidden');this.style.display='none';">
     <i class="fas fa-comment-dots text-white text-2xl"></i>
 </div>
-
 <nav class="fixed top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-zinc-700 border-b md:px-4 md:py-2 py-2 px-1 h-[70px] md:h-[65px]">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
@@ -85,7 +97,8 @@
                                     <button id="organizations-btn"
                                             type="button"
                                             class="flex items-center h-full px-4 text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 focus:outline-none">
-                                        <i id="selected-icon" class="fas fa-check mr-2 text-red-500 dark:text-red-400"></i>
+                                        <i id="selected-icon"
+                                           class="fas fa-check mr-2 text-red-500 dark:text-red-400"></i>
                                         <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
                                         <i class="fa fa-chevron-down ml-2 text-red-500 dark:text-red-400 text-sm"></i>
                                     </button>
@@ -278,7 +291,6 @@
         </form>
     </div>
 </nav>
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
@@ -335,7 +347,6 @@
         }
     });
 </script>
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const organizationsBtn = document.getElementById("organizations-btn");
@@ -435,7 +446,6 @@
         }
     });
 </script>
-
 <script>
     // Ensure the chat icon is clickable
     window.addEventListener('DOMContentLoaded', function() {
@@ -481,7 +491,6 @@
         }
     });
 </script>
-
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         const chatLog = document.querySelector('#chat-log');
@@ -625,7 +634,6 @@
         });
     });
 </script>
-
 <script>
     function toggleMobileSearch() {
         const mobileSearch = document.getElementById('mobile-search');
@@ -633,5 +641,4 @@
         mobileSearch.classList.toggle('active');
     }
 </script>
-
 <script src="{% static 'js/chatbot.js' %}"></script>
