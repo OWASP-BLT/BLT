@@ -223,6 +223,8 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    room_messages_api,
+    send_message_api,
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
@@ -1035,6 +1037,9 @@ urlpatterns = [
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
+    # Chat room API endpoints
+    path("api/send-message/", send_message_api, name="send_message_api"),
+    path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
 ]
 
 if settings.DEBUG:

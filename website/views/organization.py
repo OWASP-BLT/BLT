@@ -50,6 +50,7 @@ from website.models import (
     IpReport,
     Issue,
     IssueScreenshot,
+    Message,
     Organization,
     OrganizationAdmin,
     Repo,
@@ -2004,8 +2005,10 @@ class RoomsListView(ListView):
         context = super().get_context_data(**kwargs)
         context["form"] = RoomForm()
 
-        # Add last 3 messages for each room
+        # Add message count and last 3 messages for each room (newest first)
         for room in context["rooms"]:
+            room.message_count = room.messages.count()
+            # Get messages in reverse chronological order (newest first)
             room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
 
         # Add breadcrumbs
@@ -2042,8 +2045,8 @@ def join_room(request, room_id):
     # Ensure session key exists for anonymous users
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
-    # Get messages ordered by timestamp
-    room_messages = room.messages.all().order_by("timestamp")
+    # Get messages ordered by timestamp in descending order (most recent first)
+    room_messages = room.messages.all().order_by("-timestamp")
 
     # Add breadcrumbs context
     breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
@@ -2531,3 +2534,62 @@ def update_organization_repos(request, slug):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
         return redirect("organization_detail", slug=slug)
+
+
+@require_POST
+def send_message_api(request):
+    """API endpoint for sending messages from the rooms list page"""
+    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        room_id = data.get("room_id")
+        message_content = data.get("message")
+
+        if not room_id or not message_content:
+            return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+
+        room = get_object_or_404(Room, id=room_id)
+
+        # Create the message
+        if request.user.is_authenticated:
+            username = request.user.username
+            user = request.user
+            session_key = None
+        else:
+            # Ensure session key exists for anonymous users
+            if not request.session.session_key:
+                request.session.create()
+            session_key = request.session.session_key
+            username = f"anon_{session_key[-4:]}"
+            user = None
+
+        message = Message.objects.create(
+            room=room, user=user, username=username, content=message_content, session_key=session_key
+        )
+
+        return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def room_messages_api(request, room_id):
+    """API endpoint for getting room messages"""
+    room = get_object_or_404(Room, id=room_id)
+    messages = room.messages.all().order_by("-timestamp")[:10]  # Get the 10 most recent messages
+
+    message_data = []
+    for message in messages:
+        message_data.append(
+            {
+                "id": message.id,
+                "username": message.username,
+                "content": message.content,
+                "timestamp": message.timestamp.isoformat(),
+                "timestamp_display": naturaltime(message.timestamp),
+            }
+        )
+
+    return JsonResponse({"success": True, "count": room.messages.count(), "messages": message_data})
