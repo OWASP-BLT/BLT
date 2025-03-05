@@ -42,6 +42,7 @@ CACHE_DURATION = 3600
 # Initialize Slack client
 client = WebClient(token=SLACK_BOT_TOKEN)
 
+
 @csrf_exempt
 def slack_events(request):
     """Handle incoming Slack events."""
@@ -52,12 +53,8 @@ def slack_events(request):
             if event_type == "team_join":
                 user_id = event_data["event"]["user"]["id"]
                 # Send a welcome message to the new user
-                client.chat_postMessage(
-                    channel='#project-blt-bacon',
-                    text=f"Welcome to the team, <@{user_id}>! 🎉"
-                )
+                client.chat_postMessage(channel="#project-blt-bacon", text=f"Welcome to the team, <@{user_id}>! 🎉")
         return HttpResponse("Event received", status=200)
-
 
 
 def get_all_owasp_repos():
@@ -418,12 +415,13 @@ def slack_commands(request):
         return HttpResponse(handler.handle(request))
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
+
 @csrf_exempt
 def submit_bug(request):
     if request.method == "POST":
         # Extract bug details from the request
         bug_description = request.POST.get("description", "No description provided.")
-        
+
         # Logic to save the bug to the database
         try:
             # Create a new Issue instance and save it
@@ -437,8 +435,7 @@ def submit_bug(request):
         # Send a message to Slack
         try:
             response = client.chat_postMessage(
-                channel='#project-blt-bacon',
-                text=f"A new bug has been reported: {bug_description}"
+                channel="#project-blt-bacon", text=f"A new bug has been reported: {bug_description}"
             )
             logger.info(f"Message sent to Slack successfully: {response['ts']}")
         except SlackApiError as e:
