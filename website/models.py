@@ -1986,7 +1986,7 @@ class Enrollment(models.Model):
         return progress
 
     def __str__(self):
-        return f"{self.student.username} - {self.course.title}"
+        return f"{self.student.user.username} - {self.course.title}"
 
 
 class Rating(models.Model):
