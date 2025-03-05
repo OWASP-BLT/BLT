@@ -1,4 +1,3 @@
-// Dark Mode Toggle Logic
 document.addEventListener('DOMContentLoaded', function() {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const sunIcon = darkModeToggle.querySelector('.sun-icon');
@@ -90,4 +89,4 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Dark mode script loaded');
     window.toggleDarkMode = setDarkMode;
     window.fixDarkMode = fixDarkModeInconsistencies;
-}); 
+});
