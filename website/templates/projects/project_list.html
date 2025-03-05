@@ -150,273 +150,277 @@
                     <!-- Project Header -->
                     <div class="bg-gradient-to-r from-red-500 to-red-600 p-6">
                         <div class="flex items-start gap-6">
-                            <a href="{% url 'project_detail' slug=project.slug %}" class="block">
-                                {% if project.logo %}
-                                    <img src="{{ project.logo.url }}"
-                                         alt="{{ project.name }}"
-                                         height="50"
-                                         width="50"
-                                         class="w-20 h-20 rounded-lg shadow-lg flex-shrink-0 hover:opacity-80 transition-opacity">
+                            {% if project.slug %}
+                                <a href="{% url 'project_detail' slug=project.slug %}" class="block">
                                 {% else %}
-                                    <div class="w-20 h-20 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0 hover:bg-white/30 transition-colors">
-                                        <span class="text-2xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
-                                    </div>
-                                {% endif %}
-                            </a>
-                            <div class="flex-grow">
-                                <a href="{% url 'project_detail' slug=project.slug %}"
-                                   class="block group">
-                                    <h2 class="text-3xl font-bold text-white mb-2 group-hover:underline">{{ project.name }}</h2>
-                                    <p class="text-lg text-white/90 leading-relaxed group-hover:text-white">{{ project.description|truncatechars:200 }}</p>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Repository Grid -->
-                    <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {% for repo in repos %}
-                            <div class="bg-white rounded-xl border-2 border-gray-200 hover:border-red-500 transition-all duration-200 hover:shadow-lg">
-                                <div class="p-6">
-                                    <!-- Repository Header -->
-                                    <a href="{% url 'repo_detail' repo.slug %}"
-                                       class="flex items-center justify-between mb-4">
-                                        <h3 class="text-xl font-bold text-gray-800">{{ repo.name }}</h3>
-                                        {% if repo.is_main %}
-                                            <span class="px-4 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-medium">Main</span>
-                                        {% elif repo.is_wiki %}
-                                            <span class="px-4 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Wiki</span>
-                                        {% else %}
-                                            <span class="px-4 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">Normal</span>
-                                        {% endif %}
-                                    </a>
-                                    <!-- Repository Description -->
-                                    <p class="text-gray-600 text-base leading-relaxed mb-6">
-                                        {{ repo.description|default:"No description available."|truncatechars:150 }}
-                                    </p>
-                                    <!-- Repository Stats -->
-                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-base">⭐</span>
-                                            <span class="text-base font-medium">{{ repo.stars }}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-base">🍴</span>
-                                            <span class="text-base font-medium">{{ repo.forks }}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-base">🐛</span>
-                                            <span class="text-base font-medium">{{ repo.open_issues }}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <span class="text-base">👥</span>
-                                            <span class="text-base font-medium">{{ repo.contributor_count }}</span>
-                                        </div>
-                                    </div>
-                                    <!-- Repository Actions -->
-                                    <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                                        <span class="text-sm text-gray-500">Updated {{ repo.last_updated|date:"M d, Y" }}</span>
-                                        <a href="{{ repo.repo_url }}"
-                                           target="_blank"
-                                           class="inline-flex items-center px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 text-sm font-medium hover:scale-105">
-                                            View Repository
-                                            <svg class="w-4 h-4 ml-2"
-                                                 fill="none"
-                                                 stroke="currentColor"
-                                                 viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                            </svg>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% empty %}
-                <div class="text-center py-12">
-                    <p class="text-gray-600 text-xl">No projects found matching your criteria.</p>
-                </div>
-            {% endfor %}
-        </div>
-        <!-- Simplified Pagination -->
-        {% if is_paginated %}
-            <div class="mt-12 flex justify-center">
-                <nav class="flex items-center gap-2" aria-label="Pagination">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-white rounded-lg hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-colors duration-200">
-                            <svg class="w-5 h-5 mr-2"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                            Previous
-                        </a>
-                    {% endif %}
-                    {% for num in paginator.page_range %}
-                        {% if num > page_obj.number|add:'-4' and num < page_obj.number|add:'4' %}
-                            <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                               class="inline-flex items-center px-4 py-2 text-sm font-medium {% if page_obj.number == num %}bg-red-500 text-white border border-red-600{% else %}bg-white text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200{% endif %} rounded-lg transition-colors duration-200">
-                                {{ num }}
-                            </a>
-                        {% elif num == page_obj.number|add:'-4' or num == page_obj.number|add:'4' %}
-                            <span class="px-2 text-gray-400">...</span>
-                        {% endif %}
-                    {% endfor %}
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
-                           class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-white rounded-lg hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-colors duration-200">
-                            Next
-                            <svg class="w-5 h-5 ml-2"
-                                 fill="none"
-                                 stroke="currentColor"
-                                 viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </a>
-                    {% endif %}
-                </nav>
-            </div>
-        {% endif %}
-    </div>
-    <!-- Add Project Modal -->
-    <div id="addProjectModal"
-         class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-        <div class="fixed inset-0 overflow-y-auto">
-            <div class="flex min-h-full items-center justify-center p-4">
-                <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
-                    <!-- Modal Header -->
-                    <div class="flex items-center justify-between p-4 border-b">
-                        <h3 class="text-xl font-bold text-gray-900">Add New Project</h3>
-                        <button type="button"
-                                onclick="closeAddProjectModal()"
-                                class="text-gray-400 hover:text-gray-500">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
-                    <!-- Modal Body with Scrollable Content -->
-                    <div class="max-h-[calc(100vh-200px)] overflow-y-auto p-6">
-                        <form id="addProjectForm" onsubmit="submitProjectForm(event)">
-                            {% csrf_token %}
-                            <div class="space-y-6">
-                                <!-- Project Basic Details -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Project Name *</label>
-                                        <input type="text"
-                                               name="name"
-                                               required
-                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Project URL</label>
-                                        <input type="url"
-                                               name="url"
-                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
-                                    </div>
-                                    {% if user.is_authenticated %}
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Organization</label>
-                                            <select name="organization"
-                                                    class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
-                                                <option value="">No Organization (Independent Project)</option>
-                                                {% for org in user_organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}
-                                            </select>
+                                    <a href="#" class="block">
+                                    {% endif %}
+                                    {% if project.logo %}
+                                        <img src="{{ project.logo.url }}"
+                                             alt="{{ project.name }}"
+                                             height="50"
+                                             width="50"
+                                             class="w-20 h-20 rounded-lg shadow-lg flex-shrink-0 hover:opacity-80 transition-opacity">
+                                    {% else %}
+                                        <div class="w-20 h-20 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0 hover:bg-white/30 transition-colors">
+                                            <span class="text-2xl text-white font-bold">{{ project.name|slice:":1"|upper }}</span>
                                         </div>
                                     {% endif %}
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Project Logo</label>
-                                        <input type="file"
-                                               name="logo"
-                                               accept="image/*"
-                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                                </a>
+                                <div class="flex-grow">
+                                    <a href="{% url 'project_detail' slug=project.slug %}"
+                                       class="block group">
+                                        <h2 class="text-3xl font-bold text-white mb-2 group-hover:underline">{{ project.name }}</h2>
+                                        <p class="text-lg text-white/90 leading-relaxed group-hover:text-white">{{ project.description|truncatechars:200 }}</p>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Repository Grid -->
+                        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {% for repo in repos %}
+                                <div class="bg-white rounded-xl border-2 border-gray-200 hover:border-red-500 transition-all duration-200 hover:shadow-lg">
+                                    <div class="p-6">
+                                        <!-- Repository Header -->
+                                        <a href="{% url 'repo_detail' repo.slug %}"
+                                           class="flex items-center justify-between mb-4">
+                                            <h3 class="text-xl font-bold text-gray-800">{{ repo.name }}</h3>
+                                            {% if repo.is_main %}
+                                                <span class="px-4 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-medium">Main</span>
+                                            {% elif repo.is_wiki %}
+                                                <span class="px-4 py-1.5 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">Wiki</span>
+                                            {% else %}
+                                                <span class="px-4 py-1.5 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">Normal</span>
+                                            {% endif %}
+                                        </a>
+                                        <!-- Repository Description -->
+                                        <p class="text-gray-600 text-base leading-relaxed mb-6">
+                                            {{ repo.description|default:"No description available."|truncatechars:150 }}
+                                        </p>
+                                        <!-- Repository Stats -->
+                                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-base">⭐</span>
+                                                <span class="text-base font-medium">{{ repo.stars }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-base">🍴</span>
+                                                <span class="text-base font-medium">{{ repo.forks }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-base">🐛</span>
+                                                <span class="text-base font-medium">{{ repo.open_issues }}</span>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-base">👥</span>
+                                                <span class="text-base font-medium">{{ repo.contributor_count }}</span>
+                                            </div>
+                                        </div>
+                                        <!-- Repository Actions -->
+                                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                                            <span class="text-sm text-gray-500">Updated {{ repo.last_updated|date:"M d, Y" }}</span>
+                                            <a href="{{ repo.repo_url }}"
+                                               target="_blank"
+                                               class="inline-flex items-center px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 text-sm font-medium hover:scale-105">
+                                                View Repository
+                                                <svg class="w-4 h-4 ml-2"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                                </svg>
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                                <!-- Project Description -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Description *</label>
-                                    <textarea name="description"
-                                              required
-                                              rows="3"
-                                              class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"></textarea>
-                                </div>
-                                <!-- Social Links -->
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Twitter URL</label>
-                                        <input type="url"
-                                               name="twitter"
-                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
-                                               placeholder="https://twitter.com/..." />
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-12">
+                        <p class="text-gray-600 text-xl">No projects found matching your criteria.</p>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Simplified Pagination -->
+            {% if is_paginated %}
+                <div class="mt-12 flex justify-center">
+                    <nav class="flex items-center gap-2" aria-label="Pagination">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-white rounded-lg hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                                Previous
+                            </a>
+                        {% endif %}
+                        {% for num in paginator.page_range %}
+                            {% if num > page_obj.number|add:'-4' and num < page_obj.number|add:'4' %}
+                                <a href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                   class="inline-flex items-center px-4 py-2 text-sm font-medium {% if page_obj.number == num %}bg-red-500 text-white border border-red-600{% else %}bg-white text-gray-500 hover:bg-red-50 hover:text-red-600 border border-gray-200{% endif %} rounded-lg transition-colors duration-200">
+                                    {{ num }}
+                                </a>
+                            {% elif num == page_obj.number|add:'-4' or num == page_obj.number|add:'4' %}
+                                <span class="px-2 text-gray-400">...</span>
+                            {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                               class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-500 bg-white rounded-lg hover:bg-red-50 hover:text-red-600 border border-gray-200 transition-colors duration-200">
+                                Next
+                                <svg class="w-5 h-5 ml-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Add Project Modal -->
+        <div id="addProjectModal"
+             class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+            <div class="fixed inset-0 overflow-y-auto">
+                <div class="flex min-h-full items-center justify-center p-4">
+                    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl">
+                        <!-- Modal Header -->
+                        <div class="flex items-center justify-between p-4 border-b">
+                            <h3 class="text-xl font-bold text-gray-900">Add New Project</h3>
+                            <button type="button"
+                                    onclick="closeAddProjectModal()"
+                                    class="text-gray-400 hover:text-gray-500">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <!-- Modal Body with Scrollable Content -->
+                        <div class="max-h-[calc(100vh-200px)] overflow-y-auto p-6">
+                            <form id="addProjectForm" onsubmit="submitProjectForm(event)">
+                                {% csrf_token %}
+                                <div class="space-y-6">
+                                    <!-- Project Basic Details -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Project Name *</label>
+                                            <input type="text"
+                                                   name="name"
+                                                   required
+                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Project URL</label>
+                                            <input type="url"
+                                                   name="url"
+                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                                        </div>
+                                        {% if user.is_authenticated %}
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Organization</label>
+                                                <select name="organization"
+                                                        class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                                                    <option value="">No Organization (Independent Project)</option>
+                                                    {% for org in user_organizations %}<option value="{{ org.id }}">{{ org.name }}</option>{% endfor %}
+                                                </select>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Project Logo</label>
+                                            <input type="file"
+                                                   name="logo"
+                                                   accept="image/*"
+                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                                        </div>
                                     </div>
+                                    <!-- Project Description -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Facebook URL</label>
-                                        <input type="url"
-                                               name="facebook"
-                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
-                                               placeholder="https://facebook.com/..." />
+                                        <label class="block text-sm font-medium text-gray-700">Description *</label>
+                                        <textarea name="description"
+                                                  required
+                                                  rows="3"
+                                                  class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"></textarea>
                                     </div>
-                                </div>
-                                <!-- Repositories Section -->
-                                <div>
-                                    <h4 class="text-lg font-medium text-gray-900 mb-4">Repositories</h4>
-                                    <div id="reposList" class="space-y-4">
-                                        <!-- Initial repo input -->
-                                        <div class="repo-entry bg-gray-50 p-4 rounded-lg">
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Repository URL *</label>
-                                                    <input type="url"
-                                                           name="repo_urls[]"
-                                                           required
-                                                           class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
-                                                </div>
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Repository Type</label>
-                                                    <select name="repo_types[]"
-                                                            class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
-                                                        <option value="normal">Normal</option>
-                                                        <option value="main">Main</option>
-                                                        <option value="wiki">Wiki</option>
-                                                    </select>
+                                    <!-- Social Links -->
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Twitter URL</label>
+                                            <input type="url"
+                                                   name="twitter"
+                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                                                   placeholder="https://twitter.com/..." />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">Facebook URL</label>
+                                            <input type="url"
+                                                   name="facebook"
+                                                   class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
+                                                   placeholder="https://facebook.com/..." />
+                                        </div>
+                                    </div>
+                                    <!-- Repositories Section -->
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-900 mb-4">Repositories</h4>
+                                        <div id="reposList" class="space-y-4">
+                                            <!-- Initial repo input -->
+                                            <div class="repo-entry bg-gray-50 p-4 rounded-lg">
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700">Repository URL *</label>
+                                                        <input type="url"
+                                                               name="repo_urls[]"
+                                                               required
+                                                               class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" />
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700">Repository Type</label>
+                                                        <select name="repo_types[]"
+                                                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500">
+                                                            <option value="normal">Normal</option>
+                                                            <option value="main">Main</option>
+                                                            <option value="wiki">Wiki</option>
+                                                        </select>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        <!-- Add Repository Button -->
+                                        <button type="button"
+                                                onclick="addRepoField()"
+                                                class="mt-4 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Add Another Repository
+                                        </button>
                                     </div>
-                                    <!-- Add Repository Button -->
+                                </div>
+                                <!-- Form Actions -->
+                                <div class="mt-6 flex justify-end gap-4">
                                     <button type="button"
-                                            onclick="addRepoField()"
-                                            class="mt-4 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 flex items-center gap-2 text-sm">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Another Repository
+                                            onclick="closeAddProjectModal()"
+                                            class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                        Cancel
+                                    </button>
+                                    <button type="submit"
+                                            class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                        Create Project
                                     </button>
                                 </div>
-                            </div>
-                            <!-- Form Actions -->
-                            <div class="mt-6 flex justify-end gap-4">
-                                <button type="button"
-                                        onclick="closeAddProjectModal()"
-                                        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                    Cancel
-                                </button>
-                                <button type="submit"
-                                        class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                                    Create Project
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Add this to your existing scripts section or create one -->
-    <script>
+        <!-- Add this to your existing scripts section or create one -->
+        <script>
     // Toast notification system
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
@@ -578,5 +582,5 @@
             setLoading(false);
         }
     }
-    </script>
-{% endblock content %}
+        </script>
+    {% endblock content %}
