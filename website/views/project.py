@@ -258,12 +258,14 @@ class ProjectView(FilterView):
         context["total_repos"] = Repo.objects.count()
         context["filtered_count"] = context["repos"].count()
 
-        # Group repos by project
+        # Group repos by project and filter out projects with empty slugs
         projects = {}
         for repo in context["repos"]:
-            if repo.project not in projects:
-                projects[repo.project] = []
-            projects[repo.project].append(repo)
+            # Skip projects with empty slugs
+            if repo.project and repo.project.slug:
+                if repo.project not in projects:
+                    projects[repo.project] = []
+                projects[repo.project].append(repo)
         context["projects"] = projects
 
         return context
