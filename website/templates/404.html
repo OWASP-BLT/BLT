@@ -16,7 +16,6 @@
                 Return to Home
             </a>
         </div>
-
         <!-- Tools for Organizations Section -->
         <section class="w-full max-w-7xl mb-12">
             <h2 class="text-3xl font-bold text-center mb-8">Tools for Organizations</h2>
@@ -53,7 +52,6 @@
                 </a>
             </div>
         </section>
-
         <!-- Tools for Projects Section -->
         <section class="w-full max-w-7xl mb-12">
             <h2 class="text-3xl font-bold text-center mb-8">Tools for Projects</h2>
@@ -90,7 +88,6 @@
                 </a>
             </div>
         </section>
-
         <!-- Tools for Users & Teams Section -->
         <section class="w-full max-w-7xl">
             <h2 class="text-3xl font-bold text-center mb-8">Tools for Users & Teams</h2>
@@ -133,12 +130,13 @@
                 </a>
             </div>
         </section>
-
         <!-- BACON Information Section -->
         <section class="w-full max-w-5xl mt-12">
             <div class="bg-[#e74c3c] text-white rounded-xl shadow-md p-6 mb-8">
                 <h2 class="text-3xl font-bold text-center mb-4">Claim Your BACON Tokens!</h2>
-                <p class="text-center text-lg">Submit the link to your merged PR and earn BACON tokens as a reward for your contributions.</p>
+                <p class="text-center text-lg">
+                    Submit the link to your merged PR and earn BACON tokens as a reward for your contributions.
+                </p>
             </div>
             <div class="flex flex-col md:flex-row gap-8">
                 <!-- BACON Overview -->
@@ -155,7 +153,6 @@
                             By leveraging the power of blockchain, BACON ensures transparency, security, and fairness in the distribution of rewards, ultimately enhancing the quality and security of open-source software.
                         </p>
                     </div>
-
                     <!-- Key Features -->
                     <div class="bg-white rounded-xl shadow-sm p-8">
                         <div class="flex items-center gap-3 mb-6">
@@ -194,7 +191,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Submit BACON Request Form -->
                 <div class="md:w-1/2">
                     <div class="bg-white rounded-xl shadow-sm p-8 border-2 border-[#e74c3c]">
@@ -221,7 +217,8 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <label for="contribution_type" class="block text-sm font-semibold text-gray-700">
+                                <label for="contribution_type"
+                                       class="block text-sm font-semibold text-gray-700">
                                     <i class="fas fa-code-branch mr-2"></i>Contribution Type
                                 </label>
                                 <div class="relative">
@@ -265,7 +262,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Get Involved -->
             <div class="bg-white rounded-xl shadow-sm p-8 mt-8">
                 <div class="flex items-center gap-3 mb-6">
@@ -277,12 +273,12 @@
                 </p>
                 <div class="flex flex-wrap gap-4">
                     <a href="{% url 'contribution_guidelines' %}"
-                        class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
+                       class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
                         <i class="fas fa-book"></i>
                         Learn How to Contribute
                     </a>
                     <a href="https://github.com/owasp/BLT-BACON"
-                        class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
+                       class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-[#e74c3c] border-2 border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white font-medium transition-all duration-200">
                         <i class="fab fa-github"></i>
                         View on GitHub
                     </a>
@@ -338,4 +334,3 @@
         }
     </script>
 {% endblock content %}
-
