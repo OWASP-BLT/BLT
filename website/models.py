@@ -2024,7 +2024,7 @@ class BaconSubmission(models.Model):
 
 
 class DailyStats(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     value = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
