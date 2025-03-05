@@ -1,9 +1,9 @@
+import json
 import logging
 import math
 import os
 import re
 import time
-import json
 
 import requests
 from django.http import HttpResponse, JsonResponse
@@ -12,6 +12,7 @@ from slack_bolt import App
 from slack_bolt.adapter.django import SlackRequestHandler
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+
 from website.models import Issue  # Import the Issue model
 
 if os.getenv("ENV") != "production":

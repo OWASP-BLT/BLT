@@ -1,13 +1,14 @@
-import os
 import json
+import os
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase, RequestFactory
 from django.conf import settings
-from django.core.management import call_command
 from django.contrib.auth.models import User
-from website.views.slackbot import submit_bug, slack_events  # Import the submit_bug and slack_events functions
+from django.core.management import call_command
+from django.test import RequestFactory, TestCase
 from slack_sdk.errors import SlackApiError
+
+from website.views.slackbot import slack_events, submit_bug  # Import the submit_bug and slack_events functions
 
 # Set the DJANGO_SETTINGS_MODULE environment variable
 os.environ['DJANGO_SETTINGS_MODULE'] = 'blt.settings'
