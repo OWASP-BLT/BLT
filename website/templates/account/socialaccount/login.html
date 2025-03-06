@@ -4,47 +4,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In Via GitHub</title>
+    <title>GitHub Login | OWASP BLT</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f4f4f4;
+            margin: 0;
         }
         .container {
-            text-align: center;
-            padding: 20px;
             background: white;
+            padding: 20px;
+            text-align: center;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
         }
         img {
-            width: 50px;
-            margin-bottom: 10px;
+            width: 100px;
+            margin-bottom: 15px;
+        }
+        h2 {
+            color: #333;
         }
         button {
             background-color: #24292e;
             color: white;
-            border: none;
             padding: 10px 20px;
-            font-size: 16px;
+            border: none;
             cursor: pointer;
             border-radius: 5px;
+            font-size: 16px;
         }
         button:hover {
-            background-color: #333;
+            background-color: #444d56;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png" alt="GitHub Logo">
-        <h2>Sign In Via GitHub</h2>
-        <p>You are about to sign in using a third-party account from GitHub.</p>
-        <form method="POST">
+        <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo">
+        <h2>Sign In via GitHub</h2>
+        <p>You are about to sign in using your GitHub account.</p>
+        <form method="post">
             {% csrf_token %}
             <button type="submit">Continue with GitHub</button>
         </form>
