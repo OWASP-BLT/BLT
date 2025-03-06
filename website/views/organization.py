@@ -2084,6 +2084,7 @@ class OrganizationListView(ListView):
                 "domain_set",
                 "projects",
                 "projects__repos",
+                "repos",
                 "tags",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
@@ -2100,7 +2101,6 @@ class OrganizationListView(ListView):
                 open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
                 closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
-                repo_count=Count("projects__repos", distinct=True),
             )
             .select_related("admin")
             .order_by("-created")
