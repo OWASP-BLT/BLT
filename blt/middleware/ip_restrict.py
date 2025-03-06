@@ -15,7 +15,6 @@ class IPRestrictMiddleware:
     Middleware to restrict access based on client IP addresses and user agents.
     """
 
-
     def __init__(self, get_response):
         self.get_response = get_response
         # Initialize cache on startup to avoid DB hits on first requests
@@ -189,6 +188,7 @@ class IPRestrictMiddleware:
 
         # Record IP information
         if ip:
+
             def record_ip():
                 with transaction.atomic():
                     # create unique entry for every unique (ip,path) tuple
@@ -213,7 +213,7 @@ class IPRestrictMiddleware:
                     else:
                         # If no record exists, create a new one
                         IP.objects.create(address=ip, agent=agent, count=1, path=request.path)
-            
+
             # We don't await this since we don't need to wait for it to complete
             # to return the response
             try:

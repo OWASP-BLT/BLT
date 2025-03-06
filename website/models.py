@@ -1182,21 +1182,21 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
     try:
         # Clear all three caches at once to maintain consistency
         cache.delete_many(["blocked_ips", "blocked_ip_network", "blocked_agents"])
-        
+
         # More efficient query by getting all data in one transaction
         with transaction.atomic():
             all_blocked = list(Blocked.objects.all().values("address", "ip_network", "user_agent_string"))
-        
+
         # Process results in memory
         blocked_ips = [item["address"] for item in all_blocked if item["address"] is not None]
         blocked_ip_network = [item["ip_network"] for item in all_blocked if item["ip_network"] is not None]
         blocked_agents = [item["user_agent_string"] for item in all_blocked if item["user_agent_string"] is not None]
-        
+
         # Batch set the caches
         cache_data = {
             "blocked_ips": blocked_ips,
             "blocked_ip_network": blocked_ip_network,
-            "blocked_agents": blocked_agents
+            "blocked_agents": blocked_agents,
         }
         cache.set_many(cache_data, timeout=86400)
     except Exception as e:

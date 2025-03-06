@@ -327,18 +327,18 @@ if not db_from_env:
 else:
     # Parse the database URL with dj_database_url
     db_config = dj_database_url.config(conn_max_age=60, ssl_require=False)
-    
+
     # If it's PostgreSQL, use connection pooling
-    if db_config.get('ENGINE') == 'django.db.backends.postgresql':
+    if db_config.get("ENGINE") == "django.db.backends.postgresql":
         # Use connection pooling for PostgreSQL
-        db_config['ENGINE'] = 'django_db_pool.db.backends.postgresql'
-        db_config['POOL_OPTIONS'] = {
-            'POOL_SIZE': 20,
-            'MAX_OVERFLOW': 10,
-            'RECYCLE': 300,
+        db_config["ENGINE"] = "django_db_pool.db.backends.postgresql"
+        db_config["POOL_OPTIONS"] = {
+            "POOL_SIZE": 20,
+            "MAX_OVERFLOW": 10,
+            "RECYCLE": 300,
         }
-    
-    DATABASES['default'] = db_config
+
+    DATABASES["default"] = db_config
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
@@ -472,7 +472,7 @@ else:
                 "SOCKET_TIMEOUT": 5,
                 "IGNORE_EXCEPTIONS": True,
             },
-            "KEY_PREFIX": "blt"
+            "KEY_PREFIX": "blt",
         }
     }
 
