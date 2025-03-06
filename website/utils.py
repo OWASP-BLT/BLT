@@ -8,6 +8,7 @@ import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
+from ipaddress import ip_address
 import markdown
 import numpy as np
 import requests
@@ -129,7 +130,6 @@ def is_valid_https_url(url):
 
 
 def is_dns_safe(hostname):
-
     try:
         resolved = socket.getaddrinfo(hostname, None)
     except socket.gaierror:
@@ -144,8 +144,8 @@ def is_dns_safe(hostname):
             continue
     return True
 
+
 def rebuild_safe_url(url):
-   
     parsed_url = urlparse(url)
 
     if parsed_url.scheme not in ("http", "https"):
@@ -170,7 +170,7 @@ def rebuild_safe_url(url):
     path = path.replace("/..", "").replace("/", "/")
 
     # Collapse multiple slashes into a single slash
-    path = re.sub(r'/{2,}', '/', path)
+    path = re.sub(r"/{2,}", "/", path)
     if path in ("", "."):
         path = "/"
     # Ensure the path starts with a slash
@@ -182,6 +182,20 @@ def rebuild_safe_url(url):
 
     return safe_url
 
+
+def is_safe_url(url, allowed_hosts, allowed_paths=None):
+    if not is_valid_https_url(url):
+        return False
+
+    parsed_url = urlparse(url)
+
+    if parsed_url.netloc not in allowed_hosts:
+        return False
+
+    if allowed_paths and parsed_url.path not in allowed_paths:
+        return False
+
+    return True
 
 
 def get_github_issue_title(github_issue_url):
@@ -197,8 +211,6 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
-
-
 
 
 def safe_redirect_allowed(url, allowed_hosts, allowed_paths=None):
