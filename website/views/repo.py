@@ -80,19 +80,6 @@ class RepoListView(ListView):
         # Get the filtered queryset count instead of all repos
         context["total_repos"] = self.get_queryset().count()
 
-        # Get language counts
-        language_counts = (
-            Repo.objects.exclude(primary_language__isnull=True)
-            .exclude(primary_language="")
-            .values("primary_language")
-            .annotate(count=Count("id"))
-            .order_by("-count")
-        )
-        context["languages"] = language_counts
-
-        # Get current language filter
-        context["current_language"] = self.request.GET.get("language")
-
         # Get organizations from related Organization model
         organizations = Organization.objects.filter(repos__isnull=False).distinct()
         context["organizations"] = organizations
@@ -107,6 +94,35 @@ class RepoListView(ListView):
                 context["current_organization_name"] = org.name
             except Organization.DoesNotExist:
                 context["current_organization_name"] = None
+
+        # Get language counts based on current filters
+        queryset = Repo.objects.all()
+
+        # Apply organization filter if selected
+        if context["current_organization"]:
+            queryset = queryset.filter(organization__id=context["current_organization"])
+
+        # Apply search filter if present
+        search_query = self.request.GET.get("q")
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(primary_language__icontains=search_query)
+            )
+
+        # Get language counts from filtered queryset
+        language_counts = (
+            queryset.exclude(primary_language__isnull=True)
+            .exclude(primary_language="")
+            .values("primary_language")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+        context["languages"] = language_counts
+
+        # Get current language filter
+        context["current_language"] = self.request.GET.get("language")
 
         return context
 
