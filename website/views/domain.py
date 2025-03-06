@@ -97,19 +97,12 @@ def check_domain_security(request, domain_id):
     try:
         domain = Domain.objects.get(id=domain_id)
         has_security, error = check_security_txt(domain.url)
-        
-        return JsonResponse({
-            "has_security_txt": has_security,
-            "error": error if error else None
-        })
+
+        return JsonResponse({"has_security_txt": has_security, "error": error if error else None})
 
     except Domain.DoesNotExist:
-        return JsonResponse({
-            "error": "Domain not found"
-        }, status=404)
-        
+        return JsonResponse({"error": "Domain not found"}, status=404)
+
     except Exception as e:
         logger.error(f"Error checking security.txt: {str(e)}")
-        return JsonResponse({
-            "error": f"Error checking security.txt: {str(e)}"
-        }, status=500)
+        return JsonResponse({"error": f"Error checking security.txt: {str(e)}"}, status=500)
