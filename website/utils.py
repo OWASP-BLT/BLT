@@ -128,9 +128,60 @@ def is_valid_https_url(url):
         return False
 
 
+def is_dns_safe(hostname):
+
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False  # Unable to resolve hostname; treat as unsafe.
+    for result in resolved:
+        ip_str = result[4][0]
+        try:
+            ip = ip_address(ip_str)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                return False
+        except ValueError:
+            continue
+    return True
+
 def rebuild_safe_url(url):
+   
     parsed_url = urlparse(url)
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+
+    if parsed_url.scheme not in ("http", "https"):
+        return None
+
+    netloc = parsed_url.netloc.split("@")[-1]
+
+    hostname = urlparse(f"http://{netloc}").hostname
+    if not hostname:
+        return None
+
+    try:
+        ip = ip_address(hostname)
+        if ip.is_private or ip.is_loopback:
+            return None
+    except ValueError:
+        if not is_dns_safe(hostname):
+            return None
+
+    path = parsed_url.path
+    path = path.replace("\r", "").replace("\n", "")
+    path = path.replace("/..", "").replace("/", "/")
+
+    # Collapse multiple slashes into a single slash
+    path = re.sub(r'/{2,}', '/', path)
+    if path in ("", "."):
+        path = "/"
+    # Ensure the path starts with a slash
+    elif not path.startswith("/"):
+        path = "/" + path
+    encoded_path = quote(path, safe="/")
+
+    safe_url = urlunparse((parsed_url.scheme, netloc, encoded_path, "", "", ""))
+
+    return safe_url
+
 
 
 def get_github_issue_title(github_issue_url):
@@ -148,19 +199,6 @@ def get_github_issue_title(github_issue_url):
         return "No Title"
 
 
-def is_safe_url(url, allowed_hosts, allowed_paths=None):
-    if not is_valid_https_url(url):
-        return False
-
-    parsed_url = urlparse(url)
-
-    if parsed_url.netloc not in allowed_hosts:
-        return False
-
-    if allowed_paths and parsed_url.path not in allowed_paths:
-        return False
-
-    return True
 
 
 def safe_redirect_allowed(url, allowed_hosts, allowed_paths=None):
