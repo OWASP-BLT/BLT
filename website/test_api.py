@@ -36,7 +36,6 @@ class RebuildSafeUrlTestCase(TestCase):
                 self.assertEqual(result, expected)
 
 
-
 class APITests(APITestCase):
     register_url = "/auth/registration/"
     login_url = "/auth/login/"
