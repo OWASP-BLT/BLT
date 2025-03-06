@@ -62,7 +62,7 @@ drf-yasg = "^1.21.8"
 slack-bolt = "^1.22.0"
 slack-sdk = "^3.27.1"
 tld = "0.13"
-openai = "^1.65.3"
+openai = "^1.65.4"
 async-timeout = "^4.0.3"
 python-dateutil = "^2.9.0.post0"
 
