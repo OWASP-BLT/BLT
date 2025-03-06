@@ -129,7 +129,6 @@ def is_valid_https_url(url):
 
 
 def is_dns_safe(hostname):
-
     try:
         resolved = socket.getaddrinfo(hostname, None)
     except socket.gaierror:
@@ -144,8 +143,8 @@ def is_dns_safe(hostname):
             continue
     return True
 
+
 def rebuild_safe_url(url):
-   
     parsed_url = urlparse(url)
 
     if parsed_url.scheme not in ("http", "https"):
@@ -170,7 +169,7 @@ def rebuild_safe_url(url):
     path = path.replace("/..", "").replace("/", "/")
 
     # Collapse multiple slashes into a single slash
-    path = re.sub(r'/{2,}', '/', path)
+    path = re.sub(r"/{2,}", "/", path)
     if path in ("", "."):
         path = "/"
     # Ensure the path starts with a slash
@@ -181,7 +180,6 @@ def rebuild_safe_url(url):
     safe_url = urlunparse((parsed_url.scheme, netloc, encoded_path, "", "", ""))
 
     return safe_url
-
 
 
 def get_github_issue_title(github_issue_url):
@@ -197,8 +195,6 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
-
-
 
 
 def safe_redirect_allowed(url, allowed_hosts, allowed_paths=None):
