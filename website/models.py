@@ -140,7 +140,13 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
-    twitter = models.CharField(max_length=255, null=True, blank=True)
+    twitter = models.URLField(null=True, blank=True)
+    matrix_url = models.URLField(null=True, blank=True)
+    slack_url = models.URLField(null=True, blank=True)
+    discord_url = models.URLField(null=True, blank=True)
+    gitter_url = models.URLField(null=True, blank=True)
+    zulipchat_url = models.URLField(null=True, blank=True)
+    element_url = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -159,6 +165,7 @@ class Organization(models.Model):
     topic_tags = models.JSONField(default=list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
+    repos_updated_at = models.DateTimeField(null=True, blank=True, help_text="When repositories were last updated")
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
@@ -431,6 +438,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
@@ -1074,16 +1082,32 @@ class Project(models.Model):
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
     def save(self, *args, **kwargs):
+        # Always ensure a valid slug exists before saving
         if not self.slug:
-            slug = slugify(self.name)
+            base_slug = slugify(self.name)
             # Replace dots with dashes and limit length
-            slug = slug.replace(".", "-")
-            if len(slug) > 50:
-                slug = slug[:50]
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
             # Ensure we have a valid slug
-            if not slug:
-                slug = f"project-{int(time.time())}"
-            self.slug = slug
+            if not base_slug:
+                base_slug = f"project-{int(time.time())}"
+
+            # Ensure slug uniqueness
+            unique_slug = base_slug
+            counter = 1
+            while Project.objects.filter(slug=unique_slug).exclude(id=self.id).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+            self.slug = unique_slug
+        elif not self.slug:
+            # Fallback if no name is available
+            self.slug = f"project-{int(time.time())}"
+
         super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -1962,7 +1986,7 @@ class Enrollment(models.Model):
         return progress
 
     def __str__(self):
-        return f"{self.student.username} - {self.course.title}"
+        return f"{self.student.user.username} - {self.course.title}"
 
 
 class Rating(models.Model):
@@ -2000,7 +2024,7 @@ class BaconSubmission(models.Model):
 
 
 class DailyStats(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     value = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -2012,3 +2036,34 @@ class DailyStats(models.Model):
 
     def __str__(self):
         return f"{self.name}: {self.value}"
+
+
+class Queue(models.Model):
+    """
+    Model to store queue items with a message, image, and launch status.
+    """
+
+    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    image = models.ImageField(upload_to="queue_images", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    launched = models.BooleanField(default=False)
+    launched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="queue_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
+
+    def launch(self):
+        """
+        Mark the queue item as launched and set the launched_at timestamp.
+        """
+        if not self.launched:
+            self.launched = True
+            self.launched_at = timezone.now()
+            self.save()

@@ -164,6 +164,7 @@ from website.views.issue import (
     issue_count,
     like_issue,
     newhome,
+    page_vote,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -222,12 +223,15 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    room_messages_api,
+    send_message_api,
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
+    update_organization_repos,
     update_role,
     user_sizzle_report,
     view_hunt,
@@ -253,6 +257,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.queue import queue_list
 from website.views.repo import RepoListView, add_repo
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
@@ -1013,6 +1018,7 @@ urlpatterns = [
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
@@ -1023,6 +1029,17 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
+    path("page-vote/", page_vote, name="page_vote"),
+    # Queue Management URLs
+    path("queue/", queue_list, name="queue_list"),
+    path("queue/create/", queue_list, name="queue_create"),
+    path("queue/<int:queue_id>/edit/", queue_list, name="queue_edit"),
+    path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
+    path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
+    path("queue/launch-control/", queue_list, name="queue_launch_page"),
+    # Chat room API endpoints
+    path("api/send-message/", send_message_api, name="send_message_api"),
+    path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
 ]
 
 if settings.DEBUG:

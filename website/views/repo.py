@@ -22,7 +22,8 @@ class RepoListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        queryset = Repo.objects.filter(is_owasp_repo=True)
+        # Start with all repos instead of just OWASP repos
+        queryset = Repo.objects.all()
 
         # Handle language filter
         language = self.request.GET.get("language")
@@ -33,6 +34,15 @@ class RepoListView(ListView):
         organization = self.request.GET.get("organization")
         if organization:
             queryset = queryset.filter(organization__id=organization)
+
+        # Handle search query
+        search_query = self.request.GET.get("q")
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query)
+                | Q(description__icontains=search_query)
+                | Q(primary_language__icontains=search_query)
+            )
 
         # Get sort parameter from URL, default to -stars
         sort_by = self.request.GET.get("sort", "-stars")
@@ -48,19 +58,51 @@ class RepoListView(ListView):
             "open_issues",
             "closed_issues",
             "open_pull_requests",
-            "contributor_count",
-            "commit_count",
+            "closed_pull_requests",
             "primary_language",
-            "size",
-            "created",
+            "contributor_count",
             "last_updated",
-            "repo_visit_count",
         ]
 
         if field in valid_fields:
+            # Apply the sort
             queryset = queryset.order_by(f"{direction}{field}")
+        else:
+            # Default sort
+            queryset = queryset.order_by("-stars")
 
-        # Handle search
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["current_sort"] = self.request.GET.get("sort", "-stars")
+
+        # Get the filtered queryset count instead of all repos
+        context["total_repos"] = self.get_queryset().count()
+
+        # Get organizations from related Organization model
+        organizations = Organization.objects.filter(repos__isnull=False).distinct()
+        context["organizations"] = organizations
+
+        # Get current organization filter
+        context["current_organization"] = self.request.GET.get("organization")
+
+        # Get organization name if filtered by organization
+        if context["current_organization"]:
+            try:
+                org = Organization.objects.get(id=context["current_organization"])
+                context["current_organization_name"] = org.name
+            except Organization.DoesNotExist:
+                context["current_organization_name"] = None
+
+        # Get language counts based on current filters
+        queryset = Repo.objects.all()
+
+        # Apply organization filter if selected
+        if context["current_organization"]:
+            queryset = queryset.filter(organization__id=context["current_organization"])
+
+        # Apply search filter if present
         search_query = self.request.GET.get("q")
         if search_query:
             queryset = queryset.filter(
@@ -69,16 +111,9 @@ class RepoListView(ListView):
                 | Q(primary_language__icontains=search_query)
             )
 
-        return queryset
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["current_sort"] = self.request.GET.get("sort", "-stars")
-        context["total_repos"] = Repo.objects.count()
-
-        # Get language counts
+        # Get language counts from filtered queryset
         language_counts = (
-            Repo.objects.exclude(primary_language__isnull=True)
+            queryset.exclude(primary_language__isnull=True)
             .exclude(primary_language="")
             .values("primary_language")
             .annotate(count=Count("id"))
@@ -88,12 +123,6 @@ class RepoListView(ListView):
 
         # Get current language filter
         context["current_language"] = self.request.GET.get("language")
-
-        # Get organizations from related Organization model
-        organizations = Organization.objects.filter(repos__isnull=False).distinct()
-
-        context["organizations"] = organizations
-        context["current_organization"] = self.request.GET.get("organization")
 
         return context
 
@@ -154,9 +183,24 @@ class RepoDetailView(DetailView):
         # Handle other section refreshes...
         return JsonResponse({"status": "error", "message": "Invalid section"}, status=400)
 
+    def fetch_github_milestones(self, repo):
+        """
+        Fetch milestones from the GitHub API for the given repository.
+        """
+        milestones_url = f"https://api.github.com/repos/{repo.repo_url.split('github.com/')[-1]}/milestones"
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+        }
+        response = requests.get(milestones_url, headers=headers)
+        if response.status_code == 200:
+            return response.json()
+        return []
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # ... existing context data ...
+        repo = self.get_object()
+        context["milestones"] = self.fetch_github_milestones(repo)
         return context
 
 
