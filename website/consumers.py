@@ -1,6 +1,7 @@
 import asyncio
 import difflib
 import json
+import logging
 import os
 import tempfile
 import zipfile
@@ -21,6 +22,8 @@ from website.utils import (
     generate_embedding,
     git_url_to_zip_url,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SimilarityConsumer(AsyncWebsocketConsumer):
@@ -404,7 +407,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message_type = data.get("type", "message")
 
             # Handle new messages
-            if message_type == "message":
+            if message_type == "message" or message_type == "chat_message":
                 message = data.get("message", "").strip()
                 username = data.get("username", "Anonymous")
 
@@ -488,7 +491,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send(
                 text_data=json.dumps(
                     {
-                        "type": "message",
+                        "type": "chat_message",
                         "message": event["message"],
                         "username": event["username"],
                         "timestamp": event.get("timestamp"),
@@ -496,8 +499,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
             )
-        except Exception as e:
-            pass
+        except Exception as error:
+            # Log the error instead of silently passing
+            logger.error(f"Error sending chat message: {str(error)}")
 
     async def delete_message_broadcast(self, event):
         """Handles broadcasting delete notifications to all users in the room."""
