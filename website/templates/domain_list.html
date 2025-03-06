@@ -64,6 +64,10 @@
                     {{ objects.name|slice:":1"|upper }}
                 </div>
                 <a href="{{ objects.get_absolute_url }}">{{ objects.name }}</a>
+                <button onclick="checkSecurity('{{ objects.id }}')"
+                        class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+                        id="check-btn-{{ objects.id }}">Check security.txt</button>
+                <div id="result-{{ objects.id }}" class="mt-2 text-sm"></div>
             </div>
         {% endfor %}
     </div>
@@ -84,4 +88,42 @@
             </div>
         {% endif %}
     </div>
+    <script>
+        function checkSecurity(domainId) {
+            const button = document.getElementById(`check-btn-${domainId}`);
+            const resultDiv = document.getElementById(`result-${domainId}`);
+    
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = 'Checking...';
+            resultDiv.innerHTML = '';
+    
+            fetch(`/domains/${domainId}/check-security/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        resultDiv.innerHTML = `<div class="text-yellow-600">${data.error}</div>`;
+                    } else {
+                        const hasSecurityTxt = data.has_security_txt;
+                        resultDiv.innerHTML = hasSecurityTxt ? 
+                            `<div class="text-green-600">✓ Has security.txt</div>` :
+                            `<div class="text-red-600">✗ No security.txt found</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultDiv.innerHTML = `<div class="text-red-600">Error checking security.txt</div>`;
+                })
+                .finally(() => {
+                    // Re-enable button
+                    button.disabled = false;
+                    button.innerHTML = 'Check security.txt';
+                });
+        }
+    </script>
 {% endblock content %}

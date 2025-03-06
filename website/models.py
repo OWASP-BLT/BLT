@@ -327,6 +327,15 @@ class Domain(models.Model):
         except ValidationError:
             pass
 
+    def check_security_txt(self):
+        """Check if domain has security.txt"""
+        from website.utils import check_security_txt
+
+        try:
+            return check_security_txt(self.url)
+        except Exception as e:
+            return False, str(e)
+
 
 class TrademarkOwner(models.Model):
     name = models.CharField(max_length=255)

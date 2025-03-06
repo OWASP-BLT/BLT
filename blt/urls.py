@@ -113,6 +113,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
+from website.views.domain import check_domain_security
 from website.views.education import (
     add_lecture,
     add_section,
@@ -1028,6 +1029,7 @@ urlpatterns = [
     path("initiate-transaction/", initiate_transaction, name="initiate_transaction"),
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
+    path("domains/<int:domain_id>/check-security/", check_domain_security, name="check_domain_security"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
     path("page-vote/", page_vote, name="page_vote"),
     # Queue Management URLs

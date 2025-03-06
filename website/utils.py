@@ -674,6 +674,28 @@ def gravatar_url(email, size=80):
     return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"
 
 
+def check_security_txt(domain_url):
+    """
+    Check if a domain has security.txt file at .well-known/security.txt or /security.txt
+    Returns (bool, str) tuple - (has_security, error_message)
+    """
+    security_paths = ["/.well-known/security.txt", "/security.txt"]
+
+    if not domain_url.startswith(("http://", "https://")):
+        domain_url = f"https://{domain_url}"
+
+    for path in security_paths:
+        url = domain_url.rstrip("/") + path
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code == 200:
+                return True, None
+        except requests.exceptions.RequestException as e:
+            return False, str(e)
+
+    return False, "security.txt not found"
+
+
 def get_page_votes(template_name):
     """
     Get the upvotes and downvotes for a specific template.
