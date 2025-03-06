@@ -329,8 +329,8 @@
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex md:flex-row flex-col my-10 w-full md:max-w-[1700px] mx-auto border rounded-lg  min-h-[500px]">
-        <div class="flex flex-col gap-6 md:w-[25%] w-full border-r border-gray-300/80 500 p-4">
+    <div class="flex md:flex-row flex-col w-full mt-10 lg:max-w-[1700px] lg:mx-auto mx-2 border rounded-lg  min-h-[500px]">
+        <div class="flex flex-col gap-6 lg:w-[25%] w-full border-r border-gray-300/80 500 p-4">
             <div class="w-full rounded-lg select-none">
                 {% if user.userprofile.avatar %}
                     <img src="{{ user.userprofile.avatar }}"
@@ -348,7 +348,7 @@
             </div>
             <div class="flex justify-between items-start ">
                 <div class="flex flex-col">
-                    <div class="text-2xl font-bold text-black/90">Rinkit Adhana</div>
+                    <div class="text-2xl font-bold text-black/90">{{ user.username }}</div>
                     <div class="font-medium text-gray-800">@{{ user.username }}</div>
                     {% if user.userprofile.role %}
                         <div class="flex flex-row gap-2 mt-2">
@@ -383,15 +383,23 @@
                     <button class="px-3 py-1 bg-gray-200 rounded-lg text-sm hover:bg-red-400 hover:text-white transition-all duration-200"
                             onclick="openKudosModal();">{{ user.kudos_received.count }} {% trans "Kudos" %}</button>
                 </div>
+                {% if request.user != user %}
                 <div class="flex flex-wrap gap-2">
-                    <button class=" select-none flex gap-2 items-center px-4 py-2 bg-pink-400 hover:bg-pink-500 text-white font-medium rounded-lg transition-all duration-200">
+                    <button class="select-none flex gap-2 items-center px-4 py-2 bg-pink-400 hover:bg-pink-500 text-white font-medium rounded-lg transition-all duration-200">
                         <i class="fa-regular fa-heart text-white text-lg"></i>
                         {% trans "Sponsor on GitHub" %}
                     </button>
-                    <button class=" select-none flex-1 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200">
-                        {% trans "Follow" %}
+                    <button onclick="followUser()" 
+                            name="{{ user.username }}"
+                            class="follow_unfollow select-none flex-1 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-lg transition-all duration-200">
+                        {% if request.user in followers %}
+                            {% trans "Unfollow" %}
+                        {% else %}
+                            {% trans "Follow" %}
+                        {% endif %}
                     </button>
                 </div>
+                {% endif %}
             </div>
             <!-- Social Links Section -->
             {% if user.userprofile.github_url or user.userprofile.x_username or user.userprofile.linkedin_url or user.userprofile.website_url %}
@@ -556,7 +564,7 @@
                                     </div>
                                     <a href="{{ activity.get_absolute_url }}"
                                        class="hover:text-red-600 w-full text-xl font-semibold px-2 text-black/85 ">
-                                        {{ activity.description|truncatechars:20 }}
+                                        {{ activity.description|truncatechars:35 }}
                                     </a>
                                     <div class="flex flex-row gap-2 items-start">
                                         <a href="{% url 'domain' slug=activity.domain_name %}">
@@ -609,7 +617,7 @@
                 </div>
             </div>
         </div>
-        <div class="md:w-[75%] flex flex-col gap-6 w-full  p-4">
+        <div class="lg:w-[75%] flex flex-col gap-6 w-full  p-4">
               <div class="flex flex-col gap-3">
                 <h1 class="text-xl font-semibold text-black/90">
                     {% trans "Issue Stats" %}
@@ -691,7 +699,7 @@
                         <ul class="top-findings select-none w-full flex flex-wrap gap-4">
                             {% if websites %}
                                 {% for website in websites %}
-                                    <li href="{% url 'domain' slug=website.name %}" class="flex gap-3 justify-between items-center border-2 border-blue-500 py-2 px-4 rounded-lg">
+                                    <li href="{% url 'domain' slug=website.name %}" class="flex gap-3 justify-between items-center border border-blue-500 bg-blue-100/20 py-2 px-4 rounded-lg">
                                         <div class="flex items-center gap-2 w-full">
                                             <a href="{% url 'domain' slug=website.name %}">
                                                 <img src="https://www.{{ website.name }}/favicon.ico"
@@ -701,7 +709,7 @@
                                                      alt="Organization logo"
                                                      onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                             </a>
-                                            <a class="hover:text-gray-600" href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:20 }}</a>
+                                            <a class="hover:text-red-600" href="{% url 'domain' slug=website.name %}">{{ website.name|truncatechars:20 }}</a>
                                         </div>
                                         <div class="px-3 py-2 bg-blue-400 text-white rounded-lg flex items-center gap-2"  name="{{ user }}">
                                             <p>{{ website.total }}</p><p>Bug{{ website.total|pluralize }}</p>
@@ -730,7 +738,7 @@
 
                 <div class="badges flex flex-wrap gap-4">
                     {% for user_badge in user_badges %}
-                        <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border-2 select-none border-red-500 px-5 py-3 rounded-lg ">
+                        <div class="badge-item flex flex-col items-center justify-center gap-1 text-center border select-none border-red-500 bg-red-100/20 px-5 py-3 rounded-lg ">
                             {% if user_badge.badge.icon %}
                                 <img src="{{ user_badge.badge.icon.url }}"
                                      alt="{{ user_badge.badge.title }}"
@@ -761,18 +769,18 @@
                         </div>
                         <div class="flex justify-between items-center gap-0">
                             <div class="flex items-center justify-center gap-2 px-4 py-7 bg-purple-100 text-purple-700 font-semibold flex-grow rounded-tl-lg">
-                                <i class="fas fa-check-circle text-3xl"></i>
-                                    <div class="text-2xl font-bold text-center">{{ overall_stats.merged_count }}</div>
+                                <i class="fas fa-check-circle text-lg lg:text-3xl"></i>
+                                    <div class="lg:text-2xl text-lg font-bold text-center">{{ overall_stats.merged_count }}</div>
                                     <div class="text-md font-normal">{% trans "Merged" %}</div>
                             </div>
                             <div class="flex items-center justify-center gap-2 px-4 py-7 bg-yellow-100 text-yellow-700 font-semibold flex-grow">
-                                <i class="fas fa-exclamation-circle text-3xl"></i>
-                                    <div class="text-2xl font-bold text-center">{{ overall_stats.open_count }}</div>
+                                <i class="fas fa-exclamation-circle text-lg lg:text-3xl"></i>
+                                    <div class="lg:text-2xl text-lg font-bold text-center">{{ overall_stats.open_count }}</div>
                                     <div class="text-md font-normal">{% trans "Open" %}</div>
                             </div>
                             <div class="flex items-center justify-center gap-2 px-4 py-7 bg-red-100 text-red-700 font-semibold flex-grow rounded-tr-lg">
-                                <i class="fas fa-times-circle text-3xl"></i>
-                                    <div class="text-2xl font-bold text-center">{{ overall_stats.closed_count }}</div>
+                                <i class="fas fa-times-circle text-lg lg:text-3xl"></i>
+                                    <div class="lg:text-2xl text-lg font-bold text-center">{{ overall_stats.closed_count }}</div>
                                     <div class="text-md font-normal">{% trans "Closed" %}</div>
                             </div>
                         </div>
@@ -780,7 +788,7 @@
                             <i class="fas fa-trophy text-xl"></i> {% trans "Rank" %}: {{ overall_stats.user_rank }}
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {% for repo_name, repo_data in repos_with_prs.items %}
                             <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
                                 <div class="bg-gray-50 p-4 border-b border-gray-200">
@@ -842,9 +850,9 @@
 
 
 
+<!-- OLD CODE-->
 
-
-{% comment %} <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
+ {% comment %} <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
     <div class="max-sm:w-[100vw] w-[20vw] flex flex-col">
         <div class="w-[20vw] font-bold text-[20px] capitalize">{{ user.username }}</div>
         <div class="inline-block relative h-[200px] w-[200px]">
@@ -1354,7 +1362,20 @@
             </div>
         </div>
     </div>
-</div> {% endcomment %}
+</div>  {% endcomment %}
+
+
+
+
+
+
+
+
+
+
+
+
+
 <div id="followers"
      class="hidden relative z-10"
      aria-labelledby="modal-title"
@@ -1363,23 +1384,24 @@
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
          aria-hidden="true"></div>
     <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+        <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
             <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
                 <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start lg:w-full">
                         <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                             <div class="mt-2">
-                                <h3>Followed By:</h3>
+                                <h3 class="text-xl font-medium text-black/90">{% trans "Followed By:" %}</h3>
                                 <br>
                                 <p class="text-xl">
                                     <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
+                                        <tbody class="flex flex-col gap-2">
                                             {% for user in followers %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
                                                     {% if user.socialaccount_set.all.0.get_avatar_url %}
                                                         <td>
                                                             <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
                                                                  height="50px"
+                                                                 class="rounded-full"
                                                                  width="50px"
                                                                  alt="{{ user.username }}">
                                                         </td>
@@ -1388,11 +1410,12 @@
                                                             <img src="{% gravatar_url user.email 50 %}"
                                                                  height="50px"
                                                                  width="50px"
+                                                                 class="rounded-full"
                                                                  alt="{{ user.username }}">
                                                         </td>
                                                     {% endif %}
                                                     <td>
-                                                        &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
+                                                        &nbsp; <a class="text-lg font-medium hover:text-red-500" href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
                                                     </td>
                                                 </tr>
                                             {% endfor %}
@@ -1403,15 +1426,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                     <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                             id="close-follow">Close</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <div id="following"
      class="hidden relative z-10"
      aria-labelledby="modal-title"
@@ -1420,23 +1444,24 @@
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
          aria-hidden="true"></div>
     <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+        <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
             <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
                 <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start lg:w-full">
                         <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                             <div class="mt-2">
-                                <h3>Following:</h3>
+                                <h3 class="text-xl font-medium text-black/90">Following:</h3>
                                 <br>
                                 <p class="text-xl">
                                     <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
+                                        <tbody class="flex flex-col gap-2">
                                             {% for user in following %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
                                                     {% if user.socialaccount_set.all.0.get_avatar_url %}
                                                         <td>
                                                             <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
                                                                  height="50px"
+                                                                 class="rounded-full"
                                                                  width="50px"
                                                                  alt="{{ user.username }}">
                                                         </td>
@@ -1445,11 +1470,12 @@
                                                             <img src="{% gravatar_url user.email 50 %}"
                                                                  height="50px"
                                                                  width="50px"
+                                                                 class="rounded-full"
                                                                  alt="{{ user.username }}">
                                                         </td>
                                                     {% endif %}
                                                     <td>
-                                                        &nbsp; <a href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
+                                                        &nbsp; <a class="text-lg font-medium hover:text-red-500" href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
                                                     </td>
                                                 </tr>
                                             {% endfor %}
@@ -1460,15 +1486,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                     <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                             id="close-following">Close</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <div id="Bookmark"
      class="hidden relative z-10"
      aria-labelledby="modal-title"
@@ -1477,32 +1504,36 @@
     <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
          aria-hidden="true"></div>
     <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+        <div class="flex min-h-full items-center justify-center p-2 text-center sm:items-center sm:p-0">
             <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
                 <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                     <div class="sm:flex sm:items-start lg:w-full">
                         <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
                             <div class="mt-2">
-                                <h3>Bookmarks:</h3>
+                                <h3 class="text-xl font-medium text-black/90">Bookmarks:</h3>
                                 <br>
                                 <p class="text-xl">
                                     <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
+                                        <tbody class="flex flex-col gap-2">
                                             {% for i in bookmarks %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
-                                                    <div class="list-group-item">
-                                                        <button type="button"
-                                                                class="close"
-                                                                name="{{ i.pk }}"
-                                                                data-dismiss="alert"
-                                                                aria-label="Close">
-                                                            <span aria-hidden="true">×</span>
-                                                        </button>
-                                                        <a href="{{ i.get_absolute_url }}" class="list-group-item-heading">
-                                                            <strong>{{ i.description|truncatechars:50 }}</strong>
-                                                        </a>
-                                                        <span class="badge text-capitalize">{{ i.status }}</span>
-                                                        <p class="list-group-item-text">{{ i.user }}</p>
+                                                <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
+                                                    <div class="flex items-center justify-between w-full">
+                                                        <div class="flex flex-col">
+                                                            <a href="{{ i.get_absolute_url }}" class="text-lg font-medium hover:text-red-500">
+                                                                <strong>{{ i.description|truncatechars:50 }}</strong>
+                                                            </a>
+                                                            <p class="text-sm text-gray-600">{{ i.user }}</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="px-2 py-1 text-sm rounded-full bg-blue-100 text-blue-800">{{ i.status }}</span>
+                                                            <button type="button"
+                                                                    class="text-gray-400 hover:text-red-500"
+                                                                    name="{{ i.pk }}"
+                                                                    data-dismiss="alert"
+                                                                    aria-label="Close">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </tr>
                                             {% endfor %}
@@ -1513,15 +1544,93 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                     <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                            class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
                             id="close-Bookmark">Close</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+
+<!-- Kudos modal -->
+<div id="Kudos"
+     class="hidden relative z-10"
+     aria-labelledby="modal-title"
+     role="dialog"
+     aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+         aria-hidden="true"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start lg:w-full">
+                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                            <div class="mt-2">
+                                <h3 class="text-xl font-medium text-black/90">Kudos Received:</h3>
+                                <br>
+                                <p class="text-xl">
+                                    <table class="table-auto w-full border-spacing-52">
+                                        <tbody class="flex flex-col gap-2">
+                                            {% for k in user.kudos_received.all %}
+                                                <tr class="px-4 py-2 rounded-lg bg-gray-100 flex items-center gap-3">
+                                                    <td>
+                                                        {% if k.sender.userprofile.avatar %}
+                                                            <img src="{{ k.sender.userprofile.avatar }}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 class="rounded-full"
+                                                                 alt="{{ k.sender.username }}">
+                                                        {% else %}
+                                                            <img src="{% gravatar_url k.sender.email 50 %}"
+                                                                 height="50px"
+                                                                 width="50px"
+                                                                 class="rounded-full"
+                                                                 alt="{{ k.sender.username }}">
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'profile' slug=k.sender.username %}" class="text-lg font-medium hover:text-red-500">{{ k.sender.username }}</a>
+                                                    </td>
+                                                    <td>{{ k.timestamp }}</td>
+                                                    {% if k.link %}
+                                                        <td>
+                                                            <a href="{{ k.link }}" target="_blank" rel="noopener noreferrer" class="text-lg font-medium hover:text-red-500">Link</a>
+                                                        </td>
+                                                    {% endif %}
+                                                    {% if k.comment %}
+                                                        <td>
+                                                            <button type="button"
+                                                                    class="toggle-comment"
+                                                                    onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                                                <i class="fas fa-comment-dots"></i> View Comment
+                                                            </button>
+                                                            <div class="hidden mt-2 text-sm text-gray-600">{{ k.comment }}</div>
+                                                        </td>
+                                                    {% endif %}
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                    <button type="button"
+                    class="border-2 border-blue-500 font-medium text-blue-500 hover:bg-blue-500 hover:text-white transition-all duration-200 px-4 py-2 rounded-lg"
+                    id="close-kudos">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <!-- Assign Badge Modal -->
 <div id="assign-badge-modal"
      class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden">
@@ -1557,78 +1666,8 @@
         </form>
     </div>
 </div>
-<!-- Kudos modal -->
-<div id="Kudos"
-     class="hidden relative z-10"
-     aria-labelledby="modal-title"
-     role="dialog"
-     aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-         aria-hidden="true"></div>
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start lg:w-full">
-                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                            <div class="mt-2">
-                                <h3>Kudos Received:</h3>
-                                <br>
-                                <p class="text-xl">
-                                    <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
-                                            {% for k in user.kudos_received.all %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
-                                                    <td>
-                                                        {% if k.sender.userprofile.avatar %}
-                                                            <img src="{{ k.sender.userprofile.avatar }}"
-                                                                 height="50"
-                                                                 width="50"
-                                                                 alt="{{ k.sender.username }}">
-                                                        {% else %}
-                                                            <img src="{% gravatar_url k.sender.email 50 %}"
-                                                                 height="50"
-                                                                 width="50"
-                                                                 alt="{{ k.sender.username }}">
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>
-                                                        <a href="{% url 'profile' slug=k.sender.username %}">{{ k.sender.username }}</a>
-                                                    </td>
-                                                    <td>{{ k.timestamp }}</td>
-                                                    {% if k.link %}
-                                                        <td>
-                                                            <a href="{{ k.link }}" target="_blank" rel="noopener noreferrer">Link</a>
-                                                        </td>
-                                                    {% endif %}
-                                                    {% if k.comment %}
-                                                        <td>
-                                                            <button type="button"
-                                                                    class="toggle-comment"
-                                                                    onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                                                <i class="fas fa-comment-dots"></i> View Comment
-                                                            </button>
-                                                            <div class="hidden mt-2 text-sm text-gray-600">{{ k.comment }}</div>
-                                                        </td>
-                                                    {% endif %}
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                    <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                            id="close-kudos">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
+
 <script defer>
             var closeKudos = document.getElementById("close-kudos");
             var openKudos = document.getElementById("Kudos");
@@ -1775,33 +1814,33 @@
         });
     });
 
-        // $('body').on('click', '.follow_unfollow', function (e) {
-        //     e.preventDefault();
-        //     var usr = $(this).attr('name');
-        //     console.log(usr)
-        //     $.ajax({
-        //         type: 'GET',
-        //         url: '/follow/' + usr + '/',
-        //         data: {},
-        //         success: function (data) {
-        //             var txt = $('.follow_unfollow').text();
-        //             if (txt == "Follow")
-        //                 $('.follow_unfollow').text("Unfollow");
-        //             else
-        //                 $('.follow_unfollow').text("Follow");
-        //             $.notify("Done!", {
-        //                 style: "custom",
-        //                 className: "success"
-        //             });
-        //         },
-        //         error: function () {
-        //             $.notify("Some error occurred!", {
-        //                 style: "custom",
-        //                 className: "danger"
-        //             });
-        //         }
-        //     });
-        // });
+        $('body').on('click', '.follow_unfollow', function (e) {
+            e.preventDefault();
+            var usr = $(this).attr('name');
+            console.log(usr)
+            $.ajax({
+                type: 'GET',
+                url: '/follow/' + usr + '/',
+                data: {},
+                success: function (data) {
+                    var txt = $('.follow_unfollow').text();
+                    if (txt == "Follow")
+                        $('.follow_unfollow').text("Unfollow");
+                    else
+                        $('.follow_unfollow').text("Follow");
+                    $.notify("Done!", {
+                        style: "custom",
+                        className: "success"
+                    });
+                },
+                error: function () {
+                    $.notify("Some error occurred!", {
+                        style: "custom",
+                        className: "danger"
+                    });
+                }
+            });
+        });
 
     $('body').on('click', '.list-group-item button', function (e) {
         e.preventDefault();
