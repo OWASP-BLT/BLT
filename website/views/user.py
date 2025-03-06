@@ -447,12 +447,7 @@ class UserProfileDetailView(DetailView):
             user_issues.update(is_hidden=hide)
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
-        redirect_url = request.META.get("HTTP_REFERER", "/")
-        parsed_url = urlparse(redirect_url)
-        if parsed_url.netloc == "" or parsed_url.netloc == request.get_host():
-            return redirect(redirect_url)
-        else:
-            return redirect("/")
+        return redirect(reverse("profile", args=[user.username]))
 
 
 @login_required
@@ -472,12 +467,7 @@ def recommend_user(request, user_id):
                 messages.success(request, "Recommendation removed successfully!")
     except User.DoesNotExist:
         messages.error(request, "User not found.")
-    redirect_url = request.META.get("HTTP_REFERER", "/")
-    parsed_url = urlparse(redirect_url)
-    if parsed_url.netloc == "" or parsed_url.netloc == request.get_host():
-        return redirect(redirect_url)
-    else:
-        return redirect("/")
+    return redirect("index")
 
 
 @login_required

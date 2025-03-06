@@ -1044,8 +1044,7 @@ urlpatterns = [
     path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
     path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
     path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
-
-
+]
 if settings.DEBUG:
     import debug_toolbar
 

@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0219_organization_repos_updated_at"),
+        ("website", "0220_alter_dailystats_name_alter_issue_label"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
