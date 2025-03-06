@@ -5,7 +5,6 @@
 {% block keywords %}messaging, chat, direct messages{% endblock %}
 {% block og_title %}Messaging - BLT{% endblock %}
 {% block og_description %}Real-time private messaging system{% endblock %}
-
 {% block content %}
     {% include "includes/sidenav.html" %}
     <!-- Locked Overlay -->
@@ -22,24 +21,20 @@
             {% for thread in threads %}
                 <div class="conversation" data-id="{{ thread.id }}">
                     {% for participant in thread.participants.all %}
-                        {% if participant != request.user %}
-                            {{ participant.username }}
-                        {% endif %}
+                        {% if participant != request.user %}{{ participant.username }}{% endif %}
                     {% endfor %}
                 </div>
             {% endfor %}
         </div>
-
         <!-- Right Side: Chat Window -->
         <div id="chat-window">
             <div id="message-list">
                 <p id="welcome-message">Welcome to BLT DMs, search a user to start chatting.</p>
             </div>
-            <textarea id="message-input" placeholder="Type a message..." style="display: none;"></textarea>
-            <button id="send-message" style="display: none;">Send</button>
+            <textarea id="message-input" placeholder="Type a message..."></textarea>
+            <button id="send-message">Send</button>
         </div>
     </div>
-
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         let socket = null;
@@ -181,10 +176,7 @@
         async function initializeEncryptionKeys() {
             let privateKey = localStorage.getItem("privateKey");
             let publicKey = localStorage.getItem("publicKey");
-            console.log("privateKey", privateKey);          
-            
             if (!privateKey || !publicKey) {
-                console.log("No keys found, generating new ECDH key pair...");
                 const keyPair = await generateECDHKeyPair();
                 publicKey = await exportECDHPublicKey(keyPair.publicKey);
                 const privateKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
@@ -199,7 +191,6 @@
         }
         // Send our ECDH public key to the server
         async function updatePublicKeyOnServer(publicKey) {
-            console.log("Updating public key on server...");
             const response = await fetch('/api/messaging/set-public-key/', {
                 method: 'POST',
                 headers: {
@@ -234,7 +225,6 @@
                 const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 socket = new WebSocket(protocol + window.location.host + `/ws/messaging/${threadId}/`);
                 socket.onopen = function() {
-                    console.log('WebSocket is connected');
                     isConnecting = false;
                     reconnectAttempts = 0;
                     updateConnectionStatus(true);
@@ -246,7 +236,6 @@
                         reconnectAttempts++;
                         setTimeout(() => connectWebSocket(threadId), reconnectDelay);
                     }
-                    console.log('WebSocket closed. Reconnecting in ' + reconnectDelay + 'ms');
                 };
                 socket.onerror = function(error) {
                     isConnecting = false;
@@ -280,7 +269,6 @@
         async function handleWebSocketMessage(event) {
             try {
                 const data = JSON.parse(event.data);
-                console.log('Received data:', data);
                 if (data.type === 'chat_message') {
                     // For decryption, derive the shared key using our private key and the recipient's public key.
                     // In a two-party conversation, the recipient's public key is the other party's key.
@@ -295,7 +283,6 @@
                     const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
                     const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                     const decryptedMessage = await decryptWithSharedKey(sharedKey, data.encrypted_content);
-                    console.log('Decrypted message:', decryptedMessage);
                     appendMessage({ username: data.username === loggedInUser ? 'You' : data.username, content: decryptedMessage });
                 } else if (data.type === 'connection_status') {
                     updateConnectionStatus(data.status === 'connected');
@@ -324,11 +311,9 @@
                 socket.close();
             }
             connectWebSocket(threadId);
-            console.log("open chat called");
             fetch(`/api/messaging/${threadId}/messages/`)
                 .then(response => response.json())
                 .then(async data => {
-                    console.log("Data fetched to display:", data);
                     const messageList = document.getElementById("message-list");
                     messageList.innerHTML = "";
                     // For decryption of historical messages, derive shared key as above.
@@ -336,10 +321,8 @@
                     if (!recipientPublicKeyBase64) {
                         const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
                         const respData = await resp.json();
-                        console.log("Recipient public key response:", respData);
                         recipientPublicKeyBase64 = respData.public_key;
                         cachedRecipientPublicKey = recipientPublicKeyBase64;
-                        console.log("Recipient public key fetched:", recipientPublicKeyBase64);
                     }
                     const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
                     const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
@@ -380,9 +363,7 @@
                 if (!rawMessage) return;
                 // Fetch recipient's public key if not already cached
                 let recipientPublicKeyBase64 = cachedRecipientPublicKey;
-                console.log("Send message clicked");
                 if (!recipientPublicKeyBase64) {
-                    console.log("Fetching recipient's public key...");
                     const response = await fetch(`/api/messaging/${currentThreadId}/get-public-key`);
                     const data = await response.json();
                     recipientPublicKeyBase64 = data.public_key;
@@ -392,7 +373,6 @@
                 const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
                 const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                 const encryptedMessage = await encryptWithSharedKey(sharedKey, rawMessage);
-                console.log("Encrypted message:", encryptedMessage);
                 socket.send(JSON.stringify({ type: "chat_message", encrypted_content: encryptedMessage }));
                 messageInput.value = "";
                 // appendMessage({ username: 'You', content: rawMessage });
@@ -413,7 +393,6 @@
         });
     });
     </script>
-
     <style>
         .messaging-container {
             display: flex;
@@ -507,6 +486,10 @@
         }
         #unlock-button:hover {
             background-color: #B22222;
+        }
+        #message-input,
+        #send-message {
+            display: none;
         }
     </style>
 {% endblock %}
