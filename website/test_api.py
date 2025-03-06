@@ -1,14 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db.transaction import atomic
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
-from website.utils import rebuild_safe_url
-from django.test import TestCase
 
+from website.utils import rebuild_safe_url
 
 
 class RebuildSafeUrlTestCase(TestCase):
