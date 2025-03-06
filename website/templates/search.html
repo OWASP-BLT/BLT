@@ -349,6 +349,21 @@
                                                             <span>Website</span>
                                                         </a>
                                                     {% endif %}
+                                                    {% if user.userprofile.public_key %}
+                                                        <button class="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2 start-chat"
+                                                                data-user-id="{{ user.id }}">
+                                                            <i class="fas fa-comment-alt"></i>
+                                                            <span>Message</span>
+                                                        </button>
+                                                    {% else %}
+                                                        <button class="text-white bg-gray-400 px-3 py-2 rounded-md shadow-md transition-colors flex items-center space-x-2"
+                                                                data-user-id="{{ user.id }}"
+                                                                disabled
+                                                                title="User has not joined BLT-DMs">
+                                                            <i class="fas fa-comment-alt"></i>
+                                                            <span>Message</span>
+                                                        </button>
+                                                    {% endif %}
                                                 </div>
                                                 <div class="flex flex-wrap gap-4 mt-4">
                                                     {% for badge in user.badges %}
@@ -800,5 +815,47 @@
             });
         }
     }
+document.addEventListener("DOMContentLoaded", function () {
+    const messageButtons = document.querySelectorAll(".start-chat");
+    console.log(messageButtons)
+    messageButtons.forEach(button => {
+        button.addEventListener("click", function () {
+            const userId = this.getAttribute("data-user-id");
+
+            fetch(`/messaging/start-thread/${userId}/`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = `/messaging/?thread=${data.thread_id}`;
+                } else {
+                    alert("Error starting chat.");
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
     </script>
 {% endblock content %}

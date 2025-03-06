@@ -215,6 +215,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/messaging/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'messaging' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/messaging/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-envelope fa-lg"></i>
+                            </div>
+                            <span>Messaging</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/challenges/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'user_challenges' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/challenges/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">

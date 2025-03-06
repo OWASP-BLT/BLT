@@ -1,0 +1,512 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Messaging{% endblock %}
+{% block description %}Real-time private messaging system{% endblock %}
+{% block keywords %}messaging, chat, direct messages{% endblock %}
+{% block og_title %}Messaging - BLT{% endblock %}
+{% block og_description %}Real-time private messaging system{% endblock %}
+
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <!-- Locked Overlay -->
+    <div id="lock-overlay">
+        <div id="lock-message">
+            <p>Your messaging is locked. Please unlock to continue.</p>
+            <button id="unlock-button">Unlock</button>
+        </div>
+    </div>
+    <div class="messaging-container">
+        <!-- Left Side: Conversation List -->
+        <div id="conversation-list">
+            <h2>Conversations</h2>
+            {% for thread in threads %}
+                <div class="conversation" data-id="{{ thread.id }}">
+                    {% for participant in thread.participants.all %}
+                        {% if participant != request.user %}
+                            {{ participant.username }}
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Right Side: Chat Window -->
+        <div id="chat-window">
+            <div id="message-list">
+                <p id="welcome-message">Welcome to BLT DMs, search a user to start chatting.</p>
+            </div>
+            <textarea id="message-input" placeholder="Type a message..." style="display: none;"></textarea>
+            <button id="send-message" style="display: none;">Send</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let socket = null;
+        let currentThreadId = null;
+        let isConnecting = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 2000; // 2 seconds
+        const loggedInUser = "{{ request.user.username }}";
+        // We'll cache the recipient's public key after the first fetch
+        let cachedRecipientPublicKey = null;
+        if(localStorage.getItem("privateKey") || localStorage.getItem("publicKey")) {
+            unlockScreen()
+        }
+        // ===== Helper Functions =====
+        
+        // ArrayBuffer <-> Base64 conversion
+        function arrayBufferToBase64(buffer) {
+            let binary = "";
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.startsWith(name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // ===== ECDH Key Functions =====
+
+        // Generate an ECDH key pair using curve P-256
+        async function generateECDHKeyPair() {
+            return window.crypto.subtle.generateKey(
+                {
+                    name: "ECDH",
+                    namedCurve: "P-256"
+                },
+                true, // extractable keys for exporting
+                ["deriveKey", "deriveBits"]
+            );
+        }
+        // Export public key as Base64 (raw format)
+        async function exportECDHPublicKey(publicKey) {
+            const exported = await window.crypto.subtle.exportKey("raw", publicKey);
+            return arrayBufferToBase64(exported);
+        }
+        // Import a raw ECDH public key from Base64
+        async function importECDHPublicKey(base64Key) {
+            const raw = base64ToArrayBuffer(base64Key);
+            return window.crypto.subtle.importKey(
+                "raw",
+                raw,
+                { name: "ECDH", namedCurve: "P-256" },
+                true,
+                []
+            );
+        }
+        // Import a private key from Base64 (pkcs8)
+        async function importECDHPrivateKey(base64Key) {
+            const raw = base64ToArrayBuffer(base64Key);
+            return window.crypto.subtle.importKey(
+                "pkcs8",
+                raw,
+                { name: "ECDH", namedCurve: "P-256" },
+                true,
+                ["deriveKey", "deriveBits"]
+            );
+        }
+        // Derive a shared AES-GCM key using our private key and the other party's public key
+        async function deriveSharedKey(privateKey, otherPublicKey) {
+            return window.crypto.subtle.deriveKey(
+                {
+                    name: "ECDH",
+                    public: otherPublicKey
+                },
+                privateKey,
+                {
+                    name: "AES-GCM",
+                    length: 256
+                },
+                false, // non-extractable
+                ["encrypt", "decrypt"]
+            );
+        }
+        // Encrypt a message using the derived shared key and AES-GCM
+        async function encryptWithSharedKey(sharedKey, message) {
+            const iv = window.crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for AES-GCM
+            const encoder = new TextEncoder();
+            const encodedMessage = encoder.encode(message);
+            const ciphertext = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                sharedKey,
+                encodedMessage
+            );
+            // Combine IV and ciphertext
+            const combined = new Uint8Array(iv.byteLength + ciphertext.byteLength);
+            combined.set(iv);
+            combined.set(new Uint8Array(ciphertext), iv.byteLength);
+            return arrayBufferToBase64(combined.buffer);
+        }
+        // Decrypt a message using the shared key
+        async function decryptWithSharedKey(sharedKey, combinedBase64) {
+            const combinedBuffer = base64ToArrayBuffer(combinedBase64);
+            const combined = new Uint8Array(combinedBuffer);
+            const iv = combined.slice(0, 12);
+            const ciphertext = combined.slice(12);
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                sharedKey,
+                ciphertext
+            );
+            const decoder = new TextDecoder();
+            return decoder.decode(decrypted);
+        }
+
+        // ===== Initialization =====
+
+        async function initializeEncryptionKeys() {
+            let privateKey = localStorage.getItem("privateKey");
+            let publicKey = localStorage.getItem("publicKey");
+            console.log("privateKey", privateKey);          
+            
+            if (!privateKey || !publicKey) {
+                console.log("No keys found, generating new ECDH key pair...");
+                const keyPair = await generateECDHKeyPair();
+                publicKey = await exportECDHPublicKey(keyPair.publicKey);
+                const privateKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
+                const privateKeyBase64 = arrayBufferToBase64(privateKeyBuffer);
+                localStorage.setItem("publicKey", publicKey);
+                localStorage.setItem("privateKey", privateKeyBase64);
+                await updatePublicKeyOnServer(publicKey);
+            } else {
+                console.log("Encryption keys found in localStorage.");
+            }
+            unlockScreen();
+        }
+        // Send our ECDH public key to the server
+        async function updatePublicKeyOnServer(publicKey) {
+            console.log("Updating public key on server...");
+            const response = await fetch('/api/messaging/set-public-key/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ public_key: publicKey })
+            });
+            if (!response.ok) {
+                console.error('Failed to update public key on server.');
+            } else {
+                console.log('Public key successfully updated on server.');
+            }
+        }
+         // Hide the locked overlay and show messaging interface
+         function unlockScreen() {
+            const lockOverlay = document.getElementById("lock-overlay");
+            const messagingContainer = document.getElementById("messaging-container");
+            if (lockOverlay) lockOverlay.style.display = "none";
+            if (messagingContainer) messagingContainer.style.display = "flex";
+        }
+        // ===== WebSocket Connection Functions =====
+
+        function connectWebSocket(threadId) {
+            if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
+                return;
+            }
+            if (isConnecting) return;
+            isConnecting = true;
+            updateConnectionStatus(false);
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                socket = new WebSocket(protocol + window.location.host + `/ws/messaging/${threadId}/`);
+                socket.onopen = function() {
+                    console.log('WebSocket is connected');
+                    isConnecting = false;
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                };
+                socket.onclose = function(e) {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(() => connectWebSocket(threadId), reconnectDelay);
+                    }
+                    console.log('WebSocket closed. Reconnecting in ' + reconnectDelay + 'ms');
+                };
+                socket.onerror = function(error) {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                };
+                socket.onmessage = handleWebSocketMessage;
+            } catch (error) {
+                isConnecting = false;
+                updateConnectionStatus(false);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            const connectionStatus = document.getElementById('connection-status');
+            const connectionText = document.getElementById('connection-text');
+            if (connectionStatus && connectionText) {
+                if (connected) {
+                    connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
+                    connectionText.textContent = 'Connected';
+                    connectionText.className = 'text-sm text-green-600';
+                    document.getElementById("message-input").disabled = false;
+                } else {
+                    connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
+                    connectionText.textContent = 'Disconnected';
+                    connectionText.className = 'text-sm text-red-600';
+                    document.getElementById("message-input").disabled = true;
+                }
+            }
+        }
+
+        async function handleWebSocketMessage(event) {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('Received data:', data);
+                if (data.type === 'chat_message') {
+                    // For decryption, derive the shared key using our private key and the recipient's public key.
+                    // In a two-party conversation, the recipient's public key is the other party's key.
+                    let recipientPublicKeyBase64 = cachedRecipientPublicKey;
+                    if (!recipientPublicKeyBase64) {
+                        const resp = await fetch(`/api/messaging/${currentThreadId}/get-public-key/`);
+                        const respData = await resp.json();
+                        recipientPublicKeyBase64 = respData.public_key;
+                        cachedRecipientPublicKey = recipientPublicKeyBase64;
+                    }
+                    const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
+                    const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
+                    const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
+                    const decryptedMessage = await decryptWithSharedKey(sharedKey, data.encrypted_content);
+                    console.log('Decrypted message:', decryptedMessage);
+                    appendMessage({ username: data.username === loggedInUser ? 'You' : data.username, content: decryptedMessage });
+                } else if (data.type === 'connection_status') {
+                    updateConnectionStatus(data.status === 'connected');
+                } else if (data.type === 'error') {
+                    // handle error
+                }
+            } catch (error) {
+                console.error("Error handling WebSocket message:", error);
+            }
+        }
+
+        function appendMessage(data) {
+            const messageList = document.getElementById("message-list");
+            if (!messageList) return;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `<strong>${data.username}:</strong> ${data.content}`;
+            messageList.appendChild(messageDiv);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        // ===== Open Chat & Load Messages =====
+
+        function openChat(threadId) {
+            if (socket) {
+                socket.close();
+            }
+            connectWebSocket(threadId);
+            console.log("open chat called");
+            fetch(`/api/messaging/${threadId}/messages/`)
+                .then(response => response.json())
+                .then(async data => {
+                    console.log("Data fetched to display:", data);
+                    const messageList = document.getElementById("message-list");
+                    messageList.innerHTML = "";
+                    // For decryption of historical messages, derive shared key as above.
+                    let recipientPublicKeyBase64 = cachedRecipientPublicKey;
+                    if (!recipientPublicKeyBase64) {
+                        const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
+                        const respData = await resp.json();
+                        console.log("Recipient public key response:", respData);
+                        recipientPublicKeyBase64 = respData.public_key;
+                        cachedRecipientPublicKey = recipientPublicKeyBase64;
+                        console.log("Recipient public key fetched:", recipientPublicKeyBase64);
+                    }
+                    const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
+                    const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
+                    const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
+                    for (const message of data) {
+                        // Decrypt each message using the shared key
+                        try {
+                            const decryptedContent = await decryptWithSharedKey(sharedKey, message.content);
+                            const messageDiv = document.createElement("div");
+                            messageDiv.classList.add("message");
+                            messageDiv.innerHTML = `<strong>${message.username}:</strong> ${decryptedContent}`;
+                            messageList.appendChild(messageDiv);
+                        } catch (err) {
+                            console.error("Error decrypting message:", err);
+                        }
+                    }
+                    messageList.scrollTop = messageList.scrollHeight;
+                })
+                .catch(error => console.error("Error fetching messages:", error));
+            document.getElementById("welcome-message").style.display = "none";
+            document.getElementById("message-input").style.display = "block";
+            document.getElementById("send-message").style.display = "block";
+        }
+
+        document.querySelectorAll(".conversation").forEach(convo => {
+            convo.addEventListener("click", function() {
+                currentThreadId = this.dataset.id;
+                openChat(currentThreadId);
+            });
+        });
+
+        // ===== Send Message =====
+
+        document.getElementById("send-message").addEventListener("click", async function() {
+            if (socket && currentThreadId) {
+                const messageInput = document.getElementById("message-input");
+                const rawMessage = messageInput.value.trim();
+                if (!rawMessage) return;
+                // Fetch recipient's public key if not already cached
+                let recipientPublicKeyBase64 = cachedRecipientPublicKey;
+                console.log("Send message clicked");
+                if (!recipientPublicKeyBase64) {
+                    console.log("Fetching recipient's public key...");
+                    const response = await fetch(`/api/messaging/${currentThreadId}/get-public-key`);
+                    const data = await response.json();
+                    recipientPublicKeyBase64 = data.public_key;
+                    cachedRecipientPublicKey = recipientPublicKeyBase64;
+                }
+                const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
+                const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
+                const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
+                const encryptedMessage = await encryptWithSharedKey(sharedKey, rawMessage);
+                console.log("Encrypted message:", encryptedMessage);
+                socket.send(JSON.stringify({ type: "chat_message", encrypted_content: encryptedMessage }));
+                messageInput.value = "";
+                // appendMessage({ username: 'You', content: rawMessage });
+            }
+        });
+
+        // Clean up WebSocket when leaving the page
+        window.addEventListener('beforeunload', function() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close();
+            }
+        });
+
+        // ===== Unlock Button =====
+
+        document.getElementById("unlock-button").addEventListener("click", async function() {
+            await initializeEncryptionKeys();
+        });
+    });
+    </script>
+
+    <style>
+        .messaging-container {
+            display: flex;
+            height: 80vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        #conversation-list {
+            width: 30%;
+            background-color: #8B0000; /* Dark Red */
+            padding: 10px;
+            overflow-y: auto;
+        }
+        #conversation-list h2 {
+            text-align: center;
+            color: white;
+        }
+        .conversation {
+            cursor: pointer;
+            padding: 10px;
+            border-bottom: 1px solid white;
+            color: white;
+        }
+        .conversation:hover {
+            background-color: #B22222; /* Lighter red */
+        }
+        #chat-window {
+            width: 70%;
+            background-color: white;
+            color: black;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        #message-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border-bottom: 2px solid #8B0000;
+            height: 300px;
+        }
+        .message {
+            margin-bottom: 10px;
+        }
+        #message-input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #8B0000;
+        }
+        #send-message {
+            background-color: #8B0000;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        #send-message:hover {
+            background-color: #B22222;
+        }
+        /* Locked overlay styles */
+        #lock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #lock-message {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: #333;
+        }
+        #unlock-button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #8B0000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+        #unlock-button:hover {
+            background-color: #B22222;
+        }
+    </style>
+{% endblock %}
