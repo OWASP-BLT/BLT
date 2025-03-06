@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 
 from website.models import Domain, Project, Repo
 from website.utils import check_security_txt
- 
+
 logger = logging.getLogger(__name__)
 
 
