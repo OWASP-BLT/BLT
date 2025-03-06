@@ -101,8 +101,17 @@ def check_domain_security(request, domain_id):
         return JsonResponse({"has_security_txt": has_security, "error": error if error else None})
 
     except Domain.DoesNotExist:
+        logger.warning(f"Domain not found with id: {domain_id}")
         return JsonResponse({"error": "Domain not found"}, status=404)
 
+    except requests.exceptions.RequestException as req_err:
+        logger.error(f"Request error checking security.txt: {req_err}")
+        return JsonResponse({"error": "Error checking security.txt: Connection failed"}, status=503)
+
+    except ValueError as val_err:
+        logger.error(f"Value error checking security.txt: {val_err}")
+        return JsonResponse({"error": "Invalid domain URL format"}, status=400)
+
     except Exception as e:
-        logger.error(f"Error checking security.txt: {str(e)}")
-        return JsonResponse({"error": f"Error checking security.txt: {str(e)}"}, status=500)
+        logger.error(f"Unexpected error checking security.txt: {str(e)}", exc_info=True)
+        return JsonResponse({"error": "Internal server error"}, status=500)

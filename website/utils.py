@@ -690,8 +690,18 @@ def check_security_txt(domain_url):
             response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 return True, None
-        except requests.exceptions.RequestException as e:
-            return False, str(e)
+        except requests.exceptions.Timeout:
+            logger.warning(f"Timeout checking security.txt at {url}")
+            continue
+        except requests.exceptions.SSLError as ssl_err:
+            logger.warning(f"SSL Error checking security.txt at {url}: {ssl_err}")
+            continue
+        except requests.exceptions.ConnectionError as conn_err:
+            logger.warning(f"Connection Error checking security.txt at {url}: {conn_err}")
+            continue
+        except requests.exceptions.RequestException as req_err:
+            logger.warning(f"Request Error checking security.txt at {url}: {req_err}")
+            continue
 
     return False, "security.txt not found"
 
