@@ -325,7 +325,20 @@ DATABASES = {
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    # Parse the database URL with dj_database_url
+    db_config = dj_database_url.config(conn_max_age=60, ssl_require=False)
+    
+    # If it's PostgreSQL, use connection pooling
+    if db_config.get('ENGINE') == 'django.db.backends.postgresql':
+        # Use connection pooling for PostgreSQL
+        db_config['ENGINE'] = 'django_db_pool.db.backends.postgresql'
+        db_config['POOL_OPTIONS'] = {
+            'POOL_SIZE': 20,
+            'MAX_OVERFLOW': 10,
+            'RECYCLE': 300,
+        }
+    
+    DATABASES['default'] = db_config
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
@@ -448,15 +461,20 @@ else:
         }
     }
 
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": os.environ.get("REDISCLOUD_URL"),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "CONNECTION_POOL_KWARGS": {"max_connections": 50},
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
+                "IGNORE_EXCEPTIONS": True,
+            },
+            "KEY_PREFIX": "blt"
+        }
+    }
 
 if DEBUG or TESTING:
     anon_throttle = 100000
