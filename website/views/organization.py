@@ -2,6 +2,7 @@ import ipaddress
 import json
 import logging
 import re
+import socket
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -1442,6 +1443,31 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
         return redirect("/")
 
 
+def is_valid_public_ip(ip_str):
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return not (ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast)
+    except ValueError:
+        return False
+
+
+def is_safe_url(url):
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme not in ["http", "https"]:
+            return False
+
+        # Resolve domain to IP
+        try:
+            ip = socket.gethostbyname(parsed.netloc)
+            return is_valid_public_ip(ip)
+        except socket.gaierror:
+            return False
+
+    except Exception:
+        return False
+
+
 @login_required(login_url="/accounts/login")
 def add_or_update_domain(request):
     if request.method == "POST":
@@ -1453,36 +1479,62 @@ def add_or_update_domain(request):
             try:
                 domain_pk = request.POST["id"]
                 domain = Domain.objects.get(pk=domain_pk)
+
+                # Validate input URL
+                url = request.POST.get("url")
+                if url and not is_safe_url(url):
+                    return HttpResponse("Invalid or unsafe URL provided")
+
                 domain.name = request.POST["name"]
                 domain.email = request.POST["email"]
                 domain.github = request.POST["github"]
+
+                # Validate GitHub URL if provided
+                if domain.github and not is_safe_url(domain.github):
+                    return HttpResponse("Invalid or unsafe GitHub URL")
+
                 try:
                     domain.logo = request.FILES["logo"]
                 except KeyError:
                     pass
+
                 domain.save()
                 return HttpResponse("Domain Updated")
+
             except Domain.DoesNotExist:
                 if count_domain == subscription.number_of_domains:
                     return HttpResponse("Domains Reached Limit")
                 else:
                     if organization_admin.role == 0:
                         domain = Domain()
+
+                        # Validate input URL
+                        url = request.POST.get("url")
+                        if url and not is_safe_url(url):
+                            return HttpResponse("Invalid or unsafe URL provided")
+
                         domain.name = request.POST["name"]
-                        domain.url = request.POST["url"]
+                        domain.url = url
                         domain.email = request.POST["email"]
                         domain.github = request.POST["github"]
+
+                        # Validate GitHub URL if provided
+                        if domain.github and not is_safe_url(domain.github):
+                            return HttpResponse("Invalid or unsafe GitHub URL")
+
                         try:
                             domain.logo = request.FILES["logo"]
                         except KeyError:
                             pass
+
                         domain.organization = organization_admin.organization
                         domain.save()
                         return HttpResponse("Domain Created")
                     else:
                         return HttpResponse("Unauthorized: Only admin can create domains")
+
         except (OrganizationAdmin.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            return HttpResponse("Error occurred while processing the request")
 
 
 @login_required(login_url="/accounts/login")
