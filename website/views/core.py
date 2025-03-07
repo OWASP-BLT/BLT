@@ -1285,6 +1285,19 @@ def home(request):
         except Exception as e:
             print(f"Error getting star count for {repo_name}: {e}")
 
+    # Get system stats for developer mode
+    system_stats = None
+    if settings.DEBUG:
+        import django
+
+        system_stats = {
+            "memory_usage": f"{psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.2f} MB",
+            "cpu_percent": f"{psutil.Process(os.getpid()).cpu_percent(interval=0.1):.2f}%",
+            "python_version": f"{os.sys.version}",
+            "django_version": django.get_version(),
+            "db_connections": len(connection.queries),
+        }
+
     return render(
         request,
         "home.html",
@@ -1301,6 +1314,8 @@ def home(request):
             "repo_stars": repo_stars,  # Add repository star counts to context
             "top_referrals": top_referrals,
             "referral_code": referral_code,
+            "debug_mode": settings.DEBUG,  # Add debug flag to context
+            "system_stats": system_stats,  # Add system stats to context
         },
     )
 
