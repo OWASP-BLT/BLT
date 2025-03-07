@@ -1,10 +1,13 @@
 import ast
 import difflib
 import hashlib
+import ipaddress
 import logging
 import os
 import re
+import socket
 import time
+import urllib.parse
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
@@ -674,6 +677,16 @@ def gravatar_url(email, size=80):
     return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"
 
 
+def is_private_ip(url):
+    """Prevents SSRF by blocking private/internal IP addresses"""
+    try:
+        hostname = urllib.parse.urlparse(url).hostname
+        ip = socket.gethostbyname(hostname)
+        return ipaddress.ip_address(ip).is_private
+    except Exception:
+        return True  # Treat failures as unsafe
+
+
 def check_security_txt(domain_url):
     """
     Check if a domain has security.txt file at .well-known/security.txt or /security.txt
@@ -683,6 +696,10 @@ def check_security_txt(domain_url):
 
     if not domain_url.startswith(("http://", "https://")):
         domain_url = f"https://{domain_url}"
+
+    # Block internal IP addresses (SSRF prevention)
+    if is_private_ip(domain_url):
+        return False, "Blocked: Potential SSRF detected"
 
     for path in security_paths:
         url = domain_url.rstrip("/") + path
