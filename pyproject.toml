@@ -8,7 +8,7 @@ license = "AGPLv3"
 [tool.poetry.dependencies]
 python = ">=3.11.2,<3.14"
 python-dotenv = "^1.0.1"
-Django = "^5.1.6"
+Django = "^5.1.7"
 dj-database-url = "^2.3.0"
 django-allauth = "^0.61.1"
 beautifulsoup4 = "^4.13.3"
