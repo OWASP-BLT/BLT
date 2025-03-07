@@ -1,0 +1,45 @@
+name: Close PRs with Style Tags
+
+# Trigger the workflow when a pull request is opened or updated
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Define the job to check and close the PR
+jobs:
+  close-style-pr:
+    runs-on: ubuntu-latest
+
+    # Required permissions to close pull requests
+    permissions:
+      pull-requests: write
+
+    steps:
+      # Step 1: Checkout the PR code
+      - name: Checkout PR Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Step 2: Check for <style> tags in the diff
+      - name: Check for Style Tags in PR Diff
+        id: check-style
+        run: |
+          diff=$(gh pr diff ${{ github.event.pull_request.number }})
+          if echo "$diff" | grep -q "<style>"; then
+            echo "Style tags detected in the PR diff."
+            echo "has_style_tags=true" >> $GITHUB_OUTPUT
+          else
+            echo "No style tags detected."
+            echo "has_style_tags=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3: Close the Pull Request if <style> tags are found
+      - name: Close Pull Request
+        if: steps.check-style.outputs.has_style_tags == 'true'
+        run: |
+          gh pr close ${{ github.event.pull_request.number }} --comment "Auto-closing PR because it contains <style> tags in the code."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
