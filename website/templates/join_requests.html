@@ -1,33 +1,84 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="join-requests-container">
-        <h2>Join Requests</h2>
-        {% if user.userprofile.team %}
-            <p>
-                You are currently in the team: <strong>{{ user.userprofile.team.name }}</strong>
-            </p>
-            <!-- Leave Team Form -->
-            <form method="post" action="{% url 'leave_team' %}">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Leave Current Team</button>
-            </form>
-        {% endif %}
-        {% if join_requests %}
-            <ul>
-                {% for request in join_requests %}
-                    <li>
-                        <span>{{ request.team.name }}</span>
-                        <!-- Join Team Form -->
-                        <form method="post" action="{% url 'join_requests' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="team_id" value="{{ request.team.id }}">
-                            <button type="submit" {% if user.userprofile.team %}disabled{% endif %}>Join</button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No join requests.</p>
-        {% endif %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex items-center gap-6 mb-6">
+                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                        <i class="fas fa-bell text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800">Team Invitations</h2>
+                        <p class="text-gray-600 mt-2">
+                            {% if user.userprofile.team %}
+                                You are currently in the team:
+                                <span class="font-semibold text-[#e74c3c]">{{ user.userprofile.team.name }}</span>
+                            {% else %}
+                                Check your pending team invitations
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Join Requests List -->
+            {% if join_requests %}
+                <div class="space-y-4">
+                    {% for request in join_requests %}
+                        <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    {% if request.team.logo %}
+                                        <img src="{{ request.team.logo.url }}"
+                                             alt="{{ request.team.name }}"
+                                             width="48"
+                                             height="48"
+                                             class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                    {% else %}
+                                        <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
+                                            <i class="fas fa-users text-gray-400"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-800">{{ request.team.name }}</h3>
+                                        <p class="text-sm text-gray-600">Invited by {{ request.team.admin.username }}</p>
+                                    </div>
+                                </div>
+                                <form method="post"
+                                      action="{% url 'join_requests' %}"
+                                      class="flex-shrink-0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="team_id" value="{{ request.team.id }}">
+                                    <button type="submit"
+                                            class="flex items-center gap-2 px-6 py-3 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                        <i class="fas fa-user-plus"></i>
+                                        Accept Invitation
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- No Requests State -->
+                <div class="bg-white rounded-xl shadow-md p-8 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i class="fas fa-inbox text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">No Team Invitations</h3>
+                    <p class="text-gray-600">
+                        You don't have any pending team invitations at the moment.
+                        {% if not user.userprofile.team %}
+                            <br>
+                            <a href="{% url 'team_overview' %}"
+                               class="text-[#e74c3c] hover:underline mt-4 inline-block">
+                                <i class="fas fa-arrow-right mr-2"></i>Create your own team
+                            </a>
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% endblock content %}
