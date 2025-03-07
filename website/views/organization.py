@@ -46,6 +46,7 @@ from website.models import (
     Activity,
     DailyStatusReport,
     Domain,
+    GitHubIssue,
     Hunt,
     IpReport,
     Issue,
@@ -489,8 +490,41 @@ class Listbounties(TemplateView):
             hunts = hunts.filter(domain=domain)
 
         # Fetch GitHub issues with $5 label for first page
+        issue_state = request.GET.get("issue_state", "open")
+
         try:
-            github_issues = self.github_issues_with_bounties("$5")
+            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
+
+            # For closed issues, fetch related PRs from database
+            if issue_state == "closed":
+                for issue in github_issues:
+                    issue_number = issue.get("number")
+
+                    try:
+                        related_prs = []
+                        prs = GitHubIssue.objects.filter(
+                            type="pull_request",
+                            is_merged=True,
+                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                            + str(issue_number),
+                        ).order_by("-merged_at")[:3]
+
+                        for pr in prs:
+                            related_prs.append(
+                                {
+                                    "number": pr.issue_id,
+                                    "title": pr.title,
+                                    "url": pr.url,
+                                    "user": pr.user_profile.user.username
+                                    if pr.user_profile and pr.user_profile.user
+                                    else None,
+                                }
+                            )
+
+                        issue["related_prs"] = related_prs
+                    except Exception as e:
+                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                        issue["related_prs"] = []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
@@ -500,18 +534,19 @@ class Listbounties(TemplateView):
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
+            "selected_issue_state": issue_state,
         }
 
         return render(request, self.template_name, context)
 
-    def github_issues_with_bounties(self, label, page=1, per_page=10):
-        cache_key = f"github_issues_{label}_page_{page}"
+    def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
         cached_issues = cache.get(cache_key)
 
         if cached_issues is not None:
             return cached_issues
 
-        params = {"labels": label, "state": "open", "per_page": per_page, "page": page}
+        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
 
         headers = {}
         github_token = getattr(settings, "GITHUB_API_TOKEN", None)
@@ -526,20 +561,29 @@ class Listbounties(TemplateView):
             response.raise_for_status()
 
             issues = response.json()
-            formatted_issues = [
-                {
-                    "id": issue.get("id"),
-                    "number": issue.get("number"),
-                    "title": issue.get("title"),
-                    "url": issue.get("html_url"),
-                    "repository": "OWASP-BLT/BLT",  # Hardcoded since we know the repo
-                    "created_at": issue.get("created_at"),
-                    "updated_at": issue.get("updated_at"),
-                    "labels": [label.get("name") for label in issue.get("labels", [])],
-                    "user": issue.get("user", {}).get("login") if issue.get("user") else None,
-                }
-                for issue in issues
-            ]
+            formatted_issues = []
+
+            for issue in issues:
+                related_prs = []
+
+                # Only include issues, not PRs in the response
+                if issue.get("pull_request") is None:
+                    formatted_issue = {
+                        "id": issue.get("id"),
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "url": issue.get("html_url"),
+                        "repository": "OWASP-BLT/BLT",
+                        "created_at": issue.get("created_at"),
+                        "updated_at": issue.get("updated_at"),
+                        "labels": [label.get("name") for label in issue.get("labels", [])],
+                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                        "state": issue.get("state"),
+                        "related_prs": related_prs,
+                        "closed_at": issue.get("closed_at"),
+                    }
+
+                    formatted_issues.append(formatted_issue)
 
             # Cache for 5 minutes
             cache.set(cache_key, formatted_issues, timeout=300)
@@ -551,28 +595,48 @@ class Listbounties(TemplateView):
 
 
 def load_more_issues(request):
+    page = int(request.GET.get("page", 1))
+    state = request.GET.get("state", "open")
+
     try:
-        page = int(request.GET.get("page", 1))
-        label = "$5"
+        view = Listbounties()
+        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
 
-        if page < 1:
-            page = 1
+        # For closed issues, fetch related PRs from database for other than first batch of issues
+        if issues and state == "closed":
+            for issue in issues:
+                issue_number = issue.get("number")
 
-        issues = Listbounties().github_issues_with_bounties(label, page=page)
+                try:
+                    related_prs = []
+                    prs = GitHubIssue.objects.filter(
+                        type="pull_request",
+                        is_merged=True,
+                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                        + str(issue_number),
+                    ).order_by("-merged_at")[:3]
 
-        return JsonResponse(
-            {
-                "success": True,
-                "issues": issues,
-                "next_page": page + 1 if issues else None,  # Only provide next page if we have results
-            }
-        )
-    except Exception:  # Removed 'as e' since it's not used
-        logger.exception("Error loading more issues")
+                    for pr in prs:
+                        related_prs.append(
+                            {
+                                "number": pr.issue_id,
+                                "title": pr.title,
+                                "url": pr.url,
+                                "user": pr.user_profile.user.username
+                                if pr.user_profile and pr.user_profile.user
+                                else None,
+                            }
+                        )
 
-        return JsonResponse(
-            {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
-        )
+                    issue["related_prs"] = related_prs
+                except Exception as e:
+                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                    issue["related_prs"] = []
+
+        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
+    except Exception as e:
+        logger.error(f"Error loading more issues: {str(e)}")
+        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
 class DraftHunts(TemplateView):
