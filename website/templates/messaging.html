@@ -46,7 +46,10 @@
         const loggedInUser = "{{ request.user.username }}";
         // We'll cache the recipient's public key after the first fetch
         let cachedRecipientPublicKey = null;
-        if(localStorage.getItem("privateKey") || localStorage.getItem("publicKey")) {
+        const serverPublicKey = "{{ request.user.userprofile.public_key }}";
+        const localPublicKey = localStorage.getItem("publicKey");
+        const localPrivateKey = localStorage.getItem("privateKey");
+        if(localPublicKey && localPrivateKey && localPublicKey === serverPublicKey) {
             unlockScreen()
         }
         // ===== Helper Functions =====
@@ -174,18 +177,18 @@
         // ===== Initialization =====
 
         async function initializeEncryptionKeys() {
-            let privateKey = localStorage.getItem("privateKey");
-            let publicKey = localStorage.getItem("publicKey");
-            if (!privateKey || !publicKey) {
+            let localPublicKey = localStorage.getItem("publicKey");
+            let localPrivateKey = localStorage.getItem("privateKey");
+            
+            // If keys are missing or don't match, regenerate and update the server
+            if (!localPublicKey || !localPrivateKey || localPublicKey !== serverPublicKey) {
                 const keyPair = await generateECDHKeyPair();
-                publicKey = await exportECDHPublicKey(keyPair.publicKey);
+                localPublicKey = await exportECDHPublicKey(keyPair.publicKey);
                 const privateKeyBuffer = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-                const privateKeyBase64 = arrayBufferToBase64(privateKeyBuffer);
-                localStorage.setItem("publicKey", publicKey);
-                localStorage.setItem("privateKey", privateKeyBase64);
-                await updatePublicKeyOnServer(publicKey);
-            } else {
-                console.log("Encryption keys found in localStorage.");
+                localPrivateKey = arrayBufferToBase64(privateKeyBuffer);
+                localStorage.setItem("publicKey", localPublicKey);
+                localStorage.setItem("privateKey", localPrivateKey);
+                await updatePublicKeyOnServer(localPublicKey);
             }
             unlockScreen();
         }
