@@ -8,7 +8,7 @@ import socket
 import time
 from collections import deque
 from ipaddress import ip_address
-from urllib.parse import urlparse, urlsplit, urlunparse, quote
+from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
 import markdown
 import numpy as np
