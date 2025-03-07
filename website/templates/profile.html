@@ -22,6 +22,424 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins"
           rel="stylesheet">
 {% endblock head %}
+{% block style %}
+    <style>
+    a {
+        color: inherit;
+        text-decoration: inherit;
+    }
+
+    .list-group .label-default {
+        margin-top: 3px;
+    }
+
+    .icon-block kbd {
+        width: 180px;
+        height: 50px;
+        font-size: 16px;
+        text-align: center;
+        line-height: 45px;
+        margin: 2px;
+    }
+
+    .unrated {
+        position: absolute;
+        left: 130px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+
+    .silver {
+        background-color: lightblue;
+        color: #333;
+        position: absolute;
+        left: 140px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+
+    .gold {
+        background-color: #D4AF37;
+        color: #333;
+        position: absolute;
+        left: 155px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+
+    .bronze {
+        background-color: #C9AE5D;
+        color: #333;
+        position: absolute;
+        left: 140px;
+        top: 8px;
+        padding: 10px;
+        font-weight: bolder;
+    }
+
+    .upload-btn,
+    .upload-btn:hover {
+        margin-top: -40px;
+        opacity: 0.6;
+        width: 190px;
+        border: none;
+        height: 30px;
+        background: whitesmoke;
+        display: none;
+    }
+
+    .upload {
+        display: none;
+        width: 200px;
+    }
+
+    .scroll {
+        max-height: 1100px;
+        overflow-y: auto;
+    }
+
+    #target_div .btn {
+        width: 200px;
+        margin-top: 10px;
+    }
+
+    .list-group-item .badge {
+        margin-right: 30px;
+        margin-top: 10px;
+    }
+
+    .icon-block kbd a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .issue-hide-btn {
+        background-color: rgb(245, 220, 79);
+        position: relative;
+        bottom: 2.5px;
+        left: 10px;
+        height: 30px;
+        font-weight: 700;
+    }
+
+    .issue-hide-btn:hover {
+        color: black;
+        background-color: rgb(98, 207, 88);
+    }
+
+    .hide-issue-form {
+        padding-top: 10px;
+    }
+
+    .bottom-right {
+        position: absolute;
+        bottom: 10px;
+        right: 15px;
+    }
+
+    #update-overlay {
+        display: flex;
+        gap: 2px;
+    }
+
+    .wallet-selection {
+        display: flex;
+        gap: 2px;
+    }
+
+    .crypto-button {
+        padding: 10px;
+        margin-bottom: 0.5px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+    }
+
+    .crypto-button[data-crypto="Ethereum"] {
+        background-color: #627eea;
+        color: #fff;
+    }
+
+    .crypto-button[data-crypto="Bitcoin"] {
+        background-color: #f2a900;
+        color: #fff;
+    }
+
+    .crypto-button[data-crypto="BitcoinCash"] {
+        background-color: #4cca47;
+        color: #fff;
+    }
+
+    .btn-save {
+        padding: 5px 5px;
+        font-size: 7px;
+        width: auto;
+    }
+
+    #crypto-address {
+        text-align: center;
+    }
+
+    #crypto-name {
+        text-align: center;
+        width: 100%;
+        font-size: 20px;
+        color: white;
+        background-color: #ff4444;
+        display: inline-block;
+        margin: 0 auto;
+    }
+
+    #update-overlay {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .wallet-selection {
+        display: flex;
+    }
+
+    .button-row {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 0px;
+    }
+
+    .wallet-selection .crypto-button[data-crypto="BitcoinCash"] {
+        margin-right: 93px;
+    }
+
+    #dialog {
+        position: relative;
+    }
+
+    #slideshow {
+        margin-top: 50px;
+    }
+
+    .navigation {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: center;
+    }
+
+    .nav-btn {
+        width: 70px;
+        height: 40px;
+        border: 1px solid #0e0d0d;
+        margin: 6px;
+        cursor: pointer;
+        transition: 0.4s;
+    }
+
+    .nav-btn.active {
+        background: red;
+        color: white;
+    }
+
+    .nav-btn:hover {
+        background: #fff;
+    }
+
+    input[name="r"] {
+        position: absolute;
+        visibility: hidden;
+    }
+
+    #btc:checked~.s1 {
+        margin-left: -20%;
+    }
+
+    #eth:checked~.s1 {
+        margin-left: -40%;
+    }
+
+    #bch:checked~.s1 {
+        margin-left: -60%;
+    }
+
+    /* Added styles for description and discounted hourly rate */
+    .profile-description,
+    .profile-rate {
+        max-width: 100%;
+        word-wrap: break-word;
+        margin-top: 1rem;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .profile-rate {
+        color: #ff5722;
+        font-weight: bold;
+    }
+    .shine-effect {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shine 2s infinite;
+    }
+
+    @keyframes shine {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .bg-#f4f4f4 {
+        margin: 0.5rem 0;
+        border: 1px solid #e2e8f0;
+    }
+    .text-lg {
+        font-size: 1.125rem; 
+    }
+    .text-sm {
+        font-size: 0.875rem;
+    }
+    .bg-gray-100 {
+        background-color: #f7fafc;
+    }
+
+    /* Styles for cryptocurrency addresses */
+    .copy_text {
+        word-break: break-all;
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+
+    /* Ensure the crypto address container has enough width */
+    .border-[1px].rounded-xl.p-1.border-[#DFDCE4].flex {
+        min-width: 300px;
+        max-width: 100%;
+        overflow: hidden;
+    }
+    /* Added styles for Recommendations */
+    .recommend-user {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .red-btn {
+        background-color: #cc0000;
+        color: #fff;
+        border: none;
+        margin : 10px;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .red-btn:hover {
+        background-color: #990000;
+    }
+    .error {
+        color: #cc0000;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    #user_list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 5px;
+    }
+
+    .user-item {
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .user-item:last-child {
+        border-bottom: none;
+    }
+
+    .recommendation-section {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+}
+
+.recommendation-blurb {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.recommend-blurb-btn {
+    margin-top: 10px;
+}
+
+.recommend-blurb-btn.recommended {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.recommendation-count {
+    font-size: 14px;
+    padding: 5px 10px;
+}
+.recommendation-tab.active {
+        border-bottom-color: #3b82f6;
+        color: #3b82f6;
+    }
+    .tooltip {
+        position: relative;
+        cursor: pointer;
+    }
+    .tooltip .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        white-space: normal;
+    }
+    .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    .overflow-x-auto {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e0 #f1f5f9;
+    }
+    .overflow-x-auto::-webkit-scrollbar {
+      height: 6px;
+  }
+  .overflow-x-auto::-webkit-scrollbar-track {
+      background: #f1f5f9;
+  }
+  .overflow-x-auto::-webkit-scrollbar-thumb {
+      background-color: #cbd5e0;
+      border-radius: 3px;
+  }
+    </style>
+{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="flex md:flex-row flex-col w-full mt-10 lg:max-w-[1700px] lg:mx-auto mx-2 border rounded-lg  min-h-[500px]">
@@ -358,6 +776,428 @@
                         ⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}
                     </button>
                 </div>
+                <div class="text-2xl font-bold my-4">
+                    User Tags
+                    <hr>
+                </div>
+                <div class="font=['Ubuntu'] max-sm:w-full w-3/4">
+                    {% for tag in user_related_tags %}
+                        <button class="mr-3"
+                                onclick="window.location.href=`{% url 'users' %}?tag={{ tag.name }}`">
+                            <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">{{ tag.name }}</div>
+                        </button>
+                    {% endfor %}
+                </div>
+                <!-- Recommendation Card UI -->
+                <div class="w-full bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+                    <div class="flex border-b">
+                        <button id="recommendations-tab"
+                                class="recommendation-tab active py-3 px-4 font-medium focus:outline-none border-b-2 border-blue-500"
+                                onclick="switchRecommendationTab('recommendations')">
+                            Recommendations ({{ object.userprofile.recommendation_count }})
+                        </button>
+                        <button id="recommends-tab"
+                                class="recommendation-tab py-3 px-4 font-medium focus:outline-none"
+                                onclick="switchRecommendationTab('recommends')">
+                            Recommends ({{ recommendations|length }})
+                        </button>
+                    </div>
+                    <!-- Recommendations Content (users who recommended this profile) -->
+                    <div id="recommendations-content" class="recommendation-content p-4">
+                        <div class="flex flex-col space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                            {% if request.user == user %}
+                                {% for i in request.user.received_recommendations.all|slice:":2" %}
+                                    <div class="recommendation-card">
+                                        <div class="flex items-center p-3 bg-gray-50 rounded-lg shadow-sm w-full hover:bg-gray-100 transition-colors">
+                                            <div class="flex-shrink-0">
+                                                {% if i.recommender.socialaccount_set.all.0.get_avatar_url %}
+                                                    <img src="{{ i.recommender.socialaccount_set.all.0.get_avatar_url }}"
+                                                         class="w-12 h-12 rounded-full object-cover"
+                                                         alt="{{ i.recommender.username }}"
+                                                         width="48"
+                                                         height="48">
+                                                {% else %}
+                                                    <img src="{% gravatar_url i.recommender.email 50 %}"
+                                                         class="w-12 h-12 rounded-full object-cover"
+                                                         alt="{{ i.recommender.username }}"
+                                                         width="48"
+                                                         height="48">
+                                                {% endif %}
+                                            </div>
+                                            <div class="ml-3">
+                                                <a href="{% url 'profile' slug=i.recommender.username %}"
+                                                   class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                    {{ i.recommender.username }}
+                                                </a>
+                                                <div class="text-xs text-gray-500 mt-1">{{ i.created_at|date:"M j, Y" }}</div>
+                                                {% if i.recommendation_message %}
+                                                    <div class="text-xs text-gray-600 italic mt-1 tooltip">
+                                                        <i class="fa fa-comment"></i>
+                                                        <span class="tooltip-text">{{ i.recommendation_message }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-gray-500 py-4">No recommendations received yet.</p>
+                                {% endfor %}
+                                {% if request.user.received_recommendations.all|length > 2 %}
+                                    <button onclick="viewMoreRecommendations('received')"
+                                            class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 flex items-center">
+                                        <span>View all {{ request.user.received_recommendations.all|length }} recommendations</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                {% with received_recommendations=0 %}
+                                    {% for users in all_users %}
+                                        {% for recommendation in users.received_recommendations.all %}
+                                            {% if recommendation.recommended_user.username|lower == user.username|lower %}
+                                                {% if forloop.counter <= 2 %}
+                                                    <div class="recommendation-card">
+                                                        <div class="flex items-center p-3 bg-gray-50 rounded-lg shadow-sm w-full hover:bg-gray-100 transition-colors">
+                                                            <div class="flex-shrink-0">
+                                                                {% if recommendation.recommender.socialaccount_set.all.0.get_avatar_url %}
+                                                                    <img src="{{ recommendation.recommender.socialaccount_set.all.0.get_avatar_url }}"
+                                                                         class="w-12 h-12 rounded-full object-cover"
+                                                                         alt="{{ recommendation.recommender.username }}"
+                                                                         alt="{{ i.recommender.username }}"
+                                                                         width="48"
+                                                                         height="48">
+                                                                {% else %}
+                                                                    <img src="{% gravatar_url recommendation.recommender.email 50 %}"
+                                                                         class="w-12 h-12 rounded-full object-cover"
+                                                                         alt="{{ recommendation.recommender.username }}"
+                                                                         alt="{{ i.recommender.username }}"
+                                                                         width="48"
+                                                                         height="48">
+                                                                {% endif %}
+                                                            </div>
+                                                            <div class="ml-3">
+                                                                <a href="{% url 'profile' slug=recommendation.recommender.username %}"
+                                                                   class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                                    {{ recommendation.recommender.username }}
+                                                                </a>
+                                                                <div class="text-xs text-gray-500 mt-1">{{ recommendation.created_at|date:"M j, Y" }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                {% with received_recommendations=received_recommendations|add:1 %}{% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                    {% if received_recommendations > 2 %}
+                                        <button onclick="viewMoreRecommendations('received')"
+                                                class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                            View all {{ received_recommendations }} recommendations
+                                        </button>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Recommends Content (users recommended by this profile) -->
+                    <div id="recommends-content" class="recommendation-content hidden p-4">
+                        <div class="flex flex-col space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                            {% for recommendation in recommendations|slice:":2" %}
+                                <div class="recommendation-card">
+                                    <div class="flex items-center p-3 bg-gray-50 rounded-lg shadow-sm w-full hover:bg-gray-100 transition-colors">
+                                        <div class="flex-shrink-0">
+                                            {% if recommendation.recommended_user.socialaccount_set.all.0.get_avatar_url %}
+                                                <img src="{{ recommendation.recommended_user.socialaccount_set.all.0.get_avatar_url }}"
+                                                     class="w-12 h-12 rounded-full object-cover"
+                                                     alt="{{ recommendation.recommended_user.username }}"
+                                                     alt="{{ i.recommender.username }}"
+                                                     width="48"
+                                                     height="48">
+                                            {% else %}
+                                                <img src="{% gravatar_url recommendation.recommended_user.email 50 %}"
+                                                     class="w-12 h-12 rounded-full object-cover"
+                                                     alt="{{ recommendation.recommended_user.username }}"
+                                                     alt="{{ i.recommender.username }}"
+                                                     width="48"
+                                                     height="48">
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-3">
+                                            <a href="{% url 'profile' slug=recommendation.recommended_user.username %}"
+                                               class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                {{ recommendation.recommended_user.username }}
+                                            </a>
+                                            <div class="text-xs text-gray-500 mt-1">{{ recommendation.created_at|date:"M j, Y" }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <p class="text-gray-500 py-4">No recommendations given yet.</p>
+                            {% endfor %}
+                            {% if recommendations|length > 2 %}
+                                <button onclick="viewMoreRecommendations('given')"
+                                        class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 flex items-center">
+                                    <span>View all {{ recommendations|length }} recommendations</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4 ml-1"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="text-2xl font-bold my-4">
+                    About Me
+                    <hr>
+                </div>
+                <!-- Recommendation Blurb Section -->
+                <div class="recommendation-section mb-4">
+                    {% if object.userprofile.recommendation_blurb %}
+                        <p class="text-gray-600 mb-3">{{ object.userprofile.recommendation_blurb }}</p>
+                    {% else %}
+                        <p class="text-gray-500 italic mb-3">No recommendation blurb yet</p>
+                    {% endif %}
+                    {% if request.user.is_authenticated and request.user != object %}
+                        <div class="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                            <input type="text"
+                                   id="recommend_message"
+                                   class="flex-grow w-full sm:w-auto py-2 px-3 text-sm border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="Optional message...">
+                            <button class="recommend-blurb-btn w-full sm:w-auto text-sm px-4 py-2 rounded-lg transition-colors duration-200 focus:outline-none {% if has_recommended_via_blurb %}bg-red-500 hover:bg-red-600{% else %}bg-blue-500 hover:bg-blue-600{% endif %} text-white"
+                                    data-username="{{ object.username }}"
+                                    onclick="recommendViaBlurb(this)">
+                                {% if has_recommended_via_blurb %}
+                                    Remove Recommendation
+                                {% else %}
+                                    Recommend User
+                                {% endif %}
+                            </button>
+                        </div>
+                    {% endif %}
+                    <div id="recommends"
+                         class="hidden relative z-10"
+                         aria-labelledby="modal-title"
+                         role="dialog"
+                         aria-modal="true">
+                        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                             aria-hidden="true"></div>
+                        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+                            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw]">
+                                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                                        <div class="sm:flex sm:items-start lg:w-full">
+                                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                                <div class="mt-2">
+                                                    <h3>Recommendation Received:</h3>
+                                                    <br>
+                                                    <p class="text-xl">
+                                                        <table class="table-auto w-full border-spacing-52">
+                                                            <tbody>
+                                                                {% if request.user == user %}
+                                                                    {% for i in request.user.received_recommendations.all %}
+                                                                        <tr class="shadow-lg m-3 w-full rounded">
+                                                                            <td>
+                                                                                {% if i.recommender.socialaccount_set.all.0.get_avatar_url %}
+                                                                                    <img src="{{ i.recommender.socialaccount_set.all.0.get_avatar_url }}"
+                                                                                         height="50px"
+                                                                                         width="50px"
+                                                                                         alt="{{ i.recommender.username }}">
+                                                                                {% else %}
+                                                                                    <img src="{% gravatar_url i.recommender.email 50 %}"
+                                                                                         height="50px"
+                                                                                         width="50px"
+                                                                                         alt="{{ i.recommender.username }}">
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td>
+                                                                                {% if i.recommender.username %}
+                                                                                    &nbsp; <a href="{% url 'profile' slug=i.recommender.username %}">{{ i.recommender.username }}</a>
+                                                                                {% endif %}
+                                                                            </td>
+                                                                            <td>
+                                                                                <small>{{ i.created_at|date:"F j, Y" }}</small>
+                                                                            </td>
+                                                                            <td>
+                                                                                <i class="fa fa-comment cursor-pointer toggle-recommend-msg text-gray-600 hover:text-black"
+                                                                                   data-message="{{ i.recommendation_message|default_if_none:'' }}"></i>
+                                                                                <div class="recommendation-msg hidden text-black bg-gray-100 p-2 mt-2"></div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    {% endfor %}
+                                                                {% else %}
+                                                                    {% for users in all_users %}
+                                                                        {% for recommendation in users.received_recommendations.all %}
+                                                                            {% if recommendation.recommended_user.username|lower == user.username|lower %}
+                                                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                                                    <td>
+                                                                                        {% if recommendation.recommender.socialaccount_set.all.0.get_avatar_url %}
+                                                                                            <img src="{{ recommendation.recommender.socialaccount_set.all.0.get_avatar_url }}"
+                                                                                                 height="50px"
+                                                                                                 width="50px"
+                                                                                                 alt="{{ recommendation.recommender.username }}">
+                                                                                        {% else %}
+                                                                                            <img src="{% gravatar_url recommendation.recommender.email 50 %}"
+                                                                                                 height="50px"
+                                                                                                 width="50px"
+                                                                                                 alt="{{ recommendation.recommender.username }}">
+                                                                                        {% endif %}
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        {% if recommendation.recommender.username %}
+                                                                                            &nbsp; <a href="{% url 'profile' slug=recommendation.recommender.username %}">{{ recommendation.recommender.username }}</a>
+                                                                                        {% endif %}
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <small>{{ recommendation.created_at|date:"F j, Y" }}</small>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            {% endif %}
+                                                                        {% endfor %}
+                                                                    {% endfor %}
+                                                                {% endif %}
+                                                            </tbody>
+                                                        </table>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                                        <button type="button"
+                                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                                id="close-Recommendations">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                function recommendViaBlurb(button) {
+                    const username = button.getAttribute('data-username');
+                    const messageElement = document.getElementById('recommend_message');
+                    const message = messageElement ? messageElement.value : '';
+
+                    fetch(`/recommend/${username}/blurb/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message: message })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (data.action === 'added') {
+                                button.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+                                button.classList.add('bg-red-500', 'hover:bg-red-600');
+                                button.textContent = 'Remove Recommendation';
+                            } else {
+                                button.classList.remove('bg-red-500', 'hover:bg-red-600');
+                                button.classList.add('bg-blue-500', 'hover:bg-blue-600');
+                                button.textContent = 'Recommend User';
+                            }
+
+                            if (messageElement) {
+                                messageElement.value = '';
+                            }
+                            // Update recommends count if element exists
+                            const countElements = document.getElementsByClassName('recommendation-count');
+                            for (let element of countElements) {
+                                element.textContent = data.total_count;
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                       console.error('Error:', error);
+                }
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.querySelectorAll('.toggle-recommend-msg').forEach(icon => {
+                        icon.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            const container = icon.nextElementSibling;
+                            const message = icon.getAttribute('data-message') || 'No message provided.';
+
+                            document.querySelectorAll('.recommendation-msg').forEach(msg => {
+                                if (msg !== container && !msg.classList.contains('hidden')) {
+                                    msg.classList.add('hidden');
+                                }
+                            });
+                            if (container) {
+                                if (container.classList.contains('hidden')) {
+                                    container.textContent = message;
+                                    container.classList.remove('hidden');
+                                } else {
+                                    container.classList.add('hidden');
+                                }
+                            }
+                        });
+                    });
+                    document.querySelectorAll('.recommendation-msg').forEach(container => {
+                        container.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
+                    });
+                });
+
+                function getCookie(name) {
+                    let cookieValue = null;
+                    if (document.cookie && document.cookie !== '') {
+                        const cookies = document.cookie.split(';');
+                        for (let i = 0; i < cookies.length; i++) {
+                            const cookie = cookies[i].trim();
+                            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                                break;
+                            }
+                        }
+                    }
+                    return cookieValue;
+                }
+                </script>
+                <div class="text-2xl font-bold my-4">
+                    Monthly Report
+                    <hr>
+                </div>
+                <div id="chart" class="max-sm:w-full w-3/4"></div>
+                {% if request.user == user %}
+                    <div>
+                        <div class="text-2xl font-bold my-4 pl-2">Spot a Talent? Recommend Now!</div>
+                        <form method="post"
+                              action="{% url 'profile' slug=user.username %}"
+                              class="recommend-user">
+                            {% csrf_token %}
+                            <label for="search_user" class="pr-2">Search for a user:</label>
+                            <input type="text"
+                                   id="search_user"
+                                   onkeyup="filterUsers()"
+                                   placeholder="Start typing a name...">
+                            <div id="user_list">
+                                {% for user in all_users %}
+                                    <div class="user-item">
+                                        <input type="radio"
+                                               name="recommended_user"
+                                               value="{{ user.id }}"
+                                               id="user_{{ user.id }}">
+                                        <label for="user_{{ user.id }}">{{ user.username }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <button class="red-btn" type="submit">Recommend</button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
             <div class="flex flex-col gap-3">
                 <h1 class="text-xl font-semibold text-black/90">{% trans "User Tags" %}</h1>
@@ -1012,6 +1852,9 @@
                                                             &nbsp; <a class="text-lg font-medium hover:text-red-500"
     href="{% url 'profile' slug=user.username %}">{{ user.username }}</a>
                                                         </td>
+                                                        <td>
+                                                            <small>{{ recommendation.created_at|date:"F j, Y" }}</small>
+                                                        </td>
                                                     </tr>
                                                 {% endfor %}
                                             </tbody>
@@ -1087,6 +1930,62 @@
                                 id="close-following">Close</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- View More Received Recommendations Modal -->
+    <div id="viewMoreReceivedModal"
+         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div class="flex justify-between items-center border-b px-6 py-4">
+                <h3 class="text-lg font-medium">All Recommendations Received</h3>
+                <button type="button"
+                        onclick="closeViewMoreModal('received')"
+                        class="text-gray-500 hover:text-gray-700"
+                        aria-label="Close modal">
+                    <svg class="w-6 h-6"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24"
+                         xmlns="http://www.w3.org/2000/svg"
+                         aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div id="receivedRecommendationsList" class="space-y-4"></div>
+            </div>
+            <div class="border-t px-6 py-4 flex justify-between items-center">
+                <div id="receivedPagination" class="flex items-center space-x-2"></div>
+                <button onclick="closeViewMoreModal('received')"
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Close</button>
+            </div>
+        </div>
+    </div>
+    <div id="viewMoreGivenModal"
+         class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div class="flex justify-between items-center border-b px-6 py-4">
+                <h3 class="text-lg font-medium">All Recommendations Given</h3>
+                <button onclick="closeViewMoreModal('given')"
+                        class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24"
+                         xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div id="givenRecommendationsList" class="space-y-4"></div>
+            </div>
+            <div class="border-t px-6 py-4 flex justify-between items-center">
+                <div id="givenPagination" class="flex items-center space-x-2"></div>
+                <button onclick="closeViewMoreModal('given')"
+                        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded">Close</button>
             </div>
         </div>
     </div>
@@ -1297,6 +2196,17 @@
     closeFollowing.addEventListener("click",()=>{
         openFollowing.style.display="none";
     });
+    var closeRecommendations = document.getElementById("close-Recommendations");
+    var openRecommendations = document.getElementById("recommendations");
+    openRecommendations.addEventListener("click",()=>{
+        openRecommendations.style.display="none";
+    });
+
+    var closeRecommends = document.getElementById("close-Recommendations");
+    var openRecommends = document.getElementById("recommends");
+    openRecommends.addEventListener("click",()=>{
+        openRecommends.style.display="none";
+    });
     var closeBookmark = document.getElementById("close-Bookmark");
     var openBookmark = document.getElementById("Bookmark");
     closeBookmark.addEventListener("click",()=>{
@@ -1312,9 +2222,38 @@
         openFollowing.style.cssText = "display:block !important;"
     }
 
+
+    function openRecommendationModal(){
+        openRecommendations.style.cssText = "display:block !important;"
+    }
+
     
+    function openRecommendsModal(){
+        openRecommends.style.cssText = "display:block !important;"
+    }
+
+
     function openBookmarkModal(){
         openBookmark.style.cssText = "display:block !important;"
+    }
+
+
+    function filterUsers() {
+        var input, filter, userList, userItems, label, i, txtValue;
+        input = document.getElementById('search_user');
+        filter = input.value.toLowerCase();
+        userList = document.getElementById('user_list');
+        userItems = userList.getElementsByClassName('user-item');
+
+        for (i = 0; i < userItems.length; i++) {
+            label = userItems[i].getElementsByTagName('label')[0];
+            txtValue = label.textContent || label.innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                userItems[i].style.display = "";
+            } else {
+                userItems[i].style.display = "none";
+            }
+        }
     }
     </script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -1370,25 +2309,6 @@
           var chart = new ApexCharts(document.querySelector("#chart"), options);
           chart.render();
     </script>
-    <script>
-        async function followUser(){
-            var user = document.getElementsByClassName("follow_unfollow")[0].getAttribute("name");
-            const request = await fetch(`/follow/${user}/`)
-            if (request.status == 200){
-                $.notify("Done!", {
-                        style: "custom",
-                        className: "success"
-                    });
-                    window.location.reload();
-            }
-            else{
-                $.notify("Permission Denied", {
-                    style: "custom",
-                    className: "danger"
-                });
-            }
-        }
-    </script>
     <script type="text/javascript">
     $(function () {
         $('.img-thumbnail, .upload-btn').on('mouseenter', function () {
@@ -1409,6 +2329,48 @@
 
         $('body').on('click', '.follow_unfollow', function (e) {
             e.preventDefault();
+            var btn = $(this); // Store button reference
+            var usr = btn.attr('name');
+
+            $.ajaxSetup({
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+
+            $.ajax({
+                type: 'POST',
+                url: '/follow/' + usr + '/',
+                data: {},
+                success: function (data) {
+                    if (data.success) {
+                        // Update button text based on following status
+                        btn.text(data.is_following ? "Unfollow" : "Follow");
+
+                        // Update follower/following counts if they exist on the page
+                        $('.followers-count').text(data.follower_count);
+                        $('.following-count').text(data.following_count);
+
+                        $.notify("Successfully " + (data.is_following ? "followed" : "unfollowed") + " user!", {
+                            style: "custom",
+                            className: "success"
+                        });
+                    } else {
+                        $.notify(data.error || "Operation failed", {
+                            style: "custom",
+                            className: "danger"
+                        });
+                    }
+                },
+                error: function (xhr) {
+                    var message = "Some error occurred!";
+                    if (xhr.status === 403) {
+                        message = "Please login to follow users";
+                    } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                        message = xhr.responseJSON.error;
+                    }
+
+                    $.notify(message, {
             var usr = $(this).attr('name');
             console.log(usr)
             $.ajax({
@@ -1459,6 +2421,204 @@
         });
     });
 
+    </script>
+    <script>
+        function switchRecommendationTab(tabName) {
+            document.querySelectorAll('.recommendation-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            document.querySelectorAll('.recommendation-tab').forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.borderBottomColor = 'transparent';
+            });
+            
+            document.getElementById(tabName + '-content').classList.remove('hidden');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+        let receivedRecommendations = [];
+        let givenRecommendations = [];
+        const itemsPerPage = 5;
+        let currentReceivedPage = 1;
+        let currentGivenPage = 1;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if request.user == user %}
+                {% for i in request.user.received_recommendations.all %}
+                    receivedRecommendations.push({
+                    id: {{ i.id }},
+                    recommenderUsername: "{{ i.recommender.username }}",
+                    recommenderUrl: "{% url 'profile' slug=i.recommender.username %}",
+                    {% if i.recommender.socialaccount_set.all.0.get_avatar_url %}
+                        avatarUrl: "{{ i.recommender.socialaccount_set.all.0.get_avatar_url }}",
+                    {% else %}
+                        avatarUrl: "{% gravatar_url i.recommender.email 50 %}",
+                    {% endif %}
+                    date: "{{ i.created_at|date:'M j, Y' }}",
+                    message: "{{ i.recommendation_message|default_if_none:'' }}"
+                });
+            {% endfor %}
+        {% else %}
+            {% for users in all_users %}
+                {% for recommendation in users.received_recommendations.all %}
+                    {% if recommendation.recommended_user.username|lower == user.username|lower %}
+                        receivedRecommendations.push({
+                            id: {{ recommendation.id }},
+                            recommenderUsername: "{{ recommendation.recommender.username }}",
+                            recommenderUrl: "{% url 'profile' slug=recommendation.recommender.username %}",
+                            {% if recommendation.recommender.socialaccount_set.all.0.get_avatar_url %}
+                                avatarUrl: "{{ recommendation.recommender.socialaccount_set.all.0.get_avatar_url }}",
+                            {% else %}
+                                avatarUrl: "{% gravatar_url recommendation.recommender.email 50 %}",
+                            {% endif %}
+                            date: "{{ recommendation.created_at|date:'M j, Y' }}",
+                            message: "{{ recommendation.recommendation_message|default_if_none:'' }}"
+                        });
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        {% endif %}
+
+        {% for recommendation in recommendations %}
+            givenRecommendations.push({
+                id: {{ recommendation.id }},
+                recommendedUsername: "{{ recommendation.recommended_user.username }}",
+                recommendedUrl: "{% url 'profile' slug=recommendation.recommended_user.username %}",
+                {% if recommendation.recommended_user.socialaccount_set.all.0.get_avatar_url %}
+                    avatarUrl: "{{ recommendation.recommended_user.socialaccount_set.all.0.get_avatar_url }}",
+                {% else %}
+                    avatarUrl: "{% gravatar_url recommendation.recommended_user.email 50 %}",
+                {% endif %}
+                date: "{{ recommendation.created_at|date:'M j, Y' }}"
+            });
+        {% endfor %}
+    });
+
+    function viewMoreRecommendations(type) {
+        if (type === 'received') {
+            renderReceivedRecommendations(1);
+            document.getElementById('viewMoreReceivedModal').classList.remove('hidden');
+        } else {
+            renderGivenRecommendations(1);
+            document.getElementById('viewMoreGivenModal').classList.remove('hidden');
+        }
+    }
+    function closeViewMoreModal(type) {
+        if (type === 'received') {
+            document.getElementById('viewMoreReceivedModal').classList.add('hidden');
+        } else {
+            document.getElementById('viewMoreGivenModal').classList.add('hidden');
+        }
+    }
+    function renderReceivedRecommendations(page) {
+        const container = document.getElementById('receivedRecommendationsList');
+        const paginationContainer = document.getElementById('receivedPagination');
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, receivedRecommendations.length);
+        const totalPages = Math.ceil(receivedRecommendations.length / itemsPerPage);
+        
+        currentReceivedPage = page;
+        container.innerHTML = '';
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            const rec = receivedRecommendations[i];
+            const messageHtml = rec.message ? 
+                `<div class="text-sm text-gray-600 mt-1"><strong>Message:</strong> ${rec.message}</div>` : '';
+            
+            container.innerHTML += `
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg shadow-sm">
+                    <div class="flex-shrink-0">
+                        <img src="${rec.avatarUrl}" class="w-12 h-12 rounded-full object-cover" alt="${rec.recommenderUsername}">
+                    </div>
+                    <div class="ml-4">
+                        <a href="${rec.recommenderUrl}" class="font-medium text-blue-600 hover:text-blue-800">
+                            ${rec.recommenderUsername}
+                        </a>
+                        <div class="text-sm text-gray-500">${rec.date}</div>
+                        ${messageHtml}
+                    </div>
+                </div>
+            `;
+        }
+        renderPagination(paginationContainer, totalPages, page, 'received');
+    }
+    function renderGivenRecommendations(page) {
+        const container = document.getElementById('givenRecommendationsList');
+        const paginationContainer = document.getElementById('givenPagination');
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, givenRecommendations.length);
+        const totalPages = Math.ceil(givenRecommendations.length / itemsPerPage);
+        
+        currentGivenPage = page;
+        container.innerHTML = '';
+        
+        for (let i = startIndex; i < endIndex; i++) {
+            const rec = givenRecommendations[i];
+            container.innerHTML += `
+                <div class="flex items-center p-4 bg-gray-50 rounded-lg shadow-sm">
+                    <div class="flex-shrink-0">
+                        <img src="${rec.avatarUrl}" class="w-12 h-12 rounded-full object-cover" alt="${rec.recommendedUsername}">
+                    </div>
+                    <div class="ml-4">
+                        <a href="${rec.recommendedUrl}" class="font-medium text-blue-600 hover:text-blue-800">
+                            ${rec.recommendedUsername}
+                        </a>
+                        <div class="text-sm text-gray-500">${rec.date}</div>
+                    </div>
+                </div>
+            `;
+        }
+        renderPagination(paginationContainer, totalPages, page, 'given');
+    }
+    function renderPagination(container, totalPages, currentPage, type) {
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        let paginationHtml = '';
+
+        if (currentPage > 1) {
+            paginationHtml += `<button onclick="changePage(${currentPage - 1}, '${type}')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded">Previous</button>`;
+        } else {
+            paginationHtml += `<button disabled class="bg-gray-100 text-gray-400 px-3 py-1 rounded cursor-not-allowed">Previous</button>`;
+        }
+    
+        const pageRange = getPageRange(currentPage, totalPages);
+        for (let i = pageRange.start; i <= pageRange.end; i++) {
+            if (i === currentPage) {
+                paginationHtml += `<span class="bg-blue-500 text-white px-3 py-1 rounded">${i}</span>`;
+            } else {
+                paginationHtml += `<button onclick="changePage(${i}, '${type}')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded">${i}</button>`;
+            }
+        }
+        if (currentPage < totalPages) {
+            paginationHtml += `<button onclick="changePage(${currentPage + 1}, '${type}')" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded">Next</button>`;
+        } else {
+            paginationHtml += `<button disabled class="bg-gray-100 text-gray-400 px-3 py-1 rounded cursor-not-allowed">Next</button>`;
+        }
+        
+        container.innerHTML = paginationHtml;
+    }
+
+    function getPageRange(currentPage, totalPages) {
+        let start = Math.max(1, currentPage - 2);
+        let end = Math.min(totalPages, start + 4);
+        
+        if (end === totalPages) {
+            start = Math.max(1, end - 4);
+        }
+        
+        return { start, end };
+    }
+
+    function changePage(page, type) {
+        if (type === 'received') {
+            renderReceivedRecommendations(page);
+        } else {
+            renderGivenRecommendations(page);
+        }
+    }
     </script>
     <script src="{% static 'js/validate-btc.js' %}"></script>
 {% endblock content %}

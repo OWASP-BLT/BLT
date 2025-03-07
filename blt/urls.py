@@ -297,6 +297,8 @@ from website.views.user import (
     messaging_home,
     profile,
     profile_edit,
+    recommend_user,
+    recommend_via_blurb,
     referral_signup,
     set_public_key,
     start_thread,
@@ -1051,8 +1053,9 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+    path("recommend/<int:user_id>/", recommend_user, name="recommend_user"),
+    path("recommend/<str:username>/blurb/", recommend_via_blurb, name="recommend_via_blurb"),
 ]
-
 if settings.DEBUG:
     import debug_toolbar
 
