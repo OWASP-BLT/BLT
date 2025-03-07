@@ -17,237 +17,421 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="container mx-auto mt-16">
-        <h2 class="text-4xl font-bold text-center mb-12">Edit Profile</h2>
-        <form method="post"
-              enctype="multipart/form-data"
-              class="bg-white p-12 rounded-xl shadow-xl max-w-7xl mx-auto">
-            {% csrf_token %}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                <!-- Left Column -->
-                <div>
-                    <!-- User Avatar -->
-                    <div class="mb-8">
-                        <label for="id_user_avatar"
-                               class="block text-lg font-semibold text-gray-700 mb-3">Profile Picture</label>
-                        <div class="mt-4">
-                            {% if form.user_avatar.value %}
-                                <img src="{{ form.user_avatar.value.url }}"
-                                     alt="Profile Picture"
-                                     class="mb-4 w-32 h-32 rounded-full shadow-lg"
-                                     width="128"
-                                     height="128">
-                            {% endif %}
-                            <input type="file"
-                                   name="user_avatar"
-                                   id="id_user_avatar"
-                                   class="mt-3 block w-full text-base text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-base file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Edit Profile</h2>
+                <p class="mt-2 text-gray-600">Update your personal information and preferences</p>
+            </div>
+            <!-- Main Form -->
+            <form method="post"
+                  enctype="multipart/form-data"
+                  class="bg-white rounded-2xl shadow-xl p-8">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Left Column -->
+                    <div class="space-y-8">
+                        <!-- Profile Picture -->
+                        <div class="flex flex-col items-center">
+                            <div class="relative mb-4">
+                                {% if form.user_avatar.value %}
+                                    <img src="{{ form.user_avatar.value.url }}"
+                                         alt="Profile Picture"
+                                         class="w-32 h-32 rounded-full object-cover border-4 border-[#e74c3c] shadow-lg"
+                                         width="128"
+                                         height="128">
+                                {% else %}
+                                    <div class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-[#e74c3c]">
+                                        <i class="fas fa-user text-4xl text-gray-400"></i>
+                                    </div>
+                                {% endif %}
+                                <label for="id_user_avatar"
+                                       class="absolute bottom-0 right-0 bg-[#e74c3c] text-white p-2 rounded-full cursor-pointer hover:bg-red-700 transition-colors">
+                                    <i class="fas fa-camera"></i>
+                                </label>
+                                <input type="file"
+                                       name="user_avatar"
+                                       id="id_user_avatar"
+                                       class="hidden"
+                                       accept="image/*">
+                            </div>
+                            <p class="text-sm text-gray-500">Click the camera icon to update your profile picture</p>
                         </div>
-                    </div>
-                    <!-- Description -->
-                    <div class="mb-8">
-                        <label for="id_role" class="block text-lg font-semibold text-gray-700 mb-3">Role</label>
-                        <textarea name="role"
-                                  id="id_role"
-                                  rows="1"
-                                  class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  maxlength="255">{{ form.role.value }}</textarea>
-                        <label for="id_description"
-                               class="block text-lg font-semibold text-gray-700 mt-6 mb-3">Description</label>
-                        <textarea name="description"
-                                  id="id_description"
-                                  rows="4"
-                                  class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ form.description.value }}</textarea>
-                    </div>
-                    <!-- Discounted Hourly Rate -->
-                    <div class="mb-8">
-                        <label for="id_discounted_hourly_rate"
-                               class="block text-lg font-semibold text-gray-700 mb-3">
-                            Discounted Hourly Rate $/hr
-                        </label>
-                        <input type="number"
-                               name="discounted_hourly_rate"
-                               id="id_discounted_hourly_rate"
-                               value="{{ form.discounted_hourly_rate.value }}"
-                               class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <!-- Social Links -->
-                    <div class="space-y-6">
-                        <!-- LinkedIn URL -->
+                        <!-- Role & Description -->
+                        <div class="space-y-6">
+                            <div>
+                                <label for="id_role" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                                <input type="text"
+                                       name="role"
+                                       id="id_role"
+                                       value="{{ form.role.value }}"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       placeholder="e.g., Security Researcher">
+                            </div>
+                            <div>
+                                <label for="id_description"
+                                       class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                                <textarea name="description"
+                                          id="id_description"
+                                          rows="4"
+                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                          placeholder="Tell us about yourself...">{{ form.description.value }}</textarea>
+                            </div>
+                        </div>
+                        <!-- Hourly Rate -->
                         <div>
-                            <label for="id_linkedin_url"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">LinkedIn URL</label>
-                            <input type="url"
-                                   name="linkedin_url"
-                                   id="id_linkedin_url"
-                                   value="{{ form.linkedin_url.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label for="id_discounted_hourly_rate"
+                                   class="block text-sm font-medium text-gray-700 mb-2">
+                                Discounted Hourly Rate ($/hr)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-500">$</span>
+                                <input type="number"
+                                       name="discounted_hourly_rate"
+                                       id="id_discounted_hourly_rate"
+                                       value="{{ form.discounted_hourly_rate.value }}"
+                                       class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       placeholder="0.00">
+                            </div>
                         </div>
-                        <!-- GitHub URL -->
-                        <div>
-                            <label for="id_github_url"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">GitHub URL</label>
-                            <input type="url"
-                                   name="github_url"
-                                   id="id_github_url"
-                                   value="{{ form.github_url.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <!-- Social Links -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Social Links</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="id_linkedin_url"
+                                           class="block text-sm font-medium text-gray-700 mb-2">LinkedIn</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-linkedin text-[#e74c3c]"></i></span>
+                                        <input type="url"
+                                               name="linkedin_url"
+                                               id="id_linkedin_url"
+                                               value="{{ form.linkedin_url.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="https://linkedin.com/in/username">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="id_github_url"
+                                           class="block text-sm font-medium text-gray-700 mb-2">GitHub</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-github text-[#e74c3c]"></i></span>
+                                        <input type="url"
+                                               name="github_url"
+                                               id="id_github_url"
+                                               value="{{ form.github_url.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="https://github.com/username">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="id_x_username"
+                                           class="block text-sm font-medium text-gray-700 mb-2">X (Twitter)</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-x-twitter text-[#e74c3c]"></i></span>
+                                        <input type="text"
+                                               name="x_username"
+                                               id="id_x_username"
+                                               value="{{ form.x_username.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="@username">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="id_website_url"
+                                           class="block text-sm font-medium text-gray-700 mb-2">Website</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fas fa-globe text-[#e74c3c]"></i></span>
+                                        <input type="url"
+                                               name="website_url"
+                                               id="id_website_url"
+                                               value="{{ form.website_url.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="https://yourwebsite.com">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <!-- X username -->
-                        <div>
-                            <label for="id_x_username"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">X URL</label>
-                            <input type="text"
-                                   name="x_username"
-                                   id="id_x_username"
-                                   value="{{ form.x_username.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <!-- Website URL -->
-                        <div>
-                            <label for="id_website_url"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">Website URL</label>
-                            <input type="url"
-                                   name="website_url"
-                                   id="id_website_url"
-                                   value="{{ form.website_url.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                    </div>
-                    <!-- Issues Hidden -->
-                    <div class="mt-8">
-                        <label for="id_issues_hidden" class="inline-flex items-center">
+                        <!-- Issues Hidden -->
+                        <div class="flex items-center">
                             <input type="checkbox"
                                    name="issues_hidden"
                                    id="id_issues_hidden"
-                                   class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                   class="h-5 w-5 text-[#e74c3c] border-gray-300 rounded focus:ring-[#e74c3c]"
                                    {% if form.issues_hidden.value %}checked{% endif %}>
-                            <span class="ml-3 text-lg font-semibold text-gray-700">Hide Issues</span>
-                        </label>
-                    </div>
-                </div>
-                <!-- Right Column -->
-                <div>
-                    <!-- Email Address -->
-                    <div class="mb-8">
-                        <label for="id_email" class="block text-lg font-semibold text-gray-700 mb-3">Email Address</label>
-                        <input type="email"
-                               name="email"
-                               id="id_email"
-                               value="{{ form.email.value|default_if_none:"" }}"
-                               class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                               required>
-                        {% if form.email.errors %}<div class="text-red-500 text-base mt-2">{{ form.email.errors }}</div>{% endif %}
-                    </div>
-                    <!-- Crypto Addresses -->
-                    <div class="space-y-6">
-                        <!-- BTC Address -->
-                        <div>
-                            <label for="id_btc_address"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">Bitcoin Address</label>
-                            <input type="text"
-                                   name="btc_address"
-                                   id="id_btc_address"
-                                   value="{{ form.btc_address.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <!-- BCH Address -->
-                        <div>
-                            <label for="id_bch_address"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">Bitcoin Cash Address</label>
-                            <input type="text"
-                                   name="bch_address"
-                                   id="id_bch_address"
-                                   value="{{ form.bch_address.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                        <!-- ETH Address -->
-                        <div>
-                            <label for="id_eth_address"
-                                   class="block text-lg font-semibold text-gray-700 mb-3">Ethereum Address</label>
-                            <input type="text"
-                                   name="eth_address"
-                                   id="id_eth_address"
-                                   value="{{ form.eth_address.value|default_if_none:"" }}"
-                                   class="mt-2 block w-full py-3 px-4 text-base border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label for="id_issues_hidden" class="ml-3 text-sm font-medium text-gray-700">Hide Issues</label>
                         </div>
                     </div>
-                    <!-- Tags -->
-                    <div class="mt-8">
-                        <label for="id_tags" class="block text-lg font-semibold text-gray-700 mb-4">Tags</label>
-                        <div class="grid grid-cols-2 gap-6">
-                            {% for tag in form.tags.field.queryset %}
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                           name="tags"
-                                           value="{{ tag.id }}"
-                                           id="tag_{{ tag.id }}"
-                                           class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                           {% if tag.id in form.tags.value %}checked{% endif %}>
-                                    <label for="tag_{{ tag.id }}" class="ml-3 text-base text-gray-700">{{ tag.name }}</label>
+                    <!-- Right Column -->
+                    <div class="space-y-8">
+                        <!-- Email -->
+                        <div>
+                            <label for="id_email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2 text-gray-500"><i class="fas fa-envelope text-[#e74c3c]"></i></span>
+                                <input type="email"
+                                       name="email"
+                                       id="id_email"
+                                       value="{{ form.email.value|default_if_none:'' }}"
+                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       required>
+                            </div>
+                            {% if form.email.errors %}<div class="mt-2 text-sm text-red-600">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+                        <!-- Crypto Addresses -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Crypto Addresses</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="id_btc_address"
+                                           class="block text-sm font-medium text-gray-700 mb-2">Bitcoin</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-bitcoin text-[#e74c3c]"></i></span>
+                                        <input type="text"
+                                               name="btc_address"
+                                               id="id_btc_address"
+                                               value="{{ form.btc_address.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="BTC Address">
+                                    </div>
                                 </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <!-- Subscribed Domains -->
-                    <div class="mt-8">
-                        <label for="id_subscribed_domains"
-                               class="block text-lg font-semibold text-gray-700 mb-4">Subscribed Domains</label>
-                        <div class="grid grid-cols-2 gap-6">
-                            {% for domain in form.subscribed_domains.field.queryset %}
-                                {% if domain.id in form.subscribed_domains.value %}
-                                    <div class="flex items-center">
-                                        <input type="checkbox"
-                                               name="subscribed_domains"
-                                               value="{{ domain.id }}"
-                                               id="domain_{{ domain.id }}"
-                                               class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                               checked>
-                                        <label for="domain_{{ domain.id }}" class="ml-3 text-base text-gray-700">{{ domain.name }}</label>
+                                <div>
+                                    <label for="id_bch_address"
+                                           class="block text-sm font-medium text-gray-700 mb-2">Bitcoin Cash</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-bitcoin text-[#e74c3c]"></i></span>
+                                        <input type="text"
+                                               name="bch_address"
+                                               id="id_bch_address"
+                                               value="{{ form.bch_address.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="BCH Address">
                                     </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <!-- Subscribed Users -->
-                    <div class="mt-8">
-                        <label for="id_subscribed_users"
-                               class="block text-lg font-semibold text-gray-700 mb-4">Subscribed Users</label>
-                        <div class="grid grid-cols-2 gap-6">
-                            {% for user in form.subscribed_users.field.queryset %}
-                                {% if user.id in form.subscribed_users.value %}
-                                    <div class="flex items-center">
-                                        <input type="checkbox"
-                                               name="subscribed_users"
-                                               value="{{ user.id }}"
-                                               id="user_{{ user.id }}"
-                                               class="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                               checked>
-                                        <label for="user_{{ user.id }}" class="ml-3 text-base text-gray-700">{{ user.username }}</label>
+                                </div>
+                                <div>
+                                    <label for="id_eth_address"
+                                           class="block text-sm font-medium text-gray-700 mb-2">Ethereum</label>
+                                    <div class="relative">
+                                        <span class="absolute left-3 top-2 text-gray-500"><i class="fab fa-ethereum text-[#e74c3c]"></i></span>
+                                        <input type="text"
+                                               name="eth_address"
+                                               id="id_eth_address"
+                                               value="{{ form.eth_address.value|default_if_none:'' }}"
+                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               placeholder="ETH Address">
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tags -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="tagSearch"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       placeholder="Search tags...">
+                            </div>
+                            <div id="tagContainer"
+                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
+                                <div class="flex flex-wrap gap-2">
+                                    {% for tag in form.tags.field.queryset %}
+                                        <div class="tag-item">
+                                            <input type="checkbox"
+                                                   name="tags"
+                                                   value="{{ tag.id }}"
+                                                   id="tag_{{ tag.id }}"
+                                                   class="hidden"
+                                                   {% if tag.id in form.tags.value %}checked{% endif %}>
+                                            <label for="tag_{{ tag.id }}"
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if tag.id in form.tags.value %} bg-[#e74c3c] text-white {% else %} bg-gray-100 text-gray-700 hover:bg-gray-200 {% endif %}">
+                                                {{ tag.name }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Subscribed Domains -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Subscribed Domains</label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="domainSearch"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       placeholder="Search domains...">
+                            </div>
+                            <div id="domainContainer"
+                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
+                                <div class="flex flex-wrap gap-2">
+                                    {% for domain in form.subscribed_domains.field.queryset %}
+                                        {% if domain.id in form.subscribed_domains.value %}
+                                            <div class="domain-item">
+                                                <input type="checkbox"
+                                                       name="subscribed_domains"
+                                                       value="{{ domain.id }}"
+                                                       id="domain_{{ domain.id }}"
+                                                       class="hidden"
+                                                       checked>
+                                                <label for="domain_{{ domain.id }}"
+                                                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-[#e74c3c] text-white hover:bg-red-700 transition-colors">
+                                                    {{ domain.name }}
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Subscribed Users -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Subscribed Users</label>
+                            <div class="relative">
+                                <input type="text"
+                                       id="userSearch"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       placeholder="Search users...">
+                            </div>
+                            <div id="userContainer"
+                                 class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
+                                <div class="flex flex-wrap gap-2">
+                                    {% for user in form.subscribed_users.field.queryset %}
+                                        {% if user.id in form.subscribed_users.value %}
+                                            <div class="user-item">
+                                                <input type="checkbox"
+                                                       name="subscribed_users"
+                                                       value="{{ user.id }}"
+                                                       id="user_{{ user.id }}"
+                                                       class="hidden"
+                                                       checked>
+                                                <label for="user_{{ user.id }}"
+                                                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-[#e74c3c] text-white hover:bg-red-700 transition-colors">
+                                                    {{ user.username }}
+                                                </label>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="text-center mt-12">
-                <button type="submit"
-                        class="px-8 py-4 text-lg bg-blue-600 text-white rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Save Changes
-                </button>
-            </div>
-        </form>
-        <div class="mt-8 border-t pt-6">
-            <h3 class="text-lg font-semibold text-red-600">Danger Zone</h3>
-            <div class="mt-4">
+                <!-- Submit Button -->
+                <div class="mt-12 text-center">
+                    <button type="submit"
+                            class="px-8 py-3 bg-[#e74c3c] text-white rounded-lg font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+            <!-- Danger Zone -->
+            <div class="mt-12 p-6 bg-red-50 rounded-lg border border-red-200">
+                <h3 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h3>
                 <form action="{% url 'user_deletion' %}"
                       method="post"
                       onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.');">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">Delete Account</button>
+                    <button type="submit"
+                            class="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+                        Delete Account
+                    </button>
                 </form>
             </div>
         </div>
     </div>
+    <!-- Add JavaScript for tag search functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tag search functionality
+            const tagSearch = document.getElementById('tagSearch');
+            const tagItems = document.querySelectorAll('.tag-item');
+
+            tagSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                tagItems.forEach(item => {
+                    const tagName = item.querySelector('label').textContent.toLowerCase();
+                    item.style.display = tagName.includes(searchTerm) ? 'inline-block' : 'none';
+                });
+            });
+
+            // Tag selection functionality
+            tagItems.forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const label = item.querySelector('label');
+                
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        label.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                        label.classList.add('bg-[#e74c3c]', 'text-white');
+                    } else {
+                        label.classList.remove('bg-[#e74c3c]', 'text-white');
+                        label.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                    }
+                });
+            });
+
+            // Domain search functionality
+            const domainSearch = document.getElementById('domainSearch');
+            const domainItems = document.querySelectorAll('.domain-item');
+
+            domainSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                domainItems.forEach(item => {
+                    const domainName = item.querySelector('label').textContent.toLowerCase();
+                    item.style.display = domainName.includes(searchTerm) ? 'inline-block' : 'none';
+                });
+            });
+
+            // Domain selection functionality
+            domainItems.forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const label = item.querySelector('label');
+                
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        label.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                        label.classList.add('bg-[#e74c3c]', 'text-white');
+                    } else {
+                        label.classList.remove('bg-[#e74c3c]', 'text-white');
+                        label.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                    }
+                });
+            });
+
+            // User search functionality
+            const userSearch = document.getElementById('userSearch');
+            const userItems = document.querySelectorAll('.user-item');
+
+            userSearch.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                userItems.forEach(item => {
+                    const userName = item.querySelector('label').textContent.toLowerCase();
+                    item.style.display = userName.includes(searchTerm) ? 'inline-block' : 'none';
+                });
+            });
+
+            // User selection functionality
+            userItems.forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const label = item.querySelector('label');
+                
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) {
+                        label.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                        label.classList.add('bg-[#e74c3c]', 'text-white');
+                    } else {
+                        label.classList.remove('bg-[#e74c3c]', 'text-white');
+                        label.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                    }
+                });
+            });
+        });
+    </script>
 {% endblock content %}
