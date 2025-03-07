@@ -22,6 +22,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -43,6 +44,7 @@ from website.models import (
     Monitor,
     Points,
     Tag,
+    Thread,
     User,
     UserBadge,
     UserProfile,
@@ -1028,3 +1030,80 @@ class UserChallengeListView(View):
             "user_challenges.html",
             {"challenges": challenges, "user_challenges": user_challenges},
         )
+
+
+@login_required
+def messaging_home(request):
+    threads = Thread.objects.filter(participants=request.user).order_by("-updated_at")
+    return render(request, "messaging.html", {"threads": threads})
+
+
+@login_required
+def start_thread(request, user_id):
+    if request.method == "POST":
+        other_user = get_object_or_404(User, id=user_id)
+
+        # Check if a thread already exists between the two users
+        thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
+
+        if not thread:
+            # Create a new thread
+            thread = Thread.objects.create()
+            thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+
+        return JsonResponse({"success": True, "thread_id": thread.id})
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def view_thread(request, thread_id):
+    thread = get_object_or_404(Thread, id=thread_id)
+    messages = thread.messages.all().order_by("timestamp")
+    # Convert the QuerySet to a list of dictionaries using values()
+    data = list(messages.values("username", "content", "timestamp"))
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_public_key(request, thread_id):
+    # Get the thread
+    thread = get_object_or_404(Thread, id=thread_id)
+
+    # Get the other participant in the thread (exclude the logged-in user)
+    other_participants = thread.participants.exclude(id=request.user.id)
+    if not other_participants.exists():
+        return JsonResponse({"error": "No other participant found"}, status=404)
+
+    other_user = other_participants.first()
+    # Access the public_key from the UserProfile
+    try:
+        public_key = other_user.userprofile.public_key
+    except Exception:
+        return JsonResponse({"error": "User profile not found"}, status=404)
+
+    if not public_key:
+        return JsonResponse({"error": "User has not provided a public key"}, status=404)
+
+    return JsonResponse({"public_key": public_key})
+
+
+@login_required
+@require_http_methods(["POST"])
+def set_public_key(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    public_key = data.get("public_key")
+    if not public_key:
+        return JsonResponse({"error": "Public key is required"}, status=400)
+
+    # Update the public_key on the user's profile
+    profile = request.user.userprofile
+    profile.public_key = public_key
+    profile.save()
+
+    return JsonResponse({"success": True, "public_key": profile.public_key})
