@@ -1537,6 +1537,65 @@ def add_or_update_domain(request):
             return HttpResponse("Error occurred while processing the request")
 
 
+def validate_url_for_ssrf(url):
+    """
+    Validates a URL to prevent SSRF attacks.
+    Returns (is_valid, error_message)
+    """
+    try:
+        # Check if URL is None or empty
+        if not url:
+            return False, "URL cannot be empty"
+
+        # Parse the URL
+        parsed = urlparse(url)
+
+        # Validate scheme
+        if parsed.scheme not in ["http", "https"]:
+            return False, "Invalid URL scheme. Only HTTP and HTTPS are allowed"
+
+        # Get hostname
+        hostname = parsed.hostname
+        if not hostname:
+            return False, "Invalid URL format"
+
+        # Check for localhost and internal domains
+        if hostname in ["localhost", "127.0.0.1", "::1"] or ".local" in hostname:
+            return False, "Local addresses are not allowed"
+
+        # Resolve domain to IP
+        try:
+            ip_addresses = socket.getaddrinfo(hostname, None)
+            for addr_info in ip_addresses:
+                ip_str = addr_info[4][0]
+                ip = ipaddress.ip_address(ip_str)
+
+                # Check for private, loopback, link-local, multicast, reserved ranges
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+                    return False, f"IP address {ip_str} is not allowed"
+
+                # Check for specific CIDR ranges that should be blocked
+                blocked_ranges = [
+                    "169.254.0.0/16",  # Link Local
+                    "127.0.0.0/8",  # Loopback
+                    "10.0.0.0/8",  # Private network
+                    "172.16.0.0/12",  # Private network
+                    "192.168.0.0/16",  # Private network
+                ]
+
+                for cidr in blocked_ranges:
+                    if ip in ipaddress.ip_network(cidr):
+                        return False, f"IP address {ip_str} is in blocked range {cidr}"
+
+        except (socket.gaierror, ValueError) as e:
+            return False, f"DNS resolution failed: {str(e)}"
+
+        return True, None
+
+    except Exception as e:
+        return False, f"URL validation error: {str(e)}"
+
+
 @login_required(login_url="/accounts/login")
 def add_or_update_organization(request):
     if not request.user.is_superuser:
@@ -1552,6 +1611,24 @@ def add_or_update_organization(request):
             user = organization.admin
             new_admin = User.objects.get(email=request.POST["admin"])
 
+            # Validate URLs before processing
+            url = request.POST.get("url", "")
+            github_url = request.POST.get("github", "")
+
+            # Validate main URL
+            if url:
+                is_valid, error_msg = validate_url_for_ssrf(url)
+                if not is_valid:
+                    return HttpResponse(f"Invalid URL: {error_msg}")
+
+            # Validate GitHub URL
+            if github_url:
+                is_valid, error_msg = validate_url_for_ssrf(github_url)
+                if not is_valid:
+                    return HttpResponse(f"Invalid GitHub URL: {error_msg}")
+                if not github_url.startswith("https://github.com/"):
+                    return HttpResponse("GitHub URL must be from github.com domain")
+
             if user != new_admin:
                 try:
                     admin = OrganizationAdmin.objects.get(user=user)
@@ -1564,9 +1641,9 @@ def add_or_update_organization(request):
 
             organization.name = request.POST["name"]
             organization.email = request.POST["email"]
-            organization.url = request.POST["url"]
+            organization.url = url
             organization.admin = new_admin
-            organization.github = request.POST["github"]
+            organization.github = github_url
             organization.is_active = request.POST.get("verify") == "on"
 
             try:
@@ -1582,7 +1659,7 @@ def add_or_update_organization(request):
             organization.save()
             return HttpResponse("Organization updated successfully")
 
-        except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
+        except (Organization.DoesNotExist, User.DoesNotExist) as e:
             logger.error(f"Error updating organization: {str(e)}")
             return HttpResponse(
                 "Error updating organization. Either organization or user "
