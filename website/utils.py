@@ -184,7 +184,6 @@ def rebuild_safe_url(url):
     return safe_url
 
 
-
 def get_github_issue_title(github_issue_url):
     """Helper function to fetch the title of a GitHub issue."""
     try:
