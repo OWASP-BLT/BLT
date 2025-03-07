@@ -1,0 +1,35 @@
+name: Bounty Bot
+on:
+  issue_comment:
+    types: [created]
+
+
+jobs:
+  bounty:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install @octokit/rest @slack/web-api
+
+
+      - name: Capture GitHub Context
+        run: echo '${{ toJson(github) }}' > github_context.json
+
+
+      - name: Run Bounty Bot
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: node .github/scripts/bounty.mjs github_context.json
