@@ -1409,7 +1409,7 @@ class RepoDetailView(DetailView):
                 )
 
         # Return a default response if no section matched
-        return JsonResponse({"status": "error", "message": "Invalid section specified"}, status=400)
+        return JsonResponse({"status": "error", "message": "Invalid section specified " + section}, status=400)
 
 
 class RepoBadgeView(APIView):
