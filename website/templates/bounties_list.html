@@ -106,24 +106,62 @@
                 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-3xl font-bold text-gray-800">Github Issue Bounties</h2>
-                        <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">GitHub bounties Issues</span>
+                        <div class="flex space-x-2">
+                            <a href="?{% if search %}search={{ search }}&{% endif %}{% if domain %}domain={{ domain }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if hunt_type %}hunt_type={{ hunt_type }}&{% endif %}issue_state=open"
+                               class="px-4 py-2 rounded-md text-sm font-medium transition duration-300 {% if selected_issue_state == 'open' or not selected_issue_state %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-800 hover:bg-gray-300{% endif %}">
+                                Open Issues
+                            </a>
+                            <a href="?{% if search %}search={{ search }}&{% endif %}{% if domain %}domain={{ domain }}&{% endif %}{% if start_date %}start_date={{ start_date }}&{% endif %}{% if end_date %}end_date={{ end_date }}&{% endif %}{% if hunt_type %}hunt_type={{ hunt_type }}&{% endif %}issue_state=closed"
+                               class="px-4 py-2 rounded-md text-sm font-medium transition duration-300 {% if selected_issue_state == 'closed' %}bg-blue-600 text-white{% else %}bg-gray-200 text-gray-800 hover:bg-gray-300{% endif %}">
+                                Closed Issues
+                            </a>
+                        </div>
                     </div>
                     <div id="github-issues-container">
                         {% if github_issues %}
                             <div class="space-y-4 mb-6">
                                 {% for issue in github_issues %}
                                     <div class="github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300">
-                                        <h3 class="font-medium text-xl mb-3 text-gray-800">{{ issue.title }}</h3>
+                                        <div class="flex justify-between items-start mb-3">
+                                            <h3 class="font-medium text-xl text-gray-800">{{ issue.title }}</h3>
+                                            <span class="px-3 py-1 text-xs rounded-full {% if issue.state == 'closed' %}bg-red-100 text-red-800{% else %}bg-green-100 text-green-800{% endif %} font-medium">
+                                                {{ issue.state|title }}
+                                            </span>
+                                        </div>
                                         <div class="text-sm text-gray-600 mb-3">
                                             <span class="font-medium">Issue #{{ issue.number }}</span> •
                                             Opened by {{ issue.user }} •
                                             Created {{ issue.created_at|date:"M d, Y" }}
+                                            {% if issue.closed_at %}• Closed {{ issue.closed_at|date:"M d, Y" }}{% endif %}
                                         </div>
                                         <div class="flex flex-wrap gap-2 mb-4">
                                             {% for label in issue.labels %}
                                                 <span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">{{ label }}</span>
                                             {% endfor %}
                                         </div>
+                                        {% if issue.related_prs %}
+                                            <div class="mt-4 mb-4">
+                                                <p class="font-medium text-gray-700 mb-2">Related Pull Requests:</p>
+                                                <div class="space-y-2 pl-4 border-l-2 border-gray-300">
+                                                    {% for pr in issue.related_prs %}
+                                                        <div class="flex items-center">
+                                                            <svg class="w-5 h-5 text-purple-600 mr-2"
+                                                                 fill="currentColor"
+                                                                 viewBox="0 0 20 20"
+                                                                 xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd">
+                                                                </path>
+                                                            </svg>
+                                                            <a href="{{ pr.url }}"
+                                                               target="_blank"
+                                                               class="text-purple-600 hover:text-purple-800 transition duration-300">
+                                                                PR #{{ pr.number }}: {{ pr.title }} (by {{ pr.user }})
+                                                            </a>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
                                         <div class="mt-4">
                                             <a href="{{ issue.url }}"
                                                target="_blank"
@@ -144,7 +182,8 @@
                             <div class="text-center">
                                 <button id="load-more-issues"
                                         data-next-page="{{ current_page|add:1 }}"
-                                        class="bg-red-500 hover:bg-blue-600 text-white px-6 py-3 rounded-md font-medium transition duration-300">
+                                        data-state="{{ selected_issue_state }}"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-md font-medium transition duration-300">
                                     Load More Issues
                                 </button>
                             </div>
@@ -306,20 +345,26 @@
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', function() {
                 const nextPage = this.getAttribute('data-next-page');
-                loadMoreIssues(nextPage);
+                const state = this.getAttribute('data-state') || 'open';
+                loadMoreIssues(nextPage, state);
             });
         }
         
+                
         // Helper functions
         function captureGithubIssues() {
             if (githubIssuesContainer) {
                 const issueElements = githubIssuesContainer.querySelectorAll('.github-issue');
                 return Array.from(issueElements).map(element => {
+                    const stateElement = element.querySelector('.rounded-full.text-xs');
+                    const stateText = stateElement ? stateElement.textContent.trim().toLowerCase() : 'open';
+                    
                     return {
                         element: element,
                         title: element.querySelector('h3').textContent.trim().toLowerCase(),
                         number: element.querySelector('.text-sm span').textContent.trim().toLowerCase(),
                         user: element.querySelector('.text-sm').textContent.trim().toLowerCase(),
+                        state: stateText,
                         labels: Array.from(element.querySelectorAll('.flex.flex-wrap.gap-2 span')).map(label => 
                             label.textContent.trim().toLowerCase())
                     };
@@ -343,7 +388,135 @@
             }
             return [];
         }
-        
+        function loadMoreIssues(page, state = 'open') {
+            if (!loadMoreBtn) return;
+            
+            loadMoreBtn.textContent = 'Loading...';
+            loadMoreBtn.disabled = true;
+            
+            // Add state parameter to the API request
+            fetch(`/api/load-more-issues/?page=${page}&state=${state}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.issues && data.issues.length > 0) {
+                        const container = document.querySelector('#github-issues-container .space-y-4');
+                        
+                        data.issues.forEach(issue => {
+                            const issueElement = document.createElement('div');
+                            issueElement.className = 'github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300';
+                            
+                            // Build labels HTML
+                            let labelsHtml = '';
+                            issue.labels.forEach(label => {
+                                labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${label}</span>`;
+                            });
+                            
+                            //builde the related PR 
+                            let relatedPRsHtml = '';
+                            if (issue.related_prs && issue.related_prs.length > 0) {
+                                relatedPRsHtml = `
+                                    <div class="mt-4 mb-4">
+                                        <p class="font-medium text-gray-700 mb-2">Related Pull Requests:</p>
+                                        <div class="space-y-2 pl-4 border-l-2 border-gray-300">
+                                `;
+                                
+                                issue.related_prs.forEach(pr => {
+                                    relatedPRsHtml += `
+                                        <div class="flex items-center">
+                                            <svg class="w-5 h-5 text-purple-600 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <a href="${pr.url}" target="_blank" class="text-purple-600 hover:text-purple-800 transition duration-300">
+                                                PR #${pr.number}: ${pr.title} (by ${pr.user})
+                                            </a>
+                                        </div>
+                                    `;
+                                });
+                                
+                                relatedPRsHtml += `
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            
+                            const createdDate = new Date(issue.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                            });
+                            
+                            const closedDateHtml = issue.closed_at ? `• Closed ${new Date(issue.closed_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                            })}` : '';
+                            
+                            const stateClass = issue.state === 'closed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+                            
+                            issueElement.innerHTML = `
+                                <div class="flex justify-between items-start mb-3">
+                                    <h3 class="font-medium text-xl text-gray-800">${issue.title}</h3>
+                                    <span class="px-3 py-1 text-xs rounded-full ${stateClass} font-medium">
+                                        ${issue.state.charAt(0).toUpperCase() + issue.state.slice(1)}
+                                    </span>
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3">
+                                    <span class="font-medium">Issue #${issue.number}</span> • 
+                                    Opened by ${issue.user} • 
+                                    Created ${createdDate}
+                                    ${closedDateHtml}
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-4">
+                                    ${labelsHtml}
+                                </div>
+                                ${relatedPRsHtml}
+                                <div class="mt-4">
+                                    <a href="${issue.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md transition duration-300">
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M10 0C4.477 0 0 4.484 0 10c0 4.42 2.865 8.166 6.839 9.49.5.09.682-.218.682-.484 0-.236-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.157-1.11-1.465-1.11-1.465-.908-.62.069-.608.069-.608 1.003.07 1.532 1.03 1.532 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.087.636-1.337-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.578 9.578 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C17.14 18.163 20 14.418 20 10c0-5.516-4.477-10-10-10z"></path>
+                                        </svg>
+                                        Show on GitHub
+                                    </a>
+                                </div>
+                            `;
+                            
+                            container.appendChild(issueElement);
+                        
+                            originalGithubIssues.push({
+                                element: issueElement,
+                                title: issue.title.toLowerCase(),
+                                number: `issue #${issue.number}`.toLowerCase(),
+                                user: `opened by ${issue.user}`.toLowerCase(),
+                                state: issue.state.toLowerCase(),
+                                labels: issue.labels.map(label => label.toLowerCase())
+                            });
+                        });
+                        
+                        const searchTerm = searchInput.value.trim().toLowerCase();
+                        if (searchTerm !== '') {
+                            filterItems(searchTerm);
+                        }
+                        
+                        if (data.next_page) {
+                            loadMoreBtn.setAttribute('data-next-page', data.next_page);
+                            loadMoreBtn.setAttribute('data-state', state);
+                            loadMoreBtn.textContent = 'Load More Issues';
+                            loadMoreBtn.disabled = false;
+                        } else {
+                            loadMoreBtn.textContent = 'No More Issues';
+                            loadMoreBtn.disabled = true;
+                        }
+                    } else {
+                        loadMoreBtn.textContent = 'No More Issues';
+                        loadMoreBtn.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading more issues:', error);
+                    loadMoreBtn.textContent = 'Error Loading Issues. Try Again.';
+                    loadMoreBtn.disabled = false;
+                });
+        }
         function filterItems(searchTerm) {
             // Refresh data if needed
             if (originalGithubIssues.length === 0 || document.querySelectorAll('.github-issue').length !== originalGithubIssues.length) {
@@ -361,6 +534,7 @@
                     issue.title.includes(searchTerm) || 
                     issue.number.includes(searchTerm) ||
                     issue.user.includes(searchTerm) ||
+                    issue.state.includes(searchTerm) ||
                     issue.labels.some(label => label.includes(searchTerm));
                 
                 if (isMatch) {
@@ -473,90 +647,6 @@
             if (loadMoreBtn) loadMoreBtn.style.display = '';
         }
         
-        function loadMoreIssues(page) {
-            if (!loadMoreBtn) return;
-            
-            loadMoreBtn.textContent = 'Loading...';
-            loadMoreBtn.disabled = true;
-            
-            fetch(`/api/load-more-issues/?page=${page}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.issues && data.issues.length > 0) {
-                        const container = document.querySelector('#github-issues-container .space-y-4');
-                        
-                        data.issues.forEach(issue => {
-                            const issueElement = document.createElement('div');
-                            issueElement.className = 'github-issue bg-white p-5 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition duration-300';
-                            
-                            let labelsHtml = '';
-                            issue.labels.forEach(label => {
-                                labelsHtml += `<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">${label}</span>`;
-                            });
-                            
-                            const createdDate = new Date(issue.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                            });
-                            
-                            issueElement.innerHTML = `
-                                <h3 class="font-medium text-xl mb-3 text-gray-800">
-                                    ${issue.title}
-                                </h3>
-                                <div class="text-sm text-gray-600 mb-3">
-                                    <span class="font-medium">Issue #${issue.number}</span> • 
-                                    Opened by ${issue.user} • 
-                                    Created ${createdDate}
-                                </div>
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    ${labelsHtml}
-                                </div>
-                                <div class="mt-4">
-                                    <a href="${issue.url}" target="_blank" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-md transition duration-300">
-                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M10 0C4.477 0 0 4.484 0 10c0 4.42 2.865 8.166 6.839 9.49.5.09.682-.218.682-.484 0-.236-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.157-1.11-1.465-1.11-1.465-.908-.62.069-.608.069-.608 1.003.07 1.532 1.03 1.532 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.087.636-1.337-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.578 9.578 0 0110 4.836c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.933.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C17.14 18.163 20 14.418 20 10c0-5.516-4.477-10-10-10z"></path>
-                                        </svg>
-                                        Show on GitHub
-                                    </a>
-                                </div>
-                            `;
-                            
-                            container.appendChild(issueElement);
-                        
-                            originalGithubIssues.push({
-                                element: issueElement,
-                                title: issue.title.toLowerCase(),
-                                number: `issue #${issue.number}`.toLowerCase(),
-                                user: `opened by ${issue.user}`.toLowerCase(),
-                                labels: issue.labels.map(label => label.toLowerCase())
-                            });
-                        });
-                        
-                        const searchTerm = searchInput.value.trim().toLowerCase();
-                        if (searchTerm !== '') {
-                            filterItems(searchTerm);
-                        }
-                        
-                        if (data.next_page) {
-                            loadMoreBtn.setAttribute('data-next-page', data.next_page);
-                            loadMoreBtn.textContent = 'Load More Issues';
-                            loadMoreBtn.disabled = false;
-                        } else {
-                            loadMoreBtn.textContent = 'No More Issues';
-                            loadMoreBtn.disabled = true;
-                        }
-                    } else {
-                        loadMoreBtn.textContent = 'No More Issues';
-                        loadMoreBtn.disabled = true;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading more issues:', error);
-                    loadMoreBtn.textContent = 'Error Loading Issues. Try Again.';
-                    loadMoreBtn.disabled = false;
-                });
-        }
     });
     </script>
 {% endblock content %}
