@@ -12,7 +12,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from django.urls import path
 
-from website.consumers import ChatConsumer, SimilarityConsumer
+from website.consumers import ChatConsumer, DirectChatConsumer, SimilarityConsumer
 
 application = ProtocolTypeRouter(
     {
@@ -25,6 +25,7 @@ application = ProtocolTypeRouter(
                         "ws/discussion-rooms/chat/<int:room_id>/",
                         ChatConsumer.as_asgi(),
                     ),
+                    path("ws/messaging/<int:thread_id>/", DirectChatConsumer.as_asgi()),  # Add this line
                 ]
             )
         ),

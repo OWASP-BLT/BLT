@@ -839,14 +839,14 @@ with-social = ["django-allauth (>=0.56.0,<0.58.0)"]
 
 [[package]]
 name = "django"
-version = "5.1.6"
+version = "5.1.7"
 description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
 optional = false
 python-versions = ">=3.10"
 groups = ["main", "dev"]
 files = [
-    {file = "Django-5.1.6-py3-none-any.whl", hash = "sha256:8d203400bc2952fbfb287c2bbda630297d654920c72a73cc82a9ad7926feaad5"},
-    {file = "Django-5.1.6.tar.gz", hash = "sha256:1e39eafdd1b185e761d9fab7a9f0b9fa00af1b37b25ad980a8aa0dac13535690"},
+    {file = "Django-5.1.7-py3-none-any.whl", hash = "sha256:1323617cb624add820cb9611cdcc788312d250824f92ca6048fda8625514af2b"},
+    {file = "Django-5.1.7.tar.gz", hash = "sha256:30de4ee43a98e5d3da36a9002f287ff400b43ca51791920bfb35f6917bfe041c"},
 ]
 
 [package.dependencies]
@@ -2192,14 +2192,14 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 
 [[package]]
 name = "openai"
-version = "1.65.3"
+version = "1.65.4"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "openai-1.65.3-py3-none-any.whl", hash = "sha256:a155fa5d60eccda516384d3d60d923e083909cc126f383fe4a350f79185c232a"},
-    {file = "openai-1.65.3.tar.gz", hash = "sha256:9b7cd8f79140d03d77f4ed8aeec6009be5dcd79bbc02f03b0e8cd83356004f71"},
+    {file = "openai-1.65.4-py3-none-any.whl", hash = "sha256:15566d46574b94eae3d18efc2f9a4ebd1366d1d44bfc1bdafeea7a5cf8271bcb"},
+    {file = "openai-1.65.4.tar.gz", hash = "sha256:0b08c58625d556f5c6654701af1023689c173eb0989ce8f73c7fd0eb22203c76"},
 ]
 
 [package.dependencies]
@@ -3939,4 +3939,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "683733af5158527ece94799ca8ec708f7968f760873b0b4c518df0b5b02a340f"
+content-hash = "34f6e9e87253b3d349b43a07fcb18ffc069589c571eb10466c18a889bb17e34c"
