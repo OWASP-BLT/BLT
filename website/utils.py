@@ -4,10 +4,11 @@ import hashlib
 import logging
 import os
 import re
+import socket
 import time
 from collections import deque
 from ipaddress import ip_address
-from urllib.parse import urlparse, urlsplit, urlunparse
+from urllib.parse import urlparse, urlsplit, urlunparse, quote
 
 import markdown
 import numpy as np
@@ -182,20 +183,6 @@ def rebuild_safe_url(url):
 
     return safe_url
 
-
-def is_safe_url(url, allowed_hosts, allowed_paths=None):
-    if not is_valid_https_url(url):
-        return False
-
-    parsed_url = urlparse(url)
-
-    if parsed_url.netloc not in allowed_hosts:
-        return False
-
-    if allowed_paths and parsed_url.path not in allowed_paths:
-        return False
-
-    return True
 
 
 def get_github_issue_title(github_issue_url):
