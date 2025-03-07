@@ -636,7 +636,7 @@ def load_more_issues(request):
         return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
-        return JsonResponse({"success": False, "error": str(e)})
+        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
 class DraftHunts(TemplateView):
