@@ -728,6 +728,7 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
 
@@ -1750,21 +1751,6 @@ class Kudos(models.Model):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
 
 
-class Message(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
-
-    class Meta:
-        ordering = ["timestamp"]
-
-    def __str__(self):
-        return f"{self.username}: {self.content[:50]}"
-
-
 class OsshCommunity(models.Model):
     CATEGORY_CHOICES = [
         ("forum", "Forum"),
@@ -2067,3 +2053,27 @@ class Queue(models.Model):
             self.launched = True
             self.launched_at = timezone.now()
             self.save()
+
+
+class Thread(models.Model):
+    participants = models.ManyToManyField(User, related_name="threads")
+    updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
+
+    def __str__(self):
+        return f"Thread {self.id}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"

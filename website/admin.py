@@ -585,10 +585,15 @@ class GitHubReviewAdmin(admin.ModelAdmin):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("id", "room", "username", "content", "timestamp")
+    list_display = ("id", "room", "thread", "username", "content", "timestamp")
     list_filter = ("room", "timestamp")
     search_fields = ("username", "content")
     date_hierarchy = "timestamp"
+
+
+class ThreadAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "created", "modified")
+    search_fields = ("name",)
 
 
 class SlackBotActivityAdmin(admin.ModelAdmin):
