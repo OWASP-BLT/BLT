@@ -1,6 +1,6 @@
 {% load static %}
-<div class="{% if included_in_issue_page %} max-sm:ml-[3.45%] ml-[10%] {% else %} ml-0 {% endif %}">
-    <div class="flex flex-col md:flex-row items-start gap-4">
+<div class="{% if included_in_issue_page %} {% else %} {% endif %}">
+    <div class="flex flex-row gap-2 items-start">
         <img class="w-[80px] h-[80px] p-1 object-cover border-2 border-[#e74c3c] border-solid rounded-md"
              src="{% static 'gif/loader.gif' %}"
              alt="crypto address qr code"
@@ -20,7 +20,7 @@
         </div>
         <div class="hidden w-full" id="no-crypto">
             {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
-            <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
+            <i class=" text-[12px]">No Address, will go to BLT Donation</i>
         </div>
     </div>
 </div>
