@@ -3,6 +3,8 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import IntegrityError
 from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
@@ -46,10 +48,6 @@ def search_users(request):
         users_list = [{"username": user["username"], "team": user["userprofile__team__name"]} for user in users]
         return JsonResponse(users_list, safe=False)
     return JsonResponse([], safe=False)
-
-
-from django.db import IntegrityError
-from django.http import JsonResponse
 
 
 @login_required
@@ -96,7 +94,7 @@ def create_team(request):
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
 
-    return render(request, "create_team.html")
+    return render(request, "team_overview.html")
 
 
 @login_required
@@ -254,40 +252,78 @@ class TeamChallenges(TemplateView):
         # Get all team challenges
         team_challenges = Challenge.objects.filter(challenge_type="team")
         if request.user.is_authenticated:
-            user_profile = request.user.userprofile  # Get the user's profile
+            user_profile = request.user.userprofile
 
             # Check if the user belongs to a team
             if user_profile.team:
-                user_team = user_profile.team  # Get the user's team
+                user_team = user_profile.team
 
                 for challenge in team_challenges:
                     # Check if the team is a participant in this challenge
                     if user_team in challenge.team_participants.all():
-                        # Progress is already stored in the Challenge model
                         challenge.progress = challenge.progress
                     else:
-                        # Team is not a participant, set progress to 0
                         challenge.progress = 0
+
+                    # Calculate the progress circle offset
+                    circumference = 125.6
+                    challenge.stroke_dasharray = circumference
+                    challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
             else:
-                # If the user is not part of a team, set progress to 0 for all challenges
                 for challenge in team_challenges:
                     challenge.progress = 0
+                    challenge.stroke_dasharray = 125.6
+                    challenge.stroke_dashoffset = 125.6
 
-        # Render the team challenges template
         return render(request, "team_challenges.html", {"team_challenges": team_challenges})
 
 
 class TeamLeaderboard(TemplateView):
-    """View to display the team leaderboard based on total points."""
+    """View to display the team leaderboard based on total points with pagination."""
 
     def get(self, request):
+        # Get all teams and their points
         teams = Organization.objects.all()
-        leaderboard = []
+        leaderboard_data = []
+
         for team in teams:
             team_points = team.team_points
-            leaderboard.append((team, team_points))
+            leaderboard_data.append((team, team_points))
 
         # Sort by points in descending order
-        leaderboard.sort(key=lambda x: x[1], reverse=True)
+        leaderboard_data.sort(key=lambda x: x[1], reverse=True)
 
-        return render(request, "team_leaderboard.html", {"leaderboard": leaderboard})
+        # Create a paginator object with 20 items per page
+        paginator = Paginator(leaderboard_data, 20)
+
+        # Get the page number from the request
+        page = request.GET.get("page", 1)
+
+        try:
+            # Get the Page object for the requested page
+            leaderboard = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page
+            leaderboard = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range, deliver last page of results
+            leaderboard = paginator.page(paginator.num_pages)
+
+        # Add rank information based on overall position
+        for index, (team, points) in enumerate(leaderboard, start=(leaderboard.number - 1) * 20 + 1):
+            if points >= 1000:
+                team.rank = "PLATINUM"
+            elif points >= 500:
+                team.rank = "GOLD"
+            elif points >= 250:
+                team.rank = "SILVER"
+            elif points >= 100:
+                team.rank = "BRONZE"
+            else:
+                team.rank = "UNRATED"
+
+        context = {
+            "leaderboard": leaderboard,
+        }
+
+        return render(request, "team_leaderboard.html", context)
