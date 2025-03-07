@@ -6,9 +6,9 @@ import os
 import re
 import time
 from collections import deque
+from ipaddress import ip_address
 from urllib.parse import urlparse, urlsplit, urlunparse
 
-from ipaddress import ip_address
 import markdown
 import numpy as np
 import requests
