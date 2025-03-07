@@ -2087,7 +2087,7 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
 
-      
+
 class Recommendation(models.Model):
     recommender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="given_recommendations")
     recommended_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_recommendations")
@@ -2100,4 +2100,4 @@ class Recommendation(models.Model):
         ]
 
     def __str__(self):
-        return f"Recommendation from {self.recommender.username} to {self.recommended_user.username}"      
+        return f"Recommendation from {self.recommender.username} to {self.recommended_user.username}"
