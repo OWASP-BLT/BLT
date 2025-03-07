@@ -1050,7 +1050,7 @@ urlpatterns = [
     path("messaging/start-thread/<int:user_id>/", start_thread, name="start_thread"),
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
-    path("api/messaging/<int:thread_id>/get-public-key", get_public_key, name="get_public_key"),
+    path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
 ]
 
 if settings.DEBUG:

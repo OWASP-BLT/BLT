@@ -472,7 +472,7 @@
                         let recipientPublicKeyBase64 = cachedRecipientPublicKey;
                         if (!recipientPublicKeyBase64) {
                             try {
-                                const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
+                                const resp = await fetch(`/api/messaging/${threadId}/get-public-key/`);
                                 if (!resp.ok) {
                                     throw new Error(`Failed to fetch public key: ${resp.status}`);
                                 }
@@ -571,7 +571,7 @@
                     let recipientPublicKeyBase64 = cachedRecipientPublicKey;
                     if (!recipientPublicKeyBase64) {
                         try {
-                            const response = await fetch(`/api/messaging/${currentThreadId}/get-public-key`);
+                            const response = await fetch(`/api/messaging/${currentThreadId}/get-public-key/`);
                             if (!response.ok) {
                                 throw new Error(`Failed to fetch public key: ${response.status}`);
                             }
