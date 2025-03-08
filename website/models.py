@@ -244,8 +244,6 @@ class Domain(models.Model):
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
     is_active = models.BooleanField(default=True)
-    has_security_txt = models.BooleanField(default=False)
-    security_txt_checked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
@@ -330,11 +328,20 @@ class Domain(models.Model):
             pass
 
     def check_security_txt(self):
-        """Check if domain has security.txt"""
+        """Check if domain has security.txt and update status"""
+        from django.utils import timezone
+
         from website.utils import check_security_txt
 
         try:
-            return check_security_txt(self.url)
+            has_security, error_message = check_security_txt(self.url)
+
+            # Update the domain's security.txt status
+            self.has_security_txt = has_security
+            self.security_txt_checked_at = timezone.now()
+            self.save(update_fields=["has_security_txt", "security_txt_checked_at"])
+
+            return has_security, error_message
         except Exception as e:
             return False, str(e)
 

@@ -681,8 +681,37 @@ def is_private_ip(url):
     """Prevents SSRF by blocking private/internal IP addresses"""
     try:
         hostname = urllib.parse.urlparse(url).hostname
-        ip = socket.gethostbyname(hostname)
-        return ipaddress.ip_address(ip).is_private
+        if not hostname:
+            return True
+
+        # Block localhost and internal domains
+        if hostname in ["localhost", "127.0.0.1", "::1"] or ".local" in hostname:
+            return True
+
+        # Resolve IP and check ranges
+        ip_addresses = socket.getaddrinfo(hostname, None)
+        for addr_info in ip_addresses:
+            ip_str = addr_info[4][0]
+            ip = ipaddress.ip_address(ip_str)
+
+            # Check for private, loopback, link-local, multicast, reserved ranges
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast or ip.is_reserved:
+                return True
+
+            # Check specific blocked CIDR ranges
+            blocked_ranges = [
+                "169.254.0.0/16",  # Link Local
+                "127.0.0.0/8",  # Loopback
+                "10.0.0.0/8",  # Private network
+                "172.16.0.0/12",  # Private network
+                "192.168.0.0/16",  # Private network
+            ]
+
+            for cidr in blocked_ranges:
+                if ip in ipaddress.ip_network(cidr):
+                    return True
+
+        return False
     except Exception:
         return True  # Treat failures as unsafe
 
@@ -692,35 +721,55 @@ def check_security_txt(domain_url):
     Check if a domain has security.txt file at .well-known/security.txt or /security.txt
     Returns (bool, str) tuple - (has_security, error_message)
     """
-    security_paths = ["/.well-known/security.txt", "/security.txt"]
+    # Validate URL format
+    if not domain_url:
+        return False, "Invalid URL: URL cannot be empty"
 
+    # Ensure URL has scheme
     if not domain_url.startswith(("http://", "https://")):
         domain_url = f"https://{domain_url}"
 
-    # Block internal IP addresses (SSRF prevention)
-    if is_private_ip(domain_url):
-        return False, "Blocked: Potential SSRF detected"
+    try:
+        parsed_url = urllib.parse.urlparse(domain_url)
+        if not parsed_url.netloc:
+            return False, "Invalid URL format"
 
-    for path in security_paths:
-        url = domain_url.rstrip("/") + path
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code == 200:
-                return True, None
-        except requests.exceptions.Timeout:
-            logger.warning(f"Timeout checking security.txt at {url}")
-            continue
-        except requests.exceptions.SSLError as ssl_err:
-            logger.warning(f"SSL Error checking security.txt at {url}: {ssl_err}")
-            continue
-        except requests.exceptions.ConnectionError as conn_err:
-            logger.warning(f"Connection Error checking security.txt at {url}: {conn_err}")
-            continue
-        except requests.exceptions.RequestException as req_err:
-            logger.warning(f"Request Error checking security.txt at {url}: {req_err}")
-            continue
+        # Force HTTPS
+        domain_url = f"https://{parsed_url.netloc}"
 
-    return False, "security.txt not found"
+        # Block internal IP addresses (SSRF prevention)
+        if is_private_ip(domain_url):
+            return False, "Blocked: Potential SSRF detected"
+
+        security_paths = ["/.well-known/security.txt", "/security.txt"]
+
+        for path in security_paths:
+            url = domain_url.rstrip("/") + path
+            try:
+                # Use a session with specific security settings
+                session = requests.Session()
+                session.verify = True  # Force SSL verification
+                session.trust_env = False  # Don't use environment proxies
+
+                response = session.get(
+                    url,
+                    timeout=5,
+                    allow_redirects=False,  # Don't follow redirects
+                    headers={"User-Agent": "BLT Security Scanner"},
+                )
+
+                if response.status_code == 200:
+                    return True, None
+
+            except requests.exceptions.SSLError:
+                continue  # Try next path if SSL fails
+            except requests.exceptions.RequestException:
+                continue  # Try next path if request fails
+
+        return False, "security.txt not found"
+
+    except Exception as e:
+        return False, f"Error checking security.txt: {str(e)}"
 
 
 def get_page_votes(template_name):
