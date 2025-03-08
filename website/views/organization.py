@@ -465,14 +465,14 @@ class Listbounties(TemplateView):
             .all()
         )
 
-        filtered_bughunts = {
+        filtered_bugbounties = {
             "all": hunts,
             "ongoing": hunts.filter(result_published=False, is_published=True),
             "ended": hunts.filter(result_published=True),
             "draft": hunts.filter(result_published=False, is_published=False),
         }
 
-        hunts = filtered_bughunts.get(hunt_type, hunts)
+        hunts = filtered_bugbounties.get(hunt_type, hunts)
 
         if search.strip():
             hunts = hunts.filter(Q(name__icontains=search))

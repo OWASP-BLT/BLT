@@ -1,19 +1,19 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% block title %}
-    View Bughunt
+    View BugBounty
 {% endblock title %}
 {% block description %}
-    View detailed information about the Bughunt, including the hunt name, duration, description, and domain URL. Check the status and participate in the event.
+    View detailed information about the BugBounty, including the bounty name, duration, description, and domain URL. Check the status and participate in the event.
 {% endblock description %}
 {% block keywords %}
-    View Bughunt, Bughunt Details, Hunt Information, Hunt Description, Domain URL, Participate in Bughunt
+    View BugBounty, BugBounty Details, Bounty Information, Bounty Description, Domain URL, Participate in BugBounty
 {% endblock keywords %}
 {% block og_title %}
-    View Bughunt - Detailed Hunt Information
+    View BugBounty - Detailed bounty Information
 {% endblock og_title %}
 {% block og_description %}
-    Access comprehensive details about the Bughunt, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
+    Access comprehensive details about the BugBounty, including the name, duration, description, and domain URL. Stay informed and get ready to participate.
 {% endblock og_description %}
 {% block content %}
     <style>
@@ -98,18 +98,18 @@ h5.card-title{
         <article id="banner" class="jumbotron jumbotron-fluid">
             <div class="font-italic pl-4 mt-4 text-light">
                 <h1 class="display-1 font-italic">
-                    {{ hunt.domain.organization.name }}
-                    <span class="badge-organization badge-primary shadow">{{ hunt.domain.name }}</span>
+                    {{ bounty.domain.organization.name }}
+                    <span class="badge-organization badge-primary shadow">{{ bounty.domain.name }}</span>
                 </h1>
-                <p class="lead mt-5">{{ hunt.name }} / {{ hunt.starts_on|date:'Y-m-d H:i' }} - {{ hunt.end_on|date:'Y-m-d H:i' }}</p>
+                <p class="lead mt-5">{{ bounty.name }} / {{ bounty.starts_on|date:'Y-m-d H:i' }} - {{ bounty.end_on|date:'Y-m-d H:i' }}</p>
             </div>
-            {% if hunt_active %}
+            {% if bounty_active %}
                 <a href="{% url 'submit_bug' %}">
                     <button class="start-btn btn btn-danger">Start</button>
                 </a>
             {% else %}
-                {% if hunt_completed %}
-                    <a href="{% url 'hunt_results' %}">
+                {% if bounty_completed %}
+                    <a href="{% url 'bounty_results' %}">
                         <button class="start-btn btn btn-danger">View Results</button>
                     </a>
                 {% else %}
@@ -119,9 +119,9 @@ h5.card-title{
         </article>
     </main>
     <div id="content">
-        <textarea>{{ hunt.description }}</textarea>
+        <textarea>{{ bounty.description }}</textarea>
     </div>
-    <div>Hunt URL : {{ hunt.domain.url }}</div>
+    <div>Bounty URL : {{ bounty.domain.url }}</div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
