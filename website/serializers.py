@@ -5,8 +5,8 @@ from website.models import (
     ActivityLog,
     Contributor,
     Domain,
-    Hunt,
-    HuntPrize,
+    Bounty,
+    BountyPrize,
     Issue,
     IssueScreenshot,
     Organization,
@@ -102,15 +102,15 @@ class DomainSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class BugHuntPrizeSerializer(serializers.ModelSerializer):
+class BugBountyPrizeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = HuntPrize
+        model = BountyPrize
         fields = "__all__"
 
 
-class BugHuntSerializer(serializers.ModelSerializer):
+class BugBountySerializer(serializers.ModelSerializer):
     class Meta:
-        model = Hunt
+        model = Bounty
         fields = "__all__"
 
 

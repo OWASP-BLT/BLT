@@ -59,7 +59,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 class Subscription(models.Model):
     name = models.CharField(max_length=25, null=False, blank=True)
     charge_per_month = models.IntegerField(null=False, blank=True)
-    hunt_per_domain = models.IntegerField(null=False, blank=True)
+    bounty_per_domain = models.IntegerField(null=False, blank=True)
     number_of_domains = models.IntegerField(null=False, blank=True)
     feature = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -381,7 +381,7 @@ def validate_image(fieldfile_obj):
         raise ValidationError("Max file size is %sMB" % str(megabyte_limit))
 
 
-class Hunt(models.Model):
+class Bounty(models.Model):
     class Meta:
         ordering = ["-id"]
 
@@ -414,8 +414,8 @@ class Hunt(models.Model):
         return self.name
 
 
-class HuntPrize(models.Model):
-    hunt = models.ForeignKey(Hunt, on_delete=models.CASCADE)
+class BountyPrize(models.Model):
+    bounty = models.ForeignKey(Bounty, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     value = models.PositiveIntegerField(default=0)
     no_of_eligible_projects = models.PositiveIntegerField(default=1)  # no of winner in this prize
@@ -425,7 +425,7 @@ class HuntPrize(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return self.hunt.name + self.name
+        return self.bounty.name + self.name
 
 
 class Issue(models.Model):
@@ -442,7 +442,7 @@ class Issue(models.Model):
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
-    hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
+    bounty = models.ForeignKey(Bounty, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
     description = models.TextField()
@@ -625,7 +625,7 @@ TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 
 
 class Winner(models.Model):
-    hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
+    bounty = models.ForeignKey(Bounty, null=True, blank=True, on_delete=models.CASCADE)
     winner = models.ForeignKey(User, related_name="winner", null=True, blank=True, on_delete=models.CASCADE)
     runner = models.ForeignKey(User, related_name="runner", null=True, blank=True, on_delete=models.CASCADE)
     second_runner = models.ForeignKey(
@@ -636,7 +636,7 @@ class Winner(models.Model):
         on_delete=models.CASCADE,
     )
     prize_distributed = models.BooleanField(default=False)
-    prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
+    prize = models.ForeignKey(BountyPrize, null=True, blank=True, on_delete=models.CASCADE)
     prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
 
