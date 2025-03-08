@@ -165,7 +165,7 @@
 
                 Monthly.prototype = {
                     _init: function() {
-                        this._el.html(months[0] + " " + options.years[0]);
+                        this._el.text(months[0] + " " + options.years[0]);
                     },
 
                     _render: function() {
@@ -202,9 +202,9 @@
 
                     _selectMonth: function(e) {
                         var monthIndex = $(e.target).data("value"),
-                            month = months[monthIndex],
-                            year = this._yearsSelect.val();
-                        this._el.html(month + " " + year);
+                            month = $("<div>").text(months[monthIndex]).html(),
+                            year = $("<div>").text(this._yearsSelect.val()).html();
+                        this._el.text(month + " " + year);
                         if (options.onMonthSelect) {
                             options.onMonthSelect(monthIndex + 1, month, year);
                         }
@@ -212,7 +212,7 @@
 
                     _renderYears: function() {
                         var markup = $.map(options.years, function(year) {
-                            return "<option>" + year + "</option>";
+                            return $("<option>").text(year)[0].outerHTML;
                         });
                         var yearsWrap = $('<div class="mb-4">').appendTo(this._container);
                         this._yearsSelect = $('<select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-inherit text-inherit">')
@@ -221,16 +221,18 @@
                     },
 
                     _renderMonths: function() {
-                        var markup = ['<div class="grid grid-cols-3 gap-2">'];
+                        var self = this;
+                        var container = $('<div class="grid grid-cols-3 gap-2">');
+                        
                         $.each(months, function(i, month) {
-                            markup.push(
-                                '<button data-value="' + i + '" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] cursor-pointer">' +
-                                month +
-                                "</button>"
-                            );
+                            $('<button>')
+                                .attr('data-value', i)
+                                .addClass('px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] cursor-pointer')
+                                .text(month)
+                                .appendTo(container);
                         });
-                        markup.push('</div>');
-                        this._container.append(markup.join(""));
+                        
+                        this._container.append(container);
                     }
                 };
 
