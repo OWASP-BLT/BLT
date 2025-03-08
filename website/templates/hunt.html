@@ -18,7 +18,7 @@
             <div class="flex flex-col justify-center items-center ">
                 <div class="flex justify-center border-b-2 w-fit border-red-300 pb-2.5 gap-2.5 items-center text-4xl font-bold text-black/90 md:text-5xl">
                     <p class="whitespace-nowrap">{% trans "Start a" %}</p>
-                    <p class="text-red-500">{% trans "BugHunt" %}</p>
+                    <p class="text-red-500">{% trans "Bug Bounty" %}</p>
                 </div>
                 <p class="font-medium text-black/60  mt-4">{% trans "Enter URL, APP name or GPS location of issue." %}</p>
             </div>
@@ -29,7 +29,7 @@
                     <i class="fa fa-bug bg-red-500 text-white p-4"></i>
                     <input class="w-full py-2 px-3 outline-none placeholder:text-base"
                            type="text"
-                           placeholder="Name of the bughunt"
+                           placeholder="Name of the bug bounty"
                            name="name"
                            value="{{ form.url.value|default:'' }}">
                 </div>
@@ -106,7 +106,7 @@
                 <div class="flex justify-end">
                     <button type="submit"
                             class="bg-red-500 text-white font-bold text-lg py-2 px-4 rounded-md hover:bg-red-600">
-                        {% trans "Start BugHunt" %}!
+                        {% trans "Start Bug Bounty" %}!
                     </button>
                 </div>
             </div>
