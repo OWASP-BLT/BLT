@@ -244,6 +244,8 @@ class Domain(models.Model):
     modified = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, blank=True)
     is_active = models.BooleanField(default=True)
+    has_security_txt = models.BooleanField(default=False)
+    security_txt_checked_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
