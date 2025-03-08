@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 
 from website.management.base import LoggedBaseCommand
-from website.models import Contribution, Project
+from website.models import Contribution, Project, Repo
 
 
 class Command(LoggedBaseCommand):
@@ -25,23 +25,40 @@ class Command(LoggedBaseCommand):
 
         # GitHub repository details
         repo = options["repo"]
-        owner, repo = repo.split("/")
+        owner, repo_name = repo.split("/")
 
         # Authentication headers
         headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"}
+
+        # Find the repository
+        try:
+            # First try to find the repo directly
+            repository = Repo.objects.get(repo_url__contains=f"{owner}/{repo_name}")
+            project = repository.project
+        except Repo.DoesNotExist:
+            try:
+                # If repo not found, try to find a project with a repo containing this path
+                project = Project.objects.filter(repos__repo_url__contains=f"{owner}/{repo_name}").first()
+                if not project:
+                    self.stdout.write(self.style.ERROR(f"No project found with repository {owner}/{repo_name}"))
+                    return
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error finding project: {str(e)}"))
+                return
 
         # Fetch and process data in parallel
         data_types = ["pulls", "issuesopen", "issuesclosed", "commits", "comments"]
         with ThreadPoolExecutor(max_workers=5) as executor:
             futures = [
-                executor.submit(self.fetch_and_update_data, data_type, headers, owner, repo) for data_type in data_types
+                executor.submit(self.fetch_and_update_data, data_type, headers, owner, repo_name, project)
+                for data_type in data_types
             ]
             for future in futures:
                 future.result()  # Wait for all tasks to complete
 
         self.stdout.write(self.style.SUCCESS("Successfully updated contributor stats"))
 
-    def fetch_and_update_data(self, data_type, headers, owner, repo):
+    def fetch_and_update_data(self, data_type, headers, owner, repo, project):
         # Define URL based on data_type
         base_urls = {
             "pulls": f"https://api.github.com/repos/{owner}/{repo}/pulls?state=all&per_page=100",
@@ -74,9 +91,6 @@ class Command(LoggedBaseCommand):
                 url = next_url
             else:
                 url = None
-
-        # Get project object
-        project = Project.objects.get(github_url__contains=f"{owner}/{repo}")
 
         contributions_to_create = []
 

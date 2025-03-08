@@ -1,18 +1,21 @@
 import asyncio
 import difflib
 import json
+import logging
 import os
 import tempfile
 import zipfile
 from pathlib import Path
 
 import aiohttp
+from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from website.models import Message, Room
+from website.models import Message, Room, Thread
 from website.utils import (
     compare_model_fields,
     cosine_similarity,
@@ -21,6 +24,8 @@ from website.utils import (
     generate_embedding,
     git_url_to_zip_url,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class SimilarityConsumer(AsyncWebsocketConsumer):
@@ -404,7 +409,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             message_type = data.get("type", "message")
 
             # Handle new messages
-            if message_type == "message":
+            if message_type == "message" or message_type == "chat_message":
                 message = data.get("message", "").strip()
                 username = data.get("username", "Anonymous")
 
@@ -488,7 +493,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.send(
                 text_data=json.dumps(
                     {
-                        "type": "message",
+                        "type": "chat_message",
                         "message": event["message"],
                         "username": event["username"],
                         "timestamp": event.get("timestamp"),
@@ -496,8 +501,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
             )
-        except Exception as e:
-            pass
+        except Exception as error:
+            # Log the error instead of silently passing
+            logger.error(f"Error sending chat message: {str(error)}")
 
     async def delete_message_broadcast(self, event):
         """Handles broadcasting delete notifications to all users in the room."""
@@ -517,3 +523,49 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             print(f"Error in delete_message_broadcast: {e}")
+
+
+class DirectChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.thread_id = self.scope["url_route"]["kwargs"]["thread_id"]
+        self.room_group_name = f"chat_{self.thread_id}"
+
+        # Join the chat room
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave the chat room
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        user = self.scope["user"]
+        if user.is_authenticated:
+            message = await self.save_message(user, data["encrypted_content"])
+            message = data["encrypted_content"]
+            # Broadcast message to the chat room
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "chat_message",
+                    "username": user.username,
+                    "encrypted_content": message,
+                },
+            )
+
+    async def chat_message(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "chat_message",
+                    "username": event["username"],
+                    "encrypted_content": event["encrypted_content"],
+                }
+            )
+        )
+
+    @sync_to_async
+    def save_message(self, user, encrypted_content):
+        thread = get_object_or_404(Thread, id=self.thread_id)
+        return Message.objects.create(thread=thread, user=user, username=user.username, content=encrypted_content)

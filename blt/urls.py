@@ -223,6 +223,8 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    room_messages_api,
+    send_message_api,
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
@@ -288,15 +290,20 @@ from website.views.user import (
     create_wallet,
     deletions,
     follow_user,
+    get_public_key,
     get_score,
     github_webhook,
     invite_friend,
+    messaging_home,
     profile,
     profile_edit,
     referral_signup,
+    set_public_key,
+    start_thread,
     update_bch_address,
     user_dashboard,
     users_view,
+    view_thread,
 )
 
 admin.autodiscover()
@@ -1035,6 +1042,15 @@ urlpatterns = [
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
+    # Chat room API endpoints
+    path("api/send-message/", send_message_api, name="send_message_api"),
+    path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
+    # direct messaging
+    path("messaging/", messaging_home, name="messaging"),
+    path("messaging/start-thread/<int:user_id>/", start_thread, name="start_thread"),
+    path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
+    path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
+    path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
 ]
 
 if settings.DEBUG:

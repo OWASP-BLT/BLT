@@ -16,6 +16,125 @@
 {% block content %}
     <!-- Include Sidebar -->
     {% include "includes/sidenav.html" %}
+    {% if debug_mode %}
+        <!-- Local Mode Panel -->
+        <div id="dev-panel"
+             class="bg-gray-900 text-white p-4 mb-4 rounded-lg shadow-lg max-w-7xl mx-auto mt-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <i class="fas fa-code text-[#e74c3c] mr-2"></i>
+                    <h2 class="text-xl font-bold">Local Mode</h2>
+                    <span class="ml-2 px-2 py-1 bg-[#e74c3c] text-white text-xs rounded-full">DEBUG=True</span>
+                </div>
+                <button id="toggle-dev-panel" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-chevron-up"></i>
+                </button>
+            </div>
+            <div id="dev-panel-content">
+                <!-- System Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-gray-800 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-1">System Stats</h3>
+                        <ul class="text-sm">
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Memory Usage:</span>
+                                <span class="font-mono">{{ system_stats.memory_usage }}</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>CPU Usage:</span>
+                                <span class="font-mono">{{ system_stats.cpu_percent }}</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Python Version:</span>
+                                <span class="font-mono text-xs">{{ system_stats.python_version|truncatechars:20 }}</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Django Version:</span>
+                                <span class="font-mono">{{ system_stats.django_version }}</span>
+                            </li>
+                            <li class="flex justify-between py-1">
+                                <span>DB Connections:</span>
+                                <span class="font-mono">{{ system_stats.db_connections }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-1">Database Stats</h3>
+                        <ul class="text-sm">
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Users:</span>
+                                <span id="user-count" class="font-mono">Loading...</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Issues:</span>
+                                <span id="issue-count" class="font-mono">Loading...</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Organizations:</span>
+                                <span id="org-count" class="font-mono">Loading...</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Domains:</span>
+                                <span id="domain-count" class="font-mono">Loading...</span>
+                            </li>
+                            <li class="flex justify-between py-1">
+                                <span>Repositories:</span>
+                                <span id="repo-count" class="font-mono">Loading...</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-1">Cache Stats</h3>
+                        <ul class="text-sm">
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Cache Backend:</span>
+                                <span id="cache-backend" class="font-mono">Loading...</span>
+                            </li>
+                            <li class="flex justify-between py-1 border-b border-gray-700">
+                                <span>Cache Keys:</span>
+                                <span id="cache-keys" class="font-mono">Loading...</span>
+                            </li>
+                            <li class="flex justify-between py-1">
+                                <span>Cache Hit Ratio:</span>
+                                <span id="cache-hit-ratio" class="font-mono">Loading...</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <button id="populate-data-btn"
+                            class="bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-database mr-2"></i>
+                        Populate Test Data
+                    </button>
+                    <button id="clear-cache-btn"
+                            class="bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-broom mr-2"></i>
+                        Clear Cache
+                    </button>
+                    <button id="check-performance-btn"
+                            class="bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        Check Performance
+                    </button>
+                    <button id="sync-github-btn"
+                            class="bg-[#e74c3c] hover:bg-[#c0392b] text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                        <i class="fab fa-github mr-2"></i>
+                        Sync GitHub Data
+                    </button>
+                </div>
+                <!-- Status Messages -->
+                <div id="dev-status-messages" class="mt-4 hidden">
+                    <div class="bg-gray-800 p-3 rounded-lg">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-1">Status</h3>
+                        <div id="dev-status-content"
+                             class="text-sm font-mono bg-black p-2 rounded h-32 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <!-- Main Content -->
     <div class="relative mt-9">
         <!-- Hero Section -->
@@ -216,6 +335,66 @@
                 </div>
             </div>
         </section>
+        <!-- Referral Program Card -->
+        {% if user.is_authenticated %}
+            <div class="max-w-7xl mx-auto px-4 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Referral Program</h3>
+                            <p class="text-gray-600">Invite friends to join BLT and earn points!</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-1">
+                            <input type="text"
+                                   id="referralLink"
+                                   value="https://{{ request.get_host }}{% url 'referral_signup' %}?ref={{ referral_code }}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                                   readonly>
+                        </div>
+                        <button onclick="copyReferralLink()"
+                                class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copy Link
+                        </button>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        <p>
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Earn 2 points for each friend who joins
+                        </p>
+                        <p>
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Track clicks and successful signups
+                        </p>
+                        <p>
+                            <i class="fas fa-check-circle text-green-500 mr-2"></i>Compete on the referral leaderboard
+                        </p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="max-w-7xl mx-auto px-4 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-[#e74c3c]">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="p-3 bg-red-50 rounded-lg">
+                            <i class="fas fa-users text-[#e74c3c] text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold">Join Our Referral Program</h3>
+                            <p class="text-gray-600">Sign in to get your referral link and start earning points!</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-center">
+                        <a href="{% url 'account_login' %}"
+                           class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] hover:text-white transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Participate
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <!-- Leaderboard Section -->
         <section class="py-12 bg-gray-50">
             <div class="max-w-7xl mx-auto px-4">
@@ -389,42 +568,55 @@
                         </div>
                         <div class="p-4">
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[#e74c3c] font-bold">1</span>
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             class="w-8 h-8 rounded-full"
-                                             alt="Default User Avatar"
-                                             width="24"
-                                             height="24">
-                                        <span class="font-medium">Jack Brown</span>
+                                {% for invite in top_referrals %}
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
+                                            {% if invite.sender.userprofile.avatar %}
+                                                <img src="{{ invite.sender.userprofile.avatar }}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ invite.sender.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% elif invite.sender.socialaccount_set.all.0.get_avatar_url %}
+                                                <img src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ invite.sender.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% else %}
+                                                <img src="{% gravatar_url invite.sender.email 50 %}"
+                                                     class="w-8 h-8 rounded-full"
+                                                     alt="{{ invite.sender.username }}'s avatar"
+                                                     width="32"
+                                                     height="32">
+                                            {% endif %}
+                                            <a href="{% url 'profile' invite.sender.username %}"
+                                               class="font-medium hover:text-[#e74c3c]">
+                                                {{ invite.sender.username }}
+                                            </a>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-500 mr-3">
+                                                <i class="fas fa-star text-yellow-400 mr-1"></i>
+                                                {{ invite.point_by_referral }} pts
+                                            </span>
+                                            <span class="font-medium">
+                                                <i class="fas fa-user-check text-green-500 mr-1"></i>
+                                                {{ invite.signup_count }}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <span class="font-medium">20 refs</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[#e74c3c] font-bold">2</span>
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             class="w-8 h-8 rounded-full"
-                                             alt="Default User Avatar"
-                                             width="24"
-                                             height="24">
-                                        <span class="font-medium">Kelly Green</span>
+                                {% empty %}
+                                    <div class="text-center text-gray-500">
+                                        <p>No referrals recorded yet</p>
+                                        <a href="{% url 'invite' %}"
+                                           class="text-[#e74c3c] hover:text-[#c0392b] font-medium mt-2 inline-block">
+                                            <i class="fas fa-plus-circle mr-1"></i>
+                                            Invite friends
+                                        </a>
                                     </div>
-                                    <span class="font-medium">18 refs</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center gap-3">
-                                        <span class="text-[#e74c3c] font-bold">3</span>
-                                        <img src="{% static 'images/dummy-user.png' %}"
-                                             class="w-8 h-8 rounded-full"
-                                             alt="Default User Avatar"
-                                             width="24"
-                                             height="24">
-                                        <span class="font-medium">Liam Taylor</span>
-                                    </div>
-                                    <span class="font-medium">15 refs</span>
-                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -826,4 +1018,20 @@
     </div>
     <!-- Add GitHub Buttons Script at the end of the content block -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
+    <script>
+        function copyReferralLink() {
+            var copyText = document.getElementById("referralLink");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+            
+            // Show feedback
+            var button = event.target.closest('button');
+            var originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            setTimeout(function() {
+                button.innerHTML = originalText;
+            }, 2000);
+        }
+    </script>
 {% endblock content %}

@@ -1,44 +1,56 @@
-
 name: Pre-commit fix
+
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - '**'  # Runs on any branch within the repository (excluding forks)
+
 permissions:
   contents: write
+
 jobs:
   run-pre-commit:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request == null  # Prevent running on PRs from forks
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.ref_name }}  
+          ref: ${{ github.ref_name }}
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
+
       - name: Install pre-commit
         run: |
           python -m venv venv
           . venv/bin/activate
           pip install --upgrade pip
           pip install pre-commit
+
       - name: Run pre-commit
         run: |
           . venv/bin/activate
           pre-commit run --all-files
         continue-on-error: true
+
       - name: Check for changes
         id: check_changes
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             echo "Changes detected by pre-commit."
-            echo "::set-output name=changes_detected::true"
+            echo "changes_detected=true" >> $GITHUB_ENV
           else
             echo "No changes made by pre-commit."
-            echo "::set-output name=changes_detected::false"
+            echo "changes_detected=false" >> $GITHUB_ENV
           fi
+
       - name: Commit and push changes
-        if: steps.check_changes.outputs.changes_detected == 'true'
+        if: env.changes_detected == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

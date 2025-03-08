@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -12,7 +13,6 @@ import psutil
 import redis
 import requests
 import requests.exceptions
-import sentry_sdk
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
@@ -32,7 +32,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db import connection, models
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -54,6 +54,7 @@ from website.models import (
     ForumPost,
     ForumVote,
     Hunt,
+    InviteFriend,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -1245,6 +1246,19 @@ def home(request):
     # Get top earners
     top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
 
+    # Get top referrals
+    top_referrals = (
+        InviteFriend.objects.filter(point_by_referral__gt=0)
+        .annotate(signup_count=Count("recipients"), total_points=F("point_by_referral"))
+        .select_related("sender", "sender__userprofile")
+        .order_by("-point_by_referral")[:5]
+    )
+    # Get or Create InviteFriend object for logged in user
+    referral_code = None
+    if request.user.is_authenticated:
+        invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
+        referral_code = invite_friend.referral_code
+
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
 
@@ -1271,6 +1285,19 @@ def home(request):
         except Exception as e:
             print(f"Error getting star count for {repo_name}: {e}")
 
+    # Get system stats for developer mode
+    system_stats = None
+    if settings.DEBUG:
+        import django
+
+        system_stats = {
+            "memory_usage": f"{psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.2f} MB",
+            "cpu_percent": f"{psutil.Process(os.getpid()).cpu_percent(interval=0.1):.2f}%",
+            "python_version": f"{os.sys.version}",
+            "django_version": django.get_version(),
+            "db_connections": len(connection.queries),
+        }
+
     return render(
         request,
         "home.html",
@@ -1285,6 +1312,10 @@ def home(request):
             "latest_blog_posts": latest_blog_posts,
             "top_earners": top_earners,  # Add top earners to context
             "repo_stars": repo_stars,  # Add repository star counts to context
+            "top_referrals": top_referrals,
+            "referral_code": referral_code,
+            "debug_mode": settings.DEBUG,  # Add debug flag to context
+            "system_stats": system_stats,  # Add system stats to context
         },
     )
 
@@ -1530,6 +1561,31 @@ def management_commands(request):
                 "help_text": help_text,
             }
 
+            # Get command arguments if they exist
+            command_args = []
+            if hasattr(command_class, "add_arguments"):
+                # Create a parser to capture arguments
+                from argparse import ArgumentParser
+
+                parser = ArgumentParser()
+                # Fix: Call add_arguments directly on the command instance
+                command_class.add_arguments(parser)
+
+                # Extract argument information
+                for action in parser._actions:
+                    if action.dest != "help":  # Skip the default help action
+                        arg_info = {
+                            "name": action.dest,
+                            "flags": ", ".join(action.option_strings),
+                            "help": action.help,
+                            "required": action.required,
+                            "default": action.default if action.default != argparse.SUPPRESS else None,
+                            "type": action.type.__name__ if action.type else "str",
+                        }
+                        command_args.append(arg_info)
+
+            command_info["arguments"] = command_args
+
             # Get command logs if they exist
             log = ManagementCommandLog.objects.filter(command_name=name).first()
             if log:
@@ -1564,17 +1620,21 @@ def run_management_command(request):
     if request.method == "POST":
         # Check if user is superuser
         if not request.user.is_superuser:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": "Only superusers can run management commands."})
             messages.error(request, "Only superusers can run management commands.")
             return redirect("management_commands")
 
         command = request.POST.get("command")
         logging.info(f"Running command: {command}")
-        print(f"Running command: {command}")
+
         try:
             # Only allow running commands from the website app and exclude initsuperuser
             app_name = get_commands().get(command)
             if app_name != "website" or command == "initsuperuser":
                 msg = f"Command {command} is not allowed to run from the web interface"
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": False, "error": msg})
                 messages.error(request, msg)
                 return redirect("management_commands")
 
@@ -1583,36 +1643,101 @@ def run_management_command(request):
                 command_name=command, defaults={"run_count": 0, "success": False, "last_run": timezone.now()}
             )
 
-            # Run the command
-            call_command(command)
-
             # Update the log entry
-            log_entry.success = True
+            log_entry.run_count += 1
             log_entry.last_run = timezone.now()
-            log_entry.run_count = log_entry.run_count + 1
-            log_entry.error_message = ""
             log_entry.save()
 
-            messages.success(
-                request,
-                f"Successfully ran command '{command}'. "
-                f"This command has been run {log_entry.run_count} time{'s' if log_entry.run_count != 1 else ''}.",
-            )
+            # Collect command arguments from POST data
+            command_args = []
+            command_kwargs = {}
 
-        except Exception as e:
-            sentry_sdk.capture_exception(e)
+            # Get the command class to check for arguments
+            command_class = load_command_class(app_name, command)
 
-            # Update log entry with error
-            if "log_entry" in locals():
-                log_entry.success = False
-                log_entry.last_run = timezone.now()
-                log_entry.run_count = log_entry.run_count + 1
-                log_entry.error_message = str(e)
+            # Create a parser to capture arguments
+            if hasattr(command_class, "add_arguments"):
+                from argparse import ArgumentParser
+
+                parser = ArgumentParser()
+                # Fix: Call add_arguments directly on the command instance
+                command_class.add_arguments(parser)
+
+                # Extract argument information and collect values from POST
+                for action in parser._actions:
+                    if action.dest != "help":  # Skip the default help action
+                        arg_name = action.dest
+                        arg_value = request.POST.get(arg_name)
+
+                        if arg_value:
+                            # Convert to appropriate type if needed
+                            if action.type:
+                                try:
+                                    if action.type == int:
+                                        arg_value = int(arg_value)
+                                    elif action.type == float:
+                                        arg_value = float(arg_value)
+                                    elif action.type == bool:
+                                        arg_value = arg_value.lower() in ("true", "yes", "1")
+                                except (ValueError, TypeError):
+                                    warning_msg = (
+                                        f"Could not convert argument '{arg_name}' to type "
+                                        f"{action.type.__name__}. Using as string."
+                                    )
+                                    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                                        return JsonResponse({"success": False, "error": warning_msg})
+                                    messages.warning(request, warning_msg)
+
+                            # Add to args or kwargs based on whether it's a positional or optional argument
+                            if action.option_strings:  # It's an optional argument
+                                command_kwargs[arg_name] = arg_value
+                            else:  # It's a positional argument
+                                command_args.append(arg_value)
+
+            # Run the command with collected arguments
+            try:
+                # Capture command output
+                import sys
+                from io import StringIO
+
+                # Redirect stdout to capture output
+                old_stdout = sys.stdout
+                sys.stdout = mystdout = StringIO()
+
+                call_command(command, *command_args, **command_kwargs)
+
+                # Get the output and restore stdout
+                output = mystdout.getvalue()
+                sys.stdout = old_stdout
+
+                log_entry.success = True
                 log_entry.save()
 
-            messages.error(
-                request, f"Error running command '{command}': {str(e)}. " f"Check the logs for more details."
-            )
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": True, "output": output})
+
+                messages.success(request, f"Command '{command}' executed successfully.")
+            except Exception as e:
+                log_entry.success = False
+                log_entry.save()
+
+                error_msg = f"Error executing command '{command}': {str(e)}"
+                logging.error(error_msg)
+
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": False, "error": error_msg})
+
+                messages.error(request, error_msg)
+
+        except Exception as e:
+            error_msg = f"Error: {str(e)}"
+            logging.error(error_msg)
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": error_msg})
+
+            messages.error(request, error_msg)
+
     return redirect("management_commands")
 
 
