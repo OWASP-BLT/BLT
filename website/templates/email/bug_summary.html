@@ -89,7 +89,7 @@
                                 The leaderboard has been reset, go forth and find bugs!
                                 <br>
                                 <br>
-                                {{ month }}'s Top 5 Bug Hunters
+                                {{ month }}'s Top 5 Bug Bounty Hunters
                                 <br>
                                 {% for leader in leaderboard %}
                                     {{ forloop.counter|ordinal }} Place - <a href="https://{% env 'FQDN' %}/profile/{{ leader.username }}">{{ leader.username }}</a>

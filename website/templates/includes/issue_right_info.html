@@ -78,7 +78,7 @@
         {% include "./tiny-cards.html" with insideIFCondition=True left="CVE ID" right=object.cve_id %}
     {% endif %}
     {% if object.hunt %}
-        <a href="{% url 'show_bughunt' object.hunt.id %}">
+        <a href="{% url 'show_bugbounty' object.hunt.id %}">
             {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right=object.hunt.name %}
         </a>
     {% else %}

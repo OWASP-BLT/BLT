@@ -306,7 +306,7 @@ msgid "Max amout awarded to winner"
 msgstr "Максимальная сумма, выделяемая победителю"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START BUGBOUNTY"
 msgstr "Начать поиск багов"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -403,7 +403,7 @@ msgid "Report a Bug"
 msgstr "Сообщить о баге"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bugbounty"
 msgstr "Поиск багов"
 
 #: website/templates/includes/navbar.html:109
@@ -652,7 +652,7 @@ msgid "Announced to Users"
 msgstr "Объявлено пользователям"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the bug bounty hunter"
 msgstr "Вся сумма призовых напрямую переходит охотнику за багами"
 
 #: website/templates/mobile_about.html:6
@@ -955,8 +955,8 @@ msgid "ADD TEAM MEMBERS"
 msgstr "Добавить членов команды"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
-msgstr "Участники команды должны быть пользователями Bughunts"
+msgid "Team members should be bugbounty users"
+msgstr "Участники команды должны быть пользователями BugBounty"
 
 #: website/templates/report.html:313
 msgid "Report Privately"
@@ -976,10 +976,10 @@ msgstr "Сообщить"
 #~ msgstr "НАЧАТЬ "
 
 # Russian (ru)
-#~ msgid "BUGHUNT"
+#~ msgid "BUGBOUNTY"
 #~ msgstr "ОХОТА НА БАГИ"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the bugbounty"
 #~ msgstr "Название поиска багов"
 
 #~ msgid "You do not have a company, create one"

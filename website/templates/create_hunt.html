@@ -71,17 +71,17 @@
     </style>
 {% endblock style %}
 {% block title %}
-    Start a Bughunt - OWASP {% env 'PROJECT_NAME' %}
+    Start a BugBounty - OWASP {% env 'PROJECT_NAME' %}
 {% endblock %}
 {% block description %}
-    Create a new bughunt by entering the URL, app name, or GPS location of the issue. Define start and end dates, domain, and prizes for the winners.
+    Create a new bugbounty by entering the URL, app name, or GPS location of the issue. Define start and end dates, domain, and prizes for the winners.
 {% endblock %}
-{% block keywords %}bughunt, OWASP, start a bughunt, security, rewards, prizes, bug tracking, competition{% endblock %}
+{% block keywords %}bugbounty, OWASP, start a bugbounty, security, rewards, prizes, bug tracking, competition{% endblock %}
 {% block og_title %}
-    Start a Bughunt - OWASP {% env 'PROJECT_NAME' %}
+    Start a BugBounty - OWASP {% env 'PROJECT_NAME' %}
 {% endblock %}
 {% block og_description %}
-    Start a new bughunt on OWASP {% env 'PROJECT_NAME' %}. Set the issue details, start/end dates, and prize information for participants.
+    Start a new bugbounty on OWASP {% env 'PROJECT_NAME' %}. Set the issue details, start/end dates, and prize information for participants.
 {% endblock %}
 {% block content %}
     <section>
@@ -97,7 +97,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h4 class="modal-title">
-                    <span class="text-black">START A</span> BUGHUNT
+                    <span class="text-black">START A</span> BUGBOUNTY
                 </h4>
                 <h6 class="modal-sub-title">Enter URL, App name or GPS location of issue</h6>
             </div>
@@ -107,7 +107,7 @@
                            name="name"
                            required
                            class="form-control"
-                           placeholder="Enter Name for the Bughunt"
+                           placeholder="Enter Name for the BugBounty"
                            id="name"
                            value="">
                 </div>
