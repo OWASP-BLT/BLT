@@ -39,24 +39,29 @@ Before you start contributing, you'll need to set up your development environmen
 ### Docker Setup (Recommended)
 
 1. Clone the repository:
+
    ```bash
-   git clone https://github.com/OWASP-BLT/BLT-Website.git
-   cd BLT-Website
+   git clone https://github.com/OWASP-BLT/BLT.git
+   cd BLT
    ```
 
 2. Configure environment variables:
+
    ```bash
    cp .env.example .env
    ```
+
    Modify the `.env` file as per your local setup.
 
 3. Ensure LF Line Endings:
    If you're working on a Windows machine, ensure all files use LF line endings:
+
    ```bash
    git config --global core.autocrlf input
    ```
 
 4. Build and start the Docker containers:
+
    ```bash
    docker-compose build
    docker-compose up
@@ -69,6 +74,7 @@ Before you start contributing, you'll need to set up your development environmen
 1. Install [Vagrant](https://www.vagrantup.com/) and [VirtualBox](https://www.virtualbox.org/)
 
 2. Start Vagrant:
+
    ```bash
    vagrant up
    vagrant ssh
@@ -76,6 +82,7 @@ Before you start contributing, you'll need to set up your development environmen
    ```
 
 3. Set up the application:
+
    ```bash
    python manage.py migrate
    python manage.py createsuperuser
@@ -88,11 +95,13 @@ Before you start contributing, you'll need to set up your development environmen
 ### Python Virtual Environment Setup
 
 1. Install Python 3.11.2 (using pyenv or another tool):
+
    ```bash
    pyenv install 3.11.2
    ```
 
 2. Set up Poetry and virtual environment:
+
    ```bash
    pip install poetry
    poetry shell
@@ -100,6 +109,7 @@ Before you start contributing, you'll need to set up your development environmen
    ```
 
 3. Set up the application:
+
    ```bash
    python manage.py migrate
    python3 manage.py loaddata website/fixtures/initial_data.json
@@ -114,23 +124,26 @@ Before you start contributing, you'll need to set up your development environmen
 
 ### Finding Issues to Work On
 
-- Check the [Issues](https://github.com/OWASP-BLT/BLT-Website/issues) page for open issues
+- Check the [Issues](https://github.com/OWASP-BLT/BLT/issues) page for open issues
 - Look for issues labeled with `good first issue` if you're new to the project
 - Comment on an issue to express your interest in working on it
 
 ### Creating a Pull Request
 
 1. Create a new branch for your feature or bugfix:
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
 2. Make your changes and commit them with descriptive commit messages:
+
    ```bash
    git commit -m "Add feature: your feature description"
    ```
 
 3. Push your branch to your fork:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -189,4 +202,4 @@ If you're adding new features or making significant changes, please update the d
 - Join the [OWASP Slack channel](https://owasp.org/slack/invite) to connect with other contributors
 - Ask questions and share ideas
 
-Thank you for contributing to OWASP BLT! 
+Thank you for contributing to OWASP BLT!
