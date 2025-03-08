@@ -303,7 +303,7 @@ msgid "Max amout awarded to winner"
 msgstr "Montant maximal attribué au gagnant"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START BUGBOUNTY"
 msgstr "DÉMARRER UNE CHASSE AUX BUGS"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -400,7 +400,7 @@ msgid "Report a Bug"
 msgstr "Signaler un bug"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bugbounty"
 msgstr "Chasses aux bugs"
 
 #: website/templates/includes/navbar.html:109
@@ -956,8 +956,8 @@ msgid "ADD TEAM MEMBERS"
 msgstr "AJOUTER DES MEMBRES D'ÉQUIPE"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
-msgstr "Les membres de l'équipe doivent être des utilisateurs de Bughunts"
+msgid "Team members should be bugbounty users"
+msgstr "Les membres de l'équipe doivent être des utilisateurs de BugBounty"
 
 #: website/templates/report.html:313
 msgid "Report Privately"
@@ -998,10 +998,10 @@ msgstr "Signaler"
 #~ msgid "START A "
 #~ msgstr "DÉMARRER UNE "
 
-#~ msgid "BUGHUNT"
+#~ msgid "BUGBOUNTY"
 #~ msgstr "CHASSE AUX BUGS"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the bugbounty"
 #~ msgstr "Nom de la chasse aux bugs"
 
 #~ msgid "You do not have a company, create one"

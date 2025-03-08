@@ -300,7 +300,7 @@ msgid "Max amout awarded to winner"
 msgstr "授予获奖者的最大金额"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START BUGBOUNTY"
 msgstr "开始猎虫"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -397,7 +397,7 @@ msgid "Report a Bug"
 msgstr "报告错误"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bugbounty"
 msgstr "寻找漏洞"
 
 #: website/templates/includes/navbar.html:109
@@ -930,7 +930,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "添加团队成员"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
+msgid "Team members should be bugbounty users"
 msgstr "团队成员应该是漏洞猎用户"
 
 #: website/templates/report.html:313
@@ -951,10 +951,10 @@ msgstr "报告"
 #~ msgstr "开始 "
 
 # Simplified Chinese (zh_CN)
-#~ msgid "BUGHUNT"
+#~ msgid "BUGBOUNTY"
 #~ msgstr "找 Bug"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the bugbounty"
 #~ msgstr "猎虫名称"
 
 #~ msgid "You do not have a company, create one"

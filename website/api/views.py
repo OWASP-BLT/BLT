@@ -501,7 +501,7 @@ class UrlCheckApiViewset(APIView):
         return Response(issues[:10])
 
 
-class BugHuntApiViewset(APIView):
+class BugBountyApiViewset(APIView):
     permission_classes = [AllowAny]
 
     def get_active_hunts(self, request, fields, *args, **kwargs):
@@ -555,7 +555,7 @@ class BugHuntApiViewset(APIView):
         return Response(hunts)
 
 
-class BugHuntApiViewsetV2(APIView):
+class BugBountyApiViewsetV2(APIView):
     permission_classes = [AllowAny]
 
     def serialize_hunts(self, hunts):

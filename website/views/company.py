@@ -1316,7 +1316,7 @@ class OrganizationDashboardManageRolesView(View):
         return redirect("organization_manage_roles", id)
 
 
-class ShowBughuntView(View):
+class ShowBugBountyView(View):
     def get(self, request, pk, *args, **kwargs):
         hunt_obj = get_object_or_404(Hunt, pk=pk)
 
@@ -1440,7 +1440,7 @@ class ShowBughuntView(View):
         return render(request, "organization/bughunt/view_bughunt.html", context)
 
 
-class EndBughuntView(View):
+class EndBugBountyView(View):
     def get(self, request, pk, *args, **kwargs):
         hunt = get_object_or_404(Hunt, pk=pk)
 
@@ -1600,7 +1600,7 @@ class AddHuntView(View):
         return redirect("organization_manage_bughunts", id)
 
 
-class OrganizationDashboardManageBughuntView(View):
+class OrganizationDashboardManageBugBountyView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # For authenticated users, show all organizations they have access to

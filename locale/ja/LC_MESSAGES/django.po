@@ -302,7 +302,7 @@ msgid "Max amout awarded to winner"
 msgstr "優勝者に授与される最大金額"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START BUGBOUNTY"
 msgstr "バグハントを開始"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -399,7 +399,7 @@ msgid "Report a Bug"
 msgstr "バグを報告する"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bugbounty"
 msgstr "バグハント"
 
 #: website/templates/includes/navbar.html:109
@@ -946,7 +946,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "チームメンバーを追加"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
+msgid "Team members should be bugbounty users"
 msgstr "チームメンバーはバグハントのユーザーである必要があります"
 
 #: website/templates/report.html:313
@@ -967,10 +967,10 @@ msgstr "報告"
 #~ msgstr "開始する "
 
 # Japanese (ja)
-#~ msgid "BUGHUNT"
+#~ msgid "BUGBOUNTY"
 #~ msgstr "バグハント"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the bugbounty"
 #~ msgstr "バグハントの名前"
 
 #~ msgid "You do not have a company, create one"

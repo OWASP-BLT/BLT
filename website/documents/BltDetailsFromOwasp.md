@@ -9,7 +9,7 @@ manner.
 
 One unique feature of BLT is that it rewards users for reporting bugs. As users report more issues, they
 earn more points, which can be verified for extra points. Additionally, companies and organizations can get
-involved with BLT and launch their own bughunt programs with prize pools. This not only incentivizes users.
+involved with BLT and launch their own bugbounty programs with prize pools. This not only incentivizes users.
 to report bugs but also encourages companies to actively seek out and address vulnerabilities before they
 can be exploited.
 
@@ -17,7 +17,7 @@ can be exploited.
 
 Overall, OWASP BLT is an important tool for improving internet security and promoting responsible
 disclosure practices. By allowing anyone to report issues, rewarding users for their contributions, and
-providing a platform for companies to launch bughunt programs, BLT empowers individuals and
+providing a platform for companies to launch bugbounty programs, BLT empowers individuals and
 organizations to work together towards a safer and more secure online environment.
 
 Contributors
