@@ -26,10 +26,10 @@ from rest_framework.views import APIView
 
 from website.models import (
     ActivityLog,
-    Contributor,
-    Domain,
     Bounty,
     BountyPrize,
+    Contributor,
+    Domain,
     InviteFriend,
     Issue,
     IssueScreenshot,
