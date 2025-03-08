@@ -728,6 +728,7 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
 
@@ -1082,16 +1083,32 @@ class Project(models.Model):
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
     def save(self, *args, **kwargs):
+        # Always ensure a valid slug exists before saving
         if not self.slug:
-            slug = slugify(self.name)
+            base_slug = slugify(self.name)
             # Replace dots with dashes and limit length
-            slug = slug.replace(".", "-")
-            if len(slug) > 50:
-                slug = slug[:50]
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
             # Ensure we have a valid slug
-            if not slug:
-                slug = f"project-{int(time.time())}"
-            self.slug = slug
+            if not base_slug:
+                base_slug = f"project-{int(time.time())}"
+
+            # Ensure slug uniqueness
+            unique_slug = base_slug
+            counter = 1
+            while Project.objects.filter(slug=unique_slug).exclude(id=self.id).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+            self.slug = unique_slug
+        elif not self.slug:
+            # Fallback if no name is available
+            self.slug = f"project-{int(time.time())}"
+
         super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -1734,21 +1751,6 @@ class Kudos(models.Model):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
 
 
-class Message(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
-
-    class Meta:
-        ordering = ["timestamp"]
-
-    def __str__(self):
-        return f"{self.username}: {self.content[:50]}"
-
-
 class OsshCommunity(models.Model):
     CATEGORY_CHOICES = [
         ("forum", "Forum"),
@@ -1970,7 +1972,7 @@ class Enrollment(models.Model):
         return progress
 
     def __str__(self):
-        return f"{self.student.username} - {self.course.title}"
+        return f"{self.student.user.username} - {self.course.title}"
 
 
 class Rating(models.Model):
@@ -2008,7 +2010,7 @@ class BaconSubmission(models.Model):
 
 
 class DailyStats(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     value = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -2051,3 +2053,27 @@ class Queue(models.Model):
             self.launched = True
             self.launched_at = timezone.now()
             self.save()
+
+
+class Thread(models.Model):
+    participants = models.ManyToManyField(User, related_name="threads")
+    updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
+
+    def __str__(self):
+        return f"Thread {self.id}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"

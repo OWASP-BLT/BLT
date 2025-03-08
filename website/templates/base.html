@@ -36,6 +36,18 @@
             <meta property="og:description"
                   content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out.{% endblock og_description %}" />
             <meta property="og:type" content="website" />
+            <!-- Leaflet CSS -->
+            <link rel="stylesheet"
+                  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+                  crossorigin="" />
+            <!-- MarkerCluster CSS -->
+            <link rel="stylesheet"
+                  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+            <link rel="stylesheet"
+                  href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+            <!-- Fullscreen Control CSS -->
+            <link rel="stylesheet"
+                  href="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.css" />
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -392,5 +404,9 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <!-- Include the page stats widget -->
         {% include 'includes/page_stats.html' %}
+        <!-- Leaflet JS -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+        <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+        <script src="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.js"></script>
     </body>
 </html>
