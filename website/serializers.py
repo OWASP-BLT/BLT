@@ -3,10 +3,10 @@ from rest_framework import serializers
 
 from website.models import (
     ActivityLog,
-    Contributor,
-    Domain,
     Bounty,
     BountyPrize,
+    Contributor,
+    Domain,
     Issue,
     IssueScreenshot,
     Organization,
