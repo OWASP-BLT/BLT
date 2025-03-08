@@ -647,7 +647,7 @@ msgid "Announced to Users"
 msgstr "ユーザーに発表"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the bug bounty hunter"
 msgstr "すべての賞金は直接バグハンターに支払われます"
 
 #: website/templates/mobile_about.html:6

@@ -405,7 +405,7 @@ msgid "Add to chrome"
 msgstr "添加到 Chrome"
 
 #: website/templates/includes/navbar.html:114
-msgid "Start a Bug Hunt"
+msgid "Start a Bug Bounty"
 msgstr "开始寻找错误"
 
 #: website/templates/includes/navbar.html:120
@@ -644,7 +644,7 @@ msgid "Announced to Users"
 msgstr "向用户宣布"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the bug bounty hunter"
 msgstr "所有奖金直接发放给漏洞猎人"
 
 #: website/templates/mobile_about.html:6
@@ -700,7 +700,7 @@ msgid "Money if you join a"
 msgstr "如果你参加"
 
 #: website/templates/mobile_about.html:20
-msgid "Sponsored Bug Hunt"
+msgid "Sponsored Bug Bounty"
 msgstr "由公司赞助的漏洞狩猎"
 
 #: website/templates/mobile_about.html:21

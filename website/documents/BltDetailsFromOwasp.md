@@ -182,7 +182,7 @@ N
 
 . How does OWASP BLT work? Users can submit a bug report through the BLT platform, and they can
 earn points for each bug they find. Companies can launch their own bug hunts and reward users for
-finding issues on their websites. Bug hunters can win money through company-sponsored Bug Hunts,
+finding issues on their websites. Bug Bounty hunters can win money through company-sponsored Bug Hunts,
 tips, or the Grand Prize/Jackpot.
 
 w

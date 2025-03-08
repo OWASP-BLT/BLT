@@ -650,7 +650,7 @@ msgid "Announced to Users"
 msgstr "Annoncé aux utilisateurs"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the bug bounty hunter"
 msgstr "Toutes les sommes gagnées vont directement au chasseur de bugs"
 
 #: website/templates/mobile_about.html:6
