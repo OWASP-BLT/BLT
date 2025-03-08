@@ -16,126 +16,6 @@
 {% block og_description %}
     Explore the monthly leaderboard to see the top performers. View scores, usernames, and their achievements for the month.
 {% endblock og_description %}
-{% block style %}
-    <style>
-    .container-min-height{
-      min-height: 50vh;
-    }
-
-    .list-group-item img {
-        width: 50px;
-        height: 50px;
-    }
-
-    .list-group-item .badge {
-        margin-top: 15px;
-    }
-
-    .list-group-item a {
-        text-decoration: none;
-        margin-left: 10px;
-    }
-
-    .silver {
-        background-color: lightblue;
-        color: #333;
-    }
-
-    .gold {
-        background-color: #D4AF37;
-        color: #333;
-    }
-
-    .bronze {
-        background-color: #C9AE5D;
-        color: #333;
-    }
-
-    .profileimage {
-        border-radius: 50%;
-    }
-
-    .titleuser {
-        position: absolute;
-        margin-top: 12px;
-        margin-left: 5px;
-    }
-    input,
-select,
-button {
-  font-family: inherit;
-  font-size: inherit;
-  padding: 8px;
-}
-select {
-  padding: 8px;
-}
-
-.monthly-wrp {
-  padding: 1em;
-  top: 6px;
-  z-index: 1000;
-  border-radius: 3px;
-  background-color: #2C3E50;
-}
-
-.monthly-wrp:before {
-  content: "";
-  border-bottom: 6px solid #2C3E50;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  position: absolute;
-  top: -6px;
-  left: 6px;
-  z-index: 1002;
-}
-
-
-.monthly-wrp .years {
-  margin-bottom: 0.8em;
-  text-align: center;
-}
-
-.monthly-wrp .years select {
-  border: 0;
-  border-radius: 3px;
-  width: 100%;
-}
-
-.monthly-wrp .years select:focus {
-  outline: none;
-}
-
-.monthly-wrp table {
-  border-collapse: collapse;
-  table-layout: fixed;
-}
-
-.monthly-wrp td {
-  padding: 1px;
-}
-
-.monthly-wrp table button {
-  width: 100%;
-  border: none;
-  background-color: #bc1a1a;
-  color: #FFFFFF;
-  font-size: 14px;
-  padding: 0.6em;
-  cursor: pointer;
-  border-radius: 3px;
-}
-
-.monthly-wrp table button:hover {
-  background-color: #a01616;
-}
-
-.monthly-wrp table button:focus {
-  outline: none;
-}
-
-    </style>
-{% endblock style %}
 {% block before_js %}
     <script async
             type="text/javascript"
@@ -144,199 +24,239 @@ select {
 {% endblock before_js %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="row">
-        <div class="col-lg-10 flex justify-center items-center">
-            <h1 class="page-header">Monthly Leaderboard</h1>
-            <p>
-                <input type="text" id="selection" value="">
-            </p>
-        </div>
-    </div>
-    <div class="row container-min-height">
-        <div class="col-lg-9">
-            <div class="list-group">
-                {% if not leaderboard %}
-                    <p class="text-red-900">No data for this month</p>
-                {% else %}
-                    {% for leader in leaderboard %}
-                        <div class="list-group-item">
-                            {% if leader.userprofile.avatar %}
-                                <img src="{{ leader.userprofile.avatar }}"
-                                     class="img-responsive img-thumbnail profileimage"
-                                     alt="{{ leader.username }}"
-                                     width="50px"
-                                     height="50px">
-                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                     class="profileimage"
-                                     alt="username"
-                                     width="50px"
-                                     height="50px">
-                            {% else %}
-                                <img src="{% gravatar_url leader.email 50 %}"
-                                     class="profileimage"
-                                     alt="username"
-                                     width="50px"
-                                     height="50px">
-                            {% endif %}
-                            <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
-                            <span class="pull-right badge">{{ leader.total_score }} Points</span>
-                            {% if leader.userprofile.winnings %}
-                                <span class="pull-right badge">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
-                            {% endif %}
-                            <span><kbd class="{{ leader.userprofile.get_title_display }} titleuser">{{ leader.userprofile.get_title_display }}</kbd></span>
+    <div class="min-h-screen bg-gray-50 p-6 lg:p-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                <div class="flex items-center gap-6">
+                    <div class="w-16 h-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
+                        <i class="fas fa-trophy text-2xl text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">Monthly Leaderboard</h1>
+                        <p class="text-gray-600 mt-2">Track the top performers for any specific month</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Month Selector -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="relative w-full sm:w-auto">
+                        <input type="text"
+                               id="selection"
+                               class="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#e74c3c] focus:border-[#e74c3c] text-gray-900 cursor-pointer bg-white font-inherit text-inherit"
+                               placeholder="Select Month"
+                               readonly>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i class="fas fa-calendar-alt text-gray-400"></i>
                         </div>
-                    {% endfor %}
+                    </div>
+                    <div class="text-sm text-gray-600">Click to select a specific month and year</div>
+                </div>
+            </div>
+            <!-- Leaderboard Content -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                {% if not leaderboard %}
+                    <div class="p-8 text-center">
+                        <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-trophy text-gray-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Data Available</h3>
+                        <p class="text-gray-500">There are no records for the selected month.</p>
+                    </div>
+                {% else %}
+                    <div class="divide-y divide-gray-200">
+                        {% for leader in leaderboard %}
+                            <div class="p-4 hover:bg-gray-50 transition-all duration-200">
+                                <div class="flex items-center space-x-4">
+                                    <!-- Rank -->
+                                    <div class="flex-shrink-0 w-12 text-center">
+                                        {% if forloop.counter == 1 %}
+                                            <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                                                <i class="fas fa-trophy text-yellow-600"></i>
+                                            </div>
+                                        {% elif forloop.counter == 2 %}
+                                            <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                                <i class="fas fa-medal text-gray-600"></i>
+                                            </div>
+                                        {% elif forloop.counter == 3 %}
+                                            <div class="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                                                <i class="fas fa-award text-orange-600"></i>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-gray-500 font-medium">#{{ forloop.counter }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <!-- User Info -->
+                                    <div class="flex-shrink-0">
+                                        {% if leader.userprofile.avatar %}
+                                            <img src="{{ leader.userprofile.avatar }}"
+                                                 class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
+                                                 alt="{{ leader.username }}"
+                                                 width="48"
+                                                 height="48">
+                                        {% elif leader.socialaccount_set.all.0.get_avatar_url %}
+                                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                                 class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
+                                                 alt="{{ leader.username }}"
+                                                 width="48"
+                                                 height="48">
+                                        {% else %}
+                                            <img src="{% gravatar_url leader.email 50 %}"
+                                                 class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
+                                                 alt="{{ leader.username }}"
+                                                 width="48"
+                                                 height="48">
+                                        {% endif %}
+                                    </div>
+                                    <!-- User Details -->
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2">
+                                            <a href="{% url 'profile' slug=leader.username %}"
+                                               class="text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors">
+                                                {{ leader.username }}
+                                            </a>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if leader.userprofile.get_title_display == 'GOLD' %}bg-yellow-100 text-yellow-800{% elif leader.userprofile.get_title_display == 'SILVER' %}bg-gray-100 text-gray-800{% elif leader.userprofile.get_title_display == 'BRONZE' %}bg-orange-100 text-orange-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                                {{ leader.userprofile.get_title_display }}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-sm text-gray-500">{{ leader.total_score }} Points</span>
+                                            {% if leader.amount %}
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-sm font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
+                                                    <i class="fas fa-dollar-sign mr-1"></i>
+                                                    {{ leader.amount|floatformat:2 }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
-{% endblock content %}
-{% block after_js %}
+    <!-- Month Picker Script -->
     <script>
-  function sanitizeInput(input) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(input));
-    return div.innerHTML;
-  }
-    function padToTwo(number) {
-    if (number <= 9999) {
-        number = ("0" + number).slice(-2);
-    }
-    return number;
-    }
-
-    (function($) {
-        $.fn.monthly = function(options) {
-        var months = options.months || [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December"
-      ],
-      Monthly = function(el) {
-        this._el = $(el);
-        this._init();
-        this._render();
-        this._renderYears();
-        this._renderMonths();
-        this._bind();
-      };
-
-    Monthly.prototype = {
-      _init: function() {
-        this._el.html(months[0] + " " + options.years[0]);
-      },
-
-      _render: function() {
-        var linkPosition = this._el.offset(),
-          cssOptions = {
-            display: "none",
-            position: "absolute",
-            top:
-              linkPosition.top + this._el.height() + (options.topOffset || 0),
-            left: linkPosition.left
-          };
-        this._container = $('<div class="monthly-wrp">')
-          .css(cssOptions)
-          .appendTo($("body"));
-      },
-
-      _bind: function() {
-        var self = this;
-        this._el.on("click", $.proxy(this._show, this));
-        $(document).on("click", $.proxy(this._hide, this));
-        this._yearsSelect.on("click", function(e) {
-          e.stopPropagation();
-        });
-        this._container.on("click", "button", $.proxy(this._selectMonth, this));
-      },
-
-      _show: function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        this._container.css("display", "inline-block");
-      },
-
-      _hide: function() {
-        this._container.css("display", "none");
-      },
-
-      _selectMonth: function(e) {
-        var monthIndex = $(e.target).data("value"),
-          month = months[monthIndex],
-          year = this._yearsSelect.val();
-        month = sanitizeInput(month);
-        year = sanitizeInput(year);
-        this._el.html(month + " " + year);
-        if (options.onMonthSelect) {
-          options.onMonthSelect(monthIndex+1, month, year);
+        function padToTwo(number) {
+            if (number <= 9999) {
+                number = ("0" + number).slice(-2);
+            }
+            return number;
         }
-      },
 
-      _renderYears: function() {
-        var markup = $.map(options.years, function(year) {
-          return "<option>" + year + "</option>";
+        (function($) {
+            $.fn.monthly = function(options) {
+                var months = options.months || [
+                    "January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"
+                ];
+
+                var Monthly = function(el) {
+                    this._el = $(el);
+                    this._init();
+                    this._render();
+                    this._renderYears();
+                    this._renderMonths();
+                    this._bind();
+                };
+
+                Monthly.prototype = {
+                    _init: function() {
+                        this._el.html(months[0] + " " + options.years[0]);
+                    },
+
+                    _render: function() {
+                        var linkPosition = this._el.offset();
+                        this._container = $('<div class="bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">')
+                            .css({
+                                display: "none",
+                                position: "absolute",
+                                top: linkPosition.top + this._el.height() + (options.topOffset || 0),
+                                left: linkPosition.left
+                            })
+                            .appendTo($("body"));
+                    },
+
+                    _bind: function() {
+                        var self = this;
+                        this._el.on("click", $.proxy(this._show, this));
+                        $(document).on("click", $.proxy(this._hide, this));
+                        this._yearsSelect.on("click", function(e) {
+                            e.stopPropagation();
+                        });
+                        this._container.on("click", "button", $.proxy(this._selectMonth, this));
+                    },
+
+                    _show: function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this._container.css("display", "inline-block");
+                    },
+
+                    _hide: function() {
+                        this._container.css("display", "none");
+                    },
+
+                    _selectMonth: function(e) {
+                        var monthIndex = $(e.target).data("value"),
+                            month = months[monthIndex],
+                            year = this._yearsSelect.val();
+                        this._el.html(month + " " + year);
+                        if (options.onMonthSelect) {
+                            options.onMonthSelect(monthIndex + 1, month, year);
+                        }
+                    },
+
+                    _renderYears: function() {
+                        var markup = $.map(options.years, function(year) {
+                            return "<option>" + year + "</option>";
+                        });
+                        var yearsWrap = $('<div class="mb-4">').appendTo(this._container);
+                        this._yearsSelect = $('<select class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-[#e74c3c] focus:border-[#e74c3c] font-inherit text-inherit">')
+                            .html(markup.join(""))
+                            .appendTo(yearsWrap);
+                    },
+
+                    _renderMonths: function() {
+                        var markup = ['<div class="grid grid-cols-3 gap-2">'];
+                        $.each(months, function(i, month) {
+                            markup.push(
+                                '<button data-value="' + i + '" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] cursor-pointer">' +
+                                month +
+                                "</button>"
+                            );
+                        });
+                        markup.push('</div>');
+                        this._container.append(markup.join(""));
+                    }
+                };
+
+                return this.each(function() {
+                    return new Monthly(this);
+                });
+            };
+        })(jQuery);
+
+        $(function() {
+            let current_year = new Date().getFullYear();
+            let years = [];
+            for (let year = current_year; year >= 2000; year -= 1) {
+                years.push(year);
+            }
+
+            $("#selection").monthly({
+                years: years,
+                topOffset: 8,
+                onMonthSelect: function(mi, m, y) {
+                    mi = padToTwo(mi);
+                    $("#selection").val(m + " " + y);
+                    $("#monthly").val(y + "-" + mi);
+                    window.location = `?month=${mi}&year=${y}`;
+                }
+            });
         });
-        var yearsWrap = $('<div class="years">').appendTo(this._container);
-        this._yearsSelect = $("<select>")
-          .html(markup.join(""))
-          .appendTo(yearsWrap);
-      },
-
-      _renderMonths: function() {
-        var markup = ["<table>", "<tr>"];
-        $.each(months, function(i, month) {
-          if (i > 0 && i % 4 === 0) {
-            markup.push("</tr>");
-            markup.push("<tr>");
-          }
-          markup.push(
-            '<td><button data-value="' + i + '">' + month + "</button></td>"
-          );
-        });
-        markup.push("</tr>");
-        markup.push("</table>");
-        this._container.append(markup.join(""));
-      }
-    };
-
-    return this.each(function() {
-      return new Monthly(this);
-    });
-  };
-})(jQuery);
-
-$(function() {
-
-   let current_year = new Date().getFullYear();
-   let years = [];
-   for(let year=current_year;year>=2000;year-=1){
-        years.push(year);
-   }
-
-  $("#selection").monthly({
-    years: years,
-    topOffset: 28,
-    onMonthSelect: function(mi, m, y) {
-      mi = padToTwo(mi);
-      $("#selection").val(m + " " + y);
-      $("#monthly").val(y + "-" + mi);
-
-      window.location = `?month=${mi}&year=${y}`;
-    }
-  });
-
-
-});
-
     </script>
-{% endblock after_js %}
+{% endblock content %}
