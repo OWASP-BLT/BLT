@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <meta name="description"
-              content="View details of the Bughunt: {{ hunt_obj.name }}. Check the timeline, prizes, and participants. Stay updated with the latest status and results of the competition.">
+              content="View details of the BugBounty: {{ hunt_obj.name }}. Check the timeline, prizes, and participants. Stay updated with the latest status and results of the competition.">
         <meta name="keywords"
-              content="{{ hunt_obj.name }}, BugHunt, Prizes, Timeline">
+              content="{{ hunt_obj.name }}, BugBounty, Prizes, Timeline">
         <script src="https://cdn.tailwindcss.com"></script>
         <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"
@@ -146,7 +146,7 @@
                 <div class="flex-1 flex flex-col items-center lg:items-end justify-end px-8 mt-2">
                     <div class="flex items-center space-x-4 mt-2">
                         {% if is_hunt_manager and not hunt_obj.result_published %}
-                            <a href="{% url 'end_bughunt' hunt_obj.id %}"
+                            <a href="{% url 'end_bugbounty' hunt_obj.id %}"
                                class="flex items-center bg-red-600 hover:bg-red-700 text-gray-100 px-4 py-2 rounded text-sm space-x-2 transition duration-100">
                                 <i class="fa-sharp fa-solid fa-bug fa-lg text-white"></i>
                                 <span>End Bughunt</span>
