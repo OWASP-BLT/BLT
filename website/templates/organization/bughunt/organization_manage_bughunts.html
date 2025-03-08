@@ -51,19 +51,19 @@
                                 <ul class="py-2 text-sm text-gray-700 dark:text-gray-200"
                                     aria-labelledby="dropdownDefaultButton">
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}"
+                                        <a href="{% url 'organization_manage_bugbounties' organization %}"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">All</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ongoing"
+                                        <a href="{% url 'organization_manage_bugbounties' organization %}?filter=ongoing"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ongoing</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=draft"
+                                        <a href="{% url 'organization_manage_bugbounties' organization %}?filter=draft"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Draft</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_bughunts' organization %}?filter=ended"
+                                        <a href="{% url 'organization_manage_bugbounties' organization %}?filter=ended"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ended</a>
                                     </li>
                                 </ul>

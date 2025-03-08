@@ -1460,7 +1460,7 @@ class EndBugBountyView(View):
         organization = hunt.domain.organization.id
 
         messages.success(request, f"successfully Ended Bughunt {hunt.name}")
-        return redirect("organization_manage_bughunts", id=organization)
+        return redirect("organization_manage_bugbounties", id=organization)
 
 
 class AddHuntView(View):
@@ -1597,7 +1597,7 @@ class AddHuntView(View):
             )
 
         messages.success(request, "successfully added the managers")
-        return redirect("organization_manage_bughunts", id)
+        return redirect("organization_manage_bugbounties", id)
 
 
 class OrganizationDashboardManageBugBountyView(View):
@@ -1649,7 +1649,7 @@ class OrganizationDashboardManageBugBountyView(View):
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
 
-        return render(request, "organization/bughunt/organization_manage_bughunts.html", context)
+        return render(request, "organization/bughunt/organization_manage_bugbounties.html", context)
 
 
 @require_http_methods(["DELETE"])

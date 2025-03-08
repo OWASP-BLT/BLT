@@ -829,7 +829,7 @@ urlpatterns = [
     path(
         "organization/<int:id>/dashboard/bughunts/",
         OrganizationDashboardManageBugBountyView.as_view(),
-        name="organization_manage_bughunts",
+        name="organization_manage_bugbounties",
     ),
     path(
         "organization/dashboard/end_bughunt/<int:pk>",

@@ -28,8 +28,8 @@ from website.models import (
     ActivityLog,
     Contributor,
     Domain,
-    Hunt,
-    HuntPrize,
+    Bounty,
+    BountyPrize,
     InviteFriend,
     Issue,
     IssueScreenshot,
@@ -44,8 +44,8 @@ from website.models import (
 )
 from website.serializers import (
     ActivityLogSerializer,
-    BugHuntPrizeSerializer,
-    BugHuntSerializer,
+    BugBountyPrizeSerializer,
+    BugBountySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
@@ -467,7 +467,7 @@ class StatsApiViewset(APIView):
     def get(self, request, *args, **kwargs):
         bug_count = Issue.objects.all().count()
         user_count = User.objects.all().count()
-        hunt_count = Hunt.objects.all().count()
+        hunt_count = Bounty.objects.all().count()
         domain_count = Domain.objects.all().count()
 
         return Response({"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count})
@@ -551,7 +551,7 @@ class BugBountyApiViewset(APIView):
             return self.get_previous_hunts(request, fields, *args, **kwargs)
         elif upcomingHunt:
             return self.get_upcoming_hunts(request, fields, *args, **kwargs)
-        hunts = Hunt.objects.values(*fields).filter(is_published=True).order_by("-end_on")
+        hunts = Bounty.objects.values(*fields).filter(is_published=True).order_by("-end_on")
         return Response(hunts)
 
 
@@ -559,30 +559,30 @@ class BugBountyApiViewsetV2(APIView):
     permission_classes = [AllowAny]
 
     def serialize_hunts(self, hunts):
-        hunts = BugHuntSerializer(hunts, many=True)
+        hunts = BugBountySerializer(hunts, many=True)
 
         serialize_hunts_list = []
 
         for hunt in hunts.data:
-            hunt_prizes = HuntPrize.objects.filter(hunt__id=hunt["id"])
-            hunt_prizes = BugHuntPrizeSerializer(hunt_prizes, many=True)
+            hunt_prizes = BountyPrize.objects.filter(hunt__id=hunt["id"])
+            hunt_prizes = BugBountyPrizeSerializer(hunt_prizes, many=True)
 
             serialize_hunts_list.append({**hunt, "prizes": hunt_prizes.data})
 
         return serialize_hunts_list
 
     def get_active_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(
+        hunts = Bounty.objects.filter(
             is_published=True, starts_on__lte=datetime.now(), end_on__gte=datetime.now()
         ).order_by("-prize")
         return Response(self.serialize_hunts(hunts))
 
     def get_previous_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
+        hunts = Bounty.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(self.serialize_hunts(hunts))
 
     def get_upcoming_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
+        hunts = Bounty.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         return Response(self.serialize_hunts(hunts))
 
     def get(self, request, *args, **kwargs):
@@ -606,7 +606,7 @@ class BugBountyApiViewsetV2(APIView):
 
             return paginator.get_paginated_response(page)
 
-        hunts = self.serialize_hunts(Hunt.objects.filter(is_published=True).order_by("-end_on"))
+        hunts = self.serialize_hunts(Bounty.objects.filter(is_published=True).order_by("-end_on"))
         page = paginator.paginate_queryset(hunts, request)
 
         return paginator.get_paginated_response(page)
