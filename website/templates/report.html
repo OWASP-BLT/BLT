@@ -202,7 +202,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                <textarea id="markdown-editor"
+                                <textarea id="markdownInput"
                                           name="markdown-content"
                                           class="w-full h-[300px] p-4 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent resize-none"
                                           placeholder="Enter your markdown here..."></textarea>
@@ -561,7 +561,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="text/javascript">
     function insertMarkdown(type) {
-        const editor = document.getElementById('markdown-editor');
+        const editor = document.getElementById('markdownInput');
         const start = editor.selectionStart;
         const end = editor.selectionEnd;
         const selectedText = editor.value.substring(start, end);
@@ -598,7 +598,7 @@
     }
 
     function togglePreview() {
-        const editor = document.getElementById('markdown-editor');
+        const editor = document.getElementById('markdownInput');
         const preview = document.getElementById('preview-area');
         const previewBtn = document.querySelector('button:contains("Preview")');
 
