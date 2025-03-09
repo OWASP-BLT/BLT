@@ -693,6 +693,10 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
+    #  fields for visit tracking
+    daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
+    last_visit_day = models.DateField(null=True, blank=True, help_text="Last day the user visited")
+
     # SendGrid webhook fields
     email_status = models.CharField(
         max_length=50, blank=True, null=True, help_text="Current email status from SendGrid"
@@ -751,6 +755,24 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+
+    def update_visit_counter(self):
+        """
+        Update daily visit counter if last visit was on a different day
+        """
+        today = timezone.now().date()
+
+        # If no previous visit or last visit was on a different day
+        if not self.last_visit_day or today > self.last_visit_day:
+            self.daily_visit_count += 1
+            self.last_visit_day = today
+            self.save()
+
+        # Always increment the general visit_count regardless of day
+        self.visit_count += 1
+        self.save(update_fields=["visit_count"])
+
+        return self.daily_visit_count
 
     def update_streak_and_award_points(self, check_in_date=None):
         """

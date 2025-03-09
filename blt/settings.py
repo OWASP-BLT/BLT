@@ -118,6 +118,7 @@ MIDDLEWARE = (
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
+    "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
 )
 
 if DEBUG:

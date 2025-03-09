@@ -52,7 +52,7 @@
                     <a href="{{ issue.user_profile.github_url }}"
                        target="_blank"
                        class="flex items-center hover:text-[#e74c3c]">
-                        <img src="{{ issue.user.avatar_url }}"
+                        <img src="{{ issue.user_profile.github_url }}.png"
                              alt="{{ issue.user.login }}"
                              class="w-6 h-6 rounded-full mr-2"
                              width="24"
@@ -62,11 +62,19 @@
                 {% elif issue.user_profile %}
                     <a href="{% url 'profile' issue.user_profile.user.username %}"
                        class="flex items-center hover:text-[#e74c3c]">
-                        <img src="{{ issue.user.avatar_url }}"
-                             alt="{{ issue.user.login }}"
-                             class="w-6 h-6 rounded-full mr-2"
-                             width="24"
-                             height="24">
+                        {% if issue.user_profile.user_avatar %}
+                            <img src="{{ issue.user_profile.user_avatar.url }}"
+                                 alt="{{ issue.user.login }}"
+                                 class="w-6 h-6 rounded-full mr-2"
+                                 width="24"
+                                 height="24">
+                        {% else %}
+                            <img src="{% gravatar_url issue.user_profile.user.email 24 %}"
+                                 alt="{{ issue.user.login }}"
+                                 class="w-6 h-6 rounded-full mr-2"
+                                 width="24"
+                                 height="24">
+                        {% endif %}
                         {{ issue.user.login }}
                     </a>
                 {% else %}

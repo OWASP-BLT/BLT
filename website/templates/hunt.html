@@ -2,124 +2,117 @@
 {% load static %}
 {% load i18n %}
 {% load custom_tags %}
-{% block style %}
-    <style>
-    .slider {
-        width: 100% !important;
-    }
-    </style>
-{% endblock style %}
 {% block content %}
+    {% include "includes/sidenav.html" %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <!-- Add jQuery UI CSS and JS -->
     <link rel="stylesheet"
           href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
     <form role="form"
           action="{% url 'hunt' %}"
           method="post"
-          enctype="multipart/form-data"
-          class="mt-2">
+          enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="w-full flex justify-center items-center p-8">
-            <div class="w-[700px] bg-white p-5 shadow-[0px_0px_10px_rgb(174,174,174)]">
-                <div class="text-center">
-                    <div class="flex justify-center items-center text-5xl font-black space-x-2 sm:text-6xl xs:text-3xl">
-                        <p class="whitespace-nowrap">START A</p>
-                        <p class="text-red-500">BUGHUNT</p>
-                    </div>
-                    <p class="font-bold mt-2">{% trans "Enter URL, APP name or GPS location of issue" %}</p>
-                    <hr class="my-4">
+        <div class="md:w-[800px] my-8 md:mx-auto mx-2 bg-white md:p-8 p-4 border shadow-md border-gray-200 rounded-lg">
+            <div class="flex flex-col justify-center items-center ">
+                <div class="flex justify-center border-b-2 w-fit border-red-300 pb-2.5 gap-2.5 items-center text-4xl font-bold text-black/90 md:text-5xl">
+                    <p class="whitespace-nowrap">{% trans "Start a" %}</p>
+                    <p class="text-red-500">{% trans "Bug Bounty" %}</p>
                 </div>
-                {% csrf_token %}
-                <div class="space-y-4">
-                    <div class="flex items-center border rounded-md overflow-hidden">
-                        <i class="fa fa-bug bg-red-500 text-white p-4"></i>
-                        <input class="w-full p-2 outline-none"
-                               type="text"
-                               placeholder="Name of the bughunt"
-                               name="name"
-                               value="{{ form.url.value|default:'' }}">
+                <p class="font-medium text-black/60  mt-4">{% trans "Enter URL, APP name or GPS location of issue." %}</p>
+            </div>
+            <div class="border-t border-gray-300 my-8"></div>
+            {% csrf_token %}
+            <div class="space-y-4">
+                <div class="flex items-center border rounded-lg overflow-hidden">
+                    <i class="fa fa-bug bg-red-500 text-white p-4"></i>
+                    <input class="w-full py-2 px-3 outline-none placeholder:text-base"
+                           type="text"
+                           placeholder="Name of the bug bounty"
+                           name="name"
+                           value="{{ form.url.value|default:'' }}">
+                </div>
+                {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.url.errors }}</p>{% endif %}
+                <div class="flex items-center border rounded-lg overflow-hidden">
+                    <i class="fa fa-link bg-red-500 text-white p-4"></i>
+                    <input class="w-full py-2 px-3 outline-none placeholder:text-base"
+                           type="text"
+                           placeholder="http://example.com"
+                           name="url"
+                           value="{{ form.url.value|default:'' }}">
+                </div>
+                {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.name.errors }}</p>{% endif %}
+                <div class="relative flex flex-col border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-red-500 transition-colors duration-300 group">
+                    <div class="flex items-center justify-center mb-4">
+                        <i class="fa fa-cloud-upload text-4xl text-red-500 group-hover:scale-110 transition-transform duration-300"></i>
                     </div>
-                    {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.url.errors }}</p>{% endif %}
-                    <div class="flex items-center border rounded-md overflow-hidden">
-                        <i class="fa fa-link bg-red-500 text-white p-4"></i>
-                        <input class="w-full p-2 outline-none"
-                               type="text"
-                               placeholder="http://example.com"
-                               name="url"
-                               value="{{ form.url.value|default:'' }}">
-                    </div>
-                    {% if form.errors %}<p class="text-red-500 text-sm mt-1">{{ form.name.errors }}</p>{% endif %}
-                    <div class="flex items-center border rounded-md overflow-hidden">
-                        <i class="fa fa-file-picture-o bg-red-500 text-white p-5"></i>
-                        <input class="w-full p-2 outline-none" type="file" name="logo">
-                    </div>
-                    {% if form.logo.errors %}<p class="text-red-500 text-sm mt-1">{{ form.logo.errors }}</p>{% endif %}
-                    <div class="flex items-start border rounded-md overflow-hidden">
-                        <i class="fa fa-pencil-square-o bg-red-500 text-white p-4"></i>
-                        <textarea name="description"
-                                  id="description"
-                                  rows="3"
-                                  class="w-full p-2 outline-none"
-                                  placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
-                    </div>
-                    {% if form.description.errors %}
-                        <p class="text-red-500 text-sm mt-1">{{ form.descriptioon.errors }}</p>
-                    {% endif %}
-                    <div>
+                    <p class="text-center text-gray-600 mb-2">Drag and drop your files here or</p>
+                    <label for="logo-upload"
+                           class="flex items-center justify-center cursor-pointer bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors duration-200 mx-auto">
+                        <i class="fa fa-file-o mr-2"></i>
+                        Browse files
+                    </label>
+                    <input id="logo-upload" class="hidden" type="file" name="logo">
+                    <p class="text-center text-xs text-gray-500 mt-2">All file formats are supported</p>
+                </div>
+                {% if form.logo.errors %}<p class="text-red-500 text-sm mt-1">{{ form.logo.errors }}</p>{% endif %}
+                <div class="flex items-start border rounded-lg overflow-hidden">
+                    <i class="fa fa-pencil-square-o bg-red-500 text-white p-4"></i>
+                    <textarea name="description"
+                              id="description"
+                              rows="3"
+                              class="w-full py-2 px-3 outline-none placeholder:text-base h-[180px]"
+                              placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
+                </div>
+                {% if form.description.errors %}<p class="text-red-500 text-sm mt-1">{{ form.descriptioon.errors }}</p>{% endif %}
+                <div>
+                    <div class="flex items-center border rounded-lg overflow-hidden">
+                        <i class="fa fa-tag bg-red-500 text-white p-4"></i>
                         <select name="plan"
                                 id="bughunt-select-plan"
-                                class="w-full bg-white text-black border p-2 rounded-md text-lg font-bold">
+                                class="w-full py-2 px-3 bg-white outline-none cursor-pointer placeholder:text-base appearance-none">
                             <option value="Flea">{% trans "Flea Plan" %} $9.00 / {% trans "Month" %}</option>
                             <option value="Ant">{% trans "Ant Plan" %} $99.00 / {% trans "Month" %}</option>
                             <option value="Wasp">{% trans "Wasp Plan" %} $499.00 / {% trans "Month" %}</option>
                             <option value="Scorpion">{% trans "Scorpion Plan" %} $1499.00 / {% trans "Month" %}</option>
                         </select>
                     </div>
-                    <div>
-                        <strong>{% trans "Grand Prize" %}:</strong>
-                        <p>{% trans "Max amount awarded to winner" %}</p>
-                        <input class="slider"
-                               type="text"
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-black/85 mt-6 ">{% trans "Grand Prize" %}</h1>
+                    <p class="text-sm text-gray-500">{% trans "Max amount awarded to winner" %}</p>
+                    <div class="relative py-6 px-4 my-6">
+                        <input class="w-full appearance-none h-2 rounded-full bg-gray-200 focus:outline-none"
+                               type="range"
                                name="prize"
                                value="{{ form.prize.value|default:'100' }}"
-                               data-provide="slider"
-                               data-slider-min="100"
-                               data-slider-max="10000"
-                               data-slider-step="100"
-                               data-slider-value="{{ form.prize.value|default:'100' }}">
-                        {% if form.prize.errors %}<p class="text-red-500 text-sm mt-1">{{ form.prize.errors }}</p>{% endif %}
+                               min="100"
+                               max="10000"
+                               step="100"
+                               oninput="document.getElementById('prize-value').textContent = '$' + this.value">
+                        <div class="absolute -top-4 left-0 right-0 text-center">
+                            <span class="bg-red-500 text-white px-3 py-1 rounded-md text-sm font-medium"
+                                  id="prize-value">${{ form.prize.value|default:'100' }}</span>
+                        </div>
+                        <div class="flex justify-between mt-2 text-xs text-gray-500">
+                            <span>$100</span>
+                            <span>$5,000</span>
+                            <span>$10,000</span>
+                        </div>
                     </div>
-                    <div class="flex justify-end">
-                        <button type="submit"
-                                class="bg-red-600 text-white font-bold text-lg py-2 px-4 rounded-md hover:bg-red-700">
-                            {% trans "START BUGHUNT" %}!
-                        </button>
-                    </div>
+                    {% if form.prize.errors %}<p class="text-red-500 text-sm mt-1">{{ form.prize.errors }}</p>{% endif %}
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="bg-red-500 text-white font-bold text-lg py-2 px-4 rounded-md hover:bg-red-600">
+                        {% trans "Start Bug Bounty" %}!
+                    </button>
                 </div>
             </div>
         </div>
-        <h1 class="text-center mt-6 font-semibold mb-12">
+        <h1 class="text-center font-medium my-12">
             {% env 'PROJECT_NAME' %} is 100% {% trans "free to use" %}, {% trans "Open Source and a non-commercial" %}, {% trans "not for profit initiative" %}.
         </h1>
     </form>
 {% endblock content %}
-{% block after_js %}
-    <script src='{% static "js/bootstrap-slider.js" %}'></script>
-    <script>
-        function numberWithCommas(x) {
-            var parts = x.toString().split(".");
-            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-            return parts.join(".");
-        }
-
-        $(".slider").slider({
-            tooltip: 'always',
-            formatter: function (value) {
-                return '$' + numberWithCommas(value);
-            }
-        });
-    </script>
-{% endblock after_js %}
