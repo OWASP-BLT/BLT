@@ -514,25 +514,25 @@
         const createTeamForm = document.getElementById('createTeamForm');
         if (createTeamForm) {
             createTeamForm.onsubmit = function(event) {
-                event.preventDefault();
-                const formData = new FormData(this);
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': formData.get('csrfmiddlewaretoken')
-                    }
-                }).then(response => {
-                    if (response.ok) {
-                        closeModal();
-                        window.location.reload();
-                    } else {
-                        alert('Failed to create team. Please try again.');
-                    }
-                }).catch(error => {
-                    console.error('Error:', error);
+            event.preventDefault();
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                }
+            }).then(response => {
+                if (response.ok) {
+                    closeModal();
+                    window.location.reload();
+                } else {
                     alert('Failed to create team. Please try again.');
-                });
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('Failed to create team. Please try again.');
+            });
             }
         }
 
@@ -616,7 +616,7 @@
             })
             .then(response => response.json())
             .then(data => {
-                closeAddMemberModal();
+                    closeAddMemberModal();
                 if (data.success) {
                     showMessage("Join request sent successfully!", false);
                 } else {
@@ -753,7 +753,7 @@
 
             // Animate the toast
             setTimeout(() => {
-                toast.style.opacity = '0';
+                     toast.style.opacity = '0';
                 toast.style.transform = 'translateY(-100%)';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
