@@ -1,8 +1,35 @@
 {% load static %}
 {% load gravatar %}
-<div class="bg-[#f4f4f4] mb-[1rem] rounded-2xl w-[20vw] max-sm:[100vw]">
-    <div class="h-auto min-h-[8vh] flex items-center justify-between mb-[1rem] bg-[#f4f4f4] p-5 rounded-2xl w-[20vw] text-clip max-sm:w-[100vw]">
-        <div class="flex items-center">
+<div class="bg-gray-100 rounded-lg p-4">
+    <div class="w-full flex flex-col gap-3 ">
+        <div class=" rounded-lg w-full">
+            {% for screenshot_activity,screenshot in activity_screenshots.items %}
+                {% if activity == screenshot_activity %}
+                    <a href="{{ activity.get_absolute_url }}">
+                        <img src="{{ screenshot.image.url }}"
+                             loading="lazy"
+                             class="w-full rounded-lg object-cover"
+                             alt="screenshot"
+                             width="50%"
+                             height="50%">
+                    </a>
+                {% endif %}
+            {% endfor %}
+            {% if activity.screenshot %}
+                <a href="{{ activity.get_absolute_url }}">
+                    <img src="{{ activity.screenshot.url }}"
+                         loading="lazy"
+                         class="w-full rounded-lg object-cover"
+                         alt="screenshot"
+                         width="50%"
+                         height="50%">
+                </a>
+            {% endif %}
+        </div>
+        <a href="{{ activity.get_absolute_url }}" class="text-xl font-medium">
+            <div class="mb-3 text-xl">{{ activity.description|truncatechars:20 }}</div>
+        </a>
+        <div class="flex items-start gap-1">
             <a href="{{ activity.user.get_absolute_url }}">
                 {% if activity.user.userprofile.avatar %}
                     <img src="{{ activity.user.userprofile.avatar }}"
@@ -34,11 +61,8 @@
                          alt="user avatar">
                 {% endif %}
             </a>
-            <div class="w-[80%]">
-                <a href="{{ activity.get_absolute_url }}" class="w-[80%]">
-                    <div class="mb-3 text-xl">{{ activity.description|truncatechars:20 }}</div>
-                </a>
-                <div class="mb-2 text-xl">
+            <div class="w-full">
+                <div class="mb-2 text-lg">
                     <a href="{{ activity.user.get_absolute_url }}">{{ activity.user|default:"Anonymous" }}</a>
                     found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> - {{ activity.created|timesince }}
                     ago
@@ -55,37 +79,13 @@
                 </a>
             </div>
         </div>
-        <div>
-            <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl label label-default pull-right">
+        <div class="flex flex-row gap-2 items-center justify-between w-full my-2">
+            <button class="bg-red-500 w-full hover:bg-red-600 text-white font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl transition duration-200 label label-default pull-right">
                 {{ activity.status }}
             </button>
-            <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right">
+            <button class="bg-red-500 w-full hover:bg-red-600 text-white font-['Poppins'] font-bold py-2 mb-3 capitalize px-4 rounded-xl transition duration-200 label label-default pull-right">
                 {{ activity.get_label_display }}
             </button>
         </div>
-    </div>
-    <div class="p-3">
-        {% for screenshot_activity,screenshot in activity_screenshots.items %}
-            {% if activity == screenshot_activity %}
-                <a href="{{ activity.get_absolute_url }}">
-                    <img src="{{ screenshot.image.url }}"
-                         loading="lazy"
-                         class="ml-3"
-                         alt="screenshot"
-                         width="50%"
-                         height="50%">
-                </a>
-            {% endif %}
-        {% endfor %}
-        {% if activity.screenshot %}
-            <a href="{{ activity.get_absolute_url }}">
-                <img src="{{ activity.screenshot.url }}"
-                     loading="lazy"
-                     class="ml-3"
-                     alt="screenshot"
-                     width="50%"
-                     height="50%">
-            </a>
-        {% endif %}
     </div>
 </div>
