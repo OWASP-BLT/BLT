@@ -1211,7 +1211,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Post, Repo, User, UserProfile  # Add UserProfile model
+    from website.models import ForumPost, GitHubIssue, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1253,6 +1253,7 @@ def home(request):
         .select_related("sender", "sender__userprofile")
         .order_by("-point_by_referral")[:5]
     )
+
     # Get or Create InviteFriend object for logged in user
     referral_code = None
     if request.user.is_authenticated:
@@ -1261,6 +1262,13 @@ def home(request):
 
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
+    # Get latest bug reports
+    latest_bugs = (
+        Issue.objects.filter(hunt=None)
+        .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+        .order_by("-created")[:2]
+    )
 
     # Get repository star counts for the specific repositories shown on the homepage
     repo_stars = []
@@ -1310,12 +1318,13 @@ def home(request):
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
             "latest_blog_posts": latest_blog_posts,
-            "top_earners": top_earners,  # Add top earners to context
-            "repo_stars": repo_stars,  # Add repository star counts to context
+            "top_earners": top_earners,
+            "repo_stars": repo_stars,
             "top_referrals": top_referrals,
             "referral_code": referral_code,
-            "debug_mode": settings.DEBUG,  # Add debug flag to context
-            "system_stats": system_stats,  # Add system stats to context
+            "debug_mode": settings.DEBUG,
+            "system_stats": system_stats,
+            "latest_bugs": latest_bugs,
         },
     )
 
