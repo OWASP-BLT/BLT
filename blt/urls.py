@@ -306,6 +306,7 @@ from website.views.user import (
     users_view,
     view_thread,
 )
+from website.views.video_call import video_call
 
 admin.autodiscover()
 
@@ -990,6 +991,7 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path("video_call/", video_call, name="video_call"),
     path(
         "batch-send-bacon-tokens/",
         batch_send_bacon_tokens_view,
