@@ -146,7 +146,7 @@ class VideoCall {
                         this.updateConnectionStatus('Other person has left the call');
                         alert('Other person has left the call');
                         this.endCall();
-                        break;
+                        break; 
                     case 'call_ended':
                         this.updateConnectionStatus('Call has been ended');
                         alert('Call has been ended');

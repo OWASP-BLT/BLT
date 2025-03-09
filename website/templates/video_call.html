@@ -1,27 +1,21 @@
 <!-- website/templates/website/video_call.html -->
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}
     Secure Video Call
 {% endblock title %}
-
 {% block description %}
     Make secure video calls with end-to-end encryption. Create a private room and share with others.
 {% endblock description %}
-
 {% block keywords %}
     Video Call, Secure Call, WebRTC, Private Room, Video Chat
 {% endblock keywords %}
-
 {% block og_title %}
     Secure Video Call - BLT Platform
 {% endblock og_title %}
-
 {% block og_description %}
     Make secure and private video calls with end-to-end encryption on BLT Platform.
 {% endblock og_description %}
-
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="p-4 sm:ml-64">
@@ -30,8 +24,12 @@
             <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        <svg class="w-8 h-8 text-white"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                            </path>
                         </svg>
                     </div>
                     <div>
@@ -40,24 +38,28 @@
                     </div>
                 </div>
             </div>
-
             <!-- Main Content -->
             <div class="max-w-4xl mx-auto">
                 <div class="bg-white rounded-2xl shadow-lg p-8">
                     <!-- Initial Controls -->
-                    <div id="initialControls" class="py-8 text-base leading-6 space-y-6 text-gray-600 sm:text-lg sm:leading-7">
+                    <div id="initialControls"
+                         class="py-8 text-base leading-6 space-y-6 text-gray-600 sm:text-lg sm:leading-7">
                         <div class="text-center mb-8">
                             <h2 class="text-2xl font-bold text-gray-900 mb-2">Start a New Call</h2>
                             <p class="text-gray-500">Create a private room and share the link with others</p>
                         </div>
-                        <button id="createRoom" class="w-full bg-[#e74c3c] text-white px-6 py-4 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 font-semibold shadow-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        <button id="createRoom"
+                                class="w-full bg-[#e74c3c] text-white px-6 py-4 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 font-semibold shadow-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 mr-2"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                </path>
                             </svg>
                             Create New Call
                         </button>
                     </div>
-
                     <!-- Share Link Section (Initially Hidden) -->
                     <div id="shareSection" class="hidden py-8 space-y-6">
                         <div class="text-center mb-6">
@@ -65,64 +67,90 @@
                             <p class="text-gray-500 text-sm">The link will work for one person only</p>
                         </div>
                         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                            <input type="text" id="shareLink" readonly
-                                class="flex-1 px-4 py-3 bg-gray-50 text-gray-900 border border-gray-200 focus:ring-2 focus:ring-red-500 block w-full sm:text-sm rounded-xl shadow-sm">
-                            <button id="copyLink" class="bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 font-semibold whitespace-nowrap flex items-center justify-center shadow-lg">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                            <input type="text"
+                                   id="shareLink"
+                                   readonly
+                                   class="flex-1 px-4 py-3 bg-gray-50 text-gray-900 border border-gray-200 focus:ring-2 focus:ring-red-500 block w-full sm:text-sm rounded-xl shadow-sm">
+                            <button id="copyLink"
+                                    class="bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 font-semibold whitespace-nowrap flex items-center justify-center shadow-lg">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3">
+                                    </path>
                                 </svg>
                                 Copy Link
                             </button>
                         </div>
-                        <div id="copyConfirm" class="hidden text-green-600 text-sm text-center bg-green-50 py-2 rounded-xl border border-green-200">
+                        <div id="copyConfirm"
+                             class="hidden text-green-600 text-sm text-center bg-green-50 py-2 rounded-xl border border-green-200">
                             Link copied to clipboard!
                         </div>
                     </div>
-
                     <!-- Video Call Interface (Initially Hidden) -->
                     <div id="callInterface" class="hidden space-y-6">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <!-- Local Video -->
                             <div class="relative aspect-video bg-gray-50 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
-                                <video id="localVideo" autoplay muted playsinline 
-                                    class="w-full h-full object-cover transform scale-x-[-1]">
+                                <video id="localVideo"
+                                       autoplay
+                                       muted
+                                       playsinline
+                                       class="w-full h-full object-cover transform scale-x-[-1]">
                                 </video>
                                 <div class="absolute bottom-3 left-3 bg-white bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100">
                                     <p class="text-gray-900 text-sm font-medium">You</p>
                                 </div>
                             </div>
-                            
                             <!-- Remote Video -->
                             <div class="relative aspect-video bg-gray-50 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
-                                <video id="remoteVideo" autoplay playsinline 
-                                    class="w-full h-full object-cover">
+                                <video id="remoteVideo"
+                                       autoplay
+                                       playsinline
+                                       class="w-full h-full object-cover">
                                 </video>
                                 <div class="absolute bottom-3 left-3 bg-white bg-opacity-90 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border border-gray-100">
                                     <p class="text-gray-900 text-sm font-medium">Remote</p>
                                 </div>
                             </div>
                         </div>
-
                         <!-- Connection Status -->
-                        <div id="connectionStatus" class="text-center py-3 px-4 rounded-xl bg-gray-50 text-gray-700 text-sm border border-gray-100 shadow-sm"></div>
-
+                        <div id="connectionStatus"
+                             class="text-center py-3 px-4 rounded-xl bg-gray-50 text-gray-700 text-sm border border-gray-100 shadow-sm">
+                        </div>
                         <!-- Call Controls -->
                         <div class="flex flex-wrap justify-center gap-4 mt-6">
-                            <button id="toggleAudio" class="flex items-center justify-center bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                            <button id="toggleAudio"
+                                    class="flex items-center justify-center bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                                    </path>
                                 </svg>
                                 Mute Audio
                             </button>
-                            <button id="toggleVideo" class="flex items-center justify-center bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            <button id="toggleVideo"
+                                    class="flex items-center justify-center bg-[#e74c3c] text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                    </path>
                                 </svg>
                                 Turn Off Video
                             </button>
-                            <button id="endCall" class="flex items-center justify-center bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2H5z"></path>
+                            <button id="endCall"
+                                    class="flex items-center justify-center bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 shadow-lg">
+                                <svg class="w-5 h-5 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M5 3a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2H5z">
+                                    </path>
                                 </svg>
                                 End Call
                             </button>
@@ -133,7 +161,6 @@
         </div>
     </div>
 {% endblock content %}
-
 {% block extra_js %}
     <script src="{% static 'js/video_call.js' %}"></script>
 {% endblock extra_js %}
