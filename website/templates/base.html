@@ -304,103 +304,106 @@
                     });
                 });
                 
-                // Check if the modal exists in the DOM
-                const modal = document.getElementById('cardModalDailyStatus');
-                const closeButton = modal ? modal.querySelector('.close-button') : null;
-                const openCheckInButton = document.getElementById('openCheckIn');
-                const checkInForm = document.getElementById('checkInForm');
+                // Wrap modal-related code in an IIFE to prevent variable leakage
+                (function() {
+                    // Check if the modal exists in the DOM
+                    const modal = document.getElementById('cardModalDailyStatus');
+                    const closeButton = modal ? modal.querySelector('.close-button') : null;
+                    const openCheckInButton = document.getElementById('openCheckIn');
+                    const checkInForm = document.getElementById('checkInForm');
 
-                // Exit if required modal elements are not present
-                if (!modal || !closeButton) {
-                    return;
-                }
-                
-                // Function to check if form was submitted today
-                function isFormSubmittedToday() {
-                    const submittedDate = localStorage.getItem('formSubmittedDateCard');
-                    const today = new Date().toISOString().split('T')[0];
-                    return submittedDate === today;
-                }
-
-                // Function to show modal
-                function showModal() {
-                    if (!modal) return;
-                    modal.classList.remove('hidden');
-                    document.body.classList.add('modal-open'); // Prevent background scrolling
-                    // Focus on the first input field
-                    const firstInput = modal.querySelector('input, textarea');
-                    if (firstInput) {
-                        firstInput.focus();
+                    // Exit if required modal elements are not present
+                    if (!modal || !closeButton) {
+                        return;
                     }
-                }
-
-                // Function to hide modal
-                function hideModal() {
-                    if (!modal) return;
-                    modal.classList.add('hidden');
-                    document.body.classList.remove('modal-open'); // Restore background scrolling
-                }
-
-                // Event listener to close modal when clicking the close button
-                closeButton.addEventListener('click', hideModal);
-
-                // Close modal when clicking outside the modal content
-                const modalOverlay = modal.querySelector('.modal-overlay');
-                if (modalOverlay) {
-                    modalOverlay.addEventListener('click', hideModal);
-                }
-                
-                document.addEventListener('keydown', function(event) {
-                    if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-                        hideModal();
+                    
+                    // Function to check if form was submitted today
+                    function isFormSubmittedToday() {
+                        const submittedDate = localStorage.getItem('formSubmittedDateCard');
+                        const today = new Date().toISOString().split('T')[0];
+                        return submittedDate === today;
                     }
-                });
 
-                // Event listener to open modal when clicking the openCheckIn button
-                if (openCheckInButton) {
-                    openCheckInButton.addEventListener('click', showModal);
-                }
+                    // Function to show modal
+                    function showModal() {
+                        if (!modal) return;
+                        modal.classList.remove('hidden');
+                        document.body.classList.add('modal-open'); // Prevent background scrolling
+                        // Focus on the first input field
+                        const firstInput = modal.querySelector('input, textarea');
+                        if (firstInput) {
+                            firstInput.focus();
+                        }
+                    }
 
-                // Handle check-in form submission with AJAX
-                if (checkInForm) {
-                    checkInForm.addEventListener('submit', function(e) {
-                        e.preventDefault(); // Prevent the default form submission
+                    // Function to hide modal
+                    function hideModal() {
+                        if (!modal) return;
+                        modal.classList.add('hidden');
+                        document.body.classList.remove('modal-open'); // Restore background scrolling
+                    }
 
-                        const formData = new FormData(checkInForm); // Gather form data
-                        const submitButton = checkInForm.querySelector('.submit-button');
-                        if (!submitButton) return;
+                    // Event listener to close modal when clicking the close button
+                    closeButton.addEventListener('click', hideModal);
 
-                        // Disable the submit button and show a loading state
-                        submitButton.disabled = true;
-                        submitButton.textContent = 'Submitting...';
-
-                        fetch(checkInForm.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                            },
-                            body: formData
-                        })
-                        .then(response => response.json()) // Expect a JSON response from the server
-                        .then(data => {
-                            if (data.success) {
-                                hideModal(); // Hide the modal on successful submission
-                                localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
-                                alert('Your report has been submitted successfully!');
-                            } else {
-                                throw new Error(data.error || 'Submission failed');
-                            }
-                        })
-                        .catch(error => {
-                            alert(`There was an error submitting your report: ${error.message}. Please try again.`);
-                        })
-                        .finally(() => {
-                            // Re-enable the submit button and reset its text
-                            submitButton.disabled = false;
-                            submitButton.textContent = 'Submit';
-                        });
+                    // Close modal when clicking outside the modal content
+                    const modalOverlay = modal.querySelector('.modal-overlay');
+                    if (modalOverlay) {
+                        modalOverlay.addEventListener('click', hideModal);
+                    }
+                    
+                    document.addEventListener('keydown', function(event) {
+                        if (event.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                            hideModal();
+                        }
                     });
-                }
+
+                    // Event listener to open modal when clicking the openCheckIn button
+                    if (openCheckInButton) {
+                        openCheckInButton.addEventListener('click', showModal);
+                    }
+
+                    // Handle check-in form submission with AJAX
+                    if (checkInForm) {
+                        checkInForm.addEventListener('submit', function(e) {
+                            e.preventDefault(); // Prevent the default form submission
+
+                            const formData = new FormData(checkInForm); // Gather form data
+                            const submitButton = checkInForm.querySelector('.submit-button');
+                            if (!submitButton) return;
+
+                            // Disable the submit button and show a loading state
+                            submitButton.disabled = true;
+                            submitButton.textContent = 'Submitting...';
+
+                            fetch(checkInForm.action, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                                },
+                                body: formData
+                            })
+                            .then(response => response.json()) // Expect a JSON response from the server
+                            .then(data => {
+                                if (data.success) {
+                                    hideModal(); // Hide the modal on successful submission
+                                    localStorage.setItem('formSubmittedDateCard', new Date().toISOString().split('T')[0]); // Store submission date
+                                    alert('Your report has been submitted successfully!');
+                                } else {
+                                    throw new Error(data.error || 'Submission failed');
+                                }
+                            })
+                            .catch(error => {
+                                alert(`There was an error submitting your report: ${error.message}. Please try again.`);
+                            })
+                            .finally(() => {
+                                // Re-enable the submit button and reset its text
+                                submitButton.disabled = false;
+                                submitButton.textContent = 'Submit';
+                            });
+                        });
+                    }
+                })();
             });
         </script>
         <!-- Add Chart.js library before the closing body tag -->

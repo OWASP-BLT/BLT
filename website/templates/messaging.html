@@ -359,7 +359,11 @@
                     messageList.scrollTop = messageList.scrollHeight;
                 })
                 .catch(error => console.error("Error fetching messages:", error));
-            document.getElementById("welcome-message").style.display = "none";
+    
+            const welcomeMessage = document.getElementById("welcome-message");
+            if (welcomeMessage) {
+                welcomeMessage.style.display = "none";
+            }
             document.getElementById("message-input").style.display = "block";
             document.getElementById("send-message").style.display = "block";
         }
