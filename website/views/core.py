@@ -1671,17 +1671,45 @@ def management_commands(request):
 
             # Get stats data for the past 30 days if it exists
             stats_data = []
+
+            # Create a dictionary to store values for each day in the 30-day period
+            date_range = []
+            date_values = {}
+
+            # Generate all dates in the 30-day range
+            for i in range(30):
+                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date_range.append(date)
+                date_values[date.isoformat()] = 0
+
+            # Get actual stats data
             daily_stats = DailyStats.objects.filter(name=name, created__gte=thirty_days_ago).order_by("created")
 
-            if daily_stats.exists():
-                for stat in daily_stats:
-                    try:
-                        value = int(stat.value)
-                    except (ValueError, TypeError):
-                        value = 0
-                    stats_data.append({"date": stat.created.date().isoformat(), "value": value})
+            # Fill in the values we have
+            max_value = 1  # Minimum value to avoid division by zero
+            for stat in daily_stats:
+                try:
+                    value = int(stat.value)
+                    date_key = stat.created.date().isoformat()
+                    date_values[date_key] = value
+                    if value > max_value:
+                        max_value = value
+                except (ValueError, TypeError, KeyError):
+                    pass
+
+            # Convert to list format for the template
+            for date in date_range:
+                date_key = date.isoformat()
+                stats_data.append(
+                    {
+                        "date": date_key,
+                        "value": date_values.get(date_key, 0),
+                        "height_percent": (date_values.get(date_key, 0) / max_value) * 100 if max_value > 0 else 0,
+                    }
+                )
 
             command_info["stats_data"] = stats_data
+            command_info["max_value"] = max_value
             available_commands.append(command_info)
 
     commands = sorted(available_commands, key=lambda x: x["name"])
@@ -1784,6 +1812,31 @@ def run_management_command(request):
 
                 log_entry.success = True
                 log_entry.save()
+
+                # Record execution in DailyStats
+                try:
+                    # Get existing stats for today
+                    today = timezone.now().date()
+                    daily_stat, created = DailyStats.objects.get_or_create(
+                        name=command,
+                        created__date=today,
+                        defaults={"value": "1", "created": timezone.now(), "modified": timezone.now()},
+                    )
+
+                    if not created:
+                        # Increment the value
+                        try:
+                            current_value = int(daily_stat.value)
+                            daily_stat.value = str(current_value + 1)
+                            daily_stat.modified = timezone.now()
+                            daily_stat.save()
+                        except (ValueError, TypeError):
+                            # If value is not an integer, set it to 1
+                            daily_stat.value = "1"
+                            daily_stat.modified = timezone.now()
+                            daily_stat.save()
+                except Exception as stats_error:
+                    logging.error(f"Error updating DailyStats: {str(stats_error)}")
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": True, "output": output})
