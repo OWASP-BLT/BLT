@@ -73,7 +73,14 @@ async function refreshSection(button, section) {
         console.log(`Sending section: '${sectionValue}'`);
 
         // Get CSRF token from the meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfMetaTag = document.querySelector('meta[name="csrf-token"]');
+        let csrfToken = '';
+
+        if (csrfMetaTag) {
+            csrfToken = csrfMetaTag.getAttribute('content');
+        } else {
+            console.error('CSRF token meta tag not found. Make sure it exists in your HTML.');
+        }
 
         const response = await fetch(window.location.href, {
             method: 'POST',
@@ -339,7 +346,7 @@ function updateContributorStats(timePeriod, page = 1) {
         body: formData,
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
         }
     })
         .then(response => {
