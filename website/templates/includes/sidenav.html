@@ -131,7 +131,7 @@
                             <span>SimilarityScan</span>
                         </a>
                     </li>
-                    <li class="mb-2">
+                    <li class="mb-2 {% if request.path == '/discussion-rooms/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'rooms_list' %}"
                            class="flex items-center w-full no-underline p-2 {% if request.path == '/discussion-rooms/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
