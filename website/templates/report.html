@@ -64,7 +64,7 @@
         </div>
     </div>
     <div class="min-h-screen bg-gray-50 py-8">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-[90%] mx-auto">
             <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
                 <div class="flex items-center gap-6">
                     <div class="w-16 h-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
@@ -226,8 +226,8 @@
                         </div>
                         <div class="bg-white rounded-xl shadow-sm p-6">
                             <label for="cve_id" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "CVE ID" %}</label>
-                            <div class="flex gap-2">
-                                <input class="flex-1 text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 py-2 px-4 focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent transition-shadow duration-200"
+                            <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full">
+                                <input class="flex-1 text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 py-2 px-4 focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent transition-shadow duration-200 min-w-0"
                                        type="text"
                                        placeholder="CVE-XXXX-XXXX"
                                        id="cve_id_input"
@@ -236,7 +236,7 @@
                                        title="Please enter a valid CVE ID format (e.g. CVE-2024-1234)">
                                 <button type="button"
                                         onclick="validateCVE()"
-                                        class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200">
+                                        class="px-3 py-1 text-xs sm:px-4 sm:py-2 sm:text-sm md:text-base bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 shrink-0 w-full sm:w-auto">
                                     <i class="fas fa-check"></i>
                                 </button>
                             </div>
@@ -287,19 +287,36 @@
                     </div>
                 </div>
                 <div class="mt-8 bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex flex-col lg:flex-row items-center justify-between gap-6">
-                        <div class="flex items-center gap-3">
-                            <input id="report_anonymous"
-                                   type="checkbox"
-                                   name="report_anonymous"
-                                   class="w-5 h-5 rounded text-[#e74c3c] focus:ring-[#e74c3c] cursor-pointer">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-6 w-full">
+                        <div class="flex flex-col items-start gap-2 w-full sm:w-auto order-2 sm:order-1">
                             <label for="report_anonymous"
                                    class="text-sm font-medium text-gray-900 cursor-pointer select-none">
                                 {% trans "Report Anonymously" %}
                             </label>
+                            <div class="flex items-center">
+                                <input id="report_anonymous"
+                                       type="checkbox"
+                                       name="report_anonymous"
+                                       class="w-5 h-5 rounded text-[#e74c3c] focus:ring-[#e74c3c] cursor-pointer">
+                            </div>
                         </div>
-                        <div class="captcha-form">{{ captcha_form.captcha }}</div>
-                        <div class="flex gap-4">
+                        <div class="captcha-form w-full sm:w-auto flex justify-center order-1 sm:order-2">
+                            <div class="p-2 scale-75 sm:scale-90 md:scale-100 transform-gpu origin-center">
+                                <div class="captcha-form flex flex-col w-full items-center gap-4">
+                                    <div class="w-full max-w-[500px]">
+                                        <img class="w-full h-auto object-contain rounded-lg"
+                                             alt="captcha"
+                                             width="500"
+                                             height="200" />
+                                    </div>
+                                    <div class="w-full max-w-[180px]">
+                                        <input class="w-full border border-gray-300 p-2.5 text-base rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent transition-shadow duration-200" />
+                                    </div>
+                                </div>
+                                {{ captcha_form.captcha }}
+                            </div>
+                        </div>
+                        <div class="flex gap-4 w-full sm:w-auto justify-center order-3">
                             <button type="button"
                                     onclick="cancelForm()"
                                     class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors duration-200 font-medium">
@@ -556,6 +573,26 @@
                 }
             });
         }
+    });
+
+    function fillUrl(domain) {
+        const urlInput = document.getElementById('url');
+        if (!domain.startsWith('http')) {
+            domain = 'https://' + domain;
+        }
+        urlInput.value = domain;
+    }
+
+    // Remove the old domain click handler and use this one
+    document.addEventListener('DOMContentLoaded', function() {
+        const domainButtons = document.querySelectorAll('[onclick^="fillUrl"]');
+        domainButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const domain = this.querySelector('span').textContent.trim();
+                fillUrl(domain);
+            });
+        });
     });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
