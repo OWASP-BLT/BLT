@@ -200,6 +200,18 @@
                     <span class="font-bold text-red-500">{{ user.userprofile.longest_streak|default:"0" }}</span>
                 </div>
                 <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <!-- Days Visited -->
+                <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2">
+                    <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> {% trans "Days Visited" %}:</span>
+                    <span class="font-bold text-red-500">{{ user.userprofile.daily_visit_count|default:"0" }}</span>
+                </div>
+                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
+                <!-- Last Visit -->
+                <div class="flex items-center justify-between w-full text-[14px] font-medium mb-2">
+                    <span><i class="fa fa-clock mr-2 text-red-500"></i> {% trans "Last Visit" %}:</span>
+                    <span class="font-bold text-red-500">{{ user.userprofile.last_visit_day|date:"M d, Y"|default:"Never" }}</span>
+                </div>
+                <hr class="border-t-[1px] border-gray-300 opacity-50 w-full mb-2">
                 <!-- Last Sizzle Check-in -->
                 <div class="flex items-center justify-between w-full text-[14px] mb-2 font-medium">
                     <span><i class="fa fa-calendar-check mr-2 text-red-500"></i> {% trans "Last Sizzle Check-in" %}:</span>

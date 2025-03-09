@@ -298,6 +298,47 @@
             </div>
         </div>
         <div class="leaderboard-container ">
+            <div class="flex-1 leaderboard-section">
+                <div class="leaderboard-title">Top Visitors</div>
+                <div class="list-group w-full p-4">
+                    {% if top_visitors %}
+                        <div class="flex flex-col gap-2">
+                            {% for profile in top_visitors %}
+                                <div class="flex justify-between items-center">
+                                    <div class="flex gap-2 items-center truncate">
+                                        {% if profile.avatar %}
+                                            <img src="{{ profile.avatar }}"
+                                                 class="size-11 select-none profileimage rounded-full"
+                                                 alt="{{ profile.user.username }}"
+                                                 width="50px"
+                                                 height="50px">
+                                        {% else %}
+                                            <img src="{% gravatar_url profile.user.email 50 %}"
+                                                 class="size-11 select-none profileimage rounded-full"
+                                                 alt="{{ profile.user.username }}"
+                                                 width="50px"
+                                                 height="50px">
+                                        {% endif %}
+                                        <a href="{% url 'profile' profile.user.username %}"
+                                           class="text-lg transition-all duration-200">{{ profile.user.username }}</a>
+                                    </div>
+                                    <div class="flex flex-col items-end text-right text-sm">
+                                        <span class="badge bg-gray-100 rounded-md py-1 px-2 select-none">
+                                            {{ profile.daily_visit_count }} visits
+                                        </span>
+                                        <span class="text-xs text-gray-500">
+                                            Last Visit: {{ profile.last_visit_day|default:"Never" }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="border-t border-gray-200 my-1"></div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-red-500 text-center font-medium">No visitor data available!</p>
+                    {% endif %}
+                </div>
+            </div>
             <div class=" flex-1  leaderboard-section">
                 <div class="leaderboard-title">Issue Bounties</div>
                 <div class=" list-group w-full p-4">
@@ -364,6 +405,7 @@
                     {% endif %}
                 </div>
             </div>
+            
         </div>
     </div>
 {% endblock content %}
