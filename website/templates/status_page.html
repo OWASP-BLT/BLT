@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
+{% load humanize %}
 {% block title %}
     Service Status
 {% endblock title %}
@@ -78,7 +80,7 @@
                 <!-- GitHub API Status -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
                     <h3 class="text-xl font-semibold mb-4">GitHub API</h3>
-                    <div class="flex items-center">
+                    <div class="flex items-center mb-4">
                         <div class="w-3 h-3 rounded-full mr-3 {% if status.github == None %}bg-gray-400{% elif status.github %}bg-green-500{% else %}bg-red-500{% endif %}">
                         </div>
                         {% if status.github == None %}
@@ -89,6 +91,97 @@
                             <span class="text-red-600">Not Operational</span>
                         {% endif %}
                     </div>
+                    {% if status.github_rate_limit %}
+                        <div class="mt-4">
+                            <h4 class="text-lg font-semibold mb-2">Rate Limits</h4>
+                            <!-- Core Rate Limit -->
+                            <div class="mb-4">
+                                <h5 class="font-medium">Core API</h5>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <span class="text-gray-600">Remaining:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.core.remaining }} / {{ status.github_rate_limit.core.limit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Used:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.core.used }}</span>
+                                    </div>
+                                </div>
+                                <!-- Progress Bar -->
+                                {% with remaining=status.github_rate_limit.core.remaining|default:0 limit=status.github_rate_limit.core.limit|default:1 %}
+                                    {% with percentage=remaining|div:limit|multiply:100|floatformat:0 %}
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                            <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                                 style="width: {{ percentage }}%"></div>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            Reset in:
+                                            {% if status.github_rate_limit.core.reset %}
+                                                {% with reset_time=status.github_rate_limit.core.reset|timestamp_to_datetime %}{{ reset_time|timeuntil }}{% endwith %}
+                                            {% else %}
+                                                Unknown
+                                            {% endif %}
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                            <!-- Search Rate Limit -->
+                            <div class="mb-4">
+                                <h5 class="font-medium">Search API</h5>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <span class="text-gray-600">Remaining:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.search.remaining }} / {{ status.github_rate_limit.search.limit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Used:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.search.used }}</span>
+                                    </div>
+                                </div>
+                                <!-- Progress Bar -->
+                                {% with remaining=status.github_rate_limit.search.remaining|default:0 limit=status.github_rate_limit.search.limit|default:1 %}
+                                    {% with percentage=remaining|div:limit|multiply:100|floatformat:0 %}
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                            <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                                 style="width: {{ percentage }}%"></div>
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                            <!-- GraphQL Rate Limit -->
+                            <div>
+                                <h5 class="font-medium">GraphQL API</h5>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <span class="text-gray-600">Remaining:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.graphql.remaining }} / {{ status.github_rate_limit.graphql.limit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Used:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.graphql.used }}</span>
+                                    </div>
+                                </div>
+                                <!-- Progress Bar -->
+                                {% with remaining=status.github_rate_limit.graphql.remaining|default:0 limit=status.github_rate_limit.graphql.limit|default:1 %}
+                                    {% with percentage=remaining|div:limit|multiply:100|floatformat:0 %}
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                            <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                                 style="width: {{ percentage }}%"></div>
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <!-- API Usage History -->
+                        {% if status.github_api_history %}
+                            <div class="mt-6">
+                                <h4 class="text-lg font-semibold mb-2">API Usage History</h4>
+                                <div class="w-full h-64">
+                                    <canvas id="githubApiChart"></canvas>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
                 </div>
                 <!-- Top Memory Consumers -->
                 <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
@@ -249,36 +342,91 @@ document.addEventListener('DOMContentLoaded', function() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: {
-                    stacked: false,
-                    title: {
-                        display: true,
-                        text: 'Date'
-                    }
-                },
                 y: {
-                    stacked: false,
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Number of Activities'
-                    }
-                }
-            },
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Slack Bot Activities (Last 30 Days)',
-                    font: {
-                        size: 16
-                    }
-                },
-                legend: {
-                    position: 'bottom'
+                    beginAtZero: true
                 }
             }
         }
     });
+    
+    // GitHub API Usage History Chart
+    const githubApiChartElement = document.getElementById('githubApiChart');
+    if (githubApiChartElement) {
+        let githubApiHistory = [];
+        try {
+            githubApiHistory = JSON.parse('{{ status.github_api_history|escapejs|default:"[]" }}');
+        } catch (e) {
+            console.error('Error parsing GitHub API history:', e);
+        }
+        
+        if (githubApiHistory && githubApiHistory.length > 0) {
+            // Format the data for the chart
+            const timestamps = githubApiHistory.map(entry => entry.timestamp);
+            const remaining = githubApiHistory.map(entry => parseInt(entry.remaining) || 0);
+            const used = githubApiHistory.map(entry => parseInt(entry.used) || 0);
+            
+            new Chart(githubApiChartElement, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        {
+                            label: 'Remaining',
+                            data: remaining,
+                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                            borderColor: '#e74c3c',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Used',
+                            data: used,
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'API Calls'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'GitHub API Usage History'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
 });
     </script>
-{% endblock %}
+{% endblock extra_js %}

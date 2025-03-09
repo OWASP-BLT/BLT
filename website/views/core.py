@@ -262,14 +262,64 @@ def status_page(request):
             if github_token:
                 try:
                     print("Checking GitHub API...")
+                    # Check basic API access
                     response = requests.get(
                         "https://api.github.com/user/repos",
                         headers={"Authorization": f"token {github_token}"},
                         timeout=5,
                     )
                     status_data["github"] = response.status_code == 200
+
+                    # Get rate limit information
+                    rate_limit_response = requests.get(
+                        "https://api.github.com/rate_limit",
+                        headers={"Authorization": f"token {github_token}"},
+                        timeout=5,
+                    )
+
+                    if rate_limit_response.status_code == 200:
+                        rate_limit_data = rate_limit_response.json()
+                        status_data["github_rate_limit"] = {
+                            "core": rate_limit_data.get("resources", {}).get("core", {}),
+                            "search": rate_limit_data.get("resources", {}).get("search", {}),
+                            "graphql": rate_limit_data.get("resources", {}).get("graphql", {}),
+                            "integration_manifest": rate_limit_data.get("resources", {}).get(
+                                "integration_manifest", {}
+                            ),
+                            "code_scanning_upload": rate_limit_data.get("resources", {}).get(
+                                "code_scanning_upload", {}
+                            ),
+                        }
+
+                        # Add recent API calls history from cache if available
+                        github_api_history = cache.get("github_api_history", [])
+                        status_data["github_api_history"] = github_api_history
+
+                        # Add current rate limit to history
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        core_rate_limit = rate_limit_data.get("resources", {}).get("core", {})
+
+                        if core_rate_limit:
+                            new_entry = {
+                                "timestamp": current_time,
+                                "remaining": core_rate_limit.get("remaining", 0),
+                                "limit": core_rate_limit.get("limit", 0),
+                                "used": core_rate_limit.get("used", 0),
+                                "reset": core_rate_limit.get("reset", 0),
+                            }
+
+                            # Add to history and keep last 50 entries
+                            github_api_history.append(new_entry)
+                            if len(github_api_history) > 50:
+                                github_api_history = github_api_history[-50:]
+
+                            # Update cache
+                            cache.set("github_api_history", github_api_history, 86400)  # Cache for 24 hours
+                    else:
+                        status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
                     print(f"GitHub API Error: {e}")
+                    status_data["github_rate_limit"] = None
 
         # OpenAI API check
         if CHECK_OPENAI:
@@ -454,19 +504,32 @@ def status_page(request):
         # Store the data in a format that can be safely serialized to JSON
         chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
 
+        # Prepare GitHub API history data for chart
+        if "github_api_history" in status_data and status_data["github_api_history"]:
+            # Convert the history data to JSON-serializable format
+            for entry in status_data["github_api_history"]:
+                # Ensure all values are JSON serializable
+                for key, value in entry.items():
+                    if not isinstance(value, (str, int, float, bool, type(None))):
+                        entry[key] = str(value)
+
         status_data["chart_data"] = chart_data
 
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
-    # Prepare the chart data for the template
-    template_chart_data = {
-        "dates": json.dumps(status_data["chart_data"]["dates"]),
-        "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
-        "commands": json.dumps(status_data["chart_data"]["commands"]),
-    }
+        # Prepare the chart data for the template
+        template_chart_data = {
+            "dates": json.dumps(status_data["chart_data"]["dates"]),
+            "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
+            "commands": json.dumps(status_data["chart_data"]["commands"]),
+        }
 
-    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+        # Serialize GitHub API history data for the template
+        if "github_api_history" in status_data:
+            status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
+
+        return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
 
 def github_callback(request):
