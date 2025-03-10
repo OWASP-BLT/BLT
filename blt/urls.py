@@ -138,12 +138,21 @@ from website.views.education import (
     view_course,
     view_lecture,
 )
+from website.views.hackathon import (
+    HackathonCreateView,
+    HackathonDetailView,
+    HackathonListView,
+    HackathonPrizeCreateView,
+    HackathonSponsorCreateView,
+    HackathonUpdateView,
+)
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
+    GsocView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -165,6 +174,7 @@ from website.views.issue import (
     like_issue,
     newhome,
     page_vote,
+    refresh_gsoc_project,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -258,7 +268,7 @@ from website.views.project import (
     select_contribution,
 )
 from website.views.queue import queue_list
-from website.views.repo import RepoListView, add_repo
+from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamChallenges,
@@ -305,6 +315,7 @@ from website.views.user import (
     users_view,
     view_thread,
 )
+from website.views.video_call import video_call
 
 admin.autodiscover()
 
@@ -678,7 +689,8 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
-    re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
+    path("gsoc/", GsocView.as_view(), name="gsoc"),
+    path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),
@@ -725,6 +737,7 @@ urlpatterns = [
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     path("repos/<slug:slug>/badge/", RepoBadgeView.as_view(), name="repo-badge"),
     path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
+    path("repository/<int:repo_id>/refresh/", refresh_repo_data, name="refresh_repo_data"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
@@ -989,6 +1002,7 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path("video_call/", video_call, name="video_call"),
     path(
         "batch-send-bacon-tokens/",
         batch_send_bacon_tokens_view,
@@ -1034,6 +1048,13 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
+    # Hackathon URLs.
+    path("hackathons/", HackathonListView.as_view(), name="hackathons"),
+    path("hackathons/create/", HackathonCreateView.as_view(), name="hackathon_create"),
+    path("hackathons/<slug:slug>/", HackathonDetailView.as_view(), name="hackathon_detail"),
+    path("hackathons/<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_edit"),
+    path("hackathons/<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_add_sponsor"),
+    path("hackathons/<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_add_prize"),
     path("page-vote/", page_vote, name="page_vote"),
     # Queue Management URLs
     path("queue/", queue_list, name="queue_list"),

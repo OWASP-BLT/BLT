@@ -38,9 +38,9 @@
     }
     </style>
     {% include "includes/sidenav.html" %}
-    <div class="flex items-center w-[100%] h-[60vh] min-h-screen p-4 bg-gray-100 lg:justify-center">
-        <div class="flex flex-col lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
-            <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 h-full">
+        <div class="flex flex-col w-full max-w-md bg-white rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
+            <div class="p-4 py-6 text-white bg-red-500 md:w-96 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
                 <div class="my-3 text-4xl font-bold tracking-wider text-center">
                     <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
@@ -69,7 +69,7 @@
                                id="id_username"
                                name="username"
                                value="{{ form.username.value|default:'' }}"
-                               class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
                     <div class="flex flex-col space-y-1">
@@ -78,7 +78,7 @@
                                id="id_email"
                                name="email"
                                value="{{ form.email.value|default:'' }}"
-                               class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
                     <div class="flex flex-col space-y-1">
@@ -90,7 +90,7 @@
                                    id="id_password"
                                    name="password1"
                                    value="{{ form.password1.value|default:'' }}"
-                                   class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -117,7 +117,7 @@
                                    id="id_password2"
                                    name="password2"
                                    value="{{ form.password2.value|default:'' }}"
-                                   class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -173,7 +173,7 @@
                     <div>
                         <button type="submit"
                                 name="signup_button"
-                                class=" w-[30%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                                class="w-full md:w-auto px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
                             {% trans "Sign Up" %}
                         </button>
                     </div>

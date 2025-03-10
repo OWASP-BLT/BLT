@@ -5,7 +5,8 @@ import os
 import smtplib
 import socket
 import uuid
-from datetime import datetime, timezone
+from collections import defaultdict
+from datetime import datetime
 from urllib.parse import urlparse
 
 import requests
@@ -23,6 +24,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
 from django.db.transaction import atomic
@@ -38,9 +40,10 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
-from django.utils.timezone import now
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
@@ -78,6 +81,8 @@ from website.utils import (
     rebuild_safe_url,
     safe_redirect_request,
 )
+
+from .constants import GSOC25_PROJECTS
 
 
 @login_required(login_url="/accounts/login")
@@ -234,7 +239,7 @@ def resolve(request, id):
         if issue.status == "open":
             issue.status = "close"
             issue.closed_by = request.user
-            issue.closed_date = now()
+            issue.closed_date = timezone.now()
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
         else:
@@ -265,7 +270,7 @@ def UpdateIssue(request):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
-            issue.closed_date = datetime.now()
+            issue.closed_date = timezone.now()
 
             msg_plain = msg_html = render_to_string(
                 "email/bug_updated.html",
@@ -325,7 +330,7 @@ def newhome(request, template="bugs_list.html"):
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    current_time = now()
+    current_time = timezone.now()
     leaderboard = (
         User.objects.filter(
             points__created__month=current_time.month,
@@ -547,7 +552,7 @@ def SaveBiddingData(request):
                 return HttpResponse(status=400)
             return redirect("BiddingData")
 
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
 
         # Check if the username exists in our database
         user = User.objects.filter(username=username).first()
@@ -619,7 +624,7 @@ def submit_pr(request):
         amount = request.POST.get("bid_amount")
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
         bch_address = request.POST.get("bch_address")
 
         # Check if the username exists in our database
@@ -901,7 +906,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         form.instance.reporter_ip_address = reporter_ip
 
         limit = 50 if self.request.user.is_authenticated else 30
-        today = now().date()
+        today = timezone.now().date()
         recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
 
         if recent_issues_count >= limit:
@@ -1387,17 +1392,21 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     time_remaining = None
     if request.method == "GET":
-        if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
-        elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
+        if ((hunt.starts_on - timezone.now()).total_seconds()) > 0:
+            messages.error(request, "Hunt has not started yet")
+            return redirect("index")
+        elif ((hunt.end_on - timezone.now()).total_seconds()) < 0:
+            messages.error(request, "Hunt has ended")
+            return redirect("index")
         else:
             return render(request, template, {"hunt": hunt})
     elif request.method == "POST":
-        if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
-        elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
+        if ((hunt.starts_on - timezone.now()).total_seconds()) > 0:
+            messages.error(request, "Hunt has not started yet")
+            return redirect("index")
+        elif ((hunt.end_on - timezone.now()).total_seconds()) < 0:
+            messages.error(request, "Hunt has ended")
+            return redirect("index")
         else:
             url = request.POST["url"]
             description = request.POST["description"]
@@ -2008,3 +2017,167 @@ def page_vote(request):
             return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
 
     return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+class GsocView(View):
+    SINCE_DATE = timezone.make_aware(datetime(2024, 11, 11))
+
+    def fetch_model_prs(self, repo_names):
+        contributors = defaultdict(lambda: {"count": 0, "github_url": ""})
+        total_pr_count = 0
+
+        # Filter repos by name
+        repos = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repo_names])
+
+        # Fetch merged PRs
+        prs = GitHubIssue.objects.filter(
+            repo__in=repos, type="pull_request", is_merged=True, merged_at__gte=self.SINCE_DATE
+        ).select_related("user_profile__user")
+
+        for pr in prs:
+            total_pr_count += 1
+
+            # First try to get the user profile from the PR
+            user_profile = pr.user_profile
+            github_url = None
+
+            if user_profile and user_profile.github_url:
+                github_url = user_profile.github_url
+            else:
+                # If no user profile, try to extract GitHub username from PR URL
+                # Example PR URL: https://github.com/adeyosemanputra/PyGoat/pull/123
+                try:
+                    # Extract username from PR URL by parsing the URL
+                    pr_url_parts = pr.url.split("/")
+                    if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
+                        # Construct a GitHub profile URL
+                        github_url = f"https://github.com/{pr_url_parts[3]}"
+                except (IndexError, AttributeError):
+                    # If we can't extract the username, skip this PR
+                    continue
+
+            # Skip bot accounts
+            if github_url and not github_url.endswith("[bot]") and "bot" not in github_url.lower():
+                contributors[github_url]["count"] += 1
+                contributors[github_url]["github_url"] = github_url
+
+        # Get top 10 contributors
+        top_contributors = sorted(contributors.items(), key=lambda item: item[1]["count"], reverse=True)[:10]
+
+        # Format top contributors list
+        formatted_contributors = [
+            {"url": url, "username": url.rstrip("/").split("/")[-1], "prs": data["count"]}
+            for url, data in top_contributors
+        ]
+
+        return formatted_contributors, total_pr_count
+
+    def get_repo_url(self, repo_names):
+        if not repo_names:
+            return ""
+
+        repo_name = repo_names[0].split("/")[-1]
+        try:
+            repo = Repo.objects.filter(name=repo_name).first()
+            return repo.repo_url if repo else f"https://github.com/{repo_names[0]}"
+        except:
+            return f"https://github.com/{repo_names[0]}"
+
+    def build_project_data(self, project, repo_names):
+        contributors, total_prs = self.fetch_model_prs(repo_names)
+
+        return {
+            "contributors": contributors,
+            "total_prs": total_prs,
+            "repo_url": self.get_repo_url(repo_names),
+        }
+
+    def get(self, request):
+        project_data = {}
+
+        for project, repo_names in GSOC25_PROJECTS.items():
+            project_data[project] = self.build_project_data(project, repo_names)
+
+        # Sort projects by total PRs
+        sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
+
+        return render(request, "gsoc.html", {"projects": sorted_project_data})
+
+
+def refresh_gsoc_project(request):
+    """
+    View to handle refreshing PRs for a specific GSoC project.
+    Only staff users can access this view.
+    """
+    if request.method == "POST":
+        project_name = request.POST.get("project_name")
+
+        if not project_name or project_name not in GSOC25_PROJECTS:
+            messages.error(request, "Invalid project name")
+            return redirect("gsoc")
+
+        # Get the repositories for this project
+        repos = GSOC25_PROJECTS.get(project_name, [])
+
+        if not repos:
+            messages.error(request, f"No repositories found for project {project_name}")
+            return redirect("gsoc")
+
+        # Set the since date to November 11, 2024
+        # Create a timezone-aware datetime using Django's timezone
+        since_date = timezone.make_aware(datetime(2024, 11, 11))
+
+        # Calculate days between now and the since date
+        days = (timezone.now() - since_date).days
+
+        try:
+            # Call the fetch_gsoc_prs command with the specific repositories
+            # We pass the repositories as a comma-separated string
+            repo_list = ",".join(repos)
+            call_command("fetch_gsoc_prs", repos=repo_list, days=days)
+
+            # Update user profiles for PRs that don't have them
+            for repo_full_name in repos:
+                try:
+                    owner, repo_name = repo_full_name.split("/")
+                    repo = Repo.objects.filter(name=repo_name).first()
+
+                    if repo:
+                        # Get PRs without user profiles
+                        prs_without_profiles = GitHubIssue.objects.filter(
+                            repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date, user_profile=None
+                        )
+
+                        for pr in prs_without_profiles:
+                            try:
+                                # Extract username from PR URL
+                                pr_url_parts = pr.url.split("/")
+                                if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
+                                    # Get or create a user profile
+                                    github_url = f"https://github.com/{pr_url_parts[3]}"
+
+                                    # Skip bot accounts
+                                    if github_url.endswith("[bot]") or "bot" in github_url.lower():
+                                        continue
+
+                                    # Find existing user profile with this GitHub URL
+                                    user_profile = UserProfile.objects.filter(github_url=github_url).first()
+
+                                    if user_profile:
+                                        # Link the PR to the user profile
+                                        pr.user_profile = user_profile
+                                        pr.save()
+                            except (IndexError, AttributeError):
+                                continue
+                except Exception as e:
+                    messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
+
+            messages.success(
+                request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
+            )
+        except Exception as e:
+            messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
+
+        return redirect("gsoc")
+
+    return redirect("gsoc")
