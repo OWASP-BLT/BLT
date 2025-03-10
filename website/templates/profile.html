@@ -249,7 +249,7 @@
                                 <div class=" bg-gray-100 rounded-lg  flex flex-col gap-3 items-start justify-between p-5 w-full">
                                     <div class="rounded-lg w-full border-2  hover:border-red-500 transition-all duration-200 ">
                                         {% for screenshot_activity,screenshot in activity_screenshots.items %}
-                                            {% if activity == screenshot_activity and screenshot.image.url %}
+                                            {% if activity == screenshot_activity and screenshot.image and screenshot.image.url %}
                                                 <a href="{{ activity.get_absolute_url }}">
                                                     <img src="{{ screenshot.image.url }}"
                                                          loading="lazy"
