@@ -22,6 +22,21 @@
 {% load humanize %}
 {% providers_media_js %}
 {% block style %}
+    <style>
+    .captcha-form img{
+        width: 200px;
+        
+    }
+    .captcha-form input{
+        width: 50%;
+        border-width: 1px;
+        border-color: black;
+        padding: 10px;
+        font-size: 1.4rem;
+        margin-left: 0.5rem;
+        border-radius: 0.3rem;
+    }
+    </style>
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -289,32 +304,30 @@
                 <div class="mt-8 bg-white rounded-xl shadow-sm p-6">
                     <div class="flex flex-col sm:flex-row items-center justify-between gap-6 w-full">
                         <div class="flex flex-col items-start gap-2 w-full sm:w-auto order-2 sm:order-1">
-                            <label for="report_anonymous"
-                                   class="text-sm font-medium text-gray-900 cursor-pointer select-none">
-                                {% trans "Report Anonymously" %}
-                            </label>
-                            <div class="flex items-center">
+                            <div class="flex items-center gap-2">
                                 <input id="report_anonymous"
                                        type="checkbox"
                                        name="report_anonymous"
-                                       class="w-5 h-5 rounded text-[#e74c3c] focus:ring-[#e74c3c] cursor-pointer">
+                                       class="w-5 h-5 rounded-lg text-[#e74c3c] focus:ring-[#e74c3c] cursor-pointer">
+                                <p for="report_anonymous"
+                                   class=" font-medium text-gray-900 cursor-pointer select-none">
+                                    {% trans "Report Anonymously" %}
+                                </p>
                             </div>
                         </div>
                         <div class="captcha-form w-full sm:w-auto flex justify-center order-1 sm:order-2">
-                            <div class="p-2 scale-75 sm:scale-90 md:scale-100 transform-gpu origin-center">
+                            {% comment %} <div class="p-2 scale-75 sm:scale-90 md:scale-100 transform-gpu origin-center">
                                 <div class="captcha-form flex flex-col w-full items-center gap-4">
                                     <div class="w-full max-w-[500px]">
-                                        <img class="w-full h-auto object-contain rounded-lg"
-                                             alt="captcha"
-                                             width="500"
-                                             height="200" />
+                                        <img class="w-full h-auto object-contain rounded-lg" alt="captcha" width="500" height="200" />
                                     </div>
                                     <div class="w-full max-w-[180px]">
                                         <input class="w-full border border-gray-300 p-2.5 text-base rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent transition-shadow duration-200" />
                                     </div>
                                 </div>
                                 {{ captcha_form.captcha }}
-                            </div>
+                            </div> {% endcomment %}
+                            <div class="captcha-form flex  flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
                         </div>
                         <div class="flex gap-4 w-full sm:w-auto justify-center order-3">
                             <button type="button"
