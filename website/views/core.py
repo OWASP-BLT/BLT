@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import psutil
+import pytz
 import redis
 import requests
 import requests.exceptions
@@ -1737,7 +1738,7 @@ def management_commands(request):
         if sort_key == "name":
             return cmd["name"]
         elif sort_key == "last_run":
-            return cmd.get("last_run", timezone.datetime.min.replace(tzinfo=timezone.utc))
+            return cmd.get("last_run", timezone.datetime.min.replace(tzinfo=pytz.UTC))
         elif sort_key == "status":
             # Sort by success status (True comes after False in ascending order)
             return cmd.get("last_success", False)
