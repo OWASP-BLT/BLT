@@ -78,6 +78,7 @@ class Command(BaseCommand):
 
         total_prs_fetched = 0
         total_prs_added = 0
+        total_prs_updated = 0
 
         for repo_full_name in all_repos:
             try:
@@ -93,12 +94,16 @@ class Command(BaseCommand):
                     self.stdout.write(f"Reset last_pr_page_processed for {repo_full_name}")
 
                 # Fetch closed PRs from the past specified days
-                prs_fetched, prs_added = self.fetch_and_save_prs(repo, owner, repo_name, days, verbose)
+                prs_fetched, prs_added, prs_updated = self.fetch_and_save_prs(repo, owner, repo_name, days, verbose)
 
                 total_prs_fetched += prs_fetched
                 total_prs_added += prs_added
+                total_prs_updated += prs_updated
 
-                self.stdout.write(f"Processed {repo_full_name}: Fetched {prs_fetched} PRs, Added {prs_added} new PRs")
+                self.stdout.write(
+                    f"Processed {repo_full_name}: Fetched {prs_fetched} PRs, "
+                    f"Added {prs_added} new PRs, Updated {prs_updated} existing PRs"
+                )
 
             except Exception as e:
                 logger.error(f"Error processing repository {repo_full_name}: {str(e)}", exc_info=True)
@@ -107,7 +112,9 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"Completed fetching PRs for GSoC repositories. "
-                f"Total fetched: {total_prs_fetched}, Total added: {total_prs_added}"
+                f"Total fetched: {total_prs_fetched}, "
+                f"Total added: {total_prs_added}, "
+                f"Total updated: {total_prs_updated}"
             )
         )
 
@@ -158,10 +165,11 @@ class Command(BaseCommand):
     def fetch_and_save_prs(self, repo, owner, repo_name, days, verbose=False):
         """
         Fetch closed pull requests from GitHub API and save them to the database.
-        Returns a tuple of (total_prs_fetched, total_prs_added).
+        Returns a tuple of (total_prs_fetched, total_prs_added, total_prs_updated).
         """
         total_prs_fetched = 0
         total_prs_added = 0
+        total_prs_updated = 0
 
         # Calculate date for filtering
         since_date = timezone.now() - timedelta(days=days)
@@ -211,9 +219,10 @@ class Command(BaseCommand):
                 self.stdout.write(f"Found {merged_count} merged PRs on page {page}")
 
                 # Process this page of PRs
-                prs_added = self.save_prs_to_db(repo, data, verbose)
+                prs_added, prs_updated = self.save_prs_to_db(repo, data, verbose)
                 total_prs_fetched += len(data)
                 total_prs_added += prs_added
+                total_prs_updated += prs_updated
 
                 # Update the repository's last processed page
                 repo.last_pr_page_processed = page
@@ -243,26 +252,27 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"Total merged PRs in database: {merged_prs}")
 
-        return total_prs_fetched, total_prs_added
+        return total_prs_fetched, total_prs_added, total_prs_updated
 
     @transaction.atomic
     def save_prs_to_db(self, repo, prs, verbose=False):
         """
         Save pull requests to the database.
-        Returns the number of new PRs added.
+        Returns the number of new PRs added and updated.
         """
         added_count = 0
+        updated_count = 0
         skipped_count = 0
         skipped_not_merged = 0
 
         self.stdout.write(f"Processing {len(prs)} PRs for {repo.name}")
 
         for pr in prs:
-            # Check if PR already exists in the database
-            if GitHubIssue.objects.filter(issue_id=pr["id"]).exists():
-                skipped_count += 1
+            # Skip PRs that aren't merged
+            if not pr.get("merged_at"):
+                skipped_not_merged += 1
                 if verbose:
-                    self.stdout.write(f"PR {pr['number']} already exists in the database")
+                    self.stdout.write(f"PR {pr['number']} is not merged, skipping")
                 continue
 
             # Parse dates
@@ -278,11 +288,6 @@ class Command(BaseCommand):
             if pr["merged_at"]:
                 merged_at = datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
                 is_merged = True
-            else:
-                skipped_not_merged += 1
-                if verbose:
-                    self.stdout.write(f"PR {pr['number']} is not merged, skipping")
-                continue
 
             # Try to find the user profile
             user_profile = None
@@ -291,31 +296,41 @@ class Command(BaseCommand):
                 if not user_profile and verbose:
                     self.stdout.write(f"No user profile found for {pr['user']['html_url']}")
 
-            # Create the GitHubIssue
-            github_issue = GitHubIssue(
-                issue_id=pr["id"],
-                title=pr["title"],
-                body=pr["body"] or "",
-                state=pr["state"],
-                type="pull_request",
-                created_at=created_at,
-                updated_at=updated_at,
-                closed_at=closed_at,
-                merged_at=merged_at,
-                is_merged=is_merged,
-                url=pr["html_url"],
-                repo=repo,
-                user_profile=user_profile,
-            )
-            github_issue.save()
+            # Prepare the data for the GitHubIssue
+            issue_data = {
+                "title": pr["title"],
+                "body": pr["body"] or "",
+                "state": pr["state"],
+                "type": "pull_request",
+                "created_at": created_at,
+                "updated_at": updated_at,
+                "closed_at": closed_at,
+                "merged_at": merged_at,
+                "is_merged": is_merged,
+                "url": pr["html_url"],
+                "repo": repo,
+                "user_profile": user_profile,
+            }
 
-            added_count += 1
+            # Try to get the existing issue or create a new one
+            try:
+                github_issue, created = GitHubIssue.objects.update_or_create(issue_id=pr["id"], defaults=issue_data)
 
-            if verbose:
-                self.stdout.write(f"Added PR #{pr['number']}: {pr['title']}")
+                if created:
+                    added_count += 1
+                    if verbose:
+                        self.stdout.write(f"Added PR #{pr['number']}: {pr['title']}")
+                else:
+                    updated_count += 1
+                    if verbose:
+                        self.stdout.write(f"Updated PR #{pr['number']}: {pr['title']}")
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f"Error saving PR #{pr['number']}: {str(e)}"))
+                skipped_count += 1
 
-        self.stdout.write(f"Skipped {skipped_count} PRs that already exist in the database")
+        self.stdout.write(f"Skipped {skipped_count} PRs due to errors")
         self.stdout.write(f"Skipped {skipped_not_merged} PRs that are not merged")
         self.stdout.write(f"Added {added_count} new PRs to the database")
+        self.stdout.write(f"Updated {updated_count} existing PRs in the database")
 
-        return added_count
+        return added_count, updated_count
