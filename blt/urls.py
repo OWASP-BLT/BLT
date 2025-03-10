@@ -342,6 +342,7 @@ router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
 router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
+router.register(r"organizations", OrganizationViewSet, basename="organizations")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
@@ -349,11 +350,6 @@ handler500 = "website.views.core.handler500"
 urlpatterns = [
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
-    path(
-        "api/v1/organizations/",
-        OrganizationViewSet.as_view({"get": "list", "post": "create"}),
-        name="organization",
-    ),
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),

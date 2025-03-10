@@ -2111,6 +2111,7 @@ def refresh_gsoc_project(request):
     """
     if request.method == "POST":
         project_name = request.POST.get("project_name")
+        reset_counter = request.POST.get("reset_counter") == "true"
 
         if not project_name or project_name not in GSOC25_PROJECTS:
             messages.error(request, "Invalid project name")
@@ -2134,7 +2135,13 @@ def refresh_gsoc_project(request):
             # Call the fetch_gsoc_prs command with the specific repositories
             # We pass the repositories as a comma-separated string
             repo_list = ",".join(repos)
-            call_command("fetch_gsoc_prs", repos=repo_list, days=days)
+            command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", f"--days={days}"]
+
+            # Add reset flag if requested
+            if reset_counter:
+                command_args.append("--reset")
+
+            call_command(*command_args)
 
             # Update user profiles for PRs that don't have them
             for repo_full_name in repos:

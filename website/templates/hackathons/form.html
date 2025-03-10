@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}{{ title }} - Hackathon{% endblock %}
+{% block title %}
+    {{ title }} - Hackathon
+{% endblock title %}
 {% block content %}
+    {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-3xl mx-auto">
             <h1 class="text-3xl font-bold mb-6 text-gray-800">{{ title }}</h1>
@@ -103,6 +106,14 @@
                             <p class="mt-1 text-xs text-gray-500">
                                 Select the repositories that will be part of this hackathon. Pull requests to these repositories during the hackathon period will be counted.
                             </p>
+                            <div id="repositories-loading" class="mt-2 hidden">
+                                <p class="text-sm text-gray-600">Loading repositories...</p>
+                            </div>
+                            <div id="no-repositories-message" class="mt-2 hidden">
+                                <p class="text-sm text-red-600">
+                                    No repositories found for this organization. Please add repositories to the organization first.
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div class="flex justify-end space-x-4">
@@ -119,4 +130,66 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
+{% block scripts %}
+    <script>
+    $(document).ready(function() {
+        // Function to fetch repositories for an organization
+        function fetchRepositories(organizationId) {
+            if (!organizationId) {
+                $('#repositories-loading').hide();
+                $('#no-repositories-message').hide();
+                $('#id_repositories').empty();
+                return;
+            }
+
+            $('#repositories-loading').show();
+            $('#no-repositories-message').hide();
+            $('#id_repositories').empty();
+
+            // Use the new API endpoint
+            $.ajax({
+                url: `/api/v1/organizations/${organizationId}/repositories/`,
+                method: 'GET',
+                success: function(data) {
+                    $('#repositories-loading').hide();
+                    
+                    if (data.length === 0) {
+                        $('#no-repositories-message').show();
+                    } else {
+                        $('#no-repositories-message').hide();
+                        
+                        // Add repositories to select
+                        data.forEach(function(repo) {
+                            let option = new Option(repo.name, repo.id);
+                            $('#id_repositories').append(option);
+                        });
+                        
+                        // If editing, restore selected repositories
+                        {% if form.instance.pk %}
+                        let selectedRepos = {{ form.instance.repositories.values_list('id', flat=True)|safe }};
+                        $('#id_repositories').val(selectedRepos);
+                        {% endif %}
+                    }
+                },
+                error: function() {
+                    $('#repositories-loading').hide();
+                    $('#no-repositories-message').show().text('Error loading repositories. Please try again.');
+                }
+            });
+        }
+
+        // Listen for changes on the organization select
+        $('#id_organization').change(function() {
+            let organizationId = $(this).val();
+            fetchRepositories(organizationId);
+        });
+
+        // Initial load of repositories if organization is selected
+        let initialOrganizationId = $('#id_organization').val();
+        if (initialOrganizationId) {
+            fetchRepositories(initialOrganizationId);
+        }
+    });
+    </script>
+{% endblock scripts %}

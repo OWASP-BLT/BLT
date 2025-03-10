@@ -36,6 +36,7 @@ from website.models import (
     Organization,
     Points,
     Project,
+    Repo,
     Tag,
     TimeLog,
     Token,
@@ -51,6 +52,7 @@ from website.serializers import (
     IssueSerializer,
     OrganizationSerializer,
     ProjectSerializer,
+    RepoSerializer,
     TagSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
@@ -680,6 +682,19 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+    @action(detail=True, methods=["get"])
+    def repositories(self, request, pk=None):
+        """
+        Get all repositories for an organization.
+        """
+        try:
+            organization = self.get_object()
+            repos = Repo.objects.filter(organization=organization)
+            serializer = RepoSerializer(repos, many=True)
+            return Response(serializer.data)
+        except Organization.DoesNotExist:
+            return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ContributorViewSet(viewsets.ModelViewSet):

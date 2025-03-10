@@ -12,6 +12,7 @@ from website.models import (
     Organization,
     Points,
     Project,
+    Repo,
     Tag,
     TimeLog,
     User,
@@ -174,3 +175,13 @@ class ActivityLogSerializer(serializers.ModelSerializer):
             "recorded_at",
             "created",
         ]  # Auto-filled fields
+
+
+class RepoSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Repo model
+    """
+
+    class Meta:
+        model = Repo
+        fields = ("id", "name", "url", "organization")
