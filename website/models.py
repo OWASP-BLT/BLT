@@ -1635,6 +1635,8 @@ class GitHubIssue(models.Model):
     merged_at = models.DateTimeField(null=True, blank=True)
     is_merged = models.BooleanField(default=False)
     url = models.URLField()
+    has_dollar_tag = models.BooleanField(default=False)
+    sponsors_tx_id = models.CharField(max_length=255, null=True, blank=True)
     repo = models.ForeignKey(
         Repo,
         null=True,

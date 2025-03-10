@@ -1618,6 +1618,23 @@ def management_commands(request):
     # Get the date 30 days ago for stats
     thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
 
+    # Get sort parameter from request
+    sort_param = request.GET.get("sort", "name")
+    reverse = False
+
+    # Check if sort parameter starts with '-' (descending order)
+    if sort_param.startswith("-"):
+        reverse = True
+        sort_key = sort_param[1:]  # Remove the '-' prefix
+    else:
+        sort_key = sort_param
+
+    # Validate sort key
+    valid_sort_keys = ["name", "last_run", "status", "run_count", "activity"]
+    if sort_key not in valid_sort_keys:
+        sort_key = "name"
+        sort_param = "name"
+
     for name, app_name in get_commands().items():
         # Only include commands from the website app and exclude initsuperuser
         if (
@@ -1687,11 +1704,13 @@ def management_commands(request):
 
             # Fill in the values we have
             max_value = 1  # Minimum value to avoid division by zero
+            total_activity = 0  # Track total activity for sorting
             for stat in daily_stats:
                 try:
                     value = int(stat.value)
                     date_key = stat.created.date().isoformat()
                     date_values[date_key] = value
+                    total_activity += value
                     if value > max_value:
                         max_value = value
                 except (ValueError, TypeError, KeyError):
@@ -1710,10 +1729,28 @@ def management_commands(request):
 
             command_info["stats_data"] = stats_data
             command_info["max_value"] = max_value
+            command_info["total_activity"] = total_activity
             available_commands.append(command_info)
 
-    commands = sorted(available_commands, key=lambda x: x["name"])
-    return render(request, "management_commands.html", {"commands": commands})
+    # Sort the commands based on the sort parameter
+    def sort_commands(cmd):
+        if sort_key == "name":
+            return cmd["name"]
+        elif sort_key == "last_run":
+            return cmd.get("last_run", timezone.datetime.min.replace(tzinfo=timezone.utc))
+        elif sort_key == "status":
+            # Sort by success status (True comes after False in ascending order)
+            return cmd.get("last_success", False)
+        elif sort_key == "run_count":
+            return cmd.get("run_count", 0)
+        elif sort_key == "activity":
+            return cmd.get("total_activity", 0)
+        else:
+            return cmd["name"]
+
+    commands = sorted(available_commands, key=sort_commands, reverse=reverse)
+
+    return render(request, "management_commands.html", {"commands": commands, "sort": sort_param, "reverse": reverse})
 
 
 def run_management_command(request):

@@ -28,12 +28,122 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Command</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'name' and not reverse %}-name{% else %}name{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Command
+                                    {% if sort == 'name' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-name' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Run</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run Count</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">30 Day Activity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'last_run' and not reverse %}-last_run{% else %}last_run{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Last Run
+                                    {% if sort == 'last_run' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-last_run' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'status' and not reverse %}-status{% else %}status{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Status
+                                    {% if sort == 'status' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-status' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'run_count' and not reverse %}-run_count{% else %}run_count{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Run Count
+                                    {% if sort == 'run_count' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-run_count' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'activity' and not reverse %}-activity{% else %}activity{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    30 Day Activity
+                                    {% if sort == 'activity' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-activity' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>

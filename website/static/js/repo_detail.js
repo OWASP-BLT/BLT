@@ -72,20 +72,42 @@ async function refreshSection(button, section) {
 
         console.log(`Sending section: '${sectionValue}'`);
 
-        // Get CSRF token from the meta tag
-        const csrfMetaTag = document.querySelector('meta[name="csrf-token"]');
-        let csrfToken = '';
+        // Try to get CSRF token from cookie first
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
 
-        if (csrfMetaTag) {
-            csrfToken = csrfMetaTag.getAttribute('content');
-        } else {
-            console.error('CSRF token meta tag not found. Make sure it exists in your HTML.');
+        // Try to get CSRF token from cookie first, then fallback to meta tag
+        let csrfToken = getCookie('csrftoken');
+
+        // If not found in cookie, try to get from meta tag
+        if (!csrfToken) {
+            const csrfMetaTag = document.querySelector('meta[name="csrf-token"]');
+            if (csrfMetaTag) {
+                csrfToken = csrfMetaTag.getAttribute('content');
+            }
+        }
+
+        if (!csrfToken) {
+            console.error('CSRF token not found. Make sure cookies are enabled or the CSRF meta tag exists.');
         }
 
         const response = await fetch(window.location.href, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': csrfToken,
+                'X-CSRFToken': csrfToken || '',
                 'X-Requested-With': 'XMLHttpRequest'
             },
             body: formData
