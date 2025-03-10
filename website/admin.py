@@ -554,6 +554,7 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "is_merged",
         "user_profile",
         "sent_by_user",
+        "repo",
     ]
     search_fields = [
         "title",
