@@ -1,738 +1,948 @@
-{% load static %}
-{% load gravatar %}
-{% load socialaccount %}
-{% load user_score %}
-{% providers_media_js %}
-{% load i18n %}
-{% load custom_tags %}
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+{% load static %} {% load gravatar %} {% load socialaccount %} {% load
+user_score %} {% providers_media_js %} {% load i18n %} {% load custom_tags %}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+/>
 <style>
-    a {
-        color: black;
-    }
+      a {
+          color: black;
+      }
 
-    @media (min-width: 700px) {
-        #selected-filter {
-            display: inline;
-        }
-    }
+      @media (min-width: 700px) {
+          #selected-filter {
+              display: inline;
+          }
+      }
 
-    @media (max-width: 699px) {
-        #selected-filter {
-            display: none;
-        }
+      @media (max-width: 699px) {
+          #selected-filter {
+              display: none;
+          }
 
-        #organizations-btn {
-            padding: 0.1rem;
-        }
-    }
+          #organizations-btn {
+              padding: 0.1rem;
+          }
+      }
 
-    .chatbot {
-        display: none;
-        position: fixed;
-        bottom: 3%;
-        right: 1%;
-        max-width: 400px;
-        width: 100%;
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 520px;
-        z-index: 9999;
-        overflow: hidden;
-        @media (max-width: 768px) {
-            right: 50%;
-            transform: translateX(50%);
-            max-width: 95%;
-        }
-        
-    }
+      .chatbot {
+          display: none;
+          position: fixed;
+          bottom: 3%;
+          right: 1%;
+          max-width: 400px;
+          width: 100%;
+          background-color: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          height: 520px;
+          z-index: 9999;
+          overflow: hidden;
+          @media (max-width: 768px) {
+              right: 50%;
+              transform: translateX(50%);
+              max-width: 95%;
+          }
 
-    .chat-icon {
-        position: fixed;
-        bottom: 3%;
-        right: 2%;
-        background-color: rgb(209, 16, 16);
-        transition: opacity 0.2s;
-        &:hover {
-            opacity: 0.8;
-        }
-        border-radius: 50%;
-        padding: 10px;
-        width: 55px;
-        height: 55px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
+      }
 
-    .chat-header {
-        background-color: #e11d48;
-        /* Red color */
-        color: white;
-        padding: 12px;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
+      .chat-icon {
+          position: fixed;
+          bottom: 3%;
+          right: 2%;
+          background-color: rgb(209, 16, 16);
+          transition: opacity 0.2s;
+          &:hover {
+              opacity: 0.8;
+          }
+          border-radius: 50%;
+          padding: 10px;
+          width: 55px;
+          height: 55px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
 
-    .chat-log {
-        max-height: 295px;
-        /* Adjusted height */
-        overflow-y: auto;
-        height: 295px;
-        /* Fixed height */
-    }
+      .chat-header {
+          background-color: #e11d48;
+          /* Red color */
+          color: white;
+          padding: 12px;
+          border-top-left-radius: 12px;
+          border-top-right-radius: 12px;
+      }
 
-    .loading {
-        display: none;
-        {% comment %} position: fixed;
-        bottom: 100px;
-right: 10.5%;{% endcomment %}
-        justify-content: center;
-        align-items: center;
-        font-size: 2xl;
-        padding: 10px; 
-        background-color: #ffffffe6;
-        /* Semi-transparent background */
-       border-radius: 8px;
-    }
+      .chat-log {
+          max-height: 295px;
+          /* Adjusted height */
+          overflow-y: auto;
+          height: 295px;
+          /* Fixed height */
+      }
 
-    .chat-Zindex {
-        z-index: 9999;
-    }
+      .loading {
+          display: none;
+          {% comment %} position: fixed;
+          bottom: 100px;
+  right: 10.5%;{% endcomment %}
+          justify-content: center;
+          align-items: center;
+          font-size: 2xl;
+          padding: 10px;
+          background-color: #ffffffe6;
+          /* Semi-transparent background */
+         border-radius: 8px;
+      }
 
-    #quick-commands {
-        overflow-x: auto; /* Ensure buttons do not overflow */
-    }
+      .chat-Zindex {
+          z-index: 9999;
+      }
 
-    #mobile-search {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 40;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
+      #quick-commands {
+          overflow-x: auto; /* Ensure buttons do not overflow */
+      }
 
-    #mobile-search.active {
-        display: block;
-    }
-    
+      #mobile-search {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          z-index: 40;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      #mobile-search.active {
+          display: block;
+      }
 </style>
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    const desktopDropdownButton = document.getElementById("dropdownButton");
+    const desktopDropdownMenu = document.getElementById("dropdownMenu");
 
-        const desktopDropdownButton = document.getElementById('dropdownButton');
-        const desktopDropdownMenu = document.getElementById('dropdownMenu');
-
-        if (desktopDropdownButton && desktopDropdownMenu) {
-            desktopDropdownButton.addEventListener('click', () => {
-                desktopDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
-                    desktopDropdownMenu.classList.add('hidden');
-                }
-            });
+    if (desktopDropdownButton && desktopDropdownMenu) {
+      desktopDropdownButton.addEventListener("click", () => {
+        desktopDropdownMenu.classList.toggle("hidden");
+      });
+      document.addEventListener("click", (e) => {
+        if (
+          !desktopDropdownButton.contains(e.target) &&
+          !desktopDropdownMenu.contains(e.target)
+        ) {
+          desktopDropdownMenu.classList.add("hidden");
         }
+      });
+    }
 
-        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
-        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
-        if (mobileDropdownButton && mobileDropdownMenu) {
-            mobileDropdownButton.addEventListener('click', () => {
-                mobileDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
-                    mobileDropdownMenu.classList.add('hidden');
-                }
-            });
+    const mobileDropdownButton = document.getElementById(
+      "dropdown-toggle-mobile"
+    );
+    const mobileDropdownMenu = document.getElementById("dropdown-mobile");
+    if (mobileDropdownButton && mobileDropdownMenu) {
+      mobileDropdownButton.addEventListener("click", () => {
+        mobileDropdownMenu.classList.toggle("hidden");
+      });
+      document.addEventListener("click", (e) => {
+        if (
+          !mobileDropdownButton.contains(e.target) &&
+          !mobileDropdownMenu.contains(e.target)
+        ) {
+          mobileDropdownMenu.classList.add("hidden");
         }
+      });
+    }
 
-        // Add sidebar toggle functionality
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('#page-wrapper');
-        let sidebarOpen = false;
+    // Add sidebar toggle functionality
+    const hamburgerButton = document.getElementById("hamburger-button");
+    const sidebar = document.querySelector(".sidebar");
+    const mainContent = document.querySelector("#page-wrapper");
+    let sidebarOpen = false;
 
-        if (hamburgerButton && sidebar) {
-            hamburgerButton.addEventListener('click', () => {
-                sidebarOpen = !sidebarOpen;
-                if (sidebarOpen) {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.classList.add('translate-x-0');
-                    if (mainContent) {
-                        mainContent.classList.add('lg:ml-[210px]');
-                    }
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    sidebar.classList.remove('translate-x-0');
-                    if (mainContent) {
-                        mainContent.classList.remove('lg:ml-[210px]');
-                    }
-                }
-            });
+    if (hamburgerButton && sidebar) {
+      hamburgerButton.addEventListener("click", () => {
+        sidebarOpen = !sidebarOpen;
+        if (sidebarOpen) {
+          sidebar.classList.remove("-translate-x-full");
+          sidebar.classList.add("translate-x-0");
+          if (mainContent) {
+            mainContent.classList.add("lg:ml-[210px]");
+          }
+        } else {
+          sidebar.classList.add("-translate-x-full");
+          sidebar.classList.remove("translate-x-0");
+          if (mainContent) {
+            mainContent.classList.remove("lg:ml-[210px]");
+          }
         }
-    });
+      });
+    }
+  });
 </script>
-<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-2 px-1">
-    <div class="px-3 py-1 lg:px-5 lg:pl-3">
-        <div class="flex items-center justify-between">
-            <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
-                <!-- Ham Menu section -->
-                <button id="hamburger-button"
-                        data-drawer-target="logo-sidebar"
-                        data-drawer-toggle="logo-sidebar"
-                        aria-controls="logo-sidebar"
-                        type="button"
-                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500 ">
-                    <i class="fa fa-bars md:text-xl text-lg "></i>
-                </button>
-                <!-- Logo -->
-                <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
-                    <img src="{% static 'img/owasp-blt-logo.svg' %}"
-                         class="h-9 sm:h-10 md:h-10 lg:h-10 w-auto"
-                         alt="OWASP BLT Logo"
-                         width="50"
-                         height="50" />
-                </a>
-            </div>
-            <!-- Search Bar -->
-            <div class="flex-1 max-w-xl mx-4 hidden sm:block">
-                <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
-                    <form class="w-full flex items-center"
-                          action="{% url 'search' %}"
-                          method="get">
-                        <input type="hidden" name="type" id="filter-type" value="all">
-                        <input type="text"
-                               name="query"
-                               id="query-input"
-                               placeholder="Search here..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none">
-                        {% with request.resolver_match.url_name as url_name %}
-                            {% if url_name != 'home' %}
-                                <div class="relative border-l-2 border-red-500 flex">
-                                    <button type="submit">
-                                        <i class="fa-solid fa-arrow-right mx-2 text-red-500"></i>
-                                    </button>
-                                    <button id="organizations-btn"
-                                            type="button"
-                                            class="flex items-center h-full px-4 text-gray-700 hover:bg-red-50 transition-colors duration-200 focus:outline-none">
-                                        <i id="selected-icon" class="fas fa-check mr-2 text-red-500"></i>
-                                        <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
-                                        <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
-                                    </button>
-                                    <div id="organizations-dropdown"
-                                         class="z-50 hidden absolute bg-white top-full left-0 w-max mt-2 rounded-lg shadow-xl border">
-                                        <ul class="flex flex-col gap-2 px-4 py-2">
-                                            <li>
-                                                <button data-value="all"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-check mr-2 text-red-500"></i>
-                                                    {% trans "All" %}
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button data-value="organizations"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-building fa-fw mr-2 text-red-500"></i>
-                                                    {% trans "Organizations" %}
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button data-value="issues"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-bug fa-fw mr-2 text-red-500"></i>
-                                                    {% trans "Issues" %}
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button data-value="domains"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-globe fa-fw mr-2 text-red-500"></i>
-                                                    {% trans "Domains" %}
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button data-value="users"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-user-group fa-fw mr-2 text-red-500"></i>
-                                                    {% trans "Users" %}
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button data-value="projects"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-box fa-fw mr-2 text-red-500">
-                                                    </i> {% trans "Projects" %}
-                                                </button>
-                                            </li>
-                                            <li>
-                                                <button data-value="repos"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded  filter-option">
-                                                    <i class="fa-brands fa-github fa-fw mr-2 text-red-500"></i>
-                                                    {% trans "Repos" %}
-                                                </button>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-                    </form>
-                    <i class="fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"></i>
-                </div>
-            </div>
-            <!-- Mobile Search Button -->
-            <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
-                <i class="fa fa-search text-3xl"></i>
-            </button>
-            {% if request.user.is_authenticated %}
-                <div class=" flex justify-center items-center">
-                    <button id="dropdownButton"
-                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2  bg-gray-200  md:rounded-lg  rounded-full  md:hover:bg-gray-200/70 transition-colors duration-200"
-                            type="button">
-                        {% if request.user.userprofile.avatar %}
-                            <img src="{{ request.user.userprofile.avatar }}"
-                                 class="md:size-8 size-10 rounded-full "
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                            <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="md:size-8 size-10 rounded-full "
-                                 alt="User Avatar"
-                                 width="30"
-                                 height="30">
-                        {% else %}
-                            {% gravatar request.user.email 30 '' 'gravatar rounded-full size-10 md:size-8' %}
-                        {% endif %}
-                        <span class="absolute md:block hidden -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
-                            <span>@{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                            {% comment %} <i class="fa fa-caret-down text-red-500"></i> {% endcomment %}
-                        </span>
+<nav
+  class="fixed top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-zinc-200 dark:border-gray-700 border-b md:px-4 md:py-2.5 py-2 px-1"
+>
+  <div class="px-3 py-1 lg:px-5 lg:pl-3">
+    <div class="flex items-center justify-between">
+      <div
+        class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end"
+      >
+        <!-- Ham Menu section -->
+        <button
+          id="hamburger-button"
+          data-drawer-target="logo-sidebar"
+          data-drawer-toggle="logo-sidebar"
+          aria-controls="logo-sidebar"
+          type="button"
+          class="inline-flex items-center justify-center p-2 text-gray-500 dark:text-gray-400 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500"
+        >
+          <i class="fa fa-bars md:text-xl text-lg"></i>
+        </button>
+        <!-- Logo -->
+        <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
+          <img
+            src="{% static 'img/owasp-blt-logo.svg' %}"
+            class="h-9 sm:h-10 md:h-10 lg:h-10 w-auto"
+            alt="OWASP BLT Logo"
+            width="50"
+            height="50"
+          />
+        </a>
+      </div>
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-xl mx-4 hidden sm:block">
+        <div
+          class="relative flex items-center rounded-lg overflow-hidden bg-white dark:bg-gray-800 border-2 border-red-500 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200"
+        >
+          <form
+            class="w-full flex items-center"
+            action="{% url 'search' %}"
+            method="get"
+          >
+            <input type="hidden" name="type" id="filter-type" value="all" />
+            <input
+              type="text"
+              name="query"
+              id="query-input"
+              placeholder="Search here..."
+              class="w-full pl-12 pr-4 py-2 text-gray-700 dark:text-gray-200 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none"
+            />
+            {% with request.resolver_match.url_name as url_name %} {% if
+            url_name != 'home' %}
+            <div class="relative border-l-2 border-red-500 flex">
+              <button type="submit">
+                <i class="fa-solid fa-arrow-right mx-2 text-red-500"></i>
+              </button>
+              <button
+                id="organizations-btn"
+                type="button"
+                class="flex items-center h-full px-4 text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors duration-200 focus:outline-none"
+              >
+                <i
+                  id="selected-icon"
+                  class="fas fa-check mr-2 text-red-500"
+                ></i>
+                <span id="selected-filter" class="hidden md:inline"
+                  >{% trans "All" %}</span
+                >
+                <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
+              </button>
+              <div
+                id="organizations-dropdown"
+                class="z-50 hidden absolute bg-white dark:bg-gray-800 top-full left-0 w-max mt-2 rounded-lg shadow-xl border dark:border-gray-700"
+              >
+                <ul class="flex flex-col gap-2 px-4 py-2">
+                  <li>
+                    <button
+                      data-value="all"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i class="fa fa-check mr-2 text-red-500"></i>
+                      {% trans "All" %}
                     </button>
-                    <!-- Dropdown for User Avatar -->
-                    <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5">
-                        <ul class="flex flex-col gap-1 px-4 py-4 border shadow-md rounded-md left-auto">
-                            <li>
-                                <a href="{% url 'account_profile' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
-                                </a>
-                            </li>
-                            {% if user.is_superuser %}
-                                <li>
-                                    <a href="{% url 'admin:index' %}"
-                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                        <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
-                                    </a>
-                                </li>
-                            {% endif %}
-                            <li>
-                                <a href="{% url 'start_hunt' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'social' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-share fa-fw"></i>
-                                    {% trans "Social" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'account_change_password' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'invite' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an Organization" %}
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{% url 'organization_view' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
-                                </a>
-                            </li>
-                            <!-- divider -->
-                            <li class="border my-2 w-full"></li>
-                            <li>
-                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white  rounded-md text-white transition-colors duration-200 font-bold"
-                                   href="{% url 'account_logout' %}">
-                                    <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            {% else %}
-                <!-- Sign up and Log in Buttons -->
-                <div class="flex items-center ">
-                    <div class="hidden lg:!flex  justify-center items-center gap-4">
-                        <a href="{% url 'account_signup' %}"
-                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
-                        {% trans "Signup" %}</a>
-                        <a href="{% url 'account_login' %}"
-                           data-toggle="modal"
-                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
-                        {% trans "Login" %}</a>
-                    </div>
-                    <!-- Log in icon -->
-                    <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
-                        <i class="fa fa-user text-4xl text-red-500"></i>
-                    </a>
-                </div>
+                  </li>
+                  <li>
+                    <button
+                      data-value="organizations"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i class="fa fa-building fa-fw mr-2 text-red-500"></i>
+                      {% trans "Organizations" %}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      data-value="issues"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i class="fa fa-bug fa-fw mr-2 text-red-500"></i>
+                      {% trans "Issues" %}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      data-value="domains"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i class="fa fa-globe fa-fw mr-2 text-red-500"></i>
+                      {% trans "Domains" %}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      data-value="users"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i class="fa fa-user-group fa-fw mr-2 text-red-500"></i>
+                      {% trans "Users" %}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      data-value="projects"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i class="fa fa-box fa-fw mr-2 text-red-500"> </i> {%
+                      trans "Projects" %}
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      data-value="repos"
+                      class="block px-2 py-1 hover:bg-red-50 dark:hover:bg-gray-700 rounded filter-option"
+                    >
+                      <i
+                        class="fa-brands fa-github fa-fw mr-2 text-red-500"
+                      ></i>
+                      {% trans "Repos" %}
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            {% endif %} {% endwith %}
+          </form>
+          <i
+            class="fa fa-search absolute left-4 text-red-500 z-10 my-auto text-lg"
+          ></i>
+        </div>
+      </div>
+      <!-- Mobile Search Button -->
+      <button class="p-2 text-red-500 sm:hidden" onclick="toggleMobileSearch()">
+        <i class="fa fa-search text-3xl"></i>
+      </button>
+
+      <!-- Dark Mode Toggle -->
+      <button
+        onclick="toggleDarkMode()"
+        class="dark-mode-toggle p-2 mx-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200"
+        aria-label="Toggle Dark Mode"
+      >
+        <i class="fas fa-sun text-xl sun-icon hidden"></i>
+        <i class="fas fa-moon text-xl moon-icon"></i>
+      </button>
+
+      {% if request.user.is_authenticated %}
+      <div class="flex justify-center items-center">
+        <button
+          id="dropdownButton"
+          class="relative flex items-center sm:gap-2 md:px-4 md:py-2 bg-gray-200 dark:bg-gray-700 md:rounded-lg rounded-full md:hover:bg-gray-200/70 dark:hover:bg-gray-600 transition-colors duration-200"
+          type="button"
+        >
+          {% if request.user.userprofile.avatar %}
+          <img
+            src="{{ request.user.userprofile.avatar }}"
+            class="md:size-8 size-10 rounded-full"
+            alt="{{ request.user.username }}"
+          />
+          {% else %}
+          <img
+            src="{% gravatar_url request.user.email 150 %}"
+            class="md:size-8 size-10 rounded-full"
+            alt="{{ request.user.username }}"
+          />
+          {% endif %}
+          <span
+            class="hidden md:block text-gray-700 dark:text-gray-200 font-medium"
+            >{{ request.user.username }}</span
+          >
+          <i
+            class="fa fa-chevron-down ml-2 text-gray-500 dark:text-gray-400 text-sm hidden md:block"
+          ></i>
+        </button>
+        <!-- Dropdown for User Avatar -->
+        <div
+          id="dropdownMenu"
+          class="z-50 hidden absolute right-4 mt-2 top-16 bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700 w-48"
+        >
+          <ul class="py-2">
+            <li>
+              <a
+                href="{% url 'profile' request.user.username %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-user fa-fw"></i> {% trans "Profile" %}
+              </a>
+            </li>
+            <li>
+              <a
+                href="{% url 'account_profile' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-gear fa-fw"></i> {% trans "Settings" %}
+              </a>
+            </li>
+            {% if request.user.is_staff %}
+            <li>
+              <a
+                href="{% url 'admin:index' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
+              </a>
+            </li>
             {% endif %}
+            <li>
+              <a
+                href="{% url 'start_hunt' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+              </a>
+            </li>
+            <li>
+              <a
+                href="{% url 'social' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-share fa-fw"></i> {% trans "Social" %}
+              </a>
+            </li>
+            <li>
+              <a
+                href="{% url 'account_change_password' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
+              </a>
+            </li>
+            <li>
+              <a
+                href="{% url 'invite' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an
+                Organization" %}
+              </a>
+            </li>
+            <li>
+              <a
+                href="{% url 'organization_view' %}"
+                class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md hover:text-red-600 transition-colors duration-200 font-medium"
+              >
+                <i class="fa fa-building fa-fw"></i> {% trans "Organization
+                Dashboard" %}
+              </a>
+            </li>
+            <!-- divider -->
+            <li class="border-t dark:border-gray-700 my-2 w-full"></li>
+            <li>
+              <a
+                class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
+                href="{% url 'account_logout' %}"
+              >
+                <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
+              </a>
+            </li>
+          </ul>
         </div>
+      </div>
+      {% else %}
+      <!-- Sign up and Log in Buttons -->
+      <div class="flex items-center">
+        <div class="hidden lg:!flex justify-center items-center gap-4">
+          <a
+            href="{% url 'account_signup' %}"
+            class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200"
+          >
+            {% trans "Signup" %}</a
+          >
+          <a
+            href="{% url 'account_login' %}"
+            data-toggle="modal"
+            class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200"
+          >
+            {% trans "Login" %}</a
+          >
+        </div>
+        <!-- Log in icon -->
+        <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
+          <i class="fa fa-user text-4xl text-red-500"></i>
+        </a>
+      </div>
+      {% endif %}
     </div>
-    <!-- Mobile Search Bar - Moved inside nav -->
-    <div id="mobile-search"
-         class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
-        <form action="{% url 'search' %}" method="get" class="flex items-center">
-            <div class="relative flex-1">
-                <i class="fa fa-search absolute text-xl left-3 top-1/2 -translate-y-1/2 text-red-500"></i>
-                <input type="text"
-                       name="query"
-                       placeholder="Search here..."
-                       class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base">
-                <input type="hidden" name="type" id="mobile-filter-type" value="all">
-            </div>
-            <button type="submit"
-                    class="ml-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                <i class="fa fa-search text-xl"></i>
-            </button>
-        </form>
+  </div>
+  <!-- Mobile Search Bar - Moved inside nav -->
+  <div
+    id="mobile-search"
+    class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700"
+  >
+    <form action="{% url 'search' %}" method="get" class="flex items-center">
+      <div class="relative flex-1">
+        <i
+          class="fa fa-search absolute text-xl left-3 top-1/2 -translate-y-1/2 text-red-500"
+        ></i>
+        <input
+          type="text"
+          name="query"
+          placeholder="Search here..."
+          class="w-full pl-10 pr-4 py-3 px-2 border-2 border-red-500 rounded-lg text-gray-700 dark:text-gray-200 dark:bg-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base"
+        />
+        <input type="hidden" name="type" id="mobile-filter-type" value="all" />
+      </div>
+      <button
+        type="submit"
+        class="ml-2 py-3 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+      >
+        <i class="fa fa-search text-xl"></i>
+      </button>
+    </form>
+  </div>
+  <!-- Mobile Menu -->
+  <div
+    id="dropdown-mobile"
+    class="z-50 hidden absolute top-[85px] right-0 left-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md"
+  >
+    <div class="container mx-auto px-4 py-2">
+      <ul class="flex flex-col gap-2">
+        <li>
+          <a
+            href="{% url 'account_signup' %}"
+            class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-red-500 font-medium"
+            >{% trans "Signup" %}</a
+          >
+        </li>
+        <li>
+          <a
+            href="{% url 'account_login' %}"
+            class="block py-2 px-4 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md text-red-500 font-medium"
+            >{% trans "Login" %}</a
+          >
+        </li>
+      </ul>
     </div>
+  </div>
 </nav>
-<div class="bg-gray-100 chat-Zindex">
-    <div id="chatbot" class="chatbot">
-        <div class="chat-header flex justify-between items-center">
-            <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
-            <button id="closeChatbot" class="text-white text-2xl">x</button>
-        </div>
-        <div class="p-4">
-            <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
-                <p class="text-base">We respond instantly!</p>
-            </div>
-            <div id="chat-log" class="relative chat-log bg-gray-100 p-3 rounded-lg">
-                <div id="loading" class="loading absolute bottom-1 left-1">
-                    <svg class="animate-spin h-5 w-5 text-red-600"
-                         xmlns="http://www.w3.org/2000/svg"
-                         fill="none"
-                         viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
-                    <span class="ml-2 text-gray-600">Loading...</span>
-                </div>
-            </div>
-            <!-- Quick Command Buttons -->
-            <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/help">/help</button>
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/stats">/stats</button>
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/bid">/bid</button>
-                <button class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
-                        data-command="/bacon">/bacon</button>
-            </div>
-            <div class="flex flex-row gap-4 items-center mt-1 w-full"
-                 id="chat-message-input-container">
-                <input id="chat-message-input"
-                       type="text"
-                       class="w-full p-2 border-2 border-gray-300 placeholder:text-base rounded-lg"
-                       placeholder="Enter your message...">
-                <div class="flex flex-row gap-2 items-center shrink-0">
-                    <button id="chat-message-submit"
-                            class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg">Send</button>
-                    <button id="chat-message-clear"
-                            class="bg-gray-300 hover:bg-gray-200 text-black p-2 rounded-lg">Clear</button>
-                </div>
-            </div>
-        </div>
+<div class="bg-gray-100 dark:bg-gray-800 chat-Zindex">
+  <div id="chatbot" class="chatbot">
+    <div class="chat-header flex justify-between items-center">
+      <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
+      <button id="closeChatbot" class="text-white text-2xl">x</button>
     </div>
-    <div id="chatIcon" class="chat-icon">
-        <svg class="w-10 h-10 text-white"
-             aria-hidden="true"
-             xmlns="http://www.w3.org/2000/svg"
-             width="24"
-             height="24"
-             fill="currentColor"
-             viewBox="0 0 24 24">
-            <path fill-rule="evenodd" d="M3.559 4.544c.355-.35.834-.544 1.33-.544H19.11c.496 0 .975.194 1.33.544.356.35.559.829.559 1.331v9.25c0 .502-.203.981-.559 1.331-.355.35-.834.544-1.33.544H15.5l-2.7 3.6a1 1 0 0 1-1.6 0L8.5 17H4.889c-.496 0-.975-.194-1.33-.544A1.868 1.868 0 0 1 3 15.125v-9.25c0-.502.203-.981.559-1.331ZM7.556 7.5a1 1 0 1 0 0 2h8a1 1 0 0 0 0-2h-8Zm0 3.5a1 1 0 1 0 0 2H12a1 1 0 1 0 0-2H7.556Z" clip-rule="evenodd" />
-        </svg>
+    <div class="p-4 bg-white dark:bg-gray-800">
+      <div
+        class="bg-red-100 dark:bg-red-900/30 p-3 rounded-lg mb-2 text-red-700 dark:text-red-300"
+      >
+        <p class="text-base">We respond instantly!</p>
+      </div>
+      <div
+        id="chat-log"
+        class="relative chat-log bg-gray-100 dark:bg-gray-700 p-3 rounded-lg"
+      >
+        <div id="loading" class="loading absolute bottom-1 left-1">
+          <svg
+            class="animate-spin h-5 w-5 text-red-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <span class="ml-2 text-gray-600 dark:text-gray-300">Loading...</span>
+        </div>
+      </div>
+      <!-- Quick Command Buttons -->
+      <div id="quick-commands" class="flex flex-wrap gap-2 mb-2 mt-2">
+        <button
+          class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+          data-command="/help"
+        >
+          /help
+        </button>
+        <button
+          class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+          data-command="/stats"
+        >
+          /stats
+        </button>
+        <button
+          class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+          data-command="/bid"
+        >
+          /bid
+        </button>
+        <button
+          class="quick-command bg-gray-500 hover:bg-gray-600 text-white px-4 py-1 rounded-lg"
+          data-command="/bacon"
+        >
+          /bacon
+        </button>
+      </div>
+      <div
+        class="flex flex-row gap-4 items-center mt-1 w-full"
+        id="chat-message-input-container"
+      >
+        <input
+          id="chat-message-input"
+          type="text"
+          class="w-full p-2 border-2 border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 placeholder:text-base rounded-lg"
+          placeholder="Enter your message..."
+        />
+        <div class="flex flex-row gap-2 items-center shrink-0">
+          <button
+            id="chat-message-submit"
+            class="bg-red-600 hover:bg-red-500 text-white p-2 rounded-lg"
+          >
+            Send
+          </button>
+          <button
+            id="chat-message-clear"
+            class="bg-gray-300 hover:bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 text-black dark:text-white p-2 rounded-lg"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
+  <div id="chatIcon" class="chat-icon">
+    <svg
+      class="w-10 h-10 text-white"
+      aria-hidden="true"
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M3.559 4.544c.355-.35.834-.544 1.33-.544H19.11c.496 0 .975.194 1.33.544.356.35.559.829.559 1.331v9.25c0 .502-.203.981-.559 1.331-.355.35-.834.544-1.33.544H15.5l-2.7 3.6a1 1 0 0 1-1.6 0L8.5 17H4.889c-.496 0-.975-.194-1.33-.544A1.868 1.868 0 0 1 3 15.125v-9.25c0-.502.203-.981.559-1.331ZM7.556 7.5a1 1 0 1 0 0 2h8a1 1 0 0 0 0-2h-8Zm0 3.5a1 1 0 1 0 0 2H12a1 1 0 1 0 0-2H7.556Z"
+        clip-rule="evenodd"
+      />
+    </svg>
+  </div>
 </div>
 <!--Script for Dropdown button-->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const organizationsBtn = document.getElementById("organizations-btn");
-        const organizationsDropdown = document.getElementById("organizations-dropdown");
-        const queryInput = document.getElementById("query-input");
+  document.addEventListener("DOMContentLoaded", function () {
+    const organizationsBtn = document.getElementById("organizations-btn");
+    const organizationsDropdown = document.getElementById(
+      "organizations-dropdown"
+    );
+    const queryInput = document.getElementById("query-input");
 
-        // Function to get URL parameters
-        function getUrlParameter(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name);
+    // Function to get URL parameters
+    function getUrlParameter(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    // Set initial values from URL parameters if they exist
+    const savedQuery = getUrlParameter("query");
+    const savedType = getUrlParameter("type");
+
+    if (queryInput && savedQuery) {
+      queryInput.value = savedQuery;
+    }
+
+    if (savedType) {
+      // Find the matching filter option
+      const matchingOption = document.querySelector(
+        `.filter-option[data-value="${savedType}"]`
+      );
+      if (matchingOption) {
+        const iconElement = matchingOption.querySelector("i");
+        const textContent = matchingOption.textContent.trim();
+
+        const selectedIcon = document.getElementById("selected-icon");
+        const selectedFilter = document.getElementById("selected-filter");
+        const filterType = document.getElementById("filter-type");
+
+        // Update the button display if elements exist
+        if (selectedIcon && selectedFilter && filterType) {
+          selectedIcon.className = iconElement.className + " mr-2";
+          selectedFilter.textContent = textContent;
+          filterType.value = savedType;
         }
+      }
+    }
 
-        // Set initial values from URL parameters if they exist
-        const savedQuery = getUrlParameter('query');
-        const savedType = getUrlParameter('type');
+    if (organizationsBtn && organizationsDropdown) {
+      organizationsBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
 
-        if (queryInput && savedQuery) {
-            queryInput.value = savedQuery;
+        const isHidden = organizationsDropdown.classList.toggle("hidden");
+
+        if (!isHidden) {
+          const btnRect = organizationsBtn.getBoundingClientRect();
+          Object.assign(organizationsDropdown.style, {
+            position: "fixed",
+            top: `${btnRect.bottom}px`,
+            left: `${btnRect.left}px`,
+            minWidth: `${btnRect.width}px`,
+            display: "block",
+          });
+        } else {
+          organizationsDropdown.style.display = "none";
         }
+      });
 
-        if (savedType) {
-            // Find the matching filter option
-            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
-            if (matchingOption) {
-                const iconElement = matchingOption.querySelector('i');
-                const textContent = matchingOption.textContent.trim();
-                
-                const selectedIcon = document.getElementById('selected-icon');
-                const selectedFilter = document.getElementById('selected-filter');
-                const filterType = document.getElementById('filter-type');
-                
-                // Update the button display if elements exist
-                if (selectedIcon && selectedFilter && filterType) {
-                    selectedIcon.className = iconElement.className + ' mr-2';
-                    selectedFilter.textContent = textContent;
-                    filterType.value = savedType;
-                }
-            }
+      // Close dropdown when clicking outside
+      document.addEventListener("click", function (e) {
+        if (
+          !organizationsBtn.contains(e.target) &&
+          !organizationsDropdown.contains(e.target)
+        ) {
+          organizationsDropdown.classList.add("hidden");
+          organizationsDropdown.style.display = "none";
         }
+      });
+    }
 
-        if (organizationsBtn && organizationsDropdown) {
-            organizationsBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
+    // Only add event listeners to filter options if they exist
+    const filterOptions = document.querySelectorAll(".filter-option");
+    if (filterOptions.length > 0) {
+      filterOptions.forEach((option) => {
+        option.addEventListener("click", function (e) {
+          e.preventDefault();
+          const iconElement = this.querySelector("i");
+          const textContent = this.textContent.trim();
+          const filterValue = this.getAttribute("data-value");
 
-                const isHidden = organizationsDropdown.classList.toggle('hidden');
+          const selectedIcon = document.getElementById("selected-icon");
+          const selectedFilter = document.getElementById("selected-filter");
+          const filterType = document.getElementById("filter-type");
 
-                if (!isHidden) {
-                    const btnRect = organizationsBtn.getBoundingClientRect();
-                    Object.assign(organizationsDropdown.style, {
-                        position: 'fixed',
-                        top: `${btnRect.bottom}px`,
-                        left: `${btnRect.left}px`,
-                        minWidth: `${btnRect.width}px`,
-                        display: 'block',
-                    });
-                } else {
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
+          if (selectedIcon && selectedFilter && filterType) {
+            selectedIcon.className = iconElement.className + " mr-2";
+            selectedFilter.textContent = textContent;
+            filterType.value = filterValue;
+          }
 
-            // Close dropdown when clicking outside
-            document.addEventListener("click", function (e) {
-                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
-                    organizationsDropdown.classList.add('hidden');
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-        }
-
-        // Only add event listeners to filter options if they exist
-        const filterOptions = document.querySelectorAll('.filter-option');
-        if (filterOptions.length > 0) {
-            filterOptions.forEach(option => {
-                option.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const iconElement = this.querySelector('i');
-                    const textContent = this.textContent.trim();
-                    const filterValue = this.getAttribute('data-value');
-                    
-                    const selectedIcon = document.getElementById('selected-icon');
-                    const selectedFilter = document.getElementById('selected-filter');
-                    const filterType = document.getElementById('filter-type');
-                    
-                    if (selectedIcon && selectedFilter && filterType) {
-                        selectedIcon.className = iconElement.className + ' mr-2';
-                        selectedFilter.textContent = textContent;
-                        filterType.value = filterValue;
-                    }
-
-                    if (organizationsDropdown) {
-                        organizationsDropdown.classList.add('hidden');
-                        organizationsDropdown.style.display = 'none';
-                    }
-                });
-            });
-        }
-    });
+          if (organizationsDropdown) {
+            organizationsDropdown.classList.add("hidden");
+            organizationsDropdown.style.display = "none";
+          }
+        });
+      });
+    }
+  });
 </script>
 <!--Script for ChatBot -->
 <script>
-    document.getElementById('chatIcon').addEventListener('click', function () {
-        document.getElementById('chatbot').style.display = 'block';
-        this.style.display = 'none';
+  document.getElementById("chatIcon").addEventListener("click", function () {
+    document.getElementById("chatbot").style.display = "block";
+    this.style.display = "none";
+  });
+
+  document
+    .getElementById("closeChatbot")
+    .addEventListener("click", function () {
+      document.getElementById("chatbot").style.display = "none";
+      document.getElementById("chatIcon").style.display = "flex";
     });
 
-    document.getElementById('closeChatbot').addEventListener('click', function () {
-        document.getElementById('chatbot').style.display = 'none';
-        document.getElementById('chatIcon').style.display = 'flex';
+  document.addEventListener("DOMContentLoaded", (event) => {
+    const chatLog = document.querySelector("#chat-log");
+    const chatInput = document.querySelector("#chat-message-input");
+    const chatSubmit = document.querySelector("#chat-message-submit");
+    const chatClear = document.querySelector("#chat-message-clear");
+    const chatClose = document.querySelector("#closeChatbot");
+    const loading = document.querySelector("#loading");
+    const quickCommands = document.querySelectorAll(".quick-command");
+
+    function escapeHtml(text) {
+      return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function handleSlashCommand(command, args) {
+      let response = "";
+      switch (command) {
+        case "/help":
+          response =
+            "<strong>Available Commands:</strong><br>" +
+            "/help - Show this message<br>" +
+            "/report &lt;description&gt; - Report a bug<br>" +
+            "/gsoc - Get GSoC info<br>" +
+            "/stats - View platform stats<br>";
+          chatLog.innerHTML +=
+            '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' +
+            response +
+            "</div>";
+          chatLog.scrollTop = chatLog.scrollHeight;
+          return true;
+        case "/report":
+          if (!args) {
+            response =
+              "Please provide a description. Usage: /report &lt;description&gt;";
+            chatLog.innerHTML +=
+              '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' +
+              response +
+              "</div>";
+            chatLog.scrollTop = chatLog.scrollHeight;
+            return true;
+          }
+          return false;
+        case "/gsoc":
+          response =
+            "<strong>Google Summer of Code (GSoC) Info:</strong><br>" +
+            "Explore OWASP's GSoC participation:<br>" +
+            '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
+            "Get involved with open-source at OWASP!";
+          chatLog.innerHTML +=
+            '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' +
+            response +
+            "</div>";
+          chatLog.scrollTop = chatLog.scrollHeight;
+          return true;
+        case "/stats":
+          response =
+            "Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.";
+          chatLog.innerHTML +=
+            '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' +
+            response +
+            "</div>";
+          chatLog.scrollTop = chatLog.scrollHeight;
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    chatSubmit.onclick = function () {
+      const message = chatInput.value.trim();
+      chatInput.value = "";
+      if (message === "") return;
+
+      const escapedMessage = escapeHtml(message);
+      chatLog.innerHTML +=
+        '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' +
+        escapedMessage +
+        "</div>";
+      loading.style.display = "flex";
+
+      // Check for slash command
+      if (message.startsWith("/")) {
+        const [command, ...argsArr] = message.split(" ");
+        const args = argsArr.join(" ").trim();
+        if (handleSlashCommand(command, args)) {
+          loading.style.display = "none";
+          return;
+        }
+      }
+
+      fetch("/api/chatbot/conversation/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question: message }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            if (response.status === 429) {
+              throw new Error("Rate limit exceeded");
+            }
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          const escapedAnswer = escapeHtml(data.answer);
+          chatLog.innerHTML +=
+            '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' +
+            escapedAnswer +
+            "</div>";
+          chatLog.scrollTop = chatLog.scrollHeight;
+          loading.style.display = "none";
+        })
+        .catch((error) => {
+          let errorMessage =
+            "Sorry, I am unable to process your request at the moment. Please try again later.";
+          if (error.message === "Rate limit exceeded") {
+            errorMessage =
+              "The request limit has been reached. Please try again later.";
+          }
+          chatLog.innerHTML +=
+            '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' +
+            errorMessage +
+            "</div>";
+          chatLog.scrollTop = chatLog.scrollHeight;
+          loading.style.display = "none";
+        });
+    };
+
+    function clearChat() {
+      loading.style.display = "flex";
+      fetch("/api/chatbot/conversation/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ question: "exit" }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          chatLog.innerHTML = "";
+          loading.style.display = "none";
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          loading.style.display = "none";
+        });
+    }
+
+    chatClear.onclick = clearChat;
+    chatClose.onclick = clearChat;
+
+    chatInput.addEventListener("keyup", function (event) {
+      if (event.keyCode === 13) {
+        // Enter key
+        chatSubmit.click();
+      }
     });
 
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const chatLog = document.querySelector('#chat-log');
-        const chatInput = document.querySelector('#chat-message-input');
-        const chatSubmit = document.querySelector('#chat-message-submit');
-        const chatClear = document.querySelector('#chat-message-clear');
-        const chatClose = document.querySelector('#closeChatbot');
-        const loading = document.querySelector('#loading');
-        const quickCommands = document.querySelectorAll('.quick-command');
-    
-        function escapeHtml(text) {
-            return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
-        }
-    
-        function handleSlashCommand(command, args) {
-            let response = '';
-            switch (command) {
-                case '/help':
-                    response = '<strong>Available Commands:</strong><br>' +
-                        '/help - Show this message<br>' +
-                        '/report &lt;description&gt; - Report a bug<br>' +
-                        '/gsoc - Get GSoC info<br>' +
-                        '/stats - View platform stats<br>';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    return true;
-                case '/report':
-                    if (!args) {
-                        response = 'Please provide a description. Usage: /report &lt;description&gt;';
-                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                        chatLog.scrollTop = chatLog.scrollHeight;
-                        return true;
-                    }
-                    return false;
-                case '/gsoc':
-                    response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                        'Explore OWASP\'s GSoC participation:<br>' +
-                        '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
-                        'Get involved with open-source at OWASP!';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    return true;
-                case '/stats':
-                    response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    return true;
-                default:
-                    return false;
-            }
-        }
-    
-        chatSubmit.onclick = function () {
-            const message = chatInput.value.trim();
-            chatInput.value = '';
-            if (message === "") return;
-    
-            const escapedMessage = escapeHtml(message);
-            chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
-            loading.style.display = 'flex';
-    
-            // Check for slash command
-            if (message.startsWith('/')) {
-                const [command, ...argsArr] = message.split(' ');
-                const args = argsArr.join(' ').trim();
-                if (handleSlashCommand(command, args)) {
-                    loading.style.display = 'none';
-                    return;
-                }
-            }
-    
-            fetch('/api/chatbot/conversation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: message }),
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        if (response.status === 429) {
-                            throw new Error('Rate limit exceeded');
-                        }
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const escapedAnswer = escapeHtml(data.answer);
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    loading.style.display = 'none';
-                })
-                .catch((error) => {
-                    let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
-                    if (error.message === 'Rate limit exceeded') {
-                        errorMessage = 'The request limit has been reached. Please try again later.';
-                    }
-                    chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    loading.style.display = 'none';
-                });
-        };
-    
-        function clearChat() {
-            loading.style.display = 'flex';
-            fetch('/api/chatbot/conversation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: "exit" }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    chatLog.innerHTML = '';
-                    loading.style.display = 'none';
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    loading.style.display = 'none';
-                });
-        }
-    
-        chatClear.onclick = clearChat;
-        chatClose.onclick = clearChat;
-    
-        chatInput.addEventListener('keyup', function (event) {
-            if (event.keyCode === 13) {  // Enter key
-                chatSubmit.click();
-            }
-        });
-    
-        // Handle quick command button clicks
-        quickCommands.forEach(button => {
-            button.addEventListener('click', function () {
-                const command = this.getAttribute('data-command');
-                chatInput.value = command;
-                chatSubmit.click();
-            });
-        });
+    // Handle quick command button clicks
+    quickCommands.forEach((button) => {
+      button.addEventListener("click", function () {
+        const command = this.getAttribute("data-command");
+        chatInput.value = command;
+        chatSubmit.click();
+      });
     });
+  });
 </script>
 <script>
-    function toggleMobileSearch() {
-        const mobileSearch = document.getElementById('mobile-search');
-        mobileSearch.classList.toggle('hidden');
-        mobileSearch.classList.toggle('active');
-    }
+  function toggleMobileSearch() {
+    const mobileSearch = document.getElementById("mobile-search");
+    mobileSearch.classList.toggle("hidden");
+    mobileSearch.classList.toggle("active");
+  }
 </script>
