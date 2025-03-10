@@ -1,8 +1,8 @@
 name: OWASP BLT Action
 
 on:
-  issue_comment:
-    types: [created]
+  issues:
+    types: [opened]
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
@@ -13,6 +13,35 @@ jobs:
     permissions: 
       issues: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check if user is a sponsor
+        id: check-sponsor
+        env:
+          SPONSORS: ${{ secrets.SPONSORS }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+        run: |
+          if [[ ",${SPONSORS}," =~ ",${ISSUE_AUTHOR}," ]]; then
+            echo "is_sponsor=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_sponsor=false" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Add $5 bounty label for sponsors
+        if: steps.check-sponsor.outputs.is_sponsor == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Adding $5 bounty label for sponsor ${ISSUE_AUTHOR}"
+          curl -X POST \
+            -H "Authorization: token ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/labels \
+            -d '{"labels":["bounty: $5"]}' || echo "Failed to add label, but continuing..."
+
       - name: OWASP BLT Action
         uses: OWASP-BLT/BLT-Action@main
         with:
