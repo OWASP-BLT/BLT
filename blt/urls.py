@@ -1045,7 +1045,6 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
-
     # Hackathon URLs.
     path("hackathons/", HackathonListView.as_view(), name="hackathons"),
     path("hackathons/create/", HackathonCreateView.as_view(), name="hackathon_create"),
@@ -1053,7 +1052,6 @@ urlpatterns = [
     path("hackathons/<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_edit"),
     path("hackathons/<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_add_sponsor"),
     path("hackathons/<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_add_prize"),
-
     path("page-vote/", page_vote, name="page_vote"),
     # Queue Management URLs
     path("queue/", queue_list, name="queue_list"),
@@ -1071,7 +1069,6 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
-
 ]
 
 if settings.DEBUG:

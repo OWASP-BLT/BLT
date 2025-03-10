@@ -2188,6 +2188,7 @@ class HackathonPrize(models.Model):
     def __str__(self):
         return f"{self.get_position_display()} - {self.title} ({self.hackathon.name})"
 
+
 class Queue(models.Model):
     """
     Model to store queue items with a message, image, and launch status.
@@ -2241,4 +2242,3 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
-
