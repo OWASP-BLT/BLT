@@ -132,7 +132,7 @@
                                     </span>
                                 </div>
                                 <p class="text-gray-600 text-sm mb-4">
-                                    Organized by <a href="{% url 'view_organization' slug=hackathon.organization.slug %}"
+                                    Organized by <a href="{% url 'organization_detail' slug=hackathon.organization.slug %}"
     class="text-[#e74c3c] hover:underline">{{ hackathon.organization.name }}</a>
                                 </p>
                                 <p class="text-gray-700 mb-4 line-clamp-3">{{ hackathon.description|truncatechars:150 }}</p>
