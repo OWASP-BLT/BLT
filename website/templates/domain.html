@@ -206,14 +206,14 @@
                             <div class="flex items-center justify-center gap-4 mt-6">
                                 {% if opened.has_previous %}
                                     <a href="?open={{ opened.previous_page_number }}"
-                                       class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
+                                       class="px-4 py-2 text-white hover:text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
                                         Previous
                                     </a>
                                 {% endif %}
                                 <span class="text-gray-700 font-medium">Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
                                 {% if opened.has_next %}
                                     <a href="?open={{ opened.next_page_number }}"
-                                       class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
+                                       class="px-4 py-2 text-white hover:text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
                                         Next
                                     </a>
                                 {% endif %}

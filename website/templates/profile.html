@@ -26,16 +26,16 @@
     {% include "includes/sidenav.html" %}
     <div class="flex md:flex-row flex-col w-full mt-10 lg:max-w-[1700px] lg:mx-auto mx-2 border rounded-lg  min-h-[500px]">
         <div class="flex flex-col gap-6 lg:w-[25%] w-full border-r border-gray-300/80 500 p-4">
-            <div class="w-full rounded-lg select-none">
+            <div class="w-full rounded-lg select-none ">
                 {% if user.userprofile.avatar %}
                     <img src="{{ user.userprofile.avatar }}"
-                         class="object-cover w-full h-full rounded-lg"
+                         class="object-cover w-full rounded-lg max-h-[400px] md:max-h-[500px] h-full"
                          alt="avatar"
                          width="200"
                          height="200">
                 {% else %}
                     <img src="{% gravatar_url user.email 200 %}"
-                         class="object-cover w-full h-full rounded-lg"
+                         class="object-cover w-full rounded-lg max-h-[400px] md:max-h-[500px] h-full"
                          alt="avatar"
                          width="200"
                          height="200">
@@ -244,16 +244,16 @@
                     {% if activities %}
                         {% load gravatar %}
                         {% load static %}
-                        <div class=" flex flex-col gap-3 items-center justify-center">
+                        <div class=" flex flex-col gap-3 items-center justify-center w-full">
                             {% for activity in activities %}
-                                <div class=" bg-gray-100 rounded-lg  flex flex-col gap-3 items-start justify-between p-5 ">
-                                    <div class="rounded-lg w-full hover:shadow-[0_0_10px_rgba(75,85,99,0.5)] transition-all duration-200">
+                                <div class=" bg-gray-100 rounded-lg  flex flex-col gap-3 items-start justify-between p-5 w-full">
+                                    <div class="rounded-lg w-full border-2  hover:border-red-500 transition-all duration-200 ">
                                         {% for screenshot_activity,screenshot in activity_screenshots.items %}
-                                            {% if activity == screenshot_activity and screenshot.image.url %}
+                                            {% if activity == screenshot_activity and screenshot.image and screenshot.image.url %}
                                                 <a href="{{ activity.get_absolute_url }}">
-                                                    <img src="https://www.{{ activity.domain_name }}/favicon.ico"
+                                                    <img src="{{ screenshot.image.url }}"
                                                          loading="lazy"
-                                                         class="rounded-lg w-full object-cover h-[200px]"
+                                                         class="rounded-lg w-full object-cover lg:max-h-[300px] h-full "
                                                          alt="screenshot"
                                                          width="50%"
                                                          height="50%">
@@ -264,7 +264,7 @@
                                             <a href="{{ activity.get_absolute_url }}">
                                                 <img src="{{ activity.screenshot.url }}"
                                                      loading="lazy"
-                                                     class="rounded-lg w-full object-cover h-[200px]"
+                                                     class="rounded-lg w-full object-cover lg:max-h-[300px] h-full"
                                                      alt="screenshot"
                                                      width="50%"
                                                      height="50%">
@@ -280,7 +280,7 @@
                                             <img src="https://www.{{ activity.domain_name }}/favicon.ico"
                                                  height="30"
                                                  width="30"
-                                                 class=" border border-gray-300  rounded-full size-[32px] "
+                                                 class=" rounded-full size-[32px] "
                                                  alt="Organization logo"
                                                  onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                         </a>
@@ -290,9 +290,9 @@
     class="hover:text-red-600">{{ activity.domain_title }}</a>
                                         </div>
                                     </div>
-                                    <p class="text-gray-600 text-start w-full">Time: {{ activity.created|timesince }} ago.</p>
+                                    <p class="text-gray-600 text-sm text-start w-full">{{ activity.created|timesince }} ago.</p>
                                     <div class="flex flex-row gap-2 items-center">
-                                        Org:
+                                        URL:
                                         <a class="hover:text-red-600"
                                            href="{{ activity.url }}"
                                            target="_blank"
