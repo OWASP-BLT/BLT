@@ -2,13 +2,13 @@
 {% load gravatar %}
 <div class="bg-gray-100 rounded-lg p-4">
     <div class="w-full flex flex-col gap-3 ">
-        <div class=" rounded-lg w-full">
+        <div class=" rounded-lg w-full border-2 hover:border-red-500 transition-all duration-200">
             {% for screenshot_activity,screenshot in activity_screenshots.items %}
                 {% if activity == screenshot_activity %}
                     <a href="{{ activity.get_absolute_url }}">
                         <img src="{{ screenshot.image.url }}"
                              loading="lazy"
-                             class="w-full rounded-lg object-cover"
+                             class="w-full rounded-lg object-cover lg:max-h-[300px] h-full "
                              alt="screenshot"
                              width="50%"
                              height="50%">
@@ -19,14 +19,15 @@
                 <a href="{{ activity.get_absolute_url }}">
                     <img src="{{ activity.screenshot.url }}"
                          loading="lazy"
-                         class="w-full rounded-lg object-cover"
+                         class="w-full rounded-lg object-cover lg:max-h-[300px] h-full "
                          alt="screenshot"
                          width="50%"
                          height="50%">
                 </a>
             {% endif %}
         </div>
-        <a href="{{ activity.get_absolute_url }}" class="text-xl font-medium">
+        <a href="{{ activity.get_absolute_url }}"
+           class="text-xl font-semibold hover:text-red-500">
             <div class="mb-3 text-xl">{{ activity.description|truncatechars:20 }}</div>
         </a>
         <div class="flex items-start gap-1">
@@ -61,17 +62,19 @@
                          alt="user avatar">
                 {% endif %}
             </a>
-            <div class="w-full">
+            <div class="w-full flex flex-col gap-2">
                 <div class="mb-2 text-lg">
-                    <a href="{{ activity.user.get_absolute_url }}">{{ activity.user|default:"Anonymous" }}</a>
-                    found a bug on <a href="{% url 'domain' slug=activity.domain_name %}">{{ activity.domain_title }}</a> - {{ activity.created|timesince }}
-                    ago
+                    <a href="{{ activity.user.get_absolute_url }}"
+                       class="hover:text-red-500">@{{ activity.user|default:"Anonymous" }}</a>
+                    found a bug on <a href="{% url 'domain' slug=activity.domain_name %}"
+    class="hover:text-red-500">{{ activity.domain_title }}</a>
                 </div>
-                <a class="text-lg"
+                <p class="text-sm text-gray-600">{{ activity.created|timesince }} ago.</p>
+                <a class=" font-medium hover:text-red-500"
                    href="{{ activity.url }}"
                    target="_blank"
                    rel="noopener noreferrer">
-                    <div>{{ activity.url|truncatechars:30 }}</div>
+                    <div>URL: {{ activity.url|truncatechars:30 }}</div>
                 </a>
                 <a class="whitespace-nowrap mb-1 text-xl"
                    href="{{ activity.get_absolute_url }}#comments">
