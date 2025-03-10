@@ -203,7 +203,13 @@ class Command(LoggedBaseCommand):
             repo.forks = repo_data.get("forks_count", 0)
             repo.open_issues = repo_data.get("open_issues_count", 0)
             repo.watchers = repo_data.get("watchers_count", 0)
-            repo.description = repo_data.get("description", "")
+
+            # Truncate description if it's too long to prevent database errors
+            description = repo_data.get("description", "")
+            if description and len(description) > 255:
+                description = description[:252] + "..."
+            repo.description = description
+
             repo.primary_language = repo_data.get("language", "")
             repo.is_archived = repo_data.get("archived", False)
 
