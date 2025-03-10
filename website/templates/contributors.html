@@ -43,14 +43,13 @@
                 <div class="h-1 w-4 bg-gray-200 rounded-full"></div>
             </div>
         </section>
-        <!-- Contributors Grid -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-8 p-4">
             {% for contributor in contributors %}
                 <a href="{% url 'contributors' %}?contributor={{ contributor.id }}"
                    class="group relative bg-white rounded-2xl shadow-md hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 overflow-hidden">
                     <div class="h-full flex flex-col">
                         <div class="h-24 bg-gradient-to-r from-[#e74c3c]/10 to-red-100/20 relative overflow-hidden">
-                            <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"20\" height=\"20\" viewBox=\"0 0 20 20\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"%23e74c3c\" fill-opacity=\"0.05\" fill-rule=\"evenodd\"%3E%3Ccircle cx=\"3\" cy=\"3\" r=\"3\"/%3E%3Ccircle cx=\"13\" cy=\"13\" r=\"3\"/%3E%3C/g%3E%3C/svg%3E')] opacity-30">
+                            <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\" 20 " height " 20 " viewBox " 0 0 20 20 " xmlns " http://www.w3.org/2000/svg " 3E 3Cg fill " 23e74c3c " fill-opacity " 0.05 " fill-rule " evenodd " 3E 3Ccircle cx " 3 " cy " 3 " r " 3 " / 3E 3Ccircle cx " 13 " cy " 13 " r " 3 " / 3E 3C/g 3E 3C/svg 3E ' opacity-30 ">
                             </div>
                         </div>
                         <div class="relative -mt-12 flex justify-center">
