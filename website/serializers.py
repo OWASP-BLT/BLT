@@ -182,6 +182,11 @@ class RepoSerializer(serializers.ModelSerializer):
     Serializer for Repo model
     """
 
+    url = serializers.SerializerMethodField()
+
+    def get_url(self, obj):
+        return obj.repo_url
+
     class Meta:
         model = Repo
         fields = ("id", "name", "url", "organization")
