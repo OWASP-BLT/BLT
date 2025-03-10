@@ -37,6 +37,10 @@ class Command(BaseCommand):
                 call_command("update_repo_stars")
             except Exception as e:
                 logger.error("Error updating repo stars", exc_info=True)
+            try:
+                call_command("fetch_gsoc_prs")
+            except Exception as e:
+                logger.error("Error fetching GSoC PRs", exc_info=True)
         except Exception as e:
             logger.error("Error in daily tasks", exc_info=True)
             raise

@@ -550,45 +550,78 @@ def refresh_repo_data(request, repo_id):
     Run the update_repos_dynamic command for a specific repository
     """
     try:
+        print(f"Refresh request received for repo_id: {repo_id}")
+
+        # Check if the repository exists
         repo = Repo.objects.get(id=repo_id)
 
         # Log the refresh attempt
         print(f"Refreshing repository data for {repo.name} (ID: {repo_id})")
+        print(f"Repository URL: {repo.repo_url}")
 
-        # Run the command with the specific repo ID
-        call_command("update_repos_dynamic", repo_id=repo_id)
+        try:
+            # Run the command with the specific repo ID
+            print("Calling update_repos_dynamic command...")
+            call_command("update_repos_dynamic", repo_id=repo_id)
+            print("Command completed successfully")
 
-        # Refresh the repo object to get the latest data
-        repo.refresh_from_db()
+            # Refresh the repo object to get the latest data
+            repo.refresh_from_db()
 
-        # Get updated counts
-        issues_count = repo.github_issues.filter(type="issue").count()
-        prs_count = repo.github_issues.filter(type="pull_request").count()
-        dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
+            # Get updated counts
+            issues_count = repo.github_issues.filter(type="issue").count()
+            prs_count = repo.github_issues.filter(type="pull_request").count()
+            dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
 
-        # Log the results
-        print(
-            f"Repository refresh complete. Issues: {issues_count}, "
-            f"PRs: {prs_count}, Bounty Issues: {dollar_tag_count}"
-        )
+            # Log the results
+            print(
+                f"Repository refresh complete. Issues: {issues_count}, "
+                f"PRs: {prs_count}, Bounty Issues: {dollar_tag_count}"
+            )
 
-        return JsonResponse(
-            {
-                "status": "success",
-                "message": "Repository data refreshed successfully",
-                "data": {
-                    "issues_count": issues_count,
-                    "prs_count": prs_count,
-                    "dollar_tag_count": dollar_tag_count,
-                    "last_updated": repo.last_updated.isoformat() if repo.last_updated else None,
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Repository data refreshed successfully",
+                    "data": {
+                        "issues_count": issues_count,
+                        "prs_count": prs_count,
+                        "dollar_tag_count": dollar_tag_count,
+                        "last_updated": repo.last_updated.isoformat() if repo.last_updated else None,
+                    },
+                }
+            )
+        except Exception as cmd_error:
+            print(f"Error running command: {str(cmd_error)}")
+            print(f"Error type: {type(cmd_error).__name__}")
+            import traceback
+
+            traceback.print_exc()
+
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Error running update command: {str(cmd_error)}",
+                    "error_type": type(cmd_error).__name__,
                 },
-            }
-        )
+                status=500,
+            )
+
     except Repo.DoesNotExist:
         print(f"Repository with ID {repo_id} not found")
         return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
     except Exception as e:
         print(f"Error refreshing repository data: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+
+        traceback.print_exc()
+
         return JsonResponse(
-            {"status": "error", "message": "An error occurred while refreshing repository data"}, status=500
+            {
+                "status": "error",
+                "message": f"An error occurred while refreshing repository data: {str(e)}",
+                "error_type": type(e).__name__,
+            },
+            status=500,
         )

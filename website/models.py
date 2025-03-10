@@ -194,6 +194,14 @@ class Organization(models.Model):
         max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
     )
 
+    def is_admin(self, user):
+        """Check if the user is an admin of the organization."""
+        return self.admin == user
+
+    def is_manager(self, user):
+        """Check if the user is a manager of the organization."""
+        return self.managers.filter(id=user.id).exists()
+
     class Meta:
         ordering = ["-created"]
         indexes = [

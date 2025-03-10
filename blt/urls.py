@@ -174,6 +174,7 @@ from website.views.issue import (
     like_issue,
     newhome,
     page_vote,
+    refresh_gsoc_project,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -689,6 +690,7 @@ urlpatterns = [
         name="update_lectures_order",
     ),
     path("gsoc/", GsocView.as_view(), name="gsoc"),
+    path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),

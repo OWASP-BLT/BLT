@@ -783,7 +783,7 @@
                                                         {% widthratio milestone.closed_issues total_issues 100 as percentage %}
                                                         <div class="flex items-center">
                                                             <div class="w-full bg-gray-200 rounded-full h-3 mr-2 relative">
-                                                                <div class="bg-blue-600 h-3 rounded-full absolute top-0 left-0 progress-bar"
+                                                                <div class="bg-[#e74c3c] h-3 rounded-full absolute top-0 left-0 progress-bar"
                                                                      data-percentage="{{ percentage }}"></div>
                                                             </div>
                                                             <span class="text-sm font-medium text-gray-700">{{ percentage }}%</span>
@@ -1258,4 +1258,5 @@
             }
         });
     </script>
+    <script src="{% static 'js/repo_detail.js' %}"></script>
 {% endblock after_js %}
