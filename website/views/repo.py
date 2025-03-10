@@ -5,14 +5,16 @@ import time
 import psutil
 import requests
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
-from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
 from website.models import Organization, Repo
@@ -330,6 +332,18 @@ class RepoDetailView(DetailView):
         # Add system stats to context
         context["system_stats"] = system_stats
 
+        # Add GitHub issues and PRs to context
+        context["github_issues"] = repo.github_issues.filter(type="issue").order_by("-updated_at")[:10]
+        context["github_prs"] = repo.github_issues.filter(type="pull_request").order_by("-updated_at")[:10]
+
+        # Add counts for issues and PRs
+        context["github_issues_count"] = repo.github_issues.filter(type="issue").count()
+        context["github_prs_count"] = repo.github_issues.filter(type="pull_request").count()
+
+        # Add dollar tag issues
+        context["dollar_tag_issues"] = repo.github_issues.filter(has_dollar_tag=True).order_by("-updated_at")[:5]
+        context["dollar_tag_issues_count"] = repo.github_issues.filter(has_dollar_tag=True).count()
+
         return context
 
 
@@ -526,4 +540,42 @@ def add_repo(request):
         return JsonResponse(
             {"status": "error", "message": f"An error occurred: {str(e)}"},
             status=500,
+        )
+
+
+@login_required
+@require_POST
+@csrf_exempt
+def refresh_repo_data(request, repo_id):
+    """
+    Run the update_repos_dynamic command for a specific repository
+    """
+    try:
+        repo = Repo.objects.get(id=repo_id)
+
+        # Run the command with the specific repo ID
+        call_command("update_repos_dynamic", repo_id=repo_id)
+
+        # Get updated counts
+        issues_count = repo.github_issues.filter(type="issue").count()
+        prs_count = repo.github_issues.filter(type="pull_request").count()
+        dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
+
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Repository data refreshed successfully",
+                "data": {
+                    "issues_count": issues_count,
+                    "prs_count": prs_count,
+                    "dollar_tag_count": dollar_tag_count,
+                    "last_updated": repo.last_updated.isoformat() if repo.last_updated else None,
+                },
+            }
+        )
+    except Repo.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+    except Exception:
+        return JsonResponse(
+            {"status": "error", "message": "An error occurred while refreshing repository data"}, status=500
         )

@@ -2,9 +2,6 @@ name: Pre-commit fix
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - '**'  # Runs on any branch within the repository (excluding forks)
 
 permissions:
   contents: write
