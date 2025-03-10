@@ -251,8 +251,10 @@ class HackathonForm(forms.ModelForm):
 
             # Filter repositories based on the selected organization
             if self.instance.pk and self.instance.organization:
+                # When editing, show all repositories from the organization
                 self.fields["repositories"].queryset = Repo.objects.filter(organization=self.instance.organization)
             else:
+                # When creating new, start with empty queryset
                 self.fields["repositories"].queryset = Repo.objects.none()
 
 
