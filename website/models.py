@@ -1675,7 +1675,7 @@ class GitHubIssue(models.Model):
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
-        return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+        return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
 
     def get_comments(self):
         """
