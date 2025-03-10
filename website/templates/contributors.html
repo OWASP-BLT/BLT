@@ -45,7 +45,7 @@
         </div>
         <div class="flex items-center justify-center flex-wrap gap-4 p-4">
             {% for contributor in contributors %}
-                <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between hover:bg-red-600 transition duration-200">
+                <div class="group card w-[250px] h-[400px] m-5 flex flex-col items-center justify-between hover:bg-red-600 transition duration-200 overflow-auto">
                     <img src="{{ contributor.img }}"
                          class="w-[100px] h-[100px] mb-3 rounded-full object-cover transition duration-200 group-hover:scale-110"
                          width="100px"
