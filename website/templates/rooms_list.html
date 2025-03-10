@@ -18,22 +18,25 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-30">
+        <!-- Breadcrumbs -->
+        {% include "includes/breadcrumbs.html" %}
         <!-- Header Section -->
-        <br>
-        <br>
-        <br>
-        <div class="flex justify-between items-center mb-8">
-            <div>
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-4">
                 <h1 class="text-3xl font-bold text-gray-900">Discussion Rooms</h1>
-                <p class="mt-2 text-sm text-gray-600">Join or create discussion rooms to collaborate with others</p>
+                <div class="flex items-center gap-2">
+                    <div id="connection-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                    <span id="connection-text" class="text-sm text-gray-600">Connecting...</span>
+                </div>
             </div>
-            <button class="bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 px-5 rounded-lg shadow-sm transition-all duration-150 ease-in-out transform hover:scale-105 flex items-center gap-2"
-                    onclick="openRoomModal()">
+            <button onclick="openRoomModal()"
+                    class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg"
-                     class="h-5 w-5"
-                     viewBox="0 0 20 20"
-                     fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                     class="h-5 w-5 mr-2"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
                 Create Room
             </button>
@@ -41,119 +44,60 @@
         <!-- Rooms Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
             {% for room in rooms %}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden"
+                     data-room-id="{{ room.id }}">
                     <div class="p-6">
-                        <!-- Room Header -->
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h2 class="text-xl font-bold text-gray-900 mb-1">{{ room.name }}</h2>
-                                <div class="flex items-center text-sm text-gray-500 gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-4 w-4"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    Created {{ room.created_at|naturaltime }}
-                                </div>
-                            </div>
-                            {% if room.admin == request.user or room.session_key == request.session.session_key %}
-                                <a href="{% url 'admin:website_room_delete' room.id %}"
-                                   class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-5 w-5"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </a>
-                            {% elif request.user.is_superuser %}
-                                <a href="{% url 'admin:website_room_delete' room.id %}"
-                                   class="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                                   title="Delete room (Superuser)">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-5 w-5"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </a>
-                            {% endif %}
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">{{ room.name }}</h2>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                {{ room.messages.count }} messages
+                            </span>
                         </div>
-                        <!-- Room Description -->
-                        <p class="text-gray-600 mb-4">{{ room.description|default:"No description available." }}</p>
-                        <!-- Recent Messages -->
-                        {% if room.recent_messages %}
-                            <div class="border-t border-gray-100 pt-4 mb-4">
-                                <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         class="h-4 w-4"
-                                         fill="none"
-                                         viewBox="0 0 24 24"
-                                         stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                    </svg>
-                                    Recent Messages
-                                </h3>
-                                <div class="space-y-3">
-                                    {% for message in room.recent_messages %}
-                                        <div class="bg-gray-50 rounded-lg p-3 text-sm">
-                                            <div class="flex justify-between items-center text-xs text-gray-500 mb-1">
-                                                <span class="font-medium">{{ message.username }}</span>
-                                                <span>{{ message.timestamp|naturaltime }}</span>
-                                            </div>
-                                            <p class="text-gray-700 break-words">{{ message.content|truncatechars:100 }}</p>
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                        <p class="text-gray-600 mb-4">{{ room.description|default:"No description" }}</p>
+                        <!-- Quick Chat Section -->
+                        <div class="border-t pt-4">
+                            <div class="messages-container h-48 overflow-y-auto mb-4 space-y-2 scroll-smooth"
+                                 id="messages-{{ room.id }}">
+                                {% for message in room.recent_messages %}
+                                    <div class="message p-2 rounded-lg {% if message.user == request.user %}bg-red-50 ml-auto{% else %}bg-gray-50{% endif %} max-w-[80%]">
+                                        <p class="text-sm font-medium">{{ message.username }}</p>
+                                        <p class="text-sm text-gray-700">{{ message.content }}</p>
+                                        <span class="text-xs text-gray-500">{{ message.timestamp|naturaltime }}</span>
+                                    </div>
+                                {% endfor %}
                             </div>
-                        {% endif %}
-                        <!-- Room Footer -->
-                        <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                            <form class="quick-chat-form flex gap-2" data-room-id="{{ room.id }}">
+                                <input type="text"
+                                       class="flex-1 rounded-lg border-gray-300 focus:border-red-500 focus:ring-red-500"
+                                       placeholder="Type a message..."
+                                       name="message">
+                                <button type="submit"
+                                        class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200">
+                                    Send
+                                </button>
+                            </form>
+                        </div>
+                        <div class="mt-4 flex justify-between items-center">
                             <a href="{% url 'join_room' room.id %}"
-                               class="inline-flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm hover:shadow gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                                </svg>
-                                Join Room
+                               class="inline-flex items-center px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition duration-200">
+                                View Full Chat
                             </a>
-                            <div class="text-sm text-gray-500 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-4 w-4"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                {% if room.admin %}
-                                    {{ room.admin.username }}
-                                {% else %}
-                                    anon_{{ room.session_key|slice:'-4:' }}
-                                {% endif %}
-                            </div>
+                            {% if request.user == room.admin %}
+                                <form action="{% url 'delete_room' room.id %}" method="post" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="px-4 py-2 border border-red-600 text-red-600 rounded-lg hover:bg-red-50 transition duration-200"
+                                            onclick="return confirm('Are you sure you want to delete this room?')">
+                                        Delete
+                                    </button>
+                                </form>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             {% empty %}
-                <div class="col-span-full text-center py-12">
-                    <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                             class="h-12 w-12 text-gray-400"
-                             fill="none"
-                             viewBox="0 0 24 24"
-                             stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                        </svg>
-                    </div>
-                    <p class="text-gray-500 text-lg">No rooms found</p>
-                    <p class="text-gray-400 mt-2">Create a new room to start discussing!</p>
+                <div class="col-span-full text-center py-8">
+                    <p class="text-gray-600">No chat rooms available.</p>
                 </div>
             {% endfor %}
         </div>
@@ -201,21 +145,92 @@
                 </nav>
             </div>
         {% endif %}
+        <!-- Create Room Button -->
+        <div class="mt-8 text-center">
+            <a href="{% url 'room_create' %}"
+               class="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-200">
+                Create New Room
+            </a>
+        </div>
     </div>
     <!-- Room Modal -->
     <div id="roomModal"
          class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
         <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 shadow-xl">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">Create Room</h2>
-            <form method="post" action="{% url 'room_create' %}" class="space-y-4">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-900">Create Room</h2>
+                <button type="button"
+                        onclick="closeRoomModal()"
+                        class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form method="post" action="{% url 'room_create' %}" class="space-y-5">
                 {% csrf_token %}
-                {{ form.as_p }}
-                <div class="flex items-center justify-end gap-3 mt-6">
+                <!-- Name Field -->
+                <div>
+                    <label for="{{ form.name.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
+                    <input type="text"
+                           id="{{ form.name.id_for_label }}"
+                           name="{{ form.name.name }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
+                           required>
+                    {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                </div>
+                <!-- Type Field -->
+                <div>
+                    <label for="{{ form.type.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+                    <select id="{{ form.type.id_for_label }}"
+                            name="{{ form.type.name }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
+                            required>
+                        <option value="">Select a type</option>
+                        <option value="project">Project</option>
+                        <option value="bug">Bug</option>
+                        <option value="organization">Organization</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                    {% if form.type.errors %}<p class="mt-1 text-sm text-red-600">{{ form.type.errors.0 }}</p>{% endif %}
+                </div>
+                <!-- Custom Type Field -->
+                <div id="custom_type_container" class="hidden">
+                    <label for="{{ form.custom_type.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-1">Custom Type</label>
+                    <input type="text"
+                           id="{{ form.custom_type.id_for_label }}"
+                           name="{{ form.custom_type.name }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900">
+                    {% if form.custom_type.errors %}<p class="mt-1 text-sm text-red-600">{{ form.custom_type.errors.0 }}</p>{% endif %}
+                </div>
+                <!-- Description Field -->
+                <div>
+                    <label for="{{ form.description.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="{{ form.description.id_for_label }}"
+                              name="{{ form.description.name }}"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
+                              rows="4"></textarea>
+                    {% if form.description.errors %}<p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
+                </div>
+                <!-- Captcha Field (if needed) -->
+                {% if form.captcha.field.required %}
+                    <div>
+                        <label for="{{ form.captcha.id_for_label }}"
+                               class="block text-sm font-medium text-gray-700 mb-1">Verification</label>
+                        <div class="flex items-center space-x-2">{{ form.captcha }}</div>
+                        {% if form.captcha.errors %}<p class="mt-1 text-sm text-red-600">{{ form.captcha.errors.0 }}</p>{% endif %}
+                    </div>
+                {% endif %}
+                <div class="flex items-center justify-end gap-3 mt-8">
                     <button type="button"
                             class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition-colors"
                             onclick="closeRoomModal()">Cancel</button>
                     <button type="submit"
-                            class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors">
+                            class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors shadow-sm">
                         Create Room
                     </button>
                 </div>
@@ -246,16 +261,276 @@
                 closeRoomModal();
             }
         });
-    </script>
-    <style>
-        #roomModal input,
-        #roomModal textarea,
-        #roomModal select {
-            @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900;
+        
+        // Toggle custom type field visibility
+        function toggleCustomTypeField(selectElement) {
+            const customTypeContainer = document.getElementById('custom_type_container');
+            const customTypeInput = document.getElementById('{{ form.custom_type.id_for_label }}');
+            
+            if (selectElement.value === 'custom') {
+                customTypeContainer.classList.remove('hidden');
+                customTypeInput.setAttribute('required', 'required');
+            } else {
+                customTypeContainer.classList.add('hidden');
+                customTypeInput.removeAttribute('required');
+                customTypeInput.value = '';
+            }
+        }
+        
+        // Initialize custom type field visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const typeSelect = document.querySelector('select[name="type"]');
+            if (typeSelect) {
+                toggleCustomTypeField(typeSelect);
+                // Add event listener for changes
+                typeSelect.addEventListener('change', function() {
+                    toggleCustomTypeField(this);
+                });
+            }
+        });
+        
+        // Refresh captcha
+        function refreshCaptcha(event) {
+            event.preventDefault();
+            fetch('/captcha/refresh/')
+                .then(response => response.json())
+                .then(data => {
+                    document.querySelector('.captcha').src = data.image_url;
+                    document.getElementById('id_captcha_0').value = data.key;
+                });
+        }
+        
+        // WebSocket connection management
+        let chatSocket = null;
+        let isConnecting = false;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectDelay = 2000;
+
+        // Connection status elements
+        const connectionStatus = document.getElementById('connection-status');
+        const connectionText = document.getElementById('connection-text');
+
+        // Update connection status UI
+        function updateConnectionStatus(connected) {
+            if (!connectionStatus || !connectionText) return;
+            
+            if (connected) {
+                connectionStatus.className = 'w-3 h-3 rounded-full bg-green-500';
+                connectionText.textContent = 'Connected';
+                connectionText.className = 'text-sm text-green-600';
+            } else {
+                connectionStatus.className = 'w-3 h-3 rounded-full bg-red-500';
+                connectionText.textContent = 'Disconnected';
+                connectionText.className = 'text-sm text-red-600';
+            }
         }
 
-        #roomModal label {
-            @apply block text-sm font-medium text-gray-700 mb-1;
+        // Connect to WebSocket for status updates
+        function connectStatusWebSocket() {
+            if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
+                return;
+            }
+
+            if (isConnecting) {
+                return;
+            }
+
+            isConnecting = true;
+            updateConnectionStatus(false);
+            
+            try {
+                const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                // Connect to the first room for status updates
+                const firstRoomElement = document.querySelector('[data-room-id]');
+                if (!firstRoomElement) {
+                    isConnecting = false;
+                    return;
+                }
+                
+                const roomId = firstRoomElement.dataset.roomId;
+                chatSocket = new WebSocket(`${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`);
+                
+                chatSocket.onopen = function() {
+                    isConnecting = false;
+                    reconnectAttempts = 0;
+                    updateConnectionStatus(true);
+                };
+
+                chatSocket.onclose = function(e) {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                    
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        setTimeout(connectStatusWebSocket, reconnectDelay);
+                    }
+                };
+
+                chatSocket.onerror = function(error) {
+                    isConnecting = false;
+                    updateConnectionStatus(false);
+                };
+            } catch (error) {
+                isConnecting = false;
+                updateConnectionStatus(false);
+            }
         }
-    </style>
+
+        // Initialize message containers
+        function initializeMessageContainers() {
+            document.querySelectorAll('.messages-container').forEach(container => {
+                if (!container) return;
+                
+                // Scroll to bottom initially
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMessageContainers();
+            connectStatusWebSocket();
+            
+            // Set up form handlers
+            document.querySelectorAll('.quick-chat-form').forEach(form => {
+                if (!form) return;
+                
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const messageInput = this.querySelector('input[name="message"]');
+                    if (!messageInput) return;
+                    
+                    const message = messageInput.value.trim();
+                    const roomId = this.dataset.roomId;
+                    
+                    if (!message || !roomId) return;
+                    
+                    // Send message using fetch API
+                    fetch('/api/send-message/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            room_id: roomId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            messageInput.value = '';
+                            
+                            // Fetch the latest messages to update the UI
+                            fetchRoomMessages(roomId);
+                        }
+                    })
+                    .catch(error => {
+                        // Error handling
+                    });
+                });
+            });
+            
+            // Load initial messages for all rooms
+            document.querySelectorAll('[data-room-id]').forEach(room => {
+                const roomId = room.dataset.roomId;
+                if (roomId) {
+                    fetchRoomMessages(roomId);
+                }
+            });
+        });
+
+        // Fetch messages for a specific room
+        function fetchRoomMessages(roomId) {
+            fetch(`/api/room-messages/${roomId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateRoomMessages(roomId, data.messages, data.count);
+                    }
+                })
+                .catch(error => {
+                    // Error handling
+                });
+        }
+
+        // Update room messages in the UI
+        function updateRoomMessages(roomId, messages, count) {
+            const roomContainer = document.querySelector(`[data-room-id="${roomId}"]`);
+            if (!roomContainer) {
+                return;
+            }
+
+            // Update message count
+            const countBadge = roomContainer.querySelector('.bg-red-100.text-red-800');
+            if (countBadge) {
+                countBadge.textContent = `${count} message${count !== 1 ? 's' : ''}`;
+            }
+
+            // Update messages
+            const messagesContainer = roomContainer.querySelector('.messages-container');
+            if (!messagesContainer) {
+                return;
+            }
+
+            // Clear existing messages
+            messagesContainer.innerHTML = '';
+
+            // Add messages in reverse order (newest last)
+            messages.reverse().forEach((message) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message p-2 rounded-lg ${
+                    message.username === '{{ request.user.username }}' ? 'bg-red-50 ml-auto' : 'bg-gray-50'
+                } max-w-[80%]`;
+                
+                messageDiv.innerHTML = `
+                    <p class="text-sm font-medium">${escapeHtml(message.username)}</p>
+                    <p class="text-sm text-gray-700">${escapeHtml(message.content)}</p>
+                    <span class="text-xs text-gray-500">${message.timestamp_display}</span>
+                `;
+                
+                messagesContainer.appendChild(messageDiv);
+            });
+            
+            // Scroll to the bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g , "&lt;") .replace( />/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Clean up WebSocket connection when leaving the page
+        window.addEventListener('beforeunload', function() {
+            if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.close();
+            }
+        });
+    </script>
 {% endblock content %}
+{% block extra_js %}
+{% endblock extra_js %}

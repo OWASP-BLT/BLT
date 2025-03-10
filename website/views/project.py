@@ -9,7 +9,6 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
-import django_filters
 import requests
 import sentry_sdk
 from dateutil.parser import parse as parse_datetime
@@ -25,6 +24,7 @@ from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.timezone import localtime, now
@@ -35,6 +35,7 @@ from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
+from website.filters import ProjectRepoFilter
 from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.utils import admin_required
 
@@ -225,76 +226,6 @@ class ProjectBadgeView(APIView):
         return response
 
 
-class ProjectRepoFilter(django_filters.FilterSet):
-    search = django_filters.CharFilter(method="filter_search", label="Search")
-    repo_type = django_filters.ChoiceFilter(
-        choices=[
-            ("all", "All"),
-            ("main", "Main"),
-            ("wiki", "Wiki"),
-            ("normal", "Normal"),
-        ],
-        method="filter_repo_type",
-        label="Repo Type",
-    )
-    sort = django_filters.ChoiceFilter(
-        choices=[
-            ("stars", "Stars"),
-            ("forks", "Forks"),
-            ("open_issues", "Open Issues"),
-            ("last_updated", "Recently Updated"),
-            ("contributor_count", "Contributors"),
-        ],
-        method="filter_sort",
-        label="Sort By",
-    )
-    order = django_filters.ChoiceFilter(
-        choices=[
-            ("asc", "Ascending"),
-            ("desc", "Descending"),
-        ],
-        method="filter_order",
-        label="Order",
-    )
-
-    class Meta:
-        model = Repo
-        fields = ["search", "repo_type", "sort", "order"]
-
-    def filter_search(self, queryset, name, value):
-        return queryset.filter(
-            Q(project__name__icontains=value)
-            | Q(name__icontains=value)
-            | Q(primary_language__icontains=value)
-            | Q(ai_summary__icontains=value)
-            | Q(readme_content__icontains=value)
-        )
-
-    def filter_repo_type(self, queryset, name, value):
-        if value == "main":
-            return queryset.filter(is_main=True)
-        elif value == "wiki":
-            return queryset.filter(is_wiki=True)
-        elif value == "normal":
-            return queryset.filter(is_main=False, is_wiki=False)
-        return queryset
-
-    def filter_sort(self, queryset, name, value):
-        sort_mapping = {
-            "stars": "stars",
-            "forks": "forks",
-            "open_issues": "open_issues",
-            "last_updated": "last_updated",
-            "contributor_count": "contributor_count",
-        }
-        return queryset.order_by(sort_mapping.get(value, "stars"))
-
-    def filter_order(self, queryset, name, value):
-        if value == "desc":
-            return queryset.reverse()
-        return queryset
-
-
 class ProjectView(FilterView):
     model = Repo
     template_name = "projects/project_list.html"
@@ -327,12 +258,14 @@ class ProjectView(FilterView):
         context["total_repos"] = Repo.objects.count()
         context["filtered_count"] = context["repos"].count()
 
-        # Group repos by project
+        # Group repos by project and filter out projects with empty slugs
         projects = {}
         for repo in context["repos"]:
-            if repo.project not in projects:
-                projects[repo.project] = []
-            projects[repo.project].append(repo)
+            # Skip projects with empty slugs
+            if repo.project and repo.project.slug:
+                if repo.project not in projects:
+                    projects[repo.project] = []
+                projects[repo.project].append(repo)
         context["projects"] = projects
 
         return context
@@ -744,6 +677,49 @@ class RepoDetailView(DetailView):
     template_name = "projects/repo_detail.html"
     context_object_name = "repo"
 
+    def fetch_github_milestones(self, repo):
+        """
+        Fetch milestones from the GitHub API for the given repository.
+        """
+        try:
+            repo_url = repo.repo_url.strip("/")
+
+            # Parse the URL properly using urllib
+            parsed_url = urlparse(repo_url)
+
+            # Verify it's actually a GitHub domain
+            if parsed_url.netloc != "github.com":
+                return []
+
+            # Extract the path and remove leading slash
+            path = parsed_url.path.strip("/")
+
+            # Split path into components
+            path_parts = path.split("/")
+
+            # Verify we have at least owner/repo in the path
+            if len(path_parts) >= 2:
+                owner, repo_name = path_parts[0], path_parts[1]
+
+                # API URL for public repository milestones
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}/milestones?state=all"
+
+                headers = {"Accept": "application/vnd.github.v3+json"}
+
+                # Add GitHub token if available for higher rate limits
+                if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                    headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                response = requests.get(api_url, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    return response.json()
+
+            return []
+
+        except Exception:
+            return []
+
     def get_github_top_contributors(self, repo_url):
         """Fetch top contributors directly from GitHub API"""
         try:
@@ -767,6 +743,12 @@ class RepoDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
+
+        # Add breadcrumbs
+        context["breadcrumbs"] = [
+            {"title": "Repositories", "url": reverse("project_list")},
+            {"title": repo.name, "url": None},
+        ]
 
         # Get other repos from same project
         context["related_repos"] = (
@@ -963,6 +945,58 @@ class RepoDetailView(DetailView):
                 "is_paginated": paginator.num_pages > 1,  # Add this
             }
         )
+
+        milestones = self.fetch_github_milestones(repo)
+
+        # Get the current page from query parameters
+        milestone_page = self.request.GET.get("milestone_page", 1)
+        try:
+            milestone_page = int(milestone_page)
+        except (TypeError, ValueError):
+            milestone_page = 1
+
+        # Calculate activity score for each milestone (open_issues + closed_issues)
+        for milestone in milestones:
+            milestone["activity_score"] = milestone.get("open_issues", 0) + milestone.get("closed_issues", 0)
+
+        # Sort milestones: first by state (open first), then by activity score (highest first)
+        milestones.sort(
+            key=lambda x: (
+                0 if x.get("state") == "open" else 1,  # Open milestones first
+                -x.get("activity_score", 0),  # Higher activity score first
+                x.get("due_on", "") or "9999-12-31T23:59:59Z",  # Then by due date
+            )
+        )
+
+        # Paginate the milestones - 5 per page
+        milestones_per_page = 5
+        total_milestones = len(milestones)
+        total_pages = (total_milestones + milestones_per_page - 1) // milestones_per_page
+
+        # Ensure the page number is within valid range
+        if milestone_page < 1:
+            milestone_page = 1
+        elif milestone_page > total_pages and total_pages > 0:
+            milestone_page = total_pages
+
+        # Calculate start and end indices for slicing
+        start_idx = (milestone_page - 1) * milestones_per_page
+        end_idx = min(start_idx + milestones_per_page, total_milestones)
+
+        # Slice the milestones list
+        paginated_milestones = milestones[start_idx:end_idx] if milestones else []
+
+        # Add the paginated milestones and pagination info to context
+        context["milestones"] = paginated_milestones
+        context["milestone_pagination"] = {
+            "current_page": milestone_page,
+            "total_pages": total_pages,
+            "has_previous": milestone_page > 1,
+            "has_next": milestone_page < total_pages,
+            "previous_page": milestone_page - 1 if milestone_page > 1 else None,
+            "next_page": milestone_page + 1 if milestone_page < total_pages else None,
+            "page_range": range(1, total_pages + 1),
+        }
 
         return context
 
@@ -1374,7 +1408,97 @@ class RepoDetailView(DetailView):
                     status=500,
                 )
 
-        return super().post(request, *args, **kwargs)
+        elif section == "ai_summary":
+            try:
+                repo = self.get_object()
+
+                # Get GitHub API token
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"},
+                        status=500,
+                    )
+
+                # Extract owner/repo from GitHub URL
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"},
+                        status=400,
+                    )
+
+                owner, repo_name = match.groups()
+
+                # Fetch README content from GitHub API
+                readme_url = f"https://api.github.com/repos/{owner}/{repo_name}/readme"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+
+                response = requests.get(readme_url, headers=headers)
+
+                if response.status_code == 200:
+                    readme_data = response.json()
+                    # README content is base64 encoded
+                    import base64
+
+                    readme_content = base64.b64decode(readme_data.get("content", "")).decode("utf-8")
+
+                    # Store README content
+                    repo.readme_content = readme_content
+
+                    # Generate AI summary if AI service is configured
+                    ai_service_url = getattr(settings, "AI_SERVICE_URL", None)
+                    if ai_service_url:
+                        try:
+                            # Call AI service to generate summary
+                            ai_response = requests.post(ai_service_url, json={"text": readme_content}, timeout=10)
+
+                            if ai_response.status_code == 200:
+                                ai_data = ai_response.json()
+                                repo.ai_summary = ai_data.get("summary", "No summary available.")
+                            else:
+                                repo.ai_summary = "Failed to generate summary from AI service."
+                        except Exception:
+                            repo.ai_summary = "Error connecting to AI service."
+                    else:
+                        # If no AI service is configured, create a simple summary
+                        if len(readme_content) > 500:
+                            repo.ai_summary = readme_content[:500] + "..."
+                        else:
+                            repo.ai_summary = readme_content
+
+                    repo.save()
+
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "AI summary updated successfully",
+                            "data": {"ai_summary": repo.ai_summary or "No summary available."},
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": f"GitHub API error: {response.status_code}",
+                        },
+                        status=response.status_code,
+                    )
+
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": f"An unexpected error occurred: {str(e)}",
+                    },
+                    status=500,
+                )
+
+        # Return a default response if no section matched
+        return JsonResponse({"status": "error", "message": "Invalid section specified " + section}, status=400)
 
 
 class RepoBadgeView(APIView):

@@ -1,8 +1,10 @@
 import ipaddress
 import json
 import logging
+import re
+import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlparse
 
@@ -13,14 +15,24 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
-from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect, JsonResponse
+from django.http import (
+    Http404,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseRedirect,
+    JsonResponse,
+    StreamingHttpResponse,
+)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.utils.decorators import method_decorator
+from django.utils.text import slugify
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, FormView, ListView, TemplateView, View
@@ -34,14 +46,18 @@ from website.models import (
     Activity,
     DailyStatusReport,
     Domain,
+    GitHubIssue,
     Hunt,
     IpReport,
     Issue,
     IssueScreenshot,
+    Message,
     Organization,
     OrganizationAdmin,
+    Repo,
     Room,
     Subscription,
+    Tag,
     TimeLog,
     Trademark,
     UserBadge,
@@ -65,24 +81,58 @@ def add_domain_to_organization(request):
                 url = domain.url
                 if not url.startswith(("http://", "https://")):
                     url = "http://" + url
-                response = requests.get(url)
-                soup = BeautifulSoup(response.text, "html.parser")
-                if organization_name in soup.get_text():
-                    organization = Organization.objects.create(name=organization_name)
-                    domain.organization = organization
-                    domain.save()
-                    messages.success(request, "Organization added successfully")
+
+                # SSRF Protection: Validate the URL before making the request
+                parsed_url = urlparse(url)
+                hostname = parsed_url.netloc.split(":")[0]
+
+                # Check if hostname is a private/internal address
+                is_private = False
+
+                # Check for localhost and special domains
+                private_domains = [".local", ".internal", ".localhost"]
+                if hostname == "localhost" or any(hostname.endswith(domain) for domain in private_domains):
+                    is_private = True
+
+                # Try to parse as IP address
+                if not is_private:
+                    try:
+                        ip = ipaddress.ip_address(hostname)
+                        # Check if IP is private
+                        is_private = ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local
+                    except ValueError:
+                        # Not a valid IP address, continue with hostname checks
+                        pass
+
+                if is_private:
+                    messages.error(request, "Invalid domain: Cannot use internal or private addresses")
                     return redirect("domain", slug=domain.url)
-                else:
-                    messages.error(request, "Organization not found in the domain")
+
+                try:
+                    response = requests.get(url, timeout=5)
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    if organization_name in soup.get_text():
+                        organization = Organization.objects.create(name=organization_name)
+                        domain.organization = organization
+                        domain.save()
+                        messages.success(request, "Organization added successfully")
+                        return redirect("domain", slug=domain.url)
+                    else:
+                        messages.error(request, "Organization not found in the domain")
+                        return redirect("domain", slug=domain.url)
+                except requests.RequestException:
+                    messages.error(request, "Could not connect to the domain")
                     return redirect("domain", slug=domain.url)
             else:
                 domain.organization = organization
                 domain.save()
                 messages.success(request, "Organization added successfully")
                 return redirect("domain", slug=domain.url)
-        except (Domain.DoesNotExist, requests.RequestException) as e:
-            messages.error(request, f"Error: {str(e)}")
+        except Domain.DoesNotExist:
+            messages.error(request, "Domain does not exist")
+            return redirect("home")
+        except requests.RequestException:
+            messages.error(request, "Could not connect to the domain")
             return redirect("home")
     else:
         return redirect("home")
@@ -385,9 +435,9 @@ class Joinorganization(TemplateView):
                 return JsonResponse({"status": "There was some error"})
 
 
-class ListHunts(TemplateView):
+class Listbounties(TemplateView):
     model = Hunt
-    template_name = "hunt_list.html"
+    template_name = "bounties_list.html"
 
     def get(self, request, *args, **kwargs):
         search = request.GET.get("search", "")
@@ -424,33 +474,169 @@ class ListHunts(TemplateView):
 
         hunts = filtered_bughunts.get(hunt_type, hunts)
 
-        if search.strip() != "":
+        if search.strip():
             hunts = hunts.filter(Q(name__icontains=search))
 
-        if start_date != "" and start_date is not None:
+        if start_date:
             start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(starts_on__gte=start_date)
 
-        if end_date != "" and end_date is not None:
+        if end_date:
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(end_on__gte=end_date)
 
-        if domain != "Select Domain" and domain is not None:
+        if domain and domain != "Select Domain":
             domain = Domain.objects.filter(id=domain).first()
             hunts = hunts.filter(domain=domain)
 
-        context = {"hunts": hunts, "domains": Domain.objects.values("id", "name").all()}
+        # Fetch GitHub issues with $5 label for first page
+        issue_state = request.GET.get("issue_state", "open")
+
+        try:
+            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
+
+            # For closed issues, fetch related PRs from database
+            if issue_state == "closed":
+                for issue in github_issues:
+                    issue_number = issue.get("number")
+
+                    try:
+                        related_prs = []
+                        prs = GitHubIssue.objects.filter(
+                            type="pull_request",
+                            is_merged=True,
+                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                            + str(issue_number),
+                        ).order_by("-merged_at")[:3]
+
+                        for pr in prs:
+                            related_prs.append(
+                                {
+                                    "number": pr.issue_id,
+                                    "title": pr.title,
+                                    "url": pr.url,
+                                    "user": pr.user_profile.user.username
+                                    if pr.user_profile and pr.user_profile.user
+                                    else None,
+                                }
+                            )
+
+                        issue["related_prs"] = related_prs
+                    except Exception as e:
+                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                        issue["related_prs"] = []
+        except Exception as e:
+            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            github_issues = []
+
+        context = {
+            "hunts": hunts,
+            "domains": Domain.objects.values("id", "name").all(),
+            "github_issues": github_issues,
+            "current_page": 1,
+            "selected_issue_state": issue_state,
+        }
 
         return render(request, self.template_name, context)
 
-    def post(self, request, *args, **kwargs):
-        request.GET.search = request.GET.get("search", "")
-        request.GET.start_date = request.GET.get("start_date", "")
-        request.GET.end_date = request.GET.get("end_date", "")
-        request.GET.domain = request.GET.get("domain", "Select Domain")
-        request.GET.hunt_type = request.GET.get("type", "all")
+    def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
+        cached_issues = cache.get(cache_key)
 
-        return self.get(request)
+        if cached_issues is not None:
+            return cached_issues
+
+        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
+
+        headers = {}
+        github_token = getattr(settings, "GITHUB_API_TOKEN", None)
+        if github_token:
+            headers["Authorization"] = f"token {github_token}"
+
+        try:
+            response = requests.get(
+                "https://api.github.com/repos/OWASP-BLT/BLT/issues", params=params, headers=headers, timeout=5
+            )
+
+            response.raise_for_status()
+
+            issues = response.json()
+            formatted_issues = []
+
+            for issue in issues:
+                related_prs = []
+
+                # Only include issues, not PRs in the response
+                if issue.get("pull_request") is None:
+                    formatted_issue = {
+                        "id": issue.get("id"),
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "url": issue.get("html_url"),
+                        "repository": "OWASP-BLT/BLT",
+                        "created_at": issue.get("created_at"),
+                        "updated_at": issue.get("updated_at"),
+                        "labels": [label.get("name") for label in issue.get("labels", [])],
+                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                        "state": issue.get("state"),
+                        "related_prs": related_prs,
+                        "closed_at": issue.get("closed_at"),
+                    }
+
+                    formatted_issues.append(formatted_issue)
+
+            # Cache for 5 minutes
+            cache.set(cache_key, formatted_issues, timeout=300)
+            return formatted_issues
+
+        except requests.RequestException as e:
+            logger.error(f"GitHub API request failed: {str(e)}")
+            return []
+
+
+def load_more_issues(request):
+    page = int(request.GET.get("page", 1))
+    state = request.GET.get("state", "open")
+
+    try:
+        view = Listbounties()
+        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
+
+        # For closed issues, fetch related PRs from database for other than first batch of issues
+        if issues and state == "closed":
+            for issue in issues:
+                issue_number = issue.get("number")
+
+                try:
+                    related_prs = []
+                    prs = GitHubIssue.objects.filter(
+                        type="pull_request",
+                        is_merged=True,
+                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                        + str(issue_number),
+                    ).order_by("-merged_at")[:3]
+
+                    for pr in prs:
+                        related_prs.append(
+                            {
+                                "number": pr.issue_id,
+                                "title": pr.title,
+                                "url": pr.url,
+                                "user": pr.user_profile.user.username
+                                if pr.user_profile and pr.user_profile.user
+                                else None,
+                            }
+                        )
+
+                    issue["related_prs"] = related_prs
+                except Exception as e:
+                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                    issue["related_prs"] = []
+
+        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
+    except Exception as e:
+        logger.error(f"Error loading more issues: {str(e)}")
+        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
 class DraftHunts(TemplateView):
@@ -600,24 +786,72 @@ class DomainDetailView(ListView):
     model = Issue
     paginate_by = 3
 
+    def get_domain_from_slug(self, slug):
+        """Helper method to find domain from a slug that might be a URL."""
+        if not slug:
+            raise Http404("No domain specified")
+
+        # Clean the slug
+        slug = slug.strip().lower()
+
+        # First try direct name match
+        try:
+            return Domain.objects.get(name=slug)
+        except Domain.DoesNotExist:
+            pass
+
+        # Try to parse as URL
+        if "//" not in slug:
+            slug = "http://" + slug
+
+        try:
+            parsed = urlparse(slug)
+            hostname = parsed.netloc or parsed.path
+            # Remove www. prefix if present
+            hostname = hostname.replace("www.", "")
+            # Remove any remaining path components
+            hostname = hostname.split("/")[0]
+
+            # Try to find domain by name or URL
+            try:
+                return Domain.objects.get(name=hostname)
+            except Domain.DoesNotExist:
+                try:
+                    return Domain.objects.get(url__icontains=hostname)
+                except Domain.DoesNotExist:
+                    # Try one last time with the original slug
+                    try:
+                        return Domain.objects.get(url__icontains=slug)
+                    except Domain.DoesNotExist:
+                        # If we've tried everything and still can't find it, return 404
+                        raise Http404(f"No domain found matching '{slug}'")
+        except Http404:
+            # Re-raise Http404 exceptions
+            raise
+        except Exception as e:
+            # Log the error but return a 404 instead of propagating the exception
+            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            raise Http404("Invalid domain format")
+
     def get_queryset(self):
         return Issue.objects.none()  # We'll handle the queryset in get_context_data
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         try:
-            # remove any arguments from the slug
-            slug = self.kwargs["slug"].split("?")[0]
-            domain = get_object_or_404(Domain, name=slug)
+            # Get the slug and clean it
+            slug = self.kwargs.get("slug", "").strip().split("?")[0]
+
+            # Find the domain
+            domain = self.get_domain_from_slug(slug)
             context["domain"] = domain
 
             # Get view count
             view_count = IP.objects.filter(path=self.request.path).count()
             context["view_count"] = view_count
 
-            parsed_url = urlparse("http://" + slug)
-            name = parsed_url.netloc.split(".")[-2:][0].title()
-            context["name"] = name
+            # Set the name for display
+            context["name"] = domain.get_name or domain.name
 
             # Fetch the related organization
             organization = domain.organization
@@ -635,13 +869,13 @@ class DomainDetailView(ListView):
 
             # Get open and closed issues
             open_issues = (
-                Issue.objects.filter(domain__name__contains=slug, status="open", hunt=None)
+                Issue.objects.filter(domain=domain, status="open", hunt=None)
                 .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
                 .order_by("-created")
             )
 
             closed_issues = (
-                Issue.objects.filter(domain__name__contains=slug, status="closed", hunt=None)
+                Issue.objects.filter(domain=domain, status="closed", hunt=None)
                 .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
                 .order_by("-created")
             )
@@ -675,24 +909,30 @@ class DomainDetailView(ListView):
                     "opened": openissue_paginated,
                     "closed_net": closed_issues,
                     "closed": closeissue_paginated,
-                    "leaderboard": User.objects.filter(issue__url__contains=slug)
-                    .annotate(total=Count("issue"))
-                    .order_by("-total"),
+                    "leaderboard": (
+                        User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
+                    ),
                     "current_month": datetime.now().month,
-                    "domain_graph": Issue.objects.filter(
-                        domain=domain,
-                        hunt=None,
-                        created__month__gte=(datetime.now().month - 6),
-                        created__month__lte=datetime.now().month,
-                    ).order_by("created"),
+                    "domain_graph": (
+                        Issue.objects.filter(
+                            domain=domain,
+                            hunt=None,
+                            created__month__gte=(datetime.now().month - 6),
+                            created__month__lte=datetime.now().month,
+                        ).order_by("created")
+                    ),
                     "total_bugs": Issue.objects.filter(domain=domain, hunt=None).count(),
-                    "pie_chart": Issue.objects.filter(domain=domain, hunt=None)
-                    .values("label")
-                    .annotate(c=Count("label"))
-                    .order_by("label"),
-                    "activities": Issue.objects.filter(domain=domain, hunt=None)
-                    .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
-                    .order_by("-created"),
+                    "pie_chart": (
+                        Issue.objects.filter(domain=domain, hunt=None)
+                        .values("label")
+                        .annotate(c=Count("label"))
+                        .order_by("label")
+                    ),
+                    "activities": (
+                        Issue.objects.filter(domain=domain, hunt=None)
+                        .exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+                        .order_by("-created")
+                    ),
                 }
             )
 
@@ -712,7 +952,11 @@ class DomainDetailView(ListView):
             context["twitter_url"] = f"https://twitter.com/{domain.get_or_set_x_url(domain.get_name)}"
 
             return context
+        except Http404:
+            # Re-raise Http404 exceptions directly
+            raise
         except Exception as e:
+            # Log the error but return a 404 instead of propagating the exception
             logger.error(f"Error in DomainDetailView: {str(e)}")
             raise Http404("Domain not found")
 
@@ -1351,7 +1595,11 @@ def add_or_update_organization(request):
             return HttpResponse("Organization updated successfully")
 
         except (Organization.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Error updating organization: {str(e)}")
+            return HttpResponse(
+                "Error updating organization. Either organization or user "
+                "doesn't exist or there was a key error. Please try again later."
+            )
     else:
         return HttpResponse("Invalid request method")
 
@@ -1385,7 +1633,11 @@ def add_role(request):
                 return HttpResponse("Role added successfully")
 
         except (OrganizationAdmin.DoesNotExist, User.DoesNotExist, KeyError) as e:
-            return HttpResponse(f"Error: {str(e)}")
+            logger.error(f"Error adding role: {str(e)}")
+            return HttpResponse(
+                "Error updating organization. Either organization or user "
+                "doesn't exist or there was a key error. Please try again later."
+            )
     else:
         return HttpResponse("Invalid request method")
 
@@ -1780,7 +2032,6 @@ def checkIN(request):
             }
         )
 
-    # Return JSON if AJAX
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse(data, safe=False)
 
@@ -1818,9 +2069,14 @@ class RoomsListView(ListView):
         context = super().get_context_data(**kwargs)
         context["form"] = RoomForm()
 
-        # Add last 3 messages for each room
+        # Add message count and last 3 messages for each room (newest first)
         for room in context["rooms"]:
+            room.message_count = room.messages.count()
+            # Get messages in reverse chronological order (newest first)
             room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
+
+        # Add breadcrumbs
+        context["breadcrumbs"] = [{"title": "Discussion Rooms", "url": None}]
 
         return context
 
@@ -1853,9 +2109,13 @@ def join_room(request, room_id):
     # Ensure session key exists for anonymous users
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
-    # Get messages ordered by timestamp
-    room_messages = room.messages.all().order_by("timestamp")
-    return render(request, "join_room.html", {"room": room, "room_messages": room_messages})
+    # Get messages ordered by timestamp in descending order (most recent first)
+    room_messages = room.messages.all().order_by("-timestamp")
+
+    # Add breadcrumbs context
+    breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
+
+    return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
 
 @login_required(login_url="/accounts/login")
@@ -1879,22 +2139,24 @@ def delete_room(request, room_id):
 class OrganizationDetailView(DetailView):
     model = Organization
     template_name = "organization/organization_detail.html"
-    context_object_name = "organization"
 
     def get_queryset(self):
-        return Organization.objects.prefetch_related(
-            "domain_set",
-            "domain_set__issue_set",
-            Prefetch(
-                "domain_set__issue_set",
-                queryset=Issue.objects.filter(status="open"),
-                to_attr="open_issues_list",
-            ),
-            Prefetch(
-                "domain_set__issue_set",
-                queryset=Issue.objects.filter(status="closed"),
-                to_attr="closed_issues_list",
-            ),
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch("domain_set", queryset=Domain.objects.prefetch_related("issue_set")),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="open"),
+                    to_attr="open_issues_list",
+                ),
+                Prefetch(
+                    "domain_set__issue_set",
+                    queryset=Issue.objects.filter(status="closed"),
+                    to_attr="closed_issues_list",
+                ),
+            )
         )
 
     def get_context_data(self, **kwargs):
@@ -1903,14 +2165,23 @@ class OrganizationDetailView(DetailView):
 
         # Get top 10 projects based on total pull requests
         top_projects = []
+        total_repos = 0
+
+        # Count repositories directly from the related repos
+        total_repos = organization.repos.count()
+
         for project in organization.projects.all():
-            total_prs = sum(repo.open_pull_requests + repo.closed_pull_requests for repo in project.repos.all())
-            total_contributors = sum(repo.contributor_count for repo in project.repos.all())
+            project_repos = project.repos.all()
+            # We don't need to add to total_repos here since we're counting directly from organization.repos
+
+            total_prs = sum(repo.open_pull_requests + repo.closed_pull_requests for repo in project_repos)
+            total_contributors = sum(repo.contributor_count for repo in project_repos)
             top_projects.append({"project": project, "total_prs": total_prs, "total_contributors": total_contributors})
 
         # Sort by total PRs and get top 10
         top_projects.sort(key=lambda x: x["total_prs"], reverse=True)
         context["top_projects"] = top_projects[:10]
+
         # Get all domains for this organization
         domains = organization.domain_set.all()
 
@@ -1921,6 +2192,11 @@ class OrganizationDetailView(DetailView):
         # Get view count
         view_count = IP.objects.filter(path=self.request.path).count()
 
+        # Check if GitHub URL exists
+        github_url = None
+        if organization.source_code and "github.com" in organization.source_code:
+            github_url = organization.source_code
+
         context.update(
             {
                 "total_domains": domains.count(),
@@ -1928,6 +2204,8 @@ class OrganizationDetailView(DetailView):
                 "total_closed_issues": total_closed_issues,
                 "total_issues": total_open_issues + total_closed_issues,
                 "view_count": view_count,
+                "total_repos": total_repos,
+                "github_url": github_url,
             }
         )
 
@@ -1941,12 +2219,13 @@ class OrganizationListView(ListView):
     paginate_by = 100
 
     def get_queryset(self):
-        # Optimize query with select_related and prefetch_related
-        return (
+        queryset = (
             Organization.objects.prefetch_related(
                 "domain_set",
                 "projects",
                 "projects__repos",
+                "repos",
+                "tags",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
                 ),
@@ -1962,11 +2241,17 @@ class OrganizationListView(ListView):
                 open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
                 closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
-                repo_count=Count("projects__repos", distinct=True),
             )
             .select_related("admin")
             .order_by("-created")
         )
+
+        # Filter by tag if provided in the URL
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1993,10 +2278,11 @@ class OrganizationListView(ListView):
 
         context["recently_viewed"] = recently_viewed
 
-        # Get most popular organizations by counting their view paths
+        # Get most popular organizations by counting their view paths for today only
+        today = timezone.now().date()
         orgs_with_views = []
         for org in self.get_queryset():
-            view_count = IP.objects.filter(path=f"/organization/{org.slug}/").count()
+            view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
             orgs_with_views.append((org, view_count))
 
         # Sort by view count and get top 5
@@ -2005,6 +2291,18 @@ class OrganizationListView(ListView):
 
         # Get total count using cached queryset
         context["total_organizations"] = Organization.objects.count()
+
+        # Get top tags by usage count
+        top_tags = (
+            Tag.objects.annotate(org_count=Count("organization")).filter(org_count__gt=0).order_by("-org_count")[:10]
+        )
+
+        context["top_tags"] = top_tags
+
+        # Get the currently selected tag if any
+        tag_slug = self.request.GET.get("tag")
+        if tag_slug:
+            context["selected_tag"] = Tag.objects.filter(slug=tag_slug).first()
 
         # Add top testers for each domain
         for org in context["organizations"]:
@@ -2016,3 +2314,346 @@ class OrganizationListView(ListView):
                 )
 
         return context
+
+
+@login_required
+def update_organization_repos(request, slug):
+    """Update repositories for an organization from GitHub."""
+    try:
+        organization = get_object_or_404(Organization, slug=slug)
+
+        # Check if repositories were updated in the last 24 hours
+        one_day_ago = timezone.timedelta(days=1)
+        if organization.repos_updated_at and timezone.now() < organization.repos_updated_at + one_day_ago:
+            time_since_update = timezone.now() - organization.repos_updated_at
+            hours_remaining = 24 - (time_since_update.total_seconds() / 3600)
+            messages.warning(
+                request,
+                f"Repositories were updated recently. Please wait {int(hours_remaining)} hours before updating again.",
+            )
+            return redirect("organization_detail", slug=slug)
+
+        # Check if the organization has a GitHub URL
+        if not organization.source_code:
+            # If GitHub URL was submitted in the form
+            if request.method == "POST" and request.POST.get("github_url"):
+                github_url = request.POST.get("github_url")
+                # Validate GitHub URL
+                if not re.match(r"https?://github\.com/([^/]+)/?.*", github_url):
+                    messages.error(
+                        request,
+                        "Invalid GitHub URL. Please ensure it's in the format: https://github.com/organization-name",
+                    )
+                    return redirect("organization_detail", slug=slug)
+
+                # Save the GitHub URL
+                organization.source_code = github_url
+                organization.save()
+                messages.success(request, "GitHub URL added successfully.")
+            else:
+                messages.error(request, "This organization doesn't have a GitHub URL set.")
+                return redirect("organization_detail", slug=slug)
+
+        # Extract GitHub organization name from URL
+        github_url_pattern = r"https?://github\.com/([^/]+)/?.*"
+        match = re.match(github_url_pattern, organization.source_code)
+        if not match:
+            messages.error(
+                request, "Invalid GitHub URL. Please ensure it's in the format: https://github.com/organization-name"
+            )
+            return redirect("organization_detail", slug=slug)
+
+        github_org_name = match.group(1)
+
+        # Check if GitHub token is set
+        if not hasattr(settings, "GITHUB_TOKEN") or not settings.GITHUB_TOKEN:
+            logger.error("GitHub token not set in settings")
+            messages.error(
+                request,
+                "GitHub API token not configured. Please contact the administrator.",
+            )
+            return redirect("organization_detail", slug=slug)
+
+        # Update the repos_updated_at timestamp
+        organization.repos_updated_at = timezone.now()
+        organization.save()
+
+        def error_stream():
+            yield "data: $ Starting repository update for organization: %s\n\n" % organization.name
+            yield "data: $ Using GitHub organization: %s\n\n" % github_org_name
+
+        def event_stream():
+            try:
+                # Test GitHub API token validity
+                yield "data: $ Testing GitHub API token...\n\n"
+                try:
+                    rate_limit_url = "https://api.github.com/rate_limit"
+                    response = requests.get(
+                        rate_limit_url,
+                        headers={
+                            "Authorization": f"token {settings.GITHUB_TOKEN}",
+                            "Accept": "application/vnd.github.v3+json",
+                        },
+                        timeout=10,
+                    )
+
+                    if response.status_code == 200:
+                        rate_data = response.json()
+                        core_rate = rate_data.get("resources", {}).get("core", {})
+                        remaining = core_rate.get("remaining", 0)
+                        limit = core_rate.get("limit", 0)
+                        reset_time = core_rate.get("reset", 0)
+                        reset_datetime = datetime.fromtimestamp(reset_time)
+                        reset_str = reset_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+                        yield (
+                            f"data: $ GitHub API token is valid. Rate limit: {remaining}/{limit}, "
+                            f"resets at {reset_str}\n\n"
+                        )
+
+                        if remaining < 50:
+                            yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
+                    else:
+                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                        yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
+                        yield "data: DONE\n\n"
+                        return
+                except requests.exceptions.RequestException as e:
+                    yield f"data: $ Error testing GitHub API: {str(e)[:50]}\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                # Fetch organization details
+                try:
+                    org_api_url = f"https://api.github.com/orgs/{github_org_name}"
+                    yield f"data: $ Fetching organization details: {org_api_url}\n\n"
+
+                    response = requests.get(
+                        org_api_url,
+                        headers={
+                            "Authorization": f"token {settings.GITHUB_TOKEN}",
+                            "Accept": "application/vnd.github.v3+json",
+                        },
+                        timeout=10,
+                    )
+
+                    if response.status_code == 404:
+                        yield f"data: $ Error: GitHub organization '{github_org_name}' not found\n\n"
+                        yield "data: DONE\n\n"
+                        return
+                    elif response.status_code == 401:
+                        yield "data: $ Error: GitHub authentication failed\n\n"
+                        yield "data: DONE\n\n"
+                        return
+                    elif response.status_code != 200:
+                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                        yield (
+                            f"data: $ Error: GitHub API returned {response.status_code}. "
+                            f"Response: {response_text}\n\n"
+                        )
+                        yield "data: DONE\n\n"
+                        return
+
+                    org_data = response.json()
+
+                    # Update organization logo if not already set
+                    if not organization.logo and org_data.get("avatar_url"):
+                        try:
+                            yield "data: $ Updating organization logo...\n\n"
+                            logo_url = org_data["avatar_url"]
+                            logo_response = requests.get(logo_url, timeout=10)
+                            if logo_response.status_code == 200:
+                                from django.core.files.base import ContentFile
+
+                                logo_filename = f"{github_org_name}_logo.png"
+                                logo_content = ContentFile(logo_response.content)
+                                organization.logo.save(logo_filename, logo_content, save=True)
+                                yield "data: $ Organization logo updated successfully\n\n"
+                            else:
+                                yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
+                        except Exception as e:
+                            yield f"data: $ Error updating logo: {str(e)[:50]}\n\n"
+                except requests.exceptions.RequestException:
+                    yield "data: $ Error: Failed to connect to GitHub\n\n"
+                    yield "data: DONE\n\n"
+                    return
+
+                # Fetch repositories
+                page = 1
+                repos_processed = 0
+                repos_updated = 0
+                repos_created = 0
+
+                while True:
+                    try:
+                        repos_api_url = f"https://api.github.com/orgs/{github_org_name}/repos"
+                        yield f"data: $ Fetching: {repos_api_url}?page={page}\n\n"
+
+                        response = requests.get(
+                            repos_api_url,
+                            params={"page": page, "per_page": 100, "type": "public"},
+                            headers={
+                                "Authorization": f"token {settings.GITHUB_TOKEN}",
+                                "Accept": "application/vnd.github.v3+json",
+                            },
+                            timeout=10,
+                        )
+
+                        if response.status_code == 403:
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            if "rate limit" in response.text.lower():
+                                yield (
+                                    f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n"
+                                )
+                            else:
+                                yield (
+                                    f"data: $ Error: GitHub API access forbidden (403). "
+                                    f"Response: {response_text}\n\n"
+                                )
+                            break
+                        elif response.status_code == 401:
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            yield (
+                                f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n"
+                            )
+                            yield "data: DONE\n\n"
+                            return
+                        elif response.status_code != 200:
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            yield (
+                                f"data: $ Error: GitHub API returned {response.status_code}. "
+                                f"Response: {response_text}\n\n"
+                            )
+                            yield "data: DONE\n\n"
+                            return
+
+                        repos = response.json()
+                        if not repos:
+                            break
+
+                        for repo_data in repos:
+                            repos_processed += 1
+                            repo_name = repo_data.get("name", "Unknown")
+
+                            try:
+                                # Check if repo already exists
+                                repo, created = Repo.objects.update_or_create(
+                                    repo_url=repo_data["html_url"],
+                                    defaults={
+                                        "name": repo_name,
+                                        "description": repo_data.get("description") or "",
+                                        "primary_language": repo_data.get("language") or "",
+                                        "organization": organization,
+                                        "stars": repo_data.get("stargazers_count", 0),
+                                        "forks": repo_data.get("forks_count", 0),
+                                        "open_issues": repo_data.get("open_issues_count", 0),
+                                        "watchers": repo_data.get("watchers_count", 0),
+                                        "is_archived": repo_data.get("archived", False),
+                                        "size": repo_data.get("size", 0),
+                                    },
+                                )
+
+                                # Create slug if it doesn't exist
+                                if not repo.slug:
+                                    base_slug = slugify(repo.name)
+                                    repo.slug = base_slug
+                                    repo.save()
+
+                                if created:
+                                    repos_created += 1
+                                    yield f"data: $ {repo.name} [created]\n\n"
+                                else:
+                                    repos_updated += 1
+                                    yield f"data: $ {repo.name} [updated]\n\n"
+
+                                # Add topics as tags (without verbose output)
+                                if repo_data.get("topics"):
+                                    for topic in repo_data["topics"]:
+                                        tag_slug = slugify(topic)
+                                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
+                                        repo.tags.add(tag)
+
+                            except Exception as e:
+                                yield f"data: $ Error with {repo_name}: {str(e)[:50]}\n\n"
+
+                    except requests.exceptions.RequestException as e:
+                        yield f"data: $ Network error: {str(e)[:50]}\n\n"
+                        break
+
+                    page += 1
+                    time.sleep(1)  # Avoid hitting rate limits
+
+                # Final status message
+                yield (
+                    f"data: $ Done. Processed: {repos_processed}, Updated: {repos_updated}, "
+                    f"Created: {repos_created}\n\n"
+                )
+                yield "data: DONE\n\n"
+
+            except Exception as e:
+                yield f"data: $ Unexpected error: {str(e)[:50]}\n\n"
+                yield "data: DONE\n\n"
+
+        return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    except Exception as e:
+        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
+        return redirect("organization_detail", slug=slug)
+
+
+@require_POST
+def send_message_api(request):
+    """API endpoint for sending messages from the rooms list page"""
+    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        room_id = data.get("room_id")
+        message_content = data.get("message")
+
+        if not room_id or not message_content:
+            return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+
+        room = get_object_or_404(Room, id=room_id)
+
+        # Create the message
+        if request.user.is_authenticated:
+            username = request.user.username
+            user = request.user
+            session_key = None
+        else:
+            # Ensure session key exists for anonymous users
+            if not request.session.session_key:
+                request.session.create()
+            session_key = request.session.session_key
+            username = f"anon_{session_key[-4:]}"
+            user = None
+
+        message = Message.objects.create(
+            room=room, user=user, username=username, content=message_content, session_key=session_key
+        )
+
+        return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def room_messages_api(request, room_id):
+    """API endpoint for getting room messages"""
+    room = get_object_or_404(Room, id=room_id)
+    messages = room.messages.all().order_by("-timestamp")[:10]  # Get the 10 most recent messages
+
+    message_data = []
+    for message in messages:
+        message_data.append(
+            {
+                "id": message.id,
+                "username": message.username,
+                "content": message.content,
+                "timestamp": message.timestamp.isoformat(),
+                "timestamp_display": naturaltime(message.timestamp),
+            }
+        )
+
+    return JsonResponse({"success": True, "count": room.messages.count(), "messages": message_data})

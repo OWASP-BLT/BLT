@@ -18,7 +18,10 @@ from website.models import (
     Contribution,
     Contributor,
     ContributorStats,
+    Course,
+    DailyStats,
     Domain,
+    Enrollment,
     ForumCategory,
     ForumComment,
     ForumPost,
@@ -31,6 +34,9 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    JoinRequest,
+    Lecture,
+    LectureStatus,
     Message,
     Monitor,
     Organization,
@@ -41,8 +47,11 @@ from website.models import (
     Post,
     PRAnalysisReport,
     Project,
+    Queue,
+    Rating,
     Repo,
     Room,
+    Section,
     SlackBotActivity,
     SlackIntegration,
     Subscription,
@@ -123,6 +132,10 @@ class BidAdmin(admin.ModelAdmin):
 
 class WalletAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "current_balance", "created")
+
+
+class JoinRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "team", "created_at", "is_accepted")
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -274,10 +287,11 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user",
+        "user_email",
         "user_avatar",
         "get_title_display",
         "role",
-        "description",
+        "short_description",
         "winnings",
         "issues_hidden",
         "btc_address",
@@ -295,7 +309,24 @@ class UserProfileAdmin(admin.ModelAdmin):
         "github_url",
         "website_url",
         "discounted_hourly_rate",
+        "email_status",
+        "email_last_event",
+        "email_last_event_time",
+        "email_click_count",
+        "email_open_count",
+        "email_spam_report",
+        "email_unsubscribed",
     )
+
+    def user_email(self, obj):
+        return obj.user.email
+
+    user_email.short_description = "Email"
+
+    def short_description(self, obj):
+        return truncatechars(obj.description, 10)
+
+    short_description.short_description = "Description"
 
     def follow_count(self, obj):
         return obj.follows.count()
@@ -511,17 +542,24 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
         "url",
+        "p2p_amount_usd",
+        "p2p_amount_bch",
+        "sent_by_user",
+        "p2p_payment_created_at",
+        "bch_tx_id",
     )
     list_filter = [
         "type",
         "state",
         "is_merged",
         "user_profile",
+        "sent_by_user",
     ]
     search_fields = [
         "title",
         "url",
         "user_profile__user__username",
+        "bch_tx_id",
     ]
     date_hierarchy = "created_at"
 
@@ -547,10 +585,15 @@ class GitHubReviewAdmin(admin.ModelAdmin):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("id", "room", "username", "content", "timestamp")
+    list_display = ("id", "room", "thread", "username", "content", "timestamp")
     list_filter = ("room", "timestamp")
     search_fields = ("username", "content")
     date_hierarchy = "timestamp"
+
+
+class ThreadAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "created", "modified")
+    search_fields = ("name",)
 
 
 class SlackBotActivityAdmin(admin.ModelAdmin):
@@ -572,6 +615,40 @@ class RoomAdmin(admin.ModelAdmin):
     list_filter = ("type", "created_at")
     search_fields = ("name", "description", "admin__username")
     date_hierarchy = "created_at"
+
+
+class DailyStatsAdmin(admin.ModelAdmin):
+    list_display = ("name", "value", "created", "modified")
+    search_fields = ["name", "value"]
+    list_filter = ["created", "modified"]
+    readonly_fields = ["created", "modified"]
+    ordering = ["-modified"]
+
+
+class QueueAdmin(admin.ModelAdmin):
+    list_display = ("id", "short_message", "image", "created", "modified", "launched", "launched_at")
+    list_filter = ("launched", "created", "modified")
+    search_fields = ("message",)
+    readonly_fields = ("created", "modified")
+    actions = ["mark_as_launched"]
+
+    def short_message(self, obj):
+        return truncatechars(obj.message, 50)
+
+    short_message.short_description = "Message"
+
+    def mark_as_launched(self, request, queryset):
+        now = timezone.now()
+        count = 0
+        for queue_item in queryset:
+            if not queue_item.launched:
+                queue_item.launched = True
+                queue_item.launched_at = now
+                queue_item.save()
+                count += 1
+        self.message_user(request, f"{count} queue items marked as launched.")
+
+    mark_as_launched.short_description = "Mark selected items as launched"
 
 
 admin.site.register(Project, ProjectAdmin)
@@ -614,8 +691,17 @@ admin.site.register(Post, PostAdmin)
 admin.site.register(Trademark)
 admin.site.register(TrademarkOwner)
 admin.site.register(OsshCommunity)
+admin.site.register(Lecture)
+admin.site.register(LectureStatus)
+admin.site.register(Course)
+admin.site.register(Section)
+admin.site.register(Enrollment)
+admin.site.register(Rating)
 admin.site.register(GitHubIssue, GitHubIssueAdmin)
 admin.site.register(GitHubReview, GitHubReviewAdmin)
 admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
+admin.site.register(DailyStats, DailyStatsAdmin)
+admin.site.register(Queue, QueueAdmin)
+admin.site.register(JoinRequest, JoinRequestAdmin)

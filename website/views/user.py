@@ -1,11 +1,8 @@
 import json
 import logging
 import os
-from collections import defaultdict
 from datetime import datetime, timezone
-from urllib.parse import urlparse
 
-import requests
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -25,6 +22,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -46,12 +44,12 @@ from website.models import (
     Monitor,
     Points,
     Tag,
+    Thread,
     User,
     UserBadge,
     UserProfile,
     Wallet,
 )
-from website.utils import is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger(__name__)
 
@@ -114,13 +112,20 @@ def profile_edit(request):
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
+            # Save the form
             form.save()
+
+            # Update the User model's email
+            request.user.email = new_email
+            request.user.save()
+
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
         else:
             messages.error(request, "Please correct the errors below.")
     else:
-        form = UserProfileForm(instance=user_profile)
+        # Initialize the form with the user's current email
+        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
 
     return render(request, "profile_edit.html", {"form": form})
 
@@ -175,17 +180,7 @@ class InviteCreate(TemplateView):
         domain = None
         if email:
             domain = email.split("@")[-1]
-            try:
-                full_url_domain = "https://" + domain + "/favicon.ico"
-                if is_valid_https_url(full_url_domain):
-                    safe_url = rebuild_safe_url(full_url_domain)
-                    response = requests.get(safe_url, timeout=5)
-                    if response.status_code == 200:
-                        exists = "exists"
-            except:
-                pass
         context = {
-            "exists": exists,
             "domain": domain,
             "email": email,
         }
@@ -377,62 +372,6 @@ class UserProfileDetailView(DetailView):
             }
         )
 
-        context["prs_grouped"] = None
-        context["total_pr_reviews"] = 0
-
-        if user.userprofile.github_url:
-            try:
-                parsed_url = urlparse(user.userprofile.github_url)
-                path_parts = parsed_url.path.strip("/").split("/")
-                if path_parts:
-                    github_username = path_parts[0]
-                    headers = {"Authorization": f"token {settings.GITHUB_TOKEN}"} if settings.GITHUB_TOKEN else {}
-                    reviewed_prs_response = requests.get(
-                        f"https://api.github.com/search/issues?q=type:pr+reviewed-by:{github_username}",
-                        headers=headers,
-                        timeout=5,
-                    )
-                    if reviewed_prs_response.status_code == 200:
-                        reviewed_prs = reviewed_prs_response.json().get("items", [])
-                        prs_grouped = defaultdict(list)
-                        reviewed_stats = {"merged_count": 0, "open_count": 0, "closed_count": 0}
-
-                        for pr in reviewed_prs:
-                            repo_name = pr["repository_url"].split("/")[-1]
-                            is_merged = pr.get("pull_request", {}).get("merged_at") is not None
-                            state = pr["state"]
-
-                            # Update counts
-                            if is_merged:
-                                reviewed_stats["merged_count"] += 1
-                            elif state == "open":
-                                reviewed_stats["open_count"] += 1
-                            else:
-                                reviewed_stats["closed_count"] += 1
-
-                            # Add to grouped PRs
-                            prs_grouped[repo_name].append(
-                                {
-                                    "html_url": pr["html_url"],
-                                    "number": pr["number"],
-                                    "title": pr["title"],
-                                    "state": state,
-                                    "merged": is_merged,
-                                    "created_at": pr["created_at"],
-                                }
-                            )
-
-                        context.update(
-                            {
-                                "prs_grouped": dict(prs_grouped),
-                                "reviewed_stats": reviewed_stats,
-                                "total_pr_reviews": len(reviewed_prs),
-                            }
-                        )
-
-            except Exception as e:
-                logger.error(f"Error fetching GitHub PRs: {str(e)}")
-
         return context
 
     @method_decorator(login_required)
@@ -570,7 +509,8 @@ class LeaderboardBase:
 
 class GlobalLeaderboardView(LeaderboardBase, ListView):
     """
-    Returns: All users:score data in descending order
+    Returns: All users:score data in descending order,
+    including pull requests, code reviews, top visitors, and top streakers
     """
 
     model = User
@@ -584,9 +524,10 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+
         context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
 
-        # Get pull request leaderboard
+        # Pull Request Leaderboard
         pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request", is_merged=True)
             .values(
@@ -599,7 +540,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Get Reviewed Pull Request Leaderboard
+        # Reviewed PR Leaderboard
         reviewed_pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request")
             .values(
@@ -611,6 +552,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .order_by("-total_reviews")[:10]
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
+
+        # Top visitors leaderboard
+        top_visitors = (
+            UserProfile.objects.select_related("user")
+            .filter(daily_visit_count__gt=0)
+            .order_by("-daily_visit_count")[:10]
+        )
+
+        context["top_visitors"] = top_visitors
 
         return context
 
@@ -849,26 +799,29 @@ def get_score(request):
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
-        userx = User.objects.get(username=user)
-        flag = 0
-        list_userfrof = request.user.userprofile.follows.all()
-        for prof in list_userfrof:
-            if str(prof) == (userx.email):
-                request.user.userprofile.follows.remove(userx.userprofile)
-                flag = 1
-        if flag != 1:
-            request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
-            msg_html = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
+        try:
+            userx = User.objects.get(username=user)
+            flag = 0
+            list_userfrof = request.user.userprofile.follows.all()
+            for prof in list_userfrof:
+                if str(prof) == (userx.email):
+                    request.user.userprofile.follows.remove(userx.userprofile)
+                    flag = 1
+            if flag != 1:
+                request.user.userprofile.follows.add(userx.userprofile)
+                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
 
-            send_mail(
-                "You got a new follower!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [userx.email],
-                html_message=msg_html,
-            )
-        return HttpResponse("Success")
+                send_mail(
+                    "You got a new follower!!",
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [userx.email],
+                    html_message=msg_html,
+                )
+            return HttpResponse("Success")
+        except User.DoesNotExist:
+            return HttpResponse(f"User {user} not found", status=404)
 
 
 # get issue and comment id from url
@@ -948,6 +901,7 @@ def badge_user_list(request, badge_id):
         .select_related("user")
         .distinct()
         .annotate(awarded_at=F("user__userbadge__awarded_at"))
+        .order_by("-awarded_at")
     )
 
     return render(
@@ -1087,3 +1041,80 @@ class UserChallengeListView(View):
             "user_challenges.html",
             {"challenges": challenges, "user_challenges": user_challenges},
         )
+
+
+@login_required
+def messaging_home(request):
+    threads = Thread.objects.filter(participants=request.user).order_by("-updated_at")
+    return render(request, "messaging.html", {"threads": threads})
+
+
+@login_required
+def start_thread(request, user_id):
+    if request.method == "POST":
+        other_user = get_object_or_404(User, id=user_id)
+
+        # Check if a thread already exists between the two users
+        thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
+
+        if not thread:
+            # Create a new thread
+            thread = Thread.objects.create()
+            thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+
+        return JsonResponse({"success": True, "thread_id": thread.id})
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def view_thread(request, thread_id):
+    thread = get_object_or_404(Thread, id=thread_id)
+    messages = thread.messages.all().order_by("timestamp")
+    # Convert the QuerySet to a list of dictionaries using values()
+    data = list(messages.values("username", "content", "timestamp"))
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_public_key(request, thread_id):
+    # Get the thread
+    thread = get_object_or_404(Thread, id=thread_id)
+
+    # Get the other participant in the thread (exclude the logged-in user)
+    other_participants = thread.participants.exclude(id=request.user.id)
+    if not other_participants.exists():
+        return JsonResponse({"error": "No other participant found"}, status=404)
+
+    other_user = other_participants.first()
+    # Access the public_key from the UserProfile
+    try:
+        public_key = other_user.userprofile.public_key
+    except Exception:
+        return JsonResponse({"error": "User profile not found"}, status=404)
+
+    if not public_key:
+        return JsonResponse({"error": "User has not provided a public key"}, status=404)
+
+    return JsonResponse({"public_key": public_key})
+
+
+@login_required
+@require_http_methods(["POST"])
+def set_public_key(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    public_key = data.get("public_key")
+    if not public_key:
+        return JsonResponse({"error": "Public key is required"}, status=400)
+
+    # Update the public_key on the user's profile
+    profile = request.user.userprofile
+    profile.public_key = public_key
+    profile.save()
+
+    return JsonResponse({"success": True, "public_key": profile.public_key})
