@@ -14,15 +14,7 @@
     span.blue a{
         color: #7CB9F0 !important;
     }
-    #trademark-container {
-    max-width: 800px;
-    margin: 20px auto;
-    background-color: #fefefe;
-    border-radius: 15px;
-    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    font-family: 'Arial', sans-serif;
-}
+ 
 
 .trademark-header {
     background-color: #2563eb;
@@ -160,18 +152,18 @@
 {% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex lg:!ml-[0px] px-5 mt-[4vh] max-sm:!mt-[5vh] max-sm:!items-center justify-between max-sm:flex-col font-['Ubuntu'] max-sm:translate-x-5 max-sm:translate-y-5">
-        <div class="max-sm:w-[100vw] w-[20vw] flex flex-col">
-            <div class="inline-block relative h-[200px] w-[200px]">
+    <div class="border lg:w-[1800px] w-full lg:mx-auto rounded-lg  flex  mt-[4vh] max-sm:mt-[5vh] max-sm:items-center justify-between max-sm:flex-col font-ubuntu">
+        <div class="lg:w-[25%] w-full border-r border-gray-300/80 flex p-4 flex-col">
+            <div class="inline-block relative h-[400px] w-full rounded-lg">
                 {% if domain.get_logo %}
                     <img src="{{ domain.get_logo }}"
-                         class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover"
+                         class="img-responsive img-thumbnail object-cover w-full h-full rounded-lg"
                          alt="avatar"
                          width="200"
                          height="200">
                 {% else %}
                     <img src="{% gravatar_url user.email 200 %}"
-                         class="img-responsive img-thumbnail w-[200px] h-[200px] object-cover"
+                         class="img-responsive img-thumbnail  w-full h-full object-cover rounded-lg"
                          alt="avatar"
                          width="200"
                          height="200">
@@ -179,16 +171,13 @@
             </div>
             <div class="h-[2vh]"></div>
             <div>
-                <div class="font-bold mb-3 mt-1">
-                    Recent Activity
-                    <hr>
-                </div>
-                <div class="relative right-0">
-                    <ul class="relative flex flex-wrap p-1 list-none rounded-xl bg-blue-gray-50/60"
+                <div class="font-semibold text-lg mb-3 mt-1">Recent Activity</div>
+                <div>
+                    <ul class="relative flex flex-wrap gap-3 p-1 select-none list-none rounded-xl bg-blue-gray-50/60"
                         data-tabs="tabs"
                         role="list">
                         <li class="z-30 flex-auto text-center">
-                            <a class="z-30 flex items-center justify-center w-full px-0 py-1 mb-0 transition-all ease-in-out border-0 rounded-lg cursor-pointer text-slate-700 bg-inherit"
+                            <a class="z-30 flex hover:text-white items-center justify-center w-full px-4 py-2 mb-0  ease-in-out rounded-lg cursor-pointer text-red-500 border-2 border-red-500 hover:bg-red-600 transition duration-200"
                                data-tab-target=""
                                active=""
                                role="tab"
@@ -198,7 +187,7 @@
                             </a>
                         </li>
                         <li class="z-30 flex-auto text-center">
-                            <a class="z-30 flex items-center justify-center w-full px-0 py-1 mb-0 transition-all ease-in-out border-0 rounded-lg cursor-pointer text-slate-700 bg-inherit"
+                            <a class="z-30 flex hover:text-white items-center justify-center w-full px-4 py-2 mb-0  ease-in-out rounded-lg cursor-pointer text-red-500 border-2 border-red-500 hover:bg-red-600 transition duration-200"
                                data-tab-target=""
                                role="tab"
                                aria-selected="false"
@@ -207,270 +196,286 @@
                             </a>
                         </li>
                     </ul>
-                    <div data-tab-content="" class="p-5">
-                        <div class="block opacity-100" id="app" role="tabpanel">
-                            <p class="block font-sans text-base antialiased font-light leading-relaxed text-inherit text-blue-gray-500">
-                                {% for activity in opened %}
+                </div>
+                <div data-tab-content="" class="w-full my-5">
+                    <div class="block opacity-100" id="app" role="tabpanel">
+                        <div class="space-y-4">
+                            {% for activity in opened %}
+                                {% include "includes/_new_activity.html" %}
+                            {% endfor %}
+                            <div class="flex items-center justify-center gap-4 mt-6">
+                                {% if opened.has_previous %}
+                                    <a href="?open={{ opened.previous_page_number }}"
+                                       class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
+                                        Previous
+                                    </a>
+                                {% endif %}
+                                <span class="text-gray-700 font-medium">Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
+                                {% if opened.has_next %}
+                                    <a href="?open={{ opened.next_page_number }}"
+                                       class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
+                                        Next
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden opacity-0" id="message" role="tabpanel">
+                        <div class="space-y-4">
+                            {% if closed %}
+                                {% for activity in closed %}
                                     {% include "includes/_new_activity.html" %}
                                 {% endfor %}
-                                <div class="text-center">
-                                    {% if opened.has_previous %}
-                                        <a href="?open={{ opened.previous_page_number }}"
-                                           class="btn btn-default">Prev</a>
-                                    {% endif %}
-                                    <span>Page {{ opened.number }} of {{ opened.paginator.num_pages }}</span>
-                                    {% if opened.has_next %}<a href="?open={{ opened.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
-                                </div>
-                            </p>
-                        </div>
-                        <div class="hidden opacity-0" id="message" role="tabpanel">
-                            <p class="block font-sans text-base antialiased font-light leading-relaxed text-inherit text-blue-gray-500">
-                                {% if closed %}
-                                    {% for activity in closed %}
-                                        {% include "includes/_new_activity.html" %}
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="text-start">{% trans "No Activity Yet!" %}</div>
+                            {% else %}
+                                <div class="text-center py-8 text-gray-500">{% trans "No Activity Yet!" %}</div>
+                            {% endif %}
+                            <div class="flex items-center justify-center gap-4 mt-6">
+                                {% if closed.has_previous %}
+                                    <a href="?close={{ closed.previous_page_number }}"
+                                       class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
+                                        Previous
+                                    </a>
                                 {% endif %}
-                                <div class="text-center">
-                                    {% if closed.has_previous %}
-                                        <a href="?close={{ closed.previous_page_number }}"
-                                           class="btn btn-default">Prev</a>
-                                    {% endif %}
-                                    <span>Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
-                                    {% if closed.has_next %}<a href="?close={{ closed.next_page_number }}" class="btn btn-default">Next</a>{% endif %}
-                                </div>
-                            </p>
+                                <span class="text-gray-700 font-medium">Page {{ closed.number }} of {{ closed.paginator.num_pages }}</span>
+                                {% if closed.has_next %}
+                                    <a href="?close={{ closed.next_page_number }}"
+                                       class="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 transition duration-200">
+                                        Next
+                                    </a>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="max-sm:w-[100vw] w-[37vw] ml-4">
-            <div>
-                <div class="organization-info flex flex-row justify-between">
-                    <div class="one">
-                        <div class="flex items-center gap-4">
-                            <a href="{{ domain.url }}"
-                               class="font-bold text-[20px] capitalize"
-                               target="/new">{{ name }}</a>
-                            {% if request.user.is_superuser %}
-                                <div class="flex items-center gap-2">
-                                    <a href="{% url 'admin:website_domain_change' domain.id %}"
-                                       class="text-blue-600 hover:text-blue-800"
-                                       title="Edit Domain">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <a href="{% url 'admin:website_domain_delete' domain.id %}"
-                                       class="text-red-600 hover:text-red-800"
-                                       title="Delete Domain">
-                                        <i class="fas fa-trash"></i>
-                                    </a>
-                                </div>
-                            {% endif %}
+        <div class=" lg:w-[75%] w-full p-4">
+            <div class="flex flex-col gap-5">
+                <div class="bg-white  border-b border-gray-300 p-6">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <a href="{{ domain.url }}"
+                                   class="text-2xl font-bold hover:text-[#e74c3c] transition duration-200"
+                                   target="_blank">{{ name }}</a>
+                                {% if request.user.is_superuser %}
+                                    <div class="flex items-center gap-3">
+                                        <a href="{% url 'admin:website_domain_change' domain.id %}"
+                                           class="text-[#e74c3c] hover:text-[#c0392b] transition duration-200"
+                                           title="Edit Domain">
+                                            <i class="fas fa-edit text-lg"></i>
+                                        </a>
+                                        <a href="{% url 'admin:website_domain_delete' domain.id %}"
+                                           class="text-[#e74c3c] hover:text-[#c0392b] transition duration-200"
+                                           title="Delete Domain">
+                                            <i class="fas fa-trash text-lg"></i>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
                         {% if organization %}
-                            <small class="uppercase flex flex-col text-[#909090]">
-                                <span class="text-gray-700">{{ organization.name }}</span>
-                            </small>
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">{{ organization.name }}</span>
+                            </div>
                         {% endif %}
                         {% if domain.email %}
-                            <small class="uppercase flex flex-col text-[#909090]">
-                                <span class="blue">{{ domain.email|obfuscate_mailto }}</span>
+                            <div class="flex flex-col gap-1 text-sm">
+                                <span class="text-[#e74c3c]">{{ domain.email|obfuscate_mailto }}</span>
                                 {% if domain.email_event %}
-                                    Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago
-                                    <br>
-                                    Clicks {{ domain.clicks|default:"0" }}
+                                    <div class="text-gray-600">Last email {{ domain.email_event|default:"" }} {{ domain.modified|timesince }} ago</div>
+                                    <div class="text-gray-600">Clicks {{ domain.clicks|default:"0" }}</div>
                                 {% endif %}
-                            </small>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
-                <div class="text-2xl font-bold my-4">
-                    Issue Stats
-                    <hr>
-                </div>
-                <div class="font=['Ubuntu'] max-sm:w-full w-[37vw]">
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚙️ {% trans "General" %} {{ bug_type_0 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚠️ {% trans "Number" %} {{ bug_type_1 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🏆 {% trans "Functional" %} {{ bug_type_2 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚡ {% trans "Performance" %} {{ bug_type_3 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⚡ {% trans "Security" %} {{ bug_type_4 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-2 m-2">✏️ {% trans "Typo" %} {{ bug_type_5 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }}</div>
-                    </button>
-                </div>
-                <div class="text-2xl font-bold my-4">
-                    Domain Stats
-                    <hr>
-                </div>
-                <div class="font=['Ubuntu'] max-sm:w-full w-[37vw]">
-                    <button>
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2 mr-3">🏆 {% trans "Bugs Reported" %} {{ total_bugs }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}</div>
-                    </button>
-                    <button class="mr-3">
-                        <div class="bg-[#f4f4f4] rounded-2xl p-3 m-2">👀 {% trans "Views" %} {{ view_count }}</div>
-                    </button>
-                </div>
-                <div class="text-2xl font-bold my-4">
-                    <div id="trademark-container" class="p-4">
-                        <div class="trademark-header">
-                            <h2 class="text-2xl">
-                                <i class="fas fa-gavel icon"></i>
-                                Trademark Results For {{ name }}
-                            </h2>
-                            <span class="status-badge {% if trademarks|length > 0 %}status-live{% else %}status-dead{% endif %}">
-                                {{ trademarks|length }} Matches Found
-                            </span>
-                        </div>
-                        <div class="trademark-scroll">
-                            {% if trademarks|length > 0 %}
-                                {% for trademark in trademarks %}
-                                    <div class="trademark-item">
-                                        <h2>
-                                            <i class="fas fa-search icon"></i>
-                                            {{ trademark.keyword }}
-                                        </h2>
-                                        <div class="trademark-details">
-                                            <div>
-                                                <i class="fas fa-id-card icon"></i>
-                                                <strong>Reg No.:</strong> {{ trademark.registration_number | default:"N/A" }}
-                                            </div>
-                                            <div>
-                                                <i class="fas fa-hashtag icon"></i>
-                                                <strong>Serial Number:</strong> {{ trademark.serial_number }}
-                                            </div>
-                                            <div>
-                                                <i class="fas fa-calendar-alt icon"></i>
-                                                <strong>Filing Date:</strong> {{ trademark.filing_date | default:"N/A" }}
-                                            </div>
-                                            <div>
-                                                <i class="fas fa-calendar-check icon"></i>
-                                                <strong>Reg Date:</strong> {{ trademark.registration_date | default:"N/A" }}
-                                            </div>
-                                            <div>
-                                                <i class="fas fa-history icon"></i>
-                                                <strong>Status Date:</strong> {{ trademark.status_date | default:"N/A" }}
-                                            </div>
-                                            <div>
-                                                <i class="fas fa-tag icon"></i>
-                                                <strong>Status:</strong>
-                                                <span class="status-badge {% if 'Live' in trademark.status_label %}status-live{% elif 'Dead' in trademark.status_label %}status-dead{% endif %}">
-                                                    {{ trademark.status_label }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <p>
-                                            <i class="fas fa-info-circle icon"></i>
-                                            <strong>Description:</strong> {{ trademark.description }}
-                                        </p>
-                                        {% if trademark.owners %}
-                                            <div class="owners-list">
-                                                <strong><i class="fas fa-users icon"></i> Owners:</strong>
-                                                <ul>
-                                                    {% for owner in trademark.owners.all %}
-                                                        <li>
-                                                            {% if owner.name %}{{ owner.name }}{% endif %}
-                                                            {% if owner.city %}, {{ owner.city }}{% endif %}
-                                                            {% if owner.state %}, {{ owner.state }}{% endif %}
-                                                            {% if owner.country %}, {{ owner.country }}{% endif %}
-                                                        </li>
-                                                    {% endfor %}
-                                                </ul>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="p-6 text-center">
-                                    <p class="text-gray-600 mb-4">No trademark results found for {{ name }}</p>
-                                    <a href="{% url 'trademark_search' %}"
-                                       class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-opacity-90 transition-colors">
-                                        <i class="fas fa-search mr-2"></i>
-                                        Search Trademarks
-                                    </a>
-                                </div>
-                            {% endif %}
-                            {% if trademarks|length > 0 %}
-                                <div class="mt-4 p-4 bg-green-50 rounded-lg">
-                                    <p class="text-green-700">
-                                        <i class="fas fa-check-circle mr-2"></i>
-                                        Found {{ trademarks|length }} trademark
-                                        {% if trademarks|length != 1 %}s{% endif %}
-                                        for {{ name }}
-                                    </p>
-                                </div>
-                            {% endif %}
-                        </div>
+                <div class="flex flex-col gap-3">
+                    <h1 class="text-xl font-semibold text-black/90">{% trans "Issue Stats" %}</h1>
+                    <div class="w-full flex flex-wrap gap-3">
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            ⚙️ {% trans "General" %} {{ bug_type_0 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            ⚠️ {% trans "Number" %} {{ bug_type_1 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            🏆 {% trans "Functional" %} {{ bug_type_2 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            ⚡ {% trans "Performance" %} {{ bug_type_3 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            ⚡ {% trans "Security" %} {{ bug_type_4 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            ✏️ {% trans "Typo" %} {{ bug_type_5 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            🧑‍💻 {% trans "Design" %} {{ bug_type_6 | length }}
+                        </button>
                     </div>
                 </div>
-                <div class="text-2xl font-bold my-4">
+                <div class="flex flex-col gap-3">
+                    <h1 class="text-xl font-semibold text-black/90">{% trans "Domain Stats" %}</h1>
+                    <div class="w-full flex flex-wrap gap-3">
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            🏆 {% trans "Bugs Reported" %} {{ total_bugs }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            🐞 {% trans "Open Issues" %} {{ bug_type_1 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            ⌨️ {% trans "Closed Issues" %} {{ bug_type_2 | length }}
+                        </button>
+                        <button class="bg-gray-100 hover:bg-red-400 hover:text-white transition duration-200 text-black/90 font-medium py-2 px-4 rounded-lg">
+                            👀 {% trans "Views" %} {{ view_count }}
+                        </button>
+                    </div>
+                </div>
+                <div class=" p-6 w-full border rounded-lg border-gray-300 ">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2">
+                            <i class="fas fa-gavel text-[#e74c3c]"></i>
+                            Trademark Results For {{ name }}
+                        </h2>
+                        <span class="px-4 py-2 rounded-full text-sm font-semibold {% if trademarks|length > 0 %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ trademarks|length }} Matches Found
+                        </span>
+                    </div>
+                    <div class="space-y-6 overflow-auto max-h-[600px] pr-2">
+                        {% if trademarks|length > 0 %}
+                            {% for trademark in trademarks %}
+                                <div class="bg-gray-50 rounded-xl p-6 hover:shadow-md transition duration-200">
+                                    <h3 class="text-xl font-semibold flex items-center gap-2 mb-4">
+                                        <i class="fas fa-search text-[#e74c3c]"></i>
+                                        {{ trademark.keyword }}
+                                    </h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-id-card text-[#e74c3c]"></i>
+                                            <span class="font-medium">Reg No:</span> {{ trademark.registration_number | default:"N/A" }}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-hashtag text-[#e74c3c]"></i>
+                                            <span class="font-medium">Serial Number:</span> {{ trademark.serial_number }}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-calendar-alt text-[#e74c3c]"></i>
+                                            <span class="font-medium">Filing Date:</span> {{ trademark.filing_date | default:"N/A" }}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-calendar-check text-[#e74c3c]"></i>
+                                            <span class="font-medium">Reg Date:</span> {{ trademark.registration_date | default:"N/A" }}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-history text-[#e74c3c]"></i>
+                                            <span class="font-medium">Status Date:</span> {{ trademark.status_date | default:"N/A" }}
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <i class="fas fa-tag text-[#e74c3c]"></i>
+                                            <span class="font-medium">Status:</span>
+                                            <span class="px-3 py-1 rounded-full text-sm {% if 'Live' in trademark.status_label %}bg-green-100 text-green-800{% elif 'Dead' in trademark.status_label %}bg-red-100 text-red-800{% endif %}">
+                                                {{ trademark.status_label }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-4 mb-4">
+                                        <p class="flex items-start gap-2">
+                                            <i class="fas fa-info-circle text-[#e74c3c] mt-1"></i>
+                                            <span>
+                                                <span class="font-medium">Description:</span>
+                                                {{ trademark.description }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    {% if trademark.owners %}
+                                        <div class="bg-white rounded-lg p-4">
+                                            <h4 class="font-semibold flex items-center gap-2 mb-2">
+                                                <i class="fas fa-users text-[#e74c3c]"></i>
+                                                Owners:
+                                            </h4>
+                                            <ul class="space-y-2">
+                                                {% for owner in trademark.owners.all %}
+                                                    <li class="flex items-center gap-2">
+                                                        <i class="fas fa-user-circle text-gray-400"></i>
+                                                        {% if owner.name %}{{ owner.name }}{% endif %}
+                                                        {% if owner.city %}, {{ owner.city }}{% endif %}
+                                                        {% if owner.state %}, {{ owner.state }}{% endif %}
+                                                        {% if owner.country %}, {{ owner.country }}{% endif %}
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-12">
+                                <i class="fas fa-search text-[#e74c3c] text-5xl mb-4"></i>
+                                <p class="text-gray-600 mb-6">No trademark results found for {{ name }}</p>
+                                <a href="{% url 'trademark_search' %}"
+                                   class="inline-flex items-center px-6 py-3 bg-[#e74c3c] text-white hover:bg-red-600 hover:text-white rounded-lg hover:bg-opacity-90 transition-colors">
+                                    <i class="fas fa-search mr-2"></i>
+                                    Search Trademarks
+                                </a>
+                            </div>
+                        {% endif %}
+                        {% if trademarks|length > 0 %}
+                            <div class="bg-green-50 rounded-lg p-4 mt-6">
+                                <p class="text-green-700 flex items-center gap-2">
+                                    <i class="fas fa-check-circle"></i>
+                                    Found {{ trademarks|length }} trademark
+                                    {% if trademarks|length != 1 %}s{% endif %}
+                                    for {{ name }}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% comment %} <div class="text-2xl font-bold my-4">
                     Monthly Report
                     <hr>
                 </div>
-                <div id="chart" class="max-sm:w-full w-3/4"></div>
-            </div>
-        </div>
-        <div class="max-sm:w-[100vw] w-[22vw]">
-            <div>
-                <div class="font-bold mb-3 mt-4">
-                    Top Hunters
-                    <hr>
-                </div>
-                <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
-                    <div class=" mb-[1rem] bg-[#f4f4f4] p-5 m-2 rounded-2xl">
-                        <ul>
+                <div id="chart" class="max-sm:w-full w-3/4"></div> {% endcomment %}
+                <div class="flex flex-col gap-4">
+                    <h1 class="text-xl font-semibold text-black/90">{% trans "Top Hunters" %}</h1>
+                    <div class="top-findings w-[20vw] max-sm:w-full max-h-[40vh]">
+                        <ul class="select-none w-full flex flex-col gap-4">
                             {% if leaderboard %}
                                 {% for leader in leaderboard %}
-                                    <li class="flex justify-between mb-3 items-center">
-                                        <div class="flex w-full">
+                                    <li class="flex gap-3 justify-between items-center border border-blue-500 bg-blue-100/20 py-2 px-4 rounded-lg">
+                                        <div class="flex items-center gap-2 w-full">
                                             <a href="{% url 'profile' slug=leader.username %}">
                                                 {% if leader.socialaccount_set.all.0.get_avatar_url %}
                                                     <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
                                                          height="20"
                                                          width="20"
-                                                         class="mr-3"
+                                                         class="size-11 rounded-full"
                                                          alt="{{ leader.username }}"
                                                          onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                                 {% else %}
                                                     <img src="{% gravatar_url leader.email 50 %}"
                                                          height="20"
                                                          width="20"
-                                                         class="mr-3"
+                                                         class="size-11 rounded-full"
                                                          alt="{{ leader.username }}"
                                                          onerror="this.onerror=null; this.src='{% static 'images/dummy-user.png' %}';">
                                                 {% endif %}
                                             </a>
-                                            <a href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
+                                            <a class="hover:text-red-600"
+                                               href="{% url 'profile' slug=leader.username %}">{{ leader.username }}</a>
                                         </div>
-                                        <button class="bg-[#c7e4ff] hover:bg-[#c7e4ff] text-[#469cff] font-['Poppins'] font-bold py-2 px-4 rounded-xl label label-default pull-right"
-                                                name="{{ user }}">
-                                            {{ leader.total }} Bug{{ leader.total|pluralize }}
-                                        </button>
+                                        <div class="px-3 py-2 bg-blue-400 text-white rounded-lg flex items-center gap-2"
+                                             name="{{ user }}">
+                                            <p>{{ leader.total }}</p>
+                                            <p>Bug{{ leader.total|pluralize }}</p>
+                                        </div>
                                     </li>
                                 {% endfor %}
                             {% else %}
                                 <li>
-                                    <div class="text-start">{% trans "Nothing Found" %}</div>
+                                    <div class="text-start text-red-500">{% trans "Nothing Found" %}</div>
                                 </li>
                             {% endif %}
                         </ul>

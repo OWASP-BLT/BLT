@@ -509,7 +509,8 @@ class LeaderboardBase:
 
 class GlobalLeaderboardView(LeaderboardBase, ListView):
     """
-    Returns: All users:score data in descending order
+    Returns: All users:score data in descending order,
+    including pull requests, code reviews, top visitors, and top streakers
     """
 
     model = User
@@ -523,9 +524,10 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
+
         context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
 
-        # Get pull request leaderboard
+        # Pull Request Leaderboard
         pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request", is_merged=True)
             .values(
@@ -538,7 +540,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Get Reviewed Pull Request Leaderboard
+        # Reviewed PR Leaderboard
         reviewed_pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request")
             .values(
@@ -550,6 +552,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .order_by("-total_reviews")[:10]
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
+
+        # Top visitors leaderboard
+        top_visitors = (
+            UserProfile.objects.select_related("user")
+            .filter(daily_visit_count__gt=0)
+            .order_by("-daily_visit_count")[:10]
+        )
+
+        context["top_visitors"] = top_visitors
 
         return context
 
