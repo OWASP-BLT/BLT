@@ -155,7 +155,8 @@ class Command(BaseCommand):
         per_page = 100
 
         # Calculate date for filtering
-        since_date = (timezone.now() - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        since_date = timezone.now() - timedelta(days=days)
+        since_date_str = since_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
@@ -165,7 +166,7 @@ class Command(BaseCommand):
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
                 f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
-                f"&since={since_date}"
+                f"&since={since_date_str}"
             )
 
             if verbose:

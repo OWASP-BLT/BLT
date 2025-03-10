@@ -2103,7 +2103,8 @@ def refresh_gsoc_project(request):
             return redirect("gsoc")
 
         # Set the since date to November 11, 2024
-        since_date = datetime(2024, 11, 11, tzinfo=timezone.utc)
+        since_date = datetime(2024, 11, 11)
+        since_date = timezone.make_aware(since_date)
         days = (timezone.now() - since_date).days
 
         try:
