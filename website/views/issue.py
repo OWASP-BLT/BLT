@@ -2037,12 +2037,29 @@ class GsocView(View):
         for pr in prs:
             total_pr_count += 1
 
+            # First try to get the user profile from the PR
             user_profile = pr.user_profile
-            if user_profile:
+            github_url = None
+
+            if user_profile and user_profile.github_url:
                 github_url = user_profile.github_url
-                if github_url and not github_url.endswith("[bot]") and "bot" not in github_url.lower():
-                    contributors[github_url]["count"] += 1
-                    contributors[github_url]["github_url"] = github_url
+            else:
+                # If no user profile, try to extract GitHub username from PR URL
+                # Example PR URL: https://github.com/adeyosemanputra/PyGoat/pull/123
+                try:
+                    # Extract username from PR URL by parsing the URL
+                    pr_url_parts = pr.url.split("/")
+                    if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
+                        # Construct a GitHub profile URL
+                        github_url = f"https://github.com/{pr_url_parts[3]}"
+                except (IndexError, AttributeError):
+                    # If we can't extract the username, skip this PR
+                    continue
+
+            # Skip bot accounts
+            if github_url and not github_url.endswith("[bot]") and "bot" not in github_url.lower():
+                contributors[github_url]["count"] += 1
+                contributors[github_url]["github_url"] = github_url
 
         # Get top 10 contributors
         top_contributors = sorted(contributors.items(), key=lambda item: item[1]["count"], reverse=True)[:10]
@@ -2118,6 +2135,42 @@ def refresh_gsoc_project(request):
             # We pass the repositories as a comma-separated string
             repo_list = ",".join(repos)
             call_command("fetch_gsoc_prs", repos=repo_list, days=days)
+
+            # Update user profiles for PRs that don't have them
+            for repo_full_name in repos:
+                try:
+                    owner, repo_name = repo_full_name.split("/")
+                    repo = Repo.objects.filter(name=repo_name).first()
+
+                    if repo:
+                        # Get PRs without user profiles
+                        prs_without_profiles = GitHubIssue.objects.filter(
+                            repo=repo, type="pull_request", is_merged=True, merged_at__gte=since_date, user_profile=None
+                        )
+
+                        for pr in prs_without_profiles:
+                            try:
+                                # Extract username from PR URL
+                                pr_url_parts = pr.url.split("/")
+                                if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
+                                    # Get or create a user profile
+                                    github_url = f"https://github.com/{pr_url_parts[3]}"
+
+                                    # Skip bot accounts
+                                    if github_url.endswith("[bot]") or "bot" in github_url.lower():
+                                        continue
+
+                                    # Find existing user profile with this GitHub URL
+                                    user_profile = UserProfile.objects.filter(github_url=github_url).first()
+
+                                    if user_profile:
+                                        # Link the PR to the user profile
+                                        pr.user_profile = user_profile
+                                        pr.save()
+                            except (IndexError, AttributeError):
+                                continue
+                except Exception as e:
+                    messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
             messages.success(
                 request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
