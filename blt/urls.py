@@ -138,6 +138,14 @@ from website.views.education import (
     view_course,
     view_lecture,
 )
+from website.views.hackathon import (
+    HackathonCreateView,
+    HackathonDetailView,
+    HackathonListView,
+    HackathonPrizeCreateView,
+    HackathonSponsorCreateView,
+    HackathonUpdateView,
+)
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
@@ -1038,6 +1046,13 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
+    # Hackathon URLs.
+    path("hackathons/", HackathonListView.as_view(), name="hackathons"),
+    path("hackathons/create/", HackathonCreateView.as_view(), name="hackathon_create"),
+    path("hackathons/<slug:slug>/", HackathonDetailView.as_view(), name="hackathon_detail"),
+    path("hackathons/<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_edit"),
+    path("hackathons/<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_add_sponsor"),
+    path("hackathons/<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_add_prize"),
     path("page-vote/", page_vote, name="page_vote"),
     # Queue Management URLs
     path("queue/", queue_list, name="queue_list"),
