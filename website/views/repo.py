@@ -13,7 +13,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
+from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
@@ -545,7 +545,6 @@ def add_repo(request):
 
 @login_required
 @require_POST
-@csrf_exempt
 def refresh_repo_data(request, repo_id):
     """
     Run the update_repos_dynamic command for a specific repository
@@ -553,13 +552,25 @@ def refresh_repo_data(request, repo_id):
     try:
         repo = Repo.objects.get(id=repo_id)
 
+        # Log the refresh attempt
+        print(f"Refreshing repository data for {repo.name} (ID: {repo_id})")
+
         # Run the command with the specific repo ID
         call_command("update_repos_dynamic", repo_id=repo_id)
+
+        # Refresh the repo object to get the latest data
+        repo.refresh_from_db()
 
         # Get updated counts
         issues_count = repo.github_issues.filter(type="issue").count()
         prs_count = repo.github_issues.filter(type="pull_request").count()
         dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
+
+        # Log the results
+        print(
+            f"Repository refresh complete. Issues: {issues_count}, "
+            f"PRs: {prs_count}, Bounty Issues: {dollar_tag_count}"
+        )
 
         return JsonResponse(
             {
@@ -574,8 +585,10 @@ def refresh_repo_data(request, repo_id):
             }
         )
     except Repo.DoesNotExist:
+        print(f"Repository with ID {repo_id} not found")
         return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
-    except Exception:
+    except Exception as e:
+        print(f"Error refreshing repository data: {str(e)}")
         return JsonResponse(
             {"status": "error", "message": "An error occurred while refreshing repository data"}, status=500
         )
