@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
@@ -400,6 +401,31 @@ def unblock_user_agent(modeladmin, request, queryset):
 unblock_user_agent.short_description = "Unblock selected UserAgent"
 
 
+# Custom filter for IP address ranges
+class IPAddressRangeFilter(SimpleListFilter):
+    title = "IP Address Range"
+    parameter_name = "ip_range"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("internal", "Internal (127.0.0.1)"),
+            ("local", "Local (192.168.x.x)"),
+            ("vpn", "VPN (10.x.x.x)"),
+            ("ipv6", "IPv6"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "internal":
+            return queryset.filter(address__startswith="127.0.0.1")
+        if self.value() == "local":
+            return queryset.filter(address__startswith="192.168.")
+        if self.value() == "vpn":
+            return queryset.filter(address__startswith="10.")
+        if self.value() == "ipv6":
+            return queryset.filter(address__contains=":")
+        return queryset
+
+
 class IPAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -408,13 +434,41 @@ class IPAdmin(admin.ModelAdmin):
         "issuenumber",
         "count",
         "created",
-        "agent",
-        "path",
+        "short_agent",
+        "short_path",
         "method",
-        "referer",
+        "short_referer",
     )
 
+    search_fields = ["address", "user", "agent", "path", "method", "referer"]
+    list_filter = ["method", "created", IPAddressRangeFilter]
+    date_hierarchy = "created"
+
     actions = [block_ip, unblock_ip, block_user_agent, unblock_user_agent]
+
+    def short_agent(self, obj):
+        """Return a truncated version of the agent field."""
+        if obj.agent and len(obj.agent) > 50:
+            return f"{obj.agent[:50]}..."
+        return obj.agent
+
+    short_agent.short_description = "User Agent"
+
+    def short_path(self, obj):
+        """Return a truncated version of the path field."""
+        if obj.path and len(obj.path) > 30:
+            return f"{obj.path[:30]}..."
+        return obj.path
+
+    short_path.short_description = "Path"
+
+    def short_referer(self, obj):
+        """Return a truncated version of the referer field."""
+        if obj.referer and len(obj.referer) > 30:
+            return f"{obj.referer[:30]}..."
+        return obj.referer
+
+    short_referer.short_description = "Referer"
 
 
 class MonitorAdmin(admin.ModelAdmin):
