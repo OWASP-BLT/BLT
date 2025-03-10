@@ -24,6 +24,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
+from django.core.management import call_command
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, Prefetch, Q, Sum
 from django.db.transaction import atomic
@@ -2080,3 +2081,43 @@ class GsocView(View):
         sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
 
         return render(request, "gsoc.html", {"projects": sorted_project_data})
+
+
+def refresh_gsoc_project(request):
+    """
+    View to handle refreshing PRs for a specific GSoC project.
+    Only staff users can access this view.
+    """
+    if request.method == "POST":
+        project_name = request.POST.get("project_name")
+
+        if not project_name or project_name not in GSOC25_PROJECTS:
+            messages.error(request, "Invalid project name")
+            return redirect("gsoc")
+
+        # Get the repositories for this project
+        repos = GSOC25_PROJECTS.get(project_name, [])
+
+        if not repos:
+            messages.error(request, f"No repositories found for project {project_name}")
+            return redirect("gsoc")
+
+        # Set the since date to November 11, 2024
+        since_date = datetime(2024, 11, 11, tzinfo=timezone.utc)
+        days = (timezone.now() - since_date).days
+
+        try:
+            # Call the fetch_gsoc_prs command with the specific repositories
+            # We pass the repositories as a comma-separated string
+            repo_list = ",".join(repos)
+            call_command("fetch_gsoc_prs", repos=repo_list, days=days)
+
+            messages.success(
+                request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
+            )
+        except Exception as e:
+            messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
+
+        return redirect("gsoc")
+
+    return redirect("gsoc")

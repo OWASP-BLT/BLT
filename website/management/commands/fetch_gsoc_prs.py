@@ -35,21 +35,34 @@ class Command(BaseCommand):
             action="store_true",
             help="Enable verbose output",
         )
+        parser.add_argument(
+            "--repos",
+            type=str,
+            default=None,
+            help="Comma-separated list of repositories to process (e.g., 'OWASP-BLT/BLT,OWASP-BLT/BLT-Flutter')",
+        )
 
     def handle(self, *args, **options):
         days = options["days"]
         limit = options["limit"]
         verbose = options["verbose"]
+        repos_arg = options["repos"]
 
         self.stdout.write(f"Fetching closed PRs from the past {days} days for GSoC repositories")
 
-        # Flatten the list of repositories from all projects
-        all_repos = []
-        for project, repos in GSOC25_PROJECTS.items():
-            all_repos.extend(repos)
+        # Determine which repositories to process
+        if repos_arg:
+            # Process specific repositories
+            all_repos = repos_arg.split(",")
+            self.stdout.write(f"Processing specific repositories: {', '.join(all_repos)}")
+        else:
+            # Flatten the list of repositories from all projects
+            all_repos = []
+            for project, repos in GSOC25_PROJECTS.items():
+                all_repos.extend(repos)
 
-        # Remove duplicates
-        all_repos = list(set(all_repos))
+            # Remove duplicates
+            all_repos = list(set(all_repos))
 
         if limit:
             all_repos = all_repos[:limit]
