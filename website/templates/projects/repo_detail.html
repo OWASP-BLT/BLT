@@ -192,11 +192,13 @@
                             Archived
                         </span>
                     {% endif %}
-                    <div class="flex items-center gap-2 relative">
+                    <div class="flex flex-wrap items-center gap-2 relative">
                         <span class="text-gray-500">Tags:</span>
-                        {% for tag in repo.tags.all %}
-                            <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
-                        {% endfor %}
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in repo.tags.all %}
+                                <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
                         <div class="refresh-container relative inline-flex">
                             <button class="refresh-btn relative ml-2"
                                     data-section="basic"
