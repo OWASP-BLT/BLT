@@ -1,0 +1,2 @@
+# Add database connection pooling library
+django-db-connection-pool==1.2.0
