@@ -341,6 +341,52 @@
                     </a>
                 </div>
             </div>
+            <!-- Top Contributors Leaderboard -->
+            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Top Contributors for GSoC 2025 Projects</h2>
+                <p class="text-gray-700 mb-4">
+                    For transparency, we are implementing a Top contributors List  for students this year. This demonstrates our commitment to working students who are contunually contributing while also signaling our intent to other projects and organizations.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {% for project, data in projects.items %}
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <a href="{{ data.repo_url }}"
+                                   target="_blank"
+                                   class="text-xl font-semibold text-gray-900">
+                                    {{ project }} - Total PRs:
+                                    <span class="text-red-600 font-bold">{{ data.total_prs }}</span>
+                                </a>
+                                <form action="{% url 'refresh_gsoc_project' %}"
+                                      method="post"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="project_name" value="{{ project }}">
+                                    <button type="submit"
+                                            class="bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-3 rounded-md text-sm flex items-center">
+                                        <i class="fas fa-sync-alt mr-1"></i> Refresh
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="space-y-3">
+                                {% for contributor in data.contributors %}
+                                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
+                                        <a href="{{ contributor.url }}"
+                                           target="_blank"
+                                           class="text-gray-700 hover:text-red-600">{{ contributor.username }}</a>
+                                        <span class="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                                            {{ contributor.prs }} PR
+                                            {% if contributor.prs != 1 %}s{% endif %}
+                                        </span>
+                                    </div>
+                                {% empty %}
+                                    <p class="text-gray-500 italic">No contributors in this period</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
             <!-- Past Events -->
             <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
                 <h2 class="text-3xl font-bold text-gray-900 mb-6">Past GSOC Events</h2>

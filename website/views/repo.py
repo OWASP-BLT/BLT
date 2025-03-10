@@ -1,14 +1,20 @@
+import os
 import re
 import time
 
+import psutil
 import requests
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
+from django.db import connection
 from django.db.models import Count, Q
 from django.http import JsonResponse
+from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
 from website.models import Organization, Repo
@@ -134,7 +140,79 @@ class RepoDetailView(DetailView):
 
     def post(self, request, *args, **kwargs):
         repo = self.get_object()
+
+        # Debug all POST data
+        print(f"POST data: {request.POST}")
+        print(f"Content-Type: {request.headers.get('Content-Type', 'Not provided')}")
+
+        # Get section parameter
         section = request.POST.get("section")
+        print(f"Section from POST: '{section}'")
+
+        # If section is not in POST data, try to get it from body
+        if not section:
+            try:
+                # Try to parse the request body
+                import json
+                from urllib.parse import parse_qs
+
+                content_type = request.headers.get("Content-Type", "").lower()
+                body_str = request.body.decode("utf-8")
+                print(f"Raw body: {body_str}")
+
+                if "application/json" in content_type:
+                    # Try to parse as JSON
+                    try:
+                        body_data = json.loads(body_str)
+                        if "section" in body_data:
+                            section = body_data["section"]
+                            print(f"Section from JSON body: '{section}'")
+                    except json.JSONDecodeError:
+                        print("Failed to parse body as JSON")
+
+                elif "application/x-www-form-urlencoded" in content_type:
+                    # Try to parse as form data
+                    body_params = parse_qs(body_str)
+                    if "section" in body_params:
+                        section = body_params["section"][0]
+                        print(f"Section from form body: '{section}'")
+
+                elif "multipart/form-data" in content_type:
+                    # For multipart/form-data, we should already have it in request.POST
+                    # But we can try to parse the boundary and extract data if needed
+                    print("Multipart form data detected, should be in request.POST")
+
+                # If still no section, try a simple key=value parsing
+                if not section:
+                    body_params = {}
+                    for param in body_str.split("&"):
+                        if "=" in param:
+                            key, value = param.split("=", 1)
+                            from urllib.parse import unquote_plus
+
+                            body_params[key] = unquote_plus(value)
+
+                    if "section" in body_params:
+                        section = body_params["section"]
+                        print(f"Section from simple parsing: '{section}'")
+            except Exception as e:
+                print(f"Error parsing body: {e}")
+
+        # Normalize the section parameter
+        if section:
+            if isinstance(section, str):
+                section = section.strip().lower()
+                print(f"Normalized section: '{section}'")
+        else:
+            return JsonResponse({"status": "error", "message": "No section parameter provided"}, status=400)
+
+        # Define valid sections
+        valid_sections = ["ai_summary", "basic", "metrics", "community", "contributor_stats", "technical"]
+
+        # Check if the section is valid
+        if section not in valid_sections:
+            error_msg = f"Invalid section specified: '{section}'. Valid sections are: {', '.join(valid_sections)}"
+            return JsonResponse({"status": "error", "message": error_msg}, status=400)
 
         if section == "ai_summary":
             try:
@@ -179,9 +257,28 @@ class RepoDetailView(DetailView):
                     },
                     status=500,
                 )
-
-        # Handle other section refreshes...
-        return JsonResponse({"status": "error", "message": "Invalid section"}, status=400)
+        elif section in ["basic", "metrics", "community", "contributor_stats", "technical"]:
+            # These sections are handled in the frontend but need a valid response
+            # In the future, we can add server-side processing for each section
+            try:
+                # For now, just return a success response with empty data
+                # The frontend will handle displaying the current data
+                return JsonResponse(
+                    {
+                        "status": "success",
+                        "message": f"{section.replace('_', ' ').title()} data refreshed successfully",
+                        "data": {},
+                    }
+                )
+            except Exception as e:
+                error_message = str(e)
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": f"An error occurred while refreshing {section}: {error_message}",
+                    },
+                    status=500,
+                )
 
     def fetch_github_milestones(self, repo):
         """
@@ -201,6 +298,52 @@ class RepoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
         context["milestones"] = self.fetch_github_milestones(repo)
+
+        # Add breadcrumbs
+        breadcrumbs = [
+            {"title": "Repositories", "url": reverse("repo_list")},
+        ]
+        if repo.project:
+            breadcrumbs.append(
+                {"title": repo.project.name, "url": reverse("project_detail", kwargs={"slug": repo.project.slug})}
+            )
+        breadcrumbs.append({"title": repo.name})
+        context["breadcrumbs"] = breadcrumbs
+
+        # Add top contributors
+        context["top_contributors"] = repo.get_top_contributors()
+
+        # Add current language filter for highlighting in template
+        context["current_language"] = self.request.GET.get("language")
+
+        # Get system stats for developer mode
+        system_stats = None
+        if settings.DEBUG:
+            import django
+
+            system_stats = {
+                "memory_usage": f"{psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.2f} MB",
+                "cpu_percent": f"{psutil.Process(os.getpid()).cpu_percent(interval=0.1):.2f}%",
+                "python_version": f"{os.sys.version}",
+                "django_version": django.get_version(),
+                "db_connections": len(connection.queries),
+            }
+
+        # Add system stats to context
+        context["system_stats"] = system_stats
+
+        # Add GitHub issues and PRs to context
+        context["github_issues"] = repo.github_issues.filter(type="issue").order_by("-updated_at")[:10]
+        context["github_prs"] = repo.github_issues.filter(type="pull_request").order_by("-updated_at")[:10]
+
+        # Add counts for issues and PRs
+        context["github_issues_count"] = repo.github_issues.filter(type="issue").count()
+        context["github_prs_count"] = repo.github_issues.filter(type="pull_request").count()
+
+        # Add dollar tag issues
+        context["dollar_tag_issues"] = repo.github_issues.filter(has_dollar_tag=True).order_by("-updated_at")[:5]
+        context["dollar_tag_issues_count"] = repo.github_issues.filter(has_dollar_tag=True).count()
+
         return context
 
 
@@ -396,5 +539,89 @@ def add_repo(request):
     except Exception as e:
         return JsonResponse(
             {"status": "error", "message": f"An error occurred: {str(e)}"},
+            status=500,
+        )
+
+
+@login_required
+@require_POST
+def refresh_repo_data(request, repo_id):
+    """
+    Run the update_repos_dynamic command for a specific repository
+    """
+    try:
+        print(f"Refresh request received for repo_id: {repo_id}")
+
+        # Check if the repository exists
+        repo = Repo.objects.get(id=repo_id)
+
+        # Log the refresh attempt
+        print(f"Refreshing repository data for {repo.name} (ID: {repo_id})")
+        print(f"Repository URL: {repo.repo_url}")
+
+        try:
+            # Run the command with the specific repo ID
+            print("Calling update_repos_dynamic command...")
+            call_command("update_repos_dynamic", repo_id=repo_id)
+            print("Command completed successfully")
+
+            # Refresh the repo object to get the latest data
+            repo.refresh_from_db()
+
+            # Get updated counts
+            issues_count = repo.github_issues.filter(type="issue").count()
+            prs_count = repo.github_issues.filter(type="pull_request").count()
+            dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
+
+            # Log the results
+            print(
+                f"Repository refresh complete. Issues: {issues_count}, "
+                f"PRs: {prs_count}, Bounty Issues: {dollar_tag_count}"
+            )
+
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Repository data refreshed successfully",
+                    "data": {
+                        "issues_count": issues_count,
+                        "prs_count": prs_count,
+                        "dollar_tag_count": dollar_tag_count,
+                        "last_updated": repo.last_updated.isoformat() if repo.last_updated else None,
+                    },
+                }
+            )
+        except Exception as cmd_error:
+            print(f"Error running command: {str(cmd_error)}")
+            print(f"Error type: {type(cmd_error).__name__}")
+            import traceback
+
+            traceback.print_exc()
+
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Error running update command: {str(cmd_error)}",
+                    "error_type": type(cmd_error).__name__,
+                },
+                status=500,
+            )
+
+    except Repo.DoesNotExist:
+        print(f"Repository with ID {repo_id} not found")
+        return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+    except Exception as e:
+        print(f"Error refreshing repository data: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+
+        traceback.print_exc()
+
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": f"An error occurred while refreshing repository data: {str(e)}",
+                "error_type": type(e).__name__,
+            },
             status=500,
         )

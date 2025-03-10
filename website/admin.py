@@ -34,6 +34,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    JoinRequest,
     Lecture,
     LectureStatus,
     Message,
@@ -131,6 +132,10 @@ class BidAdmin(admin.ModelAdmin):
 
 class WalletAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "current_balance", "created")
+
+
+class JoinRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "team", "created_at", "is_accepted")
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -580,10 +585,15 @@ class GitHubReviewAdmin(admin.ModelAdmin):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("id", "room", "username", "content", "timestamp")
+    list_display = ("id", "room", "thread", "username", "content", "timestamp")
     list_filter = ("room", "timestamp")
     search_fields = ("username", "content")
     date_hierarchy = "timestamp"
+
+
+class ThreadAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "created", "modified")
+    search_fields = ("name",)
 
 
 class SlackBotActivityAdmin(admin.ModelAdmin):
@@ -694,3 +704,4 @@ admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
+admin.site.register(JoinRequest, JoinRequestAdmin)
