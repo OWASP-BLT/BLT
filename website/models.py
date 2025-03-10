@@ -1489,6 +1489,8 @@ class Repo(models.Model):
     ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
+    last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
 
     def save(self, *args, **kwargs):
         if not self.slug:

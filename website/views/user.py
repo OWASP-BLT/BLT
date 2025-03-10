@@ -525,7 +525,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
+        context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
 
         # Pull Request Leaderboard
         pr_leaderboard = (
