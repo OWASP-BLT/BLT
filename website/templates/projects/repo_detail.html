@@ -1003,7 +1003,226 @@
             </div>
         </div>
     </div>
+    <!-- GitHub Issues and PRs Section -->
+    <div class="mt-10 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">GitHub Issues & Pull Requests</h2>
+            <button id="refresh-github-data"
+                    data-repo-id="{{ repo.id }}"
+                    class="inline-flex items-center px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-lg transition-colors">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh Data
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Issues Section -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Issues</h3>
+                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                          id="issues-count">{{ github_issues_count }}</span>
+                </div>
+                {% if github_issues %}
+                    <div class="space-y-4">
+                        {% for issue in github_issues %}
+                            <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <span class="inline-block w-3 h-3 rounded-full {% if issue.state == 'open' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <a href="{{ issue.url }}"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline font-medium">{{ issue.title }}</a>
+                                        <div class="mt-1 text-sm text-gray-600">#{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}</div>
+                                        {% if issue.has_dollar_tag %}
+                                            <span class="mt-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">$ Bounty</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if github_issues_count > 10 %}
+                        <div class="mt-4 text-center">
+                            <a href="{{ repo.repo_url }}/issues"
+                               target="_blank"
+                               class="text-[#e74c3c] hover:underline">
+                                View all {{ github_issues_count }} issues on GitHub
+                            </a>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="p-6 bg-gray-50 rounded-lg text-center">
+                        <p class="text-gray-600">No issues found for this repository.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pull Requests Section -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Pull Requests</h3>
+                    <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
+                          id="prs-count">{{ github_prs_count }}</span>
+                </div>
+                {% if github_prs %}
+                    <div class="space-y-4">
+                        {% for pr in github_prs %}
+                            <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <span class="inline-block w-3 h-3 rounded-full {% if pr.state == 'open' %}bg-green-500{% elif pr.is_merged %}bg-purple-500{% else %}bg-red-500{% endif %}"></span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <a href="{{ pr.url }}"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline font-medium">{{ pr.title }}</a>
+                                        <div class="mt-1 text-sm text-gray-600">
+                                            #{{ pr.issue_id }} opened {{ pr.created_at|date:"M d, Y" }}
+                                            {% if pr.is_merged %}
+                                                <span class="text-purple-600 ml-2">Merged</span>
+                                            {% elif pr.state == 'closed' %}
+                                                <span class="text-red-600 ml-2">Closed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% if github_prs_count > 10 %}
+                        <div class="mt-4 text-center">
+                            <a href="{{ repo.repo_url }}/pulls"
+                               target="_blank"
+                               class="text-[#e74c3c] hover:underline">
+                                View all {{ github_prs_count }} pull requests on GitHub
+                            </a>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="p-6 bg-gray-50 rounded-lg text-center">
+                        <p class="text-gray-600">No pull requests found for this repository.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Dollar Tag Issues Section -->
+        {% if dollar_tag_issues %}
+            <div class="mt-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Issues with Bounties</h3>
+                    <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium"
+                          id="dollar-tag-count">{{ dollar_tag_issues_count }}</span>
+                </div>
+                <div class="space-y-4">
+                    {% for issue in dollar_tag_issues %}
+                        <div class="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mt-1">
+                                    <span class="inline-block w-3 h-3 rounded-full {% if issue.state == 'open' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <a href="{{ issue.url }}"
+                                       target="_blank"
+                                       class="text-[#e74c3c] hover:underline font-medium">{{ issue.title }}</a>
+                                    <div class="mt-1 text-sm text-gray-600">#{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}</div>
+                                    <span class="mt-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">$ Bounty</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if dollar_tag_issues_count > 5 %}
+                    <div class="mt-4 text-center">
+                        <a href="{{ repo.repo_url }}/issues?q=is%3Aissue+label%3A%24"
+                           target="_blank"
+                           class="text-[#e74c3c] hover:underline">
+                            View all {{ dollar_tag_issues_count }} bounty issues on GitHub
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        <div class="mt-6 text-sm text-gray-500 text-right" id="last-updated-text">
+            Last updated: {{ repo.last_updated|date:"M d, Y H:i" }}
+        </div>
+    </div>
 {% endblock content %}
 {% block after_js %}
     <script src="{% static 'js/repo_detail.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshButton = document.getElementById('refresh-github-data');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            if (refreshButton) {
+                refreshButton.addEventListener('click', function() {
+                    const repoId = this.getAttribute('data-repo-id');
+                    
+                    // Show loading overlay
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('hidden');
+                    }
+                    
+                    // Disable the button to prevent multiple clicks
+                    refreshButton.disabled = true;
+                    refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    // Make the AJAX request to refresh the data
+                    fetch(`/repository/${repoId}/refresh/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Update the counts
+                        document.getElementById('issues-count').textContent = data.data.issues_count;
+                        document.getElementById('prs-count').textContent = data.data.prs_count;
+                        
+                        const dollarTagCount = document.getElementById('dollar-tag-count');
+                        if (dollarTagCount) {
+                            dollarTagCount.textContent = data.data.dollar_tag_count;
+                        }
+                        
+                        // Update the last updated text
+                        if (data.data.last_updated) {
+                            const lastUpdated = new Date(data.data.last_updated);
+                            document.getElementById('last-updated-text').textContent = 
+                                `Last updated: ${lastUpdated.toLocaleString()}`;
+                        }
+                        
+                        // Show success message
+                        alert('Repository data refreshed successfully! Reload the page to see the updated issues and PRs.');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while refreshing the repository data. Please try again later.');
+                    })
+                    .finally(() => {
+                        // Hide loading overlay
+                        if (loadingOverlay) {
+                            loadingOverlay.classList.add('hidden');
+                        }
+                        
+                        // Re-enable the button
+                        refreshButton.disabled = false;
+                        refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    });
+                });
+            }
+        });
+    </script>
 {% endblock after_js %}
