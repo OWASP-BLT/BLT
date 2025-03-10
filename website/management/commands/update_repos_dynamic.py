@@ -300,10 +300,14 @@ class Command(LoggedBaseCommand):
     def fetch_closed_prs(self, owner, repo_name):
         """
         Fetch closed pull requests from GitHub API.
+        Only fetches PRs from the past year.
         """
         prs = []
         page = 1
         per_page = 100
+
+        # Calculate date one year ago for filtering
+        one_year_ago = (timezone.now() - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
@@ -312,8 +316,11 @@ class Command(LoggedBaseCommand):
         while True:
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
-                f"?state=closed&per_page={per_page}&page={page}"
+                f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
+                f"&since={one_year_ago}"
             )
+
+            self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
                 response = requests.get(url, headers=headers)
@@ -323,7 +330,23 @@ class Command(LoggedBaseCommand):
                 if not data:
                     break
 
-                prs.extend(data)
+                # Filter PRs to only include those updated in the last year
+                filtered_data = []
+                for pr in data:
+                    updated_at = datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
+                    updated_at = timezone.make_aware(updated_at)
+                    if updated_at >= timezone.now() - timedelta(days=365):
+                        filtered_data.append(pr)
+                    else:
+                        # Since results are sorted by updated_at, we can break early
+                        break
+
+                if not filtered_data:
+                    break
+
+                prs.extend(filtered_data)
+                self.stdout.write(f"Found {len(filtered_data)} PRs on page {page}")
+
                 page += 1
 
                 # Check if we've reached the last page
@@ -334,6 +357,7 @@ class Command(LoggedBaseCommand):
                 logger.error(f"Error fetching closed PRs for {owner}/{repo_name}: {e}")
                 break
 
+        self.stdout.write(f"Total PRs fetched: {len(prs)}")
         return prs
 
     @transaction.atomic
