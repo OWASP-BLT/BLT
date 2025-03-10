@@ -5,6 +5,7 @@ import os
 import smtplib
 import socket
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 
@@ -41,6 +42,7 @@ from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.utils.timezone import now
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
@@ -57,7 +59,7 @@ from website.models import (
     IP,
     Activity,
     Bid,
-    ContentType,
+    DailyStats,
     Domain,
     GitHubIssue,
     Hunt,
@@ -72,11 +74,14 @@ from website.models import (
 from website.utils import (
     get_client_ip,
     get_email_from_domain,
+    get_page_votes,
     image_validator,
     is_valid_https_url,
     rebuild_safe_url,
     safe_redirect_request,
 )
+
+from .constants import GSOC25_PROJECTS
 
 
 @login_required(login_url="/accounts/login")
@@ -342,6 +347,7 @@ def newhome(request, template="bugs_list.html"):
     return render(request, template, context)
 
 
+# The delete_issue function performs delete operation from the database
 @login_required
 @require_POST
 def delete_issue(request, id):
@@ -1971,3 +1977,106 @@ class GitHubIssueDetailView(DetailView):
         context["comment_list"] = issue.get_comments()  # Assuming you have a method to fetch comments
 
         return context
+
+
+@login_required(login_url="/accounts/login")
+@csrf_exempt
+def page_vote(request):
+    """
+    Handle upvote/downvote for a page
+    """
+    if request.method == "POST":
+        template_name = request.POST.get("template_name")
+        vote_type = request.POST.get("vote_type")
+
+        if not template_name or vote_type not in ["upvote", "downvote"]:
+            return JsonResponse({"status": "error", "message": "Invalid parameters"})
+
+        # Clean the template name to use as a key
+        page_key = template_name.replace("/", "_").replace(".html", "")
+        vote_key = f"{vote_type}_{page_key}"
+
+        # Get or create the DailyStats entry
+        try:
+            stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
+            # Increment the vote count
+            current_value = int(stat.value)
+            stat.value = str(current_value + 1)
+            stat.save()
+
+            # Get the counts for both vote types
+            upvotes, downvotes = get_page_votes(template_name)
+
+            return JsonResponse({"status": "success", "upvotes": upvotes, "downvotes": downvotes})
+        except Exception:
+            return JsonResponse({"status": "error", "message": "An error occurred while processing your vote"})
+
+    return JsonResponse({"status": "error", "message": "Invalid request method"})
+
+
+class GsocView(View):
+    SINCE_DATE = datetime(2024, 11, 1, tzinfo=timezone.utc)
+
+    def fetch_model_prs(self, repo_names):
+        contributors = defaultdict(lambda: {"count": 0, "github_url": ""})
+        total_pr_count = 0
+
+        # Filter repos by name
+        repos = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repo_names])
+
+        # Fetch merged PRs
+        prs = GitHubIssue.objects.filter(
+            repo__in=repos, type="pull_request", is_merged=True, merged_at__gte=self.SINCE_DATE
+        ).select_related("user_profile__user")
+
+        for pr in prs:
+            total_pr_count += 1
+
+            user_profile = pr.user_profile
+            if user_profile:
+                github_url = user_profile.github_url
+                if github_url and not github_url.endswith("[bot]") and "bot" not in github_url.lower():
+                    contributors[github_url]["count"] += 1
+                    contributors[github_url]["github_url"] = github_url
+
+        # Get top 10 contributors
+        top_contributors = sorted(contributors.items(), key=lambda item: item[1]["count"], reverse=True)[:10]
+
+        # Format top contributors list
+        formatted_contributors = [
+            {"url": url, "username": url.rstrip("/").split("/")[-1], "prs": data["count"]}
+            for url, data in top_contributors
+        ]
+
+        return formatted_contributors, total_pr_count
+
+    def get_repo_url(self, repo_names):
+        if not repo_names:
+            return ""
+
+        repo_name = repo_names[0].split("/")[-1]
+        try:
+            repo = Repo.objects.filter(name=repo_name).first()
+            return repo.repo_url if repo else f"https://github.com/{repo_names[0]}"
+        except:
+            return f"https://github.com/{repo_names[0]}"
+
+    def build_project_data(self, project, repo_names):
+        contributors, total_prs = self.fetch_model_prs(repo_names)
+
+        return {
+            "contributors": contributors,
+            "total_prs": total_prs,
+            "repo_url": self.get_repo_url(repo_names),
+        }
+
+    def get(self, request):
+        project_data = {}
+
+        for project, repo_names in GSOC25_PROJECTS.items():
+            project_data[project] = self.build_project_data(project, repo_names)
+
+        # Sort projects by total PRs
+        sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
+
+        return render(request, "gsoc.html", {"projects": sorted_project_data})

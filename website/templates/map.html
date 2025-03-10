@@ -1,98 +1,14 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% block title %}Location Map{% endblock %}
-{% block extra_css %}
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-          crossorigin="" />
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.css" />
-    <style>
-        #map {
-            width: 100%;
-            height: 600px;
-            z-index: 1;
-            background: #f8f9fa;
-        }
-        .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .leaflet-popup-content {
-            margin: 16px;
-            min-width: 250px;
-        }
-        .marker-cluster {
-            background-color: rgba(231, 76, 60, 0.2);
-            border: 3px solid rgba(231, 76, 60, 0.4);
-            border-radius: 50%;
-        }
-        .marker-cluster div {
-            background-color: rgba(231, 76, 60, 0.6);
-            color: white;
-            width: 30px;
-            height: 30px;
-            margin-left: -3px;
-            margin-top: -3px;
-            text-align: center;
-            border-radius: 50%;
-            font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
-            line-height: 30px;
-        }
-        .leaflet-control-zoom a,
-        .leaflet-control-fullscreen a {
-            background-color: white !important;
-            color: #e74c3c !important;
-            border: 2px solid rgba(231, 76, 60, 0.2) !important;
-            width: 36px !important;
-            height: 36px !important;
-            line-height: 32px !important;
-            border-radius: 8px !important;
-            margin-bottom: 5px !important;
-        }
-        .leaflet-control-zoom a:hover,
-        .leaflet-control-fullscreen a:hover {
-            background-color: #e74c3c !important;
-            color: white !important;
-        }
-        .map-loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .custom-popup img {
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .location-card {
-            transition: all 0.3s ease;
-        }
-        .location-card:hover {
-            transform: translateY(-2px);
-        }
-    </style>
-{% endblock %}
+{% block extra_css %}{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Header Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-0">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">Location Map</h1>
             <p class="mt-2 text-sm text-gray-600">View locations around the world</p>
         </div>
-        <!-- Map Type Selector -->
         <div class="mb-6">
             <div class="flex flex-wrap gap-4">
                 {% for type in marker_types %}
@@ -104,8 +20,7 @@
                 {% endfor %}
             </div>
         </div>
-        <!-- Map Container -->
-        <div class="relative">
+        <div class="relative z-0">
             <div id="map-loading" class="map-loading hidden">
                 <div class="flex items-center space-x-2">
                     <i class="fas fa-spinner fa-spin text-[#e74c3c]"></i>
@@ -113,9 +28,9 @@
                 </div>
             </div>
             <div id="map"
-                 class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden"></div>
+                 class="w-full h-[600px] rounded-lg shadow-lg mb-8 overflow-hidden relative z-0 border-2 border-black">
+            </div>
         </div>
-        <!-- Location List -->
         <div class="mt-8">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Locations</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -175,16 +90,12 @@
     </div>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const loadingEl = document.getElementById('map-loading');
         loadingEl.classList.remove('hidden');
 
         try {
-            // Initialize map
             const map = L.map('map', {
                 center: [20, 0],
                 zoom: 2,
@@ -195,18 +106,15 @@
                 worldCopyJump: true
             });
 
-            // Add OpenStreetMap tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
                 maxZoom: 19
             }).addTo(map);
 
-            // Add zoom control to top-right
             L.control.zoom({
                 position: 'topright'
             }).addTo(map);
 
-            // Initialize marker cluster group
             const markers = L.markerClusterGroup({
                 showCoverageOnHover: false,
                 maxClusterRadius: 40,
@@ -228,7 +136,6 @@
                 }
             });
 
-            // Custom icon for markers
             const customIcon = L.divIcon({
                 html: `<div style=" background-color: #e74c3c; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); "></div>`,
                 className: 'custom-marker',
@@ -236,7 +143,6 @@
                 iconAnchor: [6, 6]
             });
 
-            // Add markers for locations
             {% for location in locations %}
                 {% if location.latitude and location.longitude %}
                     const marker = L.marker([{{ location.latitude }}, {{ location.longitude }}], {
@@ -268,10 +174,8 @@
                 {% endif %}
             {% endfor %}
 
-            // Add marker cluster to map
             map.addLayer(markers);
 
-            // Fit bounds if there are markers
             if (markers.getLayers().length > 0) {
                 map.fitBounds(markers.getBounds(), {
                     padding: [50, 50],
@@ -279,10 +183,8 @@
                 });
             }
 
-            // Hide loading indicator
             loadingEl.classList.add('hidden');
 
-            // Handle window resize
             let resizeTimeout;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimeout);

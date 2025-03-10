@@ -34,6 +34,7 @@ from website.models import (
     InviteFriend,
     Issue,
     IssueScreenshot,
+    JoinRequest,
     Lecture,
     LectureStatus,
     Message,
@@ -46,6 +47,7 @@ from website.models import (
     Post,
     PRAnalysisReport,
     Project,
+    Queue,
     Rating,
     Repo,
     Room,
@@ -130,6 +132,10 @@ class BidAdmin(admin.ModelAdmin):
 
 class WalletAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "current_balance", "created")
+
+
+class JoinRequestAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "team", "created_at", "is_accepted")
 
 
 class PaymentAdmin(admin.ModelAdmin):
@@ -579,10 +585,15 @@ class GitHubReviewAdmin(admin.ModelAdmin):
 
 
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ("id", "room", "username", "content", "timestamp")
+    list_display = ("id", "room", "thread", "username", "content", "timestamp")
     list_filter = ("room", "timestamp")
     search_fields = ("username", "content")
     date_hierarchy = "timestamp"
+
+
+class ThreadAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "created", "modified")
+    search_fields = ("name",)
 
 
 class SlackBotActivityAdmin(admin.ModelAdmin):
@@ -612,6 +623,32 @@ class DailyStatsAdmin(admin.ModelAdmin):
     list_filter = ["created", "modified"]
     readonly_fields = ["created", "modified"]
     ordering = ["-modified"]
+
+
+class QueueAdmin(admin.ModelAdmin):
+    list_display = ("id", "short_message", "image", "created", "modified", "launched", "launched_at")
+    list_filter = ("launched", "created", "modified")
+    search_fields = ("message",)
+    readonly_fields = ("created", "modified")
+    actions = ["mark_as_launched"]
+
+    def short_message(self, obj):
+        return truncatechars(obj.message, 50)
+
+    short_message.short_description = "Message"
+
+    def mark_as_launched(self, request, queryset):
+        now = timezone.now()
+        count = 0
+        for queue_item in queryset:
+            if not queue_item.launched:
+                queue_item.launched = True
+                queue_item.launched_at = now
+                queue_item.save()
+                count += 1
+        self.message_user(request, f"{count} queue items marked as launched.")
+
+    mark_as_launched.short_description = "Mark selected items as launched"
 
 
 admin.site.register(Project, ProjectAdmin)
@@ -666,3 +703,5 @@ admin.site.register(Message, MessageAdmin)
 admin.site.register(SlackBotActivity, SlackBotActivityAdmin)
 admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
+admin.site.register(Queue, QueueAdmin)
+admin.site.register(JoinRequest, JoinRequestAdmin)

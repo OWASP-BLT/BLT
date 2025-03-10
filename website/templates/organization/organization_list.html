@@ -42,14 +42,16 @@
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center">
                                         {% if org.logo %}
-                                            <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                                 alt="{{ org.name }} logo"
-                                                 width="48"
-                                                 height="48"
-                                                 class="w-12 h-12 rounded-full object-cover mr-4">
+                                            <div class="w-12 h-12 bg-white rounded-lg shadow-sm p-1 flex items-center justify-center mr-4">
+                                                <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                                     alt="{{ org.name }} logo"
+                                                     width="48"
+                                                     height="48"
+                                                     class="max-w-full max-h-full object-contain">
+                                            </div>
                                         {% else %}
-                                            <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-4">
-                                                <i class="fas fa-building text-gray-400"></i>
+                                            <div class="w-12 h-12 rounded-full bg-white flex items-center justify-center mr-4 shadow-sm">
+                                                <i class="fas fa-building text-[#e74c3c]"></i>
                                             </div>
                                         {% endif %}
                                         <div>
@@ -109,7 +111,7 @@
                                             <span class="text-xs text-gray-600">Projects</span>
                                         </div>
                                         <div class="text-center">
-                                            <span class="block text-lg font-bold text-[#e74c3c]">{{ org.repo_count }}</span>
+                                            <span class="block text-lg font-bold text-[#e74c3c]">{{ org.repos.count }}</span>
                                             <span class="text-xs text-gray-600">Repos</span>
                                         </div>
                                     </div>
@@ -176,8 +178,8 @@
                                             </div>
                                         </div>
                                     {% endfor %}
-                                    {% if org.domain_set.count > 3 %}
-                                        <div class="text-center text-sm text-gray-500 mt-2">+ {{ org.domain_set.count|add:"-3" }} more domains</div>
+                                    {% if org.domain_count > 3 %}
+                                        <div class="text-center text-sm text-gray-500 mt-2">+ {{ org.domain_count|add:"-3" }} more domains</div>
                                     {% endif %}
                                 </div>
                                 <div class="mt-4 flex flex-wrap gap-4">
@@ -253,14 +255,16 @@
                             {% for org in recently_viewed %}
                                 <div class="flex items-center">
                                     {% if org.logo %}
-                                        <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                             alt="{{ org.name }} logo"
-                                             width="32"
-                                             height="32"
-                                             class="w-8 h-8 rounded-full object-cover mr-3">
+                                        <div class="w-8 h-8 bg-white rounded-lg shadow-sm p-1 flex items-center justify-center mr-3">
+                                            <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                                 alt="{{ org.name }} logo"
+                                                 width="32"
+                                                 height="32"
+                                                 class="max-w-full max-h-full object-contain">
+                                        </div>
                                     {% else %}
-                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                            <i class="fas fa-building text-gray-400 text-sm"></i>
+                                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center mr-3 shadow-sm">
+                                            <i class="fas fa-building text-[#e74c3c] text-sm"></i>
                                         </div>
                                     {% endif %}
                                     <a href="{% url 'organization_detail' org.slug %}"
@@ -280,14 +284,16 @@
                             {% for org in most_popular %}
                                 <div class="flex items-center">
                                     {% if org.logo %}
-                                        <img src="{{ MEDIA_URL }}{{ org.logo }}"
-                                             alt="{{ org.name }} logo"
-                                             width="32"
-                                             height="32"
-                                             class="w-8 h-8 rounded-full object-cover mr-3">
+                                        <div class="w-8 h-8 bg-white rounded-lg shadow-sm p-1 flex items-center justify-center mr-3">
+                                            <img src="{{ MEDIA_URL }}{{ org.logo }}"
+                                                 alt="{{ org.name }} logo"
+                                                 width="32"
+                                                 height="32"
+                                                 class="max-w-full max-h-full object-contain">
+                                        </div>
                                     {% else %}
-                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                                            <i class="fas fa-building text-gray-400 text-sm"></i>
+                                        <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center mr-3 shadow-sm">
+                                            <i class="fas fa-building text-[#e74c3c] text-sm"></i>
                                         </div>
                                     {% endif %}
                                     <a href="{% url 'organization_detail' org.slug %}"

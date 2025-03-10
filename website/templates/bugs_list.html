@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load humanize %}
 {% block title %}
     All Issues
 {% endblock title %}
@@ -17,75 +18,127 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="p-6 lg:p-8">
+    <div class="p-6 lg:p-8 bg-gray-50 min-h-screen">
         <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-4">Latest Bugs</h1>
-                <p class="text-gray-600">Browse and track the latest reported bugs across all domains</p>
-            </div>
-            <a href="{% url 'report' %}"
-               class="mt-4 sm:mt-0 inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-[#d44637] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors">
-                <svg class="w-5 h-5 mr-2"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Report a Bug
-            </a>
-        </div>
-        <!-- Main Content -->
-        <div class="flex flex-col lg:flex-row lg:space-x-8">
-            <!-- Issues Grid -->
-            <div class="flex-1">
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                    {% for bug in bugs %}
-                        {% include "includes/_bug.html" %}
-                    {% endfor %}
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Latest Bugs</h1>
+                    <p class="text-lg text-gray-600">Track and manage reported issues across all domains</p>
                 </div>
-                <!-- Pagination -->
-                {% if bugs.paginator %}
-                    <div class="mt-8 flex flex-col items-center space-y-3">
-                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
-                             aria-label="Pagination">
-                            {% if bugs.has_previous %}
-                                <a href="?page=1"
-                                   class="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                                    First
-                                </a>
-                            {% endif %}
-                            {% for num in bugs.paginator.page_range %}
-                                {% if num == bugs.number %}
-                                    <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
-                                        {{ num }}
-                                    </span>
-                                {% elif num > bugs.number|add:"-3" and num < bugs.number|add:"3" %}
-                                    <a href="?page={{ num }}"
-                                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                        {{ num }}
-                                    </a>
-                                {% endif %}
-                            {% endfor %}
-                            {% if bugs.has_next %}
-                                <a href="?page={{ bugs.paginator.num_pages }}"
-                                   class="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                                    Last
-                                </a>
-                            {% endif %}
-                        </nav>
-                        <p class="text-sm text-gray-700">Page {{ bugs.number }} of {{ bugs.paginator.num_pages }}</p>
-                    </div>
-                {% endif %}
+                <div class="mt-4 sm:mt-0">
+                    <a href="{% url 'report' %}"
+                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-[#e74c3c] hover:bg-[#d44637] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-all duration-200 transform hover:scale-105">
+                        <svg class="w-5 h-5 mr-2"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Report a Bug
+                    </a>
+                </div>
             </div>
-            <!-- Sidebar -->
-            <div class="w-full lg:w-80 mt-8 lg:mt-0">
-                <!-- Leaderboard -->
-                {% include "includes/_leaderboard_widget.html" %}
+            <!-- Main Content -->
+            <div class="flex flex-col lg:flex-row lg:space-x-8">
+                <!-- Issues Grid -->
+                <div class="flex-1">
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        {% for bug in bugs %}
+                            {% include "includes/_bug.html" %}
+                        {% endfor %}
+                    </div>
+                    <!-- Enhanced Pagination -->
+                    {% if bugs.paginator %}
+                        <div class="mt-8">
+                            <div class="flex items-center justify-between bg-white px-4 py-3 rounded-lg shadow-sm">
+                                <div class="flex-1 flex justify-between sm:hidden">
+                                    {% if bugs.has_previous %}
+                                        <a href="?page={{ bugs.previous_page_number }}"
+                                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Previous</a>
+                                    {% endif %}
+                                    {% if bugs.has_next %}
+                                        <a href="?page={{ bugs.next_page_number }}"
+                                           class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Next</a>
+                                    {% endif %}
+                                </div>
+                                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                    <div>
+                                        <p class="text-sm text-gray-700">
+                                            Showing
+                                            <span class="font-medium">{{ bugs.start_index }}</span>
+                                            to
+                                            <span class="font-medium">{{ bugs.end_index }}</span>
+                                            of
+                                            <span class="font-medium">{{ bugs.paginator.count }}</span>
+                                            results
+                                        </p>
+                                    </div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                         aria-label="Pagination">
+                                        {% if bugs.has_previous %}
+                                            <a href="?page=1"
+                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">First</span>
+                                                <svg class="h-5 w-5"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                        {% for num in bugs.paginator.page_range %}
+                                            {% if num == bugs.number %}
+                                                <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
+                                                    {{ num }}
+                                                </span>
+                                            {% elif num > bugs.number|add:"-3" and num < bugs.number|add:"3" %}
+                                                <a href="?page={{ num }}"
+                                                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                                    {{ num }}
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if bugs.has_next %}
+                                            <a href="?page={{ bugs.paginator.num_pages }}"
+                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">Last</span>
+                                                <svg class="h-5 w-5"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414zm6 0a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L13.586 10l-4.293 4.293a1 1 0 000 1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Sidebar with Enhanced Leaderboard -->
+                <div class="w-full lg:w-80 mt-8 lg:mt-0">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-4 bg-[#e74c3c] bg-opacity-95">
+                            <h2 class="text-xl font-bold text-white flex items-center">
+                                <svg class="w-6 h-6 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                                Leaderboard
+                            </h2>
+                        </div>
+                        {% include "includes/_leaderboard_widget.html" %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <!-- JavaScript for voting and flagging -->
+    <!-- JavaScript for voting -->
     <script>
         function getVoteCount(issue_pk) {
             $.ajax({
@@ -93,8 +146,8 @@
                 url: '/vote_count/' + issue_pk + '/',
                 data: {},
                 success: function(data) {
-                    $('#likes_count').text(data.likes);
-                    $('#dislikes_count').text(data.dislikes);
+                    $('#likes_count_' + issue_pk).text(data.likes);
+                    $('#dislikes_count_' + issue_pk).text(data.dislikes);
                 },
             });
         }

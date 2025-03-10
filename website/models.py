@@ -140,7 +140,13 @@ class Organization(models.Model):
     logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
-    twitter = models.CharField(max_length=255, null=True, blank=True)
+    twitter = models.URLField(null=True, blank=True)
+    matrix_url = models.URLField(null=True, blank=True)
+    slack_url = models.URLField(null=True, blank=True)
+    discord_url = models.URLField(null=True, blank=True)
+    gitter_url = models.URLField(null=True, blank=True)
+    zulipchat_url = models.URLField(null=True, blank=True)
+    element_url = models.URLField(null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -159,6 +165,7 @@ class Organization(models.Model):
     topic_tags = models.JSONField(default=list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
+    repos_updated_at = models.DateTimeField(null=True, blank=True, help_text="When repositories were last updated")
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
@@ -431,6 +438,7 @@ class Issue(models.Model):
         (5, "Typo"),
         (6, "Design"),
         (7, "Server Down"),
+        (8, "Trademark Squatting"),
     )
     user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
@@ -685,6 +693,10 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
+    #  fields for visit tracking
+    daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
+    last_visit_day = models.DateField(null=True, blank=True, help_text="Last day the user visited")
+
     # SendGrid webhook fields
     email_status = models.CharField(
         max_length=50, blank=True, null=True, help_text="Current email status from SendGrid"
@@ -720,6 +732,7 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
 
@@ -742,6 +755,24 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+
+    def update_visit_counter(self):
+        """
+        Update daily visit counter if last visit was on a different day
+        """
+        today = timezone.now().date()
+
+        # If no previous visit or last visit was on a different day
+        if not self.last_visit_day or today > self.last_visit_day:
+            self.daily_visit_count += 1
+            self.last_visit_day = today
+            self.save()
+
+        # Always increment the general visit_count regardless of day
+        self.visit_count += 1
+        self.save(update_fields=["visit_count"])
+
+        return self.daily_visit_count
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
@@ -1074,16 +1105,32 @@ class Project(models.Model):
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
     def save(self, *args, **kwargs):
+        # Always ensure a valid slug exists before saving
         if not self.slug:
-            slug = slugify(self.name)
+            base_slug = slugify(self.name)
             # Replace dots with dashes and limit length
-            slug = slug.replace(".", "-")
-            if len(slug) > 50:
-                slug = slug[:50]
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
             # Ensure we have a valid slug
-            if not slug:
-                slug = f"project-{int(time.time())}"
-            self.slug = slug
+            if not base_slug:
+                base_slug = f"project-{int(time.time())}"
+
+            # Ensure slug uniqueness
+            unique_slug = base_slug
+            counter = 1
+            while Project.objects.filter(slug=unique_slug).exclude(id=self.id).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+            self.slug = unique_slug
+        elif not self.slug:
+            # Fallback if no name is available
+            self.slug = f"project-{int(time.time())}"
+
         super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -1588,6 +1635,8 @@ class GitHubIssue(models.Model):
     merged_at = models.DateTimeField(null=True, blank=True)
     is_merged = models.BooleanField(default=False)
     url = models.URLField()
+    has_dollar_tag = models.BooleanField(default=False)
+    sponsors_tx_id = models.CharField(max_length=255, null=True, blank=True)
     repo = models.ForeignKey(
         Repo,
         null=True,
@@ -1724,21 +1773,6 @@ class Kudos(models.Model):
 
     def __str__(self):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
-
-
-class Message(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
-
-    class Meta:
-        ordering = ["timestamp"]
-
-    def __str__(self):
-        return f"{self.username}: {self.content[:50]}"
 
 
 class OsshCommunity(models.Model):
@@ -1962,7 +1996,7 @@ class Enrollment(models.Model):
         return progress
 
     def __str__(self):
-        return f"{self.student.username} - {self.course.title}"
+        return f"{self.student.user.username} - {self.course.title}"
 
 
 class Rating(models.Model):
@@ -2000,7 +2034,7 @@ class BaconSubmission(models.Model):
 
 
 class DailyStats(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     value = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -2153,3 +2187,58 @@ class HackathonPrize(models.Model):
 
     def __str__(self):
         return f"{self.get_position_display()} - {self.title} ({self.hackathon.name})"
+
+class Queue(models.Model):
+    """
+    Model to store queue items with a message, image, and launch status.
+    """
+
+    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    image = models.ImageField(upload_to="queue_images", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    launched = models.BooleanField(default=False)
+    launched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [
+            models.Index(fields=["created"], name="queue_created_idx"),
+        ]
+
+    def __str__(self):
+        return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
+
+    def launch(self):
+        """
+        Mark the queue item as launched and set the launched_at timestamp.
+        """
+        if not self.launched:
+            self.launched = True
+            self.launched_at = timezone.now()
+            self.save()
+
+
+class Thread(models.Model):
+    participants = models.ManyToManyField(User, related_name="threads")
+    updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
+
+    def __str__(self):
+        return f"Thread {self.id}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"
+

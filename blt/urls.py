@@ -152,6 +152,7 @@ from website.views.issue import (
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
+    GsocView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -172,6 +173,7 @@ from website.views.issue import (
     issue_count,
     like_issue,
     newhome,
+    page_vote,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -230,12 +232,15 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    room_messages_api,
+    send_message_api,
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
     subscribe_to_domains,
     trademark_detailview,
     trademark_search,
+    update_organization_repos,
     update_role,
     user_sizzle_report,
     view_hunt,
@@ -261,6 +266,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.queue import queue_list
 from website.views.repo import RepoListView, add_repo
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
@@ -293,16 +299,22 @@ from website.views.user import (
     create_wallet,
     deletions,
     follow_user,
+    get_public_key,
     get_score,
     github_webhook,
     invite_friend,
+    messaging_home,
     profile,
     profile_edit,
     referral_signup,
+    set_public_key,
+    start_thread,
     update_bch_address,
     user_dashboard,
     users_view,
+    view_thread,
 )
+from website.views.video_call import video_call
 
 admin.autodiscover()
 
@@ -676,7 +688,7 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
-    re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
+    path("gsoc/", GsocView.as_view(), name="gsoc"),
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),
@@ -987,6 +999,7 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path("video_call/", video_call, name="video_call"),
     path(
         "batch-send-bacon-tokens/",
         batch_send_bacon_tokens_view,
@@ -1021,6 +1034,7 @@ urlpatterns = [
     path("repo_list/", RepoListView.as_view(), name="repo_list"),
     path("add_repo", add_repo, name="add_repo"),
     path("organization/<slug:slug>/", OrganizationDetailView.as_view(), name="organization_detail"),
+    path("organization/<slug:slug>/update-repos/", update_organization_repos, name="update_organization_repos"),
     # GitHub Issues
     path("github-issues/<int:pk>/", GitHubIssueDetailView.as_view(), name="github_issue_detail"),
     path("github-issues/", GitHubIssuesView.as_view(), name="github_issues"),
@@ -1031,6 +1045,7 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
+
     # Hackathon URLs.
     path("hackathons/", HackathonListView.as_view(), name="hackathons"),
     path("hackathons/create/", HackathonCreateView.as_view(), name="hackathon_create"),
@@ -1038,6 +1053,25 @@ urlpatterns = [
     path("hackathons/<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_edit"),
     path("hackathons/<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_add_sponsor"),
     path("hackathons/<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_add_prize"),
+
+    path("page-vote/", page_vote, name="page_vote"),
+    # Queue Management URLs
+    path("queue/", queue_list, name="queue_list"),
+    path("queue/create/", queue_list, name="queue_create"),
+    path("queue/<int:queue_id>/edit/", queue_list, name="queue_edit"),
+    path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
+    path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
+    path("queue/launch-control/", queue_list, name="queue_launch_page"),
+    # Chat room API endpoints
+    path("api/send-message/", send_message_api, name="send_message_api"),
+    path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
+    # direct messaging
+    path("messaging/", messaging_home, name="messaging"),
+    path("messaging/start-thread/<int:user_id>/", start_thread, name="start_thread"),
+    path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
+    path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
+    path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+
 ]
 
 if settings.DEBUG:
