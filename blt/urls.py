@@ -144,6 +144,7 @@ from website.views.issue import (
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
+    GsocView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -290,16 +291,22 @@ from website.views.user import (
     create_wallet,
     deletions,
     follow_user,
+    get_public_key,
     get_score,
     github_webhook,
     invite_friend,
+    messaging_home,
     profile,
     profile_edit,
     referral_signup,
+    set_public_key,
+    start_thread,
     update_bch_address,
     user_dashboard,
     users_view,
+    view_thread,
 )
+from website.views.video_call import video_call
 
 admin.autodiscover()
 
@@ -673,7 +680,7 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
-    re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
+    path("gsoc/", GsocView.as_view(), name="gsoc"),
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),
@@ -984,6 +991,7 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path("video_call/", video_call, name="video_call"),
     path(
         "batch-send-bacon-tokens/",
         batch_send_bacon_tokens_view,
@@ -1040,6 +1048,12 @@ urlpatterns = [
     # Chat room API endpoints
     path("api/send-message/", send_message_api, name="send_message_api"),
     path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
+    # direct messaging
+    path("messaging/", messaging_home, name="messaging"),
+    path("messaging/start-thread/<int:user_id>/", start_thread, name="start_thread"),
+    path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
+    path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
+    path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
 ]
 
 if settings.DEBUG:

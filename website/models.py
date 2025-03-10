@@ -693,6 +693,10 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
+    #  fields for visit tracking
+    daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
+    last_visit_day = models.DateField(null=True, blank=True, help_text="Last day the user visited")
+
     # SendGrid webhook fields
     email_status = models.CharField(
         max_length=50, blank=True, null=True, help_text="Current email status from SendGrid"
@@ -728,6 +732,7 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
 
@@ -750,6 +755,24 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+
+    def update_visit_counter(self):
+        """
+        Update daily visit counter if last visit was on a different day
+        """
+        today = timezone.now().date()
+
+        # If no previous visit or last visit was on a different day
+        if not self.last_visit_day or today > self.last_visit_day:
+            self.daily_visit_count += 1
+            self.last_visit_day = today
+            self.save()
+
+        # Always increment the general visit_count regardless of day
+        self.visit_count += 1
+        self.save(update_fields=["visit_count"])
+
+        return self.daily_visit_count
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
@@ -1612,6 +1635,8 @@ class GitHubIssue(models.Model):
     merged_at = models.DateTimeField(null=True, blank=True)
     is_merged = models.BooleanField(default=False)
     url = models.URLField()
+    has_dollar_tag = models.BooleanField(default=False)
+    sponsors_tx_id = models.CharField(max_length=255, null=True, blank=True)
     repo = models.ForeignKey(
         Repo,
         null=True,
@@ -1748,21 +1773,6 @@ class Kudos(models.Model):
 
     def __str__(self):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
-
-
-class Message(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
-
-    class Meta:
-        ordering = ["timestamp"]
-
-    def __str__(self):
-        return f"{self.username}: {self.content[:50]}"
 
 
 class OsshCommunity(models.Model):
@@ -2067,3 +2077,27 @@ class Queue(models.Model):
             self.launched = True
             self.launched_at = timezone.now()
             self.save()
+
+
+class Thread(models.Model):
+    participants = models.ManyToManyField(User, related_name="threads")
+    updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
+
+    def __str__(self):
+        return f"Thread {self.id}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"

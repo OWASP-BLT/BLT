@@ -8,12 +8,14 @@ import zipfile
 from pathlib import Path
 
 import aiohttp
+from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from website.models import Message, Room
+from website.models import Message, Room, Thread
 from website.utils import (
     compare_model_fields,
     cosine_similarity,
@@ -521,3 +523,136 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             print(f"Error in delete_message_broadcast: {e}")
+
+
+class DirectChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.thread_id = self.scope["url_route"]["kwargs"]["thread_id"]
+        self.room_group_name = f"chat_{self.thread_id}"
+
+        # Join the chat room
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        # Leave the chat room
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        user = self.scope["user"]
+        if user.is_authenticated:
+            message = await self.save_message(user, data["encrypted_content"])
+            message = data["encrypted_content"]
+            # Broadcast message to the chat room
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    "type": "chat_message",
+                    "username": user.username,
+                    "encrypted_content": message,
+                },
+            )
+
+    async def chat_message(self, event):
+        await self.send(
+            text_data=json.dumps(
+                {
+                    "type": "chat_message",
+                    "username": event["username"],
+                    "encrypted_content": event["encrypted_content"],
+                }
+            )
+        )
+
+    @sync_to_async
+    def save_message(self, user, encrypted_content):
+        thread = get_object_or_404(Thread, id=self.thread_id)
+        return Message.objects.create(thread=thread, user=user, username=user.username, content=encrypted_content)
+
+
+class VideoCallConsumer(AsyncWebsocketConsumer):
+    rooms = {}  # Class variable to store room states
+
+    async def connect(self):
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]
+        self.room_group_name = f"video_{self.room_name}"
+
+        # Check if room exists and has less than 2 participants
+        if self.room_name in self.rooms:
+            if len(self.rooms[self.room_name]) >= 2:
+                await self.close(code=4000)  # Room is full
+                return
+            self.rooms[self.room_name].append(self.channel_name)
+        else:
+            self.rooms[self.room_name] = [self.channel_name]
+
+        # Join room group
+        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+
+        await self.accept()
+
+        # Notify about participant count
+        participant_count = len(self.rooms[self.room_name])
+        await self.channel_layer.group_send(self.room_group_name, {"type": "room_status", "count": participant_count})
+
+    async def disconnect(self, close_code):
+        # Remove from room
+        if self.room_name in self.rooms:
+            self.rooms[self.room_name].remove(self.channel_name)
+            if not self.rooms[self.room_name]:
+                del self.rooms[self.room_name]
+            else:
+                # Notify remaining participant
+                await self.channel_layer.group_send(self.room_group_name, {"type": "peer_disconnected"})
+
+        # Leave room group
+        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        try:
+            data = json.loads(text_data)
+            message_type = data.get("type")
+
+            # Forward message to all peers in the room except sender
+            if message_type in ["offer", "answer", "ice-candidate"]:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {"type": "video_message", "sender_channel_name": self.channel_name, "data": data},
+                )
+            elif message_type == "join":
+                # Notify others in the room
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        "type": "video_message",
+                        "sender_channel_name": self.channel_name,
+                        "data": {"type": "join", "room": data.get("room")},
+                    },
+                )
+            elif message_type == "end_call":
+                # Notify others that call is ending
+                await self.channel_layer.group_send(self.room_group_name, {"type": "call_ended"})
+
+        except json.JSONDecodeError:
+            await self.send(text_data=json.dumps({"error": "Invalid JSON format"}))
+        except Exception as e:
+            await self.send(text_data=json.dumps({"error": "Internal server error"}))
+
+    async def video_message(self, event):
+        # Don't send the message back to the sender
+        if self.channel_name != event.get("sender_channel_name"):
+            # Send message to WebSocket
+            await self.send(text_data=json.dumps(event["data"]))
+
+    async def room_status(self, event):
+        # Send room status to client
+        await self.send(text_data=json.dumps({"type": "room_status", "count": event["count"]}))
+
+    async def peer_disconnected(self, event):
+        # Notify client that peer disconnected
+        await self.send(text_data=json.dumps({"type": "peer_disconnected"}))
+
+    async def call_ended(self, event):
+        # Notify client that call has ended
+        await self.send(text_data=json.dumps({"type": "call_ended"}))
