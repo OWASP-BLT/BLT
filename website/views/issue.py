@@ -6,7 +6,7 @@ import smtplib
 import socket
 import uuid
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime
 from urllib.parse import urlparse
 
 import requests
@@ -40,9 +40,9 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.html import escape
-from django.utils.timezone import now
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -239,7 +239,7 @@ def resolve(request, id):
         if issue.status == "open":
             issue.status = "close"
             issue.closed_by = request.user
-            issue.closed_date = now()
+            issue.closed_date = timezone.now()
             issue.save()
             return JsonResponse({"status": "ok", "issue_status": issue.status})
         else:
@@ -270,7 +270,7 @@ def UpdateIssue(request):
         if request.POST.get("action") == "close":
             issue.status = "closed"
             issue.closed_by = request.user
-            issue.closed_date = datetime.now()
+            issue.closed_date = timezone.now()
 
             msg_plain = msg_html = render_to_string(
                 "email/bug_updated.html",
@@ -330,7 +330,7 @@ def newhome(request, template="bugs_list.html"):
     )
     bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
-    current_time = now()
+    current_time = timezone.now()
     leaderboard = (
         User.objects.filter(
             points__created__month=current_time.month,
@@ -552,7 +552,7 @@ def SaveBiddingData(request):
                 return HttpResponse(status=400)
             return redirect("BiddingData")
 
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
 
         # Check if the username exists in our database
         user = User.objects.filter(username=username).first()
@@ -624,7 +624,7 @@ def submit_pr(request):
         amount = request.POST.get("bid_amount")
         issue_url = request.POST.get("issue_link")
         status = "Submitted"
-        current_time = datetime.now(timezone.utc)
+        current_time = timezone.now()
         bch_address = request.POST.get("bch_address")
 
         # Check if the username exists in our database
@@ -906,7 +906,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
         form.instance.reporter_ip_address = reporter_ip
 
         limit = 50 if self.request.user.is_authenticated else 30
-        today = now().date()
+        today = timezone.now().date()
         recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
 
         if recent_issues_count >= limit:
@@ -1392,17 +1392,21 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     time_remaining = None
     if request.method == "GET":
-        if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
-        elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
+        if ((hunt.starts_on - timezone.now()).total_seconds()) > 0:
+            messages.error(request, "Hunt has not started yet")
+            return redirect("index")
+        elif ((hunt.end_on - timezone.now()).total_seconds()) < 0:
+            messages.error(request, "Hunt has ended")
+            return redirect("index")
         else:
             return render(request, template, {"hunt": hunt})
     elif request.method == "POST":
-        if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
-        elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
-            return redirect("/dashboard/user/hunt/" + str(pk) + "/")
+        if ((hunt.starts_on - timezone.now()).total_seconds()) > 0:
+            messages.error(request, "Hunt has not started yet")
+            return redirect("index")
+        elif ((hunt.end_on - timezone.now()).total_seconds()) < 0:
+            messages.error(request, "Hunt has ended")
+            return redirect("index")
         else:
             url = request.POST["url"]
             description = request.POST["description"]
@@ -2016,7 +2020,7 @@ def page_vote(request):
 
 
 class GsocView(View):
-    SINCE_DATE = datetime(2024, 11, 1, tzinfo=timezone.utc)
+    SINCE_DATE = timezone.make_aware(datetime(2024, 11, 11))
 
     def fetch_model_prs(self, repo_names):
         contributors = defaultdict(lambda: {"count": 0, "github_url": ""})
@@ -2103,8 +2107,10 @@ def refresh_gsoc_project(request):
             return redirect("gsoc")
 
         # Set the since date to November 11, 2024
-        since_date = datetime(2024, 11, 11)
-        since_date = timezone.make_aware(since_date)
+        # Create a timezone-aware datetime using Django's timezone
+        since_date = timezone.make_aware(datetime(2024, 11, 11))
+
+        # Calculate days between now and the since date
         days = (timezone.now() - since_date).days
 
         try:

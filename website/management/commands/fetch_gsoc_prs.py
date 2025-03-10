@@ -45,7 +45,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         days = options["days"]
         limit = options["limit"]
-        verbose = options["verbose"]
+        verbose = True  # Always use verbose mode for debugging
         repos_arg = options["repos"]
 
         self.stdout.write(f"Fetching closed PRs from the past {days} days for GSoC repositories")
@@ -158,9 +158,15 @@ class Command(BaseCommand):
         since_date = timezone.now() - timedelta(days=days)
         since_date_str = since_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+        self.stdout.write(f"Fetching PRs since {since_date_str} for {owner}/{repo_name}")
+        self.stdout.write(f"Current date: {timezone.now().strftime('%Y-%m-%dT%H:%M:%SZ')}, Looking back {days} days")
+
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+            self.stdout.write("Using GitHub token for authentication")
+        else:
+            self.stdout.write("No GitHub token found, using unauthenticated requests (rate limits may apply)")
 
         while True:
             url = (
@@ -178,12 +184,20 @@ class Command(BaseCommand):
 
                 data = response.json()
                 if not data:
+                    self.stdout.write(f"No more PRs found for {owner}/{repo_name} on page {page}")
                     break
+
+                self.stdout.write(f"Fetched {len(data)} PRs from page {page}")
+
+                # Check if any PRs are merged
+                merged_count = sum(1 for pr in data if pr.get("merged_at") is not None)
+                self.stdout.write(f"Found {merged_count} merged PRs on page {page}")
 
                 prs.extend(data)
 
                 # Check if we've reached the last page
                 if len(data) < per_page:
+                    self.stdout.write(f"Reached last page ({page}) for {owner}/{repo_name}")
                     break
 
                 page += 1
@@ -195,6 +209,8 @@ class Command(BaseCommand):
 
         if verbose:
             self.stdout.write(f"Fetched {len(prs)} PRs for {owner}/{repo_name}")
+            merged_prs = sum(1 for pr in prs if pr.get("merged_at") is not None)
+            self.stdout.write(f"Of which {merged_prs} are merged PRs")
 
         return prs
 
@@ -205,10 +221,12 @@ class Command(BaseCommand):
         Returns the number of new PRs added.
         """
         added_count = 0
+        skipped_count = 0
 
         for pr in prs:
             # Check if PR already exists in the database
             if GitHubIssue.objects.filter(issue_id=pr["id"]).exists():
+                skipped_count += 1
                 if verbose:
                     self.stdout.write(f"PR {pr['number']} already exists in the database")
                 continue
@@ -255,4 +273,5 @@ class Command(BaseCommand):
             if verbose:
                 self.stdout.write(f"Added PR #{pr['number']}: {pr['title']}")
 
+        self.stdout.write(f"Skipped {skipped_count} PRs that already exist in the database")
         return added_count
