@@ -504,7 +504,7 @@
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                         <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-bold">Top PR Contributors</h3>
+                                <h3 class="text-lg font-bold">TOP BLT PRs - {{ current_time|date:"M" }}</h3>
                                 <i class="fas fa-code-branch"></i>
                             </div>
                         </div>
@@ -514,45 +514,36 @@
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
-                                            <a href="{% url 'profile' slug=user.user_profile__user__username %}"
+                                            <a href="{{ user.contributor__github_url }}"
+                                               target="_blank"
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
-                                                {% if user.user_profile__github_url %}
-                                                    <img src="https://github.com/{{ user.user_profile__user__username }}.png"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% elif user.user_profile__user__userprofile.avatar %}
-                                                    <img src="{{ user.user_profile__user__userprofile.avatar }}"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
-                                                    <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                {% if user.contributor__avatar_url %}
+                                                    <img src="{{ user.contributor__avatar_url }}"
+                                                         alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full"
                                                          onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% else %}
-                                                    <img src="{% gravatar_url user.user_profile__user__email 50 %}"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                         alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                         class="w-6 h-6 rounded-full">
                                                 {% endif %}
-                                                {{ user.user_profile__user__username }}
+                                                {{ user.contributor__name }}
                                             </a>
                                         </div>
                                         <span class="text-sm text-gray-500">{{ user.total_prs }} PRs</span>
                                     </div>
                                 {% empty %}
                                     <div class="text-center text-gray-500">
-                                        <p>No PR contributions yet</p>
+                                        <p>No BLT PRs for {{ current_time|date:"F Y" }}</p>
+                                        <a href="https://github.com/OWASP-BLT/BLT/pulls"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline text-sm mt-2 inline-block">
+                                            <i class="fas fa-external-link-alt mr-1"></i>View PRs on GitHub
+                                        </a>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -712,6 +703,85 @@
                 <!-- Leaderboards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
                     <!-- Remove the duplicate Top PR Contributors section -->
+                </div>
+            </div>
+        </section>
+        <!-- Latest Bugs -->
+        <section class="py-12 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4">
+                <h2 class="text-3xl font-bold text-center mb-12">Latest Bug Reports</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                    {% for bug in latest_bugs|slice:":2" %}
+                        <div class="bg-white rounded-lg shadow-lg border-2 border-[#e74c3c] overflow-hidden">
+                            <div class="p-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-xl font-semibold text-gray-800 truncate">{{ bug.description }}</h3>
+                                    <span class="px-2 py-1 bg-{{ bug.status|yesno:'green-100,red-100' }} text-{{ bug.status|yesno:'green-800,red-800' }} rounded-full text-xs">
+                                        {{ bug.status|default:"open"|title }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center text-gray-600 text-sm mb-4">
+                                    <i class="fas fa-globe mr-2"></i>
+                                    <a href="{{ bug.url }}"
+                                       class="hover:text-[#e74c3c] truncate"
+                                       target="_blank">{{ bug.domain_name }}</a>
+                                </div>
+                                {% if bug.screenshots.all.0 %}
+                                    <div class="mb-4 rounded-lg overflow-hidden">
+                                        <img src="{{ bug.screenshots.all.0.image.url }}"
+                                             alt="Screenshot"
+                                             class="w-full h-32 object-cover"
+                                             width="400"
+                                             height="128">
+                                    </div>
+                                {% endif %}
+                                <div class="flex justify-between items-center text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        {% if bug.user %}
+                                            {% if bug.user.userprofile.avatar %}
+                                                <img src="{{ bug.user.userprofile.avatar }}"
+                                                     alt="{{ bug.user.username }}"
+                                                     class="w-6 h-6 rounded-full mr-2"
+                                                     width="24"
+                                                     height="24">
+                                            {% else %}
+                                                <img src="{% gravatar_url bug.user.email 30 %}"
+                                                     alt="{{ bug.user.username }}"
+                                                     class="w-6 h-6 rounded-full mr-2"
+                                                     width="24"
+                                                     height="24">
+                                            {% endif %}
+                                            <a href="{% url 'profile' bug.user.username %}"
+                                               class="hover:text-[#e74c3c]">{{ bug.user.username }}</a>
+                                        {% else %}
+                                            <span>Anonymous</span>
+                                        {% endif %}
+                                    </div>
+                                    <span>{{ bug.created|timesince }} ago</span>
+                                </div>
+                                <div class="flex justify-between mt-6 pt-4 border-t border-gray-100">
+                                    <div class="flex items-center">
+                                        <span class="flex items-center mr-4"><i class="fas fa-thumbs-up text-green-500 mr-1"></i> {{ bug.upvoted.count }}</span>
+                                        <span class="flex items-center"><i class="fas fa-tag text-blue-500 mr-1"></i> {{ bug.get_label_display }}</span>
+                                    </div>
+                                    <a href="{% url 'issue_view' bug.id %}"
+                                       class="text-[#e74c3c] hover:text-[#c0392b] font-medium">View Details</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-span-2 text-center p-8">
+                            <p class="text-gray-500 mb-4">No bug reports available yet.</p>
+                            <a href="{% url 'report' %}"
+                               class="inline-block px-6 py-3 bg-[#e74c3c] text-white rounded-md hover:bg-[#c0392b]">Report a Bug</a>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="text-center">
+                    <a href="{% url 'issues' %}"
+                       class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-[#d44637] transition-colors">
+                        <i class="fas fa-list mr-2"></i> View All Bug Reports
+                    </a>
                 </div>
             </div>
         </section>

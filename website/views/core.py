@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import psutil
+import pytz
 import redis
 import requests
 import requests.exceptions
@@ -262,14 +263,64 @@ def status_page(request):
             if github_token:
                 try:
                     print("Checking GitHub API...")
+                    # Check basic API access
                     response = requests.get(
                         "https://api.github.com/user/repos",
                         headers={"Authorization": f"token {github_token}"},
                         timeout=5,
                     )
                     status_data["github"] = response.status_code == 200
+
+                    # Get rate limit information
+                    rate_limit_response = requests.get(
+                        "https://api.github.com/rate_limit",
+                        headers={"Authorization": f"token {github_token}"},
+                        timeout=5,
+                    )
+
+                    if rate_limit_response.status_code == 200:
+                        rate_limit_data = rate_limit_response.json()
+                        status_data["github_rate_limit"] = {
+                            "core": rate_limit_data.get("resources", {}).get("core", {}),
+                            "search": rate_limit_data.get("resources", {}).get("search", {}),
+                            "graphql": rate_limit_data.get("resources", {}).get("graphql", {}),
+                            "integration_manifest": rate_limit_data.get("resources", {}).get(
+                                "integration_manifest", {}
+                            ),
+                            "code_scanning_upload": rate_limit_data.get("resources", {}).get(
+                                "code_scanning_upload", {}
+                            ),
+                        }
+
+                        # Add recent API calls history from cache if available
+                        github_api_history = cache.get("github_api_history", [])
+                        status_data["github_api_history"] = github_api_history
+
+                        # Add current rate limit to history
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        core_rate_limit = rate_limit_data.get("resources", {}).get("core", {})
+
+                        if core_rate_limit:
+                            new_entry = {
+                                "timestamp": current_time,
+                                "remaining": core_rate_limit.get("remaining", 0),
+                                "limit": core_rate_limit.get("limit", 0),
+                                "used": core_rate_limit.get("used", 0),
+                                "reset": core_rate_limit.get("reset", 0),
+                            }
+
+                            # Add to history and keep last 50 entries
+                            github_api_history.append(new_entry)
+                            if len(github_api_history) > 50:
+                                github_api_history = github_api_history[-50:]
+
+                            # Update cache
+                            cache.set("github_api_history", github_api_history, 86400)  # Cache for 24 hours
+                    else:
+                        status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
                     print(f"GitHub API Error: {e}")
+                    status_data["github_rate_limit"] = None
 
         # OpenAI API check
         if CHECK_OPENAI:
@@ -454,19 +505,32 @@ def status_page(request):
         # Store the data in a format that can be safely serialized to JSON
         chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
 
+        # Prepare GitHub API history data for chart
+        if "github_api_history" in status_data and status_data["github_api_history"]:
+            # Convert the history data to JSON-serializable format
+            for entry in status_data["github_api_history"]:
+                # Ensure all values are JSON serializable
+                for key, value in entry.items():
+                    if not isinstance(value, (str, int, float, bool, type(None))):
+                        entry[key] = str(value)
+
         status_data["chart_data"] = chart_data
 
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
-    # Prepare the chart data for the template
-    template_chart_data = {
-        "dates": json.dumps(status_data["chart_data"]["dates"]),
-        "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
-        "commands": json.dumps(status_data["chart_data"]["commands"]),
-    }
+        # Prepare the chart data for the template
+        template_chart_data = {
+            "dates": json.dumps(status_data["chart_data"]["dates"]),
+            "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
+            "commands": json.dumps(status_data["chart_data"]["commands"]),
+        }
 
-    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+        # Serialize GitHub API history data for the template
+        if "github_api_history" in status_data:
+            status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
+
+        return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
 
 def github_callback(request):
@@ -1211,7 +1275,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Post, Repo, User, UserProfile  # Add UserProfile model
+    from website.models import ForumPost, GitHubIssue, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1235,10 +1299,17 @@ def home(request):
         .order_by("-total_score")[:5]
     )
 
-    # Get top PR contributors using the leaderboard method
+    # Get top PR contributors using the leaderboard method for BLT repo in current month only
     top_pr_contributors = (
-        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
-        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        GitHubIssue.objects.filter(
+            type="pull_request",
+            is_merged=True,
+            repo__name="BLT",  # Filter for BLT repo only
+            contributor__isnull=False,  # Exclude None values
+            merged_at__month=current_time.month,  # Current month only
+            merged_at__year=current_time.year,  # Current year
+        )
+        .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
     )
@@ -1253,6 +1324,7 @@ def home(request):
         .select_related("sender", "sender__userprofile")
         .order_by("-point_by_referral")[:5]
     )
+
     # Get or Create InviteFriend object for logged in user
     referral_code = None
     if request.user.is_authenticated:
@@ -1261,6 +1333,13 @@ def home(request):
 
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
+    # Get latest bug reports
+    latest_bugs = (
+        Issue.objects.filter(hunt=None)
+        .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+        .order_by("-created")[:2]
+    )
 
     # Get repository star counts for the specific repositories shown on the homepage
     repo_stars = []
@@ -1304,18 +1383,20 @@ def home(request):
         {
             "last_commit": last_commit,
             "current_year": timezone.now().year,
+            "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_posts": recent_posts,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
             "latest_blog_posts": latest_blog_posts,
-            "top_earners": top_earners,  # Add top earners to context
-            "repo_stars": repo_stars,  # Add repository star counts to context
+            "top_earners": top_earners,
+            "repo_stars": repo_stars,
             "top_referrals": top_referrals,
             "referral_code": referral_code,
-            "debug_mode": settings.DEBUG,  # Add debug flag to context
-            "system_stats": system_stats,  # Add system stats to context
+            "debug_mode": settings.DEBUG,
+            "system_stats": system_stats,
+            "latest_bugs": latest_bugs,
         },
     )
 
@@ -1546,6 +1627,23 @@ def management_commands(request):
     # Get the date 30 days ago for stats
     thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
 
+    # Get sort parameter from request
+    sort_param = request.GET.get("sort", "name")
+    reverse = False
+
+    # Check if sort parameter starts with '-' (descending order)
+    if sort_param.startswith("-"):
+        reverse = True
+        sort_key = sort_param[1:]  # Remove the '-' prefix
+    else:
+        sort_key = sort_param
+
+    # Validate sort key
+    valid_sort_keys = ["name", "last_run", "status", "run_count", "activity"]
+    if sort_key not in valid_sort_keys:
+        sort_key = "name"
+        sort_param = "name"
+
     for name, app_name in get_commands().items():
         # Only include commands from the website app and exclude initsuperuser
         if (
@@ -1599,21 +1697,69 @@ def management_commands(request):
 
             # Get stats data for the past 30 days if it exists
             stats_data = []
+
+            # Create a dictionary to store values for each day in the 30-day period
+            date_range = []
+            date_values = {}
+
+            # Generate all dates in the 30-day range
+            for i in range(30):
+                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date_range.append(date)
+                date_values[date.isoformat()] = 0
+
+            # Get actual stats data
             daily_stats = DailyStats.objects.filter(name=name, created__gte=thirty_days_ago).order_by("created")
 
-            if daily_stats.exists():
-                for stat in daily_stats:
-                    try:
-                        value = int(stat.value)
-                    except (ValueError, TypeError):
-                        value = 0
-                    stats_data.append({"date": stat.created.date().isoformat(), "value": value})
+            # Fill in the values we have
+            max_value = 1  # Minimum value to avoid division by zero
+            total_activity = 0  # Track total activity for sorting
+            for stat in daily_stats:
+                try:
+                    value = int(stat.value)
+                    date_key = stat.created.date().isoformat()
+                    date_values[date_key] = value
+                    total_activity += value
+                    if value > max_value:
+                        max_value = value
+                except (ValueError, TypeError, KeyError):
+                    pass
+
+            # Convert to list format for the template
+            for date in date_range:
+                date_key = date.isoformat()
+                stats_data.append(
+                    {
+                        "date": date_key,
+                        "value": date_values.get(date_key, 0),
+                        "height_percent": (date_values.get(date_key, 0) / max_value) * 100 if max_value > 0 else 0,
+                    }
+                )
 
             command_info["stats_data"] = stats_data
+            command_info["max_value"] = max_value
+            command_info["total_activity"] = total_activity
             available_commands.append(command_info)
 
-    commands = sorted(available_commands, key=lambda x: x["name"])
-    return render(request, "management_commands.html", {"commands": commands})
+    # Sort the commands based on the sort parameter
+    def sort_commands(cmd):
+        if sort_key == "name":
+            return cmd["name"]
+        elif sort_key == "last_run":
+            return cmd.get("last_run", timezone.datetime.min.replace(tzinfo=pytz.UTC))
+        elif sort_key == "status":
+            # Sort by success status (True comes after False in ascending order)
+            return cmd.get("last_success", False)
+        elif sort_key == "run_count":
+            return cmd.get("run_count", 0)
+        elif sort_key == "activity":
+            return cmd.get("total_activity", 0)
+        else:
+            return cmd["name"]
+
+    commands = sorted(available_commands, key=sort_commands, reverse=reverse)
+
+    return render(request, "management_commands.html", {"commands": commands, "sort": sort_param, "reverse": reverse})
 
 
 def run_management_command(request):
@@ -1712,6 +1858,31 @@ def run_management_command(request):
 
                 log_entry.success = True
                 log_entry.save()
+
+                # Record execution in DailyStats
+                try:
+                    # Get existing stats for today
+                    today = timezone.now().date()
+                    daily_stat, created = DailyStats.objects.get_or_create(
+                        name=command,
+                        created__date=today,
+                        defaults={"value": "1", "created": timezone.now(), "modified": timezone.now()},
+                    )
+
+                    if not created:
+                        # Increment the value
+                        try:
+                            current_value = int(daily_stat.value)
+                            daily_stat.value = str(current_value + 1)
+                            daily_stat.modified = timezone.now()
+                            daily_stat.save()
+                        except (ValueError, TypeError):
+                            # If value is not an integer, set it to 1
+                            daily_stat.value = "1"
+                            daily_stat.modified = timezone.now()
+                            daily_stat.save()
+                except Exception as stats_error:
+                    logging.error(f"Error updating DailyStats: {str(stats_error)}")
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": True, "output": output})
