@@ -159,3 +159,21 @@ def div(value, arg):
         return float(value) / float(arg)
     except (ValueError, ZeroDivisionError):
         return 0
+
+
+@register.filter
+def cut(value, arg):
+    """
+    Removes all instances of arg from the given string.
+
+    Args:
+        value (str): The string to modify
+        arg (str): The substring to remove
+
+    Returns:
+        str: The modified string with all instances of arg removed
+    """
+    try:
+        return str(value).replace(arg, "")
+    except (ValueError, TypeError):
+        return value

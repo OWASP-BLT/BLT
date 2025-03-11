@@ -112,9 +112,9 @@ class HackathonDetailView(DetailView):
                 repo__in=repo_ids,
                 created_at__gte=hackathon.start_time,
                 created_at__lte=hackathon.end_time,
-                is_pull_request=True,
+                type="pull_request",
             )
-            .values("user")
+            .values("user_profile")
             .distinct()
             .count()
         )
@@ -126,7 +126,7 @@ class HackathonDetailView(DetailView):
             repo__in=repo_ids,
             created_at__gte=hackathon.start_time,
             created_at__lte=hackathon.end_time,
-            is_pull_request=True,
+            type="pull_request",
         ).count()
 
         context["pr_count"] = pr_count
@@ -136,11 +136,54 @@ class HackathonDetailView(DetailView):
             repo__in=repo_ids,
             created_at__gte=hackathon.start_time,
             created_at__lte=hackathon.end_time,
-            is_pull_request=True,
-            pr_status="merged",
+            type="pull_request",
+            is_merged=True,
         ).count()
 
         context["merged_pr_count"] = merged_pr_count
+
+        # Get view data for sparkline chart
+        import json
+        from datetime import timedelta
+
+        from django.db.models import Sum
+        from django.db.models.functions import TruncDate
+        from django.utils import timezone
+
+        from website.models import IP
+
+        # Get the path for this hackathon
+        hackathon_path = f"/hackathons/{hackathon.slug}/"
+
+        # Get the last 14 days of view data
+        today = timezone.now().date()
+        fourteen_days_ago = today - timedelta(days=14)
+
+        # Query IP table for view counts by date
+        view_data = (
+            IP.objects.filter(path=hackathon_path, created__date__gte=fourteen_days_ago)
+            .annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(count=Sum("count"))
+            .order_by("date")
+        )
+
+        # Prepare data for the sparkline chart
+        dates = []
+        counts = []
+
+        # Fill in missing dates with zero counts
+        current_date = fourteen_days_ago
+        date_counts = {item["date"]: item["count"] for item in view_data}
+
+        while current_date <= today:
+            dates.append(current_date.strftime("%Y-%m-%d"))
+            counts.append(date_counts.get(current_date, 0))
+            current_date += timedelta(days=1)
+
+        context["view_dates"] = json.dumps(dates)
+        context["view_counts"] = json.dumps(counts)
+        context["total_views"] = sum(counts)
 
         return context
 
