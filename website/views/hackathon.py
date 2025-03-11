@@ -77,8 +77,96 @@ class HackathonDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         hackathon = self.get_object()
 
+        # Add breadcrumbs
+        context["breadcrumbs"] = [
+            {"title": "Hackathons", "url": reverse("hackathons")},
+            {"title": hackathon.name, "url": None},
+        ]
+
         # Get the leaderboard
         context["leaderboard"] = hackathon.get_leaderboard()
+
+        # Get repositories with merged PR counts
+        repositories = hackathon.repositories.all()
+        repos_with_pr_counts = []
+
+        for repo in repositories:
+            # Count merged PRs for this repository
+            merged_pr_count = GitHubIssue.objects.filter(
+                repo=repo,
+                type="pull_request",
+                is_merged=True,
+                created_at__gte=hackathon.start_time,
+                created_at__lte=hackathon.end_time,
+            ).count()
+
+            repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
+
+        context["repositories"] = repos_with_pr_counts
+
+        # Get PR data per day for chart
+        import json
+        from datetime import timedelta
+
+        from django.db.models import Count
+        from django.db.models.functions import TruncDate
+
+        # Get participant count (users who have contributed to the repositories)
+        repo_ids = hackathon.repositories.values_list("id", flat=True)
+
+        # Get all pull requests during the hackathon period
+        pr_data = (
+            GitHubIssue.objects.filter(
+                repo__in=repo_ids,
+                created_at__gte=hackathon.start_time,
+                created_at__lte=hackathon.end_time,
+                type="pull_request",
+            )
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        # Prepare data for the chart
+        pr_dates = []
+        pr_counts = []
+        merged_pr_counts = []
+
+        # Fill in all dates in the range
+        current_date = hackathon.start_time.date()
+        end_date = hackathon.end_time.date()
+
+        # Create dictionaries for lookup
+        date_pr_counts = {item["date"]: item["count"] for item in pr_data}
+
+        # Get merged PR data
+        merged_pr_data = (
+            GitHubIssue.objects.filter(
+                repo__in=repo_ids,
+                created_at__gte=hackathon.start_time,
+                created_at__lte=hackathon.end_time,
+                type="pull_request",
+                is_merged=True,
+            )
+            .annotate(date=TruncDate("created_at"))
+            .values("date")
+            .annotate(count=Count("id"))
+            .order_by("date")
+        )
+
+        date_merged_pr_counts = {item["date"]: item["count"] for item in merged_pr_data}
+
+        # Fill in all dates in the range
+        while current_date <= end_date:
+            pr_dates.append(current_date.strftime("%Y-%m-%d"))
+            pr_counts.append(date_pr_counts.get(current_date, 0))
+            merged_pr_counts.append(date_merged_pr_counts.get(current_date, 0))
+            current_date += timedelta(days=1)
+
+        context["pr_dates"] = json.dumps(pr_dates)
+        context["pr_counts"] = json.dumps(pr_counts)
+        context["merged_pr_counts"] = json.dumps(merged_pr_counts)
 
         # Get sponsors by level
         sponsors = hackathon.sponsors.all()
@@ -101,9 +189,6 @@ class HackathonDetailView(DetailView):
                 org = hackathon.organization
                 can_manage = org.is_admin(user) or org.is_manager(user)
         context["can_manage"] = can_manage
-
-        # Get participant count (users who have contributed to the repositories)
-        repo_ids = hackathon.repositories.values_list("id", flat=True)
 
         # Count unique users who have created pull requests to the hackathon repositories
         # during the hackathon period

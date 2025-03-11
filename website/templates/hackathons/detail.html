@@ -6,6 +6,8 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
+        <!-- Breadcrumbs -->
+        {% include "includes/breadcrumbs.html" %}
         <!-- Hackathon Header -->
         <div class="relative rounded-lg overflow-hidden mb-8">
             {% if hackathon.banner_image %}
@@ -85,22 +87,48 @@
                     <div class="mt-6">
                         <h3 class="text-xl font-semibold mb-2 text-gray-800">Repositories</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {% for repo in hackathon.repositories.all %}
-                                <a href="{{ repo.repo_url }}"
-                                   target="_blank"
-                                   rel="noopener noreferrer"
-                                   class="flex items-center p-3 border rounded-lg hover:bg-gray-50 transition">
-                                    <div class="text-[#e74c3c] mr-3">
-                                        <i class="fab fa-github fa-lg"></i>
+                            {% for repo_data in repositories %}
+                                <div class="flex flex-col p-4 border rounded-lg hover:bg-gray-50 transition">
+                                    <div class="flex items-center mb-3">
+                                        <div class="text-[#e74c3c] mr-3">
+                                            <i class="fab fa-github fa-lg"></i>
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="font-medium">{{ repo_data.repo.name }}</div>
+                                            <div class="text-sm text-gray-500">{{ repo_data.repo.description|truncatechars:60 }}</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="font-medium">{{ repo.name }}</div>
-                                        <div class="text-sm text-gray-500">{{ repo.description|truncatechars:60 }}</div>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <div class="flex items-center text-sm text-gray-600">
+                                            <i class="fas fa-code-branch mr-1"></i>
+                                            <span>{{ repo_data.merged_pr_count }} merged PRs</span>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <a href="{{ repo_data.repo.repo_url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="text-sm px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-md transition">
+                                                <i class="fab fa-github mr-1"></i> GitHub
+                                            </a>
+                                            <a href="{% url 'repo_detail' repo_data.repo.slug %}"
+                                               class="text-sm px-3 py-1 bg-[#e74c3c] text-white hover:bg-red-700 rounded-md transition">
+                                                <i class="fas fa-info-circle mr-1"></i> Details
+                                            </a>
+                                        </div>
                                     </div>
-                                </a>
+                                </div>
                             {% empty %}
                                 <div class="col-span-2 text-gray-500 italic">No repositories have been added to this hackathon yet.</div>
                             {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Pull Request Activity Chart -->
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Pull Request Activity</h3>
+                        <div class="bg-white p-4 rounded-lg border">
+                            <div class="h-64">
+                                <canvas id="prActivityChart"></canvas>
+                            </div>
                         </div>
                     </div>
                     {% if can_manage %}
@@ -169,15 +197,42 @@
                 <div class="bg-white rounded-lg shadow p-6 mb-8">
                     <h2 class="text-2xl font-bold mb-4 text-gray-800">Leaderboard</h2>
                     {% if leaderboard %}
-                        <div class="space-y-4">
+                        <div class="space-y-6">
                             {% for entry in leaderboard %}
-                                <div class="flex items-center p-3 {% if forloop.counter <= 3 %}bg-gray-50{% endif %} rounded-lg">
-                                    <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
-                                        {{ forloop.counter }}
+                                <div class="p-4 {% if forloop.counter <= 3 %}bg-gray-50{% endif %} rounded-lg border border-gray-200">
+                                    <div class="flex items-center mb-3">
+                                        <div class="w-8 h-8 flex items-center justify-center mr-3 {% if forloop.counter == 1 %}bg-yellow-100 text-yellow-600{% elif forloop.counter == 2 %}bg-gray-100 text-gray-600{% elif forloop.counter == 3 %}bg-amber-100 text-amber-600{% else %}bg-gray-100 text-gray-500{% endif %} rounded-full font-bold">
+                                            {{ forloop.counter }}
+                                        </div>
+                                        <div class="flex-grow">
+                                            <div class="font-medium">{{ entry.user.username }}</div>
+                                            <div class="text-sm text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
+                                        </div>
                                     </div>
-                                    <div class="flex-grow">
-                                        <div class="font-medium">{{ entry.user.username }}</div>
-                                        <div class="text-sm text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
+                                    <!-- Pull Requests List -->
+                                    <div class="mt-2 pl-11">
+                                        <div class="text-sm font-medium text-gray-700 mb-2">Contributions:</div>
+                                        <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                            {% for pr in entry.prs %}
+                                                <a href="{{ pr.url }}"
+                                                   target="_blank"
+                                                   rel="noopener noreferrer"
+                                                   class="block p-2 bg-gray-50 hover:bg-gray-100 rounded border-l-4 border-[#e74c3c] transition">
+                                                    <div class="font-medium text-sm truncate">{{ pr.title }}</div>
+                                                    <div class="flex items-center text-xs text-gray-500 mt-1">
+                                                        <span class="flex items-center">
+                                                            <i class="fas fa-code-branch mr-1"></i>
+                                                            {{ pr.repo.name }}
+                                                        </span>
+                                                        <span class="mx-2">•</span>
+                                                        <span>
+                                                            <i class="far fa-calendar-alt mr-1"></i>
+                                                            {{ pr.merged_at|date:"M d, Y" }}
+                                                        </span>
+                                                    </div>
+                                                </a>
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -273,6 +328,66 @@ document.addEventListener('DOMContentLoaded', function() {
                 y: {
                     display: false,
                     beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // Initialize the PR activity chart
+    const prCtx = document.getElementById('prActivityChart').getContext('2d');
+    const prDates = {{ pr_dates|safe }};
+    const prCounts = {{ pr_counts|safe }};
+    const mergedPrCounts = {{ merged_pr_counts|safe }};
+    
+    new Chart(prCtx, {
+        type: 'bar',
+        data: {
+            labels: prDates,
+            datasets: [
+                {
+                    label: 'All Pull Requests',
+                    data: prCounts,
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Merged Pull Requests',
+                    data: mergedPrCounts,
+                    backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                    borderColor: 'rgba(231, 76, 60, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    enabled: true
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Date'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Pull Requests'
+                    },
+                    ticks: {
+                        precision: 0
+                    }
                 }
             }
         }
