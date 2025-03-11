@@ -416,7 +416,7 @@
                                 <p>Opened/Closed Issue Ratio</p>
                             </span>
                             <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">{{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }})</p>
+                                <p class="text-gray-400">{{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }}%)</p>
                                 <p class="{% if issue_ratio_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
                                     {% if issue_ratio_change >= 0 %}
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -437,7 +437,7 @@
                                 <p>Pull Requests Opened</p>
                             </span>
                             <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">{{ pr_change|intcomma }} ({{ pr_percentage_change|floatformat:2 }})</p>
+                                <p class="text-gray-400">{{ pr_change|intcomma }} ({{ pr_percentage_change|floatformat:2 }}%)</p>
                                 <p class="{% if pr_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
                                     {% if pr_change >= 0 %}
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -458,7 +458,7 @@
                                 <p>Commits</p>
                             </span>
                             <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">{{ commit_change|intcomma }} ({{ commit_percentage_change|floatformat:2 }})</p>
+                                <p class="text-gray-400">{{ commit_change|intcomma }} ({{ commit_percentage_change|floatformat:2 }}%)</p>
                                 <p class="{% if commit_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
                                     {% if commit_change >= 0 %}
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
