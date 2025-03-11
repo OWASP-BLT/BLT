@@ -21,46 +21,26 @@
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
-{% block style %}
-    <style>
-    .captcha-form img{
-        width: 200px;
-        
-    }
-    .captcha-form input{
-        width: 50%;
-        border-width: 1px;
-        border-color: black;
-        padding: 10px;
-        font-size: 1.4rem;
-        margin-left: 0.5rem;
-        border-radius: 0.3rem;
-    }
-    </style>
-{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div id="duplicate-container"
-         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-50 bg-black/50 backdrop-blur-sm"
+         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-[10000] bg-black/80 backdrop-blur-sm"
          hidden>
-        <div class="flex flex-col w-full h-full items-center">
-            <div class="w-full flex bg-gradient-to-r from-[#e74c3c] to-[#c0392b] items-center justify-between p-4">
-                <button id="close-duplicate-container"
-                        class="flex w-10 h-10 bg-white justify-center items-center rounded-full hover:bg-red-100 hover:shadow-md transition-all duration-200">
-                    <i class="text-[#e74c3c] scale-150 fa-sharp fa-solid fa-xmark cursor-pointer"></i>
-                </button>
-                <div class="flex items-center">
-                    <p class="text-3xl font-bold text-white">DUPLICATE ISSUES</p>
+        <div class="flex flex-col w-full  h-full items-center ">
+            <div class=" flex bg-red-500 mx-4 lg:mx-0 rounded-xl flex-col justify-center items-center  mt-10 w-full lg:max-w-[1400px]">
+                <div class="w-full flex bg-red-500 rounded-t-lg  select-none items-center justify-between py-1 px-4">
+                    <h1 class=" text-center text-white font-bold text-2xl p-4 w-full">{% trans "DUPLICATE ISSUES" %}</h1>
+                    <button id="close-duplicate-container"
+                            class="flex w-10 h-10 bg-white justify-center items-center rounded-full hover:bg-red-100 hover:shadow-md transition-all duration-200">
+                        <i class="text-red-500 scale-150 fa-sharp fa-solid fa-xmark cursor-pointer"></i>
+                    </button>
                 </div>
-                <div class="w-10"></div>
-            </div>
-            <div class="w-full flex justify-center mx-auto">
-                <div class="p-6 w-full max-w-4xl mt-10 bg-white rounded-xl shadow-xl border border-gray-200">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-2xl font-bold text-[#e74c3c]">Latest Issues</h3>
+                <div class="p-6 w-full bg-white rounded-b-lg shadow-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-6 select-none">
+                        <h3 class="text-2xl font-bold text-red-500">{% trans "Latest Issues" %}</h3>
                         <a href=""
                            id="view_all"
-                           class="text-lg font-medium text-blue-600 hover:underline">View all</a>
+                           class="text-lg font-medium text-blue-600 hover:underline hover:text-blue-500">View all</a>
                     </div>
                     <div class="flow-root">
                         <ul role="list"
@@ -68,9 +48,9 @@
                             class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                         </ul>
                     </div>
-                    <div class="p-6 mt-6 border-t border-gray-200 bg-gray-50 text-center rounded-b-xl">
+                    <div class="pt-6 border-t border-gray-300  text-center ">
                         <button onclick="$('#duplicate-container').hide()"
-                                class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium">
+                                class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 font-medium">
                             Close List
                         </button>
                     </div>
@@ -80,9 +60,9 @@
     </div>
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="w-[90%] mx-auto">
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 md:px-8 py-8 mb-8">
                 <div class="flex items-center gap-6">
-                    <div class="w-16 h-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
+                    <div class="size-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
                         <i class="fas fa-bug text-2xl text-white"></i>
                     </div>
                     <div>
@@ -99,12 +79,12 @@
                 {% csrf_token %}
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between">
                                     <label for="url" class="text-xl font-semibold text-gray-900">{% trans "Domain URL" %}</label>
                                     <button type="button"
-                                            class="duplicates inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-[#e74c3c] text-white hover:bg-[#c0392b] transition-colors duration-200">
+                                            class="duplicates inline-flex items-center px-3 py-2 font-medium rounded-lg bg-[#e74c3c] text-white hover:bg-[#c0392b] transition-colors duration-200">
                                         <i class="fas fa-search mr-2"></i>
                                         {% trans "Check Duplicates" %}
                                     </button>
@@ -116,7 +96,7 @@
                                            value="{{ request.GET.url }}{{ form.url.value|default:'' }}"
                                            placeholder="https://example.com/report"
                                            required
-                                           class="flex-1 text-lg placeholder:text-gray-400 rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 focus:ring-[#e74c3c] transition-shadow duration-200" />
+                                           class="placeholder:text-base flex-1 text-lg placeholder:text-gray-400 rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
                                 </div>
                                 {% if top_domains %}
                                     <div class="mt-4 space-y-3">
@@ -151,27 +131,24 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                 <div class="lg:col-span-2">
-                                    <label for="description"
-                                           class="block text-xl font-semibold text-gray-900 mb-2">
-                                        {% trans "Bug Title" %}
-                                    </label>
+                                    <label for="description" class="block text-xl font-semibold text-gray-900">{% trans "Bug Title" %}</label>
                                     <input type="text"
                                            name="description"
                                            id="description"
                                            value="{{ request.GET.description }}{{ form.description.value|default:'' }}"
                                            placeholder="XSS Vulnerability in Bug Report Editor"
                                            required
-                                           class="w-full text-lg placeholder:text-gray-400 rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 focus:ring-[#e74c3c] transition-shadow duration-200" />
+                                           class="w-full text-lg placeholder:text-gray-400 placeholder:text-base rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
                                 </div>
                                 <div>
-                                    <label for="label" class="block text-xl font-semibold text-gray-900 mb-2">{% trans "Bug Type" %}</label>
+                                    <label for="label" class="block text-xl font-semibold text-gray-900">{% trans "Bug Type" %}</label>
                                     <select name="label"
                                             id="labelSelect"
                                             required
-                                            class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2 focus:ring-[#e74c3c] transition-shadow duration-200">
+                                            class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2 transition-shadow duration-200">
                                         <option value="0">General</option>
                                         <option value="1">Number error</option>
                                         <option value="2">Functional</option>
@@ -185,41 +162,41 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-white rounded-md border border-gray-200 shadow-sm p-6">
                             <div class="space-y-4">
                                 <div class="flex items-center justify-between">
-                                    <h2 class="text-xl font-semibold text-gray-900">{% trans "Bug Description" %}</h2>
+                                    <h2 class="text-xl font-semibold text-gray-900 truncate">{% trans "Bug Description" %}</h2>
                                     <div class="flex gap-2">
                                         <button type="button"
                                                 onclick="insertMarkdown('bold')"
-                                                class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
                                             <i class="fas fa-bold"></i>
                                         </button>
                                         <button type="button"
                                                 onclick="insertMarkdown('italic')"
-                                                class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
                                             <i class="fas fa-italic"></i>
                                         </button>
                                         <button type="button"
                                                 onclick="insertMarkdown('image')"
-                                                class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
                                             <i class="fas fa-image"></i>
                                         </button>
                                         <button type="button"
                                                 onclick="insertMarkdown('link')"
-                                                class="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
                                             <i class="fas fa-link"></i>
                                         </button>
                                         <button type="button"
                                                 onclick="togglePreview()"
-                                                class="p-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-md transition-colors duration-200">
+                                                class="px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-md transition-colors duration-200">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                     </div>
                                 </div>
                                 <textarea id="markdownInput"
                                           name="markdown-content"
-                                          class="w-full h-[300px] p-4 text-gray-700 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent resize-none"
+                                          class="w-full placeholder:text-base h-[300px] p-4 text-gray-700 border border-gray-200 rounded-lg "
                                           placeholder="Enter your markdown here..."></textarea>
                                 <div id="preview-area"
                                      class="hidden w-full h-[300px] p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto prose prose-sm max-w-none">
@@ -228,21 +205,23 @@
                         </div>
                     </div>
                     <div class="space-y-6">
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
                             <label for="hunt" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "Bug Hunt" %}</label>
                             <select name="hunt"
                                     required
-                                    class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2 focus:ring-[#e74c3c] transition-shadow duration-200">
+                                    class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2  transition-shadow duration-200">
                                 {% if not report_on_hunt %}
                                     <option value="None">{% trans "Report Independently" %}</option>
                                 {% endif %}
-                                {% for hunt in hunts %}<option value="{{ hunt.id }}">{{ hunt.name }}</option>{% endfor %}
+                                {% for hunt in hunts %}
+                                    <option value="{{ hunt.id }}">{{ hunt.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
                             <label for="cve_id" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "CVE ID" %}</label>
                             <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full">
-                                <input class="flex-1 text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 py-2 px-4 focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent transition-shadow duration-200 min-w-0"
+                                <input class="flex-1 placeholder:text-base text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 py-2 px-4 transition-shadow duration-200 min-w-0"
                                        type="text"
                                        placeholder="CVE-XXXX-XXXX"
                                        id="cve_id_input"
@@ -251,12 +230,12 @@
                                        title="Please enter a valid CVE ID format (e.g. CVE-2024-1234)">
                                 <button type="button"
                                         onclick="validateCVE()"
-                                        class="px-3 py-1 text-xs sm:px-4 sm:py-2 sm:text-sm md:text-base bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 shrink-0 w-full sm:w-auto">
-                                    <i class="fas fa-check"></i>
+                                        class="px-3 md:py-1 py-4 text-xs sm:text-sm md:text-base bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 shrink-0 w-full sm:w-auto">
+                                    <i class="fas fa-check md:text-base text-lg"></i>
                                 </button>
                             </div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
                             <label class="block text-xl font-semibold text-gray-900 mb-4">{% trans "Screenshots" %}</label>
                             <div id="screenshot-container"
                                  onclick="document.getElementById('screenshots').click()"
@@ -282,10 +261,11 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="files_manage" class="mt-4 grid grid-cols-2 gap-4"></div>
+                            <div id="files_manage"
+                                 class="mt-4 w-full flex flex-col gap-4 items-center"></div>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm p-6">
-                            <div class="flex items-center justify-between mb-4">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                            <div class="flex items-center justify-between">
                                 <h2 class="text-xl font-semibold text-gray-900">{% trans "Team Members" %}</h2>
                                 <button onclick="add_email_container()"
                                         type="button"
@@ -296,51 +276,38 @@
                             </div>
                             <p class="text-sm text-gray-500 mb-4">{% trans "Team members should be bughunts users" %}.</p>
                             <div class="space-y-3" id="email-container">
-                                <label class="block text-sm font-medium text-gray-700">{% trans "Email address:" %}</label>
+                                <label class="block font-medium text-gray-700">{% trans "Email address:" %}</label>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-8 bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-6 w-full">
-                        <div class="flex flex-col items-start gap-2 w-full sm:w-auto order-2 sm:order-1">
-                            <div class="flex items-center gap-2">
-                                <input id="report_anonymous"
-                                       type="checkbox"
-                                       name="report_anonymous"
-                                       class="w-5 h-5 rounded-lg text-[#e74c3c] focus:ring-[#e74c3c] cursor-pointer">
-                                <p for="report_anonymous"
-                                   class=" font-medium text-gray-900 cursor-pointer select-none">
-                                    {% trans "Report Anonymously" %}
-                                </p>
-                            </div>
+                <div class="mt-8 bg-white rounded-lg border border-gray-200 shadow-sm flex md:flex-row flex-col items-center justify-between gap-8 px-6 py-5">
+                    <div class="flex flex-col items-start gap-2">
+                        <div class="flex items-center gap-2">
+                            <input id="report_anonymous"
+                                   type="checkbox"
+                                   name="report_anonymous"
+                                   class="w-5 h-5 rounded-lg text-[#e74c3c]  cursor-pointer">
+                            <p for="report_anonymous"
+                               class=" font-medium text-gray-900 cursor-pointer select-none">
+                                {% trans "Report Anonymously" %}
+                            </p>
                         </div>
-                        <div class="captcha-form w-full sm:w-auto flex justify-center order-1 sm:order-2">
-                            {% comment %} <div class="p-2 scale-75 sm:scale-90 md:scale-100 transform-gpu origin-center">
-                                <div class="captcha-form flex flex-col w-full items-center gap-4">
-                                    <div class="w-full max-w-[500px]">
-                                        <img class="w-full h-auto object-contain rounded-lg" alt="captcha" width="500" height="200" />
-                                    </div>
-                                    <div class="w-full max-w-[180px]">
-                                        <input class="w-full border border-gray-300 p-2.5 text-base rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent transition-shadow duration-200" />
-                                    </div>
-                                </div>
-                                {{ captcha_form.captcha }}
-                            </div> {% endcomment %}
-                            <div class="captcha-form flex  flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
-                        </div>
-                        <div class="flex gap-4 w-full sm:w-auto justify-center order-3">
-                            <button type="button"
-                                    onclick="cancelForm()"
-                                    class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors duration-200 font-medium">
-                                {% trans "Cancel" %}
-                            </button>
-                            <button type="submit"
-                                    name="reportbug_button"
-                                    class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium">
-                                {% trans "Report" %}
-                            </button>
-                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4 md:flex-row items-center justify-center [&>img]:w-[150px] md:[&>input]:w-[30%] [&>input]:w-[50%] [&>input]:border [&>input]:border-black [&>input]:p-[10px] [&>input]:text-[1.4rem] [&>input]:ml-2 [&>input]:rounded">
+                        {{ captcha_form.captcha }}
+                    </div>
+                    <div class="flex gap-4  justify-center">
+                        <button type="button"
+                                onclick="cancelForm()"
+                                class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors duration-200 font-medium">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit"
+                                name="reportbug_button"
+                                class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium">
+                            {% trans "Report" %}
+                        </button>
                     </div>
                 </div>
             </form>
@@ -453,20 +420,20 @@
         let add_duplicates = (issue) => {
             $("#duplicate-list").append(
                 `
-                    <li class="py-3 sm:py-4 border-x-gray-500 border-t-2 cursor-pointer hover:shadow-lg transition-all">
-                        <div class="flex items-center space-x-4 p-2">
+                    <li class="py-2 border-x-gray-500 border-t-2 cursor-pointer hover:bg-gray-100 transition-all duration-200">
+                        <div class="flex items-center space-x-4 px-2 py-1">
                             <div class="flex-shrink-0">
-                                <img class="w-[60px] h-[60px] rounded-full" src="{% media_url %}${issue.user__userprofile__user_avatar}" alt="Neil image" width="60px" height="60px">
+                                <img class="w-[50px] h-[50px] rounded-full" src="{% media_url %}${issue.user__userprofile__user_avatar}" alt="Neil image" width="50px" height="50px">
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-3xl font-medium text-gray-900 text-black">
+                                <p class="text-xl font-bold text-black/90">
                                     ${issue.description.substring(0, 50)}...
                                 </p>
-                                <a href="/issue/${issue.id}" class="text-2xl text-gray-500 truncate dark:text-gray-400">
+                                <a href="/issue/${issue.id}" class="text-lg text-gray-500 hover:text-red-500 truncate">
                                     /issue/${issue.id}
                                 </a>
                             </div>
-                            <div class="inline-flex items-center text-base text-xl font-semibold text-gray-900 dark:text-white">
+                            <div class="inline-flex items-center text-base text-lg font-medium text-gray-500">
                                     ${issue.created__day}/${issue.created__month}/${issue.created__year}
                                 </div>
                         </div>
@@ -499,7 +466,7 @@
         const email_container_child_html = document.createElement('div');
         email_container_child_html.innerHTML = `
             <div class="mt-2 flex flex-row items-center w-[70%]">
-                <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600" />
+                <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm  placeholder:text-gray-400 ring-1 ring-gray-300" />
                 <button type="button" onclick="remove_email_container()">
                     <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
                 </button>

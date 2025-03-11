@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}{{ hackathon.name }} - Hackathon{% endblock %}
+{% block title %}
+    {{ hackathon.name }} - Hackathon
+{% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
@@ -32,7 +34,7 @@
             </div>
         </div>
         <!-- Quick Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div class="bg-white rounded-lg shadow p-6 text-center">
                 <h3 class="text-lg font-semibold text-gray-700">Participants</h3>
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ participant_count }}</p>
@@ -44,6 +46,13 @@
             <div class="bg-white rounded-lg shadow p-6 text-center">
                 <h3 class="text-lg font-semibold text-gray-700">Merged PRs</h3>
                 <p class="text-3xl font-bold text-[#e74c3c]">{{ merged_pr_count }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <h3 class="text-lg font-semibold text-gray-700">Page Views</h3>
+                <p class="text-3xl font-bold text-[#e74c3c]">{{ total_views }}</p>
+                <div class="mt-2 h-16">
+                    <canvas id="viewsSparkline"></canvas>
+                </div>
             </div>
         </div>
         <!-- Main Content -->
@@ -217,4 +226,57 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the sparkline chart
+    const ctx = document.getElementById('viewsSparkline').getContext('2d');
+    const dates = {{ view_dates|safe }};
+    const counts = {{ view_counts|safe }};
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [{
+                data: counts,
+                backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                borderColor: 'rgba(231, 76, 60, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            return tooltipItems[0].label;
+                        },
+                        label: function(context) {
+                            return 'Views: ' + context.raw;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    display: false
+                },
+                y: {
+                    display: false,
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+    </script>
+{% endblock scripts %}

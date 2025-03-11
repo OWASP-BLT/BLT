@@ -691,7 +691,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         try:
             organization = self.get_object()
             repos = Repo.objects.filter(organization=organization)
-            serializer = RepoSerializer(repos, many=True)
+            serializer = RepoSerializer(repos, many=True, context={"request": request})
             return Response(serializer.data)
         except Organization.DoesNotExist:
             return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
