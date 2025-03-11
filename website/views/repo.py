@@ -389,7 +389,7 @@ def add_repo(request):
         use_token = False
 
         if github_token:
-            headers["Authorization"] = github_token
+            headers["Authorization"] = f"token {github_token}"
             # Test the token with a request
             test_response = requests.get(api_url, headers=headers)
             use_token = test_response.status_code != 401  # Keep token if not unauthorized
