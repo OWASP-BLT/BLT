@@ -408,7 +408,9 @@
                 </section>
                 <!-- Statistics Charts -->
                 <section class="bg-white py-6 px-4 rounded-lg shadow-lg">
-                    <h2 class="text-pink-500 font-bold text-lg">{{ repo.contributor_count|intcomma }} Contributions in the Last 30 Days</h2>
+                    <h2 class="text-pink-500 font-bold text-lg">
+                        {{ repo.contributor_count|intcomma }} Contributions in the Last 30 Days
+                    </h2>
                     <div class="grid grid-cols-3 gap-2 mt-4">
                         <div class="p-4 border rounded-lg">
                             <span class="text-blue-500 text-sm flex w-full items-center justify-start">
@@ -416,7 +418,9 @@
                                 <p>Opened/Closed Issue Ratio</p>
                             </span>
                             <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">{{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }}%)</p>
+                                <p class="text-gray-400">
+                                    {{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }}%)
+                                </p>
                                 <p class="{% if issue_ratio_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
                                     {% if issue_ratio_change >= 0 %}
                                         <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -479,9 +483,9 @@
                             <div class="flex items-center justify-start">
                                 <span class="p-2 rounded-full mr-2">
                                     <svg class="w-5 h-5 text-blue-500"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24">
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </span>
@@ -1255,7 +1259,7 @@
                 {% endif %}
             </div>
         </div>
-        <!-- Dollar Tag Issues Section -->
+        <!-- Bounties Section -->
         {% if dollar_tag_issues %}
             <div class="mt-8 bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
