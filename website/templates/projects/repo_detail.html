@@ -407,122 +407,124 @@
                     </div>
                 </section>
                 <!-- Statistics Charts -->
-                <section class="bg-white py-6 px-4 rounded-lg shadow-lg">
-                    <h2 class="text-pink-500 font-bold text-lg">
-                        {{ repo.contributor_count|intcomma }} Contributions in the Last 30 Days
-                    </h2>
-                    <div class="grid grid-cols-3 gap-2 mt-4">
-                        <div class="p-4 border rounded-lg">
-                            <span class="text-blue-500 text-sm flex w-full items-center justify-start">
-                                <p class="mr-2" id="open-closed-issue-ratio"></p>
-                                <p>Opened/Closed Issue Ratio</p>
-                            </span>
-                            <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">
-                                    {{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }}%)
-                                </p>
-                                <p class="{% if issue_ratio_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
-                                    {% if issue_ratio_change >= 0 %}
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    {% else %}
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    {% endif %}
-                                    past month
-                                </p>
-                            </span>
-                        </div>
-                        <div class="p-4 border rounded-lg">
-                            <span class="text-purple-500 text-sm flex w-full items-center justify-start">
-                                <p class="mr-2">{{ repo.open_pull_requests|intcomma }}</p>
-                                <p>Pull Requests Opened</p>
-                            </span>
-                            <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">{{ pr_change|intcomma }} ({{ pr_percentage_change|floatformat:2 }}%)</p>
-                                <p class="{% if pr_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
-                                    {% if pr_change >= 0 %}
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    {% else %}
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    {% endif %}
-                                    past month
-                                </p>
-                            </span>
-                        </div>
-                        <div class="p-4 border rounded-lg">
-                            <span class="text-blue-500 text-sm flex w-full items-center justify-start">
-                                <p class="mr-2">{{ repo.commit_count|intcomma }}</p>
-                                <p>Commits</p>
-                            </span>
-                            <span class="text-xs flex justify-between items-center mt-3">
-                                <p class="text-gray-400">{{ commit_change|intcomma }} ({{ commit_percentage_change|floatformat:2 }}%)</p>
-                                <p class="{% if commit_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
-                                    {% if commit_change >= 0 %}
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    {% else %}
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                        </svg>
-                                    {% endif %}
-                                    past month
-                                </p>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-4 mt-6">
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center justify-start">
-                                <span class="p-2 rounded-full mr-2">
-                                    <svg class="w-5 h-5 text-blue-500"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                {% if show_repo_stats %}
+                    <section class="bg-white py-6 px-4 rounded-lg shadow-lg">
+                        <h2 class="text-pink-500 font-bold text-lg">
+                            {{ repo.contributor_count|intcomma }} Contributions in the Last 30 Days
+                        </h2>
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <div class="p-4 border rounded-lg">
+                                <span class="text-blue-500 text-sm flex w-full items-center justify-start">
+                                    <p class="mr-2" id="open-closed-issue-ratio"></p>
+                                    <p>Opened/Closed Issue Ratio</p>
                                 </span>
-                                <p class="text-blue-500">Issues</p>
-                            </div>
-                            <canvas id="issuesChart"></canvas>
-                        </div>
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center justify-start">
-                                <span class="p-2 rounded-full">
-                                    <svg class="w-5 h-5 text-purple-500"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                                    </svg>
+                                <span class="text-xs flex justify-between items-center mt-3">
+                                    <p class="text-gray-400">
+                                        {{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }}%)
+                                    </p>
+                                    <p class="{% if issue_ratio_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
+                                        {% if issue_ratio_change >= 0 %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                        past month
+                                    </p>
                                 </span>
-                                <p class="text-purple-500">Pull Requests</p>
                             </div>
-                            <canvas id="prChart"></canvas>
-                        </div>
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex items-center justify-start">
-                                <span class="p-2 rounded-full">
-                                    <svg class="w-5 h-5 text-orange-500"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                            <div class="p-4 border rounded-lg">
+                                <span class="text-purple-500 text-sm flex w-full items-center justify-start">
+                                    <p class="mr-2">{{ repo.open_pull_requests|intcomma }}</p>
+                                    <p>Pull Requests Opened</p>
                                 </span>
-                                <p class="text-orange-500">Pushes & Commits</p>
+                                <span class="text-xs flex justify-between items-center mt-3">
+                                    <p class="text-gray-400">{{ pr_change|intcomma }} ({{ pr_percentage_change|floatformat:2 }}%)</p>
+                                    <p class="{% if pr_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
+                                        {% if pr_change >= 0 %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                        past month
+                                    </p>
+                                </span>
                             </div>
-                            <canvas id="commitsChart"></canvas>
+                            <div class="p-4 border rounded-lg">
+                                <span class="text-blue-500 text-sm flex w-full items-center justify-start">
+                                    <p class="mr-2">{{ repo.commit_count|intcomma }}</p>
+                                    <p>Commits</p>
+                                </span>
+                                <span class="text-xs flex justify-between items-center mt-3">
+                                    <p class="text-gray-400">{{ commit_change|intcomma }} ({{ commit_percentage_change|floatformat:2 }}%)</p>
+                                    <p class="{% if commit_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
+                                        {% if commit_change >= 0 %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                        past month
+                                    </p>
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                        <div class="grid grid-cols-3 gap-4 mt-6">
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex items-center justify-start">
+                                    <span class="p-2 rounded-full mr-2">
+                                        <svg class="w-5 h-5 text-blue-500"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </span>
+                                    <p class="text-blue-500">Issues</p>
+                                </div>
+                                <canvas id="issuesChart"></canvas>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex items-center justify-start">
+                                    <span class="p-2 rounded-full">
+                                        <svg class="w-5 h-5 text-purple-500"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                    </span>
+                                    <p class="text-purple-500">Pull Requests</p>
+                                </div>
+                                <canvas id="prChart"></canvas>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex items-center justify-start">
+                                    <span class="p-2 rounded-full">
+                                        <svg class="w-5 h-5 text-orange-500"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </span>
+                                    <p class="text-orange-500">Pushes & Commits</p>
+                                </div>
+                                <canvas id="commitsChart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
                 <!-- Community Section -->
                 <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="p-6">
