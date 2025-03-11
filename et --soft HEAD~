@@ -1,0 +1,197 @@
+[33mcommit 5b2134ca0a64c3d29052c259bd72ce7fd23a0b92[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: swaparup36 <swaparup36@gmail.com>
+Date:   Tue Mar 11 09:38:23 2025 +0530
+
+    merged
+
+[33mcommit d8af0cce30427b52cd66f42b658e62fe20bb3003[m
+Merge: 34b6f14 387a65d
+Author: swaparup36 <swaparup36@gmail.com>
+Date:   Tue Mar 11 09:32:44 2025 +0530
+
+    Merge branch 'main' of https://github.com/swaparup36/BLT
+
+[33mcommit 34b6f14c1d81f45fc7a8173dc34c0ab4c073ca93[m
+Author: swaparup36 <swaparup36@gmail.com>
+Date:   Tue Mar 11 09:18:11 2025 +0530
+
+    satistical charts added to repo detail page
+
+[33mcommit 387a65d074c3e014c57e2376c5b5282ac00547d6[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 23:28:39 2025 -0400
+
+    Update Contributor Leaderboard to Use New Contributor Model
+    
+    - Modify home template to use new contributor fields
+    - Update home view query to fetch contributors using new model attributes
+    - Replace user profile-based avatar and link generation with contributor data
+    - Simplify avatar and link rendering logic
+
+[33mcommit 76ea0e6fd564a2cdcfff97f7c85c3d2c0ae228fd[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 23:19:02 2025 -0400
+
+    Add Reset Page Counter Option for GSoC Projects
+    
+    - Introduce checkbox to reset page counter in GSoC project view
+    - Update refresh_gsoc_project view to handle reset counter flag
+    - Add user-friendly message when page counter is reset
+    - Enhance UI with improved layout and styling for reset option
+
+[33mcommit a588a586ed7558ee246681a55bdbf3dfd1b3a0f1[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 23:11:36 2025 -0400
+
+    Remove Contributors Fetching from Repository Update Command
+    
+    - Remove `fetch_and_update_contributors` method
+    - Delete `--skip-contributors` command-line option
+    - Simplify `update_repository` method by removing contributor-related logic
+    - Remove unused imports related to contributors
+
+[33mcommit a6efbd7c23741e60bce8f0211b14915efac2dcff[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 23:07:55 2025 -0400
+
+    Add Contributors Fetching to Repository Update Command
+    
+    - Implement dynamic GitHub contributors fetching with pagination
+    - Add new command-line option `--skip-contributors` to control contributor data retrieval
+    - Update repository model with contributor count and relationships
+    - Handle GitHub API rate limiting with intelligent waiting mechanism
+    - Improve error handling and logging for contributor data synchronization
+    - Simplify project constants by shortening project name
+
+[33mcommit 1eeec0cedc9eed34b0f8dabc2de44c98aaa3f930[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 22:42:28 2025 -0400
+
+    Enhance GSoC Contributor Tracking and Visualization
+    
+    - Add contributor field to GitHubIssue model
+    - Modify fetch_gsoc_prs command to create and link contributors
+    - Update GSoC view to use new contributor-based PR tracking
+    - Improve contributor leaderboard with avatar and direct PR link
+    - Update project constants and add more repository mappings
+    - Add custom template tag for string manipulation
+
+[33mcommit aa097ba8fac4e1c48c28e319b6b9701a0886d0ce[m
+Merge: 346aeee fd19f8c
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 21:39:40 2025 -0400
+
+    Merge branch 'main' of https://github.com/OWASP-BLT/BLT
+
+[33mcommit 346aeeedf211e03a023bb1c53570d81741193916[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 21:38:18 2025 -0400
+
+    Modify GitHubIssue Model to Allow Multiple Issues with Same Number Across Repositories
+    
+    - Remove unique constraint on `issue_id` field
+    - Add `unique_together` constraint for `issue_id` and `repo`
+    - Update `update_repos_dynamic.py` to handle potential saving errors
+    - Add error logging for issue and PR saving failures
+    - Create corresponding migration for model changes
+
+[33mcommit fd19f8c2184c1f40453cffe05b887478997c1804[m
+Merge: c9fe962 145b910
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Tue Mar 11 00:26:34 2025 +0000
+
+    Merge pull request #3911 from OWASP-BLT/dependabot/pip/drf-yasg-1.21.10
+
+[33mcommit 145b910037efc20e11946dccd1f87a9b4ae11892[m
+Author: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+Date:   Tue Mar 11 00:22:24 2025 +0000
+
+    chore(deps): Bump drf-yasg from 1.21.8 to 1.21.10
+    
+    Bumps [drf-yasg](https://github.com/axnsan12/drf-yasg) from 1.21.8 to 1.21.10.
+    - [Release notes](https://github.com/axnsan12/drf-yasg/releases)
+    - [Changelog](https://github.com/axnsan12/drf-yasg/blob/master/docs/changelog.rst)
+    - [Commits](https://github.com/axnsan12/drf-yasg/compare/1.21.8...1.21.10)
+    
+    ---
+    updated-dependencies:
+    - dependency-name: drf-yasg
+      dependency-type: direct:production
+      update-type: version-update:semver-patch
+    ...
+    
+    Signed-off-by: dependabot[bot] <support@github.com>
+
+[33mcommit c9fe9626fe759157fa5d4d8dbd28808464156529[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 19:58:31 2025 -0400
+
+    Add Page Views Sparkline to Hackathon Detail Page
+    
+    - Enhance hackathon detail template with a new page views statistic
+    - Implement Chart.js sparkline to visualize page view trends over 14 days
+    - Add view count data retrieval in HackathonDetailView
+    - Include total page views and daily view count in context
+
+[33mcommit 85d83a568a54ef80a97afdcdb306790a83c4f7d1[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 19:51:52 2025 -0400
+
+    Fix Hackathon Form Repository Selection for Editing
+    
+    - Update repository selection logic in hackathon form template
+    - Modify template code to correctly populate selected repositories when editing
+    - Ensure compatibility with existing hackathon repository data
+
+[33mcommit b61cfca6a7c80211b48cd78e84c67a8979b633be[m
+Author: Rinkit Adhana <therinkit@gmail.com>
+Date:   Tue Mar 11 05:12:27 2025 +0530
+
+    all small error, styling and Optimized Code (#3910)
+    
+    Co-authored-by: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+
+[33mcommit 39ba4fd7466a465d23304d0349a79e8e7d61b2f3[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 18:58:14 2025 -0400
+
+    Fix GitHubIssue __str__ method to handle missing user_profile
+
+[33mcommit 873e6312ec41db46064b66e06563f7f049d2db52[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 18:42:21 2025 -0400
+
+    Reduce Global Leaderboard Entries from 25 to 10
+    
+    - Modify GlobalLeaderboardView to limit leaderboard display to top 10 entries
+    - Decrease the number of displayed leaderboard items for improved performance and readability
+
+[33mcommit a32566b3943d6f5d4aea9a41bf1e135d7ba3287f[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 18:36:56 2025 -0400
+
+    Add Organization Repositories API Endpoint and Dynamic Repository Selection
+    
+    - Register OrganizationViewSet in router
+    - Add repositories action to OrganizationViewSet to fetch organization repos
+    - Create RepoSerializer for repository data
+    - Update hackathon form template with dynamic repository loading
+    - Add JavaScript to fetch and populate repositories based on selected organization
+
+[33mcommit 648fddca7f0e03b9ca634844294329f8f947c5cb[m
+Author: Lucky negi <91773416+igennova@users.noreply.github.com>
+Date:   Tue Mar 11 03:58:32 2025 +0530
+
+    Revamped the Contributor Page (#3904)
+    
+    * done
+    
+    * fix_linting
+
+[33mcommit bd389c0f0f59fe3a0d91704b6f9fb017ff49ede5[m
+Author: DonnieBLT <128622481+DonnieBLT@users.noreply.github.com>
+Date:   Mon Mar 10 18:17:09 2025 -0400
+
+    Update Hackathon PR Metrics Queries
+    
+    - Change PR query to use `user_profile` instead of `user` for participa
