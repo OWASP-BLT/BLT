@@ -226,10 +226,21 @@
                                       class="inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="project_name" value="{{ project }}">
-                                    <button type="submit"
-                                            class="bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-3 rounded-md text-sm flex items-center">
-                                        <i class="fas fa-sync-alt mr-1"></i> Refresh
-                                    </button>
+                                    <div class="flex items-center space-x-2">
+                                        <button type="submit"
+                                                class="bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-3 rounded-md text-sm flex items-center">
+                                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                                        </button>
+                                        <div class="flex items-center">
+                                            <input type="checkbox"
+                                                   id="reset_counter_{{ project|slugify }}"
+                                                   name="reset_counter"
+                                                   value="true"
+                                                   class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                                            <label for="reset_counter_{{ project|slugify }}"
+                                                   class="ml-2 text-sm text-gray-700">Reset page counter</label>
+                                        </div>
+                                    </div>
                                 </form>
                             </div>
                             <div class="space-y-3">

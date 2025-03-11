@@ -2127,6 +2127,7 @@ def refresh_gsoc_project(request):
             # Add reset flag if requested
             if reset_counter:
                 command_args.append("--reset")
+                messages.info(request, f"Resetting page counter for {project_name} repositories")
 
             # Run the command
             call_command(*command_args)
