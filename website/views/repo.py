@@ -39,7 +39,11 @@ class RepoListView(ListView):
         # Handle organization filter
         organization = self.request.GET.get("organization")
         if organization:
-            queryset = queryset.filter(organization__id=organization)
+            try:
+                organization = int(organization)
+                queryset = queryset.filter(organization__id=organization)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid organization ID: must be a valid integer.")
 
         # Handle search query
         search_query = self.request.GET.get("q")
