@@ -13,12 +13,34 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             logger.info(f"Starting daily scheduled tasks at {timezone.now()}")
-            call_command("update_github_issues")
-            call_command("fetch_contributor_stats")
-            call_command("check_keywords")
-            call_command("check_owasp_projects")
-            call_command("check_trademarks")
-            call_command("update_repo_stars")
+            try:
+                call_command("update_github_issues")
+            except Exception as e:
+                logger.error("Error updating GitHub issues", exc_info=True)
+            try:
+                call_command("fetch_contributor_stats")
+            except Exception as e:
+                logger.error("Error fetching contributor stats", exc_info=True)
+            try:
+                call_command("check_keywords")
+            except Exception as e:
+                logger.error("Error checking keywords", exc_info=True)
+            try:
+                call_command("check_owasp_projects")
+            except Exception as e:
+                logger.error("Error checking OWASP projects", exc_info=True)
+            try:
+                call_command("check_trademarks")
+            except Exception as e:
+                logger.error("Error checking trademarks", exc_info=True)
+            try:
+                call_command("update_repo_stars")
+            except Exception as e:
+                logger.error("Error updating repo stars", exc_info=True)
+            try:
+                call_command("fetch_gsoc_prs")
+            except Exception as e:
+                logger.error("Error fetching GSoC PRs", exc_info=True)
         except Exception as e:
-            logger.error(f"Error in daily tasks: {str(e)}")
+            logger.error("Error in daily tasks", exc_info=True)
             raise

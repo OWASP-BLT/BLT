@@ -11,6 +11,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token }}">
         {% block metaTags %}
             <!-- Title Block -->
             <title>
@@ -194,26 +195,6 @@
                 };
             });
         </script>
-        <style>
-            .animate-slide-in {
-                animation: slideIn 0.3s ease-out;
-            }
-            
-            @keyframes slideIn {
-                from {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            .message-alert {
-                transition: opacity 0.3s ease-out;
-            }
-        </style>
         {% block extra_js %}
         {% endblock extra_js %}
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

@@ -122,3 +122,58 @@ def get_page_votes(template_name, vote_type="upvote"):
         return int(stat.value)
     except (DailyStats.DoesNotExist, ValueError):
         return 0
+
+
+@register.filter
+def timestamp_to_datetime(timestamp):
+    """
+    Convert a Unix timestamp to a datetime object.
+
+    Args:
+        timestamp (int): Unix timestamp in seconds
+
+    Returns:
+        datetime: Datetime object
+    """
+    try:
+        # Convert to integer first to handle string inputs
+        timestamp_int = int(float(timestamp))
+        return timezone.datetime.fromtimestamp(timestamp_int)
+    except (ValueError, TypeError):
+        return None
+
+
+@register.filter
+def div(value, arg):
+    """
+    Divide the value by the argument.
+
+    Args:
+        value (float): The numerator
+        arg (float): The denominator
+
+    Returns:
+        float: The result of the division
+    """
+    try:
+        return float(value) / float(arg)
+    except (ValueError, ZeroDivisionError):
+        return 0
+
+
+@register.filter
+def cut(value, arg):
+    """
+    Removes all instances of arg from the given string.
+
+    Args:
+        value (str): The string to modify
+        arg (str): The substring to remove
+
+    Returns:
+        str: The modified string with all instances of arg removed
+    """
+    try:
+        return str(value).replace(arg, "")
+    except (ValueError, TypeError):
+        return value
