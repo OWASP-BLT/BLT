@@ -1,5 +1,4 @@
 import logging
-import time
 from datetime import datetime, timedelta
 
 import requests
@@ -8,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
-from website.models import Contributor, GitHubIssue, Repo
+from website.models import GitHubIssue, Repo
 
 logger = logging.getLogger(__name__)
 
@@ -35,17 +34,11 @@ class Command(LoggedBaseCommand):
             action="store_true",
             help="Skip fetching issues and pull requests",
         )
-        parser.add_argument(
-            "--skip-contributors",
-            action="store_true",
-            help="Skip fetching contributors data",
-        )
 
     def handle(self, *args, **options):
         force_all = options.get("force_all", False)
         repo_id = options.get("repo_id")
         skip_issues = options.get("skip_issues", False)
-        skip_contributors = options.get("skip_contributors", False)
         now = timezone.now()
 
         # If a specific repo ID is provided, only update that repo
@@ -53,7 +46,7 @@ class Command(LoggedBaseCommand):
             try:
                 repo = Repo.objects.get(id=repo_id)
                 self.stdout.write(f"Updating specific repository: {repo.name}")
-                self.update_repository(repo, skip_issues, skip_contributors)
+                self.update_repository(repo, skip_issues)
                 self.stdout.write(self.style.SUCCESS(f"Repository update completed for {repo.name}"))
                 return
             except Repo.DoesNotExist:
@@ -72,7 +65,7 @@ class Command(LoggedBaseCommand):
         for repo in repos:
             if self.should_update_repo(repo, now) or force_all:
                 try:
-                    self.update_repository(repo, skip_issues, skip_contributors)
+                    self.update_repository(repo, skip_issues)
                     updated_count += 1
                 except Exception as e:
                     logger.error(f"Error updating repository {repo.name}: {e}")
@@ -162,7 +155,7 @@ class Command(LoggedBaseCommand):
         return None
 
     @transaction.atomic
-    def update_repository(self, repo, skip_issues=False, skip_contributors=False):
+    def update_repository(self, repo, skip_issues=False):
         """
         Update the repository data from GitHub.
         """
@@ -180,10 +173,6 @@ class Command(LoggedBaseCommand):
             # Fetch issues with $ in tags and closed PRs if not skipped
             if not skip_issues:
                 self.fetch_issues_and_prs(repo, owner, repo_name)
-
-            # Fetch and update contributors if not skipped
-            if not skip_contributors:
-                self.fetch_and_update_contributors(repo, owner, repo_name)
         else:
             self.stdout.write(self.style.WARNING(f"Not a valid GitHub repository URL: {repo.repo_url}"))
 
@@ -426,95 +415,3 @@ class Command(LoggedBaseCommand):
             except Exception as e:
                 logger.error(f"Error saving PR #{pr['number']} for repo {repo.name}: {e}")
                 self.stdout.write(self.style.ERROR(f"Failed to save PR #{pr['number']}: {e}"))
-
-    def fetch_and_update_contributors(self, repo, owner, repo_name):
-        """
-        Fetch contributors for a repository and update the database.
-        """
-        self.stdout.write(f"Fetching contributors for {owner}/{repo_name}")
-
-        headers = {"Accept": "application/vnd.github.v3+json"}
-        if settings.GITHUB_TOKEN:
-            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
-
-        # Get all contributors with pagination
-        page = 1
-        per_page = 100
-        all_contributors = []
-        valid_contributors = []  # Only contributors with valid IDs
-
-        while True:
-            api_url = (
-                f"https://api.github.com/repos/{owner}/{repo_name}/contributors"
-                f"?anon=true&per_page={per_page}&page={page}"
-            )
-
-            try:
-                response = requests.get(api_url, headers=headers)
-
-                # Handle rate limiting
-                if (
-                    response.status_code == 403
-                    and "X-RateLimit-Remaining" in response.headers
-                    and int(response.headers["X-RateLimit-Remaining"]) == 0
-                ):
-                    reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
-                    wait_time = reset_time - int(time.time())
-                    if wait_time > 0:
-                        self.stdout.write(f"Rate limit hit, waiting {wait_time} seconds")
-                        time.sleep(wait_time + 1)  # Add 1 second buffer
-                        continue
-
-                response.raise_for_status()
-
-                contributors_page = response.json()
-                if not contributors_page:
-                    break
-
-                all_contributors.extend(contributors_page)
-
-                # Filter valid contributors (those with IDs)
-                valid_contributors.extend([c for c in contributors_page if c.get("id")])
-
-                # Check if we've reached the last page
-                if len(contributors_page) < per_page:
-                    break
-
-                page += 1
-
-                # Be nice to GitHub API
-                time.sleep(1)
-
-            except requests.exceptions.RequestException as e:
-                logger.error(f"Error fetching contributors for {owner}/{repo_name}: {e}")
-                self.stdout.write(self.style.ERROR(f"Failed to fetch contributors: {e}"))
-                break
-
-        # Update contributor count with only valid contributors
-        repo.contributor_count = len(valid_contributors)
-
-        # Batch create/update contributors
-        contributor_count = 0
-        for contrib_data in valid_contributors:
-            github_id = contrib_data.get("id")
-            login = contrib_data.get("login", "unknown")
-
-            try:
-                contributor, created = Contributor.objects.update_or_create(
-                    github_id=github_id,
-                    defaults={
-                        "name": login,
-                        "github_url": contrib_data.get("html_url", ""),
-                        "avatar_url": contrib_data.get("avatar_url", ""),
-                        "contributions": contrib_data.get("contributions", 0),
-                        "contributor_type": contrib_data.get("type", "User"),
-                    },
-                )
-                repo.contributor.add(contributor)
-                contributor_count += 1
-            except Exception as e:
-                logger.error(f"Error saving contributor {login}: {e}")
-
-        repo.save()
-
-        self.stdout.write(self.style.SUCCESS(f"Updated {contributor_count} contributors for {repo.name}"))
