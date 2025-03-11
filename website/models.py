@@ -1080,6 +1080,8 @@ class Contributor(models.Model):
     contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
     contributions = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
+    # Note: The repos relationship is defined in the Repo model as:
+    # contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
 
     def __str__(self):
         return self.name
@@ -1635,7 +1637,7 @@ class GitHubIssue(models.Model):
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.BigIntegerField(unique=True)
+    issue_id = models.BigIntegerField()  # Removed unique=True
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)
@@ -1662,6 +1664,13 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
     # Peer-to-Peer Payment Fields
     p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
     p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -1675,8 +1684,12 @@ class GitHubIssue(models.Model):
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
 
+    class Meta:
+        # Make the combination of issue_id and repo unique
+        unique_together = ("issue_id", "repo")
+
     def __str__(self):
-        return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+        return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
 
     def get_comments(self):
         """

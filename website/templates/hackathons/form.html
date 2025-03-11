@@ -167,7 +167,7 @@
                         
                         // If editing, restore selected repositories
                         {% if form.instance.pk %}
-                        let selectedRepos = {{ form.instance.repositories.values_list('id', flat=True)|safe }};
+                        let selectedRepos = [{% for repo in form.instance.repositories.all %}{{ repo.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
                         $('#id_repositories').val(selectedRepos);
                         {% endif %}
                     }
