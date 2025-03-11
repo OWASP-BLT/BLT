@@ -580,7 +580,7 @@ GSOC25_PROJECTS = {
     "NEST": ["OWASP/Nest"],
     "NETTACKER": ["OWASP/Nettacker"],
     "JUICE-SHOP": ["juice-shop/juice-shop", "juice-shop/multi-juicer"],
-    "DevSecOps Maturity Model(DSOMM)": ["devsecopsmaturitymodel/DevSecOps-MaturityModel"],
+    "DSOMM": ["devsecopsmaturitymodel/DevSecOps-MaturityModel"],
     "PYGOAT": ["adeyosemanputra/PyGoat"],
     "OpenCRE": ["OWASP/OpenCRE"],
 }
