@@ -288,6 +288,24 @@
                     {% if not sponsors_by_level.platinum and not sponsors_by_level.gold and not sponsors_by_level.silver and not sponsors_by_level.bronze and not sponsors_by_level.partner %}
                         <p class="text-gray-500 italic">No sponsors yet.</p>
                     {% endif %}
+                    {% if hackathon.sponsor_note or hackathon.sponsor_link %}
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            {% if hackathon.sponsor_note %}
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-semibold mb-2 text-gray-800">Sponsorship Information</h3>
+                                    <div class="prose max-w-none text-gray-600">{{ hackathon.sponsor_note|linebreaks }}</div>
+                                </div>
+                            {% endif %}
+                            {% if hackathon.sponsor_link %}
+                                <a href="{{ hackathon.sponsor_link }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                    <i class="fas fa-handshake mr-2"></i> Become a Sponsor
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
