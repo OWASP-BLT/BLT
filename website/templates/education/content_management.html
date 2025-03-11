@@ -392,8 +392,8 @@
             <div class="p-6">
                 <p id="deleteConfirmationText" class="text-gray-700">Are you sure you want to delete this item?</p>
             </div>
-            <form action="{% url 'delete_lecture' 0 %}" id="confirmDeleteForm">
-                <div class="p-6 border-t flex justify-end space-x-3">
+            <form action="{% url 'delete_lecture' 0 %}" id="confirmDeleteForm" method="POST">
+                {% csrf_token %}
                     <button type="button"
                             class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-300"
                             onclick="toggleModal('confirmDeleteModal')">Cancel</button>
