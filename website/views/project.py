@@ -1,5 +1,5 @@
-import ipaddress
 import concurrent.futures
+import ipaddress
 import json
 import re
 import socket
@@ -42,10 +42,12 @@ from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
+
 # Helper function to parse date
 def parse_date(date_str):
     """Parse GitHub API date string to datetime object"""
     return parse_datetime(date_str) if date_str else None
+
 
 def blt_tomato(request):
     current_dir = Path(__file__).parent.parent
@@ -665,7 +667,7 @@ class ProjectsDetailView(DetailView):
             }
         )
 
-        # Add organization context if it exists
+        # Add organization context if it exists!
         if project.organization:
             context["organization"] = project.organization
 
