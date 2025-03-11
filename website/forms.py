@@ -211,6 +211,8 @@ class HackathonForm(forms.ModelForm):
             "registration_open",
             "max_participants",
             "repositories",
+            "sponsor_note",
+            "sponsor_link",
         ]
         widgets = {
             "description": forms.Textarea(
@@ -223,6 +225,19 @@ class HackathonForm(forms.ModelForm):
                 attrs={
                     "rows": 5,
                     "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                }
+            ),
+            "sponsor_note": forms.Textarea(
+                attrs={
+                    "rows": 4,
+                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "placeholder": "Provide information about sponsorship opportunities for this hackathon",
+                }
+            ),
+            "sponsor_link": forms.URLInput(
+                attrs={
+                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "placeholder": "https://example.com/sponsor",
                 }
             ),
             "start_time": forms.DateTimeInput(

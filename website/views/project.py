@@ -950,8 +950,32 @@ class RepoDetailView(DetailView):
         owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
         owner, repo_name = owner_repo.split("/")
 
-        # Get activity data
-        activity_data = self.fetch_activity_data(owner, repo_name)
+        # Add show_repo_stats parameter set to False to hide stats section
+        context["show_repo_stats"] = False
+
+        # Get activity data only if we're showing repo stats
+        activity_data = None
+        if context["show_repo_stats"]:
+            activity_data = self.fetch_activity_data(owner, repo_name)
+        else:
+            # Create empty activity data structure to avoid template errors
+            activity_data = {
+                "issues_labels": [],
+                "issues_opened": [],
+                "issues_closed": [],
+                "pr_labels": [],
+                "pr_opened_data": [],
+                "pr_closed_data": [],
+                "commits_labels": [],
+                "commits_data": [],
+                "pushes_data": [],
+                "issue_ratio_change": 0,
+                "pr_change": 0,
+                "commit_change": 0,
+                "issue_ratio_percentage_change": 0,
+                "pr_percentage_change": 0,
+                "commit_percentage_change": 0,
+            }
 
         # Add breadcrumbs
         context["breadcrumbs"] = [
