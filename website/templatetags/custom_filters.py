@@ -1,3 +1,4 @@
+# avoid using custom filters if possible
 import json
 
 from django import template
@@ -16,6 +17,7 @@ def get_item(dictionary, key):
 @register.filter
 def before_dot(value):
     return str(value).split(".")[0]
+
 
 @register.filter(name="to_json", is_safe=True)
 def to_json(value):
