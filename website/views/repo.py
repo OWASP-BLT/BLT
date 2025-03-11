@@ -384,8 +384,7 @@ def add_repo(request):
             )
 
         # First try with token if available
-        # github_token = getattr(settings, "GITHUB_TOKEN", None)
-        github_token = "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"
+        github_token = getattr(settings, "GITHUB_TOKEN", None)
         headers = {"Accept": "application/vnd.github.v3+json"}
         use_token = False
 
