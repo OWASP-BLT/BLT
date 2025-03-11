@@ -1079,6 +1079,8 @@ class Contributor(models.Model):
     contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
     contributions = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
+    # Note: The repos relationship is defined in the Repo model as:
+    # contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
 
     def __str__(self):
         return self.name
@@ -1656,6 +1658,13 @@ class GitHubIssue(models.Model):
     )
     user_profile = models.ForeignKey(
         UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
+    contributor = models.ForeignKey(
+        Contributor,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
