@@ -205,7 +205,14 @@
                                             {{ forloop.counter }}
                                         </div>
                                         <div class="flex-grow">
-                                            <div class="font-medium">{{ entry.user.username }}</div>
+                                            <div class="font-medium">
+                                                {% if entry.is_contributor %}
+                                                    {{ entry.user.username }}
+                                                    <span class="text-xs text-gray-500 ml-1">(GitHub Contributor)</span>
+                                                {% else %}
+                                                    {{ entry.user.username }}
+                                                {% endif %}
+                                            </div>
                                             <div class="text-sm text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
                                         </div>
                                     </div>
@@ -227,7 +234,11 @@
                                                         <span class="mx-2">•</span>
                                                         <span>
                                                             <i class="far fa-calendar-alt mr-1"></i>
-                                                            {{ pr.merged_at|date:"M d, Y" }}
+                                                            {% if pr.merged_at %}
+                                                                {{ pr.merged_at|date:"M d, Y" }}
+                                                            {% else %}
+                                                                {{ pr.created_at|date:"M d, Y" }}
+                                                            {% endif %}
                                                         </span>
                                                     </div>
                                                 </a>
