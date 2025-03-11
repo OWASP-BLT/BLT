@@ -367,43 +367,51 @@ class Command(LoggedBaseCommand):
         """
         # Process issues with $ in labels
         for issue in dollar_issues:
-            GitHubIssue.objects.update_or_create(
-                issue_id=issue["number"],
-                repo=repo,
-                defaults={
-                    "title": issue["title"],
-                    "body": issue.get("body", ""),
-                    "state": issue["state"],
-                    "type": "issue",
-                    "created_at": timezone.make_aware(datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "updated_at": timezone.make_aware(datetime.strptime(issue["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "closed_at": timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                    if issue.get("closed_at")
-                    else None,
-                    "url": issue["html_url"],
-                    "has_dollar_tag": True,
-                },
-            )
+            try:
+                GitHubIssue.objects.update_or_create(
+                    issue_id=issue["number"],
+                    repo=repo,
+                    defaults={
+                        "title": issue["title"],
+                        "body": issue.get("body", ""),
+                        "state": issue["state"],
+                        "type": "issue",
+                        "created_at": timezone.make_aware(datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "updated_at": timezone.make_aware(datetime.strptime(issue["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "closed_at": timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                        if issue.get("closed_at")
+                        else None,
+                        "url": issue["html_url"],
+                        "has_dollar_tag": True,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error saving issue #{issue['number']} for repo {repo.name}: {e}")
+                self.stdout.write(self.style.ERROR(f"Failed to save issue #{issue['number']}: {e}"))
 
         # Process closed pull requests
         for pr in closed_prs:
-            GitHubIssue.objects.update_or_create(
-                issue_id=pr["number"],
-                repo=repo,
-                defaults={
-                    "title": pr["title"],
-                    "body": pr.get("body", ""),
-                    "state": pr["state"],
-                    "type": "pull_request",
-                    "created_at": timezone.make_aware(datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "updated_at": timezone.make_aware(datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "closed_at": timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                    if pr.get("closed_at")
-                    else None,
-                    "merged_at": timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                    if pr.get("merged_at")
-                    else None,
-                    "is_merged": bool(pr.get("merged_at")),
-                    "url": pr["html_url"],
-                },
-            )
+            try:
+                GitHubIssue.objects.update_or_create(
+                    issue_id=pr["number"],
+                    repo=repo,
+                    defaults={
+                        "title": pr["title"],
+                        "body": pr.get("body", ""),
+                        "state": pr["state"],
+                        "type": "pull_request",
+                        "created_at": timezone.make_aware(datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "updated_at": timezone.make_aware(datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "closed_at": timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                        if pr.get("closed_at")
+                        else None,
+                        "merged_at": timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                        if pr.get("merged_at")
+                        else None,
+                        "is_merged": bool(pr.get("merged_at")),
+                        "url": pr["html_url"],
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error saving PR #{pr['number']} for repo {repo.name}: {e}")
+                self.stdout.write(self.style.ERROR(f"Failed to save PR #{pr['number']}: {e}"))

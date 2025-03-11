@@ -308,13 +308,17 @@ class Command(BaseCommand):
                 "merged_at": merged_at,
                 "is_merged": is_merged,
                 "url": pr["html_url"],
-                "repo": repo,
                 "user_profile": user_profile,
             }
 
             # Try to get the existing issue or create a new one
             try:
-                github_issue, created = GitHubIssue.objects.update_or_create(issue_id=pr["id"], defaults=issue_data)
+                # Use issue_id and repo as the lookup fields to match the unique_together constraint
+                github_issue, created = GitHubIssue.objects.update_or_create(
+                    issue_id=pr["number"],  # Use number instead of id
+                    repo=repo,
+                    defaults=issue_data,
+                )
 
                 if created:
                     added_count += 1
