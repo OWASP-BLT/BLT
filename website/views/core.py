@@ -1302,7 +1302,7 @@ def home(request):
     # Get top PR contributors using the leaderboard method
     top_pr_contributors = (
         GitHubIssue.objects.filter(type="pull_request", is_merged=True)
-        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
     )
