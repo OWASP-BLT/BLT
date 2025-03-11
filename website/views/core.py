@@ -1299,9 +1299,16 @@ def home(request):
         .order_by("-total_score")[:5]
     )
 
-    # Get top PR contributors using the leaderboard method
+    # Get top PR contributors using the leaderboard method for BLT repo in current month only
     top_pr_contributors = (
-        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
+        GitHubIssue.objects.filter(
+            type="pull_request",
+            is_merged=True,
+            repo__name="BLT",  # Filter for BLT repo only
+            contributor__isnull=False,  # Exclude None values
+            merged_at__month=current_time.month,  # Current month only
+            merged_at__year=current_time.year,  # Current year
+        )
         .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
@@ -1376,6 +1383,7 @@ def home(request):
         {
             "last_commit": last_commit,
             "current_year": timezone.now().year,
+            "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_posts": recent_posts,
