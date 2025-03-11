@@ -343,6 +343,8 @@ ALLOWED_HOSTS = [
 ]
 ALLOWED_HOSTS.extend(os.environ.get("ALLOWED_HOSTS", "").split(","))
 
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"

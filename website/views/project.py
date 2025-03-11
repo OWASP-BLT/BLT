@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 import requests
 import sentry_sdk
+import concurrent.futures
 from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
@@ -41,6 +42,9 @@ from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
+def parse_date(date_str):
+    """Parse GitHub API date string to datetime object"""
+    return parse_datetime(date_str) if date_str else None
 
 def blt_tomato(request):
     current_dir = Path(__file__).parent.parent
@@ -723,7 +727,6 @@ class RepoDetailView(DetailView):
     def get_github_top_contributors(self, repo_url):
         """Fetch top contributors directly from GitHub API"""
         try:
-            # Extract owner/repo from GitHub URL
             owner_repo = repo_url.rstrip("/").split("github.com/")[-1]
             api_url = f"https://api.github.com/repos/{owner_repo}/contributors?per_page=6"
 
@@ -740,9 +743,204 @@ class RepoDetailView(DetailView):
             print(f"Error fetching GitHub contributors: {e}")
             return []
 
+    def fetch_activity_data(self, owner, repo_name):
+        """Fetch detailed activity data for charts"""
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=60)
+        
+        headers = {
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+        base_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+        def fetch_all_pages(url):
+            results = []
+            page = 1
+            while True:
+                response = requests.get(f"{url}&page={page}", headers=headers)
+                if response.status_code != 200 or not response.json():
+                    break
+                results.extend(response.json())
+                page += 1
+                if 'Link' not in response.headers or 'rel="next"' not in response.headers['Link']:
+                    break
+            return results
+
+        # Fetching data concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {
+                'issues': executor.submit(
+                    fetch_all_pages,
+                    f"{base_url}/issues?state=all&since={start_date.isoformat()}&per_page=100"
+                ),
+                'pulls': executor.submit(
+                    fetch_all_pages,
+                    f"{base_url}/pulls?state=all&since={start_date.isoformat()}&per_page=100"
+                ),
+                'commits': executor.submit(
+                    fetch_all_pages,
+                    f"{base_url}/commits?since={start_date.isoformat()}&per_page=100"
+                )
+            }
+
+            data = {}
+            for key, future in futures.items():
+                try:
+                    data[key] = future.result()
+                except Exception as e:
+                    print(f"Error fetching {key}: {e}")
+                    data[key] = []
+
+        # Processing data for charts
+        dates = [(end_date - timedelta(days=x)).strftime('%Y-%m-%d') 
+                for x in range(30)]
+        
+        # Defining time periods
+        current_month_start = end_date - timedelta(days=30)
+        previous_month_start = current_month_start - timedelta(days=30)
+
+        def calculate_period_metrics(data, start_date, end_date):
+            """Calculate metrics for a specific time period"""
+            start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+            end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+            
+            return {
+                'issues_opened': len([i for i in data['issues'] 
+                    if i.get('created_at') 
+                    and start_date <= parse_date(i['created_at']) <= end_date 
+                    and 'pull_request' not in i]),
+                'issues_closed': len([i for i in data['issues'] 
+                    if i.get('closed_at') 
+                    and start_date <= parse_date(i['closed_at']) <= end_date 
+                    and 'pull_request' not in i]),
+                'prs_opened': len([p for p in data['pulls'] 
+                    if p.get('created_at') 
+                    and start_date <= parse_date(p['created_at']) <= end_date]),
+                'prs_closed': len([p for p in data['pulls'] 
+                    if p.get('closed_at') 
+                    and start_date <= parse_date(p['closed_at']) <= end_date]),
+                'commits': len([c for c in data['commits'] 
+                    if c.get('commit', {}).get('author', {}).get('date')
+                    and start_date <= parse_date(c['commit']['author']['date']) <= end_date])
+            }
+
+        # Calculating metrics for both periods
+        current_metrics = calculate_period_metrics(
+            data, 
+            current_month_start.date(), 
+            end_date.date()
+        )
+        previous_metrics = calculate_period_metrics(
+            data, 
+            previous_month_start.date(), 
+            current_month_start.date()
+        )
+
+        print(f"Current period: {current_month_start.date()} to {end_date.date()}")
+        print(f"Previous period: {previous_month_start.date()} to {current_month_start.date()}")
+        print(f"Current metrics: {current_metrics}")
+        print(f"Previous metrics: {previous_metrics}")
+
+        # Calculating percentage changes
+        def calculate_percentage_change(current, previous):
+            """Calculates percentage change between two periods"""
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return ((current - previous) / previous) * 100
+
+        changes = {
+            'issue_ratio_percentage_change': calculate_percentage_change(
+                (current_metrics['issues_opened']/current_metrics['issues_closed']), (previous_metrics['issues_opened']/previous_metrics['issues_closed'])
+            ),
+            'issue_ratio_change': (current_metrics['issues_opened']/current_metrics['issues_closed']) - (previous_metrics['issues_opened']/previous_metrics['issues_closed']),
+            'pr_percentage_change': calculate_percentage_change(
+                current_metrics['prs_opened'], previous_metrics['prs_opened']
+            ),
+            'pr_change': current_metrics['prs_opened'] - previous_metrics['prs_opened'],
+            'commit_percentage_change': calculate_percentage_change(
+                current_metrics['commits'], previous_metrics['commits']
+            ),
+            'commit_change': current_metrics['commits'] - previous_metrics['commits']
+        }
+        
+        chart_data = {
+            'issues_labels': dates,
+            'issues_opened': [],
+            'issues_closed': [],
+            'pr_labels': dates,
+            'pr_opened_data': [],
+            'pr_closed_data': [],
+            'commits_labels': dates,
+            'commits_data': [],
+            'pushes_data': [],
+            'issue_ratio_change': round(changes['issue_ratio_change'], 2),
+            'pr_change': changes['pr_change'],
+            'commit_change': changes['commit_change'],
+            'issue_ratio_percentage_change': round(changes['issue_ratio_percentage_change'], 2),
+            'pr_percentage_change': round(changes['pr_percentage_change'], 2),
+            'commit_percentage_change': round(changes['commit_percentage_change'], 2),
+        }
+
+        for date in dates:
+            # Counting issues with safe null checks
+            issues_opened = len([
+                i for i in data['issues']
+                if i.get('created_at') and i['created_at'].startswith(date) 
+                and 'pull_request' not in i
+            ])
+            
+            issues_closed = len([
+                i for i in data['issues']
+                if i.get('closed_at') and i['closed_at'].startswith(date) 
+                and 'pull_request' not in i
+            ])
+
+            # Counting PRs with safe null checks
+            prs_opened = len([
+                p for p in data['pulls']
+                if p.get('created_at') and p['created_at'].startswith(date)
+            ])
+            
+            prs_closed = len([
+                p for p in data['pulls']
+                if p.get('closed_at') and p['closed_at'].startswith(date)
+            ])
+
+            # Counting commits with safe null checks
+            day_commits = [
+                c for c in data['commits']
+                if (c.get('commit', {}).get('author', {}).get('date') and 
+                    c['commit']['author']['date'].startswith(date))
+            ]
+            commits_count = len(day_commits)
+            pushes_count = len(set(c.get('sha', '') for c in day_commits))
+
+            # Adding to chart data
+            chart_data['issues_opened'].append(issues_opened)
+            chart_data['issues_closed'].append(issues_closed)
+            chart_data['pr_opened_data'].append(prs_opened)
+            chart_data['pr_closed_data'].append(prs_closed)
+            chart_data['commits_data'].append(commits_count)
+            chart_data['pushes_data'].append(pushes_count)
+
+        return chart_data
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
+
+        # # Add GitHub activity data
+        # activity_data = self.fetch_github_activity_data(repo.repo_url)
+        # if activity_data:
+        #     context.update(activity_data)
+
+        # Extract owner and repo name from repo URL
+        owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
+        owner, repo_name = owner_repo.split('/')
+
+        # Get activity data
+        activity_data = self.fetch_activity_data(owner, repo_name)
 
         # Add breadcrumbs
         context["breadcrumbs"] = [
@@ -943,6 +1141,21 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
+                'issues_labels': activity_data['issues_labels'],
+                'issues_opened': activity_data['issues_opened'],
+                'issues_closed': activity_data['issues_closed'],
+                'pr_labels': activity_data['pr_labels'],
+                'pr_opened_data': activity_data['pr_opened_data'],
+                'pr_closed_data': activity_data['pr_closed_data'],
+                'commits_labels': activity_data['commits_labels'],
+                'commits_data': activity_data['commits_data'],
+                'pushes_data': activity_data['pushes_data'],
+                'issue_ratio_change': activity_data['issue_ratio_change'],
+                'pr_change': activity_data['pr_change'],
+                'commit_change': activity_data['commit_change'],
+                'issue_ratio_percentage_change': activity_data['issue_ratio_percentage_change'],
+                'pr_percentage_change': activity_data['pr_percentage_change'],
+                'commit_percentage_change': activity_data['commit_percentage_change'],
             }
         )
 
