@@ -504,7 +504,7 @@
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                         <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-bold">Top PR Contributors</h3>
+                                <h3 class="text-lg font-bold">TOP BLT PRs - {{ current_time|date:"M" }}</h3>
                                 <i class="fas fa-code-branch"></i>
                             </div>
                         </div>
@@ -538,7 +538,12 @@
                                     </div>
                                 {% empty %}
                                     <div class="text-center text-gray-500">
-                                        <p>No PR contributions yet</p>
+                                        <p>No BLT PRs for {{ current_time|date:"F Y" }}</p>
+                                        <a href="https://github.com/OWASP-BLT/BLT/pulls"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline text-sm mt-2 inline-block">
+                                            <i class="fas fa-external-link-alt mr-1"></i>View PRs on GitHub
+                                        </a>
                                     </div>
                                 {% endfor %}
                             </div>
