@@ -44,54 +44,15 @@
                 ETH
             </button>
         </div>
-        <!-- QR code container with toggle functionality -->
-        <div class="relative w-[150px] h-[150px] cursor-pointer" id="qr-container">
-            <!-- Blurred QR image -->
-            <div class="absolute inset-0 filter blur-sm" id="qr-blurred">
-                <img class="w-full h-full object-cover border-2 border-[#e74c3c] border-solid rounded-md"
-                     src="{% static 'gif/loader.gif' %}"
-                     height="200px"
-                     width="200px"
-                     alt="crypto address qr code"
-                     id="crypto-qr-image">
-            </div>
-            <!-- Small QR icon overlay -->
-            <div class="absolute inset-0 flex items-center justify-center"
-                 id="qr-icon">
-                <div class="bg-white p-2 rounded-full shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         width="24"
-                         height="24"
-                         viewBox="0 0 24 24"
-                         fill="none"
-                         stroke="currentColor"
-                         stroke-width="2"
-                         stroke-linecap="round"
-                         stroke-linejoin="round">
-                        <rect x="3" y="3" width="5" height="5" rx="1"></rect>
-                        <rect x="16" y="3" width="5" height="5" rx="1"></rect>
-                        <rect x="3" y="16" width="5" height="5" rx="1"></rect>
-                        <path d="M21 16h-3a2 2 0 0 0-2 2v3"></path>
-                        <path d="M21 21v.01"></path>
-                        <path d="M12 7v3a2 2 0 0 1-2 2H7"></path>
-                        <path d="M3 12h.01"></path>
-                        <path d="M12 3h.01"></path>
-                        <path d="M12 16v.01"></path>
-                        <path d="M16 12h1"></path>
-                        <path d="M21 12v.01"></path>
-                        <path d="M12 21v-1"></path>
-                    </svg>
-                </div>
-            </div>
-            <!-- Clear QR image (hidden by default) -->
-            <div class="absolute inset-0 hidden" id="qr-clear">
-                <img class="w-full h-full object-cover border-2 border-[#e74c3c] border-solid rounded-md"
-                     src="{% static 'gif/loader.gif' %}"
-                     height="200px"
-                     width="200px"
-                     alt="crypto address qr code"
-                     id="crypto-qr-image-clear">
-            </div>
+        <!-- QR code container -->
+        <div class="relative w-[150px] h-[150px]" id="qr-container">
+            <!--  QR image  -->
+            <img class="w-full h-full object-cover border-2 border-[#e74c3c] border-solid rounded-md"
+                 src="{% static 'gif/loader.gif' %}"
+                 height="150px"
+                 width="150px"
+                 alt="crypto address qr code"
+                 id="crypto-qr-image">
         </div>
         <!-- Address display -->
         <div class="w-full max-w-md" id="crypto-address-container">
@@ -126,12 +87,7 @@
     const bltAddress = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
     
     // DOM elements
-    const qrContainer = document.getElementById('qr-container');
-    const qrBlurred = document.getElementById('qr-blurred');
-    const qrIcon = document.getElementById('qr-icon');
-    const qrClear = document.getElementById('qr-clear');
     const cryptoQrImage = document.getElementById('crypto-qr-image');
-    const cryptoQrImageClear = document.getElementById('crypto-qr-image-clear');
     const btcBtn = document.getElementById('btn-btc');
     const bchBtn = document.getElementById('btn-bch');
     const ethBtn = document.getElementById('btn-eth');
@@ -160,7 +116,6 @@
         if (address && address !== "None") {
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
             cryptoQrImage.src = qrUrl;
-            cryptoQrImageClear.src = qrUrl;
             return true;
         }
         return false;
@@ -180,19 +135,6 @@
         
         setActiveButton(document.getElementById(`btn-${type.toLowerCase()}`));
     }
-    
-    // Toggle QR code visibility
-    qrContainer.addEventListener('click', () => {
-        if (qrBlurred.classList.contains('hidden')) {
-            qrBlurred.classList.remove('hidden');
-            qrIcon.classList.remove('hidden');
-            qrClear.classList.add('hidden');
-        } else {
-            qrBlurred.classList.add('hidden');
-            qrIcon.classList.add('hidden');
-            qrClear.classList.remove('hidden');
-        }
-    });
     
     // Button click handlers
     btcBtn.addEventListener('click', () => selectCrypto('BTC', btcAddress));
