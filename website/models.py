@@ -2179,6 +2179,7 @@ class Hackathon(models.Model):
                         "count": 1,
                         "prs": [pr],
                         "is_contributor": True,
+                        "contributor": pr.contributor,  # Include the contributor object
                     }
 
         # Convert to list and sort by count (descending)

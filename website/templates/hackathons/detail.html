@@ -256,9 +256,17 @@
                                         </div>
                                         <div class="w-8 h-8 mr-3">
                                             {% if entry.is_contributor %}
-                                                <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                                                    <i class="fab fa-github text-gray-600"></i>
-                                                </div>
+                                                {% if entry.contributor.avatar_url %}
+                                                    <img src="{{ entry.contributor.avatar_url }}"
+                                                         alt="{{ entry.user.username }}"
+                                                         class="w-8 h-8 rounded-full object-cover"
+                                                         width="32"
+                                                         height="32">
+                                                {% else %}
+                                                    <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                                        <i class="fab fa-github text-gray-600"></i>
+                                                    </div>
+                                                {% endif %}
                                             {% else %}
                                                 {% if entry.user.userprofile.user_avatar %}
                                                     <img src="{{ entry.user.userprofile.user_avatar.url }}"
@@ -274,14 +282,7 @@
                                             {% endif %}
                                         </div>
                                         <div class="flex-grow">
-                                            <div class="font-medium">
-                                                {% if entry.is_contributor %}
-                                                    {{ entry.user.username }}
-                                                    <span class="text-xs text-gray-500 ml-1">(GitHub Contributor)</span>
-                                                {% else %}
-                                                    {{ entry.user.username }}
-                                                {% endif %}
-                                            </div>
+                                            <div class="font-medium">{{ entry.user.username }}</div>
                                             <div class="text-sm text-gray-500">{{ entry.count }} pull request{{ entry.count|pluralize }}</div>
                                         </div>
                                     </div>
