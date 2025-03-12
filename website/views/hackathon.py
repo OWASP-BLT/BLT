@@ -109,8 +109,8 @@ class HackathonDetailView(DetailView):
                 repo=repo,
                 type="pull_request",
                 is_merged=True,
-                created_at__gte=hackathon.start_time,
-                created_at__lte=hackathon.end_time,
+                merged_at__gte=hackathon.start_time,
+                merged_at__lte=hackathon.end_time,
             ).count()
 
             repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
@@ -223,7 +223,6 @@ class HackathonDetailView(DetailView):
         contributor_count = (
             prs.filter(user_profile=None)
             .exclude(contributor=None)
-            .exclude(contributor__name__icontains="bot")
             .exclude(contributor__name__endswith="[bot]")
             .values("contributor")
             .distinct()

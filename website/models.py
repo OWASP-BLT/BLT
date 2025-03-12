@@ -2144,8 +2144,8 @@ class Hackathon(models.Model):
             repo__in=self.repositories.all(),
             type="pull_request",
             is_merged=True,
-            created_at__gte=self.start_time,
-            created_at__lte=self.end_time,
+            merged_at__gte=self.start_time,
+            merged_at__lte=self.end_time,
         )
 
         # Group by user_profile and count PRs
