@@ -1,3 +1,5 @@
+import time
+
 import pytz
 import requests
 from django.conf import settings
@@ -465,26 +467,71 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
         # Get pull requests from GitHub API
         params = {
             "state": "all",  # Get all PRs (open, closed, merged)
-            "sort": "created",
+            "sort": "updated",  # Sort by last updated to get both recently created and recently merged
             "direction": "desc",
             "per_page": 100,  # Maximum per page
         }
 
-        response = requests.get(api_url, headers=headers, params=params)
-        response.raise_for_status()  # Raise exception for HTTP errors
+        # If the hackathon started more than 3 months ago, we need to make multiple requests
+        # to get all PRs that might be relevant
+        all_prs_data = []
+        page = 1
+        max_pages = 5  # Limit to 5 pages (500 PRs) to avoid excessive API calls
 
-        prs_data = response.json()
+        while page <= max_pages:
+            params["page"] = page
+            response = requests.get(api_url, headers=headers, params=params)
+            response.raise_for_status()  # Raise exception for HTTP errors
+
+            page_data = response.json()
+            if not page_data:  # No more results
+                break
+
+            all_prs_data.extend(page_data)
+
+            # Check if the oldest PR on this page is older than the hackathon start time
+            # If so, we can stop fetching more pages
+            oldest_pr = page_data[-1]
+            oldest_updated = timezone.datetime.strptime(oldest_pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=pytz.UTC
+            )
+            if oldest_updated < hackathon.start_time:
+                break
+
+            page += 1
+
+            # Respect GitHub's rate limits by adding a small delay
+            time.sleep(0.5)
 
         # Process pull requests
         pr_count = 0
-        for pr_data in prs_data:
-            # Check if PR is within hackathon timeframe
+        for pr_data in all_prs_data:
+            # Parse dates
             created_at = timezone.datetime.strptime(pr_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
                 tzinfo=pytz.UTC
             )
 
-            if created_at < hackathon.start_time or created_at > hackathon.end_time:
-                continue  # Skip PRs outside hackathon timeframe
+            # Determine if PR is merged
+            is_merged = pr_data["merged_at"] is not None
+            merged_at = None
+            if is_merged:
+                merged_at = timezone.datetime.strptime(pr_data["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                    tzinfo=pytz.UTC
+                )
+
+            # Check if PR is relevant to the hackathon
+            # Include PRs that were merged during the hackathon timeframe
+            is_relevant = False
+
+            # If PR was merged during the hackathon timeframe
+            if is_merged and merged_at and hackathon.start_time <= merged_at <= hackathon.end_time:
+                is_relevant = True
+            # Or if PR was created during the hackathon timeframe
+            elif hackathon.start_time <= created_at <= hackathon.end_time:
+                is_relevant = True
+
+            if not is_relevant:
+                continue  # Skip PRs not relevant to the hackathon
 
             # Get or create contributor
             github_username = pr_data["user"]["login"]
@@ -517,14 +564,6 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
 
             # Check if PR already exists in database
             existing_pr = GitHubIssue.objects.filter(issue_id=pr_data["number"], repo=repo).first()
-
-            # Determine if PR is merged
-            is_merged = pr_data["merged_at"] is not None
-            merged_at = None
-            if is_merged:
-                merged_at = timezone.datetime.strptime(pr_data["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
-                    tzinfo=pytz.UTC
-                )
 
             # Update or create PR
             if existing_pr:
