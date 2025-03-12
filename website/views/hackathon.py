@@ -205,17 +205,33 @@ class HackathonDetailView(DetailView):
 
         # Count unique users who have created pull requests to the hackathon repositories
         # during the hackathon period
-        participant_count = (
-            GitHubIssue.objects.filter(
-                repo__in=repo_ids,
-                created_at__gte=hackathon.start_time,
-                created_at__lte=hackathon.end_time,
-                type="pull_request",
-            )
-            .values("user_profile")
+        from django.db.models import Count
+
+        # Get all pull requests during the hackathon period
+        prs = GitHubIssue.objects.filter(
+            repo__in=repo_ids,
+            created_at__gte=hackathon.start_time,
+            created_at__lte=hackathon.end_time,
+            type="pull_request",
+        )
+
+        # Count unique user profiles (users registered on the platform)
+        user_profile_count = prs.exclude(user_profile=None).values("user_profile").distinct().count()
+
+        # Count unique contributors (GitHub users not registered on the platform)
+        # Exclude bot accounts
+        contributor_count = (
+            prs.filter(user_profile=None)
+            .exclude(contributor=None)
+            .exclude(contributor__name__icontains="bot")
+            .exclude(contributor__name__endswith="[bot]")
+            .values("contributor")
             .distinct()
             .count()
         )
+
+        # Total participant count is the sum of both
+        participant_count = user_profile_count + contributor_count
 
         context["participant_count"] = participant_count
 

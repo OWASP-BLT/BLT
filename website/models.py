@@ -2159,6 +2159,11 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
+                # Skip bot accounts
+                github_username = pr.contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
                 # If no user profile but has contributor, use contributor as key
                 contributor_id = f"contributor_{pr.contributor.id}"
                 if contributor_id in leaderboard:
