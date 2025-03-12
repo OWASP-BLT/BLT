@@ -2250,6 +2250,8 @@ class Queue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     launched = models.BooleanField(default=False)
     launched_at = models.DateTimeField(null=True, blank=True)
+    txid = models.CharField(max_length=255, null=True, blank=True)
+    url = models.URLField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]

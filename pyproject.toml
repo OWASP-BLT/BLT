@@ -65,6 +65,7 @@ tld = "0.13"
 openai = "^1.66.2"
 async-timeout = "^4.0.3"
 python-dateutil = "^2.9.0.post0"
+tweepy = "^4.15.0"
 
 
 [tool.poetry.group.dev.dependencies]
