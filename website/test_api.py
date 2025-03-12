@@ -1,3 +1,4 @@
+from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db.transaction import atomic
@@ -72,6 +73,9 @@ class APITests(APITestCase):
 
         user = get_user_model().objects.create_user(self.USERNAME, self.EMAIL, self.PASS)
 
+        # Verify the email
+        EmailAddress.objects.create(user=user, email=self.EMAIL, verified=True, primary=True)
+
         response = self.client.post(self.login_url, data=payload, status_code=200)
         self.assertEqual("key" in response.json().keys(), True)
         self.token = response.json()["key"]
@@ -87,11 +91,28 @@ class APITests(APITestCase):
     def test_registration(self):
         user_count = get_user_model().objects.all().count()
         result = self.client.post(self.register_url, data=self.REGISTRATION_DATA, status_code=201)
-        self.assertIn("key", result.data)
-        self.assertEqual(get_user_model().objects.all().count(), user_count + 1)
 
+        # Since email verification is required, we need to verify the email
+        self.assertEqual(get_user_model().objects.all().count(), user_count + 1)
         new_user = get_user_model().objects.latest("id")
         self.assertEqual(new_user.username, self.REGISTRATION_DATA["username"])
+
+        # Check that we got the verification email message
+        self.assertIn("detail", result.data)
+        self.assertEqual(result.data["detail"], "Verification e-mail sent.")
+
+        # Verify the email
+        email_address = EmailAddress.objects.get(user=new_user, email=self.EMAIL)
+        email_address.verified = True
+        email_address.save()
+
+        # Now try to login to get the key
+        login_payload = {
+            "username": self.USERNAME.lower(),
+            "password": self.PASS,
+        }
+        login_response = self.client.post(self.login_url, data=login_payload)
+        self.assertIn("key", login_response.data)
 
     def test_create_issue(self):
         @atomic

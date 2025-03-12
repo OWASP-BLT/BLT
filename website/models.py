@@ -2087,6 +2087,11 @@ class Hackathon(models.Model):
     max_participants = models.PositiveIntegerField(null=True, blank=True)
     # Link to repositories that are part of this hackathon
     repositories = models.ManyToManyField(Repo, related_name="hackathons", blank=True)
+    # Sponsor information
+    sponsor_note = models.TextField(
+        blank=True, null=True, help_text="Additional information about sponsorship opportunities"
+    )
+    sponsor_link = models.URLField(blank=True, null=True, help_text="Link to sponsorship information or application")
 
     class Meta:
         ordering = ["-start_time"]
@@ -2153,6 +2158,29 @@ class Hackathon(models.Model):
                     leaderboard[user_id]["prs"].append(pr)
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
+            elif pr.contributor and pr.contributor.github_id:
+                # Skip bot accounts
+                github_username = pr.contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
+                # If no user profile but has contributor, use contributor as key
+                contributor_id = f"contributor_{pr.contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["prs"].append(pr)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": pr.contributor.name or pr.contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "prs": [pr],
+                        "is_contributor": True,
+                        "contributor": pr.contributor,  # Include the contributor object
+                    }
 
         # Convert to list and sort by count (descending)
         leaderboard_list = list(leaderboard.values())
@@ -2223,6 +2251,8 @@ class Queue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     launched = models.BooleanField(default=False)
     launched_at = models.DateTimeField(null=True, blank=True)
+    txid = models.CharField(max_length=255, null=True, blank=True)
+    url = models.URLField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]

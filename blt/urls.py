@@ -145,6 +145,7 @@ from website.views.hackathon import (
     HackathonPrizeCreateView,
     HackathonSponsorCreateView,
     HackathonUpdateView,
+    refresh_repository_data,
 )
 from website.views.issue import (
     AllIssuesView,
@@ -267,7 +268,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
-from website.views.queue import queue_list
+from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
@@ -1044,13 +1045,26 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
-    # Hackathon URLs.
-    path("hackathons/", HackathonListView.as_view(), name="hackathons"),
-    path("hackathons/create/", HackathonCreateView.as_view(), name="hackathon_create"),
-    path("hackathons/<slug:slug>/", HackathonDetailView.as_view(), name="hackathon_detail"),
-    path("hackathons/<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_edit"),
-    path("hackathons/<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_add_sponsor"),
-    path("hackathons/<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_add_prize"),
+    # Hackathon URLs
+    path(
+        "hackathons/",
+        include(
+            [
+                path("", HackathonListView.as_view(), name="hackathons"),
+                path("create/", HackathonCreateView.as_view(), name="hackathon_create"),
+                path("<slug:slug>/", HackathonDetailView.as_view(), name="hackathon_detail"),
+                path("<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_update"),
+                path("<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_sponsor_create"),
+                path("<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_prize_create"),
+                # Add the new URL pattern for refreshing repository data
+                path(
+                    "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
+                    refresh_repository_data,
+                    name="refresh_repository_data",
+                ),
+            ]
+        ),
+    ),
     path("page-vote/", page_vote, name="page_vote"),
     # Queue Management URLs
     path("queue/", queue_list, name="queue_list"),
@@ -1058,6 +1072,7 @@ urlpatterns = [
     path("queue/<int:queue_id>/edit/", queue_list, name="queue_edit"),
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
+    path("queue/<int:queue_id>/update-txid/", update_txid, name="queue_update_txid"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
     # Chat room API endpoints
     path("api/send-message/", send_message_api, name="send_message_api"),
