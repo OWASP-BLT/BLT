@@ -2088,6 +2088,11 @@ class Hackathon(models.Model):
     max_participants = models.PositiveIntegerField(null=True, blank=True)
     # Link to repositories that are part of this hackathon
     repositories = models.ManyToManyField(Repo, related_name="hackathons", blank=True)
+    # Sponsor information
+    sponsor_note = models.TextField(
+        blank=True, null=True, help_text="Additional information about sponsorship opportunities"
+    )
+    sponsor_link = models.URLField(blank=True, null=True, help_text="Link to sponsorship information or application")
 
     class Meta:
         ordering = ["-start_time"]
@@ -2140,8 +2145,8 @@ class Hackathon(models.Model):
             repo__in=self.repositories.all(),
             type="pull_request",
             is_merged=True,
-            merged_at__gte=self.start_time,
-            merged_at__lte=self.end_time,
+            created_at__gte=self.start_time,
+            created_at__lte=self.end_time,
         )
 
         # Group by user_profile and count PRs
@@ -2154,6 +2159,23 @@ class Hackathon(models.Model):
                     leaderboard[user_id]["prs"].append(pr)
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
+            elif pr.contributor and pr.contributor.github_id:
+                # If no user profile but has contributor, use contributor as key
+                contributor_id = f"contributor_{pr.contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["prs"].append(pr)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": pr.contributor.name or pr.contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "prs": [pr],
+                        "is_contributor": True,
+                    }
 
         # Convert to list and sort by count (descending)
         leaderboard_list = list(leaderboard.values())
