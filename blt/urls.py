@@ -268,7 +268,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
-from website.views.queue import queue_list
+from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
@@ -1072,6 +1072,7 @@ urlpatterns = [
     path("queue/<int:queue_id>/edit/", queue_list, name="queue_edit"),
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
+    path("queue/<int:queue_id>/update-txid/", update_txid, name="queue_update_txid"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
     # Chat room API endpoints
     path("api/send-message/", send_message_api, name="send_message_api"),
