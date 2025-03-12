@@ -565,11 +565,13 @@ class GitHubIssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user_profile",
+        "contributor",
         "type",
         "title",
         "state",
         "is_merged",
         "created_at",
+        "merged_at",
         "updated_at",
         "url",
         "p2p_amount_usd",
@@ -583,6 +585,7 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "state",
         "is_merged",
         "user_profile",
+        "contributor",
         "sent_by_user",
         "repo",
     ]
@@ -590,6 +593,7 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "title",
         "url",
         "user_profile__user__username",
+        "contributor__name",
         "bch_tx_id",
     ]
     date_hierarchy = "created_at"
