@@ -2,6 +2,7 @@ import logging
 import os
 
 from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -147,3 +148,39 @@ def queue_list(request):
     }
 
     return render(request, "queue/list.html", context)
+
+
+def update_txid(request, queue_id):
+    """
+    Update the txid and url for a queue item via HTMX.
+    """
+    if not request.user.is_authenticated:
+        return HttpResponse("Unauthorized", status=401)
+
+    # Check if user is authorized for launch control
+    authorized_user_id = os.environ.get("Q_ID")
+    is_auth = authorized_user_id and request.user.is_authenticated
+    is_launch_authorized = is_auth and str(request.user.id) == authorized_user_id
+    is_superuser = request.user.is_superuser
+
+    if not (is_launch_authorized or is_superuser):
+        return HttpResponse("Unauthorized", status=401)
+
+    if request.method == "POST":
+        queue_item = get_object_or_404(Queue, id=queue_id)
+        txid = request.POST.get("txid", "")
+        url = request.POST.get("url", "")
+
+        if txid:
+            queue_item.txid = txid
+
+        if url:
+            queue_item.url = url
+
+        queue_item.save()
+
+        # Return the updated transaction details HTML
+        context = {"item": queue_item}
+        return render(request, "queue/partials/transaction_details.html", context)
+
+    return HttpResponse("Method not allowed", status=405)
