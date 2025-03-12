@@ -1,3 +1,4 @@
+import pytz
 import requests
 from django.conf import settings
 from django.contrib import messages
@@ -464,7 +465,7 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
         for pr_data in prs_data:
             # Check if PR is within hackathon timeframe
             created_at = timezone.datetime.strptime(pr_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
-                tzinfo=timezone.utc
+                tzinfo=pytz.UTC
             )
 
             if created_at < hackathon.start_time or created_at > hackathon.end_time:
@@ -507,7 +508,7 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
             merged_at = None
             if is_merged:
                 merged_at = timezone.datetime.strptime(pr_data["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
-                    tzinfo=timezone.utc
+                    tzinfo=pytz.UTC
                 )
 
             # Update or create PR
@@ -518,7 +519,7 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
                 existing_pr.merged_at = merged_at
                 existing_pr.updated_at = timezone.datetime.strptime(
                     pr_data["updated_at"], "%Y-%m-%dT%H:%M:%SZ"
-                ).replace(tzinfo=timezone.utc)
+                ).replace(tzinfo=pytz.UTC)
 
                 # Link to contributor if not already linked
                 if not existing_pr.contributor:
@@ -535,7 +536,7 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
                     type="pull_request",
                     created_at=created_at,
                     updated_at=timezone.datetime.strptime(pr_data["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(
-                        tzinfo=timezone.utc
+                        tzinfo=pytz.UTC
                     ),
                     merged_at=merged_at,
                     is_merged=is_merged,
