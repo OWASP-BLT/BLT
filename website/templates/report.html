@@ -281,36 +281,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="mt-8 bg-white rounded-xl shadow-sm p-6">
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-6 w-full">
-                        <div class="flex flex-col items-start gap-2 w-full sm:w-auto order-2 sm:order-1">
-                            <div class="flex items-center gap-2">
-                                <input id="report_anonymous"
-                                       type="checkbox"
-                                       name="report_anonymous"
-                                       class="w-5 h-5 rounded-lg text-[#e74c3c] focus:ring-[#e74c3c] cursor-pointer">
-                                <p for="report_anonymous"
-                                   class=" font-medium text-gray-900 cursor-pointer select-none">
-                                    {% trans "Report Anonymously" %}
-                                </p>
-                            </div>
-                        </div>
-                        <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">
-                            <div class="[&_img]:w-36 [&_img]:mr-2.5 [&_input]:w-full [&_input]:border [&_input]:border-black [&_input]:p-2.5 [&_input]:text-lg">
-                                {{ captcha_form.captcha }}
-                            </div>
-                        </div>
-                        <div class="flex gap-4 w-full sm:w-auto justify-center order-3">
-                            <button type="button"
-                                    onclick="cancelForm()"
-                                    class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors duration-200 font-medium">
-                                {% trans "Cancel" %}
-                            </button>
-                            <button type="submit"
-                                    name="reportbug_button"
-                                    class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium">
-                                {% trans "Report" %}
-                            </button>
+                <div class="mt-8 bg-white rounded-lg border border-gray-200 shadow-sm flex md:flex-row flex-col items-center justify-between gap-8 px-6 py-5">
+                    <div class="flex flex-col items-start gap-2">
+                        <div class="flex items-center gap-2">
+                            <input id="report_anonymous"
+                                   type="checkbox"
+                                   name="report_anonymous"
+                                   class="w-5 h-5 rounded-lg text-[#e74c3c]  cursor-pointer">
+                            <p for="report_anonymous"
+                               class=" font-medium text-gray-900 cursor-pointer select-none">
+                                {% trans "Report Anonymously" %}
+                            </p>
                         </div>
                     </div>
                     <div class="flex flex-col gap-4 md:flex-row items-center justify-center [&>img]:w-[150px] md:[&>input]:w-[30%] [&>input]:w-[50%] [&>input]:border [&>input]:border-black [&>input]:p-[10px] [&>input]:text-[1.4rem] [&>input]:ml-2 [&>input]:rounded">
