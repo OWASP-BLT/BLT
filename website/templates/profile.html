@@ -139,7 +139,10 @@
                     </div>
                 </div>
             {% endif %}
-            <div class="select-none">{% include "./includes/crypto_donation.html" %}</div>
+            <div class="select-none">
+                <div class="font-bold text-black/90 mb-3">{% trans "Crypto Addresses" %}</div>
+                {% include "./includes/crypto_donation.html" %}
+            </div>
             <!-- Points Section -->
             <div class=" score-container select-none flex gap-2 items-center justify-center bg-gray-100 text-black/80 p-4 rounded-lg  w-full cursor-pointer hover:bg-gray-200/80 transition-all duration-200">
                 <span class=" text-2xl font-bold text-yellow-500">{{ my_score|default:0 }}</span>
