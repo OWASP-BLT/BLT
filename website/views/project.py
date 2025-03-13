@@ -48,6 +48,7 @@ def parse_date(date_str):
     """Parse GitHub API date string to datetime object"""
     return parse_datetime(date_str) if date_str else None
 
+
 def repo_activity_data(request, slug):
     """API endpoint for repository activity data"""
     repo = get_object_or_404(Repo, slug=slug)
@@ -956,7 +957,6 @@ class RepoDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
-
 
         # Add breadcrumbs
         context["breadcrumbs"] = [
