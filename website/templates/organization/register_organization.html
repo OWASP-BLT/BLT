@@ -21,247 +21,218 @@
               referrerpolicy="no-referrer" />
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body>
-        <style>
-            .page-container {
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .content {
-                flex: 1;
-            }
-
-            .bottom-links {
-                padding: 15px;
-                text-align: right;
-                background-color: #F3F5F7;
-            }
-
-            .bottom-links a {
-                margin-left: 10px;
-                color: #666;
-                text-decoration: none;
-            }
-
-            .bottom-links a:hover {
-                color: #333;
-            }
-        </style>
-        <div class="page-container">
-            <div class="content">
-                <div class="bg-[#F3F5F7] flex flex-col items-center">
-                    <form method='post'
-                          action="#"
-                          enctype="multipart/form-data"
-                          class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
-                        <div class="w-full mb-5">
-                            <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans "Register Organization" %}</p>
-                        </div>
-                        {% csrf_token %}
-                        <div class="pb-12">
-                            <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Information" %}</h2>
-                            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                                <div class="sm:col-span-3">
-                                    <label for="domain_name"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Name" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="organization_name"
-                                               id="organization_name"
-                                               autocomplete="organization_name"
-                                               placeholder="Organization Name"
-                                               required
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-3">
-                                    <label for="organization_url"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Url" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="organization_url"
-                                               id="organization_url"
-                                               autocomplete="organization_url"
-                                               placeholder="https://Organization_domain.xyz"
-                                               required
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2 sm:col-start-1">
-                                    <label for="support_email"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Support Email (Optional)" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="email"
-                                               name="support_email"
-                                               id="support_email"
-                                               autocomplete="email"
-                                               placeholder="Organization@domain.xyz"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label for="twitter_url"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Twitter URL (Optional)" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="twitter_url"
-                                               id="twitter_url"
-                                               autocomplete="twitter"
-                                               placeholder="https://twitter.com/handle"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label for="facebook_url"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Facebook URL (Optional)" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="facebook_url"
-                                               id="facebook_url"
-                                               autocomplete="facebook"
-                                               placeholder="https://facebook.com/handle"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-12">
-                            <div class="border-b border-gray-900/10 pb-12">
-                                <div class="col-span-full mb-5">
-                                    <label for="organization_logo"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Logo" %}
-                                    </label>
-                                    <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
-                                        <div id="previewLogoDiv"
-                                             class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
-                                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <label for="logo"
-                                               class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                            <span class="text-red-600">{% trans "Upload logo" %}</span>
-                                            <input id="logo"
-                                                   name="logo"
-                                                   type="file"
-                                                   class="sr-only"
-                                                   required
-                                                   onchange="displayLogoPreview()" />
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="pb-12 mt-5">
-                            <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Managers" %}</h2>
-                            <p class="mt-1 text-sm leading-6 text-gray-600">
-                                {% trans "Add Emails which will be allowed to add domains" %}.
-                                <br>
-                                {% trans "Email should be registerd user on BLT" %}.
-                            </p>
-                            <button onclick="add_email_container()"
-                                    type="button"
-                                    class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                                {% trans "Add Email" %}
-                            </button>
-                            <div class="sm:col-span-4 mt-5" id="email-container">
-                                <label for="email" class="block text-sm font-medium leading-6 text-gray-900">{% trans "Email address" %}</label>
-                            </div>
-                        </div>
-                        <div class="mt-6 flex items-center justify-end gap-x-6">
-                            <button type="button"
-                                    onclick="cancelForm()"
-                                    class="text-md font-semibold leading-6 text-gray-900">{% trans "Cancel" %}</button>
-                            <button type="submit"
-                                    class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
-                                {% trans "Save" %}
-                            </button>
-                        </div>
-                    </form>
+    <body class="min-h-screen flex flex-col">
+        <div class="flex-1 bg-[#F3F5F7] flex flex-col items-center">
+            <form method="post"
+                  action="#"
+                  enctype="multipart/form-data"
+                  class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
+                <div class="w-full mb-5">
+                    <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans "Register Organization" %}</p>
                 </div>
-                {% if messages %}
-                    {% for message in messages %}
-                        {% if message.level_tag == 'error' %}
-                            <div id="alert-border-2"
-                                 class="popup-errors flex p-4 mb-4 w-[30vw] text-red-800 border-t-4 border-red-300 bg-red-50 absolute bottom-10 right-10"
-                                 role="alert">
-                                <svg class="flex-shrink-0 w-5 h-5"
-                                     fill="currentColor"
-                                     viewBox="0 0 20 20"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
-                                    </path>
-                                </svg>
-                                <div class="ml-3 text-sm font-medium">{{ message }}</div>
-                                <button type="button"
-                                        onclick="removeErrors()"
-                                        class="ml-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex h-8 w-8"
-                                        data-dismiss-target="#alert-border-2"
-                                        aria-label="Close">
-                                    <span class="sr-only">Dismiss</span>
-                                    <svg aria-hidden="true"
-                                         class="w-5 h-5"
-                                         fill="currentColor"
-                                         viewBox="0 0 20 20"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
-                                        </path>
-                                    </svg>
-                                </button>
+                {% csrf_token %}
+                <div class="pb-12">
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Information" %}</h2>
+                    <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                        <div class="sm:col-span-3">
+                            <label for="domain_name"
+                                   class="block text-sm font-medium leading-6 text-gray-900">
+                                {% trans "Organization Name" %}
+                            </label>
+                            <div class="mt-2">
+                                <input type="text"
+                                       name="organization_name"
+                                       id="organization_name"
+                                       autocomplete="organization_name"
+                                       placeholder="Organization Name"
+                                       required
+                                       class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
-                        {% else %}
-                            <div id="alert-border-2"
-                                 class="popup-errors flex p-4 mb-4 w-[30vw] text-green-800 border-t-4 border-green-300 bg-green-50 absolute bottom-10 right-10"
-                                 role="alert">
-                                <svg class="flex-shrink-0 w-5 h-5"
-                                     fill="currentColor"
-                                     viewBox="0 0 20 20"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
-                                    </path>
-                                </svg>
-                                <div class="ml-3 text-sm font-medium">{{ message }}</div>
-                                <button type="button"
-                                        onclick="removeErrors()"
-                                        class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex h-8 w-8"
-                                        data-dismiss-target="#alert-border-2"
-                                        aria-label="Close">
-                                    <span class="sr-only">Dismiss</span>
-                                    <svg aria-hidden="true"
-                                         class="w-5 h-5"
-                                         fill="currentColor"
-                                         viewBox="0 0 20 20"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
-                                        </path>
-                                    </svg>
-                                </button>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="organization_url"
+                                   class="block text-sm font-medium leading-6 text-gray-900">
+                                {% trans "Organization Url" %}
+                            </label>
+                            <div class="mt-2">
+                                <input type="text"
+                                       name="organization_url"
+                                       id="organization_url"
+                                       autocomplete="organization_url"
+                                       placeholder="https://Organization_domain.xyz"
+                                       required
+                                       class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
-                        {% endif %}
-                    {% endfor %}
+                        </div>
+                        <div class="sm:col-span-2 sm:col-start-1">
+                            <label for="support_email"
+                                   class="block text-sm font-medium leading-6 text-gray-900">
+                                {% trans "Organization Support Email (Optional)" %}
+                            </label>
+                            <div class="mt-2">
+                                <input type="email"
+                                       name="support_email"
+                                       id="support_email"
+                                       autocomplete="email"
+                                       placeholder="Organization@domain.xyz"
+                                       class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                            </div>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="twitter_url"
+                                   class="block text-sm font-medium leading-6 text-gray-900">
+                                {% trans "Organization Twitter URL (Optional)" %}
+                            </label>
+                            <div class="mt-2">
+                                <input type="text"
+                                       name="twitter_url"
+                                       id="twitter_url"
+                                       autocomplete="twitter"
+                                       placeholder="https://twitter.com/handle"
+                                       class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                            </div>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="facebook_url"
+                                   class="block text-sm font-medium leading-6 text-gray-900">
+                                {% trans "Organization Facebook URL (Optional)" %}
+                            </label>
+                            <div class="mt-2">
+                                <input type="text"
+                                       name="facebook_url"
+                                       id="facebook_url"
+                                       autocomplete="facebook"
+                                       placeholder="https://facebook.com/handle"
+                                       class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-12">
+                    <div class="border-b border-gray-900/10 pb-12">
+                        <div class="col-span-full mb-5">
+                            <label for="organization_logo"
+                                   class="block text-sm font-medium leading-6 text-gray-900">
+                                {% trans "Organization Logo" %}
+                            </label>
+                            <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
+                                <div id="previewLogoDiv"
+                                     class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
+                                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                        <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <label for="logo"
+                                       class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
+                                    <span class="text-red-600">{% trans "Upload logo" %}</span>
+                                    <input id="logo"
+                                           name="logo"
+                                           type="file"
+                                           class="sr-only"
+                                           required
+                                           onchange="displayLogoPreview()" />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pb-12 mt-5">
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Managers" %}</h2>
+                    <p class="mt-1 text-sm leading-6 text-gray-600">
+                        {% trans "Add Emails which will be allowed to add domains" %}.
+                        <br>
+                        {% trans "Email should be registerd user on BLT" %}.
+                    </p>
+                    <button onclick="add_email_container()"
+                            type="button"
+                            class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
+                        {% trans "Add Email" %}
+                    </button>
+                    <div class="sm:col-span-4 mt-5" id="email-container">
+                        <label for="email" class="block text-sm font-medium leading-6 text-gray-900">{% trans "Email address" %}</label>
+                    </div>
+                </div>
+                <div class="mt-6 flex items-center justify-end gap-x-6">
+                    <button type="button"
+                            onclick="cancelForm()"
+                            class="text-md font-semibold leading-6 text-gray-900">{% trans "Cancel" %}</button>
+                    <button type="submit"
+                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                        {% trans "Save" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.level_tag == 'error' %}
+                    <div id="alert-border-2"
+                         class="popup-errors flex p-4 mb-4 w-[30vw] text-red-800 border-t-4 border-red-300 bg-red-50 absolute bottom-10 right-10"
+                         role="alert">
+                        <svg class="flex-shrink-0 w-5 h-5"
+                             fill="currentColor"
+                             viewBox="0 0 20 20"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        <div class="ml-3 text-sm font-medium">{{ message }}</div>
+                        <button type="button"
+                                onclick="removeErrors()"
+                                class="ml-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex h-8 w-8"
+                                data-dismiss-target="#alert-border-2"
+                                aria-label="Close">
+                            <span class="sr-only">Dismiss</span>
+                            <svg aria-hidden="true"
+                                 class="w-5 h-5"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
+                {% else %}
+                    <div id="alert-border-2"
+                         class="popup-errors flex p-4 mb-4 w-[30vw] text-green-800 border-t-4 border-green-300 bg-green-50 absolute bottom-10 right-10"
+                         role="alert">
+                        <svg class="flex-shrink-0 w-5 h-5"
+                             fill="currentColor"
+                             viewBox="0 0 20 20"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        <div class="ml-3 text-sm font-medium">{{ message }}</div>
+                        <button type="button"
+                                onclick="removeErrors()"
+                                class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex h-8 w-8"
+                                data-dismiss-target="#alert-border-2"
+                                aria-label="Close">
+                            <span class="sr-only">Dismiss</span>
+                            <svg aria-hidden="true"
+                                 class="w-5 h-5"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                        </button>
+                    </div>
                 {% endif %}
-            </div>
-            <div class="bottom-links">
-                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/register_organization.html">
-                    <i class="fab fa-github"></i>
-                </a>
-                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-                    <i class="fab fa-figma"></i>
-                </a>
-            </div>
+            {% endfor %}
+        {% endif %}
+        <div class="p-4 text-right bg-[#F3F5F7]">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/register_organization.html"
+               class="ml-2 text-gray-600 hover:text-gray-900">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1"
+               class="ml-2 text-gray-600 hover:text-gray-900">
+                <i class="fab fa-figma"></i>
+            </a>
         </div>
     </body>
     <script>

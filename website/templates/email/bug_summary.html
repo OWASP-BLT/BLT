@@ -13,144 +13,80 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
               rel="stylesheet">
-        <style>
-        body {
-            font-family: "Montserrat", serif;
-            margin: 0;
-            padding: 0;
-        }
-        .email-container {
-            border: 1px solid #cccccc;
-            width: 100%;
-        }
-        .email-content {
-            width: 600px;
-            margin: 0 auto;
-            border: 1px solid #cccccc;
-            border-radius: 10px;
-        }
-        .email-header {
-            text-align: center;
-            padding: 16px 0;
-        }
-        .email-body {
-            padding: 20px;
-        }
-        .email-body h1 {
-            text-decoration: underline;
-        }
-        .email-footer {
-            padding: 10px;
-            background-color: black;
-            border-radius: 0 0 10px 10px;
-            text-align: center;
-        }
-        .email-footer a {
-            margin: 0 10px;
-        }
-        .spacer {
-            font-size: 0;
-            line-height: 0;
-            width: 20px;
-        }
-        .center-align {
-            text-align: center;
-        }
-        .left-align {
-            text-align: left;
-        }
-        .block-display {
-            display: block;
-        }
-        .email-footer table,.email-content img {
-            margin: 0 auto;
-        }
-        </style>
+        <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body>
-        <table class="email-container" cellpadding="0" cellspacing="0">
+    <body class="font-sans bg-gray-100 m-0 p-0">
+        <table class="w-full border border-gray-300" cellpadding="0" cellspacing="0">
             <tr>
                 <td>
-                    <table class="email-content" cellpadding="0" cellspacing="0">
+                    <table class="w-full max-w-[600px] mx-auto border border-gray-300 rounded-lg"
+                           cellpadding="0"
+                           cellspacing="0">
                         <tr>
-                            <td class="email-header center-align">
+                            <td class="text-center py-4">
                                 <img src="https://{% env 'FQDN' %}static/img/logo-large-transparent.png"
                                      alt="{% env 'PROJECT_NAME' %}"
                                      width="300"
                                      height="73"
-                                     class="block-display" />
+                                     class="block mx-auto" />
                             </td>
                         </tr>
                         <tr>
-                            <td class="email-body left-align">
+                            <td class="px-6 py-4 text-left">
                                 {% load humanize %}
-                                <h1>{% env 'PROJECT_NAME' %} {{ month }} Summary</h1>
-                                <br>
-                                The leaderboard has been reset, go forth and find bugs!
-                                <br>
-                                <br>
-                                {{ month }}'s Top 5 Bug Hunters
-                                <br>
-                                {% for leader in leaderboard %}
-                                    {{ forloop.counter|ordinal }} Place - <a href="https://{% env 'FQDN' %}/profile/{{ leader.username }}">{{ leader.username }}</a>
-                                    ({{ leader.total_score }} points)
-                                    <br>
-                                {% endfor %}
-                                <br>
-                                <br>
-                                <a href="https://{% env 'DOMAIN_NAME' %}/">Sponsor the Leaderboard</a>
-                                <br>
-                                (Click "Sponsor a Prize" on the leaderboard)
-                                <br>
-                                <br>
-                                <h2>--- {{month}} Stats ---</h2>
-                                <br>
-                                <br>
-                                <h4>Most Responsive Domains:</h4>
-                                {% for domain in responsive %}
-                                    {{ domain.url }} - {{ domain.modified|timesince }} ago
-                                    <br>
-                                {% endfor %}
-                                <br>
-                                <br>
-                                <h4>Most Closed Bugs:</h4>
-                                <br>
-                                {% for domain in closed_issues %}
-                                    {{ domain.url }} - {{ domain.count }} closed bugs
-                                    <br>
-                                {% endfor %}
-                                <br>
-                                <br>
-                                <h4>Most Open Bugs:</h4>
-                                <br>
-                                {% for domain in open_issues %}
-                                    {{ domain.url }} - {{ domain.count }} opened bugs
-                                    <br>
-                                {% endfor %}
-                                <br>
-                                <br>
-                                <h4>Most Viewed Bugs:</h4>
-                                <br>
-                                {% for issue in most_viewed %}
-                                    {{ issue.domain }} - {{ issue.description|truncatewords:20 }} (viewed {{ issue.views|default:"0" }} times)
-                                    <br>
-                                {% endfor %}
-                                <br>
-                                Keep your website bug free
-                                <br>
-                                <a href="https://{% env 'DOMAIN_NAME' %}/hunt">Sponsor a Bug Hunt Today</a>
-                                <br>
+                                <h1 class="text-2xl font-bold underline mb-4">{% env 'PROJECT_NAME' %} {{ month }} Summary</h1>
+                                <p class="mb-4">The leaderboard has been reset, go forth and find bugs!</p>
+                                <p class="mb-4">{{ month }}'s Top 5 Bug Hunters:</p>
+                                <ul class="mb-4">
+                                    {% for leader in leaderboard %}
+                                        <li class="mb-2">
+                                            {{ forloop.counter|ordinal }} Place - <a href="https://{% env 'FQDN' %}/profile/{{ leader.username }}"
+    class="text-blue-500 hover:text-blue-700">{{ leader.username }}</a> ({{ leader.total_score }} points)
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="mb-4">
+                                    <a href="https://{% env 'DOMAIN_NAME' %}/"
+                                       class="text-blue-500 hover:text-blue-700">Sponsor the Leaderboard</a>
+                                </p>
+                                <p class="mb-4">(Click "Sponsor a Prize" on the leaderboard)</p>
+                                <h2 class="text-xl font-bold mb-4">--- {{ month }} Stats ---</h2>
+                                <h4 class="text-lg font-bold mb-2">Most Responsive Domains:</h4>
+                                <ul class="mb-4">
+                                    {% for domain in responsive %}<li class="mb-2">{{ domain.url }} - {{ domain.modified|timesince }} ago</li>{% endfor %}
+                                </ul>
+                                <h4 class="text-lg font-bold mb-2">Most Closed Bugs:</h4>
+                                <ul class="mb-4">
+                                    {% for domain in closed_issues %}<li class="mb-2">{{ domain.url }} - {{ domain.count }} closed bugs</li>{% endfor %}
+                                </ul>
+                                <h4 class="text-lg font-bold mb-2">Most Open Bugs:</h4>
+                                <ul class="mb-4">
+                                    {% for domain in open_issues %}<li class="mb-2">{{ domain.url }} - {{ domain.count }} opened bugs</li>{% endfor %}
+                                </ul>
+                                <h4 class="text-lg font-bold mb-2">Most Viewed Bugs:</h4>
+                                <ul class="mb-4">
+                                    {% for issue in most_viewed %}
+                                        <li class="mb-2">
+                                            {{ issue.domain }} - {{ issue.description|truncatewords:20 }} (viewed {{ issue.views|default:"0" }} times)
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="mb-4">Keep your website bug free:</p>
+                                <p class="mb-4">
+                                    <a href="https://{% env 'DOMAIN_NAME' %}/hunt"
+                                       class="text-blue-500 hover:text-blue-700">Sponsor a Bug Hunt Today</a>
+                                </p>
                             </td>
                         </tr>
                         <tr>
-                            <td class="email-footer">
-                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <td class="bg-black text-white py-4 rounded-b-lg">
+                                <table class="w-full" cellpadding="0" cellspacing="0">
                                     <tr>
-                                        <td align="center">
-                                            <table border="0" cellpadding="0" cellspacing="0">
-                                                <tr border="0" align="center">
+                                        <td class="text-center">
+                                            <table class="inline-block" cellpadding="0" cellspacing="0">
+                                                <tr>
                                                     <td>
-                                                        <a href="{% env 'TWITTER_URL' %}">
+                                                        <a href="{% env 'TWITTER_URL' %}" class="inline-block mx-2">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  viewBox="0 0 448 512"
                                                                  width="30"
@@ -160,9 +96,9 @@
                                                             </svg>
                                                         </a>
                                                     </td>
-                                                    <td class="spacer">&nbsp;</td>
+                                                    <td class="w-5">&nbsp;</td>
                                                     <td>
-                                                        <a href="{% env 'FACEBOOK_URL' %}">
+                                                        <a href="{% env 'FACEBOOK_URL' %}" class="inline-block mx-2">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  viewBox="0 0 448 512"
                                                                  width="30"
@@ -172,9 +108,9 @@
                                                             </svg>
                                                         </a>
                                                     </td>
-                                                    <td class="spacer">&nbsp;</td>
+                                                    <td class="w-5">&nbsp;</td>
                                                     <td>
-                                                        <a href="{% env 'GITHUB_URL' %}">
+                                                        <a href="{% env 'GITHUB_URL' %}" class="inline-block mx-2">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  viewBox="0 0 448 512"
                                                                  width="30"

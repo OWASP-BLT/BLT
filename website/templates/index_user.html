@@ -6,194 +6,120 @@
 {% providers_media_js %}
 {% load i18n %}
 {% block content %}
-    <style type="text/css">
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-}
-
-.btn {
-  color: #ffffff;
-  padding: 0.8rem;
-  font-size: 14px;
-  text-transform: uppercase;
-  border-radius: 4px;
-  font-weight: 400;
-  display: block;
-  width: 100%;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
-}
-
-.btn:hover {
-  background-color: rgba(255, 255, 255, 0.12);
-}
-
-.cards {
-  display: flex;
-  flex-wrap: wrap;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.cards_item {
-  display: flex;
-  padding: 1rem;
-}
-
-@media (min-width: 40rem) {
-  .cards_item {
-    width: 50%;
-  }
-}
-
-@media (min-width: 56rem) {
-  .cards_item {
-    width: 33.3333%;
-  }
-}
-
-.card {
-  background-color: white;
-  border-radius: 0.25rem;
-  box-shadow: 0 20px 40px -14px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.card_content {
-  padding: 1rem;
-  background: linear-gradient(to bottom left, #EF8D9C 40%, #FFC39E 100%);
-}
-
-.card_title {
-  color: #ffffff;
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: capitalize;
-  margin: 0px;
-}
-
-.card_text {
-  color: #ffffff;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  margin-bottom: 1.25rem;    
-  font-weight: 400;
-}
-.bottom-right {
-  position: absolute;
-  bottom: 10px;
-  right: 15px;
-}    
-    </style>
     <section>
         {% include "includes/user_sidenav.html" %}
     </section>
-    <div>
+    <div class="p-4">
+        <!-- Upcoming Hunts -->
         {% if upcoming_hunts %}
-            <div class="col_3">
-                <h3 class="text-left blank1">Upcoming Hunt</h3>
-                <ul class="cards">
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold text-left mb-4">Upcoming Hunt</h3>
+                <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in upcoming_hunts %}
-                        <li class="cards_item">
-                            <div class="card">
+                        <li class="flex">
+                            <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                                 {% if hunt.logo %}
-                                    <div class="card_image">
+                                    <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ hunt.logo }}"
                                              alt="{{ hunt.name }}"
-                                             width="100%"
-                                             height="100%">
+                                             class="w-full h-full object-cover"
+                                             width="192"
+                                             height="108">
                                     </div>
                                 {% endif %}
-                                <div class="card_content">
-                                    <h2 class="card_title">{{ hunt.name }}</h2>
-                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Starts on {{ hunt.starts_on }}</p>
-                                    <a href="{% url 'view_hunt' hunt.pk %}">
-                                        <button class="btn card_btn">Read More</button>
+                                <div class="p-6 bg-gradient-to-br from-[#EF8D9C] to-[#FFC39E] flex-1 flex flex-col">
+                                    <h2 class="text-xl font-bold text-white mb-2">{{ hunt.name }}</h2>
+                                    <p class="text-sm text-white mb-4">
+                                        {{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Starts on {{ hunt.starts_on }}
+                                    </p>
+                                    <a href="{% url 'view_hunt' hunt.pk %}" class="mt-auto">
+                                        <button class="w-full py-2 px-4 text-white border border-white rounded-md hover:bg-white hover:text-[#EF8D9C] transition duration-200">
+                                            Read More
+                                        </button>
                                     </a>
                                 </div>
                             </div>
                         </li>
                     {% endfor %}
                 </ul>
-                <div class="clearfix"></div>
             </div>
         {% endif %}
-    </div>
-    <div>
+        <!-- Ongoing Hunts -->
         {% if ongoing_hunt %}
-            <div class="col_3">
-                <h3 class="text-left blank1">Ongoing Hunt</h3>
-                <ul class="cards">
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold text-left mb-4">Ongoing Hunt</h3>
+                <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in ongoing_hunt %}
-                        <li class="cards_item">
-                            <div class="card">
+                        <li class="flex">
+                            <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                                 {% if hunt.logo %}
-                                    <div class="card_image">
+                                    <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ hunt.logo }}"
                                              alt="{{ hunt.name }}"
-                                             width="100%"
-                                             height="100%">
+                                             class="w-full h-full object-cover"
+                                             width="192"
+                                             height="108">
                                     </div>
                                 {% endif %}
-                                <div class="card_content">
-                                    <h2 class="card_title">{{ hunt.name }}</h2>
-                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Already Started</p>
-                                    <a href="{% url 'view_hunt' hunt.pk %}">
-                                        <button class="btn card_btn">Read More</button>
+                                <div class="p-6 bg-gradient-to-br from-[#EF8D9C] to-[#FFC39E] flex-1 flex flex-col">
+                                    <h2 class="text-xl font-bold text-white mb-2">{{ hunt.name }}</h2>
+                                    <p class="text-sm text-white mb-4">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Already Started</p>
+                                    <a href="{% url 'view_hunt' hunt.pk %}" class="mt-auto">
+                                        <button class="w-full py-2 px-4 text-white border border-white rounded-md hover:bg-white hover:text-[#EF8D9C] transition duration-200">
+                                            Read More
+                                        </button>
                                     </a>
                                 </div>
                             </div>
                         </li>
                     {% endfor %}
                 </ul>
-                <div class="clearfix"></div>
             </div>
         {% endif %}
-    </div>
-    <div>
+        <!-- Previous Hunts -->
         {% if previous_hunt %}
-            <div class="col_3">
-                <h3 class="text-left blank1">Previous Hunt</h3>
-                <ul class="cards">
+            <div class="mb-8">
+                <h3 class="text-2xl font-bold text-left mb-4">Previous Hunt</h3>
+                <ul class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for hunt in previous_hunt %}
-                        <li class="cards_item">
-                            <div class="card">
+                        <li class="flex">
+                            <div class="bg-white rounded-lg shadow-xl overflow-hidden flex flex-col w-full">
                                 {% if hunt.logo %}
-                                    <div class="card_image">
+                                    <div class="w-full h-48 overflow-hidden">
                                         <img src="{{ hunt.logo }}"
                                              alt="{{ hunt.name }}"
-                                             width="100%"
-                                             height="100%">
+                                             class="w-full h-full object-cover"
+                                             width="192"
+                                             height="108">
                                     </div>
                                 {% endif %}
-                                <div class="card_content">
-                                    <h2 class="card_title">{{ hunt.name }}</h2>
-                                    <p class="card_text">{{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Ended on {{ hunt.end_on }}</p>
-                                    <a href="{% url 'view_hunt' hunt.pk %}">
-                                        <button class="btn card_btn">Read More</button>
+                                <div class="p-6 bg-gradient-to-br from-[#EF8D9C] to-[#FFC39E] flex-1 flex flex-col">
+                                    <h2 class="text-xl font-bold text-white mb-2">{{ hunt.name }}</h2>
+                                    <p class="text-sm text-white mb-4">
+                                        {{ hunt.domain.name }}, {{ hunt.domain.organization.name }} - Ended on {{ hunt.end_on }}
+                                    </p>
+                                    <a href="{% url 'view_hunt' hunt.pk %}" class="mt-auto">
+                                        <button class="w-full py-2 px-4 text-white border border-white rounded-md hover:bg-white hover:text-[#EF8D9C] transition duration-200">
+                                            Read More
+                                        </button>
                                     </a>
                                 </div>
                             </div>
                         </li>
                     {% endfor %}
                 </ul>
-                <div class="clearfix"></div>
             </div>
         {% endif %}
     </div>
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/index_user.html">
-            <i class="fab fa-github"></i>
+    <!-- Bottom-right icons -->
+    <div class="fixed bottom-4 right-4 flex gap-4">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/index_user.html"
+           class="text-gray-700 hover:text-gray-900">
+            <i class="fab fa-github text-2xl"></i>
         </a>
-        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1350&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
+        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1350&t=pqxWpF3hcYxjEDrs-1"
+           class="text-gray-700 hover:text-gray-900">
+            <i class="fab fa-figma text-2xl"></i>
         </a>
     </div>
 {% endblock content %}

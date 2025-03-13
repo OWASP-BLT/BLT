@@ -16,14 +16,7 @@
     Easily view, add, edit, or delete domains. Keep your domain list organized and up-to-date with our management tools.
 {% endblock og_description %}
 {% block body %}
-    <style>
-      .bottom-right {
-          position: absolute;
-          bottom: 10px;
-          right: 15px;
-      }
-    </style>
-    <div class="bottom-right">
+    <div class="fixed bottom-2.5 right-3.75">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_domains.html">
             <i class="fab fa-github"></i>
         </a>
@@ -42,10 +35,9 @@
             </div>
         </div>
         <div class="w-[96%] max-h-[70vh] p-4 mt-10 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
-            <div class="flex items-center justify-between mb-4 ">
+            <div class="flex items-center justify-between mb-4">
                 <h5 class="text-xl font-bold leading-none text-gray-900">All Domains</h5>
-                <a href="#"
-                   class="text-sm font-medium text-blue-600 hover:underline dark:text-blue-500">View all</a>
+                <a href="#" class="text-sm font-medium text-blue-600 hover:underline">View all</a>
             </div>
             <div class="flow-root h-full mt-5">
                 <ul role="list" class="divide-y divide-gray-200 px-5 overflow-y-scroll">
@@ -61,9 +53,9 @@
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 truncate">{{ domain.name | capfirst }}</p>
-                                    <p class="text-sm text-gray-500 truncate dark:text-gray-400">{{ domain.url }}</p>
+                                    <p class="text-sm text-gray-500 truncate">{{ domain.url }}</p>
                                 </div>
-                                <div class="inline-flex items-center text-base font-semibold text-gray-900 ">
+                                <div class="inline-flex items-center text-base font-semibold text-gray-900">
                                     <a href="{% url 'edit_domain' organization domain.id %}">Edit</a>
                                     <a class="ml-4" href="{% url 'view_domain' domain.id %}">View</a>
                                     <form id="deleteForm"

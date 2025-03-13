@@ -17,165 +17,25 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        .report-container {
-            margin-top: 20px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-        }
-    
-        .report-card {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-    
-        .report-card:hover {
-            background-color: #f2f2f2;
-        }
-    
-        .ip-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-weight: bold;
-}
-.ip-info {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-}
-.ip-address {
-    font-size: 1.1em;
-    font-weight: bold;
-    margin-right: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-    
-        .expand-icon {
-            font-size: 1.5em; 
-            color: #333;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px; 
-            transition: transform 0.3s ease; 
-        }
-    
-        .user-info {
-            display: flex;
-            align-items: center;
-            font-size: 0.9em;
-            color: #555;
-            margin-top: 5px;
-        }
-    
-        .user-info i {
-            margin-right: 5px;
-        }
-    
-        .description-content {
-            max-height: 0;
-            overflow: hidden; 
-            background-color: #eeeeee;
-            margin-top: 10px;
-            padding: 0 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            font-size: 0.95em;
-            transition: max-height 0.5s ease, padding 0.5s ease;
-        }
-
-        .description-content.show {
-        max-height: 200px; 
-        padding: 10px;
-        overflow-y: auto; 
-    }
-    
-        .reason {
-            font-weight: bold;
-        }
-    
-        .icon-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            font-size: 1.2em;
-        }
-        .activity-type {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-}
-
-.activity-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    margin-right: 8px;
-}
-
-.red-dot {
-    background-color: red;
-}
-
-.green-dot {
-    background-color: green;
-}
-
-.activity-text {
-    font-weight: bold;
-    font-size: 1.4rem;
-    color: #333;
-}
-a.floating-report-ip-button {
-    position: fixed;
-    bottom: 50px;
-    left: 220px;
-    padding: 10px 15px;
-    background-color: #c51919; /* Red background */
-    color: #fff; /* White text */
-    text-decoration: none;
-    border-radius: 5px;
-    font-weight: bold;
-    display: inline-flex;
-    align-items: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: transform 0.3s ease;
-    z-index: 1000;
-}
-
-a.floating-report-ip-button:hover {
-    transform: scale(1.1); /* Hover effect */
-}
-
-a.floating-report-ip-button i {
-    margin-right: 6px;
-}
-    </style>
-    <div class="report-container">
+    <div class="report-container mt-5 grid grid-cols-1 gap-4">
         {% for ip in reported_ips %}
-            <div class="report-card" onclick="toggleExpand(this)">
-                <div class="ip-header">
-                    <span class="ip-address">{{ ip.ip_address }}</span>
-                    <div class="activity-type">
-                        <!-- Display activity type with the respective color dot -->
-                        <span class="activity-dot {% if ip.activity_type == 'malicious' %}red-dot{% else %}green-dot{% endif %}"></span>
-                        <span class="activity-text">{{ ip.activity_type|capfirst }}</span>
+            <div class="report-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-colors duration-300 hover:bg-gray-100"
+                 onclick="toggleExpand(this)">
+                <div class="ip-header flex items-center justify-between font-bold">
+                    <div class="ip-info flex items-center flex-grow">
+                        <span class="ip-address text-lg font-bold mr-2 truncate">{{ ip.ip_address }}</span>
                     </div>
-                    <span class="expand-icon">⬇</span>
+                    <div class="activity-type flex items-center ml-auto">
+                        <span class="activity-dot w-2.5 h-2.5 rounded-full mr-2 {% if ip.activity_type == 'malicious' %}bg-red-500{% else %}bg-green-500{% endif %}"></span>
+                        <span class="activity-text font-bold text-gray-700 text-xl">{{ ip.activity_type|capfirst }}</span>
+                    </div>
+                    <span class="expand-icon text-2xl text-gray-700 flex items-center justify-center w-8 transition-transform duration-300">⬇</span>
                 </div>
-                <div class="user-info">
-                    <i class="fas fa-user"></i> {{ ip.user.username|default:"Anonymous" }} - {{ ip.created|date:"M d, Y" }}
+                <div class="user-info flex items-center text-sm text-gray-600 mt-1">
+                    <i class="fas fa-user mr-1"></i> {{ ip.user.username|default:"Anonymous" }} - {{ ip.created|date:"M d, Y" }}
                 </div>
-                <div class="description-content">
-                    <p class="reason">Reason: {{ ip.activity_title }}</p>
+                <div class="description-content max-h-0 overflow-hidden bg-gray-100 mt-2 px-3 rounded-lg border border-gray-200 text-sm transition-all duration-500">
+                    <p class="reason font-bold">Reason: {{ ip.activity_title }}</p>
                     <p>{{ ip.description|default:"No additional details provided." }}</p>
                 </div>
             </div>
@@ -200,34 +60,36 @@ a.floating-report-ip-button i {
             {% endif %}
         </div>
     </div>
-    <div class="bottom-right">
-        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/reported_ips_list.html">
-            <i class="fab fa-github"></i>
+    <div class="bottom-right fixed bottom-4 right-4">
+        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/reported_ips_list.html"
+           class="mr-2">
+            <i class="fab fa-github text-2xl text-gray-700"></i>
         </a>
         <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1">
-            <i class="fab fa-figma"></i>
+            <i class="fab fa-figma text-2xl text-gray-700"></i>
         </a>
     </div>
-    <a href="{% url 'report_ip' %}" class="floating-report-ip-button">
-        <i class="fas fa-exclamation-triangle"></i> Report an IP
+    <a href="{% url 'report_ip' %}"
+       class="floating-report-ip-button fixed bottom-12 left-56 px-4 py-2 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:scale-110 transition-transform duration-300 z-50">
+        <i class="fas fa-exclamation-triangle mr-2"></i> Report an IP
     </a>
     <script>
-    function toggleExpand(card) {
-        const descriptionContent = card.querySelector(".description-content");
-        const icon = card.querySelector(".expand-icon");
-        const isExpanded = descriptionContent.classList.contains("show");
-
-        if (isExpanded) {
-            descriptionContent.classList.remove("show");
-            icon.textContent = "⬇";
-            icon.setAttribute("aria-expanded", "false");
-            icon.style.transform = "rotate(0deg)"; // Reset rotation
-        } else {
-            descriptionContent.classList.add("show");
-            icon.textContent = "⬇";
-            icon.setAttribute("aria-expanded", "true");
-            icon.style.transform = "rotate(180deg)"; // Rotate 90 degrees
+        function toggleExpand(card) {
+            const descriptionContent = card.querySelector(".description-content");
+            const icon = card.querySelector(".expand-icon");
+            const isExpanded = descriptionContent.classList.contains("max-h-48");
+    
+            if (isExpanded) {
+                descriptionContent.classList.remove("max-h-48", "px-3", "py-3");
+                descriptionContent.classList.add("max-h-0");
+                icon.style.transform = "rotate(0deg)"; 
+                icon.setAttribute("aria-expanded", "false");
+            } else {
+                descriptionContent.classList.remove("max-h-0");
+                descriptionContent.classList.add("max-h-48", "px-3", "py-3");
+                icon.style.transform = "rotate(180deg)"; 
+                icon.setAttribute("aria-expanded", "true");
+            }
         }
-    }
     </script>
 {% endblock content %}

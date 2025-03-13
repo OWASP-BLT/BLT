@@ -17,92 +17,15 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-        }
-
-        #submit_pr{
-            max-width: 400px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        #label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        #bch_label, #pr_label {
-            display: none;
-        }
-
-
-        #issue_link, #bid_amount {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-
-        #fetch,#submit {
-            padding: 8px 15px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-        }
-
-        #BidDisplay {
-            margin-bottom: 10px;
-        }
-        #pr_link,#bch_address {
-            display: none;
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-        #Link_bid {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        #Link_bid a {
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
-            background-color:  #e53e3e; 
-            color: #000;
-            text-decoration: none;
-        }
-
-        #invalidUrlMessage{
-            display: none;
-        }
-    </style>
     <script>
-        function fetchData(){
+        function fetchData() {
             const issueUrl = document.getElementById('issue_link').value;
             const csrftoken = getCookie('csrftoken');
             const githubUrlPattern = /^https?:\/\/github\.com\/.*$/i;
             if (!githubUrlPattern.test(issueUrl)) {
                 document.getElementById('invalidUrlMessage').style.display = "block";
                 return;
-            }
-            else {
+            } else {
                 document.getElementById('invalidUrlMessage').style.display = "none";
             }
             fetch(`/fetch-current-bid/`, {
@@ -115,31 +38,28 @@
             })
             .then(response => response.json())
             .then(data => {
-                if('current_bid' in data) {
+                if ('current_bid' in data) {
                     const currentBid = data.current_bid;
                     const status = data.status;
-                    if(status === "Selected") { 
+                    if (status === "Selected") { 
                         document.getElementById('pr_label').style.display = "block";
                         document.getElementById('bch_label').style.display = "block";
                         document.getElementById('pr_link').style.display = "block";
                         document.getElementById('bch_address').style.display = "block";
-                    }
-                    else if (status === "Submitted") {
+                    } else if (status === "Submitted") {
                         document.getElementById('pr_label').style.display = "block";
-                        document.getElementById('pr_label').textContent="PR is submitted , Please contact your repository head ";
-                    }
-                    else{
+                        document.getElementById('pr_label').textContent = "PR is submitted, Please contact your repository head";
+                    } else {
                         document.getElementById('pr_label').style.display = "block";
                         document.getElementById('pr_link').style.display = "none";
-                        document.getElementById('pr_label').textContent="Bid is not selected : Status is Open/Closed";
+                        document.getElementById('pr_label').textContent = "Bid is not selected: Status is Open/Closed";
                     }
                     document.getElementById('bid_amount').value = currentBid;
-                    document.getElementById('BidDisplay').innerHTML = `CurrentBid: ${currentBid} <br>`;
-                }
-                else{
+                    document.getElementById('BidDisplay').innerHTML = `Current Bid: ${currentBid} <br>`;
+                } else {
                     document.getElementById('BidDisplay').innerHTML = 'No current bid';
                 }
-            })
+            });
         }
 
         function getCookie(name) {
@@ -156,25 +76,48 @@
             }
             return cookieValue;
         }
-
     </script>
-    <div>
-        <form id="submit_pr"action="{% url 'submit_pr' %}" method="post">
+    <div class="min-h-screen font-sans">
+        <form id="submit_pr"
+              action="{% url 'submit_pr' %}"
+              method="post"
+              class="max-w-sm mx-auto mt-8 p-6 bg-white rounded shadow-md">
             {% csrf_token %}
-            <label id="label">Issue Link</label>
-            <input type="text" name="issue_link" id="issue_link">
-            <button id="fetch" type="button" onclick="fetchData()">Fetch data</button>
-            <p id="invalidUrlMessage">Please enter a valid GitHub link</p>
-            <p id="BidDisplay"></p>
+            <label for="issue_link" class="block mb-2 font-bold">Issue Link</label>
+            <input type="text"
+                   name="issue_link"
+                   id="issue_link"
+                   class="w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+            <button id="fetch"
+                    type="button"
+                    onclick="fetchData()"
+                    class="w-full px-4 py-2 mb-4 text-white bg-blue-500 rounded hover:bg-blue-600 transition duration-300">
+                Fetch Data
+            </button>
+            <p id="invalidUrlMessage" class="hidden text-red-500 text-sm">Please enter a valid GitHub link</p>
+            <p id="BidDisplay" class="mb-4"></p>
             <input type="hidden" name="bid_amount" id="bid_amount">
-            <label id="bch_label">Add you BCH Address</label>
-            <input type="text" name="bch_address" id="bch_address" required>
-            <label id="pr_label">Link to your Pull Request</label>
-            <input type="text" name="pr_link" id="pr_link" required>
-            <button type="submit" id="submit">Submit</button>
+            <label for="bch_address" id="bch_label" class="hidden block mb-2 font-bold">Add your BCH Address</label>
+            <input type="text"
+                   name="bch_address"
+                   id="bch_address"
+                   required
+                   class="hidden w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+            <label for="pr_link" id="pr_label" class="hidden block mb-2 font-bold">Link to your Pull Request</label>
+            <input type="text"
+                   name="pr_link"
+                   id="pr_link"
+                   required
+                   class="hidden w-full px-3 py-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+            <button type="submit"
+                    id="submit"
+                    class="w-full px-4 py-2 text-white bg-blue-500 rounded hover:bg-blue-600 transition duration-300">
+                Submit
+            </button>
         </form>
-    </div>
-    <div id="Link_bid">
-        <a href="{% url 'BiddingData' %}">Place a Bid</a>
+        <div id="Link_bid" class="text-center mt-8">
+            <a href="{% url 'BiddingData' %}"
+               class="inline-block px-6 py-3 bg-red-500 text-black rounded hover:bg-red-600 transition duration-300">Place a Bid</a>
+        </div>
     </div>
 {% endblock content %}

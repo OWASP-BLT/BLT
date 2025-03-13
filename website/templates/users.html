@@ -16,76 +16,47 @@
 {% block og_description %}
     Dive into our community and meet our members. View profiles, learn about their roles, and get in touch to build meaningful connections.
 {% endblock og_description %}
-{% block style %}
-    <style type="text/tailwindcss">
-     @layer components {
-      .social-icon {
-        @apply text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl;
-      }
-      .profile-button {
-        @apply mt-4 px-6 py-2.5 bg-white text-[#e74c3c] border border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200 font-medium text-sm;
-      }
-      .tag-count {
-        @apply ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px];
-      }
-      .tag-link {
-        @apply inline-flex items-center px-5 py-2.5 rounded-full transition-all duration-300 ease-in-out font-medium text-sm hover:shadow-lg hover:scale-105 transform;
-      }
-      .tag-link.active {
-        @apply bg-[#e74c3c] text-white;
-      }
-      .tag-link.active .tag-count {
-        @apply bg-white/20 text-white;
-      }
-      .tag-link.inactive {
-        @apply bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200;
-      }
-      .tag-link.inactive .tag-count {
-        @apply bg-gray-100 text-gray-600;
-      }
-    }
-    </style>
-    <!--Tailwind CSS-->
-    <!--Font-Awesome-->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-          integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA=="
-          crossorigin="anonymous"
-          referrerpolicy="no-referrer" />
-{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container py-8 min-h-[100vh]">
+        <!-- Hero Section -->
         <div class="flex flex-col text-center gap-6 mb-12 px-4 py-8 max-w-7xl mx-auto">
             <div class="w-full flex flex-col items-center space-y-6">
                 <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">Explore Our Community Members</h1>
-                <p class="text-lg md:text-xl lg:text-2xl bg-[#e74c3c] text-white px-6 py-3 rounded-xl shadow-md transform hover:scale-105 transition-transform duration-200">
+                <p class="text-lg md:text-xl lg:text-2xl bg-[#e74c3c] text-white px-6 py-3 rounded-xl shadow-md hover:scale-105 transition-transform duration-200">
                     A warm and welcoming collection of open sourcers
                 </p>
             </div>
         </div>
-        <!-- Filter tags section -->
+        <!-- Filter Tags Section -->
         <div class="flex flex-wrap items-center justify-center gap-4 my-12 px-4 max-w-5xl mx-auto">
             <a href="?contributors=true"
-               class="tag-link {% if show_contributors %}active{% else %}inactive{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if show_contributors %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
                 <i class="fas fa-users mr-2"></i>
                 <span>OWASP Contributors</span>
-                <span class="tag-count">{{ contributors_count }}</span>
+                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if show_contributors %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
+                    {{ contributors_count }}
+                </span>
             </a>
             <a href="?githubbers=true"
-               class="tag-link {% if githubbers %}active{% else %}inactive{% endif %}">
+               class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if githubbers %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
                 <i class="fab fa-github mr-2"></i>
                 <span>Githubbers</span>
-                <span class="tag-count">{{ users_with_github_count }}</span>
+                <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if githubbers %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
+                    {{ users_with_github_count }}
+                </span>
             </a>
             {% for tag_obj in tags_with_counts %}
                 <a href="?tag={{ tag_obj.name }}"
-                   class="tag-link {% if tag_obj.name == tag %}active{% else %}inactive{% endif %}">
+                   class="inline-flex items-center px-5 py-2.5 rounded-full font-medium text-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 transform {% if tag_obj.name == tag %}bg-[#e74c3c] text-white{% else %}bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200{% endif %}">
                     <span>{{ tag_obj.name }}</span>
-                    <span class="tag-count">{{ tag_obj.user_count }}</span>
+                    <span class="ml-3 px-2.5 py-0.5 text-sm rounded-full inline-flex items-center justify-center min-w-[24px] {% if tag_obj.name == tag %}bg-white/20 text-white{% else %}bg-gray-100 text-gray-600{% endif %}">
+                        {{ tag_obj.user_count }}
+                    </span>
                 </a>
             {% endfor %}
         </div>
+        <!-- User Cards Section -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto px-4 pb-12">
             {% if show_contributors %}
                 {% for contributor in contributors %}
@@ -103,14 +74,14 @@
                             <a href="{{ contributor.github_url }}"
                                target="_blank"
                                rel="noopener noreferrer"
-                               class="text-gray-600 hover:text-red-500 transition-colors">
+                               class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200">
                                 <i class="fab fa-github fa-lg"></i>
                             </a>
                         </div>
                         <a href="{{ contributor.github_url }}"
                            target="_blank"
                            rel="noopener noreferrer"
-                           class="mt-4 px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors font-medium">
+                           class="mt-4 px-6 py-2.5 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium text-sm">
                             View Profile
                         </a>
                     </div>
@@ -141,9 +112,9 @@
                                  height="100px"
                                  alt="user image" />
                         {% endif %}
-                        <div class="transition duration-200 group-hover:text-red-500 text-gray-900 text-4xl font-bold">
+                        <div class="transition duration-200 group-hover:text-[#e74c3c] text-gray-900 text-4xl font-bold">
                             <a href="{% url 'profile' slug=user.user.username %}"
-                               class="profile-link transition duration-200 hover:text-red-500">{{ user.user.username }}</a>
+                               class="transition duration-200 hover:text-[#e74c3c]">{{ user.user.username }}</a>
                         </div>
                         <div class="text-purple-600 text-2xl">{{ user.role }}</div>
                         {% if user.discounted_hourly_rate %}
@@ -157,7 +128,7 @@
                                 <a href="{{ user.x_username }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="social-icon">
+                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-brands fa-x-twitter"></i>
                                 </a>
                             {% endif %}
@@ -165,7 +136,7 @@
                                 <a href="{{ user.linkedin_url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="social-icon">
+                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-brands fa-linkedin"></i>
                                 </a>
                             {% endif %}
@@ -173,7 +144,7 @@
                                 <a href="{{ user.github_url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="social-icon">
+                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-brands fa-github"></i>
                                 </a>
                             {% endif %}
@@ -181,13 +152,15 @@
                                 <a href="{{ user.website_url }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   class="social-icon">
+                                   class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 text-xl">
                                     <i class="fa-solid fa-globe"></i>
                                 </a>
                             {% endif %}
                         </div>
                         <a href="{% url 'profile' slug=user.user.username %}"
-                           class="profile-button">View Profile</a>
+                           class="mt-4 px-6 py-2.5 bg-white text-[#e74c3c] border border-[#e74c3c] rounded-lg hover:bg-[#e74c3c] hover:text-white transition-all duration-200 font-medium text-sm">
+                            View Profile
+                        </a>
                     </div>
                 {% endfor %}
             {% endif %}
