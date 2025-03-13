@@ -5,51 +5,7 @@
 {% block extra_head %}
     <style>
         .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #f3f4f6;
-            padding: 20px;
-        }
-        .auth-card {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            max-width: 400px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-        }
-        .auth-input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .auth-input:focus {
-            border-color: #ef4444;
-        }
-        .auth-button {
-            width: 100%;
-            padding: 10px;
-            background-color: #ef4444;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .auth-button:hover {
-            background-color: #dc2626;
-        }
-        .auth-footer {
-            text-align: center;
-            margin-top: 10px;
+            /* Your styles here */
         }
     </style>
 {% endblock extra_head %}
@@ -57,11 +13,19 @@
 {% block content %}
     <div class="auth-container">
         <div class="auth-card">
-            <h2 class="text-center text-2xl font-semibold">{% block auth_title %}{% endblock auth_title %}</h2>
-            <p class="text-center text-gray-500">{% block auth_description %}{% endblock auth_description %}</p>
-            {% block auth_form %}{% endblock auth_form %}
+            <h2 class="text-center text-2xl font-semibold">
+                {% block auth_title %}
+                {% endblock auth_title %}
+            </h2>
+            <p class="text-center text-gray-500">
+                {% block auth_description %}
+                {% endblock auth_description %}
+            </p>
+            {% block auth_form %}
+            {% endblock auth_form %}
             <div class="auth-footer">
-                {% block auth_footer %}{% endblock auth_footer %}
+                {% block auth_footer %}
+                {% endblock auth_footer %}
             </div>
         </div>
     </div>
