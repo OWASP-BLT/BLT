@@ -6,7 +6,7 @@ from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
 
-MAX_COUNT = 2147483647  # Maximum value for the count field
+MAX_COUNT = 2147483647
 
 
 class IPRestrictMiddleware:
@@ -46,7 +46,7 @@ class IPRestrictMiddleware:
                 network = ipaddress.ip_network(range_str, strict=False)
                 blocked_ip_network.append(network)
             except ValueError:
-                # Skip invalid networks
+                # Log the error or handle it as needed, but skip invalid networks
                 continue
 
         return blocked_ip_network
@@ -75,7 +75,8 @@ class IPRestrictMiddleware:
 
     def is_user_agent_blocked(self, user_agent, blocked_agents):
         """
-        Check if the user agent is in the list of blocked user agents.
+        Check if the user agent is in the list of blocked user agents by checking if the
+        full user agent string contains any of the blocked substrings.
         """
         if not user_agent or not blocked_agents:
             return False
@@ -89,53 +90,30 @@ class IPRestrictMiddleware:
         """
         Increment the block count for a specific IP, network, or user agent in the Blocked model.
         """
-        if ip:
-            blocked_entry = Blocked.objects.select_for_update().filter(address=ip).first()
-        elif network:
-            blocked_entry = Blocked.objects.select_for_update().filter(ip_network=network).first()
-        elif user_agent:
-            # Find if any user_agent_string is a substring of the user_agent
-            blocked_entry = (
-                Blocked.objects.select_for_update()
-                .filter(
-                    user_agent_string__in=[
-                        agent
-                        for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                        if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
-                    ]
+        with transaction.atomic():
+            if ip:
+                blocked_entry = Blocked.objects.select_for_update().filter(address=ip).first()
+            elif network:
+                blocked_entry = Blocked.objects.select_for_update().filter(ip_network=network).first()
+            elif user_agent:
+                # Correct lookup: find if any user_agent_string is a substring of the user_agent
+                blocked_entry = (
+                    Blocked.objects.select_for_update()
+                    .filter(
+                        user_agent_string__in=[
+                            agent
+                            for agent in Blocked.objects.values_list("user_agent_string", flat=True)
+                            if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
+                        ]
+                    )
+                    .first()
                 )
-                .first()
-            )
-        else:
-            return  # Nothing to increment
+            else:
+                return  # Nothing to increment
 
-        if blocked_entry:
-            blocked_entry.count = models.F("count") + 1
-            blocked_entry.save(update_fields=["count"])
-
-    def _update_or_create_ip_record(self, ip, agent, path):
-        """
-        Helper method to update or create an IP record.
-        """
-        ip_records = IP.objects.select_for_update().filter(address=ip, path=path)
-        if ip_records.exists():
-            ip_record = ip_records.first()
-
-            # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
-            new_count = ip_record.count + 1
-            if new_count > MAX_COUNT:
-                new_count = MAX_COUNT
-
-            ip_record.agent = agent
-            ip_record.count = new_count
-            if ip_record.pk:
-                ip_record.save(update_fields=["agent", "count"])
-
-            # Delete duplicate records
-            ip_records.exclude(pk=ip_record.pk).delete()
-        else:
-            # If no record exists, create a new one
-            IP.objects.create(address=ip, agent=agent, count=1, path=path)
+            if blocked_entry:
+                blocked_entry.count = models.F("count") + 1
+                blocked_entry.save(update_fields=["count"])
 
     def __call__(self, request):
         ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
@@ -145,24 +123,45 @@ class IPRestrictMiddleware:
         blocked_ip_network = self.blocked_ip_network()
         blocked_agents = self.blocked_agents()
 
-        # Check if the IP, network, or user agent is blocked
         if self.ip_in_ips(ip, blocked_ips):
-            transaction.on_commit(lambda: self.increment_block_count(ip=ip))
+            self.increment_block_count(ip=ip)
             return HttpResponseForbidden()
 
         if self.ip_in_range(ip, blocked_ip_network):
+            # Find the specific network that caused the block and increment its count
             for network in blocked_ip_network:
                 if ipaddress.ip_address(ip) in network:
-                    transaction.on_commit(lambda: self.increment_block_count(network=str(network)))
+                    self.increment_block_count(network=str(network))
                     break
             return HttpResponseForbidden()
 
         if self.is_user_agent_blocked(agent, blocked_agents):
-            transaction.on_commit(lambda: self.increment_block_count(user_agent=agent))
+            self.increment_block_count(user_agent=agent)
             return HttpResponseForbidden()
 
-        # Update or create IP record (deferred until after the main transaction commits)
         if ip:
-            transaction.on_commit(lambda: self._update_or_create_ip_record(ip, agent, request.path))
+            with transaction.atomic():
+                # create unique entry for every unique (ip,path) tuple
+                # if this tuple already exists, we just increment the count.
+                ip_records = IP.objects.select_for_update().filter(address=ip, path=request.path)
+                if ip_records.exists():
+                    ip_record = ip_records.first()
+
+                    # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
+                    new_count = ip_record.count + 1
+                    if new_count > MAX_COUNT:
+                        new_count = MAX_COUNT
+
+                    ip_record.agent = agent
+                    ip_record.count = new_count
+                    if ip_record.pk:
+                        ip_record.save(update_fields=["agent", "count"])
+
+                    # Check if a transaction is already active before starting a new one
+                    if not transaction.get_autocommit():
+                        ip_records.exclude(pk=ip_record.pk).delete()
+                else:
+                    # If no record exists, create a new one
+                    IP.objects.create(address=ip, agent=agent, count=1, path=request.path)
 
         return self.get_response(request)
