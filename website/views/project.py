@@ -42,8 +42,6 @@ from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
-
-# Helper function to parse date
 def parse_date(date_str):
     """Parse GitHub API date string to datetime object"""
     return parse_datetime(date_str) if date_str else None
@@ -53,13 +51,12 @@ def repo_activity_data(request, slug):
     """API endpoint for repository activity data"""
     repo = get_object_or_404(Repo, slug=slug)
     owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
-    owner, repo_name = owner_repo.split('/')
-    
+    owner, repo_name = owner_repo.split("/")  # Changed single quotes to double quotes
+
     # Get activity data
     activity_data = RepoDetailView().fetch_activity_data(owner, repo_name)
-    
-    return JsonResponse(activity_data)
 
+    return JsonResponse(activity_data)
 
 def blt_tomato(request):
     current_dir = Path(__file__).parent.parent
