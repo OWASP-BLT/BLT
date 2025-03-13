@@ -149,9 +149,7 @@ class MySeleniumTests(LiveServerTestCase):
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
         # Add explicit wait for the URL input field
-        url_input = WebDriverWait(self.selenium, 30).until(
-            EC.presence_of_element_located((By.NAME, "url"))
-        )
+        url_input = WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.NAME, "url")))
         url_input.send_keys("https://blt.owasp.org/report/")
         self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
         self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
