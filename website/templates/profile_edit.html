@@ -18,7 +18,7 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <div class="max-w-4xl mx-auto">
+        <div class="lg:max-w-[1700px] mx-auto">
             <!-- Header -->
             <div class="text-center mb-12">
                 <h2 class="text-3xl font-bold text-gray-900">Edit Profile</h2>
@@ -27,7 +27,7 @@
             <!-- Main Form -->
             <form method="post"
                   enctype="multipart/form-data"
-                  class="bg-white rounded-2xl shadow-xl p-8">
+                  class=" bg-white rounded-xl w-full border border-gray-200 shadow-md py-10 px-8">
                 {% csrf_token %}
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Left Column -->
@@ -47,7 +47,7 @@
                                     </div>
                                 {% endif %}
                                 <label for="id_user_avatar"
-                                       class="absolute bottom-0 right-0 bg-[#e74c3c] text-white p-2 rounded-full cursor-pointer hover:bg-red-700 transition-colors">
+                                       class="absolute bottom-0 right-0 bg-[#e74c3c] text-white px-3 py-2 rounded-full cursor-pointer hover:bg-red-700 transition-colors">
                                     <i class="fas fa-camera"></i>
                                 </label>
                                 <input type="file"
@@ -66,7 +66,7 @@
                                        name="role"
                                        id="id_role"
                                        value="{{ form.role.value }}"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="e.g., Security Researcher">
                             </div>
                             <div>
@@ -75,7 +75,7 @@
                                 <textarea name="description"
                                           id="id_description"
                                           rows="4"
-                                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                          class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                           placeholder="Tell us about yourself...">{{ form.description.value }}</textarea>
                             </div>
                         </div>
@@ -91,7 +91,7 @@
                                        name="discounted_hourly_rate"
                                        id="id_discounted_hourly_rate"
                                        value="{{ form.discounted_hourly_rate.value }}"
-                                       class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="0.00">
                             </div>
                         </div>
@@ -108,7 +108,7 @@
                                                name="linkedin_url"
                                                id="id_linkedin_url"
                                                value="{{ form.linkedin_url.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="https://linkedin.com/in/username">
                                     </div>
                                 </div>
@@ -121,7 +121,7 @@
                                                name="github_url"
                                                id="id_github_url"
                                                value="{{ form.github_url.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="https://github.com/username">
                                     </div>
                                 </div>
@@ -134,7 +134,7 @@
                                                name="x_username"
                                                id="id_x_username"
                                                value="{{ form.x_username.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="@username">
                                     </div>
                                 </div>
@@ -147,20 +147,20 @@
                                                name="website_url"
                                                id="id_website_url"
                                                value="{{ form.website_url.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="https://yourwebsite.com">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <!-- Issues Hidden -->
-                        <div class="flex items-center">
+                        <div class="flex items-center ">
                             <input type="checkbox"
                                    name="issues_hidden"
                                    id="id_issues_hidden"
                                    class="h-5 w-5 text-[#e74c3c] border-gray-300 rounded focus:ring-[#e74c3c]"
                                    {% if form.issues_hidden.value %}checked{% endif %}>
-                            <label for="id_issues_hidden" class="ml-3 text-sm font-medium text-gray-700">Hide Issues</label>
+                            <p for="id_issues_hidden" class="ml-3 text-sm font-medium text-gray-700">Hide Issues</p>
                         </div>
                     </div>
                     <!-- Right Column -->
@@ -174,7 +174,7 @@
                                        name="email"
                                        id="id_email"
                                        value="{{ form.email.value|default_if_none:'' }}"
-                                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        required>
                             </div>
                             {% if form.email.errors %}<div class="mt-2 text-sm text-red-600">{{ form.email.errors }}</div>{% endif %}
@@ -192,7 +192,7 @@
                                                name="btc_address"
                                                id="id_btc_address"
                                                value="{{ form.btc_address.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="BTC Address">
                                     </div>
                                 </div>
@@ -205,7 +205,7 @@
                                                name="bch_address"
                                                id="id_bch_address"
                                                value="{{ form.bch_address.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="BCH Address">
                                     </div>
                                 </div>
@@ -218,7 +218,7 @@
                                                name="eth_address"
                                                id="id_eth_address"
                                                value="{{ form.eth_address.value|default_if_none:'' }}"
-                                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                               class="w-full placeholder:text-base pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                                placeholder="ETH Address">
                                     </div>
                                 </div>
@@ -230,7 +230,7 @@
                             <div class="relative">
                                 <input type="text"
                                        id="tagSearch"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="Search tags...">
                             </div>
                             <div id="tagContainer"
@@ -259,27 +259,25 @@
                             <div class="relative">
                                 <input type="text"
                                        id="domainSearch"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="Search domains...">
                             </div>
                             <div id="domainContainer"
                                  class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
                                 <div class="flex flex-wrap gap-2">
                                     {% for domain in form.subscribed_domains.field.queryset %}
-                                        {% if domain.id in form.subscribed_domains.value %}
-                                            <div class="domain-item">
-                                                <input type="checkbox"
-                                                       name="subscribed_domains"
-                                                       value="{{ domain.id }}"
-                                                       id="domain_{{ domain.id }}"
-                                                       class="hidden"
-                                                       checked>
-                                                <label for="domain_{{ domain.id }}"
-                                                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-[#e74c3c] text-white hover:bg-red-700 transition-colors">
-                                                    {{ domain.name }}
-                                                </label>
-                                            </div>
-                                        {% endif %}
+                                        <div class="domain-item">
+                                            <input type="checkbox"
+                                                   name="subscribed_domains"
+                                                   value="{{ domain.id }}"
+                                                   id="domain_{{ domain.id }}"
+                                                   class="hidden"
+                                                   {% if domain.id in form.subscribed_domains.value %}checked{% endif %}>
+                                            <label for="domain_{{ domain.id }}"
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if domain.id in form.subscribed_domains.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                                                {{ domain.name }}
+                                            </label>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -290,27 +288,25 @@
                             <div class="relative">
                                 <input type="text"
                                        id="userSearch"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
+                                       class="w-full placeholder:text-base px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#e74c3c] focus:border-[#e74c3c]"
                                        placeholder="Search users...">
                             </div>
                             <div id="userContainer"
                                  class="mt-4 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-4">
                                 <div class="flex flex-wrap gap-2">
                                     {% for user in form.subscribed_users.field.queryset %}
-                                        {% if user.id in form.subscribed_users.value %}
-                                            <div class="user-item">
-                                                <input type="checkbox"
-                                                       name="subscribed_users"
-                                                       value="{{ user.id }}"
-                                                       id="user_{{ user.id }}"
-                                                       class="hidden"
-                                                       checked>
-                                                <label for="user_{{ user.id }}"
-                                                       class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer bg-[#e74c3c] text-white hover:bg-red-700 transition-colors">
-                                                    {{ user.username }}
-                                                </label>
-                                            </div>
-                                        {% endif %}
+                                        <div class="user-item">
+                                            <input type="checkbox"
+                                                   name="subscribed_users"
+                                                   value="{{ user.id }}"
+                                                   id="user_{{ user.id }}"
+                                                   class="hidden"
+                                                   {% if user.id in form.subscribed_users.value %}checked{% endif %}>
+                                            <label for="user_{{ user.id }}"
+                                                   class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors {% if user.id in form.subscribed_users.value %}bg-[#e74c3c] text-white hover:bg-red-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                                                {{ user.username }}
+                                            </label>
+                                        </div>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -326,8 +322,8 @@
                 </div>
             </form>
             <!-- Danger Zone -->
-            <div class="mt-12 p-6 bg-red-50 rounded-lg border border-red-200">
-                <h3 class="text-lg font-semibold text-red-700 mb-4">Danger Zone</h3>
+            <div class="mt-12 p-6 bg-red-50 rounded-lg border flex justify-between border-red-200">
+                <h3 class="text-lg font-semibold text-red-700">Danger Zone</h3>
                 <form action="{% url 'user_deletion' %}"
                       method="post"
                       onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.');">

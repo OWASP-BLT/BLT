@@ -19,22 +19,6 @@
     <link rel="stylesheet"
           type="text/css"
           href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
-    <style>
-        .docs_style {
-            background-color: #EF4444!important;
-            color: white!important;
-        }
-        /* add backgound hover */
-        .docs_style:hover {
-            background-color: #dc2626!important;
-        }
-        /* Disable button styles */
-
-        .disabled-button {
-            background-color: #a1a1aa !important; /* Gray background */
-            cursor: not-allowed !important; /* Change cursor */
-        }
-    </style>
     <div class="container mx-auto p-6">
         <!-- Include the left navigation -->
         {% include "includes/sidenav.html" %}
@@ -54,21 +38,21 @@
             </div>
             <div class="flex space-x-10 items-center mb-8 mt-8">
                 <a href="{% url 'sizzle-docs' %}"
-                   class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                   class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                     Sizzle Docs
                 </a>
                 {% if user.is_authenticated %}
                     <a href="{% url 'time_logs' %}"
-                       class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                       class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                         Start Tracking
                     </a>
                     <a href="{% url 'sizzle_daily_log' %}"
-                       class="docs_style py-2 px-6 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
+                       class="bg-red-500 text-white py-2 px-6 rounded-md shadow-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300 cursor-pointer">
                         Daily Status Report
                     </a>
                 {% endif %}
             </div>
-            <!-- Report and Leaderboard Section --> <!-- new code: Rename section -->
+            <!-- Report and Leaderboard Section -->
             <div class="flex flex-col lg:flex-row lg:space-x-10">
                 <!-- Report Table -->
                 {% if user.is_authenticated %}
@@ -76,7 +60,6 @@
                         <div class="bg-white shadow-lg rounded-lg overflow-hidden"
                              id="report-item">
                             <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold border-b border-gray-400">
-                                <!-- if the sizzle data have the show here value of sizzle data "date" key value else today date -->
                                 {% if sizzle_data %}
                                     {{ sizzle_data.date }}
                                 {% else %}
@@ -164,96 +147,94 @@
                 src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
         <script type="text/javascript">
            $(function() {
-    // Initialize daterange picker
-    $('input[name="daterange"]').daterangepicker({
-        opens: 'left',
-        locale: {
-            format: 'YYYY-MM-DD'
-        }
-    }, function(start, end, label) {
-        $('#report-date').text(start.format('D.M.YYYY') + ' - ' + end.format('D.M.YYYY') + ' Report');
+                // Initialize daterange picker
+                $('input[name="daterange"]').daterangepicker({
+                    opens: 'left',
+                    locale: {
+                        format: 'YYYY-MM-DD'
+                    }
+                }, function(start, end, label) {
+                    $('#report-date').text(start.format('D.M.YYYY') + ' - ' + end.format('D.M.YYYY') + ' Report');
 
-        // Fetch and update report logs
-        $.ajax({
-            url: '{% url "timelogsreport" %}',
-            data: {
-                start_date: start.format('YYYY-MM-DDTHH:mm:ssZ'),
-                end_date: end.format('YYYY-MM-DDTHH:mm:ssZ')
-            },
-            success: function(data) {
-                // Clear existing content and append the new data
-                $('#report-table').empty();
-                data.forEach(function(item) {
-                    $('#report-table').append(`
-                        <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                            <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                                ${item.date}
-                            </div>
-                            <table class="min-w-full bg-white">
-                                <thead>
-                                    <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                                        <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
-                                        <td class="py-3 px-4 border-b border-gray-200">
-                                            <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded" data-id="${item.id}">
-                                                Delete
-                                            </button>
-                                            <span>Item ID: ${item.id}</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    `);
+                    // Fetch and update report logs
+                    $.ajax({
+                        url: '{% url "timelogsreport" %}',
+                        data: {
+                            start_date: start.format('YYYY-MM-DDTHH:mm:ssZ'),
+                            end_date: end.format('YYYY-MM-DDTHH:mm:ssZ')
+                        },
+                        success: function(data) {
+                            // Clear existing content and append the new data
+                            $('#report-table').empty();
+                            data.forEach(function(item) {
+                                $('#report-table').append(`
+                                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+                                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
+                                            ${item.date}
+                                        </div>
+                                        <table class="min-w-full bg-white">
+                                            <thead>
+                                                <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
+                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
+                                                    <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
+                                                    <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
+                                                    <td class="py-3 px-4 border-b border-gray-200">
+                                                        <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded" data-id="${item.id}">
+                                                            Delete
+                                                        </button>
+                                                        <span>Item ID: ${item.id}</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                `);
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            alert('An error occurred while fetching the report logs.');
+                        }
+                    });
                 });
-            },
-            error: function(xhr, status, error) {
-                alert('An error occurred while fetching the report logs.');
-            }
-        });
-    });
 
-    // Event delegation for dynamically added delete buttons (moved outside the AJAX success callback)
-    $(document).on('click', '.delete-entry', function() {
-        var entryId = $(this).data('id');
-        if (!entryId) {
-            console.error("Entry ID is missing or empty.");
-            return;
-        }
-        if (confirm("Are you sure you want to delete this time entry?")) {
-            fetch("{% url 'delete_time_entry' %}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
-                body: new URLSearchParams({ id: entryId }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log("Success");
-                    // Remove the row from the table if the delete was successful
-                    this.closest("tr").remove();
-                } else {
-                    console.log("Failed");
-                    alert("Failed to delete time entry.");
-                }
+                // Event delegation for dynamically added delete buttons
+                $(document).on('click', '.delete-entry', function() {
+                    var entryId = $(this).data('id');
+                    if (!entryId) {
+                        console.error("Entry ID is missing or empty.");
+                        return;
+                    }
+                    if (confirm("Are you sure you want to delete this time entry?")) {
+                        fetch("{% url 'delete_time_entry' %}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/x-www-form-urlencoded",
+                                "X-CSRFToken": "{{ csrf_token }}",
+                            },
+                            body: new URLSearchParams({ id: entryId }),
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log("Success");
+                                // Remove the row from the table if the delete was successful
+                                this.closest("tr").remove();
+                            } else {
+                                console.log("Failed");
+                                alert("Failed to delete time entry.");
+                            }
+                        });
+                    }
+                });
             });
-        }
-    });
-});
-
-        
         </script>
     {% endif %}
 {% endblock content %}

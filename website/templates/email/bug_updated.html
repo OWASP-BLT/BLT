@@ -13,104 +13,51 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
               rel="stylesheet">
-        <style>
-        body {
-            font-family: "Montserrat", serif;
-            margin: 0;
-            padding: 0;
-        }
-        .email-container {
-            border: 1px solid #cccccc;
-            width: 100%;
-        }
-        .email-content {
-            width: 600px;
-            margin: 0 auto;
-            border: 1px solid #cccccc;
-            border-radius: 10px;
-        }
-        .email-header {
-            text-align: center;
-            padding: 16px 0;
-        }
-        .email-body {
-            padding: 20px;
-        }
-        .email-body h1 {
-            text-decoration: underline;
-        }
-        .email-footer {
-            padding: 10px;
-            background-color: black;
-            border-radius: 0 0 10px 10px;
-            text-align: center;
-        }
-        .email-footer a {
-            margin: 0 10px;
-        }
-        .spacer {
-            font-size: 0;
-            line-height: 0;
-            width: 20px;
-        }
-        .center-align {
-            text-align: center;
-        }
-        .left-align {
-            text-align: left;
-        }
-        .block-display {
-            display: block;
-        }
-        .email-footer table, .email-content img {
-            margin: 0 auto;
-        }
-        </style>
+        <script src="https://cdn.tailwindcss.com"></script>
     </head>
-    <body>
-        <table class="email-container" cellpadding="0" cellspacing="0">
+    <body class="font-sans bg-gray-100 m-0 p-0">
+        <table class="w-full border border-gray-300" cellpadding="0" cellspacing="0">
             <tr>
                 <td>
-                    <table class="email-content" cellpadding="0" cellspacing="0">
+                    <table class="w-full max-w-[600px] mx-auto border border-gray-300 rounded-lg"
+                           cellpadding="0"
+                           cellspacing="0">
                         <tr>
-                            <td class="email-header center-align">
+                            <td class="text-center py-4">
                                 <img src="https://{% env 'FQDN' %}/static/img/logo-large-transparent.png"
                                      alt="{% env 'PROJECT_NAME' %}"
                                      width="300"
                                      height="73"
-                                     class="block-display" />
+                                     class="block mx-auto" />
                             </td>
                         </tr>
                         <tr>
-                            <td class="email-body left-align">
-                                <h1>Bug {{ action }}</h1>
-                                Dear {{ name }},
-                                <br>
-                                <br>
-                                <a href="https://{% env 'FQDN' %}/domain/{{ domain }}">{{ domain }}</a> bug # {{ id }} has been {{ action }} by <a href="https://{% env 'FQDN' %}/profile/{{ username }}">{{ username }}</a>
-                                <br>
-                                <br>
-                                You can see more info here:
-                                <br>
-                                <br>
-                                <a href="https://{% env 'FQDN' %}/issue/{{ id }}">https://{% env 'FQDN' %}/issue/{{ id }}</a>
-                                <br>
-                                <br>
-                                Best,
-                                <br>
-                                The {% env 'PROJECT_NAME' %} Team
-                                <br>
+                            <td class="px-6 py-4 text-left">
+                                <h1 class="text-2xl font-bold underline mb-4">Bug {{ action }}</h1>
+                                <p class="mb-4">Dear {{ name }},</p>
+                                <p class="mb-4">
+                                    <a href="https://{% env 'FQDN' %}/domain/{{ domain }}"
+                                       class="text-blue-500 hover:text-blue-700">{{ domain }}</a> bug #{{ id }} has been {{ action }} by <a href="https://{% env 'FQDN' %}/profile/{{ username }}"
+    class="text-blue-500 hover:text-blue-700">{{ username }}</a>.
+                                </p>
+                                <p class="mb-4">You can see more info here:</p>
+                                <p class="mb-4">
+                                    <a href="https://{% env 'FQDN' %}/issue/{{ id }}"
+                                       class="text-blue-500 hover:text-blue-700">https://{% env 'FQDN' %}/issue/{{ id }}</a>
+                                </p>
+                                <p class="mb-4">Best,</p>
+                                <p>The {% env 'PROJECT_NAME' %} Team</p>
                             </td>
                         </tr>
                         <tr>
-                            <td class="email-footer">
-                                <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                            <td class="bg-black text-white py-4 rounded-b-lg">
+                                <table class="w-full" cellpadding="0" cellspacing="0">
                                     <tr>
-                                        <td align="center">
-                                            <table border="0" cellpadding="0" cellspacing="0">
-                                                <tr border="0" align="center">
+                                        <td class="text-center">
+                                            <table class="inline-block" cellpadding="0" cellspacing="0">
+                                                <tr>
                                                     <td>
-                                                        <a href="{% env 'TWITTER_URL' %}">
+                                                        <a href="{% env 'TWITTER_URL' %}" class="inline-block mx-2">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  viewBox="0 0 448 512"
                                                                  width="30"
@@ -120,9 +67,9 @@
                                                             </svg>
                                                         </a>
                                                     </td>
-                                                    <td class="spacer">&nbsp;</td>
+                                                    <td class="w-5">&nbsp;</td>
                                                     <td>
-                                                        <a href="{% env 'FACEBOOK_URL' %}">
+                                                        <a href="{% env 'FACEBOOK_URL' %}" class="inline-block mx-2">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  viewBox="0 0 448 512"
                                                                  width="30"
@@ -132,9 +79,9 @@
                                                             </svg>
                                                         </a>
                                                     </td>
-                                                    <td class="spacer">&nbsp;</td>
+                                                    <td class="w-5">&nbsp;</td>
                                                     <td>
-                                                        <a href="{% env 'GITHUB_URL' %}">
+                                                        <a href="{% env 'GITHUB_URL' %}" class="inline-block mx-2">
                                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                                  viewBox="0 0 448 512"
                                                                  width="30"
