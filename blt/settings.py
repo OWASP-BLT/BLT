@@ -119,6 +119,8 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
+    "blt.middleware.cache_middleware.ApiCacheFallbackMiddleware",
+    "website.middleware.NetworkStatusMiddleware",
 )
 
 if DEBUG:
@@ -607,3 +609,27 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# API Cache Settings
+API_CACHE_TIMEOUT = 12 * 60 * 60  # 12 hours in seconds
+API_CACHE_DIR = os.path.join(BASE_DIR, 'media', 'api_cache')
+
+# Cache settings
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'blt-cache',
+        'TIMEOUT': 60 * 60 * 24,  # 24 hours
+    }
+}
+
+# If using Redis, uncomment this section and install django-redis
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django_redis.cache.RedisCache',
+#         'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     }
+# }

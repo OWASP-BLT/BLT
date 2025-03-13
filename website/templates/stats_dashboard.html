@@ -4,6 +4,17 @@
 {% block title %}
     Statistics Dashboard
 {% endblock title %}
+
+{% block extra_head %}
+<script>
+    // Define page-specific APIs to precache
+    window.PAGE_APIS = [
+        '/api/v1/stats/',
+        '/api/v1/leaderboard/'
+    ];
+</script>
+{% endblock %}
+
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div id="mainContent"
@@ -23,108 +34,102 @@
                 {% endfor %}
             </div>
         </div>
+        
         <!-- Stats Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-4">
-            <!-- Users Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Users</h3>
-                    <i class="fa fa-users text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.users.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.users.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.users.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Issues Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Issues</h3>
-                    <i class="fa fa-bug text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.issues.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Open: {{ stats.issues.open }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.issues.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Domains Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Domains</h3>
-                    <i class="fa fa-globe text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.domains.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.domains.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.domains.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Organizations Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Orgs</h3>
-                    <i class="fa fa-building text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.organizations.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.organizations.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.organizations.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Bug Hunts Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Hunts</h3>
-                    <i class="fa fa-search text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.hunts.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.hunts.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.hunts.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Points Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Points</h3>
-                    <i class="fa fa-trophy text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.points.total }}</div>
-                <div class="text-sm text-gray-600">
-                    <span class="text-xs text-gray-500">(Total: {{ stats.points.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Projects Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Projects</h3>
-                    <i class="fa fa-folder text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.projects.total }}</div>
-                <div class="text-sm text-gray-600">
-                    <span class="text-xs text-gray-500">(Total: {{ stats.projects.total_all_time }})</span>
-                    <form method="post" action="{% url 'sync_github_projects' %}" class="mt-1">
-                        {% csrf_token %}
-                        <button type="submit"
-                                class="text-xs bg-[#e74c3c] hover:bg-[#d44637] text-white px-2 py-1 rounded-md w-full">
-                            <i class="fas fa-sync-alt mr-1"></i>Sync
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <!-- Activities Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Activities</h3>
-                    <i class="fa fa-clock text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.activities.total }}</div>
-                <div class="text-sm text-gray-600">
-                    <span class="text-xs text-gray-500">(Total: {{ stats.activities.total_all_time }})</span>
-                </div>
+        <div id="stats-container" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-4">
+            <!-- Stats will be loaded here -->
+            <!-- Loading placeholder -->
+            <div class="col-span-full text-center py-8">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#e74c3c]"></div>
+                <p class="mt-2 text-gray-600">Loading statistics...</p>
             </div>
         </div>
+        
+        <!-- Rest of the content -->
+        
+        <!-- ... existing code ... -->
     </div>
-{% endblock content %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statsContainer = document.getElementById('stats-container');
+        const period = new URLSearchParams(window.location.search).get('period') || 'month';
+        
+        // Function to load stats
+        async function loadStats() {
+            try {
+                // Use our API cache utility
+                const stats = await ApiCache.fetch(`/api/v1/stats/?period=${period}`);
+                
+                // Check if data is from cache
+                if (stats._fromCache) {
+                    NetworkStatus.showCachedDataMessage('statistics', stats._cachedAt);
+                }
+                
+                // Render stats
+                renderStats(stats);
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                statsContainer.innerHTML = `
+                    <div class="col-span-full bg-red-50 p-4 rounded-lg border border-red-200">
+                        <p class="text-red-700 text-center">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Unable to load statistics. Please try again later.
+                        </p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Function to render stats
+        function renderStats(data) {
+            // Create HTML for stats widgets
+            const statsHtml = `
+                <!-- Users Widget -->
+                <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-gray-800">Users</h3>
+                        <i class="fa fa-users text-xl text-[#e74c3c]"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 w-full text-center">${data.users || 0}</div>
+                </div>
+                
+                <!-- Issues Widget -->
+                <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-gray-800">Issues</h3>
+                        <i class="fa fa-bug text-xl text-[#e74c3c]"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 w-full text-center">${data.bugs || 0}</div>
+                </div>
+                
+                <!-- Domains Widget -->
+                <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-gray-800">Domains</h3>
+                        <i class="fa fa-globe text-xl text-[#e74c3c]"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 w-full text-center">${data.domains || 0}</div>
+                </div>
+                
+                <!-- Hunts Widget -->
+                <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-semibold text-gray-800">Hunts</h3>
+                        <i class="fa fa-search text-xl text-[#e74c3c]"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-gray-900 w-full text-center">${data.hunts || 0}</div>
+                </div>
+            `;
+            
+            // Update the container
+            statsContainer.innerHTML = statsHtml;
+        }
+        
+        // Load stats
+        loadStats();
+    });
+</script>
+{% endblock %}

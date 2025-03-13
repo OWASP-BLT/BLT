@@ -23,46 +23,50 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.core.paginator import Paginator
+from rest_framework.views import APIView
 
 from website.models import (
-    ActivityLog,
-    Contributor,
-    Domain,
+    Issue, 
+    Domain, 
     Hunt,
-    HuntPrize,
-    InviteFriend,
-    Issue,
-    IssueScreenshot,
-    Organization,
-    Points,
-    Project,
-    Repo,
     Tag,
-    TimeLog,
-    Token,
-    User,
     UserProfile,
+    Organization,
+    Contributor,
+    Project,
+    TimeLog,
+    ActivityLog,
 )
 from website.serializers import (
-    ActivityLogSerializer,
-    BugHuntPrizeSerializer,
-    BugHuntSerializer,
-    ContributorSerializer,
-    DomainSerializer,
     IssueSerializer,
-    OrganizationSerializer,
-    ProjectSerializer,
-    RepoSerializer,
+    DomainSerializer,
     TagSerializer,
-    TimeLogSerializer,
     UserProfileSerializer,
+    OrganizationSerializer,
+    ContributorSerializer,
+    ProjectSerializer,
+    TimeLogSerializer,
+    ActivityLogSerializer,
 )
 from website.utils import image_validator
 from website.views.user import LeaderboardBase
+from website.api.cache import (
+    apply_api_cache, 
+    cache_response_with_images, 
+    offline_resilient_view, 
+    offline_first_view,
+    is_network_available
+)
 
 # API's
 
 
+@offline_first_view
+@apply_api_cache
 class UserIssueViewSet(viewsets.ModelViewSet):
     """
     User Issue Model View Set
@@ -80,8 +84,20 @@ class UserIssueViewSet(viewsets.ModelViewSet):
             return Issue.objects.exclude(Q(is_hidden=True))
         else:
             return Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=user_id))
+            
+    def get_cached_response(self, request, *args, **kwargs):
+        """
+        Provide a fallback response when offline
+        """
+        return Response({
+            "detail": "Currently offline. Showing cached data.",
+            "data": [],
+            "offline": True
+        })
 
 
+@offline_first_view
+@apply_api_cache
 class UserProfileViewSet(viewsets.ModelViewSet):
     """
     User Profile View Set
@@ -123,6 +139,8 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@offline_first_view
+@apply_api_cache
 class DomainViewSet(viewsets.ModelViewSet):
     """
     Domain View Set
@@ -135,6 +153,8 @@ class DomainViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head"]
 
 
+@offline_first_view
+@apply_api_cache
 class IssueViewSet(viewsets.ModelViewSet):
     """
     Issue View Set
@@ -196,6 +216,7 @@ class IssueViewSet(viewsets.ModelViewSet):
             "tags": tags,
         }
 
+    @cache_response_with_images
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         issues = []
@@ -204,56 +225,49 @@ class IssueViewSet(viewsets.ModelViewSet):
             return Response(issues)
         for issue in page:
             issues.append(self.get_issue_info(request, issue))
-        return self.get_paginated_response(issues)
+        
+        # Add a flag to indicate if this is offline data
+        response = self.get_paginated_response(issues)
+        if not is_network_available():
+            response.data['offline'] = True
+        
+        return response
 
+    @cache_response_with_images
     def retrieve(self, request, pk, *args, **kwargs):
-        return Response(self.get_issue_info(request, Issue.objects.filter(id=pk).first()))
-
-    def create(self, request, *args, **kwargs):
-        request.data._mutable = True
-
-        # Since the tags field is json encoded we need to decode it
-        tags = None
+        response_data = self.get_issue_info(request, Issue.objects.filter(id=pk).first())
+        
+        # Add a flag to indicate if this is offline data
+        if not is_network_available():
+            response_data['offline'] = True
+            
+        return Response(response_data)
+        
+    def get_cached_response(self, request, *args, **kwargs):
+        """
+        Provide a fallback response when offline
+        """
         try:
-            if "tags" in request.data:
-                tags_json = request.data.get("tags")
-                if isinstance(tags_json, list):
-                    tags_json = tags_json[0]
-                tags = json.loads(tags_json)
-
-                if isinstance(tags, list) and any(isinstance(i, list) for i in tags):
-                    tags = [item for sublist in tags for item in sublist]
-
-                del request.data["tags"]
-        except (ValueError, MultiValueDictKeyError) as e:
-            return Response({"error": "Invalid tags format."}, status=status.HTTP_400_BAD_REQUEST)
-        finally:
-            request.data._mutable = False
-
-        screenshot_count = len(self.request.FILES.getlist("screenshots"))
-        if screenshot_count == 0:
-            return Response({"error": "Upload at least one image!"}, status=status.HTTP_400_BAD_REQUEST)
-        elif screenshot_count > 5:
-            return Response({"error": "Max limit of 5 images!"}, status=status.HTTP_400_BAD_REQUEST)
-
-        data = super().create(request, *args, **kwargs).data
-        issue = Issue.objects.filter(id=data["id"]).first()
-
-        if tags:
-            issue.tags.add(*tags)
-
-        for screenshot in self.request.FILES.getlist("screenshots"):
-            if image_validator(screenshot):
-                filename = screenshot.name
-                screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
-                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-
-                # Create the IssueScreenshot object and associate it with the issue
-                IssueScreenshot.objects.create(image=file_path, issue=issue)
-            else:
-                return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(self.get_issue_info(request, issue))
+            # Try to get some cached issues from the database
+            queryset = self.get_queryset().order_by('-modified')[:10]  # Get most recently modified issues
+            issues = []
+            for issue in queryset:
+                issues.append(self.get_issue_info(request, issue))
+                
+            return Response({
+                "detail": "Currently offline. Showing cached data.",
+                "results": issues,
+                "offline": True,
+                "count": len(issues)
+            })
+        except Exception:
+            # If all else fails, return an empty list with offline flag
+            return Response({
+                "detail": "Currently offline. No cached data available.",
+                "results": [],
+                "offline": True,
+                "count": 0
+            })
 
 
 class LikeIssueApiView(APIView):
@@ -349,6 +363,8 @@ class UserScoreApiView(APIView):
         return Response({"total_score": total_score})
 
 
+@offline_first_view
+@apply_api_cache
 class LeaderboardApiViewSet(APIView):
     def get_queryset(self):
         return User.objects.all()
@@ -440,6 +456,7 @@ class LeaderboardApiViewSet(APIView):
 
         return paginator.get_paginated_response(page)
 
+    @cache_response_with_images
     def get(self, request, format=None, *args, **kwargs):
         filter = request.query_params.get("filter")
         group_by_month = request.query_params.get("group_by_month")
@@ -465,14 +482,57 @@ class LeaderboardApiViewSet(APIView):
         return paginator.get_paginated_response(page)
 
 
+@offline_first_view
+@apply_api_cache
 class StatsApiViewset(APIView):
+    @cache_response_with_images
     def get(self, request, *args, **kwargs):
         bug_count = Issue.objects.all().count()
         user_count = User.objects.all().count()
         hunt_count = Hunt.objects.all().count()
         domain_count = Domain.objects.all().count()
 
-        return Response({"bugs": bug_count, "users": user_count, "hunts": hunt_count, "domains": domain_count})
+        response_data = {
+            "bugs": bug_count, 
+            "users": user_count, 
+            "hunts": hunt_count, 
+            "domains": domain_count
+        }
+        
+        if not is_network_available():
+            response_data['offline'] = True
+            
+        return Response(response_data)
+        
+    def get_cached_response(self, request, *args, **kwargs):
+        """
+        Provide a fallback response when offline
+        """
+        try:
+            # Try to get cached counts
+            bug_count = Issue.objects.all().count()
+            user_count = User.objects.all().count()
+            hunt_count = Hunt.objects.all().count()
+            domain_count = Domain.objects.all().count()
+            
+            return Response({
+                "bugs": bug_count, 
+                "users": user_count, 
+                "hunts": hunt_count, 
+                "domains": domain_count,
+                "detail": "Currently offline. Showing cached data.",
+                "offline": True
+            })
+        except Exception:
+            # If all else fails, return some default data
+            return Response({
+                "bugs": 0, 
+                "users": 0, 
+                "hunts": 0, 
+                "domains": 0,
+                "detail": "Currently offline. No cached data available.",
+                "offline": True
+            })
 
 
 class UrlCheckApiViewset(APIView):
@@ -503,6 +563,8 @@ class UrlCheckApiViewset(APIView):
         return Response(issues[:10])
 
 
+@offline_first_view
+@apply_api_cache
 class BugHuntApiViewset(APIView):
     permission_classes = [AllowAny]
 
@@ -512,22 +574,51 @@ class BugHuntApiViewset(APIView):
             .filter(is_published=True, starts_on__lte=datetime.now(), end_on__gte=datetime.now())
             .order_by("-prize")
         )
-        return Response(hunts)
+        
+        response_data = list(hunts)
+        if not is_network_available():
+            # Add offline indicator
+            for hunt in response_data:
+                hunt['offline'] = True
+        
+        return Response(response_data)
 
     def get_previous_hunts(self, request, fields, *args, **kwargs):
         hunts = Hunt.objects.values(*fields).filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
-        return Response(hunts)
+        
+        response_data = list(hunts)
+        if not is_network_available():
+            # Add offline indicator
+            for hunt in response_data:
+                hunt['offline'] = True
+                
+        return Response(response_data)
 
     def get_upcoming_hunts(self, request, fields, *args, **kwargs):
         hunts = (
             Hunt.objects.values(*fields).filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         )
-        return Response(hunts)
+        
+        response_data = list(hunts)
+        if not is_network_available():
+            # Add offline indicator
+            for hunt in response_data:
+                hunt['offline'] = True
+                
+        return Response(response_data)
 
     def get_search_by_name(self, request, search_query, fields, *args, **kwargs):
         hunts = Hunt.objects.values(*fields).filter(is_published=True, name__icontains=search_query).order_by("end_on")
-        return Response(hunts)
+        
+        response_data = list(hunts)
+        if not is_network_available():
+            # Add offline indicator
+            for hunt in response_data:
+                hunt['offline'] = True
+                
+        return Response(response_data)
 
+    @cache_response_with_images
     def get(self, request, *args, **kwargs):
         activeHunt = request.query_params.get("activeHunt")
         previousHunt = request.query_params.get("previousHunt")
@@ -553,10 +644,58 @@ class BugHuntApiViewset(APIView):
             return self.get_previous_hunts(request, fields, *args, **kwargs)
         elif upcomingHunt:
             return self.get_upcoming_hunts(request, fields, *args, **kwargs)
+            
         hunts = Hunt.objects.values(*fields).filter(is_published=True).order_by("-end_on")
-        return Response(hunts)
+        
+        response_data = list(hunts)
+        if not is_network_available():
+            # Add offline indicator
+            for hunt in response_data:
+                hunt['offline'] = True
+                
+        return Response(response_data)
+        
+    def get_cached_response(self, request, *args, **kwargs):
+        """
+        Provide a fallback response when offline
+        """
+        try:
+            # Try to get some cached hunts from the database
+            fields = (
+                "id",
+                "name",
+                "url",
+                "prize",
+                "logo",
+                "banner",
+                "description",
+                "starts_on",
+                "end_on",
+            )
+            
+            hunts = Hunt.objects.values(*fields).filter(is_published=True).order_by("-end_on")[:5]
+            
+            response_data = list(hunts)
+            # Add offline indicator
+            for hunt in response_data:
+                hunt['offline'] = True
+                
+            return Response({
+                "detail": "Currently offline. Showing cached data.",
+                "results": response_data,
+                "offline": True
+            })
+        except Exception:
+            # If all else fails, return an empty list with offline flag
+            return Response({
+                "detail": "Currently offline. No cached data available.",
+                "results": [],
+                "offline": True
+            })
 
 
+@offline_first_view
+@apply_api_cache
 class BugHuntApiViewsetV2(APIView):
     permission_classes = [AllowAny]
 
@@ -587,6 +726,7 @@ class BugHuntApiViewsetV2(APIView):
         hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         return Response(self.serialize_hunts(hunts))
 
+    @cache_response_with_images
     def get(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
 
@@ -675,6 +815,8 @@ class InviteFriendApiViewset(APIView):
             )
 
 
+@offline_first_view
+@apply_api_cache
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
@@ -703,6 +845,8 @@ class ContributorViewSet(viewsets.ModelViewSet):
     http_method_names = ("get", "post", "put")
 
 
+@offline_first_view
+@apply_api_cache
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer

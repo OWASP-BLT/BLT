@@ -592,3 +592,34 @@
             mobileSearch.classList.toggle('active');
         }
 </script>
+
+<!-- API Caching and Network Status JS -->
+<script src="{% static 'js/api-cache.js' %}"></script>
+<script src="{% static 'js/image-cache.js' %}"></script>
+<script src="{% static 'js/network-status.js' %}"></script>
+<script>
+    // Initialize offline data preloading for critical API routes
+    document.addEventListener('DOMContentLoaded', function() {
+        // List of critical API endpoints to precache
+        const criticalApis = [
+            '/api/v1/stats',  // Stats API
+            '/api/v1/domain', // Domains API
+            '/api/v1/issues?limit=25', // Recent issues
+            '/api/v1/hunt?activeHunt=true', // Active hunts
+            '/api/v1/leaderboard', // Leaderboard
+        ];
+
+        // Precache critical APIs when network is available
+        if (navigator.onLine) {
+            criticalApis.forEach(api => {
+                fetch(api)
+                    .catch(err => console.log(`Failed to precache ${api}:`, err));
+            });
+        }
+
+        // Initialize image caching for visible images
+        if (window.ImageCache) {
+            window.ImageCache.cacheAllImages();
+        }
+    });
+</script>
