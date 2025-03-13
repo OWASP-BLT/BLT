@@ -266,8 +266,8 @@ from website.views.project import (
     blt_tomato,
     create_project,
     distribute_bacon,
+    repo_activity_data,
     select_contribution,
-    repo_activity_data
 )
 from website.views.queue import queue_list
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
