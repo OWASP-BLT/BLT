@@ -16,153 +16,6 @@
     Explore the global leaderboard to see the top performers from around the world. View scores, usernames, and their achievements.
 {% endblock og_description %}
 {% load gravatar %}
-{% block style %}
-    <style>
-        {% comment %} .list-group {
-            border: 2px solid rgb(212 212 216);
-            padding-top: 0.75rem;
-            padding-bottom: 0.75rem;
-            border-top: 0;
-            border-bottom-left-radius: 0.5rem;
-            border-bottom-right-radius: 0.5rem;
-} {% endcomment %}
-        .list-group-item img {
-            width: 50px;
-            height: 50px;
-        }
-
-        .list-group-item .badge {
-            margin-top: 15px;
-        }
-
-        .list-group-item a {
-            text-decoration: none;
-            margin-left: 10px;
-        }
-
-        @media (min-height: 800px) and (min-width: 992px) {
-            .col-md-6 {
-                width: 50%;
-            }
-        }
-        
-        @media (min-height: 800px) and (min-width: 360px) {
-            .col-md-6 {
-                width: 90%;
-                font-size: small;
-            }
-        }
-
-        .silver {
-            background-color: #C0C0C0;
-            color: #333;
-        }
-
-        .gold {
-            background-color: #D4AF37;
-            color: #333;
-        }
-
-        .bronze {
-            background-color: #be7225; 
-            color: #FFFFFF; 
-        }
-
-        .platinum {
-            background-color: #E5E4E2; 
-            color: #333;
-        }
-
-        .unrated {
-            background-color: #000000; 
-            color: #FFFFFF; 
-        }
-
-        .profileimage {
-            border: 1px solid rgb(229 231 235);
-            border-radius: 50%;
-        }
-
-        
-
-        /* Styles for tag pills */
-        .tag-pill {
-            display: inline-block;
-            padding: 0.4em 0.8em;
-            margin: 0.2em;
-            font-size: 0.9em;
-            font-weight: 600;
-            color: #fff;
-            background-color: #007bff;
-            border-radius: 15px;
-            border: 1px solid #007bff;
-            transition: background-color 0.3s ease, color 0.3s ease;
-            text-decoration: none;
-        }
-
-        .tag-pill:hover {
-            background-color: #0056b3;
-            border-color: #0056b3;
-            color: #fff;
-        }
-
-        /* Alternative colors for variety */
-        .tag-pill.tag-secondary {
-            background-color: #6c757d;
-            border-color: #6c757d;
-        }
-
-        .tag-pill.tag-success {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-
-        .tag-pill.tag-danger {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-
-        .tag-pill.tag-warning {
-            background-color: #ffc107;
-            border-color: #ffc107;
-            color: #212529;
-        }
-
-        .tag-pill.tag-info {
-            background-color: #17a2b8;
-            border-color: #17a2b8;
-        }
-
-        .leaderboard-container {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-
-        .leaderboard-section {
-            border: 2px solid rgb(212 212 216);
-            padding-bottom: 0.75rem;
-            border-top: 0;
-            border-radius: 0.5rem;
-            flex: 1;
-            min-width: 300px;
-            max-width: 550px;
-        }
-
-        .leaderboard-title {
-            text-align: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-            border-width: 2px;
-            border-style: solid;
-            border-color: #e74c3c;
-            border-radius: 0.5rem 0.5rem 0 0;
-        }
-    </style>
-{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="row container-min-height flex justify-center pb-4">
@@ -171,9 +24,9 @@
         </div>
     </div>
     <div class="flex flex-col md:gap-10 px-4  gap-2 md:px-0">
-        <div class="leaderboard-container ">
-            <div class=" flex-1  leaderboard-section">
-                <div class="leaderboard-title">Points Leaderboard</div>
+        <div class="flex justify-center gap-6 flex-wrap">
+            <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Points Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if not leaderboard %}
                         <p class="text-red-500 text-center font-medium">No data for this month!</p>
@@ -184,26 +37,30 @@
                                     <div class="flex  gap-2 items-center truncate">
                                         {% if leader.userprofile.avatar %}
                                             <img src="{{ leader.userprofile.avatar }}"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% elif leader.socialaccount_set.all.0.get_avatar_url %}
                                             <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.email 50 %}"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
                                         {% endif %}
                                         <a href="{% url 'profile' slug=leader.username %}"
                                            class="text-lg transition-all duration-200">{{ leader.username }}</a>
-                                        <span><kbd class=" py-1 px-2 select-none rounded-md {{ leader.userprofile.get_title_display|lower }} ">{{ leader.userprofile.get_title_display }}</kbd></span>
+                                        <span>
+                                            <kbd class="py-1 px-2 select-none rounded-md {% if leader.userprofile.get_title_display|lower == 'silver' %}bg-gray-400 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'gold' %}bg-yellow-600 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'bronze' %}bg-orange-700 text-white{% elif leader.userprofile.get_title_display|lower == 'platinum' %}bg-gray-200 text-gray-800{% elif leader.userprofile.get_title_display|lower == 'unrated' %}bg-black text-white{% endif %}">
+                                                {{ leader.userprofile.get_title_display }}
+                                            </kbd>
+                                        </span>
                                         {% if leader.userprofile.winnings %}
                                             <span class="pull-right badge px-2 py-1 select-none">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
                                         {% endif %}
@@ -216,8 +73,8 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 leaderboard-section">
-                <div class=" leaderboard-title">Pull Request Leaderboard</div>
+            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class=" text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Pull Request Leaderboard</div>
                 <div class=" list-group w-full p-4">
                     {% if pr_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -226,13 +83,13 @@
                                     <div class="flex  gap-2 items-center truncate">
                                         {% if leader.user_profile__github_url %}
                                             <img src="https://github.com/{{ leader.user_profile__user__username }}.png"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.user_profile__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.user_profile__user__email 50 %}"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -255,8 +112,8 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1 leaderboard-section">
-                <div class="leaderboard-title">Code Review Leaderboard</div>
+            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Code Review Leaderboard</div>
                 <div class="list-group p-4">
                     {% if code_review_leaderboard %}
                         <div class="flex flex-col gap-2">
@@ -265,13 +122,13 @@
                                     <div class="flex  gap-2 items-center truncate">
                                         {% if leader.reviews__reviewer__user__username %}
                                             <img src="https://github.com/{{ leader.reviews__reviewer__user__username }}.png"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="{{ leader.reviews__reviewer__user__username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url leader.reviews__reviewer__user__email 50 %}"
-                                                 class=" size-11 select-none profileimage"
+                                                 class=" size-11 select-none border border-gray-200 rounded-full"
                                                  alt="username"
                                                  width="50px"
                                                  height="50px">
@@ -297,9 +154,9 @@
                 </div>
             </div>
         </div>
-        <div class="leaderboard-container ">
-            <div class="flex-1 leaderboard-section">
-                <div class="leaderboard-title">Top Visitors</div>
+        <div class="flex justify-center gap-6 flex-wrap">
+            <div class="flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Top Visitors</div>
                 <div class="list-group w-full p-4">
                     {% if top_visitors %}
                         <div class="flex flex-col gap-2">
@@ -308,13 +165,13 @@
                                     <div class="flex gap-2 items-center truncate">
                                         {% if profile.avatar %}
                                             <img src="{{ profile.avatar }}"
-                                                 class="size-11 select-none profileimage rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full rounded-full"
                                                  alt="{{ profile.user.username }}"
                                                  width="50px"
                                                  height="50px">
                                         {% else %}
                                             <img src="{% gravatar_url profile.user.email 50 %}"
-                                                 class="size-11 select-none profileimage rounded-full"
+                                                 class="size-11 select-none border border-gray-200 rounded-full rounded-full"
                                                  alt="{{ profile.user.username }}"
                                                  width="50px"
                                                  height="50px">
@@ -335,69 +192,21 @@
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1  leaderboard-section">
-                <div class="leaderboard-title">Issue Bounties</div>
+            <div class=" flex-1 border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Issue Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not issue_bounties %}
                         <p class="text-red-500 text-center font-medium">No issue bounties data available!</p>
                     {% else %}
-                        {% comment %} <div class="flex flex-col gap-2">
-                    {% for leader in issue_bounties %}
-                        <div class=" flex justify-between items-center">
-                          <div class="flex  gap-2 items-center truncate">
-                            {% if leader.userprofile.avatar %}
-                                <img src="{{ leader.userprofile.avatar }}" class=" size-11 select-none profileimage" alt="{{ leader.username }}" width="50px" height="50px">
-                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class=" size-11 select-none profileimage" alt="username" width="50px" height="50px">
-                            {% else %}
-                                <img src="{% gravatar_url leader.email 50 %}" class=" size-11 select-none profileimage" alt="username" width="50px" height="50px">
-                            {% endif %}
-                            <a href="{% url 'profile' slug=leader.username %}" class="text-lg transition-all duration-200">{{ leader.username }}</a>
-                            <span><kbd class= " py-1 px-2 select-none rounded-md {{ leader.userprofile.get_title_display|lower }} ">{{ leader.userprofile.get_title_display }}</kbd></span>
-                            {% if leader.userprofile.winnings %}
-                                <span class="pull-right badge px-2 py-1 select-none">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
-                            {% endif %}
-                         </div>
-                            <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">{{ leader.total_score }} Points</span>
-                            
-                        </div>
-                        <div class="border-t border-gray-200 my-1"></div>
-
-                    {% endfor %}
-                        </div> {% endcomment %}
                     {% endif %}
                 </div>
             </div>
-            <div class=" flex-1  leaderboard-section">
-                <div class="leaderboard-title">Bug Bounties</div>
+            <div class=" flex-1  border-2 border-gray-300 pb-3 rounded-b-lg flex-1 min-w-[300px] max-w-[550px]">
+                <div class="text-center text-3xl font-bold py-4 border-2 border-red-500 rounded-t-lg">Bug Bounties</div>
                 <div class=" list-group w-full p-4">
                     {% if not bug_bounties %}
                         <p class="text-red-500 text-center font-medium">No bug bounties data available!</p>
                     {% else %}
-                        {% comment %} <div class="flex flex-col gap-2">
-                    {% for leader in bug_bounties %}
-                        <div class=" flex justify-between items-center">
-                          <div class="flex  gap-2 items-center truncate">
-                            {% if leader.userprofile.avatar %}
-                                <img src="{{ leader.userprofile.avatar }}" class=" size-11 select-none profileimage" alt="{{ leader.username }}" width="50px" height="50px">
-                            {% elif leader.socialaccount_set.all.0.get_avatar_url %}
-                                <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}" class=" size-11 select-none profileimage" alt="username" width="50px" height="50px">
-                            {% else %}
-                                <img src="{% gravatar_url leader.email 50 %}" class=" size-11 select-none profileimage" alt="username" width="50px" height="50px">
-                            {% endif %}
-                            <a href="{% url 'profile' slug=leader.username %}" class="text-lg transition-all duration-200">{{ leader.username }}</a>
-                            <span><kbd class= " py-1 px-2 select-none rounded-md {{ leader.userprofile.get_title_display|lower }} ">{{ leader.userprofile.get_title_display }}</kbd></span>
-                            {% if leader.userprofile.winnings %}
-                                <span class="pull-right badge px-2 py-1 select-none">${{ leader.userprofile.winnings|default:""|floatformat }}</span>
-                            {% endif %}
-                         </div>
-                            <span class="pull-right badge bg-gray-100 flex-shrink-0 rounded-md py-1 px-2 select-none">{{ leader.total_score }} Points</span>
-                            
-                        </div>
-                        <div class="border-t border-gray-200 my-1"></div>
-
-                    {% endfor %}
-                        </div> {% endcomment %}
                     {% endif %}
                 </div>
             </div>

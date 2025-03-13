@@ -1,41 +1,5 @@
-{% load custom_tags %}
-<style>
-    .page-header {
-        font-size: 2.5em;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #333;
-    }
-
-    .content-container {
-        margin-top: 20px;
-        line-height: 1.6;
-        color: #555;
-    }
-
-    .content-container p, .content-container li {
-        margin-bottom: 15px;
-    }
-
-    .content-container ul {
-        padding-left: 20px;
-        margin-bottom: 20px;
-    }
-
-    .content-container ul ul {
-        padding-left: 20px;
-    }
-
-    .content-container h2 {
-        font-size: 2em;
-        font-weight: bold;
-        margin-top: 30px;
-        margin-bottom: 15px;
-        color: #333;
-    }
-</style>
-<div class="content-container">
-    <h1 class="page-header">Privacy Policy</h1>
+<div class="mt-5 space-y-4 text-gray-700">
+    <h1 class="text-4xl font-bold text-gray-800">Privacy Policy</h1>
     <p>
         We want to make sure you, as a Customer or Finder, understand what information we collect from you and why. We also want you to know about our information use practices so that you can make informed decisions about how you use {% env 'PROJECT_NAME' %}.
     </p>
@@ -43,14 +7,14 @@
         This Privacy Policy explains what information we collect from and about you, (collectively, "Your Information") and what we do with it.
     </p>
     <p>Please read this Privacy Policy carefully.</p>
-    <h2>
+    <h2 class="text-3xl font-bold text-gray-800 mt-8 mb-4">
         <strong>Information Collection</strong>
     </h2>
-    <ul class="list-disc">
+    <ul class="list-disc pl-5 space-y-3">
         <li>
-            <b>Direct Collection</b>
+            <b class="font-bold">Direct Collection</b>
         </li>
-        <ul class="list-circle">
+        <ul class="list-disc pl-5 space-y-3">
             <li>
                 When you create an account with {% env 'PROJECT_NAME' %}, you are required to provide us with profile information, including your name, Organization name (if applicable), username, password, and email address. {% env 'PROJECT_NAME' %} stores this information to help identify you when you log in.
             </li>
@@ -59,17 +23,17 @@
             </li>
         </ul>
         <li>
-            <b>Indirect Collection</b>
+            <b class="font-bold">Indirect Collection</b>
         </li>
-        <ul class="list-circle">
+        <ul class="list-disc pl-5 space-y-3">
             <li>
                 We receive some information automatically when you visit {% env 'PROJECT_NAME' %}. This includes information about the device, browser, and operating system you use when accessing our site and Services and your IP address. If you visit {% env 'PROJECT_NAME' %} when you are logged into your account, we also collect the user identification number we assign you when you open your account.
             </li>
         </ul>
         <li>
-            <b>Cookie Policy</b>
+            <b class="font-bold">Cookie Policy</b>
         </li>
-        <ul class="list-circle">
+        <ul class="list-disc pl-5 space-y-3">
             <li>
                 When you log in to your account, {% env 'PROJECT_NAME' %} will place cookie(s) for the purpose of creating the session, knowing when you're logged in, and recognizing you as the same authenticated user across accounts. These cookie(s) contain an encrypted user identifier.
             </li>

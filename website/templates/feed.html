@@ -13,319 +13,88 @@
 {% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-      /* Pagination styling */
-      .pagination {
-        margin-top: 20px;
-        text-align: center;
-        display: flex;
-        justify-content: center;  /* Center the pagination buttons */
-        gap: 10px; /* Space between buttons */
-      }
-
-      .pagination .btn {
-        background-color: #ff0000;
-        color: #fff;
-        border-radius: 5px;  /* Rounded corners */
-        text-decoration: none;
-        display: inline-block;
-      }
-
-      .pagination .btn:hover {
-        background-color: #cc0000;
-      }
-
-      .pagination .current {
-        font-size: 16px;
-        color: #333;
-        margin: 0 10px;
-      }
-
-      .activity-feed-container {
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #f9f9f9; /* Light background */
-        color: #333; /* Dark text for readability */
-        border-radius: 8px;
-        max-width: 800px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        overflow-y: auto; /* Allow scrolling when there are many activities */
-        max-height: calc(100vh - 60px); /* Adjust for space at the top, assuming header height is 60px */
-        margin-bottom: 20px;
-        position: relative; /* Make the container relative for z-index to work */
-      }
-
-      /* Prevent the body from scrolling */
-      body {
-        height: 100vh; /* Ensure body takes full height */
-      }
-
-      .activity-list {
-        max-height: 100%;
-        overflow-y: auto;
-        padding: 20px; /* Prevents scrollbar overlap */
-      }
-
-      h1 {
-        text-align: center;
-        color: #ff0000; /* Red color for header */
-        margin-bottom: 20px;
-        font-size: 28px;
-        margin-top: 40px; /* Added to create space from the top */
-      }
-
-      /* Individual activity card */
-      .activity-card {
-        margin-bottom: 20px;
-        padding: 15px;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        transform-origin: center; /* Ensures the scaling happens from the center */
-        z-index: 1; /* Set z-index for proper stacking */
-      }
-
-      /* Enlarge card on hover without causing overlap */
-      .activity-card:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.2);
-      }
-
-      /* Card header for reporter and timestamp */
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-      }
-
-      .reporter-info {
-        color: #333;
-        font-size: 16px;
-      }
-
-      .timestamp {
-        font-size: 12px;
-        color: #777; /* Light gray for timestamp */
-      }
-
-      /* Activity type section */
-      .activity-type {
-        display: flex;
-        align-items: center;
-      }
-
-      .activity-dot {
-        height: 8px;
-        width: 8px;
-        border-radius: 50%;
-        margin-right: 8px;
-      }
-
-      .red-dot {
-        background-color: #ff0000;
-      }
-
-      .green-dot {
-        background-color: #00ff00;
-      }
-
-      .white-dot {
-        background-color: #ffffff;
-      }
-
-      .activity-text {
-        font-size: 14px;
-        text-transform: capitalize;
-        color: #333;
-      }
-
-      /* Body of the card with image and description */
-      .card-body {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      /* Image styling */
-      .activity-image img {
-        max-width: 100%;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-        margin-bottom: 15px; /* Space below the image */
-      }
-
-      /* Description text styling */
-      .activity-description {
-        font-size: 14px;
-        color: #555;
-        line-height: 1.5;
-      }
-
-      /* Pagination styling */
-      .pagination {
-        margin-top: 20px;
-        text-align: center;
-      }
-
-      .pagination .btn {
-        background-color: #ff0000;
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 4px;
-        text-decoration: none;
-        margin: 0 5px;
-      }
-
-      .pagination .btn:hover {
-        background-color: #cc0000;
-      }
-
-      .activity-card.expanded {
-        transform: scale(1.05); /* Scale slightly larger */
-        box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2); /* Stronger shadow when expanded */
-        z-index: 10; /* Bring expanded card to the top */
-        margin: 0 20px; /* Push the expanded card away from the container edges */
-      }
- 
-  .action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 15px;
-  }
-
-  .btn-like, .btn-dislike, .btn-approve {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.3s ease;
-  }
-
-  .btn-like {
-      background-color: #28a745;
-      color: #fff;
-  }
-
-  .btn-like:hover {
-      background-color: #218838;
-  }
-
-  .btn-dislike {
-      background-color: #dc3545;
-      color: #fff;
-  }
-
-  .btn-dislike:hover {
-      background-color: #c82333;
-  }
-
-  .btn-approve {
-      background-color: #007bff;
-      color: #fff;
-  }
-
-  .btn-approve:hover {
-      background-color: #0056b3;
-  }
-
-  .approved-label {
-      padding: 5px 10px;
-      background-color: #28a745;
-      color: #fff;
-      border-radius: 5px;
-      font-size: 14px;
-      font-weight: bold;
-  }
-    </style>
-    <h1>Global Activity Feed</h1>
-    <div class="activity-feed-container">
-        <ul class="activity-list">
+    <h1 class="text-center text-red-600 text-2xl mt-10 mb-5">Global Activity Feed</h1>
+    <div class="bg-gray-50 rounded-lg shadow-md mx-auto p-5 max-w-4xl overflow-y-auto max-h-[calc(100vh-60px)] mb-5 relative">
+        <ul class="space-y-5 p-5">
             {% for activity in page_obj %}
-                <li class="activity-card">
-                    <div class="card-header">
+                <li class="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:scale-105 hover:shadow-md transition-transform duration-300 ease-in-out transform origin-center z-10">
+                    <!-- Card Header -->
+                    <div class="flex justify-between items-center mb-3">
                         <!-- Reporter and Time -->
-                        <div class="reporter-info">
-                            <strong>{{ activity.user.username }}</strong>
-                            <span class="timestamp">{{ activity.timestamp|date:"M d, Y, H:i A" }}</span>
+                        <div class="text-gray-800">
+                            <strong class="text-lg">{{ activity.user.username }}</strong>
+                            <span class="text-sm text-gray-500 ml-2">{{ activity.timestamp|date:"M d, Y, H:i A" }}</span>
                         </div>
                         <!-- Activity Type -->
-                        <div class="activity-type">
-                            <span class="activity-dot {% if activity.action_type == 'create' %}red-dot{% elif activity.action_type == 'update' %}green-dot{% else %}white-dot{% endif %}"></span>
-                            <span class="activity-text">{{ activity.get_action_type_display|capfirst }}</span>
+                        <div class="flex items-center">
+                            <span class="w-2 h-2 rounded-full mr-2 {% if activity.action_type == 'create' %}bg-red-500{% elif activity.action_type == 'update' %}bg-green-500{% else %}bg-white{% endif %}"></span>
+                            <span class="text-sm text-gray-700 capitalize">{{ activity.get_action_type_display }}</span>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <!-- Display Title -->
-                        <div class="activity-title">
-                            <h3>{{ activity.title }}</h3>
-                        </div>
-                        <!-- Display Image if available -->
+                    <!-- Card Body -->
+                    <div class="space-y-3">
+                        <!-- Title -->
+                        <h3 class="text-xl font-semibold text-gray-900">{{ activity.title }}</h3>
+                        <!-- Image -->
                         {% if activity.image %}
-                            <div class="activity-image">
+                            <div class="w-full">
                                 <img src="{{ activity.image.url }}"
                                      alt="Activity Image"
+                                     class="w-full rounded-lg border border-gray-200"
                                      width="{{ activity.image.width }}"
-                                     height="{{ activity.image.height }}" />
+                                     height="{{ activity.image.height }}">
                             </div>
                         {% endif %}
                         <!-- Description -->
-                        <div class="activity-description">
-                            <p>{{ activity.description }}</p>
-                        </div>
-                        <!-- Like/Dislike/Approval Buttons -->
-                        <div class="action-buttons">
-                            <button class="btn btn-like"
+                        <p class="text-gray-600 text-sm leading-relaxed">{{ activity.description }}</p>
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3 mt-4">
+                            <button class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200"
                                     data-id="{{ activity.id }}"
                                     onclick="likeActivity({{ activity.id }})">
                                 Like (<span id="like-count-{{ activity.id }}">{{ activity.like_count }}</span>)
                             </button>
-                            <button class="btn btn-dislike"
+                            <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200"
                                     data-id="{{ activity.id }}"
                                     onclick="dislikeActivity({{ activity.id }})">
                                 Dislike (<span id="dislike-count-{{ activity.id }}">{{ activity.dislike_count }}</span>)
                             </button>
-                            <!-- Approve button (only visible to mentors) -->
-                            {% if is_mentor  and not activity.is_approved %}
-                                <button class="btn btn-approve"
+                            <!-- Approve Button (for mentors) -->
+                            {% if is_mentor and not activity.is_approved %}
+                                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
                                         data-id="{{ activity.id }}"
                                         onclick="approveActivity({{ activity.id }})">Approve</button>
                             {% endif %}
-                            <!-- Approved label (visible to all users) -->
+                            <!-- Approved Label -->
                             {% if activity.is_approved %}
-                                <div class="approved-label">
-                                    Approved For BlueSky</>
-                                {% endif %}
-                            </div>
+                                <div class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Approved For BlueSky</div>
+                            {% endif %}
                         </div>
-                    </li>
-                {% empty %}
-                    <p>No activities recorded.</p>
-                {% endfor %}
-            </ul>
-            <!-- Pagination -->
-            <div class="pagination">
-                {% if is_paginated %}
-                    <!-- {% if page_obj.has_previous %} -->
-                    <a href="?page=1" class="btn btn-default">First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}"
-                       class="btn btn-default">Previous</a>
-                    <!-- {% endif %} -->
-                    <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
-                        <a href="?page={{ page_obj.paginator.num_pages }}"
-                           class="btn btn-default">Last</a>
-                    {% endif %}
-                {% endif %}
-            </div>
-        </div>
+                    </div>
+                </li>
+            {% empty %}
+                <p class="text-center text-gray-600">No activities recorded.</p>
+            {% endfor %}
+        </ul>
     </div>
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="flex justify-center gap-3 mt-5">
+            {% if page_obj.has_previous %}
+                <a href="?page=1"
+                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">First</a>
+                <a href="?page={{ page_obj.previous_page_number }}"
+                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Previous</a>
+            {% endif %}
+            <span class="text-gray-700 text-lg mx-4">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}"
+                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}"
+                   class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200">Last</a>
+            {% endif %}
+        </div>
+    {% endif %}
     <script>
       function getCookie(name) {
           let cookieValue = null;
