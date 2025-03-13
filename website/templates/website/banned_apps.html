@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">Search Banned Apps by Country</h1>
+        <!-- Search Bar -->
+        <div class="max-w-xl mx-auto mb-8">
+            <input type="text"
+                   id="countrySearch"
+                   placeholder="Enter country name..."
+                   class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent">
+        </div>
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <h2 class="text-2xl font-semibold mb-4">Banned Apps Results</h2>
+            <div id="appsGrid"
+                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Results will be inserted here -->
+            </div>
+        </div>
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden text-center py-8">
+            <p class="text-gray-600">No banned apps found for this country.</p>
+        </div>
+    </div>
+    <script>
+document.getElementById('countrySearch').addEventListener('input', debounce(searchApps, 300));
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+function searchApps() {
+    const country = document.getElementById('countrySearch').value.trim();
+    if (!country) {
+        hideResults();
+        return;
+    }
+
+    fetch(`/api/banned-apps/search/?country=${encodeURIComponent(country)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.apps.length === 0) {
+                showNoResults();
+            } else {
+                showResults(data.apps);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+}
+
+function showResults(apps) {
+    const grid = document.getElementById('appsGrid');
+    grid.innerHTML = '';
+    
+    apps.forEach(app => {
+        const card = createAppCard(app);
+        grid.appendChild(card);
+    });
+
+    document.getElementById('resultsSection').classList.remove('hidden');
+    document.getElementById('noResults').classList.add('hidden');
+}
+
+function createAppCard(app) {
+    const div = document.createElement('div');
+    div.className = 'bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow';
+    
+    div.innerHTML = `
+        <h3 class="text-xl font-semibold mb-2 text-red-600">${app.app_name}</h3>
+        <p class="text-sm text-gray-600 mb-2">${app.app_type}</p>
+        <p class="text-gray-800 mb-4">${app.ban_reason}</p>
+        <div class="text-sm text-gray-600">
+            <p>Ban Date: ${new Date(app.ban_date).toLocaleDateString()}</p>
+            ${app.source_url ? `<a href="${app.source_url}" target="_blank" class="text-red-600 hover:underline">Source →</a>` : ''}
+        </div>
+    `;
+    
+    return div;
+}
+
+function showNoResults() {
+    document.getElementById('resultsSection').classList.add('hidden');
+    document.getElementById('noResults').classList.remove('hidden');
+}
+
+function hideResults() {
+    document.getElementById('resultsSection').classList.add('hidden');
+    document.getElementById('noResults').classList.add('hidden');
+}
+    </script>
+{% endblock %}
