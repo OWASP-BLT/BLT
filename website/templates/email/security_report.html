@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="Security Vulnerability Report for {{ clean_domain }} - Please review the attached report for details.">
+        <meta name="keywords"
+              content="security, vulnerability, report, website security, cyber threats">
+        <title>Security Vulnerability Report</title>
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+              rel="stylesheet">
+    </head>
+    <body class="font-sans text-gray-700 bg-gray-100 p-6">
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+            <h1 class="text-2xl font-bold text-gray-800 mb-4">Security Vulnerability Report for {{ clean_domain }}</h1>
+            <p class="text-base text-gray-600 mb-4">A security vulnerability has been reported for your domain.</p>
+            <p class="text-base text-gray-600 mb-4">
+                The attached zip file contains screenshots and details of the vulnerability.
+                <br>
+                For security reasons, the zip file is password-protected.
+            </p>
+            <p class="text-base text-gray-600 mb-4">
+                <strong class="text-gray-800">Password:</strong> {{ password }}
+            </p>
+            <p class="text-base text-gray-600 mb-4">Please review this report as soon as possible and take appropriate action.</p>
+            <p class="text-sm text-gray-500 italic">This is an automated message from our security reporting system.</p>
+        </div>
+    </body>
+</html>
