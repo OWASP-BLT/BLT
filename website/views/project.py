@@ -42,6 +42,7 @@ from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
+
 def parse_date(date_str):
     """Parse GitHub API date string to datetime object"""
     return parse_datetime(date_str) if date_str else None
@@ -57,6 +58,7 @@ def repo_activity_data(request, slug):
     activity_data = RepoDetailView().fetch_activity_data(owner, repo_name)
 
     return JsonResponse(activity_data)
+
 
 def blt_tomato(request):
     current_dir = Path(__file__).parent.parent
