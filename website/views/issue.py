@@ -79,6 +79,7 @@ from website.utils import (
     is_valid_https_url,
     rebuild_safe_url,
     safe_redirect_request,
+    validate_screenshot_hash,
 )
 
 from .constants import GSOC25_PROJECTS
@@ -985,111 +986,157 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     dest_email = getattr(domain.organization, "email", None)
 
                 if dest_email:
+                    import logging
                     import secrets
                     import string
                     import tempfile
                     from pathlib import Path
 
                     import pyzipper
+                    from django.core.exceptions import ValidationError
                     from django.core.mail import EmailMessage
 
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        password = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(11))
-                        zip_path = os.path.join(temp_dir, "security_report.zip")
+                    logger = logging.getLogger(__name__)
 
-                        screenshot_paths = []
+                    try:
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            password = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(11))
+                            zip_path = os.path.join(temp_dir, "security_report.zip")
 
-                        if self.request.FILES.getlist("screenshots"):
-                            for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
-                                file_path = os.path.join(temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}")
-                                with open(file_path, "wb+") as destination:
-                                    for chunk in screenshot.chunks():
-                                        destination.write(chunk)
-                                screenshot_paths.append(file_path)
+                            screenshot_paths = []
 
-                        elif self.request.POST.get("screenshot-hash"):
-                            screenshot_hash = self.request.POST.get("screenshot-hash")
-                            orig_path = os.path.join(settings.MEDIA_ROOT, "uploads", f"{screenshot_hash}.png")
-                            if os.path.exists(orig_path):
-                                dest_path = os.path.join(temp_dir, "screenshot_1.png")
-                                import shutil
+                            if self.request.FILES.getlist("screenshots"):
+                                for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
+                                    file_path = os.path.join(
+                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                    )
+                                    with open(file_path, "wb+") as destination:
+                                        for chunk in screenshot.chunks():
+                                            destination.write(chunk)
+                                    screenshot_paths.append(file_path)
 
-                                shutil.copy(orig_path, dest_path)
-                                screenshot_paths.append(dest_path)
+                            elif self.request.POST.get("screenshot-hash"):
+                                screenshot_hashes = self.request.POST.get("screenshot-hash").split(",")
 
-                        details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
-                        with open(details_md_path, "w") as f:
-                            f.write("# Security Vulnerability Report\n")
-                            f.write("\n")
+                                for idx, screenshot_hash in enumerate(screenshot_hashes):
+                                    try:
+                                        validate_screenshot_hash(screenshot_hash.strip())
+                                    except ValidationError as e:
+                                        messages.error(self.request, str(e))
+                                        return HttpResponseRedirect("/")
 
-                            f.write(f"**URL:** {obj.url}\n")
-                            f.write(f"**Domain:** {clean_domain}\n")
+                                    orig_path = os.path.join(
+                                        settings.MEDIA_ROOT, "uploads", f"{screenshot_hash.strip()}.png"
+                                    )
 
-                            if obj.cve_id:
-                                f.write(f"**CVE ID:** {obj.cve_id}\n")
+                                    if not orig_path.startswith(os.path.abspath(settings.MEDIA_ROOT)):
+                                        messages.error(self.request, f"Invalid screenshot hash: {screenshot_hash}.")
+                                        return HttpResponseRedirect("/")
 
-                            f.write("\n")
-                            f.write(f"**Description:**\n{obj.description}\n\n")
+                                    if os.path.exists(orig_path):
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        import shutil
 
-                            if obj.markdown_description:
-                                f.write("## Detailed Description\n")
-                                f.write(f"{obj.markdown_description}\n\n")
+                                        shutil.copy(orig_path, dest_path)
+                                        screenshot_paths.append(dest_path)
 
-                            if (
-                                self.request.user.is_authenticated
-                                and self.request.POST.get("report_anonymous", "off") != "on"
-                            ):
-                                username = self.request.user.username or "Unknown User"
-                                email = self.request.user.email if self.request.user.email else "No email provided"
+                            details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
+                            with open(details_md_path, "w", encoding="utf-8") as f:
+                                f.write("# Security Vulnerability Report\n\n")
+                                f.write(f"**URL:** {obj.url}\n")
+                                f.write(f"**Domain:** {clean_domain}\n")
 
-                                f.write("### Reported by:\n")
-                                f.write(f"- **Name:** {username}\n")
-                                f.write(f"- **Email:** {email}\n\n")
+                                if obj.cve_id:
+                                    f.write(f"**CVE ID:** {obj.cve_id}\n")
 
-                            f.write(f"**Report Date:** {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                                f.write("\n**Description:**\n")
+                                f.write(f"{obj.description}\n\n")
 
-                        screenshot_paths.append(details_md_path)
+                                if obj.markdown_description:
+                                    f.write("## Detailed Description\n")
+                                    f.write(f"{obj.markdown_description}\n\n")
 
-                        with pyzipper.AESZipFile(
-                            zip_path, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
-                        ) as zipf:
-                            zipf.setpassword(password.encode())
-                            for file in screenshot_paths:
-                                zipf.write(file, arcname=os.path.basename(file))
+                                if (
+                                    self.request.user.is_authenticated
+                                    and self.request.POST.get("report_anonymous", "off") != "on"
+                                ):
+                                    username = self.request.user.username or "Unknown User"
+                                    email = self.request.user.email if self.request.user.email else "No email provided"
 
-                        email_subject = f"Security Vulnerability Report for {clean_domain}"
-                        html_body = render_to_string(
-                            "email/security_report.html",
-                            {
-                                "clean_domain": clean_domain,
-                                "password": password,
-                            },
-                        )
+                                    f.write("### Reported by:\n")
+                                    f.write(f"- **Name:** {username}\n")
+                                    f.write(f"- **Email:** {email}\n")
 
-                        email = EmailMessage(
-                            subject=email_subject,
-                            body=html_body,
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            to=[dest_email],
-                        )
-                        email.content_subtype = "html"
+                                    user_profile = getattr(self.request.user, "userprofile", None)
+                                    if user_profile:
+                                        if user_profile.github_url:
+                                            github_username = user_profile.github_url.rstrip("/").split("/")[-1]
+                                            sponsors_url = f"https://github.com/sponsors/{github_username}"
+                                            f.write(
+                                                f"- **💖 GitHub Sponsors:** [Sponsor]({sponsors_url}) (or [Profile]({user_profile.github_url}))\n"
+                                            )
+                                        if user_profile.btc_address:
+                                            f.write(f"- **🟠 BTC Address:** {user_profile.btc_address}\n")
+                                        if user_profile.bch_address:
+                                            f.write(f"- **💚 BCH Address:** {user_profile.bch_address}\n")
+                                        if user_profile.eth_address:
+                                            f.write(f"- **💎 ETH Address:** {user_profile.eth_address}\n")
 
-                        with open(zip_path, "rb") as f:
-                            email.attach("security_report.zip", f.read(), "application/zip")
+                                    f.write(f"\n**Report Date:** {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
-                        email.send(fail_silently=False)
+                            screenshot_paths.append(details_md_path)
 
-                    messages.success(
-                        self.request,
-                        "Security vulnerability report sent securely to the organization. Thank you for your report.",
-                    )
+                            with pyzipper.AESZipFile(
+                                zip_path, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
+                            ) as zipf:
+                                zipf.setpassword(password.encode())
+                                for file in screenshot_paths:
+                                    zipf.write(file, arcname=os.path.basename(file))
+
+                            email_subject = f"Security Vulnerability Report for {clean_domain}"
+                            html_body = render_to_string(
+                                "email/security_report.html",
+                                {"clean_domain": clean_domain, "password": password},
+                            )
+
+                            try:
+                                email = EmailMessage(
+                                    subject=email_subject,
+                                    body=html_body,
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
+                                    to=[dest_email],
+                                )
+                                email.content_subtype = "html"
+
+                                with open(zip_path, "rb") as f:
+                                    email.attach("security_report.zip", f.read(), "application/zip")
+
+                                email.send(fail_silently=False)
+
+                                messages.success(
+                                    self.request,
+                                    "Security vulnerability report sent securely to the organization. Thank you for your report.",
+                                )
+                                return HttpResponseRedirect("/")
+                            except Exception as e:
+                                logger.error(f"Error while sending email: {e}")
+                                messages.error(
+                                    self.request,
+                                    "Could not mail security report. Please try again later.",
+                                )
+                                return HttpResponseRedirect("/")
+
+                    except Exception as e:
+                        logger.error(f"Unexpected error: {e}")
+                        messages.error(self.request, "An unexpected error occurred while processing the report.")
+                        return HttpResponseRedirect("/")
+
                 else:
                     messages.warning(
                         self.request,
                         "Could not send security vulnerability report as no contact email is available for this domain.",
                     )
-
-                return HttpResponseRedirect("/")
+                    return HttpResponseRedirect("/")
 
             hunt = self.request.POST.get("hunt", None)
             if hunt is not None and hunt != "None":

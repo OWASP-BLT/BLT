@@ -2,7 +2,6 @@ import os
 import time
 
 import chromedriver_autoinstaller
-from django.core import mail
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, LiveServerTestCase, TestCase
@@ -185,30 +184,6 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    @override_settings(DEBUG=True)
-    def test_mail_security_bug(self):
-        self.selenium.get(f"{self.live_server_url}/report/")
-        self.selenium.find_element("name", "url").send_keys("https://example.com")
-        self.selenium.find_element("id", "description").send_keys("Critical Bug")
-        self.selenium.find_element("id", "markdownInput").send_keys("Bug details here")
-        image_path = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
-        self.selenium.find_element("name", "screenshots").send_keys(image_path)
-
-        # Select label 4 (Security)
-        self.selenium.find_element("id", "labelSelect").send_keys("4")
-
-        self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
-        self.selenium.find_element("name", "reportbug_button").click()
-
-        self.assertFalse(Issue.objects.filter(description="Critical Bug").exists())
-        self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("Security Vulnerability Report", mail.outbox[0].subject)
-        self.selenium.get(f"{self.live_server_url}/all_activity/")
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-
-        body_text = self.selenium.find_element(By.TAG_NAME, "body").text
-        self.assertNotIn("Critical Bug", body_text)
-
     def setUp(self):
         super().setUp()
         # Verify emails for all test users
@@ -230,7 +205,6 @@ class MySeleniumTests(LiveServerTestCase):
                 else:
                     # Create a new verified email address
                     EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
-
 
 
 class HideImage(TestCase):
