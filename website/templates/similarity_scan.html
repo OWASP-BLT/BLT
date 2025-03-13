@@ -2,117 +2,25 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Red, White, and Black Theme */
-        .container {
-            width: 80%;
-            margin: 50px auto;
-            padding: 20px;
-            border: 1px solid #000;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            position: relative;
-        }
-
-        h1 {
-            text-align: center;
-            color: #000;
-            font-size: 36px;
-            font-weight: bold;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
-        .btn {
-            display: inline-block;
-            background-color: #d32f2f; /* Red button */
-            color: #fff;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn:hover {
-            background-color: #b71c1c; /* Darker red on hover */
-        }
-
-        .results-container {
-            margin-top: 30px;
-        }
-
-        .chart-container {
-            margin-top: 20px;
-        }
-
-        .legend {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #fff;
-            border: 1px solid #000;
-            border-radius: 4px;
-            padding: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .legend div {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .legend div span {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-        }
-
-        .legend .high-similarity {
-            background-color: #008000; /* Green */
-        }
-
-        .legend .medium-similarity {
-            background-color: #ffa500; /* Orange */
-        }
-
-        .legend .low-similarity {
-            background-color: #ff0000; /* Red */
-        }
-        #cancelRequest {
-            display: none;
-        }
-        #downloadCsv {
-            display: none;
-        }
-    </style>
-    <div class="container">
-        <h1>Similarity Check</h1>
+    <div class="container mx-auto w-4/5 mt-16 p-5 border border-black rounded-lg bg-white shadow-md relative">
+        <h1 class="text-center text-black text-3xl font-bold">Similarity Check</h1>
         <!-- Legend -->
-        <div class="legend">
-            <div>
-                <span class="high-similarity"></span>High Similarity
+        <div class="absolute top-5 right-5 bg-white border border-black rounded-lg p-3 shadow-md">
+            <div class="flex items-center mb-1">
+                <span class="block w-5 h-5 mr-2 bg-green-500"></span>High Similarity
             </div>
-            <div>
-                <span class="medium-similarity"></span>Medium Similarity
+            <div class="flex items-center mb-1">
+                <span class="block w-5 h-5 mr-2 bg-orange-500"></span>Medium Similarity
             </div>
-            <div>
-                <span class="low-similarity"></span>Low/No Similarity
+            <div class="flex items-center">
+                <span class="block w-5 h-5 mr-2 bg-red-500"></span>Low/No Similarity
             </div>
         </div>
         <!-- Input fields -->
-        <form id="similarityForm">
+        <form id="similarityForm" class="space-y-4">
             {% csrf_token %}
             <div class="flex gap-4">
-                <div>
+                <div class="flex-1">
                     <input id="repo1"
                            name="repo1"
                            type="text"
@@ -120,24 +28,24 @@
                            class="border border-gray-300 p-2 rounded-md w-full"
                            required>
                 </div>
-                <div>
+                <div class="flex-1">
                     <select id="type1"
                             name="type1"
                             class="border border-gray-300 p-2 rounded-md w-full">
                         <option value="github">GitHub</option>
                     </select>
                 </div>
-                <div>
+                <div class="flex-1">
                     <input id="branch1"
                            name="branch1"
                            type="text"
                            placeholder="Enter the branch name"
-                           class="border border-gray-300 p-2 rounded-md w-full"
+                           class="border border-gray-300 p-2 rounded-md w-1/2"
                            required>
                 </div>
             </div>
-            <div class="flex gap-4 mt-4">
-                <div>
+            <div class="flex gap-4">
+                <div class="flex-1">
                     <input id="repo2"
                            name="repo2"
                            type="text"
@@ -145,32 +53,43 @@
                            class="border border-gray-300 p-2 rounded-md w-full"
                            required>
                 </div>
-                <div>
+                <div class="flex-1">
                     <select id="type2"
                             name="type2"
                             class="border border-gray-300 p-2 rounded-md w-full">
                         <option value="github">GitHub</option>
                     </select>
                 </div>
-                <div>
+                <div class="flex-1">
                     <input id="branch2"
                            name="branch2"
                            type="text"
                            placeholder="Enter the branch name"
-                           class="border border-gray-300 p-2 rounded-md w-full"
+                           class="border border-gray-300 p-2 rounded-md w-1/2"
                            required>
                 </div>
             </div>
-            <button type="button" id="fetchReports" class="btn">Fetch Reports</button>
-            <button type="button" id="cancelRequest" class="btn">Cancel</button>
+            <button type="button"
+                    id="fetchReports"
+                    class="inline-block bg-red-700 text-white px-5 py-2 text-center font-bold rounded-md hover:bg-red-900">
+                Fetch Reports
+            </button>
+            <button type="button"
+                    id="cancelRequest"
+                    class="inline-block bg-red-700 text-white px-5 py-2 text-center font-bold rounded-md hover:bg-red-900 hidden">
+                Cancel
+            </button>
         </form>
         <!-- Results Section -->
-        <div class="results-container">
-            <h2>Results</h2>
-            <div class="chart-container">
+        <div class="mt-8">
+            <h2 class="text-xl font-bold">Results</h2>
+            <div class="mt-4">
                 <canvas id="similarityChart"></canvas>
             </div>
-            <button id="downloadCsv" class="btn">Download CSV</button>
+            <button id="downloadCsv"
+                    class="inline-block bg-red-700 text-white px-5 py-2 text-center font-bold rounded-md hover:bg-red-900 mt-4 hidden">
+                Download CSV
+            </button>
         </div>
     </div>
     <script>

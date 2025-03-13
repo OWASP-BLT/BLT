@@ -1,135 +1,57 @@
 {% extends "base.html" %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-    .challenges-container {
-        text-align: center;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        max-width: 900px;
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .challenge-item {
-        margin: 15px 0;
-        padding: 15px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        text-align: left;
-        cursor: pointer;
-        box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.3s ease;
-    }
-
-    .challenge-item:hover {
-        box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    .challenge-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .challenge-title {
-        font-size: 18px;
-        font-weight: bold;
-        flex-grow: 1; /* Allow title to take up remaining space */
-    }
-
-    .dropdown-icon {
-        font-size: 16px;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-
-    .dropdown-icon.rotate {
-        transform: rotate(180deg);
-    }
-
-    .challenge-details {
-        margin-top: 10px;
-        display: none;
-        font-size: 14px;
-        color: #555;
-    }
-
-    .progress-bar-container {
-        position: relative;
-        width: 100%;
-        background-color: #ddd;
-        border-radius: 4px;
-        margin-top: 10px;
-        height: 20px;
-    }
-
-    .progress-bar {
-        height: 100%;
-        background-color: #FF0000;
-        border-radius: 4px;
-        width: 0; /* Will be dynamically filled */
-        transition: width 0.5s ease;
-    }
-
-    .progress-bar-container span {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-weight: bold;
-        color: #333;
-    }
-    .challenge-points {
-        font-size: 14px;
-        color: #777;
-        font-weight: bold;
-        margin-right: 3px; /* Adjusted spacing between points and arrow */
-    }
-
-    </style>
-    <div class="challenges-container">
-        <h2>Single User Challenges</h2>
+    <div class="text-center mx-auto my-5 p-5 bg-gray-100 rounded-lg max-w-4xl shadow-md">
+        <h2 class="text-xl font-bold">Single User Challenges</h2>
         {% if challenges %}
             <div>
                 {% for challenge in challenges %}
-                    <div class="challenge-item" onclick="toggleDetails({{ challenge.id }})">
-                        <div class="challenge-header">
-                            <span class="challenge-title">{{ challenge.title }}</span>
-                            <span class="challenge-points">{{ challenge.points }} pts</span>
+                    <div class="my-4 p-4 bg-white rounded-lg border border-gray-300 text-left cursor-pointer shadow-sm hover:shadow-md transition-shadow duration-300"
+                         onclick="toggleDetails({{ challenge.id }})">
+                        <div class="flex justify-between items-center">
+                            <span class="text-lg font-bold flex-grow">{{ challenge.title }}</span>
+                            <span class="text-sm text-gray-500 font-bold mr-1">{{ challenge.points }} pts</span>
                             <span id="dropdown-icon-{{ challenge.id }}"
-                                  class="dropdown-icon fas fa-chevron-down"></span>
+                                  class="fas fa-chevron-down text-base transition-transform duration-300"></span>
                         </div>
-                        <div id="challenge-details-{{ challenge.id }}" class="challenge-details">
+                        <div id="challenge-details-{{ challenge.id }}"
+                             class="hidden mt-2 text-sm text-gray-600">
                             <p>{{ challenge.description }}</p>
                         </div>
                         <!-- Progress Bar always visible -->
-                        <div class="progress-bar-container">
-                            <div class="progress-bar"
+                        <div class="relative w-full bg-gray-300 rounded mt-2 h-5">
+                            <div class="h-full bg-red-600 rounded transition-all duration-500"
                                  id="progress-bar-{{ challenge.id }}"
-                                 style="width: {{ challenge.progress }}%"></div>
-                            <span>{{ challenge.progress|floatformat:0 }}%</span>
+                                 data-progress="{{ challenge.progress }}"></div>
+                            <span class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-bold text-gray-800">{{ challenge.progress|floatformat:0 }}%</span>
                         </div>
                     </div>
                 {% endfor %}
             </div>
         {% else %}
-            <p>No challenges available.</p>
+            <p class="text-gray-700">No challenges available.</p>
         {% endif %}
     </div>
     <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set progress bar widths based on data-progress attribute
+    const progressBars = document.querySelectorAll('[data-progress]');
+    progressBars.forEach(bar => {
+        const progress = bar.getAttribute('data-progress');
+        bar.style.width = progress + '%';
+    });
+});
+
 function toggleDetails(challengeId) {
     const detailsElement = document.getElementById(`challenge-details-${challengeId}`);
     const iconElement = document.getElementById(`dropdown-icon-${challengeId}`);
 
-    if (detailsElement.style.display === "none" || detailsElement.style.display === "") {
-        detailsElement.style.display = "block";
-        iconElement.classList.add("rotate");
+    if (detailsElement.classList.contains("hidden")) {
+        detailsElement.classList.remove("hidden");
+        iconElement.classList.add("transform", "rotate-180");
     } else {
-        detailsElement.style.display = "none";
-        iconElement.classList.remove("rotate");
+        detailsElement.classList.add("hidden");
+        iconElement.classList.remove("transform", "rotate-180");
     }
 }
     </script>

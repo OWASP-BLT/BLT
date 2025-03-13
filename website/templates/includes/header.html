@@ -7,189 +7,18 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<style>
-    a {
-        color: black;
-    }
-
-    @media (min-width: 700px) {
-        #selected-filter {
-            display: inline;
-        }
-    }
-
-    @media (max-width: 699px) {
-        #selected-filter {
-            display: none;
-        }
-
-        #organizations-btn {
-            padding: 0.1rem;
-        }
-    }
-
-    .chatbot {
-        display: none;
-        position: fixed;
-        bottom: 3%;
-        right: 1%;
-        max-width: 400px;
-        width: 100%;
-        background-color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        height: 520px;
-        z-index: 9999;
-        overflow: hidden;
-        @media (max-width: 768px) {
-            right: 50%;
-            transform: translateX(50%);
-            max-width: 95%;
-        }
-        
-    }
-
-    .chat-icon {
-        position: fixed;
-        bottom: 3%;
-        right: 2%;
-        background-color: rgb(209, 16, 16);
-        transition: opacity 0.2s;
-        &:hover {
-            opacity: 0.8;
-        }
-        border-radius: 50%;
-        padding: 10px;
-        width: 55px;
-        height: 55px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .chat-header {
-        background-color: #e11d48;
-        /* Red color */
-        color: white;
-        padding: 12px;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
-
-    .chat-log {
-        max-height: 295px;
-        /* Adjusted height */
-        overflow-y: auto;
-        height: 295px;
-        /* Fixed height */
-    }
-
-    .loading {
-        display: none;
-        {% comment %} position: fixed;
-        bottom: 100px;
-right: 10.5%;{% endcomment %}
-        justify-content: center;
-        align-items: center;
-        font-size: 2xl;
-        padding: 10px; 
-        background-color: #ffffffe6;
-        /* Semi-transparent background */
-       border-radius: 8px;
-    }
-
-    .chat-Zindex {
-        z-index: 9999;
-    }
-
-    #quick-commands {
-        overflow-x: auto; /* Ensure buttons do not overflow */
-    }
-
-    #mobile-search {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        z-index: 40;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-
-    #mobile-search.active {
-        display: block;
-    }
-    
-</style>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        const desktopDropdownButton = document.getElementById('dropdownButton');
-        const desktopDropdownMenu = document.getElementById('dropdownMenu');
-
-        if (desktopDropdownButton && desktopDropdownMenu) {
-            desktopDropdownButton.addEventListener('click', () => {
-                desktopDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!desktopDropdownButton.contains(e.target) && !desktopDropdownMenu.contains(e.target)) {
-                    desktopDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        const mobileDropdownButton = document.getElementById('dropdown-toggle-mobile');
-        const mobileDropdownMenu = document.getElementById('dropdown-mobile');
-        if (mobileDropdownButton && mobileDropdownMenu) {
-            mobileDropdownButton.addEventListener('click', () => {
-                mobileDropdownMenu.classList.toggle('hidden');
-            });
-            document.addEventListener('click', (e) => {
-                if (!mobileDropdownButton.contains(e.target) && !mobileDropdownMenu.contains(e.target)) {
-                    mobileDropdownMenu.classList.add('hidden');
-                }
-            });
-        }
-
-        // Add sidebar toggle functionality
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('#page-wrapper');
-        let sidebarOpen = false;
-
-        if (hamburgerButton && sidebar) {
-            hamburgerButton.addEventListener('click', () => {
-                sidebarOpen = !sidebarOpen;
-                if (sidebarOpen) {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.classList.add('translate-x-0');
-                    if (mainContent) {
-                        mainContent.classList.add('lg:ml-[210px]');
-                    }
-                } else {
-                    sidebar.classList.add('-translate-x-full');
-                    sidebar.classList.remove('translate-x-0');
-                    if (mainContent) {
-                        mainContent.classList.remove('lg:ml-[210px]');
-                    }
-                }
-            });
-        }
-    });
-</script>
-<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5  py-2 px-1">
+<nav class="fixed top-0 z-50 w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5 py-2 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
-                <!-- Ham Menu section -->
+                <!-- Hamburger Menu -->
                 <button id="hamburger-button"
                         data-drawer-target="logo-sidebar"
                         data-drawer-toggle="logo-sidebar"
                         aria-controls="logo-sidebar"
                         type="button"
-                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500 ">
-                    <i class="fa fa-bars md:text-xl text-lg "></i>
+                        class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500">
+                    <i class="fa fa-bars md:text-xl text-lg"></i>
                 </button>
                 <!-- Logo -->
                 <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
@@ -272,7 +101,7 @@ right: 10.5%;{% endcomment %}
                                             </li>
                                             <li>
                                                 <button data-value="repos"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded  filter-option">
+                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
                                                     <i class="fa-brands fa-github fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Repos" %}
                                                 </button>
@@ -291,19 +120,20 @@ right: 10.5%;{% endcomment %}
                 <i class="fa fa-search text-3xl"></i>
             </button>
             {% if request.user.is_authenticated %}
-                <div class=" flex justify-center items-center">
+                <div class="flex justify-center items-center">
+                    <!-- Dropdown Button -->
                     <button id="dropdownButton"
-                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2  bg-gray-200  md:rounded-lg  rounded-full  md:hover:bg-gray-200/70 transition-colors duration-200"
+                            class="relative flex items-center sm:gap-2 md:px-4 md:py-2 bg-gray-200 md:rounded-lg rounded-full md:hover:bg-gray-200/70 transition-colors duration-200"
                             type="button">
                         {% if request.user.userprofile.avatar %}
                             <img src="{{ request.user.userprofile.avatar }}"
-                                 class="md:size-8 size-10 rounded-full "
+                                 class="md:size-8 size-10 rounded-full"
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
                         {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
                             <img src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                 class="md:size-8 size-10 rounded-full "
+                                 class="md:size-8 size-10 rounded-full"
                                  alt="User Avatar"
                                  width="30"
                                  height="30">
@@ -312,13 +142,12 @@ right: 10.5%;{% endcomment %}
                         {% endif %}
                         <span class="absolute md:block hidden -right-[17px] -bottom-[25px] lg:-right-[25px] lg:-bottom-[25px] sm:static whitespace-nowrap">
                             <span>@{{ request.user.username }}</span> ({{ request.user|score|default:"0" }} Pts)
-                            {% comment %} <i class="fa fa-caret-down text-red-500"></i> {% endcomment %}
                         </span>
                     </button>
-                    <!-- Dropdown for User Avatar -->
+                    <!-- Dropdown Menu -->
                     <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5">
-                        <ul class="flex flex-col gap-1 px-4 py-4 border shadow-md rounded-md left-auto">
+                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5 border shadow-md rounded-md">
+                        <ul class="flex flex-col gap-1 px-4 py-4">
                             <li>
                                 <a href="{% url 'account_profile' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
@@ -342,8 +171,7 @@ right: 10.5%;{% endcomment %}
                             <li>
                                 <a href="{% url 'social' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-share fa-fw"></i>
-                                    {% trans "Social" %}
+                                    <i class="fa fa-share fa-fw"></i> {% trans "Social" %}
                                 </a>
                             </li>
                             <li>
@@ -364,10 +192,10 @@ right: 10.5%;{% endcomment %}
                                     <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
-                            <!-- divider -->
+                            <!-- Divider -->
                             <li class="border my-2 w-full"></li>
                             <li>
-                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white  rounded-md text-white transition-colors duration-200 font-bold"
+                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
                                    href="{% url 'account_logout' %}">
                                     <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                 </a>
@@ -377,15 +205,17 @@ right: 10.5%;{% endcomment %}
                 </div>
             {% else %}
                 <!-- Sign up and Log in Buttons -->
-                <div class="flex items-center ">
-                    <div class="hidden lg:!flex  justify-center items-center gap-4">
+                <div class="flex items-center">
+                    <div class="hidden lg:flex justify-center items-center gap-4">
                         <a href="{% url 'account_signup' %}"
-                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
-                        {% trans "Signup" %}</a>
+                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                            {% trans "Signup" %}
+                        </a>
                         <a href="{% url 'account_login' %}"
                            data-toggle="modal"
-                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200 ">
-                        {% trans "Login" %}</a>
+                           class="inline-flex select-none items-center justify-center px-3 py-2 text-red-500 border-2 border-red-500 rounded-lg hover:bg-red-500 hover:text-white font-medium transition-colors duration-200">
+                            {% trans "Login" %}
+                        </a>
                     </div>
                     <!-- Log in icon -->
                     <a href="{% url 'account_login' %}" class="block lg:hidden m-2">
@@ -395,7 +225,7 @@ right: 10.5%;{% endcomment %}
             {% endif %}
         </div>
     </div>
-    <!-- Mobile Search Bar - Moved inside nav -->
+    <!-- Mobile Search Bar -->
     <div id="mobile-search"
          class="hidden sm:hidden md:hidden lg:hidden w-full px-4 py-3 bg-white border-t border-gray-200">
         <form action="{% url 'search' %}" method="get" class="flex items-center">
@@ -414,18 +244,22 @@ right: 10.5%;{% endcomment %}
         </form>
     </div>
 </nav>
+<!-- Chatbot -->
 <div class="bg-gray-100 chat-Zindex">
-    <div id="chatbot" class="chatbot">
-        <div class="chat-header flex justify-between items-center">
-            <h3 class="text-xl font-extrabold">Chat with BLT Bot</h3>
-            <button id="closeChatbot" class="text-white text-2xl">x</button>
+    <div id="chatbot"
+         class="fixed bottom-3 right-1 max-w-[400px] w-full bg-white rounded-lg shadow-lg h-[520px] z-[9999] overflow-hidden hidden">
+        <div class="bg-red-600 text-white p-3 rounded-t-lg flex justify-between items-center">
+            <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
+            <button id="closeChatbot" class="text-white text-2xl">×</button>
         </div>
         <div class="p-4">
             <div class="bg-red-100 p-3 rounded-lg mb-2 text-red-700">
                 <p class="text-base">We respond instantly!</p>
             </div>
-            <div id="chat-log" class="relative chat-log bg-gray-100 p-3 rounded-lg">
-                <div id="loading" class="loading absolute bottom-1 left-1">
+            <div id="chat-log"
+                 class="bg-gray-100 p-3 rounded-lg max-h-[295px] h-[295px] overflow-y-auto relative">
+                <div id="loading"
+                     class="hidden absolute bottom-1 left-1 flex items-center justify-center bg-white/90 p-2 rounded-lg">
                     <svg class="animate-spin h-5 w-5 text-red-600"
                          xmlns="http://www.w3.org/2000/svg"
                          fill="none"
@@ -463,7 +297,8 @@ right: 10.5%;{% endcomment %}
             </div>
         </div>
     </div>
-    <div id="chatIcon" class="chat-icon">
+    <div id="chatIcon"
+         class="fixed bottom-3 right-2 bg-red-600 rounded-full p-3 w-[55px] h-[55px] flex items-center justify-center cursor-pointer shadow-lg hover:opacity-80 transition-opacity">
         <svg class="w-10 h-10 text-white"
              aria-hidden="true"
              xmlns="http://www.w3.org/2000/svg"
@@ -475,264 +310,285 @@ right: 10.5%;{% endcomment %}
         </svg>
     </div>
 </div>
-<!--Script for Dropdown button-->
+<!-- Scripts -->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const organizationsBtn = document.getElementById("organizations-btn");
-        const organizationsDropdown = document.getElementById("organizations-dropdown");
-        const queryInput = document.getElementById("query-input");
-
-        // Function to get URL parameters
-        function getUrlParameter(name) {
-            const params = new URLSearchParams(window.location.search);
-            return params.get(name);
-        }
-
-        // Set initial values from URL parameters if they exist
-        const savedQuery = getUrlParameter('query');
-        const savedType = getUrlParameter('type');
-
-        if (queryInput && savedQuery) {
-            queryInput.value = savedQuery;
-        }
-
-        if (savedType) {
-            // Find the matching filter option
-            const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
-            if (matchingOption) {
-                const iconElement = matchingOption.querySelector('i');
-                const textContent = matchingOption.textContent.trim();
-                
-                const selectedIcon = document.getElementById('selected-icon');
-                const selectedFilter = document.getElementById('selected-filter');
-                const filterType = document.getElementById('filter-type');
-                
-                // Update the button display if elements exist
-                if (selectedIcon && selectedFilter && filterType) {
-                    selectedIcon.className = iconElement.className + ' mr-2';
-                    selectedFilter.textContent = textContent;
-                    filterType.value = savedType;
-                }
+        document.addEventListener('DOMContentLoaded', function () {
+            const organizationsBtn = document.getElementById('organizations-btn');
+            const organizationsDropdown = document.getElementById('organizations-dropdown');
+            const queryInput = document.getElementById('query-input');
+    
+            // Function to get URL parameters
+            function getUrlParameter(name) {
+                const params = new URLSearchParams(window.location.search);
+                return params.get(name);
             }
-        }
-
-        if (organizationsBtn && organizationsDropdown) {
-            organizationsBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                const isHidden = organizationsDropdown.classList.toggle('hidden');
-
-                if (!isHidden) {
-                    const btnRect = organizationsBtn.getBoundingClientRect();
-                    Object.assign(organizationsDropdown.style, {
-                        position: 'fixed',
-                        top: `${btnRect.bottom}px`,
-                        left: `${btnRect.left}px`,
-                        minWidth: `${btnRect.width}px`,
-                        display: 'block',
-                    });
-                } else {
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-
-            // Close dropdown when clicking outside
-            document.addEventListener("click", function (e) {
-                if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
-                    organizationsDropdown.classList.add('hidden');
-                    organizationsDropdown.style.display = 'none';
-                }
-            });
-        }
-
-        // Only add event listeners to filter options if they exist
-        const filterOptions = document.querySelectorAll('.filter-option');
-        if (filterOptions.length > 0) {
-            filterOptions.forEach(option => {
-                option.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const iconElement = this.querySelector('i');
-                    const textContent = this.textContent.trim();
-                    const filterValue = this.getAttribute('data-value');
+    
+            // Set initial values from URL parameters if they exist
+            const savedQuery = getUrlParameter('query');
+            const savedType = getUrlParameter('type');
+    
+            if (queryInput && savedQuery) {
+                queryInput.value = savedQuery;
+            }
+    
+            if (savedType) {
+                // Find the matching filter option
+                const matchingOption = document.querySelector(`.filter-option[data-value="${savedType}"]`);
+                if (matchingOption) {
+                    const iconElement = matchingOption.querySelector('i');
+                    const textContent = matchingOption.textContent.trim();
                     
                     const selectedIcon = document.getElementById('selected-icon');
                     const selectedFilter = document.getElementById('selected-filter');
                     const filterType = document.getElementById('filter-type');
                     
+                    // Update the button display if elements exist
                     if (selectedIcon && selectedFilter && filterType) {
                         selectedIcon.className = iconElement.className + ' mr-2';
                         selectedFilter.textContent = textContent;
-                        filterType.value = filterValue;
+                        filterType.value = savedType;
                     }
-
-                    if (organizationsDropdown) {
+                }
+            }
+    
+            if (organizationsBtn && organizationsDropdown) {
+                organizationsBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+    
+                    const isHidden = organizationsDropdown.classList.toggle('hidden');
+    
+                    if (!isHidden) {
+                        const btnRect = organizationsBtn.getBoundingClientRect();
+                        Object.assign(organizationsDropdown.style, {
+                            position: 'fixed',
+                            top: `${btnRect.bottom}px`,
+                            left: `${btnRect.left}px`,
+                            minWidth: `${btnRect.width}px`,
+                            display: 'block',
+                        });
+                    } else {
+                        organizationsDropdown.style.display = 'none';
+                    }
+                });
+    
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function (e) {
+                    if (!organizationsBtn.contains(e.target) && !organizationsDropdown.contains(e.target)) {
                         organizationsDropdown.classList.add('hidden');
                         organizationsDropdown.style.display = 'none';
                     }
                 });
-            });
-        }
-    });
+            }
+    
+            // Only add event listeners to filter options if they exist
+            const filterOptions = document.querySelectorAll('.filter-option');
+            if (filterOptions.length > 0) {
+                filterOptions.forEach(option => {
+                    option.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const iconElement = this.querySelector('i');
+                        const textContent = this.textContent.trim();
+                        const filterValue = this.getAttribute('data-value');
+                        
+                        const selectedIcon = document.getElementById('selected-icon');
+                        const selectedFilter = document.getElementById('selected-filter');
+                        const filterType = document.getElementById('filter-type');
+                        
+                        if (selectedIcon && selectedFilter && filterType) {
+                            selectedIcon.className = iconElement.className + ' mr-2';
+                            selectedFilter.textContent = textContent;
+                            filterType.value = filterValue;
+                        }
+    
+                        if (organizationsDropdown) {
+                            organizationsDropdown.classList.add('hidden');
+                            organizationsDropdown.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
 </script>
-<!--Script for ChatBot -->
 <script>
-    document.getElementById('chatIcon').addEventListener('click', function () {
-        document.getElementById('chatbot').style.display = 'block';
-        this.style.display = 'none';
-    });
-
-    document.getElementById('closeChatbot').addEventListener('click', function () {
-        document.getElementById('chatbot').style.display = 'none';
-        document.getElementById('chatIcon').style.display = 'flex';
-    });
-
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const chatLog = document.querySelector('#chat-log');
-        const chatInput = document.querySelector('#chat-message-input');
-        const chatSubmit = document.querySelector('#chat-message-submit');
-        const chatClear = document.querySelector('#chat-message-clear');
-        const chatClose = document.querySelector('#closeChatbot');
-        const loading = document.querySelector('#loading');
-        const quickCommands = document.querySelectorAll('.quick-command');
+        document.getElementById('chatIcon').addEventListener('click', function () {
+            document.getElementById('chatbot').classList.remove('hidden');
+            this.classList.add('hidden');
+        });
     
-        function escapeHtml(text) {
-            return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
-        }
+        document.getElementById('closeChatbot').addEventListener('click', function () {
+            document.getElementById('chatbot').classList.add('hidden');
+            document.getElementById('chatIcon').classList.remove('hidden');
+        });
     
-        function handleSlashCommand(command, args) {
-            let response = '';
-            switch (command) {
-                case '/help':
-                    response = '<strong>Available Commands:</strong><br>' +
-                        '/help - Show this message<br>' +
-                        '/report &lt;description&gt; - Report a bug<br>' +
-                        '/gsoc - Get GSoC info<br>' +
-                        '/stats - View platform stats<br>';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    return true;
-                case '/report':
-                    if (!args) {
-                        response = 'Please provide a description. Usage: /report &lt;description&gt;';
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const chatLog = document.querySelector('#chat-log');
+            const chatInput = document.querySelector('#chat-message-input');
+            const chatSubmit = document.querySelector('#chat-message-submit');
+            const chatClear = document.querySelector('#chat-message-clear');
+            const chatClose = document.querySelector('#closeChatbot');
+            const loading = document.querySelector('#loading');
+            const quickCommands = document.querySelectorAll('.quick-command');
+        
+            function escapeHtml(text) {
+                return text.replace(/</g , "&lt;").replace( />/g, "&gt;");
+            }
+        
+            function handleSlashCommand(command, args) {
+                let response = '';
+                switch (command) {
+                    case '/help':
+                        response = '<strong>Available Commands:</strong><br>' +
+                            '/help - Show this message<br>' +
+                            '/report &lt;description&gt; - Report a bug<br>' +
+                            '/gsoc - Get GSoC info<br>' +
+                            '/stats - View platform stats<br>';
                         chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
                         chatLog.scrollTop = chatLog.scrollHeight;
                         return true;
-                    }
-                    return false;
-                case '/gsoc':
-                    response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
-                        'Explore OWASP\'s GSoC participation:<br>' +
-                        '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
-                        'Get involved with open-source at OWASP!';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    return true;
-                case '/stats':
-                    response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    return true;
-                default:
-                    return false;
-            }
-        }
-    
-        chatSubmit.onclick = function () {
-            const message = chatInput.value.trim();
-            chatInput.value = '';
-            if (message === "") return;
-    
-            const escapedMessage = escapeHtml(message);
-            chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
-            loading.style.display = 'flex';
-    
-            // Check for slash command
-            if (message.startsWith('/')) {
-                const [command, ...argsArr] = message.split(' ');
-                const args = argsArr.join(' ').trim();
-                if (handleSlashCommand(command, args)) {
-                    loading.style.display = 'none';
-                    return;
+                    case '/report':
+                        if (!args) {
+                            response = 'Please provide a description. Usage: /report &lt;description&gt;';
+                            chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                            chatLog.scrollTop = chatLog.scrollHeight;
+                            return true;
+                        }
+                        return false;
+                    case '/gsoc':
+                        response = '<strong>Google Summer of Code (GSoC) Info:</strong><br>' +
+                            'Explore OWASP\'s GSoC participation:<br>' +
+                            '- Current projects: <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas">GSoC 2025 Ideas</a><br>' +
+                            'Get involved with open-source at OWASP!';
+                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        return true;
+                    case '/stats':
+                        response = 'Platform stats are not directly available via the bot yet. Please check the website dashboard or ask an admin for detailed statistics.';
+                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + response + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        return true;
+                    default:
+                        return false;
                 }
             }
-    
-            fetch('/api/chatbot/conversation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: message }),
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        if (response.status === 429) {
-                            throw new Error('Rate limit exceeded');
+        
+            chatSubmit.onclick = function () {
+                const message = chatInput.value.trim();
+                chatInput.value = '';
+                if (message === "") return;
+        
+                const escapedMessage = escapeHtml(message);
+                chatLog.innerHTML += '<div class="bg-green-300 text-black p-2 rounded-lg mb-2"> You - ' + escapedMessage + '</div>';
+                loading.classList.remove('hidden');
+        
+                // Check for slash command
+                if (message.startsWith('/')) {
+                    const [command, ...argsArr] = message.split(' ');
+                    const args = argsArr.join(' ').trim();
+                    if (handleSlashCommand(command, args)) {
+                        loading.classList.add('hidden');
+                        return;
+                    }
+                }
+        
+                fetch('/api/chatbot/conversation/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: message }),
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 429) {
+                                throw new Error('Rate limit exceeded');
+                            }
+                            throw new Error('Network response was not ok');
                         }
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
+                        return response.json();
+                    })
+                    .then(data => {
+                        const escapedAnswer = escapeHtml(data.answer);
+                        chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        loading.classList.add('hidden');
+                    })
+                    .catch((error) => {
+                        let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
+                        if (error.message === 'Rate limit exceeded') {
+                            errorMessage = 'The request limit has been reached. Please try again later.';
+                        }
+                        chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
+                        chatLog.scrollTop = chatLog.scrollHeight;
+                        loading.classList.add('hidden');
+                    });
+            };
+        
+            function clearChat() {
+                loading.classList.remove('hidden');
+                fetch('/api/chatbot/conversation/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: "exit" }),
                 })
-                .then(data => {
-                    const escapedAnswer = escapeHtml(data.answer);
-                    chatLog.innerHTML += '<div class="bg-blue-300 text-black p-2 rounded-lg mb-2">Bot - ' + escapedAnswer + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    loading.style.display = 'none';
-                })
-                .catch((error) => {
-                    let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
-                    if (error.message === 'Rate limit exceeded') {
-                        errorMessage = 'The request limit has been reached. Please try again later.';
-                    }
-                    chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
-                    chatLog.scrollTop = chatLog.scrollHeight;
-                    loading.style.display = 'none';
-                });
-        };
-    
-        function clearChat() {
-            loading.style.display = 'flex';
-            fetch('/api/chatbot/conversation/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question: "exit" }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    chatLog.innerHTML = '';
-                    loading.style.display = 'none';
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                    loading.style.display = 'none';
-                });
-        }
-    
-        chatClear.onclick = clearChat;
-        chatClose.onclick = clearChat;
-    
-        chatInput.addEventListener('keyup', function (event) {
-            if (event.keyCode === 13) {  // Enter key
-                chatSubmit.click();
+                    .then(response => response.json())
+                    .then(data => {
+                        chatLog.innerHTML = '';
+                        loading.classList.add('hidden');
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        loading.classList.add('hidden');
+                    });
             }
-        });
-    
-        // Handle quick command button clicks
-        quickCommands.forEach(button => {
-            button.addEventListener('click', function () {
-                const command = this.getAttribute('data-command');
-                chatInput.value = command;
-                chatSubmit.click();
+        
+            chatClear.onclick = clearChat;
+            chatClose.onclick = clearChat;
+        
+            chatInput.addEventListener('keyup', function (event) {
+                if (event.keyCode === 13) {  // Enter key
+                    chatSubmit.click();
+                }
+            });
+        
+            // Handle quick command button clicks
+            quickCommands.forEach(button => {
+                button.addEventListener('click', function () {
+                    const command = this.getAttribute('data-command');
+                    chatInput.value = command;
+                    chatSubmit.click();
+                });
             });
         });
-    });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropdownButton = document.getElementById('dropdownButton');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+        
+            if (dropdownButton && dropdownMenu) {
+                // Toggle dropdown on button click
+                dropdownButton.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropdownMenu.classList.toggle('hidden');
+                });
+        
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function (e) {
+                    if (!dropdownButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                        dropdownMenu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+        
 </script>
 <script>
-    function toggleMobileSearch() {
-        const mobileSearch = document.getElementById('mobile-search');
-        mobileSearch.classList.toggle('hidden');
-        mobileSearch.classList.toggle('active');
-    }
+        function toggleMobileSearch() {
+            const mobileSearch = document.getElementById('mobile-search');
+            mobileSearch.classList.toggle('hidden');
+            mobileSearch.classList.toggle('active');
+        }
 </script>

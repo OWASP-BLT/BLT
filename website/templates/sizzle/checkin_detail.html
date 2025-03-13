@@ -1,28 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-    <style>
-    .docs_style {
-        background-color: #EF4444!important;
-        color: white!important;
-    }
-    .docs_style:hover {
-        background-color: #dc2626!important;
-    }
-
-    .accent-line {
-        height: 4px;
-        width: 50px;
-        background: #EF4444;
-    }
-    </style>
     <div class="bg-gray-100 min-h-screen p-6">
         {% include "includes/sidenav.html" %}
         <div class="main-content w-full max-w-2xl mx-auto">
             <div class="flex justify-between items-center mb-8 mt-8">
                 <h1 class="text-4xl font-extrabold text-gray-800">Check-In Details</h1>
                 <a href="{% url 'checkIN' %}"
-                   class="docs_style py-2 px-6 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                   class="bg-red-500 text-white py-2 px-6 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
                     Back
                 </a>
             </div>
@@ -30,7 +15,7 @@
                 <div class="bg-white rounded-lg shadow-inner p-8">
                     <div class="mb-6">
                         <h2 class="text-3xl font-bold text-gray-800 mb-1">{{ username }}</h2>
-                        <div class="accent-line mb-3"></div>
+                        <div class="h-1 w-12 bg-red-500 mb-3"></div>
                         <p class="text-gray-500 text-sm">{{ date }}</p>
                     </div>
                     <div class="mb-8">
