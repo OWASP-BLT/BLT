@@ -2144,8 +2144,8 @@ class Hackathon(models.Model):
             repo__in=self.repositories.all(),
             type="pull_request",
             is_merged=True,
-            created_at__gte=self.start_time,
-            created_at__lte=self.end_time,
+            merged_at__gte=self.start_time,
+            merged_at__lte=self.end_time,
         )
 
         # Group by user_profile and count PRs
@@ -2159,6 +2159,11 @@ class Hackathon(models.Model):
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
+                # Skip bot accounts
+                github_username = pr.contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
                 # If no user profile but has contributor, use contributor as key
                 contributor_id = f"contributor_{pr.contributor.id}"
                 if contributor_id in leaderboard:
@@ -2174,6 +2179,7 @@ class Hackathon(models.Model):
                         "count": 1,
                         "prs": [pr],
                         "is_contributor": True,
+                        "contributor": pr.contributor,  # Include the contributor object
                     }
 
         # Convert to list and sort by count (descending)
@@ -2245,6 +2251,8 @@ class Queue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     launched = models.BooleanField(default=False)
     launched_at = models.DateTimeField(null=True, blank=True)
+    txid = models.CharField(max_length=255, null=True, blank=True)
+    url = models.URLField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]
