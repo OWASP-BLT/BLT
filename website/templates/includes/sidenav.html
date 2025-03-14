@@ -746,19 +746,4 @@
             </ul>
         </div>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const hamburgerButton = document.getElementById('hamburger-button');
-            const sidebar = document.getElementById('sidebar');
-            
-            // Check if elements exist before adding event listener
-            if (hamburgerButton && sidebar) {
-                hamburgerButton.addEventListener('click', function () {
-                    sidebar.classList.toggle('-translate-x-full');
-                });
-            } else {
-                console.warn('Hamburger button or sidebar elements not found');
-            }
-        });
-    </script>
 </div>
