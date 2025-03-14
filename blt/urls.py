@@ -299,6 +299,7 @@ from website.views.user import (
     contributors,
     contributors_view,
     create_wallet,
+    delete_notification,
     deletions,
     fetch_notifications,
     follow_user,
@@ -636,6 +637,7 @@ urlpatterns = [
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
     path("notifications/fetch/", fetch_notifications, name="fetch_notifications"),
     path("notifications/mark_all_read", mark_as_read, name="mark_all_read"),
+    path("notifications/delete_notification/<int:notification_id>", delete_notification, name="delete_notification"),
     re_path(
         r"^googleplayapp/$",
         TemplateView.as_view(template_name="coming_soon.html"),
