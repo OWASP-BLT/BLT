@@ -42,6 +42,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Points,
     Tag,
     Thread,
@@ -1118,3 +1119,32 @@ def set_public_key(request):
     profile.save()
 
     return JsonResponse({"success": True, "public_key": profile.public_key})
+
+
+@login_required
+def fetch_notifications(request):
+    notifications = Notification.objects.filter(user=request.user).order_by("is_read", "-created_at")
+
+    notifications_data = [
+        {
+            "message": notification.message,
+            "created_at": notification.created_at,
+            "is_read": notification.is_read,
+            "notification_type": notification.notification_type,
+            "link": notification.link,
+        }
+        for notification in notifications
+    ]
+
+    return JsonResponse({"notifications": notifications_data}, safe=False)
+
+
+@login_required
+def mark_as_read(request):
+    if request.method == "PATCH":
+        try:
+            notifications = Notification.objects.filter(user=request.user, is_read=False)
+            notifications.update(is_read=True)
+            return JsonResponse({"status": "success"})
+        except Notification.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Unable to fetch notifications"}, status=404)
