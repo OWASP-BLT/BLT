@@ -592,3 +592,17 @@
             mobileSearch.classList.toggle('active');
         }
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const hamburgerButton = document.getElementById('hamburger-button');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (hamburgerButton && sidebar) {
+            hamburgerButton.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                sidebar.classList.toggle('-translate-x-full');
+            });
+        }
+    });
+</script>
