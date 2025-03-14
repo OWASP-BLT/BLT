@@ -10,7 +10,7 @@ from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
@@ -306,6 +306,13 @@ from website.views.user import (
     github_webhook,
     invite_friend,
     messaging_home,
+    newsletter_confirm,
+    newsletter_detail,
+    newsletter_home,
+    newsletter_preferences,
+    newsletter_resend_confirmation,
+    newsletter_subscribe,
+    newsletter_unsubscribe,
     profile,
     profile_edit,
     referral_signup,
@@ -1083,6 +1090,14 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+    # Newsletter URLs
+    path("newsletter/", newsletter_home, name="newsletter_home"),
+    path("newsletter/<slug:slug>/", newsletter_detail, name="newsletter_detail"),
+    path("newsletter/subscribe/", newsletter_subscribe, name="newsletter_subscribe"),
+    path("newsletter/confirm/<uuid:token>/", newsletter_confirm, name="newsletter_confirm"),
+    path("newsletter/unsubscribe/<uuid:token>/", newsletter_unsubscribe, name="newsletter_unsubscribe"),
+    path("newsletter/preferences/", newsletter_preferences, name="newsletter_preferences"),
+    path("newsletter/resend-confirmation/", newsletter_resend_confirmation, name="newsletter_resend_confirmation"),
 ]
 
 if settings.DEBUG:

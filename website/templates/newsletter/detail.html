@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% load gravatar %}
+{% block title %}{{ newsletter.title }} - Newsletter{% endblock %}
+{% block description %}{{ newsletter.content|striptags|truncatechars:160 }}{% endblock %}
+{% block content %}
+    <!-- Include Sidebar -->
+    {% include "includes/sidenav.html" %}
+    <div class="relative mt-9">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Breadcrumbs -->
+            <nav class="flex mb-5" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{% url 'home' %}"
+                           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                            <svg class="w-3 h-3 mr-2.5"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20">
+                                <path d="m19.707 9.293-2-2-7-7a1 1 0 0 0-1.414 0l-7 7-2 2a1 1 0 0 0 1.414 1.414L2 10.414V18a2 2 0 0 0 2 2h3a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h3a2 2 0 0 0 2-2v-7.586l.293.293a1 1 0 0 0 1.414-1.414Z" />
+                            </svg>
+                            Home
+                        </a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <svg class="w-3 h-3 text-gray-400 mx-1"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="none"
+                                 viewBox="0 0 6 10">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4" />
+                            </svg>
+                            <a href="{% url 'newsletter_home' %}"
+                               class="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2">Newsletters</a>
+                        </div>
+                    </li>
+                    <li aria-current="page">
+                        <div class="flex items-center">
+                            <svg class="w-3 h-3 text-gray-400 mx-1"
+                                 aria-hidden="true"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="none"
+                                 viewBox="0 0 6 10">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 9 4-4-4-4" />
+                            </svg>
+                            <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">{{ newsletter.title }}</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Main content -->
+                <div class="w-full md:w-2/3">
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                        {% if newsletter.featured_image %}
+                            <img class="w-full h-64 object-cover object-center"
+                                 src="{{ newsletter.featured_image.url }}"
+                                 alt="{{ newsletter.title }}">
+                        {% endif %}
+                        <div class="p-6">
+                            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ newsletter.title }}</h1>
+                            <div class="flex items-center text-gray-500 text-sm mb-4">
+                                <span>Published on {{ newsletter.published_at|date:"F j, Y" }}</span>
+                                <span class="mx-2">•</span>
+                                <span>{{ newsletter.view_count }} views</span>
+                            </div>
+                            <div class="prose max-w-none">{{ newsletter.content|markdown }}</div>
+                            <!-- Content sections -->
+                            {% if newsletter.recent_bugs_section and recent_bugs %}
+                                <div class="mt-8">
+                                    <h2 class="text-xl font-bold text-gray-900 mb-4">Recent Security Findings</h2>
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <ul class="space-y-3">
+                                            {% for bug in recent_bugs %}
+                                                <li class="flex items-start">
+                                                    <span class="inline-flex items-center justify-center flex-shrink-0 w-5 h-5 mr-2 text-white bg-red-500 rounded-full">
+                                                        <svg class="w-3 h-3"
+                                                             fill="currentColor"
+                                                             viewBox="0 0 20 20"
+                                                             xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z">
+                                                            </path>
+                                                        </svg>
+                                                    </span>
+                                                    <a href="{{ bug.get_absolute_url }}"
+                                                       class="text-blue-600 hover:underline">
+                                                        {{ bug.description|truncatechars:80 }}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if newsletter.leaderboard_section and leaderboard %}
+                                <div class="mt-8">
+                                    <h2 class="text-xl font-bold text-gray-900 mb-4">Leaderboard Updates</h2>
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <ul class="space-y-3">
+                                            {% for user in leaderboard %}
+                                                <li class="flex items-center justify-between">
+                                                    <div class="flex items-center">
+                                                        <span class="inline-flex items-center justify-center w-6 h-6 mr-2 text-sm font-bold bg-blue-100 text-blue-800 rounded-full">
+                                                            {{ forloop.counter }}
+                                                        </span>
+                                                        <a href="{% url 'profile' slug=user.username %}"
+                                                           class="text-blue-600 hover:underline">
+                                                            {{ user.username }}
+                                                        </a>
+                                                    </div>
+                                                    <span class="font-semibold">{{ user.score }} points</span>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if newsletter.reported_ips_section and reported_ips %}
+                                <div class="mt-8">
+                                    <h2 class="text-xl font-bold text-gray-900 mb-4">Recently Reported IPs</h2>
+                                    <div class="bg-gray-50 rounded-lg p-4">
+                                        <ul class="space-y-3">
+                                            {% for report in reported_ips %}
+                                                <li class="flex items-start">
+                                                    <span class="inline-flex items-center justify-center flex-shrink-0 w-5 h-5 mr-2 text-white bg-yellow-500 rounded-full">
+                                                        <svg class="w-3 h-3"
+                                                             fill="currentColor"
+                                                             viewBox="0 0 20 20"
+                                                             xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                                                            </path>
+                                                        </svg>
+                                                    </span>
+                                                    <div>
+                                                        <p class="text-sm font-medium text-gray-900">{{ report.ip_address }} ({{ report.get_ip_type_display }})</p>
+                                                        <p class="text-sm text-gray-500">{{ report.activity_title }}</p>
+                                                    </div>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- Subscribe CTA -->
+                            <div class="mt-8 border-t border-gray-200 pt-6">
+                                <div class="bg-blue-50 rounded-lg p-4">
+                                    <h3 class="text-lg font-semibold text-blue-800">Subscribe to Our Newsletter</h3>
+                                    <p class="text-blue-600 mb-3">Get the latest security news and updates directly in your inbox.</p>
+                                    <a href="{% url 'newsletter_subscribe' %}"
+                                       class="inline-block px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors">
+                                        Subscribe Now
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sidebar -->
+                <div class="w-full md:w-1/3">
+                    <!-- Recent newsletters -->
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-6">
+                        <div class="p-4 bg-gray-50 border-b">
+                            <h3 class="font-semibold text-gray-800">Recent Newsletters</h3>
+                        </div>
+                        <div class="p-4">
+                            <ul class="space-y-3">
+                                {% for item in recent_newsletters %}
+                                    <li class="{% if item.id == newsletter.id %}bg-blue-50 rounded p-2{% endif %}">
+                                        <a href="{% url 'newsletter_detail' item.slug %}"
+                                           class="text-blue-600 hover:underline">{{ item.title }}</a>
+                                        <p class="text-xs text-gray-500">{{ item.published_at|date:"M j, Y" }}</p>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Newsletter management options -->
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b">
+                            <h3 class="font-semibold text-gray-800">Newsletter Options</h3>
+                        </div>
+                        <div class="p-4">
+                            <ul class="space-y-2">
+                                <li>
+                                    <a href="{% url 'newsletter_home' %}"
+                                       class="flex items-center text-blue-600 hover:underline">
+                                        <svg class="w-4 h-4 mr-2"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd">
+                                            </path>
+                                            <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                        View all newsletters
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{% url 'newsletter_subscribe' %}"
+                                       class="flex items-center text-blue-600 hover:underline">
+                                        <svg class="w-4 h-4 mr-2"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                                        </svg>
+                                        Subscribe to newsletter
+                                    </a>
+                                </li>
+                                {% if request.user.is_authenticated %}
+                                    <li>
+                                        <a href="{% url 'newsletter_preferences' %}"
+                                           class="flex items-center text-blue-600 hover:underline">
+                                            <svg class="w-4 h-4 mr-2"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 20 20"
+                                                 xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd">
+                                                </path>
+                                            </svg>
+                                            Manage preferences
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

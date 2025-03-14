@@ -41,6 +41,8 @@ from website.models import (
     LectureStatus,
     Message,
     Monitor,
+    Newsletter,
+    NewsletterSubscriber,
     Organization,
     OrganizationAdmin,
     OsshCommunity,
@@ -702,6 +704,77 @@ class QueueAdmin(admin.ModelAdmin):
         self.message_user(request, f"{count} queue items marked as launched.")
 
     mark_as_launched.short_description = "Mark selected items as launched"
+
+
+@admin.register(Newsletter)
+class NewsletterAdmin(admin.ModelAdmin):
+    list_display = ("title", "status", "published_at", "email_sent", "view_count")
+    list_filter = ("status", "email_sent")
+    search_fields = ("title", "content")
+    prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = ("view_count", "email_sent_at")
+    date_hierarchy = "created_at"
+    fieldsets = (
+        ("Content", {"fields": ("title", "slug", "content", "featured_image")}),
+        ("Publication", {"fields": ("status", "published_at")}),
+        ("Email Settings", {"fields": ("email_subject", "email_sent", "email_sent_at")}),
+        ("Content Sections", {"fields": ("recent_bugs_section", "leaderboard_section", "reported_ips_section")}),
+        ("Statistics", {"fields": ("view_count",)}),
+    )
+
+    actions = ["send_newsletter"]
+
+    def send_newsletter(self, request, queryset):
+        from django.core.management import call_command
+
+        count = 0
+        for newsletter in queryset:
+            if newsletter.status == "published" and not newsletter.email_sent:
+                call_command("send_newsletter", newsletter_id=newsletter.id)
+                count += 1
+
+        self.message_user(request, f"{count} newsletters were sent successfully.")
+
+    send_newsletter.short_description = "Send selected newsletters"
+
+
+@admin.register(NewsletterSubscriber)
+class NewsletterSubscriberAdmin(admin.ModelAdmin):
+    list_display = ("email", "name", "user", "subscription_status", "subscribed_at")
+    list_filter = ("is_active", "confirmed", "wants_bug_reports", "wants_leaderboard_updates", "wants_security_news")
+    search_fields = ("email", "name", "user__email", "user__username")
+    raw_id_fields = ("user",)
+    readonly_fields = ("confirmation_token",)
+
+    actions = ["send_confirmation_email", "mark_as_confirmed", "mark_as_unsubscribed"]
+
+    def subscription_status(self, obj):
+        return obj.subscription_status
+
+    def send_confirmation_email(self, request, queryset):
+        from website.views.user import send_confirmation_email
+
+        count = 0
+        for subscriber in queryset:
+            if not subscriber.confirmed and subscriber.is_active:
+                send_confirmation_email(subscriber)
+                count += 1
+
+        self.message_user(request, f"Confirmation emails sent to {count} subscribers.")
+
+    send_confirmation_email.short_description = "Send confirmation email"
+
+    def mark_as_confirmed(self, request, queryset):
+        queryset.update(confirmed=True)
+        self.message_user(request, f"{queryset.count()} subscribers marked as confirmed.")
+
+    mark_as_confirmed.short_description = "Mark selected subscribers as confirmed"
+
+    def mark_as_unsubscribed(self, request, queryset):
+        queryset.update(is_active=False)
+        self.message_user(request, f"{queryset.count()} subscribers marked as unsubscribed.")
+
+    mark_as_unsubscribed.short_description = "Mark selected subscribers as unsubscribed"
 
 
 admin.site.register(Project, ProjectAdmin)

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}Newsletter Preferences - Bug Logging Tool{% endblock %}
+{% block description %}Manage your newsletter subscription preferences for OWASP BLT.{% endblock %}
+{% block content %}
+    <!-- Include Sidebar -->
+    {% include "includes/sidenav.html" %}
+    <div class="relative mt-9">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Status message banner -->
+            {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                        <div class="p-4 {% if message.tags == 'success' %}bg-green-50 text-green-800 border-green-300{% elif message.tags == 'error' %}bg-red-50 text-red-800 border-red-300{% elif message.tags == 'info' %}bg-blue-50 text-blue-800 border-blue-300{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border-yellow-300{% endif %} border-l-4 rounded-md">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h1 class="text-2xl font-bold text-gray-900">Newsletter Preferences</h1>
+                        <div class="flex items-center">
+                            <div class="h-4 w-4 rounded-full {% if subscriber.is_active and subscriber.confirmed %}bg-green-500{% else %}bg-red-500{% endif %} mr-2">
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">{{ subscriber.subscription_status }}</span>
+                        </div>
+                    </div>
+                    {% if not subscriber.confirmed and subscriber.is_active %}
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-yellow-400"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         viewBox="0 0 20 20"
+                                         fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        Your email address has not been confirmed yet. Please check your inbox for a confirmation email.
+                                        <a href="#" class="font-medium underline" id="resend-confirmation">Resend confirmation email</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <div>
+                            <label class="text-base font-medium text-gray-900">Email Address</label>
+                            <div class="mt-1">
+                                <input type="email"
+                                       name="email"
+                                       id="email"
+                                       value="{{ subscriber.email }}"
+                                       disabled
+                                       class="block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-gray-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <fieldset>
+                            <legend class="text-base font-medium text-gray-900">Content Preferences</legend>
+                            <div class="mt-4 space-y-4">
+                                <div class="relative flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="wants_bug_reports"
+                                               name="wants_bug_reports"
+                                               type="checkbox"
+                                               {% if subscriber.wants_bug_reports %}checked{% endif %}
+                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="wants_bug_reports" class="font-medium text-gray-700">Bug Reports</label>
+                                        <p class="text-gray-500">Receive updates about recently reported security issues</p>
+                                    </div>
+                                </div>
+                                <div class="relative flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="wants_leaderboard_updates"
+                                               name="wants_leaderboard_updates"
+                                               type="checkbox"
+                                               {% if subscriber.wants_leaderboard_updates %}checked{% endif %}
+                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="wants_leaderboard_updates" class="font-medium text-gray-700">Leaderboard Updates</label>
+                                        <p class="text-gray-500">Get notifications about changes in the community leaderboard</p>
+                                    </div>
+                                </div>
+                                <div class="relative flex items-start">
+                                    <div class="flex items-center h-5">
+                                        <input id="wants_security_news"
+                                               name="wants_security_news"
+                                               type="checkbox"
+                                               {% if subscriber.wants_security_news %}checked{% endif %}
+                                               class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    </div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="wants_security_news" class="font-medium text-gray-700">Security News</label>
+                                        <p class="text-gray-500">Stay informed about important security news and analysis</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div class="flex items-center justify-between pt-4 border-t border-gray-200">
+                            <button type="submit"
+                                    class="inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Save Preferences
+                            </button>
+                            <a href="{% url 'newsletter_unsubscribe' token=subscriber.confirmation_token %}"
+                               class="text-sm font-medium text-red-600 hover:text-red-500"
+                               onclick="return confirm('Are you sure you want to unsubscribe from the newsletter?');">
+                                Unsubscribe
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Recent newsletters section -->
+            {% if recent_newsletters %}
+                <div class="mt-10">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Recent Newsletters</h2>
+                    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                        <ul class="divide-y divide-gray-200">
+                            {% for newsletter in recent_newsletters %}
+                                <li>
+                                    <a href="{% url 'newsletter_detail' newsletter.slug %}"
+                                       class="block hover:bg-gray-50">
+                                        <div class="px-4 py-4 sm:px-6">
+                                            <div class="flex items-center justify-between">
+                                                <p class="text-sm font-medium text-blue-600 truncate">{{ newsletter.title }}</p>
+                                                <div class="ml-2 flex-shrink-0 flex">
+                                                    <p class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                        {{ newsletter.published_at|date:"F j, Y" }}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="mt-6">
+                <a href="{% url 'newsletter_home' %}"
+                   class="text-sm font-medium text-blue-600 hover:text-blue-500">&larr; Back to Newsletters</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle resend confirmation email click
+            const resendLink = document.getElementById('resend-confirmation');
+            if (resendLink) {
+                resendLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Show loading state
+                    const originalText = resendLink.textContent;
+                    resendLink.textContent = 'Sending...';
+                    resendLink.style.pointerEvents = 'none';
+                    
+                    // Make AJAX request to resend confirmation
+                    fetch('{% url "newsletter_resend_confirmation" %}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: '{{ subscriber.email }}'
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.createMessage('Confirmation email has been sent.', 'success');
+                        } else {
+                            window.createMessage('Failed to send confirmation email. Please try again.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        window.createMessage('An error occurred. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        // Reset button state
+                        resendLink.textContent = originalText;
+                        resendLink.style.pointerEvents = 'auto';
+                    });
+                });
+            }
+        });
+    </script>
+{% endblock %}

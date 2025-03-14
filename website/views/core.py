@@ -58,6 +58,8 @@ from website.models import (
     InviteFriend,
     Issue,
     ManagementCommandLog,
+    Newsletter,
+    NewsletterSubscriber,
     Organization,
     Points,
     PRAnalysisReport,
@@ -1377,6 +1379,9 @@ def home(request):
             "db_connections": len(connection.queries),
         }
 
+    # Add featured newsletter
+    featured_newsletter = Newsletter.objects.filter(status="published").order_by("-published_at").first()
+
     return render(
         request,
         "home.html",
@@ -1397,6 +1402,7 @@ def home(request):
             "debug_mode": settings.DEBUG,
             "system_stats": system_stats,
             "latest_bugs": latest_bugs,
+            "featured_newsletter": featured_newsletter,
         },
     )
 
@@ -2760,3 +2766,29 @@ class RoadmapView(TemplateView):
         context["milestones"] = milestones
         context["milestone_count"] = len(milestones)
         return context
+
+
+# Add the newsletter context processor function at the end of the file
+def newsletter_context_processor(request):
+    """
+    Adds newsletter subscription data to the template context
+    """
+    context = {}
+
+    if request.user.is_authenticated:
+        try:
+            subscriber = NewsletterSubscriber.objects.get(user=request.user)
+            context["newsletter_subscription"] = {
+                "subscribed": True,
+                "confirmed": subscriber.confirmed,
+                "is_active": subscriber.is_active,
+            }
+        except NewsletterSubscriber.DoesNotExist:
+            context["newsletter_subscription"] = {"subscribed": False}
+
+    try:
+        context["latest_newsletter"] = Newsletter.objects.filter(status="published").order_by("-published_at").first()
+    except:
+        pass
+
+    return context

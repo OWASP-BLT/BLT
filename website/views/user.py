@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import uuid
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
@@ -10,8 +11,10 @@ from django.contrib.auth import get_user_model, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
+from django.core.paginator import Paginator
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import ExtractMonth
 from django.dispatch import receiver
@@ -22,7 +25,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -32,6 +35,7 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    Activity,
     Badge,
     Challenge,
     Contributor,
@@ -42,6 +46,8 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Newsletter,
+    NewsletterSubscriber,
     Points,
     Tag,
     Thread,
@@ -1118,3 +1124,214 @@ def set_public_key(request):
     profile.save()
 
     return JsonResponse({"success": True, "public_key": profile.public_key})
+
+
+def newsletter_home(request):
+    """View for displaying list of published newsletters"""
+    newsletters = Newsletter.objects.filter(status="published").order_by("-published_at")
+
+    paginator = Paginator(newsletters, 10)
+    page = request.GET.get("page")
+    newsletters = paginator.get_page(page)
+
+    featured_newsletter = Newsletter.objects.filter(status="published").order_by("-published_at").first()
+
+    if request.user.is_authenticated:
+        Activity.objects.create(
+            user=request.user,
+            action_type="view",
+            title="Viewed newsletters",
+            content_type=ContentType.objects.get_for_model(Newsletter),
+            object_id=1,
+        )
+
+    return render(
+        request,
+        "newsletter/home.html",
+        {
+            "newsletters": newsletters,
+            "featured_newsletter": featured_newsletter,
+        },
+    )
+
+
+def newsletter_detail(request, slug):
+    """View for displaying a specific newsletter"""
+    newsletter = get_object_or_404(Newsletter, slug=slug, status="published")
+
+    newsletter.increment_view_count()
+
+    recent_newsletters = (
+        Newsletter.objects.filter(status="published").exclude(id=newsletter.id).order_by("-published_at")[:5]
+    )
+
+    if request.user.is_authenticated:
+        Activity.objects.create(
+            user=request.user,
+            action_type="view",
+            title=f"Read newsletter: {newsletter.title}",
+            content_type=ContentType.objects.get_for_model(Newsletter),
+            object_id=newsletter.id,
+        )
+
+    context = {
+        "newsletter": newsletter,
+        "recent_newsletters": recent_newsletters,
+        "recent_bugs": newsletter.get_recent_bugs(),
+        "leaderboard": newsletter.get_leaderboard_updates(),
+        "reported_ips": newsletter.get_reported_ips(),
+    }
+
+    return render(request, "newsletter/detail.html", context)
+
+
+def newsletter_subscribe(request):
+    """View for newsletter subscription"""
+    if request.method == "POST":
+        email = request.POST.get("email")
+        name = request.POST.get("name", "")
+
+        if not email:
+            messages.error(request, "Email address is required.")
+            return redirect("newsletter_subscribe")
+
+        # Check if already subscribed
+        subscriber = NewsletterSubscriber.objects.filter(email=email).first()
+
+        if subscriber:
+            if subscriber.is_active and subscriber.confirmed:
+                messages.info(request, "You're already subscribed to our newsletter!")
+            elif subscriber.is_active and not subscriber.confirmed:
+                send_confirmation_email(subscriber)
+                messages.info(request, "A confirmation email has been resent. Please check your inbox.")
+            else:
+                # Reactivate subscription
+                subscriber.is_active = True
+                subscriber.confirmation_token = uuid.uuid4()
+                subscriber.save()
+                send_confirmation_email(subscriber)
+                messages.success(request, "Your subscription has been reactivated. Please confirm your email.")
+        else:
+            # Create new subscription
+            subscriber = NewsletterSubscriber(
+                email=email, name=name, user=request.user if request.user.is_authenticated else None
+            )
+            subscriber.save()
+            send_confirmation_email(subscriber)
+            messages.success(request, "Thanks for subscribing! Please check your email to confirm your subscription.")
+
+        return redirect("newsletter_home")
+
+    return render(request, "newsletter/subscribe.html")
+
+
+def send_confirmation_email(subscriber):
+    """Send confirmation email to new subscribers"""
+    confirm_url = settings.DOMAIN_NAME + reverse("newsletter_confirm", args=[subscriber.confirmation_token])
+
+    context = {"name": subscriber.name or "there", "confirm_url": confirm_url, "project_name": settings.PROJECT_NAME}
+
+    subject = f"Confirm your {settings.PROJECT_NAME} newsletter subscription"
+    html_message = render_to_string("newsletter/email/confirmation_email.html", context)
+
+    send_mail(
+        subject=subject,
+        message=f"Please confirm your subscription: {confirm_url}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[subscriber.email],
+        html_message=html_message,
+        fail_silently=False,
+    )
+
+
+def newsletter_confirm(request, token):
+    """View to confirm newsletter subscription"""
+    subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+
+    if not subscriber.confirmed:
+        subscriber.confirmed = True
+        subscriber.save()
+        messages.success(request, "Thank you! Your newsletter subscription has been confirmed.")
+    else:
+        messages.info(request, "Your subscription is already confirmed.")
+
+    return redirect("newsletter_home")
+
+
+def newsletter_unsubscribe(request, token):
+    """View to unsubscribe from newsletter"""
+    subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+
+    if subscriber.is_active:
+        subscriber.is_active = False
+        subscriber.save()
+        messages.success(request, "You have been unsubscribed from the newsletter.")
+
+        # Log the unsubscribe action
+        logger.info(f"User unsubscribed from newsletter: {subscriber.email}")
+
+        # Create activity record if user is authenticated
+        if subscriber.user and hasattr(subscriber.user, "id"):
+            Activity.objects.create(
+                user=subscriber.user,
+                action_type="update",
+                title="Unsubscribed from newsletter",
+                description="User unsubscribed from the newsletter",
+                content_type=ContentType.objects.get_for_model(NewsletterSubscriber),
+                object_id=subscriber.id,
+            )
+    else:
+        messages.info(request, "You are already unsubscribed.")
+
+    return redirect("home")
+
+
+@login_required
+def newsletter_preferences(request):
+    """View to update newsletter preferences"""
+    try:
+        subscriber = NewsletterSubscriber.objects.get(user=request.user)
+    except NewsletterSubscriber.DoesNotExist:
+        # If no subscription exists but user wants to manage preferences,
+        # create one with their email from their user account
+        subscriber = NewsletterSubscriber(
+            user=request.user,
+            email=request.user.email,
+            name=request.user.get_full_name(),
+            confirmed=True,  # Auto-confirm for logged-in users
+        )
+        subscriber.save()
+
+    if request.method == "POST":
+        subscriber.wants_bug_reports = "wants_bug_reports" in request.POST
+        subscriber.wants_leaderboard_updates = "wants_leaderboard_updates" in request.POST
+        subscriber.wants_security_news = "wants_security_news" in request.POST
+        subscriber.save()
+
+        messages.success(request, "Your newsletter preferences have been updated.")
+        return redirect("newsletter_preferences")
+
+    # Get recent newsletters for the sidebar
+    recent_newsletters = Newsletter.objects.filter(status="published").order_by("-published_at")[:3]
+
+    return render(
+        request, "newsletter/preferences.html", {"subscriber": subscriber, "recent_newsletters": recent_newsletters}
+    )
+
+
+@require_POST
+def newsletter_resend_confirmation(request):
+    """AJAX view to resend newsletter confirmation email"""
+    try:
+        data = json.loads(request.body)
+        email = data.get("email")
+
+        if not email:
+            return JsonResponse({"success": False, "error": "Email is required"})
+
+        subscriber = get_object_or_404(NewsletterSubscriber, email=email, is_active=True, confirmed=False)
+        send_confirmation_email(subscriber)
+
+        return JsonResponse({"success": True})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})

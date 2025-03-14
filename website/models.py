@@ -21,7 +21,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxValueValidator, MinValueValidator, URLValidator
 from django.db import models, transaction
-from django.db.models import Count
+from django.db.models import Count, Sum
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -1076,7 +1076,7 @@ class Contributor(models.Model):
     github_id = models.IntegerField(unique=True)
     github_url = models.URLField()
     avatar_url = models.URLField()
-    contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
+    contributor_type = models.CharField(max_length=255)
     contributions = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
     # Note: The repos relationship is defined in the Repo model as:
@@ -2295,3 +2295,170 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class Newsletter(models.Model):
+    PUBLICATION_STATUS = (
+        ("draft", "Draft"),
+        ("published", "Published"),
+    )
+
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True)
+    content = MDTextField(help_text="Write newsletter content in Markdown format")
+    featured_image = models.ImageField(upload_to="newsletter_images", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=PUBLICATION_STATUS, default="draft")
+
+    # Content sections
+    recent_bugs_section = models.BooleanField(default=True, help_text="Include recently reported bugs")
+    leaderboard_section = models.BooleanField(default=True, help_text="Include leaderboard updates")
+    reported_ips_section = models.BooleanField(default=False, help_text="Include recently reported IPs")
+
+    # Email settings
+    email_subject = models.CharField(max_length=255, blank=True, null=True)
+    email_sent = models.BooleanField(default=False)
+    email_sent_at = models.DateTimeField(blank=True, null=True)
+
+    view_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-published_at"]
+        verbose_name = "Newsletter"
+        verbose_name_plural = "Newsletters"
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+
+        if self.status == "published" and not self.published_at:
+            self.published_at = timezone.now()
+
+        super().save(*args, **kwargs)
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+
+        return reverse("newsletter_detail", args=[self.slug])
+
+    def get_recent_bugs(self, limit=5):
+        """Get recent bugs for newsletter content"""
+        if not self.recent_bugs_section:
+            return []
+
+        return Issue.objects.filter(status="open").order_by("-created")[:limit]
+
+    def get_leaderboard_updates(self, limit=5):
+        """Get leaderboard data for newsletter content"""
+        if not self.leaderboard_section:
+            return []
+
+        return User.objects.annotate(score=Sum("points__score")).filter(score__gt=0).order_by("-score")[:limit]
+
+    def get_reported_ips(self, limit=5):
+        """Get recently reported IPs for newsletter content"""
+        if not self.reported_ips_section:
+            return []
+
+        return IP.objects.filter(address__isnull=False).order_by("-created")[:limit]
+
+    def increment_view_count(self):
+        """Increment the view count for this newsletter"""
+        self.view_count += 1
+        self.save(update_fields=["view_count"])
+
+    def get_subscribers(self):
+        """Get all active and confirmed subscribers who should receive this newsletter"""
+        return NewsletterSubscriber.objects.filter(is_active=True, confirmed=True)
+
+    def mark_as_sent(self):
+        """Mark the newsletter as sent"""
+        self.email_sent = True
+        self.email_sent_at = timezone.now()
+        self.save(update_fields=["email_sent", "email_sent_at"])
+
+    def format_for_email(self):
+        """Format the newsletter content for email sending"""
+        from django.utils.html import strip_tags
+
+        email_body = self.content
+        plain_text = strip_tags(email_body).replace("&nbsp;", " ")
+
+        return {
+            "subject": self.email_subject or f"Newsletter: {self.title}",
+            "html_content": email_body,
+            "plain_text": plain_text,
+        }
+
+
+class NewsletterSubscriber(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="newsletter_subscriptions"
+    )
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=100, blank=True, null=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    confirmation_token = models.UUIDField(default=uuid.uuid4, editable=False)
+    confirmed = models.BooleanField(default=False)
+
+    # Preferences
+    wants_bug_reports = models.BooleanField(default=True)
+    wants_leaderboard_updates = models.BooleanField(default=True)
+    wants_security_news = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Newsletter Subscriber"
+        verbose_name_plural = "Newsletter Subscribers"
+
+    def __str__(self):
+        return self.email
+
+    @property
+    def subscription_status(self):
+        if not self.is_active:
+            return "Unsubscribed"
+        elif not self.confirmed:
+            return "Pending confirmation"
+        else:
+            return "Active"
+
+    def resubscribe(self):
+        """Reactivate a subscription"""
+        if not self.is_active:
+            self.is_active = True
+            self.confirmation_token = uuid.uuid4()
+            self.save()
+        return self
+
+    def unsubscribe(self):
+        """Deactivate a subscription"""
+        self.is_active = False
+        self.save(update_fields=["is_active"])
+        return self
+
+    @staticmethod
+    def user_is_subscribed(user):
+        """Check if a user is subscribed to the newsletter"""
+        if not user or not user.is_authenticated:
+            return False
+        return NewsletterSubscriber.objects.filter(user=user, is_active=True, confirmed=True).exists()
+
+    @staticmethod
+    def email_is_subscribed(email):
+        """Check if an email address is subscribed to the newsletter"""
+        if not email:
+            return False
+        return NewsletterSubscriber.objects.filter(email=email, is_active=True, confirmed=True).exists()
+
+    def get_unsubscribe_url(self):
+        """Get the unsubscribe URL for this subscriber"""
+        from django.conf import settings
+        from django.urls import reverse
+
+        return f"{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"

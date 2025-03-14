@@ -111,6 +111,29 @@
     <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
         {% include "includes/header.html" %}
         <div class="w-full h-[50px]"></div>
+        <!-- Newsletter subscription banner - add this section -->
+        {% if not user_subscribed_to_newsletter %}
+            <div class="bg-blue-50 border-b border-blue-100 py-2">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <svg class="h-5 w-5 text-blue-500 mr-2"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span class="text-sm font-medium text-blue-700">Stay updated with our newsletter</span>
+                        </div>
+                        <a href="{% url 'newsletter_subscribe' %}"
+                           class="text-sm font-medium text-blue-600 hover:text-blue-800">
+                            Subscribe <span aria-hidden="true">&rarr;</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
         <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
             {% block content %}
