@@ -158,6 +158,15 @@
                             <span>Video Call</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if request.path == '/banned-apps/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'banned_apps' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/banned-apps/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-ban fa-lg"></i>
+                            </div>
+                            <span>Banned Apps</span>
+                        </a>
+                    </li>
                 </ul>
                 <!-- Spacer -->
                 <div class="my-4 border-t border-gray-300"></div>
