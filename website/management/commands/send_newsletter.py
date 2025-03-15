@@ -47,7 +47,10 @@ class Command(BaseCommand):
         if test_mode:
             # Send only to admin email for testing
             self.stdout.write(f"Sending test email for '{newsletter.title}' to admin")
-            self.send_to_subscriber(settings.ADMINS[0][1], newsletter, is_test=True)
+            if settings.ADMINS and len(settings.ADMINS) > 0:
+                self.send_to_subscriber(settings.ADMINS[0][1], newsletter, is_test=True)
+            else:
+                self.stderr.write("No admin email configured. Cannot send test email.")
             return
 
         # Get active, confirmed subscribers
@@ -85,16 +88,18 @@ class Command(BaseCommand):
         if is_test:
             subject = f"[TEST] {subject}"
 
+        # Build URL scheme based on settings
+        scheme = "https" if not settings.DEBUG else "http"
+
         # Newsletter context
         context = {
             "newsletter": newsletter,
             "subscriber": subscriber,
-            "unsubscribe_url": "https://"
-            + settings.DOMAIN_NAME
+            "unsubscribe_url": f"{scheme}://{settings.DOMAIN_NAME}"
             + reverse("newsletter_unsubscribe", args=[subscriber.confirmation_token])
-            if subscriber
+            if subscriber is not None
             else "#",
-            "view_in_browser_url": "https://" + settings.DOMAIN_NAME + newsletter.get_absolute_url(),
+            "view_in_browser_url": f"{scheme}://{settings.DOMAIN_NAME}" + newsletter.get_absolute_url(),
             "project_name": settings.PROJECT_NAME,
             "recent_bugs": newsletter.get_recent_bugs(),
             "leaderboard": newsletter.get_leaderboard_updates(),

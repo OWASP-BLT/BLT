@@ -1195,30 +1195,39 @@ def newsletter_subscribe(request):
             messages.error(request, "Email address is required.")
             return redirect("newsletter_subscribe")
 
-        # Check if already subscribed
-        subscriber = NewsletterSubscriber.objects.filter(email=email).first()
+        try:
+            NewsletterSubscriber.objects.filter(email=email).exclude(is_active=False).update(is_active=False)
 
-        if subscriber:
-            if subscriber.is_active and subscriber.confirmed:
-                messages.info(request, "You're already subscribed to our newsletter!")
-            elif subscriber.is_active and not subscriber.confirmed:
-                send_confirmation_email(subscriber)
-                messages.info(request, "A confirmation email has been resent. Please check your inbox.")
-            else:
-                # Reactivate subscription
+            subscriber, created = NewsletterSubscriber.objects.get_or_create(
+                email=email,
+                defaults={
+                    "name": name,
+                    "user": request.user if request.user.is_authenticated else None,
+                    "is_active": True,
+                    "confirmed": False,
+                },
+            )
+
+            if not created:
                 subscriber.is_active = True
+                subscriber.name = name if name else subscriber.name
                 subscriber.confirmation_token = uuid.uuid4()
                 subscriber.save()
-                send_confirmation_email(subscriber)
-                messages.success(request, "Your subscription has been reactivated. Please confirm your email.")
-        else:
-            # Create new subscription
-            subscriber = NewsletterSubscriber(
-                email=email, name=name, user=request.user if request.user.is_authenticated else None
-            )
-            subscriber.save()
+
             send_confirmation_email(subscriber)
-            messages.success(request, "Thanks for subscribing! Please check your email to confirm your subscription.")
+
+            if created:
+                logger.info(f"New subscription created for {email}")
+                messages.success(
+                    request, "Thanks for subscribing! Please check your email to confirm your subscription."
+                )
+            else:
+                logger.info(f"Subscription reactivated for {email}")
+                messages.success(request, "Your subscription has been reactivated. Please confirm your email.")
+
+        except Exception as e:
+            logger.error(f"Error in newsletter subscription: {str(e)}")
+            messages.error(request, "There was an error processing your subscription. Please try again later.")
 
         return redirect("newsletter_home")
 
@@ -1227,37 +1236,72 @@ def newsletter_subscribe(request):
 
 def send_confirmation_email(subscriber):
     """Send confirmation email to new subscribers"""
-    confirm_url = (
-        "https://" + settings.DOMAIN_NAME + reverse("newsletter_confirm", args=[subscriber.confirmation_token])
-    )
+    scheme = "https" if not settings.DEBUG else "http"
+
+    domain = settings.DOMAIN_NAME
+
+    if settings.DEBUG:
+        domain = "localhost:8000"
+        logger.info(f"Using development domain: {domain}")
+
+    token_path = reverse("newsletter_confirm", args=[subscriber.confirmation_token])
+    confirm_url = f"{scheme}://{domain}{token_path}"
+
+    logger.info(f"Generated confirmation URL: {confirm_url}")
 
     context = {"name": subscriber.name or "there", "confirm_url": confirm_url, "project_name": settings.PROJECT_NAME}
 
     subject = f"Confirm your {settings.PROJECT_NAME} newsletter subscription"
     html_message = render_to_string("newsletter/email/confirmation_email.html", context)
 
-    send_mail(
-        subject=subject,
-        message=f"Please confirm your subscription: {confirm_url}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[subscriber.email],
-        html_message=html_message,
-        fail_silently=False,
-    )
+    # Send the email
+    try:
+        send_mail(
+            subject=subject,
+            message=f"Please confirm your subscription: {confirm_url}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[subscriber.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        logger.info(f"Confirmation email sent to: {subscriber.email}")
+    except Exception as e:
+        logger.error(f"Failed to send confirmation email to {subscriber.email}: {str(e)}")
+        raise
 
 
 def newsletter_confirm(request, token):
     """View to confirm newsletter subscription"""
-    subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+    try:
+        logger.info(f"Newsletter confirmation attempt with token: {token}")
 
-    if not subscriber.confirmed:
-        subscriber.confirmed = True
-        subscriber.save()
-        messages.success(request, "Thank you! Your newsletter subscription has been confirmed.")
-    else:
-        messages.info(request, "Your subscription is already confirmed.")
+        subscriber = get_object_or_404(NewsletterSubscriber, confirmation_token=token)
+        logger.info(f"Found subscriber with email: {subscriber.email}")
 
-    return redirect("newsletter_home")
+        try:
+            token_expired = subscriber.is_token_expired()
+            if token_expired:
+                subscriber.refresh_token()
+                send_confirmation_email(subscriber)
+                messages.warning(
+                    request, "Your confirmation link has expired. We've sent a new confirmation email to your address."
+                )
+                return redirect("newsletter_home")
+        except (AttributeError, Exception) as e:
+            logger.warning(f"Error checking token expiration for subscriber {subscriber.id}: {str(e)}")
+
+        if not subscriber.confirmed:
+            subscriber.confirmed = True
+            subscriber.save()
+            messages.success(request, "Thank you! Your newsletter subscription has been confirmed.")
+        else:
+            messages.info(request, "Your subscription is already confirmed.")
+
+        return redirect("newsletter_home")
+    except Exception as e:
+        logger.error(f"Error in newsletter confirmation: {str(e)}")
+        messages.error(request, "There was an error confirming your subscription. Please try again or contact support.")
+        return redirect("newsletter_home")
 
 
 def newsletter_unsubscribe(request, token):

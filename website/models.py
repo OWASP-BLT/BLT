@@ -2406,6 +2406,9 @@ class NewsletterSubscriber(models.Model):
     is_active = models.BooleanField(default=True)
     confirmation_token = models.UUIDField(default=uuid.uuid4, editable=False)
     confirmed = models.BooleanField(default=False)
+    token_created_at = models.DateTimeField(
+        default=timezone.now, help_text="Timestamp when confirmation token was created"
+    )
 
     # Preferences
     wants_bug_reports = models.BooleanField(default=True)
@@ -2456,9 +2459,28 @@ class NewsletterSubscriber(models.Model):
             return False
         return NewsletterSubscriber.objects.filter(email=email, is_active=True, confirmed=True).exists()
 
+    def is_token_expired(self, expiration_hours=48):
+        """Check if the confirmation token has expired"""
+        if not self.token_created_at:
+            return True
+
+        from django.utils import timezone
+
+        expiration_time = self.token_created_at + timezone.timedelta(hours=expiration_hours)
+        return timezone.now() > expiration_time
+
+    def refresh_token(self):
+        """Generate a new confirmation token and reset the creation timestamp"""
+        self.confirmation_token = uuid.uuid4()
+        self.token_created_at = timezone.now()
+        self.save(update_fields=["confirmation_token", "token_created_at"])
+        return self
+
     def get_unsubscribe_url(self):
         """Get the unsubscribe URL for this subscriber"""
         from django.conf import settings
         from django.urls import reverse
 
-        return f"https://{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"
+        scheme = "https" if not settings.DEBUG else "http"
+
+        return f"{scheme}://{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"
