@@ -318,7 +318,7 @@ else:
         # use this to debug emails locally
         # python -m smtpd -n -c DebuggingServer localhost:1025
         # if DEBUG:
-        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+        # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
