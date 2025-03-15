@@ -568,3 +568,19 @@ TAG_NORMALIZATION = {
     "gradle": "gradle",
     "ant": "ant",
 }
+
+GSOC25_PROJECTS = {
+    "BLT": [
+        "OWASP-BLT/BLT",
+        "OWASP-BLT/BLT-Flutter",
+        "OWASP-BLT/BLT-Bacon",
+        "OWASP-BLT/BLT-Action",
+        "OWASP-BLT/BLT-Extension",
+    ],
+    "NEST": ["OWASP/Nest"],
+    "NETTACKER": ["OWASP/Nettacker"],
+    "JUICE-SHOP": ["juice-shop/juice-shop", "juice-shop/multi-juicer"],
+    "DSOMM": ["devsecopsmaturitymodel/DevSecOps-MaturityModel"],
+    "PYGOAT": ["adeyosemanputra/PyGoat"],
+    "OpenCRE": ["OWASP/OpenCRE"],
+}

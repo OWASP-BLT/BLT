@@ -42,6 +42,7 @@ repos:
         args: [pre-commit-hooks/check_style_tags.py]
         language: python
         types: [html]
+        pass_filenames: false  # <-- ADD THIS LINE
         verbose: true
 
   - repo: local

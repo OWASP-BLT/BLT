@@ -1,212 +1,161 @@
 {% extends "base_dashboard.html" %}
 {% load static %}
 {% load tz_detect %}
-{% block style %}
-    <style>
-  #create-hunt{
-    position: relative;
-    top: 105%;
-    left: 50%;
-    transform: translate(-50%, 0%);
-    width: 50%
-  }
-  .row .col-md-6:nth-child(1) .panel {
-    background-color: #F76B78;
-  }
-
-  .row .col-md-6:nth-child(2) .panel {
-    background-color: #DC4353;
-  }
-
-  .row .col-md-6:nth-child(3) .panel {
-    background-color: #C41E2E;
-  }
-
-  .row .col-md-6:nth-child(4) .panel {
-    background-color: #9B0C1A;
-  }
-
-  .row .col-md-6:nth-child(1) .panel button {
-    background-color: #F76B78;
-    border-color: #F76B78;
-  }
-
-  .row .col-md-6:nth-child(2) .panel button {
-    background-color: #DC4353;
-    border-color: #DC4353;
-  }
-
-  .row .col-md-6:nth-child(3) .panel button {
-    background-color: #C41E2E;
-    border-color: #C41E2E;
-  }
-
-  .row .col-md-6:nth-child(4) .panel button {
-    background-color: #9B0C1A;
-    border-color: #9B0C1A;
-  }
-
-  .text-danger {
-    margin-left: 0px;
-  }
-
-  input[type='file'] {
-    height: auto;
-    width: auto;
-    opacity: 1;
-  }
-
-  .slider {
-    width: 100% !important;
-  }
-
-  .hunt-form .form-group {
-    margin-top: 30px;
-  }
-
-  .winner_prize>.label_prize>div {
-    display: inline-block;
-    padding: 4px 3px 8px 8px;
-    font-size: 14px;
-    cursor: text;
-    color: #666;
-    position: absolute;
-    top: 0;
-    right: 0;
-  }
-    </style>
-{% endblock style %}
 {% block content %}
     <section>
         {% include "includes/organization_sidenav.html" %}
     </section>
-    <script src="{% static "js/jquery.validate.js" %}"></script>
-    <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
-    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
-    <form id="create-hunt">
+    <script src="{% static 'js/jquery.validate.js' %}"></script>
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static 'css/mtr-datepicker.min.css' %}" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static 'css/mtr-datepicker.default-theme.min.css' %}" />
+    <form id="create-hunt"
+          class="fixed top-[105%] left-1/2 transform -translate-x-1/2 w-1/2 bg-white rounded-lg shadow-lg p-6">
         {% csrf_token %}
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">
-                    <span class="text-black">START A</span> BUGHUNT
-                </h4>
-                <h6 class="modal-sub-title">Enter URL, App name or GPS location of issue</h6>
+        <!-- Modal Header -->
+        <div class="mb-6">
+            <h4 class="text-2xl font-bold">
+                <span class="text-black">START A</span> BUGHUNT
+            </h4>
+            <h6 class="text-gray-600">Enter URL, App name or GPS location of issue</h6>
+        </div>
+        <!-- Modal Body -->
+        <div class="space-y-6">
+            <!-- Name Input -->
+            <div>
+                <input type="text"
+                       name="name"
+                       required
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       placeholder="Enter Name for the Bughunt"
+                       id="name"
+                       value="">
             </div>
-            <div class="modal-body">
-                <div class="form-group col-sm-12 p-0">
-                    <input type="text"
-                           name="name"
-                           required
-                           class="form-control"
-                           placeholder="Enter Name for the Bughunt"
-                           id="name"
-                           value="">
-                </div>
+            <!-- Hunt Form Media -->
+            <div>
+                {{ hunt_form.media }}
+                {{ hunt_form.as_p }}
+            </div>
+            <!-- Date/Time Pickers -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                    {{ hunt_form.media }}
-                    {{ hunt_form.as_p }}
-                </div>
-                <div class="form-group col-sm-6">
-                    <label for="name">
-                        Start Date/Time :
-                        <div id="datepicker-1-res" class="hidden"></div>
-                    </label>
+                    <label for="name" class="block text-gray-700">Start Date/Time :</label>
+                    <div id="datepicker-1-res" class="hidden"></div>
                     <div id="datepicker-1"></div>
                 </div>
-                <div class="form-group col-sm-6">
-                    <label for="name">
-                        End Date/Time :
-                        <div id="datepicker-2-res" class="hidden"></div>
-                    </label>
+                <div>
+                    <label for="name" class="block text-gray-700">End Date/Time :</label>
+                    <div id="datepicker-2-res" class="hidden"></div>
                     <div id="datepicker-2"></div>
                 </div>
-                <div class="form-group col-sm-12">
-                    <select name="domain" class="form-control" id="domain">
-                        {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
-                    </select>
+            </div>
+            <!-- Domain Selection -->
+            <div>
+                <select name="domain"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        id="domain">
+                    {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <!-- Prizes Section -->
+            <div>
+                <span class="block text-gray-700">Prizes</span>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block">
+                            <input name="prize_winner"
+                                   type="number"
+                                   placeholder="Winner"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-gray-600">$</span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block">
+                            <input placeholder="Runner's Up"
+                                   name="prize_runner"
+                                   type="number"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-gray-600">$</span>
+                        </label>
+                    </div>
+                    <div>
+                        <label class="block">
+                            <input placeholder="2nd Runner's Up"
+                                   name="prize_second_runner"
+                                   type="number"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-gray-600">$</span>
+                        </label>
+                    </div>
                 </div>
-                Prizes
-                <div class="form-group col-sm-12 winner_prize">
-                    <label class="label_prize col-sm-4 col-md-4" for="prize_winner">
-                        <input name="prize_winner"
-                               type="Number"
-                               placeholder="Winner"
-                               class="form-control" />
-                        <div>$</div>
-                    </label>
-                    <label class="label_prize col-sm-4 col-md-4" for="prize_runner">
-                        <input placeholder="Runner's Up"
-                               name="prize_runner"
-                               type="Number"
-                               class="form-control" />
-                        <div>$</div>
-                    </label>
-                    <label class="label_prize col-sm-4 col-md-4" for="prize_second_runner">
-                        <input placeholder="2nd Runner's Up"
-                               name="prize_second_runner"
-                               type="Number"
-                               class="form-control" />
-                        <div>$</div>
-                    </label>
+                <p class="text-sm text-gray-600 mt-2">
                     (Your wallet must contain the total prize money, if not you can go to profile to add money to wallet)
-                </div>
-                <label class="checkbox-inline col-sm-12">
-                    <input name="publish" type="checkbox" value="true">
-                    Publish (If Not
-                    Published, the Hunt Will be saved as a draft)
+                </p>
+            </div>
+            <!-- Publish Checkbox -->
+            <div>
+                <label class="flex items-center">
+                    <input name="publish" type="checkbox" value="true" class="mr-2">
+                    <span>Publish (If Not Published, the Hunt Will be saved as a draft)</span>
                 </label>
             </div>
-            <div class="modal-footer">
-                <input type="submit"
-                       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                       value="Save" />
-                <input type="reset"
-                       data-dismiss="modal"
-                       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                       value="Reset" />
-            </div>
+        </div>
+        <!-- Modal Footer -->
+        <div class="mt-6 flex justify-end gap-4">
+            <button type="submit"
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-200">
+                Save
+            </button>
+            <button type="reset"
+                    class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition duration-200">
+                Reset
+            </button>
         </div>
     </form>
-    <script type="text/javascript" src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
-    <script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
-    <script type="text/javascript" src="{% static "js/dt.js" %}"></script>
+    <script type="text/javascript"
+            src="{% static 'js/mtr-datepicker-timezones.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/mtr-datepicker.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/dt.js' %}"></script>
     <script type="text/javascript">
-  var dateNow = new Date();
-  var Datepicker1 = MtrDatepickerDemo.init({
-    target: 'datepicker-1',
-    timestamp: dateNow.getTime(),
-    future: true,
-  }, {
-    exportFormats: 'datepicker-1-res',
-  });
-  var Datepicker2 = MtrDatepickerDemo.init({
-    target: 'datepicker-2',
-    timestamp: dateNow.getTime(),
-    future: true,
-  }, {
-    exportFormats: 'datepicker-2-res',
-  });
+        var dateNow = new Date();
+        var Datepicker1 = MtrDatepickerDemo.init({
+            target: 'datepicker-1',
+            timestamp: dateNow.getTime(),
+            future: true,
+        }, {
+            exportFormats: 'datepicker-1-res',
+        });
+        var Datepicker2 = MtrDatepickerDemo.init({
+            target: 'datepicker-2',
+            timestamp: dateNow.getTime(),
+            future: true,
+        }, {
+            exportFormats: 'datepicker-2-res',
+        });
     </script>
 {% endblock content %}
 {% block after_js %}
-    <script src="{% static "js/bootstrap-slider.js" %}"></script>
+    <script src="{% static 'js/bootstrap-slider.js' %}"></script>
     <script>
-  $('.btn').on('click', function () {
-    $(".hunt-form").valid();
-  });
+        $('.btn').on('click', function () {
+            $(".hunt-form").valid();
+        });
 
-  function numberWithCommas(x) {
-    var parts = x.toString().split(".");
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return parts.join(".");
-  }
+        function numberWithCommas(x) {
+            var parts = x.toString().split(".");
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return parts.join(".");
+        }
 
-  $(".slider").slider({
-    tooltip: 'always',
-    formatter: function (value) {
-      return '$' + numberWithCommas(value);
-    }
-  });
+        $(".slider").slider({
+            tooltip: 'always',
+            formatter: function (value) {
+                return '$' + numberWithCommas(value);
+            }
+        });
     </script>
 {% endblock after_js %}

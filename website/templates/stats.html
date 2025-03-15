@@ -17,62 +17,7 @@
 {% endblock og_description %}
 {% load humanize %}
 {% block style %}
-    <style>
-    /* Dashboard Styles */
-    .stat-card {
-        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-        color: #fff;
-        border-radius: 12px;
-        padding: 20px;
-        position: relative;
-        overflow: hidden;
-        transition: box-shadow 0.2s ease-in-out;
-    }
-    .stat-card:hover {
-        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
-    }
-    .stat-icon {
-        font-size: 4rem;
-        opacity: 0.15;
-        position: absolute;
-        top: 10px;
-        right: 10px;
-    }
-    .stat-content {
-        position: relative;
-        z-index: 1;
-    }
-    .stat-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-    .stat-count {
-        font-size: 2.5rem;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-    }
-    .stat-total {
-        font-size: 1rem;
-        opacity: 0.8;
-        margin-top: 5px;
-    }
-    .stat-count span {
-        margin-left: 10px;
-        font-size: 1.25rem;
-        display: flex;
-        align-items: center;
-    }
-    .stat-count span i {
-        margin-right: 5px;
-    }
-    .chart-container {
-        position: relative;
-        height: 60px;
-        margin-top: 20px;
-    }
-    </style>
+    <!-- No custom styles needed as Tailwind handles everything -->
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
@@ -100,25 +45,25 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {% for stat in stats %}
-                <div class="stat-card">
-                    <i class="{{ stat.icon }} stat-icon"></i>
-                    <div class="stat-content">
-                        <div class="stat-title">{{ stat.label }}</div>
-                        <div class="stat-count">
+                <div class="relative overflow-hidden rounded-[12px] p-5 bg-gradient-to-br from-[#e74c3c] to-[#c0392b] text-white shadow-md transition-shadow hover:shadow-lg">
+                    <i class="{{ stat.icon }} absolute top-4 right-4 text-[4rem] opacity-15"></i>
+                    <div class="relative z-10">
+                        <div class="text-[1.25rem] font-semibold mb-1">{{ stat.label }}</div>
+                        <div class="flex items-center text-[2.5rem] font-bold">
                             {{ stat.count|intcomma }}
                             {% if stat.trend > 0 %}
-                                <span class="text-green-300">
-                                    <i class="fas fa-arrow-up"></i> {{ stat.trend }}
+                                <span class="ml-2 flex items-center text-green-300">
+                                    <i class="fas fa-arrow-up mr-1"></i> {{ stat.trend }}
                                 </span>
                             {% elif stat.trend < 0 %}
-                                <span class="text-red-300">
-                                    <i class="fas fa-arrow-down"></i> {{ stat.trend }}
+                                <span class="ml-2 flex items-center text-red-300">
+                                    <i class="fas fa-arrow-down mr-1"></i> {{ stat.trend }}
                                 </span>
                             {% endif %}
                         </div>
-                        <div class="stat-total">Total: {{ stat.total_count|intcomma }}</div>
+                        <div class="text-[1rem] opacity-80 mt-1">Total: {{ stat.total_count|intcomma }}</div>
                         {% if stat.history and stat.dates %}
-                            <div class="chart-container">
+                            <div class="relative h-[60px] mt-5">
                                 <canvas id="chart-{{ forloop.counter }}"
                                         class="sparkline"
                                         data-values='{{ stat.history|safe }}'

@@ -1,54 +1,74 @@
-<style>
-    .sidebar{
-        position: fixed;
-        top: 0;
-        left:0;
-        height: 100%;
-        background-color: black;
-    }
-</style>
-<div class="sidebar">
+<div class="fixed top-0 left-0 h-full bg-black">
     <ul class="nav nav-pills nav-stacked custom-nav">
         <li class="{% if request.resolver_match.url_name == 'organization_dashboar_home' %}active{% endif %}">
-            <a href="{% url 'organization_dashboar_home' %}"><i class="lnr lnr-power-switch"></i><span>Home</span></a>
+            <a href="{% url 'organization_dashboar_home' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-power-switch"></i>
+                <span class="ml-2">Home</span>
+            </a>
         </li>
-        <li class="{% if request.resolver_match.url_name == "domain_list" %}active{% endif %}">
-        <a href="{% url 'domain_list' %}"><i class="lnr lnr-pencil"></i>
-        <span>Domains</span></a>
-</li>
-<li class="menu-list">
-<a href="#"><i class="lnr lnr-rocket"></i>
-<span>Create</span></a>
-<ul class="sub-menu-list">
-    <li class="{% if request.resolver_match.url_name == "create_hunt" %}active{% endif %}">
-        <a href="{% url 'create_hunt' %}">Bug Hunt</a>
-    </li>
-    <li>
-        <a href="#">Bugathon</a>
-    </li>
-</ul>
-</li>
-<li class="{% if request.resolver_match.url_name == "draft_hunts" %}active{% endif %}">
-<a href="{% url 'draft_hunts' %}"><i class="lnr lnr-pencil"></i>
-<span>Drafts</span></a>
-</li>
-<li class="{% if request.resolver_match.url_name == "upcoming_hunts" %}active{% endif %}">
-<a href="{% url 'upcoming_hunts' %}"><i class="lnr lnr-bullhorn"></i>
-<span>Upcoming</span></a>
-</li>
-<li class="{% if request.resolver_match.url_name == "ongoing_hunts" %}active{% endif %}">
-    <a href="{% url 'ongoing_hunts' %}"><i class="lnr lnr-train"></i> <span>Ongoing
-    Hunts</span></a>
-</li>
-<li class="{% if request.resolver_match.url_name == "previous_hunts" %}active{% endif %}">
-<a href="{% url 'previous_hunts' %}"><i class="lnr lnr-spell-check"></i>
-<span>Previous Hunts</span></a>
-</li>
-<li class="{% if request.resolver_match.url_name == "create_hunt" %}active{% endif %}">
-    <a href="#"><i class="lnr lnr-diamond"></i> <span>Wallet</span></a>
-</li>
-<li class="{% if request.resolver_match.url_name == "organization-settings" %}active{% endif %}">
-    <a href="{% url 'organization-settings' %}"><i class="lnr lnr-cog"></i> <span>Settings</span></a>
-</li>
-</ul>
+        <li class="{% if request.resolver_match.url_name == 'domain_list' %}active{% endif %}">
+            <a href="{% url 'domain_list' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-pencil"></i>
+                <span class="ml-2">Domains</span>
+            </a>
+        </li>
+        <li class="menu-list">
+            <a href="#" class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-rocket"></i>
+                <span class="ml-2">Create</span>
+            </a>
+            <ul class="sub-menu-list pl-8">
+                <li class="{% if request.resolver_match.url_name == 'create_hunt' %}active{% endif %}">
+                    <a href="{% url 'create_hunt' %}"
+                       class="block p-2 text-white hover:bg-gray-700">Bug Hunt</a>
+                </li>
+                <li>
+                    <a href="#" class="block p-2 text-white hover:bg-gray-700">Bugathon</a>
+                </li>
+            </ul>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'draft_hunts' %}active{% endif %}">
+            <a href="{% url 'draft_hunts' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-pencil"></i>
+                <span class="ml-2">Drafts</span>
+            </a>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'upcoming_hunts' %}active{% endif %}">
+            <a href="{% url 'upcoming_hunts' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-bullhorn"></i>
+                <span class="ml-2">Upcoming</span>
+            </a>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'ongoing_hunts' %}active{% endif %}">
+            <a href="{% url 'ongoing_hunts' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-train"></i>
+                <span class="ml-2">Ongoing Hunts</span>
+            </a>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'previous_hunts' %}active{% endif %}">
+            <a href="{% url 'previous_hunts' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-spell-check"></i>
+                <span class="ml-2">Previous Hunts</span>
+            </a>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'create_hunt' %}active{% endif %}">
+            <a href="#" class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-diamond"></i>
+                <span class="ml-2">Wallet</span>
+            </a>
+        </li>
+        <li class="{% if request.resolver_match.url_name == 'organization-settings' %}active{% endif %}">
+            <a href="{% url 'organization-settings' %}"
+               class="flex items-center p-4 text-white hover:bg-gray-800">
+                <i class="lnr lnr-cog"></i>
+                <span class="ml-2">Settings</span>
+            </a>
+        </li>
+    </ul>
 </div>

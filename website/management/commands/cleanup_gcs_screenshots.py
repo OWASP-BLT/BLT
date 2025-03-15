@@ -6,7 +6,7 @@ from django.conf import settings
 from google.cloud import storage
 
 from website.management.base import LoggedBaseCommand
-from website.models import Issue
+from website.models import Issue, IssueScreenshot
 
 logger = logging.getLogger(__name__)
 

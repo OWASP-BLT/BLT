@@ -72,7 +72,7 @@
                                 <strong>GitHub Username:</strong> {{ submission.user.username }}
                             </p>
                             <p>
-                                <strong>BCH Address:</strong> <span class="bch-address">{{ submission.user.userprofile.bch_address }}</span>
+                                <strong>BCH Address:</strong> <span class="break-all break-words">{{ submission.user.userprofile.bch_address }}</span>
                             </p>
                             <!-- Editable Bacon Amount Field -->
                             <label for="bacon-input-{{ submission.id }}" class="block mt-2">Bacon Amount:</label>
@@ -89,7 +89,9 @@
                             </div>
                             <a href="https://mempool.space/tx/{{ submission.transaction_id }}"
                                target="_blank"
-                               class="check-tx-status">Check Transaction Status</a>
+                               class="fixed bottom-5 right-48 w-48 bg-blue-600 text-white border-none px-4 py-2 cursor-pointer rounded font-bold mt-2.5 text-center no-underline hover:bg-blue-700">
+                                Check Transaction Status
+                            </a>
                         </div>
                     {% endif %}
                 </div>
@@ -98,11 +100,16 @@
             {% endfor %}
         </div>
         {% if is_mentor %}
-            <a href="{% url 'initiate_transaction' %}" class="floating-btn">Initiate Transaction</a>
+            <a href="{% url 'initiate_transaction' %}"
+               class="fixed bottom-5 left-48 bg-green-500 text-white border-none px-5 py-3 rounded-full cursor-pointer shadow-md hover:bg-green-600 transition-colors duration-300 ease-in-out">
+                Initiate Transaction
+            </a>
         {% endif %}
         <a href="https://mempool.space/address/bc1parskmdj7cjh73xwsyugjpwp8xmly23035885st48kl43pjcj9ctsz2pf45"
            target="_blank"
-           class="check-tx-status">Check Transaction Status</a>
+           class="fixed bottom-5 right-48 w-48 bg-blue-600 text-white border-none px-4 py-2 cursor-pointer rounded font-bold mt-2.5 text-center no-underline hover:bg-blue-700">
+            Check Transaction Status
+        </a>
     </div>
     <script>
 function toggleDescription(id) {
@@ -142,50 +149,4 @@ function updateSubmission(id, status) {
     .catch(error => console.error("Error:", error));
 }
     </script>
-    <style>
-    .floating-btn {
-        position: fixed;
-        bottom: 20px;
-        left: 200px;
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 15px 20px;
-        border-radius: 50px;
-        cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s ease-in-out;
-    }
-    
-    .floating-btn:hover {
-        background-color: #45a049;
-    }
-
-    .bch-address {
-        word-wrap: break-word;
-        word-break: break-all;
-    }
-
-    .check-tx-status {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        cursor: pointer;
-        border-radius: 4px;
-        font-weight: bold;
-        margin-top: 10px;
-        display: block;
-        text-align: center;
-        text-decoration: none;
-        position: fixed;
-        bottom: 20px;
-        right: 200px;
-        width: 200px; /* Make the button smaller in length */
-    }
-
-    .check-tx-status:hover {
-        background-color: #0056b3;
-    }
-    </style>
 {% endblock content %}

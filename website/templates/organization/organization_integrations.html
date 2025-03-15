@@ -16,14 +16,7 @@
     Keep all your integrations organized. Add new ones, edit existing setups, or remove those you no longer need to maintain smooth and efficient workflows.
 {% endblock og_description %}
 {% block body %}
-    <style>
-      .bottom-right {
-          position: absolute;
-          bottom: 10px;
-          right: 15px;
-      }
-    </style>
-    <div class="bottom-right">
+    <div class="fixed bottom-2.5 right-3.75">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_domains.html">
             <i class="fab fa-github"></i>
         </a>
@@ -46,7 +39,7 @@
             </div>
         </div>
         <div class="w-[96%] max-h-[70vh] p-4 mt-10 bg-white border border-gray-200 rounded-lg shadow-md sm:p-8">
-            <div class="flex-col items-center justify-between mb-4 ">
+            <div class="flex-col items-center justify-between mb-4">
                 <h5 class="text-xl font-bold leading-none text-gray-900">All Integrations</h5>
                 <ul class="flex-col list-decimal">
                     {% if slack_integration %}
@@ -82,9 +75,9 @@
                                     Delete
                                 </button>
                             </form>
-                        {% else %}
-                            <span>No integrations found.</span>
                         </li>
+                    {% else %}
+                        <span>No integrations found.</span>
                     {% endif %}
                 </ul>
             </div>

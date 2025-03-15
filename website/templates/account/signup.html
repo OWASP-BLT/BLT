@@ -19,28 +19,11 @@
 {% load i18n %}
 {% load custom_tags %}
 {% block natural_content %}
-    <style>
-    .captcha-field input {
-        border: 1px solid #d1d5db;
-        margin-top: 10px;
-        padding-left: 6px;
-        border-radius: 4px;
-    }
-    .captcha-reload {
-        margin-left: 8px;
-        cursor: pointer;
-        padding: 4px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-    }
-    .captcha-reload:hover {
-        background-color: #f3f4f6;
-    }
-    </style>
     {% include "includes/sidenav.html" %}
-    <div class="flex items-center w-[100%] h-[60vh] min-h-screen p-4 bg-gray-100 lg:justify-center">
-        <div class="flex flex-col lg:scale-150 overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
-            <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 h-full">
+        <div class="flex flex-col w-full max-w-md bg-white rounded-md shadow-lg md:flex-row md:max-w-2xl lg:max-w-4xl">
+            <!-- Left Section -->
+            <div class="p-4 py-6 text-white bg-red-500 md:w-96 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
                 <div class="my-3 text-4xl font-bold tracking-wider text-center">
                     <a href="{% url 'home' %}"
                        class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
@@ -56,12 +39,14 @@
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline">{% trans "conditions" %}</a>
                 </p>
             </div>
+            <!-- Right Section -->
             <div class="p-5 bg-white md:flex-1">
                 <h3 class="my-4 text-2xl font-semibold text-gray-700">{% trans "Account SignUp" %}</h3>
                 <form class="flex flex-col space-y-5 login"
                       method="post"
                       action="{% url 'account_signup' %}">
                     {% csrf_token %}
+                    <!-- Username Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="email" class="text-sm font-semibold text-gray-500">Username</label>
                         <input autofocus
@@ -69,18 +54,20 @@
                                id="id_username"
                                name="username"
                                value="{{ form.username.value|default:'' }}"
-                               class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.username.errors }}</span>
                     </div>
+                    <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="email" class="text-sm font-semibold text-gray-500">Email</label>
                         <input type="email"
                                id="id_email"
                                name="email"
                                value="{{ form.email.value|default:'' }}"
-                               class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                               class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block">{{ form.email.errors }}</span>
                     </div>
+                    <!-- Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
                             <label for="password" class="text-sm font-semibold text-gray-500">Password</label>
@@ -90,7 +77,7 @@
                                    id="id_password"
                                    name="password1"
                                    value="{{ form.password1.value|default:'' }}"
-                                   class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -108,6 +95,7 @@
                         </div>
                         <span class="help-block">{{ form.password1.errors }}</span>
                     </div>
+                    <!-- Confirm Password Field -->
                     <div class="flex flex-col space-y-1">
                         <div class="flex items-center justify-between">
                             <label for="password" class="text-sm font-semibold text-gray-500">Confirm Password</label>
@@ -117,7 +105,7 @@
                                    id="id_password2"
                                    name="password2"
                                    value="{{ form.password2.value|default:'' }}"
-                                   class="px-4 py-2 w-[100%] h-[28px] transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
+                                   class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                             <button type="button"
                                     id="togglePassword"
                                     class="password-toggle absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-800 focus:outline-none"
@@ -135,19 +123,22 @@
                         </div>
                         <span class="help-block">{{ form.password2.errors }}</span>
                     </div>
-                    <!-- Captcha -->
+                    <!-- Captcha Field -->
                     <div class="flex flex-col space-y-1">
                         <label for="captcha" class="text-sm font-semibold text-gray-500">Captcha</label>
-                        <div class="captcha-field flex items-center">
+                        <div class="flex items-center">
                             <div class="captcha-container">
                                 <input type="hidden" name="captcha_0" value="{{ form.captcha.value.key }}">
                                 <img id="captcha-image"
                                      src="{{ form.captcha.image_url }}"
                                      alt="Captcha Image"
                                      width="150"
-                                     height="50">
+                                     height="50"
+                                     class="border border-gray-300 rounded">
                             </div>
-                            <button type="button" onclick="refreshCaptcha()" class="captcha-reload">
+                            <button type="button"
+                                    onclick="refreshCaptcha()"
+                                    class="ml-2 p-2 rounded-md hover:bg-gray-100 transition-colors">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      fill="none"
                                      viewBox="0 0 24 24"
@@ -165,23 +156,25 @@
                                required>
                         <span class="help-block">{{ form.captcha.errors }}</span>
                     </div>
+                    <!-- Hidden Redirect Field -->
                     {% if redirect_field_value %}
                         <input type="hidden"
                                name="{{ redirect_field_name }}"
                                value="{{ redirect_field_value }}" />
                     {% endif %}
+                    <!-- Submit Button -->
                     <div>
                         <button type="submit"
                                 name="signup_button"
-                                class=" w-[30%] h-[28px] text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                                class="w-full md:w-auto px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
                             {% trans "Sign Up" %}
                         </button>
                     </div>
-                    {# Removed generic error block so errors only show below each field #}
                 </form>
             </div>
         </div>
     </div>
+    <!-- Captcha Refresh Script -->
     <script>
         function refreshCaptcha() {
             const captchaContainer = document.querySelector('.captcha-container');
@@ -195,7 +188,7 @@
             .then(data => {
                 captchaContainer.innerHTML = `
                     <input type="hidden" name="captcha_0" value="${data.key}">
-                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50">
+                    <img id="captcha-image" src="${data.image_url}?${Date.now()}" alt="Captcha Image" width="150" height="50" class="border border-gray-300 rounded">
                 `;
             })
             .catch(error => console.error('Error:', error));
