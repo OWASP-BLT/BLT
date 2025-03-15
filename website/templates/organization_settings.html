@@ -1,4 +1,4 @@
-{% extends "base_dashboard.html" %}
+{% extends "organization/organization_dashboard_base.html" %}
 {% load socialaccount %}
 {% load gravatar %}
 {% load static %}
@@ -17,137 +17,138 @@
 {% block og_description %}
     View and manage admins and their roles within the organization using the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
-{% block content %}
-    <section>
-        {% include "includes/organization_sidenav.html" %}
-    </section>
-    <div class="col-md-6 widget_middle_left">
-        <div class="online">
-            <form id="update-role">
-                {% csrf_token %}
-                {% if admins %}
-                    {% for admin in admins %}
-                        <div class="online-top">
-                            <div class="top-at">
-                                {% if request.user.userprofile.avatar %}
-                                    <img class="img-responsive"
-                                         src="{{ request.user.userprofile.avatar }}"
-                                         alt="avatar"
-                                         width="100%"
-                                         height="100%">
-                                {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
-                                    <img class="img-responsive"
-                                         src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
-                                         alt="avatar"
-                                         width="100%"
-                                         height="100%">
-                                {% else %}
-                                    {% gravatar request.user.email 20 %}
-                                {% endif %}
-                            </div>
-                            <div class="top-on">
-                                <div class="top-on1">
-                                    <p>{{ admin.user }}</p>
-                                    {% ifequal admin.user request.user %}
-                                    you
+{% block body %}
+    <div>
+        <div class="col_3">
+            {% include "includes/organization_sidenav.html" %}
+        </div>
+        <div class="col-md-6 widget_middle_left">
+            <div class="online">
+                <form id="update-role">
+                    {% csrf_token %}
+                    {% if admins %}
+                        {% for admin in admins %}
+                            <div class="online-top">
+                                <div class="top-at">
+                                    {% if request.user.userprofile.avatar %}
+                                        <img class="img-responsive"
+                                             src="{{ request.user.userprofile.avatar }}"
+                                             alt="avatar"
+                                             width="100%"
+                                             height="100%">
+                                    {% elif request.user.socialaccount_set.all.0.get_avatar_url %}
+                                        <img class="img-responsive"
+                                             src="{{ request.user.socialaccount_set.all.0.get_avatar_url }}"
+                                             alt="avatar"
+                                             width="100%"
+                                             height="100%">
+                                    {% else %}
+                                        {% gravatar request.user.email 20 %}
+                                    {% endif %}
+                                </div>
+                                <div class="top-on">
+                                    <div class="top-on1">
+                                        <p>{{ admin.user }}</p>
+                                        {% ifequal admin.user request.user %}
+                                        you
+                                    {% endifequal %}
+                                    <p class="user-role" id="user_{{ admin.user }}">{{ admin.get_role_display }}</p>
+                                    <p class="user-role" id="domain_{{ admin.user }}">{{ admin.domain.name }}</p>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn_5 btn-lg btn-danger role-change-button dropdown-toggle"
+                                            type="button"
+                                            data-toggle="dropdown">
+                                        Role
+                                        <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% ifequal user.role 0 %}
+                                        <li>
+                                            <a id="{{ admin.user }}"
+                                               class="userRoleListItem"
+                                               value="0"
+                                               data-name="Admin"
+                                               href="#">Admin</a>
+                                        </li>
+                                        <li>
+                                            <a id="{{ admin.user }}"
+                                               class="userRoleListItem"
+                                               value="1"
+                                               data-name="Moderator"
+                                               href="#">Moderator</a>
+                                        </li>
+                                        {% ifnotequal admin.user request.user %}
+                                        <li>
+                                            <a id="{{ admin.user }}"
+                                               class="userRoleListItem"
+                                               value="9"
+                                               data-name="None"
+                                               href="#">None</a>
+                                        </li>
+                                    {% endifnotequal %}
                                 {% endifequal %}
-                                <p class="user-role" id="user_{{ admin.user }}">{{ admin.get_role_display }}</p>
-                                <p class="user-role" id="domain_{{ admin.user }}">{{ admin.domain.name }}</p>
-                            </div>
-                            <div class="dropdown">
-                                <button class="btn btn_5 btn-lg btn-danger role-change-button dropdown-toggle"
-                                        type="button"
-                                        data-toggle="dropdown">
-                                    Role
-                                    <span class="caret"></span>
-                                </button>
-                                <ul class="dropdown-menu">
-                                    {% ifequal user.role 0 %}
-                                    <li>
-                                        <a id="{{ admin.user }}"
-                                           class="userRoleListItem"
-                                           value="0"
-                                           data-name="Admin"
-                                           href="#">Admin</a>
-                                    </li>
-                                    <li>
-                                        <a id="{{ admin.user }}"
-                                           class="userRoleListItem"
-                                           value="1"
-                                           data-name="Moderator"
-                                           href="#">Moderator</a>
-                                    </li>
-                                    {% ifnotequal admin.user request.user %}
-                                    <li>
-                                        <a id="{{ admin.user }}"
-                                           class="userRoleListItem"
-                                           value="9"
-                                           data-name="None"
-                                           href="#">None</a>
-                                    </li>
-                                {% endifnotequal %}
-                            {% endifequal %}
-                            {% ifequal user.role 1 %}
-                            {% ifnotequal admin.role 0 %}
+                                {% ifequal user.role 1 %}
+                                {% ifnotequal admin.role 0 %}
+                                <li>
+                                    <a id="{{ admin.user }}"
+                                       class="userRoleListItem"
+                                       value="9"
+                                       data-name="None"
+                                       href="#">None</a>
+                                </li>
+                            {% endifnotequal %}
+                        {% endifequal %}
+                    </ul>
+                </div>
+                {% ifequal user.role 0 %}
+                <div class="dropdown">
+                    <button class="btn btn_5 btn-lg btn-danger role-change-button dropdown-toggle"
+                            type="button"
+                            data-toggle="dropdown">
+                        Domain
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        {% for domain in domain_list %}
                             <li>
                                 <a id="{{ admin.user }}"
-                                   class="userRoleListItem"
-                                   value="9"
-                                   data-name="None"
-                                   href="#">None</a>
+                                   class="userDomainListItem"
+                                   value="{{ domain.pk }}"
+                                   data-name="{{ domain.name }}"
+                                   href="#">{{ domain.name }}</a>
                             </li>
-                        {% endifnotequal %}
-                    {% endifequal %}
-                </ul>
-            </div>
-            {% ifequal user.role 0 %}
-            <div class="dropdown">
-                <button class="btn btn_5 btn-lg btn-danger role-change-button dropdown-toggle"
-                        type="button"
-                        data-toggle="dropdown">
-                    Domain
-                    <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    {% for domain in domain_list %}
+                        {% endfor %}
                         <li>
                             <a id="{{ admin.user }}"
                                class="userDomainListItem"
-                               value="{{ domain.pk }}"
-                               data-name="{{ domain.name }}"
-                               href="#">{{ domain.name }}</a>
+                               value=""
+                               data-name="None"
+                               href="#">None</a>
                         </li>
-                    {% endfor %}
-                    <li>
-                        <a id="{{ admin.user }}"
-                           class="userDomainListItem"
-                           value=""
-                           data-name="None"
-                           href="#">None</a>
-                    </li>
-                </ul>
-            </div>
-        {% endifequal %}
+                    </ul>
+                </div>
+            {% endifequal %}
+            <div class="clearfix"></div>
+        </div>
         <div class="clearfix"></div>
     </div>
-    <div class="clearfix"></div>
-</div>
-<input id="role_{{ admin.user }}"
-       type="hidden"
-       name="role@{{ admin.user }}"
-       value="{{ admin.role }}">
-<input id="user{{ admin.user }}"
-       type="hidden"
-       name="user@{{ admin.user }}"
-       value="{{ admin.user }}">
-<input id="domain{{ admin.user }}"
-       type="hidden"
-       name="domain@{{ admin.user }}"
-       value="{{ admin.domain.pk }}">
-{% endfor %}
-<input type="submit"
-       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-       value="Change Role" />
+    <input id="role_{{ admin.user }}"
+           type="hidden"
+           name="role@{{ admin.user }}"
+           value="{{ admin.role }}">
+    <input id="user{{ admin.user }}"
+           type="hidden"
+           name="user@{{ admin.user }}"
+           value="{{ admin.user }}">
+    <input id="domain{{ admin.user }}"
+           type="hidden"
+           name="domain@{{ admin.user }}"
+           value="{{ admin.domain.pk }}">
+    {% endfor %}
+    <input type="submit"
+           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+           value="Change Role" />
 </form>
 {% else %}
 </br>
@@ -191,4 +192,4 @@ no more admins !
         data-target="#addUserModal">
     <i class="lnr lnr-plus-circle"> </i>
 </button>
-{% endblock content %}
+{% endblock body %}

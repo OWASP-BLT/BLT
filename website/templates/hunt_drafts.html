@@ -1,4 +1,4 @@
-{% extends "base_dashboard.html" %}
+{% extends "organization/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}Drafts - organization Dashboard{% endblock %}
 {% block description %}
@@ -11,10 +11,7 @@
 {% block og_description %}
     View and manage your draft hunts in the organization Dashboard. Track progress and update as needed.
 {% endblock %}
-{% block content %}
-    <section>
-        {% include "includes/organization_sidenav.html" %}
-    </section>
+{% block body %}
     <div>
         <div class="col_3">
             <h3 class="text-left blank1">Drafts</h3>
@@ -43,4 +40,4 @@
         <div class="clearfix"></div>
     </div>
 </div>
-{% endblock content %}
+{% endblock body %}
