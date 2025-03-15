@@ -118,6 +118,7 @@ MIDDLEWARE = (
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
+    "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
 )
 
 if DEBUG:
@@ -169,20 +170,22 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
             ],
-            "loaders": [
-                "django.template.loaders.filesystem.Loader",
-                "django.template.loaders.app_directories.Loader",
-            ]
-            if DEBUG
-            else [
-                (
-                    "django.template.loaders.cached.Loader",
-                    [
-                        "django.template.loaders.filesystem.Loader",
-                        "django.template.loaders.app_directories.Loader",
-                    ],
-                ),
-            ],
+            "loaders": (
+                [
+                    "django.template.loaders.filesystem.Loader",
+                    "django.template.loaders.app_directories.Loader",
+                ]
+                if DEBUG
+                else [
+                    (
+                        "django.template.loaders.cached.Loader",
+                        [
+                            "django.template.loaders.filesystem.Loader",
+                            "django.template.loaders.app_directories.Loader",
+                        ],
+                    ),
+                ]
+            ),
         },
     },
 ]
@@ -329,7 +332,7 @@ else:
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -342,6 +345,8 @@ ALLOWED_HOSTS = [
 ]
 ALLOWED_HOSTS.extend(os.environ.get("ALLOWED_HOSTS", "").split(","))
 
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"

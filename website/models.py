@@ -24,6 +24,7 @@ from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from google.api_core.exceptions import NotFound
@@ -193,6 +194,14 @@ class Organization(models.Model):
     longitude = models.DecimalField(
         max_digits=9, decimal_places=6, blank=True, null=True, help_text="The longitude coordinate"
     )
+
+    def is_admin(self, user):
+        """Check if the user is an admin of the organization."""
+        return self.admin == user
+
+    def is_manager(self, user):
+        """Check if the user is a manager of the organization."""
+        return self.managers.filter(id=user.id).exists()
 
     class Meta:
         ordering = ["-created"]
@@ -693,6 +702,10 @@ class UserProfile(models.Model):
     issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
+    #  fields for visit tracking
+    daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
+    last_visit_day = models.DateField(null=True, blank=True, help_text="Last day the user visited")
+
     # SendGrid webhook fields
     email_status = models.CharField(
         max_length=50, blank=True, null=True, help_text="Current email status from SendGrid"
@@ -728,6 +741,7 @@ class UserProfile(models.Model):
         null=True,
         blank=True,
     )
+    public_key = models.TextField(blank=True, null=True)
     merged_pr_count = models.PositiveIntegerField(default=0)
     contribution_rank = models.PositiveIntegerField(default=0)
 
@@ -750,6 +764,24 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return self.user.email
+
+    def update_visit_counter(self):
+        """
+        Update daily visit counter if last visit was on a different day
+        """
+        today = timezone.now().date()
+
+        # If no previous visit or last visit was on a different day
+        if not self.last_visit_day or today > self.last_visit_day:
+            self.daily_visit_count += 1
+            self.last_visit_day = today
+            self.save()
+
+        # Always increment the general visit_count regardless of day
+        self.visit_count += 1
+        self.save(update_fields=["visit_count"])
+
+        return self.daily_visit_count
 
     def update_streak_and_award_points(self, check_in_date=None):
         """
@@ -1048,6 +1080,8 @@ class Contributor(models.Model):
     contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
     contributions = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
+    # Note: The repos relationship is defined in the Repo model as:
+    # contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
 
     def __str__(self):
         return self.name
@@ -1082,16 +1116,32 @@ class Project(models.Model):
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
     def save(self, *args, **kwargs):
+        # Always ensure a valid slug exists before saving
         if not self.slug:
-            slug = slugify(self.name)
+            base_slug = slugify(self.name)
             # Replace dots with dashes and limit length
-            slug = slug.replace(".", "-")
-            if len(slug) > 50:
-                slug = slug[:50]
+            base_slug = base_slug.replace(".", "-")
+            if len(base_slug) > 50:
+                base_slug = base_slug[:50]
             # Ensure we have a valid slug
-            if not slug:
-                slug = f"project-{int(time.time())}"
-            self.slug = slug
+            if not base_slug:
+                base_slug = f"project-{int(time.time())}"
+
+            # Ensure slug uniqueness
+            unique_slug = base_slug
+            counter = 1
+            while Project.objects.filter(slug=unique_slug).exclude(id=self.id).exists():
+                suffix = f"-{counter}"
+                # Make sure base_slug + suffix doesn't exceed 50 chars
+                if len(base_slug) + len(suffix) > 50:
+                    base_slug = base_slug[: 50 - len(suffix)]
+                unique_slug = f"{base_slug}{suffix}"
+                counter += 1
+            self.slug = unique_slug
+        elif not self.slug:
+            # Fallback if no name is available
+            self.slug = f"project-{int(time.time())}"
+
         super(Project, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -1441,6 +1491,8 @@ class Repo(models.Model):
     ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
+    last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1585,7 +1637,7 @@ class GitHubIssue(models.Model):
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.BigIntegerField(unique=True)
+    issue_id = models.BigIntegerField()  # Removed unique=True
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)
@@ -1596,6 +1648,8 @@ class GitHubIssue(models.Model):
     merged_at = models.DateTimeField(null=True, blank=True)
     is_merged = models.BooleanField(default=False)
     url = models.URLField()
+    has_dollar_tag = models.BooleanField(default=False)
+    sponsors_tx_id = models.CharField(max_length=255, null=True, blank=True)
     repo = models.ForeignKey(
         Repo,
         null=True,
@@ -1605,6 +1659,13 @@ class GitHubIssue(models.Model):
     )
     user_profile = models.ForeignKey(
         UserProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
+    contributor = models.ForeignKey(
+        Contributor,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -1623,8 +1684,12 @@ class GitHubIssue(models.Model):
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
 
+    class Meta:
+        # Make the combination of issue_id and repo unique
+        unique_together = ("issue_id", "repo")
+
     def __str__(self):
-        return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+        return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
 
     def get_comments(self):
         """
@@ -1732,21 +1797,6 @@ class Kudos(models.Model):
 
     def __str__(self):
         return f"Kudos from {self.sender.username} to {self.receiver.username}"
-
-
-class Message(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
-    content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
-    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
-
-    class Meta:
-        ordering = ["timestamp"]
-
-    def __str__(self):
-        return f"{self.username}: {self.content[:50]}"
 
 
 class OsshCommunity(models.Model):
@@ -1970,7 +2020,7 @@ class Enrollment(models.Model):
         return progress
 
     def __str__(self):
-        return f"{self.student.username} - {self.course.title}"
+        return f"{self.student.user.username} - {self.course.title}"
 
 
 class Rating(models.Model):
@@ -2008,7 +2058,7 @@ class BaconSubmission(models.Model):
 
 
 class DailyStats(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     value = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -2022,6 +2072,175 @@ class DailyStats(models.Model):
         return f"{self.name}: {self.value}"
 
 
+class Hackathon(models.Model):
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True, blank=True, max_length=255)
+    description = models.TextField()
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="hackathons")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    banner_image = models.ImageField(upload_to="hackathon_banners", null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    rules = models.TextField(blank=True, null=True)
+    registration_open = models.BooleanField(default=True)
+    max_participants = models.PositiveIntegerField(null=True, blank=True)
+    # Link to repositories that are part of this hackathon
+    repositories = models.ManyToManyField(Repo, related_name="hackathons", blank=True)
+    # Sponsor information
+    sponsor_note = models.TextField(
+        blank=True, null=True, help_text="Additional information about sponsorship opportunities"
+    )
+    sponsor_link = models.URLField(blank=True, null=True, help_text="Link to sponsorship information or application")
+
+    class Meta:
+        ordering = ["-start_time"]
+        indexes = [
+            models.Index(fields=["start_time"], name="hackathon_start_idx"),
+            models.Index(fields=["organization"], name="hackathon_org_idx"),
+        ]
+        constraints = [models.UniqueConstraint(fields=["slug"], name="unique_hackathon_slug")]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    @property
+    def is_ongoing(self):
+        now = timezone.now()
+        return self.start_time <= now <= self.end_time
+
+    @property
+    def has_ended(self):
+        return timezone.now() > self.end_time
+
+    @property
+    def has_started(self):
+        return timezone.now() >= self.start_time
+
+    @property
+    def time_remaining(self):
+        if self.has_ended:
+            return "Ended"
+        elif not self.has_started:
+            return f"Starts in {(self.start_time - timezone.now()).days} days"
+        else:
+            remaining = self.end_time - timezone.now()
+            days = remaining.days
+            hours = remaining.seconds // 3600
+            return f"{days} days, {hours} hours remaining"
+
+    def get_leaderboard(self):
+        """
+        Generate a leaderboard of contributors based on merged pull requests
+        during the hackathon timeframe.
+        """
+        # Get all merged pull requests from the hackathon's repositories within the timeframe
+        pull_requests = GitHubIssue.objects.filter(
+            repo__in=self.repositories.all(),
+            type="pull_request",
+            is_merged=True,
+            merged_at__gte=self.start_time,
+            merged_at__lte=self.end_time,
+        )
+
+        # Group by user_profile and count PRs
+        leaderboard = {}
+        for pr in pull_requests:
+            if pr.user_profile:
+                user_id = pr.user_profile.user.id
+                if user_id in leaderboard:
+                    leaderboard[user_id]["count"] += 1
+                    leaderboard[user_id]["prs"].append(pr)
+                else:
+                    leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
+            elif pr.contributor and pr.contributor.github_id:
+                # Skip bot accounts
+                github_username = pr.contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
+                # If no user profile but has contributor, use contributor as key
+                contributor_id = f"contributor_{pr.contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["prs"].append(pr)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": pr.contributor.name or pr.contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "prs": [pr],
+                        "is_contributor": True,
+                        "contributor": pr.contributor,  # Include the contributor object
+                    }
+
+        # Convert to list and sort by count (descending)
+        leaderboard_list = list(leaderboard.values())
+        leaderboard_list.sort(key=lambda x: x["count"], reverse=True)
+
+        return leaderboard_list
+
+
+class HackathonSponsor(models.Model):
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name="sponsors")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="sponsored_hackathons")
+    sponsor_level = models.CharField(
+        max_length=20,
+        choices=[
+            ("platinum", "Platinum"),
+            ("gold", "Gold"),
+            ("silver", "Silver"),
+            ("bronze", "Bronze"),
+            ("partner", "Partner"),
+        ],
+        default="partner",
+    )
+    logo = models.ImageField(upload_to="hackathon_sponsor_logos", null=True, blank=True)
+    website = models.URLField(blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["sponsor_level", "created"]
+        unique_together = ("hackathon", "organization")
+
+    def __str__(self):
+        return f"{self.organization.name} - {self.get_sponsor_level_display()} " f"sponsor for {self.hackathon.name}"
+
+
+class HackathonPrize(models.Model):
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name="prizes")
+    position = models.PositiveIntegerField(
+        choices=[
+            (1, "First Place"),
+            (2, "Second Place"),
+            (3, "Third Place"),
+            (4, "Special Prize"),
+        ]
+    )
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    sponsor = models.ForeignKey(
+        HackathonSponsor, on_delete=models.SET_NULL, null=True, blank=True, related_name="prizes"
+    )
+
+    class Meta:
+        ordering = ["position"]
+        unique_together = ("hackathon", "position")
+
+    def __str__(self):
+        return f"{self.get_position_display()} - {self.title} ({self.hackathon.name})"
+
+
 class Queue(models.Model):
     """
     Model to store queue items with a message, image, and launch status.
@@ -2033,6 +2252,8 @@ class Queue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     launched = models.BooleanField(default=False)
     launched_at = models.DateTimeField(null=True, blank=True)
+    txid = models.CharField(max_length=255, null=True, blank=True)
+    url = models.URLField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]
@@ -2051,3 +2272,27 @@ class Queue(models.Model):
             self.launched = True
             self.launched_at = timezone.now()
             self.save()
+
+
+class Thread(models.Model):
+    participants = models.ManyToManyField(User, related_name="threads")
+    updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
+
+    def __str__(self):
+        return f"Thread {self.id}"
+
+
+class Message(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+
+    class Meta:
+        ordering = ["timestamp"]
+
+    def __str__(self):
+        return f"{self.username}: {self.content[:50]}"

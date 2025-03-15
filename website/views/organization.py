@@ -46,10 +46,12 @@ from website.models import (
     Activity,
     DailyStatusReport,
     Domain,
+    GitHubIssue,
     Hunt,
     IpReport,
     Issue,
     IssueScreenshot,
+    Message,
     Organization,
     OrganizationAdmin,
     Repo,
@@ -488,8 +490,41 @@ class Listbounties(TemplateView):
             hunts = hunts.filter(domain=domain)
 
         # Fetch GitHub issues with $5 label for first page
+        issue_state = request.GET.get("issue_state", "open")
+
         try:
-            github_issues = self.github_issues_with_bounties("$5")
+            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
+
+            # For closed issues, fetch related PRs from database
+            if issue_state == "closed":
+                for issue in github_issues:
+                    issue_number = issue.get("number")
+
+                    try:
+                        related_prs = []
+                        prs = GitHubIssue.objects.filter(
+                            type="pull_request",
+                            is_merged=True,
+                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                            + str(issue_number),
+                        ).order_by("-merged_at")[:3]
+
+                        for pr in prs:
+                            related_prs.append(
+                                {
+                                    "number": pr.issue_id,
+                                    "title": pr.title,
+                                    "url": pr.url,
+                                    "user": pr.user_profile.user.username
+                                    if pr.user_profile and pr.user_profile.user
+                                    else None,
+                                }
+                            )
+
+                        issue["related_prs"] = related_prs
+                    except Exception as e:
+                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                        issue["related_prs"] = []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
@@ -499,18 +534,19 @@ class Listbounties(TemplateView):
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
+            "selected_issue_state": issue_state,
         }
 
         return render(request, self.template_name, context)
 
-    def github_issues_with_bounties(self, label, page=1, per_page=10):
-        cache_key = f"github_issues_{label}_page_{page}"
+    def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
         cached_issues = cache.get(cache_key)
 
         if cached_issues is not None:
             return cached_issues
 
-        params = {"labels": label, "state": "open", "per_page": per_page, "page": page}
+        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
 
         headers = {}
         github_token = getattr(settings, "GITHUB_API_TOKEN", None)
@@ -525,20 +561,29 @@ class Listbounties(TemplateView):
             response.raise_for_status()
 
             issues = response.json()
-            formatted_issues = [
-                {
-                    "id": issue.get("id"),
-                    "number": issue.get("number"),
-                    "title": issue.get("title"),
-                    "url": issue.get("html_url"),
-                    "repository": "OWASP-BLT/BLT",  # Hardcoded since we know the repo
-                    "created_at": issue.get("created_at"),
-                    "updated_at": issue.get("updated_at"),
-                    "labels": [label.get("name") for label in issue.get("labels", [])],
-                    "user": issue.get("user", {}).get("login") if issue.get("user") else None,
-                }
-                for issue in issues
-            ]
+            formatted_issues = []
+
+            for issue in issues:
+                related_prs = []
+
+                # Only include issues, not PRs in the response
+                if issue.get("pull_request") is None:
+                    formatted_issue = {
+                        "id": issue.get("id"),
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "url": issue.get("html_url"),
+                        "repository": "OWASP-BLT/BLT",
+                        "created_at": issue.get("created_at"),
+                        "updated_at": issue.get("updated_at"),
+                        "labels": [label.get("name") for label in issue.get("labels", [])],
+                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                        "state": issue.get("state"),
+                        "related_prs": related_prs,
+                        "closed_at": issue.get("closed_at"),
+                    }
+
+                    formatted_issues.append(formatted_issue)
 
             # Cache for 5 minutes
             cache.set(cache_key, formatted_issues, timeout=300)
@@ -550,28 +595,48 @@ class Listbounties(TemplateView):
 
 
 def load_more_issues(request):
+    page = int(request.GET.get("page", 1))
+    state = request.GET.get("state", "open")
+
     try:
-        page = int(request.GET.get("page", 1))
-        label = "$5"
+        view = Listbounties()
+        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
 
-        if page < 1:
-            page = 1
+        # For closed issues, fetch related PRs from database for other than first batch of issues
+        if issues and state == "closed":
+            for issue in issues:
+                issue_number = issue.get("number")
 
-        issues = Listbounties().github_issues_with_bounties(label, page=page)
+                try:
+                    related_prs = []
+                    prs = GitHubIssue.objects.filter(
+                        type="pull_request",
+                        is_merged=True,
+                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                        + str(issue_number),
+                    ).order_by("-merged_at")[:3]
 
-        return JsonResponse(
-            {
-                "success": True,
-                "issues": issues,
-                "next_page": page + 1 if issues else None,  # Only provide next page if we have results
-            }
-        )
-    except Exception:  # Removed 'as e' since it's not used
-        logger.exception("Error loading more issues")
+                    for pr in prs:
+                        related_prs.append(
+                            {
+                                "number": pr.issue_id,
+                                "title": pr.title,
+                                "url": pr.url,
+                                "user": pr.user_profile.user.username
+                                if pr.user_profile and pr.user_profile.user
+                                else None,
+                            }
+                        )
 
-        return JsonResponse(
-            {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
-        )
+                    issue["related_prs"] = related_prs
+                except Exception as e:
+                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                    issue["related_prs"] = []
+
+        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
+    except Exception as e:
+        logger.error(f"Error loading more issues: {str(e)}")
+        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
 class DraftHunts(TemplateView):
@@ -2004,8 +2069,10 @@ class RoomsListView(ListView):
         context = super().get_context_data(**kwargs)
         context["form"] = RoomForm()
 
-        # Add last 3 messages for each room
+        # Add message count and last 3 messages for each room (newest first)
         for room in context["rooms"]:
+            room.message_count = room.messages.count()
+            # Get messages in reverse chronological order (newest first)
             room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
 
         # Add breadcrumbs
@@ -2042,8 +2109,8 @@ def join_room(request, room_id):
     # Ensure session key exists for anonymous users
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
-    # Get messages ordered by timestamp
-    room_messages = room.messages.all().order_by("timestamp")
+    # Get messages ordered by timestamp in descending order (most recent first)
+    room_messages = room.messages.all().order_by("-timestamp")
 
     # Add breadcrumbs context
     breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
@@ -2157,6 +2224,7 @@ class OrganizationListView(ListView):
                 "domain_set",
                 "projects",
                 "projects__repos",
+                "repos",
                 "tags",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
@@ -2173,7 +2241,6 @@ class OrganizationListView(ListView):
                 open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
                 closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
-                repo_count=Count("projects__repos", distinct=True),
             )
             .select_related("admin")
             .order_by("-created")
@@ -2531,3 +2598,62 @@ def update_organization_repos(request, slug):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
         return redirect("organization_detail", slug=slug)
+
+
+@require_POST
+def send_message_api(request):
+    """API endpoint for sending messages from the rooms list page"""
+    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        room_id = data.get("room_id")
+        message_content = data.get("message")
+
+        if not room_id or not message_content:
+            return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+
+        room = get_object_or_404(Room, id=room_id)
+
+        # Create the message
+        if request.user.is_authenticated:
+            username = request.user.username
+            user = request.user
+            session_key = None
+        else:
+            # Ensure session key exists for anonymous users
+            if not request.session.session_key:
+                request.session.create()
+            session_key = request.session.session_key
+            username = f"anon_{session_key[-4:]}"
+            user = None
+
+        message = Message.objects.create(
+            room=room, user=user, username=username, content=message_content, session_key=session_key
+        )
+
+        return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def room_messages_api(request, room_id):
+    """API endpoint for getting room messages"""
+    room = get_object_or_404(Room, id=room_id)
+    messages = room.messages.all().order_by("-timestamp")[:10]  # Get the 10 most recent messages
+
+    message_data = []
+    for message in messages:
+        message_data.append(
+            {
+                "id": message.id,
+                "username": message.username,
+                "content": message.content,
+                "timestamp": message.timestamp.isoformat(),
+                "timestamp_display": naturaltime(message.timestamp),
+            }
+        )
+
+    return JsonResponse({"success": True, "count": room.messages.count(), "messages": message_data})
