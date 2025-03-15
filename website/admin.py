@@ -41,6 +41,7 @@ from website.models import (
     LectureStatus,
     Message,
     Monitor,
+    Notification,
     Organization,
     OrganizationAdmin,
     OsshCommunity,
@@ -758,3 +759,4 @@ admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
+admin.site.register(Notification)
