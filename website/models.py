@@ -172,6 +172,9 @@ class Organization(models.Model):
         choices=[(tag.value, tag.name) for tag in OrganisationType],
         default=OrganisationType.ORGANIZATION.value,
     )
+    check_ins_enabled = models.BooleanField(
+        default=False, help_text="Indicates if the organization has check-ins enabled"
+    )
 
     # Address fields
     address_line_1 = models.CharField(
@@ -2296,3 +2299,31 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    NOTIFICATION_TYPES = [
+        ("general", "General"),
+        ("alert", "Alert"),
+        ("reminder", "Reminder"),
+        ("promo", "Promotional"),
+        ("reward", "Rewards"),
+    ]
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default="general")
+
+    link = models.CharField(max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username} - {self.notification_type}"
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.save()
+
+    class Meta:
+        ordering = ["is_read", "-created_at"]
