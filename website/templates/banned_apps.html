@@ -139,7 +139,7 @@
                             };
                         }
                     }).addTo(map);
-                });
+                }) .catch(error => console.error('Error loading GeoJSON:', error));
         }
         
         // Calculate positions for multiple markers
