@@ -1,10 +1,12 @@
 from urllib.parse import urlparse
 
 from django.contrib import admin
+from django.contrib.admin import SimpleListFilter
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.template.defaultfilters import truncatechars
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -12,6 +14,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    BannedApp,
     Bid,
     Blocked,
     ChatBotLog,
@@ -39,6 +42,7 @@ from website.models import (
     LectureStatus,
     Message,
     Monitor,
+    Notification,
     Organization,
     OrganizationAdmin,
     OsshCommunity,
@@ -400,6 +404,31 @@ def unblock_user_agent(modeladmin, request, queryset):
 unblock_user_agent.short_description = "Unblock selected UserAgent"
 
 
+# Custom filter for IP address ranges
+class IPAddressRangeFilter(SimpleListFilter):
+    title = "IP Address Range"
+    parameter_name = "ip_range"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("internal", "Internal (127.0.0.1)"),
+            ("local", "Local (192.168.x.x)"),
+            ("vpn", "VPN (10.x.x.x)"),
+            ("ipv6", "IPv6"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "internal":
+            return queryset.filter(address__startswith="127.0.0.1")
+        if self.value() == "local":
+            return queryset.filter(address__startswith="192.168.")
+        if self.value() == "vpn":
+            return queryset.filter(address__startswith="10.")
+        if self.value() == "ipv6":
+            return queryset.filter(address__contains=":")
+        return queryset
+
+
 class IPAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -413,6 +442,10 @@ class IPAdmin(admin.ModelAdmin):
         "method",
         "referer",
     )
+
+    search_fields = ["address", "user", "agent", "path", "method", "referer"]
+    list_filter = ["method", "created", IPAddressRangeFilter]
+    date_hierarchy = "created"
 
     actions = [block_ip, unblock_ip, block_user_agent, unblock_user_agent]
 
@@ -535,11 +568,13 @@ class GitHubIssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "user_profile",
+        "contributor",
         "type",
         "title",
         "state",
         "is_merged",
         "created_at",
+        "merged_at",
         "updated_at",
         "url",
         "p2p_amount_usd",
@@ -553,12 +588,15 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "state",
         "is_merged",
         "user_profile",
+        "contributor",
         "sent_by_user",
+        "repo",
     ]
     search_fields = [
         "title",
         "url",
         "user_profile__user__username",
+        "contributor__name",
         "bch_tx_id",
     ]
     date_hierarchy = "created_at"
@@ -626,9 +664,19 @@ class DailyStatsAdmin(admin.ModelAdmin):
 
 
 class QueueAdmin(admin.ModelAdmin):
-    list_display = ("id", "short_message", "image", "created", "modified", "launched", "launched_at")
+    list_display = (
+        "id",
+        "short_message",
+        "image",
+        "created",
+        "modified",
+        "launched",
+        "launched_at",
+        "txid",
+        "url_link",
+    )
     list_filter = ("launched", "created", "modified")
-    search_fields = ("message",)
+    search_fields = ("message", "txid")
     readonly_fields = ("created", "modified")
     actions = ["mark_as_launched"]
 
@@ -636,6 +684,13 @@ class QueueAdmin(admin.ModelAdmin):
         return truncatechars(obj.message, 50)
 
     short_message.short_description = "Message"
+
+    def url_link(self, obj):
+        if obj.url:
+            return format_html('<a href="{}" target="_blank">View</a>', obj.url)
+        return "-"
+
+    url_link.short_description = "URL"
 
     def mark_as_launched(self, request, queryset):
         now = timezone.now()
@@ -705,3 +760,19 @@ admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
+admin.site.register(Notification)
+
+
+@admin.register(BannedApp)
+class BannedAppAdmin(admin.ModelAdmin):
+    list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
+    list_filter = ("app_type", "is_active", "ban_date")
+    search_fields = ("country_name", "country_code", "app_name", "ban_reason")
+    date_hierarchy = "ban_date"
+    ordering = ("country_name", "app_name")
+
+    fieldsets = (
+        ("App Information", {"fields": ("app_name", "app_type")}),
+        ("Country Information", {"fields": ("country_name", "country_code")}),
+        ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
+    )

@@ -28,12 +28,122 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead>
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Command</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'name' and not reverse %}-name{% else %}name{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Command
+                                    {% if sort == 'name' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-name' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Run</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Run Count</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">30 Day Activity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'last_run' and not reverse %}-last_run{% else %}last_run{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Last Run
+                                    {% if sort == 'last_run' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-last_run' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'status' and not reverse %}-status{% else %}status{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Status
+                                    {% if sort == 'status' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-status' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'run_count' and not reverse %}-run_count{% else %}run_count{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    Run Count
+                                    {% if sort == 'run_count' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-run_count' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="?sort={% if sort == 'activity' and not reverse %}-activity{% else %}activity{% endif %}"
+                                   class="flex items-center hover:text-[#e74c3c]">
+                                    30 Day Activity
+                                    {% if sort == 'activity' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
+                                        </svg>
+                                    {% elif sort == '-activity' %}
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-4 w-4 ml-1"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    {% endif %}
+                                </a>
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -84,16 +194,27 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ command.run_count|default:"0" }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {% if command.stats_data %}
-                                        <div class="flex items-end h-[30px] w-[100px] gap-[1px]"
-                                             title="30-day activity">
-                                            {% for data in command.stats_data %}
-                                                <div class="flex-1 bg-[#e74c3c] min-w-[2px] rounded-t-[1px]"
-                                                     style="height: {% widthratio data.value 100 30 %}px"
-                                                     title="{{ data.date }}: {{ data.value }}"></div>
-                                            {% endfor %}
+                                        <div class="relative">
+                                            <!-- Grid background -->
+                                            <div class="absolute inset-0 grid grid-rows-4 w-[120px] h-[30px] pointer-events-none">
+                                                <div class="border-t border-gray-200"></div>
+                                                <div class="border-t border-gray-200"></div>
+                                                <div class="border-t border-gray-200"></div>
+                                                <div class="border-t border-gray-200"></div>
+                                            </div>
+                                            <!-- Bars -->
+                                            <div class="flex items-end h-[30px] w-[120px] gap-[1px] relative"
+                                                 title="30-day activity">
+                                                {% for data in command.stats_data %}
+                                                    <div class="flex-1 {% if data.value > 0 %}bg-[#e74c3c] hover:bg-red-700{% else %}bg-gray-200 hover:bg-gray-300{% endif %} min-w-[2px] rounded-t-sm transition-all duration-200"
+                                                         style="height: {% if data.value > 0 %}{{ data.height_percent|floatformat:0 }}{% else %}1{% endif %}%"
+                                                         title="{{ data.date }}: {{ data.value }}"></div>
+                                                {% endfor %}
+                                            </div>
                                         </div>
+                                        <div class="text-xs text-gray-500 mt-1">Max: {{ command.max_value }}</div>
                                     {% else %}
-                                        <div class="flex items-center justify-center h-[30px] w-[100px] text-gray-400 text-[10px]">No data</div>
+                                        <div class="flex items-center justify-center h-[30px] w-[120px] text-gray-400 text-[10px]">No data</div>
                                     {% endif %}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -276,6 +397,64 @@
                     submitCommandForm(this);
                 });
             }
+
+            // Enhanced tooltips for activity bars
+            const activityBars = document.querySelectorAll('.flex-1[title]');
+            activityBars.forEach(bar => {
+                bar.addEventListener('mouseenter', function() {
+                    const title = this.getAttribute('title');
+                    if (!title) return;
+                    
+                    // Parse the title to get date and value
+                    const [date, valueStr] = title.split(': ');
+                    const value = parseInt(valueStr) || 0;
+                    
+                    // Format the date
+                    const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    
+                    // Create tooltip
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'absolute z-10 bg-gray-900 text-white text-xs rounded py-1 px-2 pointer-events-none';
+                    tooltip.innerHTML = `
+                        <div class="font-bold">${formattedDate}</div>
+                        <div class="flex justify-between gap-2">
+                            <span>Executions:</span>
+                            <span class="font-bold">${value}</span>
+                        </div>
+                    `;
+                    tooltip.style.bottom = '40px';
+                    tooltip.style.left = '50%';
+                    tooltip.style.transform = 'translateX(-50%)';
+                    tooltip.style.whiteSpace = 'nowrap';
+                    
+                    // Position tooltip
+                    this.style.position = 'relative';
+                    this.appendChild(tooltip);
+                    
+                    // Remove title to prevent default tooltip
+                    this.setAttribute('data-original-title', title);
+                    this.removeAttribute('title');
+                });
+                
+                bar.addEventListener('mouseleave', function() {
+                    // Restore title
+                    const originalTitle = this.getAttribute('data-original-title');
+                    if (originalTitle) {
+                        this.setAttribute('title', originalTitle);
+                        this.removeAttribute('data-original-title');
+                    }
+                    
+                    // Remove tooltip
+                    const tooltip = this.querySelector('div');
+                    if (tooltip) {
+                        this.removeChild(tooltip);
+                    }
+                });
+            });
         });
         
         // Command modal functions
