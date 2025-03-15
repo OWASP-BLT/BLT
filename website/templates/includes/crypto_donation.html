@@ -1,62 +1,176 @@
 {% load static %}
-<div class=" {% if included_in_issue_page %} max-sm:ml-[3.45%] ml-[10%] {% else %} ml-0 {% endif %} ">
-    <div class="flex justify-start items-center">
-        <img class="w-[80px] h-[80px] p-1 object-cover border-2 border-[#7e22ce] border-solid"
-             src="{% static 'gif/loader.gif' %}"
-             alt="crypto address qr code"
-             id="crypto-qr-image"
-             width="32px"
-             height="32px">
-        <div class="ml-3" id="crypto">
-            {% if user.userprofile.btc_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address|slice:":40" lessWidth=True editCrypto=True %}
-            {% endif %}
-            {% if user.userprofile.bch_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address|slice:":40" lessWidth=True editCrypto=True %}
-            {% endif %}
-            {% if user.userprofile.eth_address %}
-                {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address|slice:":40" lessWidth=True editCrypto=True %}
-            {% endif %}
+<div class="{% if included_in_issue_page %} {% else %} {% endif %}">
+    <div class="flex flex-col gap-3 items-center">
+        <!-- Crypto currency selection buttons -->
+        <div class="flex flex-row gap-2 justify-center">
+            <button id="btn-btc"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.btc_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    {% if not user.userprofile.btc_address %}disabled{% endif %}>
+                <svg width="16"
+                     height="16"
+                     viewBox="0 0 2000 2000"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1970,1242c-133.48,535.66-676.18,861.68-1212,728S-103.69,1293.89,30,758.18,706.12-103.7,1241.82,30,2103.69,706.16,1970,1242h0Z" fill="#f7931a" />
+                    <path d="M1441,857.53c19.88-133.07-81.44-204.61-220-252.33l45-180.25-109.76-27.34-43.84,175.51c-28.82-7.18-58.44-14-87.88-20.68l44-176.67L958.87,348.43,914,528.61,692.68,473.79,663.48,591s81.42,18.66,79.7,19.82c44.44,11.1,52.5,40.5,51.14,63.82l-123.14,493.8c-5.44,13.5-19.22,33.74-50.28,26,1.1,1.6-79.76-19.46-79.76-19.46l-54.48,125.79,221,55.8-45.42,182.35,109.6,27.34,45-180.39c30,8.12,59,15.62,87.42,22.68l-44.82,179.55,109.74,27.34,45.42-182c187.13,35.4,327.85,21.12,387-148,47.72-136.25-2.34-214.85-100.8-266.13,71.7-16.6,125.7-63.74,140.11-161.17m-250.71,351.52c-34,136.25-263.35,62.62-337.77,44.12l60.26-241.55c74.38,18.56,312.89,55.32,277.55,197.41m34-353.5c-30.94,124-221.91,61-283.89,45.54L994.91,682c62,15.48,261.51,44.3,229.25,173.59" fill="#fff" />
+                </svg>
+                BTC
+            </button>
+            <button id="btn-bch"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.bch_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    {% if not user.userprofile.bch_address %}disabled{% endif %}>
+                <svg width="16"
+                     height="16"
+                     viewBox="0 0 2000 2000"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="1000" cy="1000" r="1000" fill="#8dc351" />
+                    <path d="M1408.64,618.17c-42.89-173.21-183-230.58-372.67-190.54L975.85,169.27,854.54,201.8l58.51,253.9c-31.94,8-64.5,15.43-96.89,22.9l-58.89-255.4L636,256.04l60.09,258.33c-26.42,6.13-52.41,12.21-77.67,18.65l-0.02-.09L467.1,567.62l39.76,164.53s91.05-28.06,90.22-25.79c50.28-12.77,74.23,20.46,85.43,38.28l96.12,414.19,15.29,40.58c-5.68,29.11-29.18,35.26-69.06,44.09,3.74,1.87-90.27,27.58-90.27,27.58l-67.48,178.69,141.8-42.76c26.39-7.21,52.59-14.2,78.13-21.36l60.79,261.15,121.11-32.37-60.68-262.2c33.33-8.26,65.81-16.58,97.12-24.72l60.43,260.57,121.29-32.51-60.55-261.77c205.35-70.94,340.77-164.54,304.51-366.51-29.05-162.59-121.88-211.67-246.72-207.17,61.75-80.9,88.95-183.85,52.9-307.61l0,0Zm-52.33,627.51c41.38,177.27-252.47,245.92-346.59,273.06l-116.76-497.21c94.12-22.87,417.68-136.89,463.35,224.15h0Zm-213.82-398.94c37.47,160.44-207.55,223.59-285.35,247.31L747.9,646.45c77.81-18.77,352.11-113.27,394.59,200.28h0Z" fill="#fff" />
+                </svg>
+                BCH
+            </button>
+            <button id="btn-eth"
+                    class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.eth_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
+                    {% if not user.userprofile.eth_address %}disabled{% endif %}>
+                <svg width="16"
+                     height="16"
+                     viewBox="0 0 784.37 1277.39"
+                     xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#343434" d="m392.07 0-8.57 29.11v844.63l8.57 8.55 392.06-231.75z" />
+                    <path fill="#8C8C8C" d="M392.07 0 0 650.54l392.07 231.75V472.33z" />
+                    <path fill="#3C3C3B" d="m392.07 956.52-4.83 5.89v300.87l4.83 14.1 392.3-552.49z" />
+                    <path fill="#8C8C8C" d="M392.07 1277.38V956.52L0 724.89z" />
+                    <path fill="#141414" d="m392.07 882.29 392.06-231.75-392.06-178.21z" />
+                    <path fill="#393939" d="m0 650.54 392.07 231.75V472.33z" />
+                </svg>
+                ETH
+            </button>
         </div>
-        <div class="hidden max-sm:w-[100%] max-sm:overflow-hidden" id="no-crypto">
-            {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
-            <i class="ml-[3%] text-[12px]">No Address, will go to BLT Donation</i>
+        <!-- QR code container -->
+        <div class="relative w-[150px] h-[150px]" id="qr-container">
+            <!--  QR image  -->
+            <img class="w-full h-full object-cover border-2 border-[#e74c3c] border-solid rounded-md"
+                 src="{% static 'gif/loader.gif' %}"
+                 height="150px"
+                 width="150px"
+                 alt="crypto address qr code"
+                 id="crypto-qr-image">
+        </div>
+        <!-- Address display -->
+        <div class="w-full max-w-md" id="crypto-address-container">
+            <div id="btc-address" class="crypto-address hidden">
+                {% if user.userprofile.btc_address %}
+                    {% include "./tiny-cards.html" with insideIFCondition=True left="BTC" right=user.userprofile.btc_address lessWidth=True editCrypto=True %}
+                {% endif %}
+            </div>
+            <div id="bch-address" class="crypto-address hidden">
+                {% if user.userprofile.bch_address %}
+                    {% include "./tiny-cards.html" with insideIFCondition=True left="BCH" right=user.userprofile.bch_address lessWidth=True editCrypto=True %}
+                {% endif %}
+            </div>
+            <div id="eth-address" class="crypto-address hidden">
+                {% if user.userprofile.eth_address %}
+                    {% include "./tiny-cards.html" with insideIFCondition=True left="ETH" right=user.userprofile.eth_address lessWidth=True editCrypto=True %}
+                {% endif %}
+            </div>
+            <div id="no-crypto" class="hidden">
+                {% include "./tiny-cards.html" with left="BCH" right="qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc" lessWidth=True editCrypto=True %}
+                <i class="text-[12px]">No Address, will go to BLT Donation</i>
+            </div>
         </div>
     </div>
 </div>
 <script>
-    function loadQRCode(){
-        var btc_address = "{{user.userprofile.btc_address}}";
-        var bch_address = "{{user.userprofile.bch_address}}";
-        var eth_address = "{{user.userprofile.eth_address}}";
-
-        if(btc_address != "None" && btc_address != ""){
-            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${btc_address}&size=400x300`;
-        }else if(bch_address != "None" && bch_address != ""){
-            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${bch_address}&size=400x300`;
-        }else if(eth_address != "None" && eth_address != ""){
-            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${eth_address}&size=400x300`;
-        }else{
-            // User has not set their crypto addresses
-            // Show BLT QR code
-            var showBLT = document.getElementById("no-crypto");
-            showBLT.style.cssText = "display: block !important";
-            var hideUser = document.getElementById("crypto");
-            hideUser.style.cssText = "display: none !important";
-            bch_address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-            document.getElementById('crypto-qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?data=${bch_address}&size=400x300`;
-        }
-
-    }
-    loadQRCode();
-
-    const copyText = document.getElementsByClassName("copy_text")[0];
-
-    copyText.addEventListener("click", ()=>{
-        navigator.clipboard.writeText(copyText.innerText);
-        $.notify("Crypto Address Copied to Clipboard!", {
-            className: "success"
-        }); 
-    })
+    // Global variables
+    let currentCrypto = null;
+    const btcAddress = "{{user.userprofile.btc_address}}";
+    const bchAddress = "{{user.userprofile.bch_address}}";
+    const ethAddress = "{{user.userprofile.eth_address}}";
+    const bltAddress = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
     
+    // DOM elements
+    const cryptoQrImage = document.getElementById('crypto-qr-image');
+    const btcBtn = document.getElementById('btn-btc');
+    const bchBtn = document.getElementById('btn-bch');
+    const ethBtn = document.getElementById('btn-eth');
+    const btcAddressDiv = document.getElementById('btc-address');
+    const bchAddressDiv = document.getElementById('bch-address');
+    const ethAddressDiv = document.getElementById('eth-address');
+    const noCryptoDiv = document.getElementById('no-crypto');
+    
+    // Helper functions
+    function setActiveButton(button) {
+        document.querySelectorAll('.crypto-btn').forEach(btn => {
+            btn.classList.remove('bg-[#e74c3c]', 'text-white');
+        });
+        
+        button.classList.add('bg-[#e74c3c]', 'text-white');
+    }
+    
+    function hideAllAddresses() {
+        document.querySelectorAll('.crypto-address').forEach(div => {
+            div.classList.add('hidden');
+        });
+        noCryptoDiv.classList.add('hidden');
+    }
+    
+    function updateQRCode(address) {
+        if (address && address !== "None") {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
+            cryptoQrImage.src = qrUrl;
+            return true;
+        }
+        return false;
+    }
+    
+    function selectCrypto(type, address) {
+        currentCrypto = type;
+        hideAllAddresses();
+        
+        if (updateQRCode(address)) {
+            document.getElementById(`${type.toLowerCase()}-address`).classList.remove('hidden');
+        } else {
+            // If no address, show BLT donation
+            noCryptoDiv.classList.remove('hidden');
+            updateQRCode(bltAddress);
+        }
+        
+        setActiveButton(document.getElementById(`btn-${type.toLowerCase()}`));
+    }
+    
+    // Button click handlers
+    btcBtn.addEventListener('click', () => selectCrypto('BTC', btcAddress));
+    bchBtn.addEventListener('click', () => selectCrypto('BCH', bchAddress));
+    ethBtn.addEventListener('click', () => selectCrypto('ETH', ethAddress));
+    
+    // Initialize with preferred crypto
+    function initializeDefault() {
+        // preference order: BCH > BTC > ETH
+        if (bchAddress && bchAddress !== "None") {
+            selectCrypto('BCH', bchAddress);
+        } else if (btcAddress && btcAddress !== "None") {
+            selectCrypto('BTC', btcAddress);
+        } else if (ethAddress && ethAddress !== "None") {
+            selectCrypto('ETH', ethAddress);
+        } else {
+            // No addresses, show BLT donation
+            noCryptoDiv.classList.remove('hidden');
+            updateQRCode(bltAddress);
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', initializeDefault);
+    
+    // Update to handle all copy buttons
+    document.addEventListener('DOMContentLoaded', () => {
+        const copyTextElements = document.getElementsByClassName("copy_text");
+        
+        Array.from(copyTextElements).forEach(element => {
+            element.addEventListener("click", () => {
+                navigator.clipboard.writeText(element.innerText);
+                $.notify("Crypto Address Copied to Clipboard!", {
+                    className: "success",
+                    position: "top right"
+                }); 
+            });
+        });
+    });
 </script>

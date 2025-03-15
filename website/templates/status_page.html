@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
+{% load custom_tags %}
+{% load humanize %}
 {% block title %}
     Service Status
 {% endblock title %}
@@ -17,290 +19,414 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        .status-container {
-            padding: 30px;
-            max-width: 800px;
-            margin: auto;
-        }
-        .status-header {
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
-        .status-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .status-card h3 {
-            margin-bottom: 10px;
-        }
-        .status-dot {
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 10px;
-        }
-        .status-dot.green {
-            background-color: #28a745;
-        }
-        .status-dot.red {
-            background-color: #dc3545;
-        }
-        .memory-info, .memory-consumers, .memory-by-module {
-            margin-top: 10px;
-        }
-        .memory-consumers ul, .memory-by-module ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        .memory-consumers li, .memory-by-module li {
-            margin-bottom: 5px;
-        }
-        /* Slack Bot Activity styles */
-        .slack-stats {
-            padding: 10px 0;
-        }
-        .stats-overview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .stats-overview p {
-            margin: 5px 0;
-        }
-        .activity-types ul {
-            list-style: none;
-            padding: 0;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-        }
-        .recent-activities table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .recent-activities th,
-        .recent-activities td {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-            text-align: left;
-        }
-        .recent-activities th {
-            background-color: #f8f9fa;
-            font-weight: 600;
-        }
-        .recent-activities tr:hover {
-            background-color: #f8f9fa;
-        }
-        .mt-4 {
-            margin-top: 1.5rem;
-        }
-        .mb-2 {
-            margin-bottom: 0.5rem;
-        }
-        .text-lg {
-            font-size: 1.125rem;
-        }
-        .font-semibold {
-            font-weight: 600;
-        }
-        .overflow-x-auto {
-            overflow-x: auto;
-        }
-    </style>
-    <div class="status-container">
-        <div class="status-header">Service Status</div>
-        <!-- Bitcoin Node Status -->
-        <div class="status-card">
-            <h3>Bitcoin Node</h3>
-            <div class="status-item">
-                <div class="status-dot {% if status.bitcoin == None %}gray{% elif status.bitcoin %}green{% else %}red{% endif %}">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8">Service Status</h1>
+        <a href="{% url 'management_commands' %}"
+           class="text-red-500 hover:text-red-600 mb-6 inline-block">Management Commands</a>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Main Status Column -->
+            <div class="space-y-6">
+                <!-- Bitcoin Node Status -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">Bitcoin Node</h3>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-3 {% if status.bitcoin == None %}bg-gray-400{% elif status.bitcoin %}bg-green-500{% else %}bg-red-500{% endif %}">
+                        </div>
+                        {% if status.bitcoin == None %}
+                            <span>Status Unknown</span>
+                        {% elif status.bitcoin %}
+                            <div>
+                                <span class="text-green-600">Operational</span>
+                                <p class="mt-2">Block Height: {{ status.bitcoin_block }}</p>
+                                <a class="text-[#e74c3c] hover:text-red-600 mt-2 inline-block"
+                                   href="https://mempool.space/block/{{ status.bitcoin_block }}"
+                                   target="_blank">View on Mempool</a>
+                            </div>
+                        {% else %}
+                            <span class="text-red-600">Not Operational</span>
+                        {% endif %}
+                    </div>
                 </div>
-                {% if status.bitcoin == None %}
-                    <span>Status Unknown</span>
-                {% elif status.bitcoin %}
-                    <span>Operational</span>
-                    <p>Block Height: {{ status.bitcoin_block }}</p>
-                    <a class="explorer-link"
-                       href="https://mempool.space/block/{{ status.bitcoin_block }}"
-                       target="_blank">View on Mempool</a>
-                {% else %}
-                    <span>Not Operational</span>
-                {% endif %}
-            </div>
-        </div>
-        <!-- SendGrid API Status -->
-        <div class="status-card">
-            <h3>SendGrid API</h3>
-            <div class="status-item">
-                <div class="status-dot {% if status.sendgrid == None %}gray{% elif status.sendgrid %}green{% else %}red{% endif %}">
+                <!-- SendGrid API Status -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">SendGrid API</h3>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-3 {% if status.sendgrid == None %}bg-gray-400{% elif status.sendgrid %}bg-green-500{% else %}bg-red-500{% endif %}">
+                        </div>
+                        {% if status.sendgrid == None %}
+                            <span>Status Unknown</span>
+                        {% elif status.sendgrid %}
+                            <span class="text-green-600">Operational</span>
+                        {% else %}
+                            <span class="text-red-600">Not Operational</span>
+                        {% endif %}
+                    </div>
                 </div>
-                {% if status.sendgrid == None %}
-                    <span>Status Unknown</span>
-                {% elif status.sendgrid %}
-                    <span>Operational</span>
-                {% else %}
-                    <span>Not Operational</span>
-                {% endif %}
-            </div>
-        </div>
-        <!-- GitHub API Status -->
-        <div class="status-card">
-            <h3>GitHub API</h3>
-            <div class="status-item">
-                <div class="status-dot {% if status.github == None %}gray{% elif status.github %}green{% else %}red{% endif %}"></div>
-                {% if status.github == None %}
-                    <span>Status Unknown</span>
-                {% elif status.github %}
-                    <span>Operational</span>
-                {% else %}
-                    <span>Not Operational</span>
-                {% endif %}
-            </div>
-        </div>
-        <!-- Memory Usage -->
-        <div class="status-card">
-            <h3>Memory Usage</h3>
-            <div class="memory-info">
-                <p>
-                    <strong>Total:</strong> {{ status.memory_info.total|filesizeformat }}
-                </p>
-                <p>
-                    <strong>Available:</strong> {{ status.memory_info.available|filesizeformat }}
-                </p>
-                <p>
-                    <strong>Used:</strong> {{ status.memory_info.used|filesizeformat }}
-                </p>
-                <p>
-                    <strong>Free:</strong> {{ status.memory_info.free|filesizeformat }}
-                </p>
-            </div>
-        </div>
-        <!-- Memory Profiling -->
-        <div class="status-card">
-            <h3>Memory Profiling</h3>
-            <p>
-                <strong>Current Usage:</strong> {{ status.memory_profiling.current|filesizeformat }}
-            </p>
-            <p>
-                <strong>Peak Usage:</strong> {{ status.memory_profiling.peak|filesizeformat }}
-            </p>
-        </div>
-        <!-- Top Memory Consumers -->
-        <div class="status-card">
-            <h3>Top Memory Consumers</h3>
-            <div class="memory-consumers">
-                <ul>
-                    {% for proc in status.top_memory_consumers %}
-                        <li>
-                            <strong>{{ proc.name }}</strong> (PID: {{ proc.pid }}):
-                            {{ proc.memory_info.rss|filesizeformat }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <!-- Memory Usage by Module -->
-        <div class="status-card">
-            <h3>Memory Usage by Module</h3>
-            <div class="memory-by-module">
-                <ul>
-                    {% for module, memory in status.memory_by_module %}
-                        <li>
-                            <strong>{{ module }}</strong>: {{ memory|filesizeformat }}
-                        </li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </div>
-        <div class="status-card">
-            <h3>Database Connection Count</h3>
-            <p>{{ status.db_connection_count }}</p>
-        </div>
-        <div class="status-card">
-            <h3>Redis Stats</h3>
-            <ul>
-                {% for key, value in status.redis_stats.items %}
-                    <li>
-                        <strong>{{ key }}</strong>: {{ value }}
-                    </li>
-                {% endfor %}
-            </ul>
-        </div>
-        <!-- Slack Bot Activity -->
-        <div class="status-card">
-            <h3>Slack Bot Activity</h3>
-            <div class="slack-stats">
-                <div class="stats-overview">
-                    <p>
-                        <strong>Total Activities:</strong> {{ status.slack_bot.total_activities }}
-                    </p>
-                    <p>
-                        <strong>Last 24h Activities:</strong> {{ status.slack_bot.last_24h_activities }}
-                    </p>
-                    <p>
-                        <strong>Success Rate:</strong> {{ status.slack_bot.success_rate|floatformat:1 }}%
-                    </p>
-                    <p>
-                        <strong>Active Workspaces:</strong> {{ status.slack_bot.workspace_count }}
-                    </p>
+                <!-- OpenAI API Status -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">OpenAI API</h3>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full mr-3 {% if status.openai == None %}bg-gray-400{% elif status.openai %}bg-green-500{% else %}bg-red-500{% endif %}">
+                        </div>
+                        {% if status.openai == None %}
+                            <span>Status Unknown</span>
+                        {% elif status.openai %}
+                            <span class="text-green-600">Operational</span>
+                        {% else %}
+                            <span class="text-red-600">Not Operational</span>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="activity-types mt-4">
-                    <h4 class="text-lg font-semibold mb-2">Activity Distribution</h4>
-                    <ul>
-                        {% for type, count in status.slack_bot.activity_types.items %}<li>{{ type|title }}: {{ count }}</li>{% endfor %}
+                <!-- GitHub API Status -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">GitHub API</h3>
+                    <div class="flex items-center mb-4">
+                        <div class="w-3 h-3 rounded-full mr-3 {% if status.github == None %}bg-gray-400{% elif status.github %}bg-green-500{% else %}bg-red-500{% endif %}">
+                        </div>
+                        {% if status.github == None %}
+                            <span>Status Unknown</span>
+                        {% elif status.github %}
+                            <span class="text-green-600">Operational</span>
+                        {% else %}
+                            <span class="text-red-600">Not Operational</span>
+                        {% endif %}
+                    </div>
+                    {% if status.github_rate_limit %}
+                        <div class="mt-4">
+                            <h4 class="text-lg font-semibold mb-2">Rate Limits</h4>
+                            <!-- Core Rate Limit -->
+                            <div class="mb-4">
+                                <h5 class="font-medium">Core API</h5>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <span class="text-gray-600">Remaining:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.core.remaining }} / {{ status.github_rate_limit.core.limit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Used:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.core.used }}</span>
+                                    </div>
+                                </div>
+                                <!-- Progress Bar -->
+                                {% with remaining=status.github_rate_limit.core.remaining|default:0 limit=status.github_rate_limit.core.limit|default:1 %}
+                                    {% with percentage=remaining|div:limit|multiply:100|floatformat:0 %}
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                            <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                                 style="width: {{ percentage }}%"></div>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            Reset in:
+                                            {% if status.github_rate_limit.core.reset %}
+                                                {% with reset_time=status.github_rate_limit.core.reset|timestamp_to_datetime %}{{ reset_time|timeuntil }}{% endwith %}
+                                            {% else %}
+                                                Unknown
+                                            {% endif %}
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                            <!-- Search Rate Limit -->
+                            <div class="mb-4">
+                                <h5 class="font-medium">Search API</h5>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <span class="text-gray-600">Remaining:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.search.remaining }} / {{ status.github_rate_limit.search.limit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Used:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.search.used }}</span>
+                                    </div>
+                                </div>
+                                <!-- Progress Bar -->
+                                {% with remaining=status.github_rate_limit.search.remaining|default:0 limit=status.github_rate_limit.search.limit|default:1 %}
+                                    {% with percentage=remaining|div:limit|multiply:100|floatformat:0 %}
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                            <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                                 style="width: {{ percentage }}%"></div>
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                            <!-- GraphQL Rate Limit -->
+                            <div>
+                                <h5 class="font-medium">GraphQL API</h5>
+                                <div class="grid grid-cols-2 gap-2 mt-2">
+                                    <div>
+                                        <span class="text-gray-600">Remaining:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.graphql.remaining }} / {{ status.github_rate_limit.graphql.limit }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Used:</span>
+                                        <span class="font-medium ml-1">{{ status.github_rate_limit.graphql.used }}</span>
+                                    </div>
+                                </div>
+                                <!-- Progress Bar -->
+                                {% with remaining=status.github_rate_limit.graphql.remaining|default:0 limit=status.github_rate_limit.graphql.limit|default:1 %}
+                                    {% with percentage=remaining|div:limit|multiply:100|floatformat:0 %}
+                                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                                            <div class="bg-[#e74c3c] h-2.5 rounded-full"
+                                                 style="width: {{ percentage }}%"></div>
+                                        </div>
+                                    {% endwith %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                        <!-- API Usage History -->
+                        {% if status.github_api_history %}
+                            <div class="mt-6">
+                                <h4 class="text-lg font-semibold mb-2">API Usage History</h4>
+                                <div class="w-full h-64">
+                                    <canvas id="githubApiChart"></canvas>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <!-- Top Memory Consumers -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">Top Memory Consumers</h3>
+                    <ul class="space-y-2">
+                        {% for proc in status.top_memory_consumers %}
+                            <li>
+                                <strong>{{ proc.name }}</strong> (PID: {{ proc.pid }}):
+                                {{ proc.memory_info.rss|filesizeformat }}
+                            </li>
+                        {% endfor %}
                     </ul>
                 </div>
-                <div class="recent-activities mt-4">
-                    <h4 class="text-lg font-semibold mb-2">Recent Activities</h4>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr>
-                                    <th class="text-left">Type</th>
-                                    <th class="text-left">Workspace</th>
-                                    <th class="text-left">Time</th>
-                                    <th class="text-left">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for activity in status.slack_bot.recent_activities %}
-                                    <tr>
-                                        <td>{{ activity.activity_type|title }}</td>
-                                        <td>{{ activity.workspace_name|default:"Unknown" }}</td>
-                                        <td>{{ activity.created|date:"M d, H:i" }}</td>
-                                        <td>
-                                            <span class="status-dot {% if activity.success %}green{% else %}red{% endif %}"></span>
-                                            {{ activity.success|yesno:"Success,Failed" }}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <!-- Database Connection Count -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">Database Connection Count</h3>
+                    <p>{{ status.db_connection_count }}</p>
+                </div>
+                <!-- Redis Stats -->
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">Redis Stats</h3>
+                    <div>
+                        <p class="mb-2">
+                            <strong>Status:</strong>
+                            <span class="{% if status.redis_stats.status == 'Connected' %}text-green-600{% else %}text-red-600{% endif %}">
+                                {{ status.redis_stats.status }}
+                            </span>
+                        </p>
+                        {% if status.redis_stats.error %}
+                            <p class="text-red-600 mb-2">
+                                <strong>Error:</strong> {{ status.redis_stats.error }}
+                            </p>
+                        {% endif %}
+                        {% if status.redis_stats.status == 'Connected' %}
+                            <ul class="space-y-2">
+                                <li>
+                                    <strong>Version:</strong> {{ status.redis_stats.version }}
+                                </li>
+                                <li>
+                                    <strong>Connected Clients:</strong> {{ status.redis_stats.connected_clients }}
+                                </li>
+                                <li>
+                                    <strong>Memory Usage:</strong> {{ status.redis_stats.used_memory_human }}
+                                </li>
+                                <li>
+                                    <strong>Uptime (days):</strong> {{ status.redis_stats.uptime_days }}
+                                </li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Slack Bot Activity Column -->
+            <div>
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c] sticky top-24">
+                    <h3 class="text-xl font-semibold mb-4">Slack Bot Activity</h3>
+                    <div>
+                        <!-- Stats Overview -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <strong>Total Activities:</strong>
+                                <p>{{ status.slack_bot.total_activities }}</p>
+                            </div>
+                            <div>
+                                <strong>Last 24h Activities:</strong>
+                                <p>{{ status.slack_bot.last_24h_activities }}</p>
+                            </div>
+                            <div>
+                                <strong>Success Rate:</strong>
+                                <p>{{ status.slack_bot.success_rate|floatformat:1 }}%</p>
+                            </div>
+                            <div>
+                                <strong>Active Workspaces:</strong>
+                                <p>{{ status.slack_bot.workspace_count }}</p>
+                            </div>
+                            {% if status.slack_bot.last_activity %}
+                                <div>
+                                    <strong>Last Activity:</strong>
+                                    <p>{{ status.slack_bot.last_activity|timesince }} ago</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <!-- Activity Distribution -->
+                        <div class="mb-6">
+                            <h4 class="text-lg font-semibold mb-4">Activity Distribution</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for type, count in status.slack_bot.activity_types.items %}<div>{{ type|title }}: {{ count }}</div>{% endfor %}
+                            </div>
+                        </div>
+                        <div class="w-full h-96 mb-8">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4">Recent Activities</h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full">
+                                    <thead>
+                                        <tr class="bg-gray-50">
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        {% for activity in status.slack_bot.recent_activities %}
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.activity_type|title }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">{{ activity.created|date:"M d, H:i" }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                                    <span class="inline-flex items-center">
+                                                        <div class="w-2 h-2 rounded-full mr-2 {% if activity.success %}bg-green-500{% else %}bg-red-500{% endif %}"></div>
+                                                        {{ activity.success|yesno:"Success,Failed" }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="status-card">
-            <h3>OpenAI API</h3>
-            <div class="status-item">
-                <div class="status-dot {% if status.openai == None %}gray{% elif status.openai %}green{% else %}red{% endif %}"></div>
-                {% if status.openai == None %}
-                    <span>Status Unknown</span>
-                {% elif status.openai %}
-                    <span>Operational</span>
-                {% else %}
-                    <span>Not Operational</span>
-                {% endif %}
-            </div>
-        </div>
     </div>
 {% endblock content %}
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    const dates = JSON.parse('{{ chart_data.dates|escapejs }}');
+    const teamJoins = JSON.parse('{{ chart_data.team_joins|escapejs }}');
+    const commands = JSON.parse('{{ chart_data.commands|escapejs }}');
+
+    const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: dates,
+            datasets: [
+                {
+                    label: 'Team Joins',
+                    data: teamJoins,
+                    backgroundColor: '#e74c3c',
+                    borderColor: '#c0392b',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Commands',
+                    data: commands,
+                    backgroundColor: '#e74c3c80',
+                    borderColor: '#c0392b80',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    // GitHub API Usage History Chart
+    const githubApiChartElement = document.getElementById('githubApiChart');
+    if (githubApiChartElement) {
+        let githubApiHistory = [];
+        try {
+            githubApiHistory = JSON.parse('{{ status.github_api_history|escapejs|default:"[]" }}');
+        } catch (e) {
+            console.error('Error parsing GitHub API history:', e);
+        }
+        
+        if (githubApiHistory && githubApiHistory.length > 0) {
+            // Format the data for the chart
+            const timestamps = githubApiHistory.map(entry => entry.timestamp);
+            const remaining = githubApiHistory.map(entry => parseInt(entry.remaining) || 0);
+            const used = githubApiHistory.map(entry => parseInt(entry.used) || 0);
+            
+            new Chart(githubApiChartElement, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [
+                        {
+                            label: 'Remaining',
+                            data: remaining,
+                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                            borderColor: '#e74c3c',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: 'Used',
+                            data: used,
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: '#3498db',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'API Calls'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'GitHub API Usage History'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return `${label}: ${value}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+    </script>
+{% endblock extra_js %}

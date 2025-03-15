@@ -1,25 +1,38 @@
 import ast
 import difflib
+import hashlib
+import logging
 import os
 import re
 import time
 from collections import deque
 from urllib.parse import urlparse, urlsplit, urlunparse
 
+import markdown
 import numpy as np
-
-# import openai
 import requests
+import tweepy
 from bs4 import BeautifulSoup
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
+from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
+from openai import OpenAI
+from PIL import Image
+
+from website.models import DailyStats
 
 from .models import PRAnalysisReport
 
-# openai.api_key = os.getenv("OPENAI_API_KEY")
-GITHUB_API_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+
+GITHUB_API_TOKEN = settings.GITHUB_TOKEN
+
 
 WHITELISTED_IMAGE_TYPES = {
     "jpeg": "image/jpeg",
@@ -53,7 +66,7 @@ def get_email_from_domain(domain_name):
         path = url[: url.rfind("/") + 1] if "/" in parts.path else url
         try:
             response = requests.get(url)
-        except:
+        except Exception:
             continue
         new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
         if new_emails:
@@ -74,18 +87,14 @@ def get_email_from_domain(domain_name):
             emails_out.add(email)
     try:
         return list(emails_out)[0]
-    except:
+    except Exception:
         return False
-
-
-import numpy as np
-from PIL import Image
 
 
 def image_validator(img):
     try:
         filesize = img.file.size
-    except:
+    except Exception:
         filesize = img.size
 
     extension = img.name.split(".")[-1]
@@ -219,10 +228,10 @@ def analyze_pr_content(pr_data, roadmap_data):
     ### Roadmap Data:
     {roadmap_data}
     """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4", messages=[{"role": "user", "content": prompt}], temperature=0.7
     )
-    return response["choices"][0]["message"]["content"]
+    return response.choices[0].message.content
 
 
 def save_analysis_report(pr_link, issue_link, analysis):
@@ -250,39 +259,15 @@ def generate_embedding(text, retries=2, backoff_factor=2):
     """
     for attempt in range(retries):
         try:
-            response = openai.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
-            # response = {
-            # "object": "list",
-            # "data": [
-            #     {
-            #     "object": "embedding",
-            #     "embedding": [
-            #         0.0023064255,
-            #         -0.009327292,
-            #         -0.0028842222,
-            #     ],
-            #     "index": 0
-            #     }
-            #     ],
-            #     "model": "text-embedding-ada-002",
-            #     "usage": {
-            #         "prompt_tokens": 8,
-            #         "total_tokens": 8
-            #     }
-            # }
+            response = client.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
             # Extract the embedding from the response
-            embedding = response["data"][0]["embedding"]
+            embedding = response.data[0].embedding
             return np.array(embedding)
 
-        except openai.RateLimitError as e:
-            # If rate-limiting error occurs, wait and retry
-            print(f"Rate-limiting error encountered: {e}. Retrying in {2 ** attempt} seconds.")
-            time.sleep(2**attempt)  # Exponential backoff
-
         except Exception as e:
-            # For other errors, print the error and return None
-            print(f"An error occurred: {e}")
-            return None
+            # If rate-limiting error occurs, wait and retry
+            print(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            time.sleep(2**attempt)  # Exponential backoff
 
     print(f"Failed to complete request after {retries} attempts.")
     return None
@@ -465,3 +450,483 @@ def git_url_to_zip_url(git_url, branch="master"):
         return zip_url
     else:
         raise ValueError("Invalid .git URL provided")
+
+
+def fetch_github_user_data(username):
+    """Fetches relevant GitHub user data for recommendations."""
+    base_url = "https://api.github.com/users/"
+    repos_url = f"{base_url}{username}/repos"
+    starred_url = f"{base_url}{username}/starred"
+    events_url = f"{base_url}{username}/events"
+
+    headers = {
+        "Authorization": f"token {GITHUB_API_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+    user_data = {}
+    try:
+        # Fetch user profile
+        logging.info(f"Fetching user profile: {username}")
+        user_response = requests.get(f"{base_url}{username}", headers=headers)
+        if user_response.status_code == 200:
+            user_info = user_response.json()
+            user_data["profile"] = {
+                "username": user_info.get("login"),
+                "name": user_info.get("name"),
+                "bio": user_info.get("bio"),
+                "location": user_info.get("location"),
+                "followers": user_info.get("followers"),
+                "following": user_info.get("following"),
+                "avatar_url": user_info.get("avatar_url"),
+                "blog": user_info.get("blog"),
+                "company": user_info.get("company"),
+                "twitter": user_info.get("twitter_username"),
+                "public_repos": user_info.get("public_repos"),
+            }
+        else:
+            logging.error(f"Failed to fetch user profile: {user_response.status_code} {user_response.text}")
+
+        # Fetch repositories
+        logging.info(f"Fetching repositories for {username}")
+        repos_response = requests.get(repos_url, headers=headers)
+        if repos_response.status_code == 200:
+            repos = repos_response.json()
+            user_repos = []
+
+            for repo in repos:
+                repo_data = {}
+                # Check if the repo is a fork
+                if repo.get("fork"):
+                    # Fetch the parent repository details
+                    parent_repo_url = repo.get("parent", {}).get("url")
+                    if not parent_repo_url:
+                        # Fetch detailed repo information to get parent URL
+                        repo_details_url = f"https://api.github.com/repos/{username}/{repo['name']}"
+                        repo_details_response = requests.get(repo_details_url, headers=headers)
+                        if repo_details_response.status_code == 200:
+                            repo_details = repo_details_response.json()
+                            parent_repo_url = repo_details.get("parent", {}).get("url")
+                        else:
+                            logging.error(
+                                f"Failed to fetch repo details for {repo['name']}: {repo_details_response.status_code}"
+                            )
+
+                    if parent_repo_url:
+                        parent_response = requests.get(parent_repo_url, headers=headers)
+                        if parent_response.status_code == 200:
+                            parent_repo = parent_response.json()
+                            logging.info(f"Fetched parent repo details for forked repo {repo['name']}")
+                            repo_data = {
+                                "name": parent_repo["name"],
+                                "url": parent_repo["html_url"],
+                                "language": parent_repo["language"],
+                                "stars": parent_repo["stargazers_count"],
+                                "forks": parent_repo["forks_count"],
+                                "description": parent_repo["description"],
+                                "topics": parent_repo.get("topics", []),
+                            }
+                        else:
+                            logging.error(
+                                f"Failed to fetch parent repo details for {repo['name']}: {parent_response.status_code}"
+                            )
+                            # Fallback to forked repo details
+                            repo_data = {
+                                "name": repo["name"],
+                                "url": repo["html_url"],
+                                "language": repo["language"],
+                                "stars": repo["stargazers_count"],
+                                "forks": repo["forks_count"],
+                                "description": repo["description"],
+                                "topics": repo.get("topics", []),
+                            }
+                    else:
+                        logging.warning(f"No parent repo found for forked repo {repo['name']}")
+                        repo_data = {
+                            "name": repo["name"],
+                            "url": repo["html_url"],
+                            "language": repo["language"],
+                            "stars": repo["stargazers_count"],
+                            "forks": repo["forks_count"],
+                            "description": repo["description"],
+                            "topics": repo.get("topics", []),
+                        }
+                else:
+                    # Regular repo, use its own details
+                    repo_data = {
+                        "name": repo["name"],
+                        "url": repo["html_url"],
+                        "language": repo["language"],
+                        "stars": repo["stargazers_count"],
+                        "forks": repo["forks_count"],
+                        "description": repo["description"],
+                        "topics": repo.get("topics", []),
+                    }
+
+                user_repos.append(repo_data)
+
+            user_data["repositories"] = user_repos
+        else:
+            logging.error(f"Failed to fetch repositories: {repos_response.status_code} {repos_response.text}")
+
+        # Fetch starred repositories
+        logging.info(f"Fetching starred repositories for {username}")
+        starred_response = requests.get(starred_url, headers=headers)
+        if starred_response.status_code == 200:
+            starred = starred_response.json()
+            user_data["starred_repos"] = [
+                {
+                    "name": repo["name"],
+                    "url": repo["html_url"],
+                    "language": repo["language"],
+                    "stars": repo["stargazers_count"],
+                }
+                for repo in starred
+            ]
+        else:
+            logging.error(
+                f"Failed to fetch starred repositories: {starred_response.status_code} {starred_response.text}"
+            )
+
+        # Fetch recent activity
+        logging.info(f"Fetching recent activity for {username}")
+        events_response = requests.get(events_url, headers=headers)
+        if events_response.status_code == 200:
+            events = events_response.json()
+            user_data["recent_activity"] = [
+                {
+                    "type": event["type"],
+                    "repo": event["repo"]["name"],
+                    "created_at": event["created_at"],
+                }
+                for event in events
+                if event["type"] in ["PushEvent", "PullRequestEvent", "IssuesEvent"]
+            ]
+        else:
+            logging.error(f"Failed to fetch recent activity: {events_response.status_code} {events_response.text}")
+
+        # Fetch language usage
+        logging.info(f"Fetching language usage for {username}")
+        language_usage = {}
+
+        for repo in user_data.get("repositories", []):
+            # Adjust repo owner and name in case of parent repos
+            repo_url_parts = repo["url"].split("/")
+            repo_owner = repo_url_parts[3]
+            repo_name = repo_url_parts[4]
+
+            repo_languages_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/languages"
+            lang_response = requests.get(repo_languages_url, headers=headers)
+            if lang_response.status_code == 200:
+                lang_data = lang_response.json()
+                for lang, bytes_used in lang_data.items():
+                    language_usage[lang] = language_usage.get(lang, 0) + bytes_used
+            else:
+                logging.warning(f"Failed to fetch languages for {repo['name']}: {lang_response.status_code}")
+
+        user_data["top_languages"] = sorted(language_usage.items(), key=lambda x: x[1], reverse=True)
+
+        # Collect topics
+        topics = [topic for repo in user_data.get("repositories", []) for topic in repo.get("topics", [])]
+        user_data["top_topics"] = list(set(topics))
+
+    except Exception as e:
+        logging.exception("An error occurred while fetching GitHub user data")
+        user_data["error"] = str(e)
+
+    return user_data
+
+
+def markdown_to_text(markdown_content):
+    """Convert Markdown to plain text."""
+    html_content = markdown.markdown(markdown_content)
+    text_content = BeautifulSoup(html_content, "html.parser").get_text()
+    return text_content
+
+
+def ai_summary(text):
+    """Generate an AI-driven summary using OpenAI's GPT"""
+    try:
+        prompt = (
+            f"Generate a brief summary of the following text, focusing on key aspects such as purpose, "
+            f"features, technologies used, and current status. Consider the following readme content: {text}"
+        )
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=150,
+            temperature=0.5,
+        )
+
+        summary = response.choices[0].message.content.strip()
+        return summary
+    except Exception as e:
+        return f"Error generating summary: {str(e)}"
+
+
+def gravatar_url(email, size=80):
+    """Generate Gravatar URL for a given email."""
+    email = email.lower().encode("utf-8")
+    gravatar_hash = hashlib.md5(email).hexdigest()
+    return f"https://www.gravatar.com/avatar/{gravatar_hash}?s={size}&d=mp"
+
+
+def get_page_votes(template_name):
+    """
+    Get the upvotes and downvotes for a specific template.
+
+    Args:
+        template_name (str): The name of the template to get votes for
+
+    Returns:
+        tuple: A tuple containing (upvotes, downvotes)
+    """
+    if not template_name:
+        return 0, 0
+
+    # Sanitize the template name to create a consistent key
+    page_key = template_name.replace("/", "_").replace(".html", "")
+
+    # Get today's stats for upvotes
+    upvotes = (
+        DailyStats.objects.filter(name=f"upvote_{page_key}")
+        .values_list("value", flat=True)
+        .aggregate(total=models.Sum("value"))["total"]
+        or 0
+    )
+
+    # Get today's stats for downvotes
+    downvotes = (
+        DailyStats.objects.filter(name=f"downvote_{page_key}")
+        .values_list("value", flat=True)
+        .aggregate(total=models.Sum("value"))["total"]
+        or 0
+    )
+
+    return upvotes, downvotes
+
+
+def validate_screenshot_hash(screenshot_hash):
+    """
+    Validate that the screenshot_hash only contains alphanumeric characters,
+    hyphens, or underscores.
+    """
+    if not re.match(r"^[a-zA-Z0-9_-]+$", screenshot_hash):
+        raise ValidationError(
+            "Invalid screenshot hash. Only alphanumeric characters, hyphens, and underscores are allowed."
+        )
+
+
+# Twitter namespace
+class twitter:
+    @staticmethod
+    def send_tweet(message, image_path=None):
+        """
+        Send a tweet using the Twitter API.
+
+        Args:
+            message (str): The message to tweet
+            image_path (str, optional): Path to an image to include in the tweet
+
+        Returns:
+            dict: A dictionary containing:
+                - success (bool): Whether the tweet was sent successfully
+                - url (str): The URL of the tweet if successful
+                - txid (str): The ID of the tweet if successful
+                - error (str): Error message if unsuccessful
+        """
+        try:
+            # Initialize Twitter API client
+            auth = tweepy.OAuth1UserHandler(
+                settings.APP_KEY, settings.APP_KEY_SECRET, settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET
+            )
+            api = tweepy.API(auth)
+
+            # Send tweet with or without media
+            if image_path:
+                status = api.update_status_with_media(status=message, filename=image_path)
+            else:
+                status = api.update_status(status=message)
+
+            # Get tweet URL
+            tweet_url = f"https://twitter.com/user/status/{status.id}"
+
+            # Send to Discord
+            twitter.send_to_discord(message, tweet_url, image_path)
+
+            # Send to Slack
+            twitter.send_to_slack(message, tweet_url, image_path)
+
+            return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
+        except Exception as e:
+            logging.error(f"Error sending tweet: {str(e)}")
+
+            # Still try to send to Discord and Slack even if Twitter fails
+            try:
+                twitter.send_to_discord(message, None, image_path, error=str(e))
+                twitter.send_to_slack(message, None, image_path, error=str(e))
+            except Exception as comm_error:
+                logging.error(f"Error sending to communication channels: {str(comm_error)}")
+
+            return {"success": False, "url": None, "txid": None, "error": str(e)}
+
+    @staticmethod
+    def send_to_discord(message, tweet_url=None, image_path=None, error=None):
+        """
+        Send a message to the #project-blt Discord channel.
+
+        Args:
+            message (str): The message to send
+            tweet_url (str, optional): URL of the tweet
+            image_path (str, optional): Path to an image
+            error (str, optional): Error message if the tweet failed
+        """
+        try:
+            # Get Discord webhook URL from environment
+            webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
+            if not webhook_url:
+                logging.warning("Discord webhook URL not configured")
+                return
+
+            # Prepare the payload
+            payload = {"content": f"**New Tweet**\n{message}", "embeds": []}
+
+            # Add tweet URL if available
+            if tweet_url:
+                payload["content"] += f"\n{tweet_url}"
+
+            # Add error information if available
+            if error:
+                payload["embeds"].append(
+                    {
+                        "title": "Error sending tweet",
+                        "description": error,
+                        "color": 0xE74C3C,  # Red color
+                    }
+                )
+
+            # Send the request
+            files = {}
+            if image_path:
+                with open(image_path, "rb") as img:
+                    files = {"file": (os.path.basename(image_path), img)}
+                    response = requests.post(webhook_url, data={"payload_json": str(payload)}, files=files)
+            else:
+                response = requests.post(webhook_url, json=payload)
+
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            logging.error(f"Error sending to Discord: {str(e)}")
+            return False
+
+    @staticmethod
+    def send_to_slack(message, tweet_url=None, image_path=None, error=None):
+        """
+        Send a message to the #project-blt Slack channel.
+
+        Args:
+            message (str): The message to send
+            tweet_url (str, optional): URL of the tweet
+            image_path (str, optional): Path to an image
+            error (str, optional): Error message if the tweet failed
+        """
+        try:
+            # Get the OWASP BLT organization's Slack integration
+            from website.models import Organization, SlackIntegration
+
+            # Find the OWASP BLT organization
+            owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
+            if not owasp_org:
+                logging.warning("OWASP BLT organization not found")
+                return False
+
+            # Find the Slack integration for the organization
+            slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
+
+            if not slack_integration or not slack_integration.bot_access_token:
+                logging.warning("Slack integration not found or token missing")
+                return False
+
+            # Get the bot token and channel ID
+            bot_token = slack_integration.bot_access_token
+            channel_id = slack_integration.default_channel_id
+
+            # If no channel ID is set, try to find the #project-blt channel
+            if not channel_id:
+                try:
+                    # Use Slack API to find the channel
+                    headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
+                    response = requests.get("https://slack.com/api/conversations.list", headers=headers)
+                    response.raise_for_status()
+
+                    data = response.json()
+                    if data.get("ok"):
+                        for channel in data.get("channels", []):
+                            if channel.get("name") == "project-blt":
+                                channel_id = channel.get("id")
+                                break
+                except Exception as e:
+                    logging.error(f"Error finding #project-blt channel: {str(e)}")
+                    return False
+
+            if not channel_id:
+                logging.warning("Could not find #project-blt channel")
+                return False
+
+            # Prepare the message blocks
+            blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": f"*New Tweet*\n{message}"}}]
+
+            # Add tweet URL if available
+            if tweet_url:
+                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"<{tweet_url}|View Tweet>"}})
+
+            # Add error information if available
+            if error:
+                blocks.append(
+                    {"type": "section", "text": {"type": "mrkdwn", "text": f"*Error sending tweet:*\n{error}"}}
+                )
+
+            # Prepare the payload
+            payload = {
+                "channel": channel_id,
+                "blocks": blocks,
+                "text": f"New Tweet: {message}",  # Fallback text
+            }
+
+            # Send the message
+            headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
+
+            # If there's an image, upload it first
+            if image_path:
+                try:
+                    # Upload the file
+                    upload_response = requests.post(
+                        "https://slack.com/api/files.upload",
+                        headers={"Authorization": f"Bearer {bot_token}"},
+                        files={"file": open(image_path, "rb")},
+                        data={"channels": channel_id, "initial_comment": f"New Tweet: {message}"},
+                    )
+
+                    if not upload_response.json().get("ok"):
+                        logging.warning(f"Error uploading image to Slack: {upload_response.json().get('error')}")
+                except Exception as e:
+                    logging.error(f"Error uploading image to Slack: {str(e)}")
+
+            # Send the message
+            response = requests.post("https://slack.com/api/chat.postMessage", headers=headers, json=payload)
+
+            response.raise_for_status()
+
+            if not response.json().get("ok"):
+                logging.warning(f"Error sending message to Slack: {response.json().get('error')}")
+                return False
+
+            return True
+        except Exception as e:
+            logging.error(f"Error sending to Slack: {str(e)}")
+            return False

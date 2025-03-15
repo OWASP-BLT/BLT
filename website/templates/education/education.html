@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    OWASP {% env 'PROJECT_NAME' %} Education - Security Courses & Learning Resources
+{% endblock title %}
+{% block description %}
+    Access comprehensive security education with OWASP {% env 'PROJECT_NAME' %} Education. Learn web security, bug hunting, and ethical hacking through expert-led courses, lectures, and video tutorials.
+{% endblock description %}
+{% block keywords %}
+    OWASP {% env 'PROJECT_NAME' %}, security education, bug hunting courses, web security training, ethical hacking, security lectures, video tutorials
+{% endblock keywords %}
+{% block og_title %}
+    OWASP {% env 'PROJECT_NAME' %} Education - Security Courses & Learning Resources
+{% endblock og_title %}
+{% block og_description %}
+    Master security skills with OWASP {% env 'PROJECT_NAME' %} Education. Expert-led courses in web security, bug hunting, and ethical hacking for beginners and professionals.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto mt-10">
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold flex items-center justify-center gap-3 text-gray-800">
+                <i class="fas fa-tv text-[#e74c3c]"></i> Education
+            </h1>
+        </div>
+        <!-- New Explainer Section -->
+        <div class="max-w-4xl mx-auto mb-12 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2 text-gray-900">
+                <i class="fas fa-lightbulb text-[#e74c3c]"></i>
+                Welcome to OWASP BLT Education
+            </h2>
+            <p class="text-gray-700 leading-relaxed mb-4">
+                Welcome to our comprehensive learning platform where security meets education! OWASP BLT Education offers expert-led courses in web security, bug hunting, and ethical hacking. Whether you're a beginner or an experienced professional, our structured learning paths will help you master the skills needed to identify and fix security vulnerabilities.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-graduation-cap text-[#e74c3c] mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Learn</h3>
+                        <p class="text-sm text-gray-600">Access structured courses with hands-on exercises</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-certificate text-[#e74c3c] mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Practice</h3>
+                        <p class="text-sm text-gray-600">Apply your knowledge with real-world scenarios</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-award text-[#e74c3c] mt-1"></i>
+                    <div>
+                        <h3 class="font-medium text-gray-900">Achieve</h3>
+                        <p class="text-sm text-gray-600">Earn certificates and build your portfolio</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="mb-4">
+            <h1 class="text-4xl text-center font-bold mb-5">Courses</h1>
+            <div class="flex justify-center mb-5">
+                <a href="{% url 'instructor_dashboard' %}">
+                    <button class="flex items-center gap-2 px-6 py-3 bg-[#e74c3c] text-white text-md font-semibold rounded-lg shadow-md hover:bg-[#c0392b] transition">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        {% if is_instructor %}
+                            My Courses
+                        {% else %}
+                            Become an Instructor
+                        {% endif %}
+                    </button>
+                </a>
+            </div>
+            {% if courses %}
+                {% include "education/includes/course_list.html" %}
+            {% else %}
+                <div class="text-center py-16">
+                    <h2 class="text-2xl font-semibold text-gray-700">No courses available</h2>
+                    <p class="text-gray-500">Check back later for new content.</p>
+                </div>
+            {% endif %}
+        </div>
+        <div class="mb-5">
+            <h1 class="text-4xl text-center font-bold">Featured Lectures</h1>
+        </div>
+        {% if lectures %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for lecture in lectures %}
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-2">{{ lecture.title }}</h2>
+                        <p class="text-gray-500 text-sm mb-2">
+                            {{ lecture.get_content_type_display }} •
+                            {% if lecture.duration %}{{ lecture.duration }} min{% endif %}
+                        </p>
+                        {% if lecture.description %}<p class="text-gray-700 mb-4">{{ lecture.description }}</p>{% endif %}
+                        {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
+                            <div class="mb-4">
+                                <iframe src="{{ lecture.embed_url }}"
+                                        frameborder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowfullscreen
+                                        class="w-full h-[250px] rounded-lg shadow"></iframe>
+                            </div>
+                            <p class="text-blue-600 underline">
+                                <a href="{{ lecture.video_url }}" target="_blank">Watch Separately</a>
+                            </p>
+                        {% elif lecture.content_type == "DOCUMENT" %}
+                            <div class="prose max-w-none bg-gray-100 p-4 rounded-lg">{{ lecture.content|safe }}</div>
+                        {% elif lecture.content_type == "QUIZ" %}
+                            <div class="bg-yellow-50 p-4 rounded-md">
+                                <p class="font-medium mb-3">This is a quiz section. Complete all questions to mark this lecture as completed.</p>
+                                <button class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition">Start Quiz</button>
+                            </div>
+                        {% elif lecture.content_type == "LIVE" %}
+                            <div class="mb-6 p-4 bg-blue-50 rounded-md">
+                                {% if lecture.scheduled_time and lecture.scheduled_time > now %}
+                                    <p class="font-medium">This live session is scheduled for {{ lecture.scheduled_time|date:"F j, Y, g:i a" }}</p>
+                                    {% if lecture.live_url %}
+                                        <a href="{{ lecture.live_url }}"
+                                           target="_blank"
+                                           class="mt-3 inline-block px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition">
+                                            Join Live Session
+                                        </a>
+                                    {% endif %}
+                                {% elif lecture.recording_url %}
+                                    <p class="font-medium mb-3">This session has ended. You can watch the recording below:</p>
+                                    <div class="aspect-w-16 aspect-h-9">
+                                        <iframe src="{{ lecture.recording_url }}"
+                                                frameborder="0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowfullscreen
+                                                class="w-full h-[250px] rounded-lg shadow"></iframe>
+                                    </div>
+                                    <p class="mt-2 text-blue-600 underline">
+                                        <a href="{{ lecture.recording_url }}">Watch Recording</a>
+                                    </p>
+                                {% else %}
+                                    <p class="font-medium">This live session has ended. Recording will be available soon.</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16">
+                <h2 class="text-2xl font-semibold text-gray-700">No lectures available</h2>
+                <p class="text-gray-500">Check back later for new content.</p>
+            </div>
+        {% endif %}
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold">Featured videos</h1>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/N_59irHRjzM"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/IYBRVRfPCK8"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/jNp3J6HLpqc"
+                            title="YouTube video player"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/OmxGrjGA_ck"
+                            title="How to configure Slack Bot"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+            <div class="bg-white shadow-md rounded-md overflow-hidden">
+                <div class="video-responsive">
+                    <iframe class="w-full h-64"
+                            src="https://www.youtube.com/embed/C_UIm1QR67o"
+                            title="Host Slack Bot on PythonAnywhere"
+                            frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

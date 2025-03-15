@@ -1,3 +1,4 @@
+import concurrent.futures
 import ipaddress
 import json
 import re
@@ -9,13 +10,14 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import urlparse
 
-import django_filters
 import requests
+import sentry_sdk
 from dateutil.parser import parse as parse_datetime
 from dateutil.relativedelta import relativedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.core.exceptions import ValidationError
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.validators import URLValidator
@@ -23,9 +25,10 @@ from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
-from django.utils.timezone import now
+from django.utils.timezone import localtime, now
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView
 from django_filters.views import FilterView
@@ -33,14 +36,21 @@ from PIL import Image, ImageDraw, ImageFont
 from rest_framework.views import APIView
 
 from website.bitcoin_utils import create_bacon_token
+from website.filters import ProjectRepoFilter
 from website.models import IP, BaconToken, Contribution, Contributor, ContributorStats, Organization, Project, Repo
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
+# Helper function to parse date
+def parse_date(date_str):
+    """Parse GitHub API date string to datetime object"""
+    return parse_datetime(date_str) if date_str else None
+
+
 def blt_tomato(request):
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).parent.parent
     json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
 
     try:
@@ -49,14 +59,22 @@ def blt_tomato(request):
     except Exception:
         data = []
 
+    processed_projects = []
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
 
         funding_link = funding_links[0] if funding_links else "#"
-        project["funding_hyperlinks"] = funding_link
+        processed_projects.append(
+            {
+                "project_name": project.get("project_name"),
+                "repo_url": project.get("repo_url"),
+                "funding_hyperlinks": funding_link,
+                "funding_details": project.get("funding_details"),
+            }
+        )
 
-    return render(request, "blt_tomato.html", {"projects": data})
+    return render(request, "blt_tomato.html", {"projects": processed_projects})
 
 
 @user_passes_test(admin_required)
@@ -215,70 +233,6 @@ class ProjectBadgeView(APIView):
         return response
 
 
-class ProjectRepoFilter(django_filters.FilterSet):
-    search = django_filters.CharFilter(method="filter_search", label="Search")
-    repo_type = django_filters.ChoiceFilter(
-        choices=[
-            ("all", "All"),
-            ("main", "Main"),
-            ("wiki", "Wiki"),
-            ("normal", "Normal"),
-        ],
-        method="filter_repo_type",
-        label="Repo Type",
-    )
-    sort = django_filters.ChoiceFilter(
-        choices=[
-            ("stars", "Stars"),
-            ("forks", "Forks"),
-            ("open_issues", "Open Issues"),
-            ("last_updated", "Recently Updated"),
-            ("contributor_count", "Contributors"),
-        ],
-        method="filter_sort",
-        label="Sort By",
-    )
-    order = django_filters.ChoiceFilter(
-        choices=[
-            ("asc", "Ascending"),
-            ("desc", "Descending"),
-        ],
-        method="filter_order",
-        label="Order",
-    )
-
-    class Meta:
-        model = Repo
-        fields = ["search", "repo_type", "sort", "order"]
-
-    def filter_search(self, queryset, name, value):
-        return queryset.filter(Q(project__name__icontains=value) | Q(name__icontains=value))
-
-    def filter_repo_type(self, queryset, name, value):
-        if value == "main":
-            return queryset.filter(is_main=True)
-        elif value == "wiki":
-            return queryset.filter(is_wiki=True)
-        elif value == "normal":
-            return queryset.filter(is_main=False, is_wiki=False)
-        return queryset
-
-    def filter_sort(self, queryset, name, value):
-        sort_mapping = {
-            "stars": "stars",
-            "forks": "forks",
-            "open_issues": "open_issues",
-            "last_updated": "last_updated",
-            "contributor_count": "contributor_count",
-        }
-        return queryset.order_by(sort_mapping.get(value, "stars"))
-
-    def filter_order(self, queryset, name, value):
-        if value == "desc":
-            return queryset.reverse()
-        return queryset
-
-
 class ProjectView(FilterView):
     model = Repo
     template_name = "projects/project_list.html"
@@ -311,12 +265,14 @@ class ProjectView(FilterView):
         context["total_repos"] = Repo.objects.count()
         context["filtered_count"] = context["repos"].count()
 
-        # Group repos by project
+        # Group repos by project and filter out projects with empty slugs
         projects = {}
         for repo in context["repos"]:
-            if repo.project not in projects:
-                projects[repo.project] = []
-            projects[repo.project].append(repo)
+            # Skip projects with empty slugs
+            if repo.project and repo.project.slug:
+                if repo.project not in projects:
+                    projects[repo.project] = []
+                projects[repo.project].append(repo)
         context["projects"] = projects
 
         return context
@@ -711,7 +667,7 @@ class ProjectsDetailView(DetailView):
             }
         )
 
-        # Add organization context if it exists
+        # Add organization context if it exists!
         if project.organization:
             context["organization"] = project.organization
 
@@ -727,6 +683,49 @@ class RepoDetailView(DetailView):
     model = Repo
     template_name = "projects/repo_detail.html"
     context_object_name = "repo"
+
+    def fetch_github_milestones(self, repo):
+        """
+        Fetch milestones from the GitHub API for the given repository.
+        """
+        try:
+            repo_url = repo.repo_url.strip("/")
+
+            # Parse the URL properly using urllib
+            parsed_url = urlparse(repo_url)
+
+            # Verify it's actually a GitHub domain
+            if parsed_url.netloc != "github.com":
+                return []
+
+            # Extract the path and remove leading slash
+            path = parsed_url.path.strip("/")
+
+            # Split path into components
+            path_parts = path.split("/")
+
+            # Verify we have at least owner/repo in the path
+            if len(path_parts) >= 2:
+                owner, repo_name = path_parts[0], path_parts[1]
+
+                # API URL for public repository milestones
+                api_url = f"https://api.github.com/repos/{owner}/{repo_name}/milestones?state=all"
+
+                headers = {"Accept": "application/vnd.github.v3+json"}
+
+                # Add GitHub token if available for higher rate limits
+                if hasattr(settings, "GITHUB_TOKEN") and settings.GITHUB_TOKEN and settings.GITHUB_TOKEN != "blank":
+                    headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                response = requests.get(api_url, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    return response.json()
+
+            return []
+
+        except Exception:
+            return []
 
     def get_github_top_contributors(self, repo_url):
         """Fetch top contributors directly from GitHub API"""
@@ -748,9 +747,241 @@ class RepoDetailView(DetailView):
             print(f"Error fetching GitHub contributors: {e}")
             return []
 
+    def fetch_activity_data(self, owner, repo_name):
+        """Fetch detailed activity data for charts"""
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=60)
+        headers = {
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+        base_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+        def fetch_all_pages(url):
+            results = []
+            page = 1
+            while True:
+                response = requests.get(f"{url}&page={page}", headers=headers)
+                if response.status_code != 200 or not response.json():
+                    break
+                results.extend(response.json())
+                page += 1
+                if "Link" not in response.headers or 'rel="next"' not in response.headers["Link"]:
+                    break
+            return results
+
+        # Fetching data concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {
+                "issues": executor.submit(
+                    fetch_all_pages, f"{base_url}/issues?state=all&since={start_date.isoformat()}&per_page=100"
+                ),
+                "pulls": executor.submit(
+                    fetch_all_pages, f"{base_url}/pulls?state=all&since={start_date.isoformat()}&per_page=100"
+                ),
+                "commits": executor.submit(
+                    fetch_all_pages, f"{base_url}/commits?since={start_date.isoformat()}&per_page=100"
+                ),
+            }
+
+            data = {}
+            for key, future in futures.items():
+                try:
+                    data[key] = future.result()
+                except Exception as e:
+                    print(f"Error fetching {key}: {e}")
+                    data[key] = []
+
+        # Processing data for charts
+        dates = [(end_date - timedelta(days=x)).strftime("%Y-%m-%d") for x in range(30)]
+
+        # Defining time periods
+        current_month_start = end_date - timedelta(days=30)
+        previous_month_start = current_month_start - timedelta(days=30)
+
+        def calculate_period_metrics(data, start_date, end_date):
+            """Calculate metrics for a specific time period"""
+            start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+            end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+
+            return {
+                "issues_opened": len(
+                    [
+                        i
+                        for i in data["issues"]
+                        if i.get("created_at")
+                        and start_date <= parse_date(i["created_at"]) <= end_date
+                        and "pull_request" not in i
+                    ]
+                ),
+                "issues_closed": len(
+                    [
+                        i
+                        for i in data["issues"]
+                        if i.get("closed_at")
+                        and start_date <= parse_date(i["closed_at"]) <= end_date
+                        and "pull_request" not in i
+                    ]
+                ),
+                "prs_opened": len(
+                    [
+                        p
+                        for p in data["pulls"]
+                        if p.get("created_at") and start_date <= parse_date(p["created_at"]) <= end_date
+                    ]
+                ),
+                "prs_closed": len(
+                    [
+                        p
+                        for p in data["pulls"]
+                        if p.get("closed_at") and start_date <= parse_date(p["closed_at"]) <= end_date
+                    ]
+                ),
+                "commits": len(
+                    [
+                        c
+                        for c in data["commits"]
+                        if c.get("commit", {}).get("author", {}).get("date")
+                        and start_date <= parse_date(c["commit"]["author"]["date"]) <= end_date
+                    ]
+                ),
+            }
+
+        # Calculating metrics for both periods
+        current_metrics = calculate_period_metrics(data, current_month_start.date(), end_date.date())
+        previous_metrics = calculate_period_metrics(data, previous_month_start.date(), current_month_start.date())
+
+        # Calculating percentage changes
+        def calculate_percentage_change(current, previous):
+            """Calculates percentage change between two periods"""
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return ((current - previous) / previous) * 100
+
+        def calculate_ratio(current, previous):
+            if previous == 0:
+                return 1 if current > 0 else 0
+            return current / previous
+
+        changes = {
+            "issue_ratio_percentage_change": calculate_percentage_change(
+                (calculate_ratio(current_metrics["issues_opened"], current_metrics["issues_closed"])),
+                (calculate_ratio(previous_metrics["issues_opened"], previous_metrics["issues_closed"])),
+            ),
+            "issue_ratio_change": (calculate_ratio(current_metrics["issues_opened"], current_metrics["issues_closed"]))
+            - (calculate_ratio(previous_metrics["issues_opened"], previous_metrics["issues_closed"])),
+            "pr_percentage_change": calculate_percentage_change(
+                current_metrics["prs_opened"], previous_metrics["prs_opened"]
+            ),
+            "pr_change": current_metrics["prs_opened"] - previous_metrics["prs_opened"],
+            "commit_percentage_change": calculate_percentage_change(
+                current_metrics["commits"], previous_metrics["commits"]
+            ),
+            "commit_change": current_metrics["commits"] - previous_metrics["commits"],
+        }
+
+        chart_data = {
+            "issues_labels": dates,
+            "issues_opened": [],
+            "issues_closed": [],
+            "pr_labels": dates,
+            "pr_opened_data": [],
+            "pr_closed_data": [],
+            "commits_labels": dates,
+            "commits_data": [],
+            "pushes_data": [],
+            "issue_ratio_change": round(changes["issue_ratio_change"], 2),
+            "pr_change": changes["pr_change"],
+            "commit_change": changes["commit_change"],
+            "issue_ratio_percentage_change": round(changes["issue_ratio_percentage_change"], 2),
+            "pr_percentage_change": round(changes["pr_percentage_change"], 2),
+            "commit_percentage_change": round(changes["commit_percentage_change"], 2),
+        }
+
+        for date in dates:
+            # Counting issues with safe null checks
+            issues_opened = len(
+                [
+                    i
+                    for i in data["issues"]
+                    if i.get("created_at") and i["created_at"].startswith(date) and "pull_request" not in i
+                ]
+            )
+
+            issues_closed = len(
+                [
+                    i
+                    for i in data["issues"]
+                    if i.get("closed_at") and i["closed_at"].startswith(date) and "pull_request" not in i
+                ]
+            )
+
+            # Counting PRs with safe null checks
+            prs_opened = len([p for p in data["pulls"] if p.get("created_at") and p["created_at"].startswith(date)])
+
+            prs_closed = len([p for p in data["pulls"] if p.get("closed_at") and p["closed_at"].startswith(date)])
+
+            # Counting commits with safe null checks
+            day_commits = [
+                c
+                for c in data["commits"]
+                if (
+                    c.get("commit", {}).get("author", {}).get("date") and c["commit"]["author"]["date"].startswith(date)
+                )
+            ]
+            commits_count = len(day_commits)
+            pushes_count = len(set(c.get("sha", "") for c in day_commits))
+
+            # Adding to chart data
+            chart_data["issues_opened"].append(issues_opened)
+            chart_data["issues_closed"].append(issues_closed)
+            chart_data["pr_opened_data"].append(prs_opened)
+            chart_data["pr_closed_data"].append(prs_closed)
+            chart_data["commits_data"].append(commits_count)
+            chart_data["pushes_data"].append(pushes_count)
+
+        return chart_data
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
+
+        # Extract owner and repo name from repo URL
+        owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
+        owner, repo_name = owner_repo.split("/")
+
+        # Add show_repo_stats parameter set to False to hide stats section
+        context["show_repo_stats"] = False
+
+        # Get activity data only if we're showing repo stats
+        activity_data = None
+        if context["show_repo_stats"]:
+            activity_data = self.fetch_activity_data(owner, repo_name)
+        else:
+            # Create empty activity data structure to avoid template errors
+            activity_data = {
+                "issues_labels": [],
+                "issues_opened": [],
+                "issues_closed": [],
+                "pr_labels": [],
+                "pr_opened_data": [],
+                "pr_closed_data": [],
+                "commits_labels": [],
+                "commits_data": [],
+                "pushes_data": [],
+                "issue_ratio_change": 0,
+                "pr_change": 0,
+                "commit_change": 0,
+                "issue_ratio_percentage_change": 0,
+                "pr_percentage_change": 0,
+                "commit_percentage_change": 0,
+            }
+
+        # Add breadcrumbs
+        context["breadcrumbs"] = [
+            {"title": "Repositories", "url": reverse("project_list")},
+            {"title": repo.name, "url": None},
+        ]
 
         # Get other repos from same project
         context["related_repos"] = (
@@ -945,8 +1176,75 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
+                "issues_labels": activity_data["issues_labels"],
+                "issues_opened": activity_data["issues_opened"],
+                "issues_closed": activity_data["issues_closed"],
+                "pr_labels": activity_data["pr_labels"],
+                "pr_opened_data": activity_data["pr_opened_data"],
+                "pr_closed_data": activity_data["pr_closed_data"],
+                "commits_labels": activity_data["commits_labels"],
+                "commits_data": activity_data["commits_data"],
+                "pushes_data": activity_data["pushes_data"],
+                "issue_ratio_change": activity_data["issue_ratio_change"],
+                "pr_change": activity_data["pr_change"],
+                "commit_change": activity_data["commit_change"],
+                "issue_ratio_percentage_change": activity_data["issue_ratio_percentage_change"],
+                "pr_percentage_change": activity_data["pr_percentage_change"],
+                "commit_percentage_change": activity_data["commit_percentage_change"],
             }
         )
+
+        milestones = self.fetch_github_milestones(repo)
+
+        # Get the current page from query parameters
+        milestone_page = self.request.GET.get("milestone_page", 1)
+        try:
+            milestone_page = int(milestone_page)
+        except (TypeError, ValueError):
+            milestone_page = 1
+
+        # Calculate activity score for each milestone (open_issues + closed_issues)
+        for milestone in milestones:
+            milestone["activity_score"] = milestone.get("open_issues", 0) + milestone.get("closed_issues", 0)
+
+        # Sort milestones: first by state (open first), then by activity score (highest first)
+        milestones.sort(
+            key=lambda x: (
+                0 if x.get("state") == "open" else 1,  # Open milestones first
+                -x.get("activity_score", 0),  # Higher activity score first
+                x.get("due_on", "") or "9999-12-31T23:59:59Z",  # Then by due date
+            )
+        )
+
+        # Paginate the milestones - 5 per page
+        milestones_per_page = 5
+        total_milestones = len(milestones)
+        total_pages = (total_milestones + milestones_per_page - 1) // milestones_per_page
+
+        # Ensure the page number is within valid range
+        if milestone_page < 1:
+            milestone_page = 1
+        elif milestone_page > total_pages and total_pages > 0:
+            milestone_page = total_pages
+
+        # Calculate start and end indices for slicing
+        start_idx = (milestone_page - 1) * milestones_per_page
+        end_idx = min(start_idx + milestones_per_page, total_milestones)
+
+        # Slice the milestones list
+        paginated_milestones = milestones[start_idx:end_idx] if milestones else []
+
+        # Add the paginated milestones and pagination info to context
+        context["milestones"] = paginated_milestones
+        context["milestone_pagination"] = {
+            "current_page": milestone_page,
+            "total_pages": total_pages,
+            "has_previous": milestone_page > 1,
+            "has_next": milestone_page < total_pages,
+            "previous_page": milestone_page - 1 if milestone_page > 1 else None,
+            "next_page": milestone_page + 1 if milestone_page < total_pages else None,
+            "page_range": range(1, total_pages + 1),
+        }
 
         return context
 
@@ -956,7 +1254,7 @@ class RepoDetailView(DetailView):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             if "time_period" in request.POST:
                 context = self.get_context_data()
-                return render(request, "projects/_contributor_stats_table.html", context)
+                return render(request, "includes/_contributor_stats_table.html", context)
 
         def get_issue_count(full_name, query, headers):
             search_url = f"https://api.github.com/search/issues?q=repo:{full_name}+{query}"
@@ -1271,6 +1569,7 @@ class RepoDetailView(DetailView):
                 )
 
             except requests.RequestException as e:
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {
                         "status": "error",
@@ -1279,6 +1578,8 @@ class RepoDetailView(DetailView):
                     status=503,
                 )
             except Exception as e:
+                # send to sentry
+                sentry_sdk.capture_exception(e)
                 return JsonResponse(
                     {"status": "error", "message": "An unexpected error occurred."},
                     status=500,
@@ -1355,7 +1656,97 @@ class RepoDetailView(DetailView):
                     status=500,
                 )
 
-        return super().post(request, *args, **kwargs)
+        elif section == "ai_summary":
+            try:
+                repo = self.get_object()
+
+                # Get GitHub API token
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"},
+                        status=500,
+                    )
+
+                # Extract owner/repo from GitHub URL
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"},
+                        status=400,
+                    )
+
+                owner, repo_name = match.groups()
+
+                # Fetch README content from GitHub API
+                readme_url = f"https://api.github.com/repos/{owner}/{repo_name}/readme"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+
+                response = requests.get(readme_url, headers=headers)
+
+                if response.status_code == 200:
+                    readme_data = response.json()
+                    # README content is base64 encoded
+                    import base64
+
+                    readme_content = base64.b64decode(readme_data.get("content", "")).decode("utf-8")
+
+                    # Store README content
+                    repo.readme_content = readme_content
+
+                    # Generate AI summary if AI service is configured
+                    ai_service_url = getattr(settings, "AI_SERVICE_URL", None)
+                    if ai_service_url:
+                        try:
+                            # Call AI service to generate summary
+                            ai_response = requests.post(ai_service_url, json={"text": readme_content}, timeout=10)
+
+                            if ai_response.status_code == 200:
+                                ai_data = ai_response.json()
+                                repo.ai_summary = ai_data.get("summary", "No summary available.")
+                            else:
+                                repo.ai_summary = "Failed to generate summary from AI service."
+                        except Exception:
+                            repo.ai_summary = "Error connecting to AI service."
+                    else:
+                        # If no AI service is configured, create a simple summary
+                        if len(readme_content) > 500:
+                            repo.ai_summary = readme_content[:500] + "..."
+                        else:
+                            repo.ai_summary = readme_content
+
+                    repo.save()
+
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "AI summary updated successfully",
+                            "data": {"ai_summary": repo.ai_summary or "No summary available."},
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": f"GitHub API error: {response.status_code}",
+                        },
+                        status=response.status_code,
+                    )
+
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": f"An unexpected error occurred: {str(e)}",
+                    },
+                    status=500,
+                )
+
+        # Return a default response if no section matched
+        return JsonResponse({"status": "error", "message": "Invalid section specified " + section}, status=400)
 
 
 class RepoBadgeView(APIView):

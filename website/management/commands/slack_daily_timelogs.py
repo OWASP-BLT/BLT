@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta
 
-from django.core.management.base import BaseCommand
 from slack_bolt import App
 
+from website.management.base import LoggedBaseCommand
 from website.models import SlackIntegration, TimeLog
 
 
-class Command(BaseCommand):
-    help = "Sends messages to organizations with a Slack integration for Sizzle timelogs\
-    To be run every hour."
+class Command(LoggedBaseCommand):
+    help = "Sends messages to organizations with a Slack integration for " "Sizzle timelogs to be run every hour."
 
     def handle(self, *args, **kwargs):
         # Get the current hour in UTC
@@ -23,7 +22,8 @@ class Command(BaseCommand):
                 integration.default_channel_id
                 and current_org
                 and integration.daily_updates
-                and integration.daily_update_time == current_hour_utc  # Ensure it's the correct hour
+                # Ensure it's the correct hour
+                and integration.daily_update_time == current_hour_utc
             ):
                 print(f"Processing updates for organization: {current_org.name}")
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+    {{ post.title }} | {% env 'PROJECT_NAME' %}
+{% endblock title %}
+{% block description %}
+    Read "{{ post.title }}" by {{ post.author }}. Published on {{ post.created_at }}. Explore this and more on {% env 'PROJECT_NAME' %}.
+{% endblock description %}
+{% block keywords %}
+    {{ post.title }}, blog post, {{ post.author }}, {% env 'PROJECT_NAME' %}, {{ post.created_at }}, {{ post.title|slugify }}
+{% endblock keywords %}
+{% block og_title %}
+    {{ post.title }} - {% env 'PROJECT_NAME' %}
+{% endblock og_title %}
+{% block og_description %}
+    Discover "{{ post.title }}" by {{ post.author }} on {% env 'PROJECT_NAME' %}. Published on {{ post.created_at }}, dive into the content to learn more!
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="font-sans p-5">
+        <article class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <h1 class="text-4xl font-bold text-gray-900 text-center mb-4">{{ post.title }}</h1>
+            <p class="text-gray-600 text-center mb-6">By {{ post.author }} on {{ post.created_at }}</p>
+            <div class="text-gray-700 leading-relaxed">{{ post.content|safe }}</div>
+            {% if post.image %}
+                <div class="my-6">
+                    <img class="w-full h-auto rounded-lg shadow-lg"
+                         src="{{ post.image.url }}"
+                         alt="{{ post.title }}"
+                         height="full"
+                         width="full">
+                </div>
+            {% endif %}
+            {% if request.user == post.author %}
+                <div class="flex justify-center space-x-4 mt-6">
+                    <a href="{% url 'post_update' slug=post.slug %}"
+                       class="inline-block px-6 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors">
+                        Update Post
+                    </a>
+                    <a href="{% url 'post_delete' slug=post.slug %}"
+                       class="inline-block px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                        Delete Post
+                    </a>
+                </div>
+            {% endif %}
+            <div class="mt-8 px-6 py-4 bg-white rounded-lg">{% include "../comments2.html" %}</div>
+        </article>
+    </div>
+{% endblock content %}

@@ -16,78 +16,6 @@
     Discover the details of the completed hunt including the domain, hunt description, and URL. Explore the results and insights from the hunt.
 {% endblock og_description %}
 {% block content %}
-    <style>
-  #banner {
-  background:
-   url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
-  background-size: cover;
-  height: 400px;
-  background-position: 0 0;
-}
-
-@media screen and (max-width:768px){
-  
- #banner {
-  background-size: cover;
-  height: 300px;
-  background-position: right bottom;
-} 
-  
-#banner h1{
-  font-size: 3.2rem !important;
-}
- 
-  #banner p{
-    padding:0.5rem;
-    text-align: center;
-  }
-  
-}
-.text-light {
-  color: #f8f9fa!important;
-}
-
-h5.card-title{
-  line-height:1.6rem;
-}
-
-
-#footer a {
-    padding: 0.8rem;
-}
-.badge-organization {
-      display: inline-block;
-    padding: .25em .4em;
-    font-size: 75%;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: .25rem;
-}
-.pl-4, .px-4 {
-    padding-left: 1.5rem!important;
-}
-.mt-4, .my-4 {
-    margin-top: 1.5rem!important;
-}
-.font-italic {
-    font-style: italic!important;
-}
-.start-btn {
-    float: right;
-    margin: 100px 25px;
-    width: 150px;
-}
-.time-remaining-btn {
-    float: right;
-    margin: 100px 25px;
-    width: auto;
-
-}
-
-    </style>
     <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">
@@ -95,20 +23,28 @@ h5.card-title{
         {% include "includes/user_sidenav.html" %}
     </section>
     <main>
-        <article id="banner" class="jumbotron jumbotron-fluid">
-            <div class="font-italic pl-4 mt-4 text-light">
-                <h1 class="display-1 font-italic">
+        <!-- Banner Section -->
+        <div id="banner"
+             class="bg-[url('https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg')] bg-cover bg-no-repeat bg-center h-[400px] flex items-start justify-start p-8 sm:p-12 md:p-16 lg:p-20">
+            <div class="text-white italic pl-4 mt-4">
+                <h1 class="text-6xl font-italic sm:text-5xl md:text-6xl lg:text-7xl">
                     {{ hunt.domain.organization.name }}
-                    <span class="badge-organization badge-primary shadow">{{ hunt.domain.name }}</span>
+                    <span class="bg-blue-500 text-white text-sm font-bold px-2 py-1 rounded shadow ml-2">{{ hunt.domain.name }}</span>
                 </h1>
-                <p class="lead mt-5">Ended</p>
+                <p class="text-xl mt-5 sm:text-lg md:text-xl lg:text-2xl">Ended</p>
             </div>
-        </article>
+        </div>
     </main>
-    <div id="content">
-        <textarea>{{ hunt.description }}</textarea>
+    <!-- Content Section -->
+    <div id="content" class="p-4">
+        <textarea class="hidden">{{ hunt.description }}</textarea>
     </div>
-    <div>Hunt URL : {{ hunt.domain.url }}</div>
+    <!-- Hunt URL -->
+    <div class="p-4 text-lg">
+        Hunt URL:
+        <a href="{{ hunt.domain.url }}" class="text-blue-500 hover:underline">{{ hunt.domain.url }}</a>
+    </div>
+    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"
             integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
             crossorigin="anonymous"></script>
@@ -121,19 +57,18 @@ h5.card-title{
     <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
     <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
     <script>
-  $(function () {
-      editormd.markdownToHTML("content", {
-          emoji           : true,
-          taskList        : true,
-          tex             : true,  
-          flowChart       : true,  
-          sequenceDiagram : true,  
-      });
+        $(function () {
+            editormd.markdownToHTML("content", {
+                emoji: true,
+                taskList: true,
+                tex: true,
+                flowChart: true,
+                sequenceDiagram: true,
+            });
 
-      $(".reference-link").each(function (i,obj) {
-        console.log(obj)
-      })
-  })
-
+            $(".reference-link").each(function (i, obj) {
+                console.log(obj);
+            });
+        });
     </script>
 {% endblock content %}

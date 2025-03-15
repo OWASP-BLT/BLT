@@ -1,13 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
 from django.core.mail import send_mail
-from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from website.management.base import LoggedBaseCommand
 from website.models import Monitor
 
 
-class Command(BaseCommand):
+class Command(LoggedBaseCommand):
     help = "Checks for keywords in monitored URLs"
 
     def handle(self, *args, **options):

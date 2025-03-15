@@ -19,90 +19,148 @@
     <section>
         {% include "includes/organization_sidenav.html" %}
     </section>
-    <div>
-        <div class="col_3">
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {% if domains %}
                 {% for domain in domains %}
-                    <div class="col-md-3 widget widget1">
-                        <div class="r3_counter_box">
-                            <a href="{% url 'organization_dashboard_domain_detail' domain.pk %}"><i class="fa fa-pencil"></i></a>
-                            <div class="stats">
-                                <h5>{{ domain.name }}</h5>
-                                <div class="hunt">
-                                    <p>
-                                        {{ domain.email }}<span>$</span>
-                                    </p>
+                    <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center">
+                                    {% if domain.logo %}
+                                        <img src="{{ domain.logo.url }}"
+                                             alt="{{ domain.name }}"
+                                             width="48"
+                                             height="48"
+                                             class="w-12 h-12 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                            <i class="fas fa-building text-gray-400 text-xl"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="ml-3">
+                                        <h3 class="font-semibold text-lg text-gray-800">{{ domain.name }}</h3>
+                                        {% if domain.email %}<p class="text-sm text-gray-600">{{ domain.email }}</p>{% endif %}
+                                    </div>
                                 </div>
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'organization_dashboard_domain_detail' domain.pk %}"
+                                       class="text-blue-500 hover:text-blue-600"
+                                       title="Edit Domain">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    {% if request.user.is_superuser %}
+                                        <a href="/admin/website/domain/{{ domain.id }}/change/"
+                                           class="text-purple-500 hover:text-purple-600"
+                                           target="_blank"
+                                           title="Edit in Admin">
+                                            <i class="fas fa-cog"></i>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Stats Section -->
+                            <div class="mt-4 grid grid-cols-2 gap-4">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-500">Issues</span>
+                                        <span class="text-sm font-medium text-gray-900">{{ domain.open_issues.count }}/{{ domain.closed_issues.count }}</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <div class="text-xs text-gray-500">Open/Closed</div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-500">Clicks</span>
+                                        <span class="text-sm font-medium text-gray-900">{{ domain.clicks|default:"0" }}</span>
+                                    </div>
+                                    <div class="mt-1">
+                                        <div class="text-xs text-gray-500">Total Views</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-500">Top Tester</span>
+                                        <span class="text-sm font-medium text-gray-900">
+                                            {% with top_tester=domain.top_tester %}
+                                                {% if top_tester %}
+                                                    {{ top_tester.username }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            {% endwith %}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-between text-sm text-gray-500">
+                                <span>Created: {{ domain.created|date:"M d, Y" }}</span>
+                                {% if domain.is_active %}
+                                    <span class="text-green-600 font-medium">Active</span>
+                                {% else %}
+                                    <span class="text-red-600 font-medium">Inactive</span>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 {% endfor %}
             {% else %}
-            </br>
-            no domain found !
-        {% endif %}
-        <div class="clearfix"></div>
+                <div class="col-span-full text-center py-8 text-gray-500">
+                    <i class="fas fa-folder-open text-4xl mb-2"></i>
+                    <p>No domains found!</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-<div id="addDomainModal" class="modal fade" role="dialog">
-    <div class="modal-dialog">
-        <!-- Modal content-->
-        <form id="add-or-update-domain">
-            {% csrf_token %}
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal">×</button>
-                    <h4 class="modal-title">Create Domain</h4>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="name">Name:</label>
-                        <input type="text"
-                               name="name"
-                               required
-                               class="form-control"
-                               id="name"
-                               value="">
+    <!-- Add Domain Modal -->
+    <div id="addDomainModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <form id="add-or-update-domain">
+                {% csrf_token %}
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Create Domain</h4>
+                        <button type="button" class="close" data-dismiss="modal">×</button>
                     </div>
-                    <div class="form-group">
-                        <label for="url">Url:</label>
-                        <input type="url" name="url" class="form-control" id="url" value="">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="name">Name:</label>
+                            <input type="text" name="name" required class="form-control" id="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="url">URL:</label>
+                            <input type="url" name="url" class="form-control" id="url">
+                        </div>
+                        <div class="form-group">
+                            <label for="logo">Logo:</label>
+                            <input type="file" name="logo" class="form-control" id="logo">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email address:</label>
+                            <input type="email" name="email" required class="form-control" id="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="github">GitHub:</label>
+                            <input type="url" name="github" class="form-control" id="github">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="logo">Logo:</label>
-                        <input type="file" name="logo" class="form-control" id="logo" value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="email">Email address:</label>
-                        <input type="email"
-                               name="email"
-                               required
-                               class="form-control"
-                               id="email"
-                               value="">
-                    </div>
-                    <div class="form-group">
-                        <label for="github">Github:</label>
-                        <input type="url" name="github" class="form-control" id="github" value="">
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Create</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <input type="submit"
-                           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                           value="Create" />
-                    <input type="reset"
-                           data-dismiss="modal"
-                           class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
-                           value="Reset" />
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
-</div>
-<button type="button"
-        class="btn btn_5 btn-lg btn-success add-admin-button"
-        data-toggle="modal"
-        data-target="#addDomainModal">
-    <i class="lnr lnr-plus-circle"> </i>
-</button>
+    <!-- Add Domain Button -->
+    <button type="button"
+            class="fixed bottom-6 right-6 bg-red-500 hover:bg-red-600 text-white rounded-full p-4 shadow-lg transition-colors duration-300"
+            data-toggle="modal"
+            data-target="#addDomainModal">
+        <i class="fas fa-plus text-xl"></i>
+    </button>
 {% endblock content %}

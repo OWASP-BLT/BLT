@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}GitHub Issues - {{ block.super }}{% endblock %}
+{% block description %}
+    Browse through all GitHub issues and pull requests
+{% endblock description %}
+{% block keywords %}
+    GitHub Issues, Pull Requests, Open Source, Contributions
+{% endblock keywords %}
+{% block og_title %}
+    GitHub Issues - Track and Browse GitHub Issues
+{% endblock og_title %}
+{% block og_description %}
+    Explore all GitHub issues and pull requests. Track progress and contribute to open source.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">Bacon Requests</h2>
+        <!-- Filter Form -->
+        <form method="get" class="mb-6 flex gap-4">
+            <select name="tx-status" class="border px-3 py-2 rounded-md">
+                <option value="">Transaction: All</option>
+                <option value="pending" {% if tx_status == "pending" %}selected{% endif %}>Pending</option>
+                <option value="completed"
+                        {% if tx_status == "completed" %}selected{% endif %}>Confirmed</option>
+            </select>
+            <select name="decision-status" class="border px-3 py-2 rounded-md">
+                <option value="">Status: All</option>
+                <option value="accepted"
+                        {% if decision_status == "accepted" %}selected{% endif %}>Accepted</option>
+                <option value="declined"
+                        {% if decision_status == "declined" %}selected{% endif %}>Rejected</option>
+            </select>
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md">Filter</button>
+        </form>
+        <!-- Cards Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for submission in submissions %}
+                <div class="bg-white shadow-md rounded-lg p-4 relative border-2 {% if submission.status == 'accepted' %} border-green-500 {% elif submission.status == 'declined' %} border-red-500 {% else %} border-gray-300 {% endif %}">
+                    <!-- User Info -->
+                    <div class="flex justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold">{{ submission.user.username }}</h3>
+                            <a href="{{ submission.github_url }}"
+                               target="_blank"
+                               class="text-blue-600 underline">GitHub PR</a>
+                        </div>
+                    </div>
+                    <!-- Contribution Type & Status -->
+                    <p class="mt-2 text-sm text-gray-600">
+                        Type: <strong>{{ submission.get_contribution_type_display }}</strong>
+                        <br>
+                        Status: <span id="status-{{ submission.id }}" class="font-semibold">{{ submission.get_status_display }}</span>
+                        <br>
+                        Transaction: {{ submission.get_transaction_status_display }}
+                        <br>
+                        Bacon Amount: <span id="bacon-amount-{{ submission.id }}">{{ submission.bacon_amount }}</span>
+                    </p>
+                    <!-- Expandable Description -->
+                    <button onclick="toggleDescription('{{ submission.id }}')"
+                            class="text-blue-600 mt-2 underline">View Description</button>
+                    <p id="description-{{ submission.id }}"
+                       class="hidden mt-2 text-gray-700">{{ submission.description }}</p>
+                    <!-- Mentor Only: Inspect Button -->
+                    {% if is_mentor %}
+                        <button onclick="toggleInspect('{{ submission.id }}')"
+                                class="mt-4 bg-gray-200 text-black px-4 py-2 rounded-md">Inspect</button>
+                        <div id="inspect-{{ submission.id }}"
+                             class="hidden mt-2 p-2 border border-gray-300 rounded-md bg-gray-100">
+                            <p>
+                                <strong>GitHub Username:</strong> {{ submission.user.username }}
+                            </p>
+                            <p>
+                                <strong>BCH Address:</strong> <span class="break-all break-words">{{ submission.user.userprofile.bch_address }}</span>
+                            </p>
+                            <!-- Editable Bacon Amount Field -->
+                            <label for="bacon-input-{{ submission.id }}" class="block mt-2">Bacon Amount:</label>
+                            <input type="number"
+                                   id="bacon-input-{{ submission.id }}"
+                                   value="{{ submission.bacon_amount }}"
+                                   class="border px-2 py-1 rounded-md w-full">
+                            <!-- Accept / Reject Buttons -->
+                            <div class="mt-2 flex gap-2">
+                                <button onclick="updateSubmission('{{ submission.id }}', 'accepted')"
+                                        class="bg-green-500 text-white px-4 py-2 rounded-md">Accept</button>
+                                <button onclick="updateSubmission('{{ submission.id }}', 'declined')"
+                                        class="bg-red-500 text-white px-4 py-2 rounded-md">Reject</button>
+                            </div>
+                            <a href="https://mempool.space/tx/{{ submission.transaction_id }}"
+                               target="_blank"
+                               class="fixed bottom-5 right-48 w-48 bg-blue-600 text-white border-none px-4 py-2 cursor-pointer rounded font-bold mt-2.5 text-center no-underline hover:bg-blue-700">
+                                Check Transaction Status
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <p class="text-center text-gray-500">No submissions found.</p>
+            {% endfor %}
+        </div>
+        {% if is_mentor %}
+            <a href="{% url 'initiate_transaction' %}"
+               class="fixed bottom-5 left-48 bg-green-500 text-white border-none px-5 py-3 rounded-full cursor-pointer shadow-md hover:bg-green-600 transition-colors duration-300 ease-in-out">
+                Initiate Transaction
+            </a>
+        {% endif %}
+        <a href="https://mempool.space/address/bc1parskmdj7cjh73xwsyugjpwp8xmly23035885st48kl43pjcj9ctsz2pf45"
+           target="_blank"
+           class="fixed bottom-5 right-48 w-48 bg-blue-600 text-white border-none px-4 py-2 cursor-pointer rounded font-bold mt-2.5 text-center no-underline hover:bg-blue-700">
+            Check Transaction Status
+        </a>
+    </div>
+    <script>
+function toggleDescription(id) {
+    let desc = document.getElementById("description-" + id);
+    desc.classList.toggle("hidden");
+}
+
+function toggleInspect(id) {
+    let inspectBox = document.getElementById("inspect-" + id);
+    inspectBox.classList.toggle("hidden");
+}
+
+function updateSubmission(id, status) {
+    let baconAmount = document.getElementById("bacon-input-" + id).value;
+
+    fetch(`/update-submission-status/${id}/`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            status: status,
+            bacon_amount: baconAmount
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("status-" + id).innerText = status.charAt(0).toUpperCase() + status.slice(1);
+            document.getElementById("bacon-amount-" + id).innerText = baconAmount;
+            window.location.reload();  // Reload the page to confirm the update
+        } else {
+            alert("Error updating submission.");
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
+    </script>
+{% endblock content %}

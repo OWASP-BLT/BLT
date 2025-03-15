@@ -1,39 +1,27 @@
 # Documentation for etching runes for BACON
 
-**2 Jan, 2025\.**  
-**11AM IST.**
+**31 Jan, 2025\.**  
+**1:30AM IST.**
 
-Right now, we have two servers with alphaVPS as the provider.
+Right now, we have three servers with alphaVPS as the provider.
 
-One node runs a testnet, where we plan to etch the BTC runes initially for POC purposes.
+One node runs a regtest, where we etched the BTC runes(BLT•BACON•TOKENS) initially for POC purposes 
 
-And another one is syncing up with the mainnet, where we plan to etch the BACON token.
+And two others are syncing up with the mainnet, where we plan to etch the BACON token again.
 
 **The current state while writing:**  
-1\. Testnet server has a corrupted chain index (started reindexing today), due to random killing of the bitcoind process, we might have to raise a ticket with alphaVPS for this, since its probable they do this because of I/O limits.
+1\. Regtest and ord server are running peacefully and all the operations are getting handled smoothly.
 
-2\. The mainnet is syncing slow and steady and is upto \~46.5% as of writing.
+2\. The mainnet1 has synced upto 90% and the mainnet2 has synced upto 70% as of now.
 
 **Current Workflow**
 
-1. On the testnet node, one tmux session is used to run the node and other is used to run the ord server.  
-2. Once both of these sync up, we will probably create another tmux session to create wallet and etch runes.  
-3. On the mainnet node, we just have a single tmux session as of writing where the bitcoind process is syncing the node with the mainnet.
+1. On the regtest node, we have a regtest.service daemon process running the bitcoin blockchain and the ord-flask.service daemon running for interaction of sending bacon tokens to the users submitted in /send-bacon-tokens endpoint ,tmux process on bitcoin user running the ordinal server to index the blocks on regtest and perform wallet operations(creating wallet, etching runes, transferring funds).
+2. First we will do a complete integration with the regtest , and once the mainnet spins up , we'll run an ord server that index the mainnet blocks and perform wallet operations.
 
 **Some useful references:**  
 [https://ordtutorial.vercel.app/ordtestnet](https://ordtutorial.vercel.app/ordtestnet) 
-
-**Current bitcoind config on testnet.**  
-server=1  
-testnet=1  
-txindex=1  
-rpcuser=apoorva  
-blockfilterindex=1  
-rpcpassword=y^2DhUnxrhFr7qAj2yjhvykFz  
-rpcallowip=127.0.0.1
-[test]  
-rpcport=8332  
-rpcbind=127.0.0.1  
+The ordicord discord server 
 
 **Current bitcoind config on the mainnet:**  
 server=1  
@@ -47,11 +35,8 @@ blockfilterindex=1
 
 Side note: We might want to add rpcbind here after the node syncs completely.
 
-**Command to start the bitcoind process on the testnet, note that we use the bitcoind snap package on both our servers.**  
+**Command to start the bitcoind process on the mainnet, as we use the bitcoind snap package on this server.**  
 bitcoin-core.daemon \-datadir=/home/apoorva/test-btc-data \-dbcache=256 \-rpcworkqueue=1000
-
-**Command to start the ordinal server to index blocks after syncing the node completely, we will create a wallet and etch runes once this completes.**  
-sudo ./ord \--bitcoin-rpc-user apoorva \--bitcoin-rpc-pass y^2DhUnxrhFr7qAj2yjhvykFz \--rpc-url http://127.0.0.1:8332 \--data-dir /home/apoorva/ord-data \--bitcoin-data-dir /home/apoorva/test-btc-data \--index-runes \--testnet \--verbose server
 
 **Some additional observations:**
 

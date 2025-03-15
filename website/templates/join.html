@@ -17,544 +17,81 @@
 {% endblock og_description %}
 {% load gravatar %}
 {% load i18n %}
-{% block style %}
-    <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400;1,700&family=Roboto+Slab:wght@400;700&display=swap');
-
-  html {
-    height: 100%;
-    min-height: 800px;
-  }
-
-  body {
-    background: url('https://i.pinimg.com/originals/48/79/86/487986c17560a8ed1afdc55e480e5be2.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    text-align: center;
-    font-family: 'Noto Sans', sans-serif;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-  }
-
-  #payment-form{
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  #subscription_id{
-    height: 460px;
-    max-width: none;
-  }
-
-  #card-element-container{
-    left: 50%; 
-    transform: translateX(-50%);
-  }
-
-  h1 {
-    font-weight: 400;
-    padding-top: 0;
-    margin-top: 0;
-    font-family: 'Roboto Slab', serif;
-  }
-
-  #svg_form_time {
-    height: 15px;
-    max-width: 80%;
-    margin: 40px auto 20px;
-    display: block;
-  }
-
-  #svg_form_time circle,
-  #svg_form_time rect {
-    fill: white;
-  }
-
-  .button {
-    background: rgb(237, 40, 70);
-    border-radius: 5px;
-    padding: 15px 25px;
-    display: inline-block;
-    margin: 10px;
-    font-weight: bold;
-    color: white;
-    cursor: pointer;
-    box-shadow: 0px 2px 5px rgb(0, 0, 0, 0.5);
-  }
-
-  .disabled {
-    display: none;
-  }
-
-  section {
-    padding: 50px;
-    max-width: 300px;
-    margin: 30px auto;
-    background: white;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.3);
-    border-radius: 5px;
-    transition: transform 0.2s ease-in-out;
-  }
-
-
-  input {
-    width: 100%;
-    margin: 7px 0px;
-    display: inline-block;
-    padding: 12px 25px;
-    box-sizing: border-box;
-    border-radius: 5px;
-    border: 1px solid lightgrey;
-    font-size: 1em;
-    font-family: inherit;
-    background: white;
-  }
-
-  p {
-    text-align: justify;
-    margin-top: 0;
-  }
-
-  .subrow .col-md-6:nth-child(1) .panel {
-    background-color: #F76B78;
-  }
-
-  .subrow .col-md-6:nth-child(2) .panel {
-    background-color: #DC4353;
-  }
-
-  .subrow .col-md-6:nth-child(3) .panel {
-    background-color: #C41E2E;
-  }
-
-  .subrow .col-md-6:nth-child(4) .panel {
-    background-color: #9B0C1A;
-  }
-
-  .subrow .col-md-6:nth-child(1) .panel button {
-    background-color: #F76B78;
-    border-color: #F76B78;
-  }
-
-  .subrow .col-md-6:nth-child(2) .panel button {
-    background-color: #DC4353;
-    border-color: #DC4353;
-  }
-
-  .subrow .col-md-6:nth-child(3) .panel button {
-    background-color: #C41E2E;
-    border-color: #C41E2E;
-  }
-
-  .subrow .col-md-6:nth-child(4) .panel button {
-    background-color: #9B0C1A;
-    border-color: #9B0C1A;
-  }
-
-  .image-subs {
-    margin-left: 10px;
-  }
-
-  .plan-style {
-    font-size: 24pt
-  }
-
-  .plan-color {
-    color: white;
-  }
-
-  .newsletter {
-    font-size: 18pt;
-  }
-
-  .announce {
-    font-size: 20pt;
-  }
-
-  label {
-    width: 100%;
-    display: block;
-  }
-
-  .card-input-element {
-    display: none;
-  }
-
-  .card-input {
-    margin: 10px;
-    padding: 00px;
-  }
-
-  .card-input:hover {
-    cursor: pointer;
-  }
-
-  .card-input-element:checked+.card-input {
-    box-shadow: 0 0 1px 1px #dc4853;
-  }
-
-  .panel-heading {
-    background-color: #DC4353;
-  }
-
-  .panel-body {
-    border: 1px solid #a7a7b1;
-    border-top: none;
-  }
-
-  .simplebox,
-  .simplebutton {
-    outline: none;
-    border: 1px solid #ddd !important;
-    -webkit-box-shadow: none !important;
-    -moz-box-shadow: none !important;
-    box-shadow: none !important;
-    font-size: 12px;
-  }
-
-  .formHolder {
-    < !-- width: 300px;
-    -->margin: 0 auto;
-    < !-- background: rgba(255, 255, 255, 1);
-    -->< !-- -webkit-border-radius: 6px;
-    -->border-radius: 6px;
-    overflow: hidden;
-    < !-- padding: 30px;
-    -->< !-- box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.2);
-    -->
-  }
-
-  .formHolder h3 {
-    margin: 0 0 14px 0;
-    font-size: 19px;
-    font-weight: 600;
-  }
-
-  .wallet {
-    display: none;
-  }
-
-  .card .cardButton {
-    margin-right: 5px;
-  }
-
-  .wallet .cardButton {
-    margin-left: 5px;
-  }
-
-  .wallet {
-    display: none;
-  }
-
-  .overlay {
-    background: #ff1d1d;
-    display: none;
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 3000;
-    bottom: 0;
-    left: 0;
-    opacity: 0.5;
-  }
-
-  .center {
-    position: absolute;
-    width: 20%;
-    height: 20%;
-    top: 30%;
-    left: 42%;
-  }
-
-  .dot-1 {
-    position: absolute;
-    z-index: 3;
-    width: 30px;
-    height: 30px;
-    top: 95px;
-    left: 95px;
-    background: #fff;
-    border-radius: 50%;
-    -webkit-animation-fill-mode: both;
-    animation-fill-mode: both;
-    -webkit-animation: jump-jump-1 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-    animation: jump-jump-1 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-  }
-
-  .dot-2 {
-    position: absolute;
-    z-index: 2;
-    width: 60px;
-    height: 60px;
-    top: 80px;
-    left: 80px;
-    background: #fff;
-    border-radius: 50%;
-    -webkit-animation-fill-mode: both;
-    animation-fill-mode: both;
-    -webkit-animation: jump-jump-2 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-    animation: jump-jump-2 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-  }
-
-  .dot-3 {
-    position: absolute;
-    z-index: 1;
-    width: 90px;
-    height: 90px;
-    top: 65px;
-    left: 65px;
-    background: #fff;
-    border-radius: 50%;
-    -webkit-animation-fill-mode: both;
-    animation-fill-mode: both;
-    -webkit-animation: jump-jump-3 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-    animation: jump-jump-3 2s cubic-bezier(0.21, 0.98, 0.6, 0.99) infinite alternate;
-  }
-
-  @-webkit-keyframes jump-jump-1 {
-
-    0%,
-    70% {
-      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-      -webkit-transform: scale(0);
-      transform: scale(0);
-    }
-
-    100% {
-      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-      -webkit-transform: scale(1);
-      transform: scale(1);
-    }
-  }
-
-  @keyframes jump-jump-1 {
-
-    0%,
-    70% {
-      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-      -webkit-transform: scale(0);
-      transform: scale(0);
-    }
-
-    100% {
-      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-      -webkit-transform: scale(1);
-      transform: scale(1);
-    }
-  }
-
-  @-webkit-keyframes jump-jump-2 {
-
-    0%,
-    40% {
-      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-      -webkit-transform: scale(0);
-      transform: scale(0);
-    }
-
-    100% {
-      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-      -webkit-transform: scale(1);
-      transform: scale(1);
-    }
-  }
-
-  @keyframes jump-jump-2 {
-
-    0%,
-    40% {
-      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-      -webkit-transform: scale(0);
-      transform: scale(0);
-    }
-
-    100% {
-      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-      -webkit-transform: scale(1);
-      transform: scale(1);
-    }
-  }
-
-  @-webkit-keyframes jump-jump-3 {
-
-    0%,
-    10% {
-      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-      -webkit-transform: scale(0);
-      transform: scale(0);
-    }
-
-    100% {
-      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-      -webkit-transform: scale(1);
-      transform: scale(1);
-    }
-  }
-
-  @keyframes jump-jump-3 {
-
-    0%,
-    10% {
-      box-shadow: 2px 2px 3px 2px rgba(0, 0, 0, 0.2);
-      -webkit-transform: scale(0);
-      transform: scale(0);
-    }
-
-    100% {
-      box-shadow: 10px 10px 15px 0 rgba(0, 0, 0, 0.3);
-      -webkit-transform: scale(1);
-      transform: scale(1);
-    }
-  }
-    </style>
-{% endblock style %}
 {% block content %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/velocity/1.2.1/velocity.min.js"
             integrity="sha384-WT0CC+OrC0vGKpxNQInSyfMeKWFIpgiHtnV9HsqN0g6n9urfDfEUQJZFpT0t9P4U"
             crossorigin="anonymous"></script>
-    <div class="join-body">
-        <div id="svg_wrap"></div>
-        <form class="col-md-12" id="payment-form">
-            {% csrf_token %}
-            <h1>Create Organization</h1>
-            <section>
-                <p>Organization information</p>
-                <input type="text" name="organization" placeholder="Organization's Name" />
-                <input type="url" name="url" placeholder="Website" />
-                <input type="file" name="file" placeholder="Logo" />
-                <input type="email" name="email" placeholder="Email Address" />
-            </section>
-            <section id="subscription_id">
-                <p>Subscription</p>
-                <div class="row">
-                    <div class="col-md-4 col-lg-4 col-sm-4">
-                        <label>
-                            <input type="radio"
-                                   value="flea"
-                                   name="product"
-                                   class="card-input-element"
-                                   checked />
-                            <div class="panel panel-default card-input">
-                                <div class="panel-heading text-red-900">
-                                    <div class="row">
-                                        <div class="pull-left image-subs">
-                                            <img src="{% static 'img/flea.svg' %}" width="100" height="100" alt="flea">
-                                        </div>
-                                        <div class="col-xs-6 text-right pull-right plan-color">
-                                            <div class="huge">Flea</div>
-                                            <span class="plan-style">$9</span> / month
-                                        </div>
+    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h2 class="mt-6 text-3xl font-bold tracking-tight text-gray-900">Join Organization</h2>
+                <p class="mt-2 text-sm text-gray-600">Join an organization and collaborate with their team</p>
+            </div>
+            <!-- Join Form -->
+            <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+                <form class="space-y-6" method="post" action="{% url 'join' %}">
+                    {% csrf_token %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="rounded-md {% if message.tags == 'error' %}bg-red-50{% else %}bg-green-50{% endif %} p-4 mb-4">
+                                <div class="flex">
+                                    <div class="flex-shrink-0">
+                                        {% if message.tags == 'error' %}
+                                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                                        {% else %}
+                                            <i class="fas fa-check-circle text-green-400"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="text-sm {% if message.tags == 'error' %}text-red-700{% else %}text-green-700{% endif %}">{{ message }}</p>
                                     </div>
                                 </div>
-                                <div class="panel-body">
-                                <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                            {% trans "Featured on Homepage" %}</span>
-                            <span class="pull-right"></span>
-                        </div>
-                    </div>
-                </label>
-            </div>
-            <div class="col-md-4 col-lg-4 col-sm-4">
-                <label>
-                    <input type="radio" value="ant" name="product" class="card-input-element" />
-                    <div class="panel panel-default card-input">
-                        <div class="panel-heading text-red-900">
-                            <div class="row">
-                                <div class="pull-left image-subs">
-                                    <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="ant">
-                                </div>
-                                <div class="col-xs-6 text-right pull-right plan-color">
-                                    <div class="huge">Ant</div>
-                                    <span class="plan-style">$99</span> / month
-                                </div>
                             </div>
+                        {% endfor %}
+                    {% endif %}
+                    <div>
+                        <label for="organization" class="block text-sm font-medium text-gray-700">Organization Name</label>
+                        <div class="mt-1">
+                            <input type="text"
+                                   name="organization"
+                                   id="organization"
+                                   required
+                                   value="{{ organization_name }}"
+                                   class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
+                                   placeholder="Enter organization name">
                         </div>
-                        <div class="panel-body">
-                        <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-                    {% trans "Featured on Homepage" %}</span>
-                </br>
-                <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
-                </span>
-            </div>
-        </div>
-    </label>
-</div>
-<div class="col-md-4 col-lg-4 col-sm-4">
-    <label>
-        <input type="radio" value="wasp" name="product" class="card-input-element" />
-        <div class="panel panel-default card-input">
-            <div class="panel-heading text-red-900">
-                <div class="row">
-                    <div class="pull-left image-subs">
-                        <img src="{% static 'img/ant.svg' %}" width="100" height="100" alt="wasp">
                     </div>
-                    <div class="col-xs-6 text-right pull-right plan-color">
-                        <div class="huge">Wasp</div>
-                        <span class="plan-style">$499</span> / month
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Your Email</label>
+                        <div class="mt-1">
+                            <input type="email"
+                                   name="email"
+                                   id="email"
+                                   required
+                                   class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-[#e74c3c] focus:outline-none focus:ring-[#e74c3c] sm:text-sm"
+                                   placeholder="Enter your email">
+                        </div>
                     </div>
-                </div>
+                    <div>
+                        <button type="submit"
+                                class="flex w-full justify-center rounded-md border border-transparent bg-[#e74c3c] py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2 transition-colors duration-200">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            Join Organization
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="panel-body">
-            <span class="pull-left"><i class="fa fa-balance-scale fa-1x"></i>
-        {% trans "Featured on Homepage" %}</span>
-    </br>
-    <span class="pull-left newsletter"><i class="fa fa-bullhorn"></i> {% trans "Featured in Newsletter" %}
-    </span>
-    <span class="pull-left announce"><i class="fa fa-globe"></i> {% trans "Announced to Users" %}</span>
-</div>
-</div>
-</label>
-</div>
-</div>
-</section>
-<section class="p-8 max-w-[500px]">
-    {% if wallet.current_balance != 0 %}
-        <div class="formHolder wallet">
-            <h3>Wallet</h3>
-            Current Balance : {{ wallet.current_balance }}$
-            <div type="submit" class="btn btn-sm btn-link cardButton" id="showcard">Use Card</div>
-        </div>
-    {% endif %}
-    <div class="formHolder card">
-        <h3>Card</h3>
-        <!-- <script src="https://js.stripe.com/v3/"></script> -->
-        <div class="col-md-12" id="card-element-container">
-            <div>
-                <label for="card-element">Credit or debit card</label>
-                <div id="card-element"></div>
-                <!-- Used to display form errors. -->
-                <div id="card-errors" role="alert"></div>
+            <!-- Back Link -->
+            <div class="mt-6 text-center">
+                <a href="{% url 'organizations' %}"
+                   class="text-sm font-medium text-[#e74c3c] hover:text-red-700">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    Back to Organizations
+                </a>
             </div>
-            <button>Submit Payment</button>
         </div>
-        {% if wallet.current_balance != 0 %}
-            <div type="submit"
-                 class="btn btn-sm btn-link newAccButton"
-                 id="showwallet">Use Wallet</div>
-        {% endif %}
     </div>
-</section>
-<section>
-    <p>General condtitions</p>
-    <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore
-        magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est
-        laborum.
-    </p>
-</section>
-<div class="button" id="prev">← Previous</div>
-<div class="button" id="next">Next →</div>
-<button class="button" id="submit">Agree and send application</button>
-</form>
-</div>
 {% endblock content %}
 {% block after_js %}
     <script type="text/javascript">

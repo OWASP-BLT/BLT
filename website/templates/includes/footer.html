@@ -1,155 +1,91 @@
 {% load static %}
 {% load i18n %}
 {% load custom_tags %}
-<footer class="bg-black text-white pt-12 pb-8 px-12 bottom-0 relative fixed t-0 mt-5">
-    <div class="mx-auto px-4 !container overflow-hidden flex flex-col lg:flex-row justify-between">
-        <a href="{% url 'home' %}" class="block mr-4 w-1/2">
-            <img src="{% logo 'WHITE' %}"
-                 class="w-[200px] ml-4 lg:ml-0"
-                 alt="footer logo"
-                 width="200px"
-                 height="50px" />
-        </a>
-        <div class="w-2/3 block sm:flex text-2xl mt-6 lg:mt-0">
-            <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Community" %}</li>
-                <li>
-                    <a href="{% url 'contributors' %}"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Contributors" %}</a>
-                </li>
-            </ul>
-            <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Organization" %}</li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT/releases"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
-                       rel="noopener noreferrer">{% trans "Features" %}</a>
-                </li>
-                <li>
-                    <a href="{% url 'stats' %}"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Stats" %}</a>
-                </li>
-                <li>
-                    <a href="{% url 'scoreboard' %}"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Organization Scoreboard" %}</a>
-                </li>
-            </ul>
-            <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Legal" %}</li>
-                <li>
-                    <a href="{% url 'about' %}
-                    class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "About" %}</a>
-                </li>
-                <li>
-                    <a href="{% url 'privacy' %}"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Privacy" %}</a>
-                </li>
-                <li>
-                    <a href="{% url 'terms' %}"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline">{% trans "Terms of Service" %}</a>
-                </li>
-            </ul>
-            <ul class="text-gray-700 list-none p-0 font-thin flex flex-col text-left w-full">
-                <li class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Get Started" %}</li>
-                <li>
-                    <a href="https://{% env 'FQDN' %}/swagger/"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
-                       rel="noopener noreferrer">{% trans "Developer API" %}</a>
-                </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
-                       rel="noopener noreferrer">{% trans "Documentation" %}</a>
-                </li>
-                <li>
-                    <a href="https://github.com/OWASP/BLT#readme"
-                       class="inline-block py-2 px-3 text-gray-500 hover:text-white no-underline"
-                       rel="noopener noreferrer">{% trans "Guides" %}</a>
-                </li>
-            </ul>
-            <div class="text-gray-700 flex flex-col w-full">
-                <div class="inline-block py-2 px-3 text-white uppercase font-medium tracking-wide">{% trans "Follow Us" %}</div>
-                <div class="flex pl-4 justify-start mt-2">
-                    <a class="block flex items-center text-gray-300 hover:text-white mr-6 no-underline"
-                       href="{% env 'FACEBOOK_URL' %}"
-                       target="_new"
-                       rel="noopener noreferrer">
-                        <svg viewBox="0 0 24 24"
-                             class="fill-current w-10 h-10"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path d="M23.998 12c0-6.628-5.372-12-11.999-12C5.372 0 0 5.372 0 12c0 5.988 4.388 10.952 10.124 11.852v-8.384H7.078v-3.469h3.046V9.356c0-3.008 1.792-4.669 4.532-4.669 1.313 0 2.686.234 2.686.234v2.953H15.83c-1.49 0-1.955.925-1.955 1.874V12h3.328l-.532 3.469h-2.796v8.384c5.736-.9 10.124-5.864 10.124-11.853z" />
-                        </svg>
-                    </a>
-                    <a class="block flex items-center text-gray-300 hover:text-white mr-6 no-underline"
-                       href="{% env 'TWITTER_URL' %}"
-                       target="_new"
-                       rel="noopener noreferrer">
-                        <svg viewBox="0 0 24 24"
-                             class="fill-current w-10 h-10"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                    </a>
-                    <a class="block flex items-center text-gray-300 hover:text-white no-underline"
-                       href="{% env 'GITHUB_URL' %}"
-                       target="_new"
-                       rel="noopener noreferrer">
-                        <svg viewBox="0 0 24 24"
-                             class="fill-current w-10 h-10"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-                        </svg>
-                    </a>
-                    <a class="w-10 h-10 block flex ml-5 rounded-[50px] p-[3px] items-center bg-gray-300 hover:bg-white no-underline"
-                       href="{% env 'BLOG_URL' %}"
-                       target="_new"
-                       rel="noopener noreferrer">
-                        <img src="{% static 'img/blog.svg' %}"
-                             alt="steemit"
-                             width="24"
-                             height="24" />
-                    </a>
-                </div>
-            </div>
+<!-- Main Footer Component -->
+<footer class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 h-[80px] z-50">
+    <div class="max-w-screen-2xl mx-auto h-full flex items-center justify-between px-8">
+        <!-- Left Section - Common Links -->
+        <div class="flex items-center space-x-10">
+            <a href="{% url 'domains' %}"
+               class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
+                <i class="fas fa-sitemap text-2xl"></i>
+                <span>Organizations</span>
+            </a>
+            <a href="{% url 'project_list' %}"
+               class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
+                <i class="fas fa-box text-2xl"></i>
+                <span>Projects</span>
+            </a>
+            <a href="{% url 'contributors' %}"
+               class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
+                <i class="fas fa-users text-2xl"></i>
+                <span>Contributors</span>
+            </a>
         </div>
-    </div>
-    <div class="pt-4 mt-4 pt-6 text-gray-600 border-t border-gray-800 text-center flex w-full justify-center flex-wrap">
-        <p>
-            {% trans "Powered by" %}
-            <a class="text-[#327BB7]"
-               href="https://owasp.org/www-project-bug-logging-tool/"
-               rel="noopener noreferrer">OWASP Bug Logging Tool</a>
-        </p>
-        <form id="footerForm"
-              class="flex items-center ml-4"
-              action="{% url 'set_language' %}"
-              method="post">
-            {% csrf_token %}
-            <input name="next" type="hidden" value="{{ redirect_to }}" />
-            <input name="language" id="footerLanguage" type="hidden" value="" />
-            <li class="dropup list-none mr-16">
-                {% get_current_language as LANGUAGE_CODE %}
-                {% get_available_languages as LANGUAGES %}
-                <a class="dropdown-toggle flex gap-1" data-toggle="dropdown" href="#">
-                    <div class="flag-{{ LANGUAGE_CODE }} w-8 rounded h-6"></div>
-                    <i class="fa fa-caret-down"></i>
+        <!-- Center Section - Version & Links -->
+        <div class="flex items-center space-x-8">
+            <span class="text-lg font-medium text-gray-600 dark:text-gray-300">v2.0</span>
+            <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            {% get_current_template as current_template %}
+            <!-- End debug output -->
+            {% if current_template %}
+                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
+                   target="_blank"
+                   rel="noopener"
+                   class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
+                    <i class="fas fa-edit text-2xl"></i>
+                    <span>Edit</span>
                 </a>
-                <ul class="bg-gray-900 dropdown-menu">
+            {% endif %}
+            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
+               target="_blank"
+               rel="noopener"
+               class="text-gray-700 dark:text-gray-200 hover:text-blue-500 flex items-center gap-3 text-xl font-medium transition-colors">
+                <i class="fab fa-figma text-2xl"></i>
+                <span>Design</span>
+            </a>
+        </div>
+        <!-- Right Section - Social Links & Language -->
+        <div class="flex items-center space-x-8">
+            <div class="flex items-center space-x-6">
+                <a href="https://twitter.com/OWASP_BLT"
+                   target="_blank"
+                   rel="noopener"
+                   class="text-gray-700 dark:text-gray-200 hover:text-blue-400 flex flex-col items-center gap-1 transition-colors">
+                    <i class="fab fa-twitter text-2xl"></i>
+                    <span class="text-base font-medium">Twitter</span>
+                </a>
+                <a href="https://www.facebook.com/groups/owaspfoundation/"
+                   target="_blank"
+                   rel="noopener"
+                   class="text-gray-700 dark:text-gray-200 hover:text-blue-600 flex flex-col items-center gap-1 transition-colors">
+                    <i class="fab fa-facebook text-2xl"></i>
+                    <span class="text-base font-medium">Facebook</span>
+                </a>
+                <a href="https://owasp.org/slack/invite"
+                   target="_blank"
+                   rel="noopener"
+                   class="text-gray-700 dark:text-gray-200 hover:text-purple-500 flex flex-col items-center gap-1 transition-colors">
+                    <i class="fab fa-slack text-2xl"></i>
+                    <span class="text-base font-medium">Slack</span>
+                </a>
+            </div>
+            <div class="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <form action="{% url 'set_language' %}"
+                  method="post"
+                  class="flex items-center">
+                {% csrf_token %}
+                <select name="language"
+                        onchange="this.form.submit()"
+                        class="bg-transparent border border-gray-300 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    {% get_current_language as LANGUAGE_CODE %}
+                    {% get_available_languages as LANGUAGES %}
                     {% for lang_code, lang_name in LANGUAGES %}
-                        {% if lang_code != LANGUAGE_CODE %}
-                            <li>
-                                <a onclick='{ $("#footerLanguage").val("{{ lang_code }}"); $("#footerForm").submit();}'
-                                   class="hover-black-text">
-                                    <div class="flex items-center gap-2 hover:text-black">
-                                        <div class="flag-{{ lang_code }} w-8 rounded h-6"></div>
-                                        <div class="lang_name text-gray-500 l-3">{{ lang_name }}</div>
-                                    </div>
-                                </a>
-                            </li>
-                        {% endif %}
+                        <option value="{{ lang_code }}"
+                                {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>{{ lang_name }}</option>
                     {% endfor %}
-                </ul>
-            </li>
-        </form>
+                </select>
+            </form>
+        </div>
     </div>
 </footer>

@@ -192,9 +192,13 @@
     </button>
 {% endif %}
 {% if request.user.is_superuser or request.user == object.user %}
-    <a href="{% url 'delete_issue' id=object.id %}"
-       onclick="return confirm('Are you sure you want to delete this issue?')"
-       class="rounded-2xl text-[1.1rem] border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2 p-4 hover:!text-[#3e3446]"> Delete &nbsp;<i class="fa-solid fa-trash text-xl text-black"></i></a>
+    <button onclick="deleteIssue({{ object.id }})"
+            class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4">
+        <div class="flex flex-row gap-2 items-center">
+            <span class="max-sm:text-[12px]">Delete</span>
+            <i class="fa-solid fa-trash text-[13px]"></i>
+        </div>
+    </button>
 {% endif %}
 {% if request.user.is_superuser or request.user == object.user %}
     <button type="button"
@@ -207,3 +211,33 @@
         {% endif %}
     </button>
 {% endif %}
+<script>
+function deleteIssue(issueId) {
+    if (!confirm('Are you sure you want to delete this issue?')) {
+        return;
+    }
+    
+    fetch(`/delete_issue/${issueId}/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.href = '/';
+        } else {
+            throw new Error('Delete failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        $.notify("Failed to delete issue", {
+            style: "custom",
+            className: "danger"
+        });
+    });
+}
+</script>

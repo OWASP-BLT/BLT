@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load static %}
-{% load static %}
 {% load custom_tags %}
 {% block title %}
     {% env 'PROJECT_NAME' %} Tomato - OWASP {% env 'PROJECT_NAME' %} Project
@@ -18,51 +17,59 @@
     Support the OWASP {% env 'PROJECT_NAME' %} Tomato project and other OWASP projects by donating through funding.yml. Help fund open-source initiatives.
 {% endblock og_description %}
 {% block content %}
-    {% include "includes/sidenav.html" %}
-    <div class="min-h-screen flex flex-col mx-4 mt-5">
-        <h2 class="text-4xl font-semibold my-8 p-5 text-white rounded-md bg-[#d9534f]">
-            {% env 'PROJECT_NAME' %} Tomato - This is an OWASP {% env 'PROJECT_NAME' %} project created to help other OWASP projects.
-        </h2>
-        {% if projects %}
-            <p class="text-xl font-semibold mt-5">The following OWASP projects are seeking funding and have a funding.yml file:</p>
-            <ul class="text-2xl">
-                {% for project in projects %}
-                    <li type="1" class=" my-2 py-2 px-4 shadow">
-                        <a href="{{ item.repo_url }}"
-                           class="text-primary underline inline-block">{{ project.project_name }}</a>
-                        <button class="bg-[#d9534f] ml-4 inline-block py-1 px-2 rounded text-white">
-                            <a href="{{ project.funding_hyperlinks }}" target="_blank">
-                                <span class="text-white">Donate</span>
-                            </a>
-                        </button>
-                        <span class="ml-4">{{ project.funding_details }}</span>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    <div class="min-h-screen bg-white">
+        <!-- Sidebar -->
+        <div class="fixed left-0 top-0 h-full lg:w-64 z-30">{% include "includes/sidenav.html" %}</div>
+        <!-- Main Content -->
+        <div class="lg:ml-64">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <!-- Header Section -->
+                {% if projects %}
+                    <div class="bg-white rounded-xl shadow-sm p-8 w-[80%] mx-auto">
+                        <h2 class="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <i class="fas fa-hand-holding-usd text-[#e74c3c]"></i>
+                            Projects Seeking Funding
+                        </h2>
+                        <p class="text-gray-600 mb-8">
+                            The following OWASP projects have active funding.yml files and are looking for community support:
+                        </p>
+                        <div class="space-y-4">
+                            {% for project in projects %}
+                                <div class="border-2 border-gray-100 rounded-lg p-6 hover:border-[#e74c3c] transition-colors duration-200">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div class="flex-1">
+                                            <h3 class="text-xl font-semibold mb-2">
+                                                <a href="{{ project.repo_url }}"
+                                                   class="text-gray-900 hover:text-[#e74c3c] flex items-center gap-2"
+                                                   target="_blank">
+                                                    <i class="fab fa-github"></i>
+                                                    {{ project.project_name }}
+                                                </a>
+                                            </h3>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <a href="{{ project.funding_hyperlinks }}"
+                                               target="_blank"
+                                               class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] font-medium transition-all duration-200">
+                                                <i class="fas fa-heart"></i>
+                                                Support Project
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="bg-white rounded-xl shadow-sm p-8 text-center w-[80%] mx-auto">
+                        <div class="mx-auto w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+                            <i class="fas fa-folder-open text-4xl text-gray-400"></i>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">No Projects Found</h3>
+                        <p class="text-gray-500">Currently, there are no OWASP projects with funding.yml files.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 {% endblock content %}
-<style>
-    .min-h-screen {
-        min-height: 100vh;
-    }
-    .shadow {
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-    }
-    .link-button {
-        background-color: #d9534f;
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.25rem;
-        text-decoration: none;
-    }
-
-    .link-button:hover {
-        background-color: #c9302c; 
-    }
-
-    .link-button:visited {
-        color: white;
-    }
-
-</style>

@@ -4,6 +4,8 @@ import uuid
 from datetime import datetime
 from urllib.parse import urlparse
 
+import requests
+from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -34,6 +36,7 @@ from website.models import (
     Organization,
     Points,
     Project,
+    Repo,
     Tag,
     TimeLog,
     Token,
@@ -49,6 +52,7 @@ from website.serializers import (
     IssueSerializer,
     OrganizationSerializer,
     ProjectSerializer,
+    RepoSerializer,
     TagSerializer,
     TimeLogSerializer,
     UserProfileSerializer,
@@ -280,7 +284,7 @@ class LikeIssueApiView(APIView):
 
             if liked_user:
                 msg_plain = render_to_string(
-                    "email/issue_liked.txt",
+                    "email/issue_liked.html",
                     {
                         "liker_user": liker_user.username,
                         "liked_user": liked_user.username,
@@ -288,7 +292,7 @@ class LikeIssueApiView(APIView):
                     },
                 )
                 msg_html = render_to_string(
-                    "email/issue_liked.txt",
+                    "email/issue_liked.html",
                     {
                         "liker_user": liker_user.username,
                         "liked_user": liked_user.username,
@@ -631,7 +635,7 @@ class InviteFriendApiViewset(APIView):
             # Prepare email content
             subject = f"Join me on {current_site.name}!"
             message = render_to_string(
-                "email/invite_friend.txt",
+                "email/invite_friend.html",
                 {
                     "sender": request.user.username,
                     "referral_link": referral_link,
@@ -678,6 +682,19 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ("id", "name")
     http_method_names = ("get", "post", "put")
+
+    @action(detail=True, methods=["get"])
+    def repositories(self, request, pk=None):
+        """
+        Get all repositories for an organization.
+        """
+        try:
+            organization = self.get_object()
+            repos = Repo.objects.filter(organization=organization)
+            serializer = RepoSerializer(repos, many=True, context={"request": request})
+            return Response(serializer.data)
+        except Organization.DoesNotExist:
+            return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ContributorViewSet(viewsets.ModelViewSet):
@@ -908,3 +925,109 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+class OwaspComplianceChecker(APIView):
+    """
+    API endpoint to check OWASP project compliance criteria for a given URL
+    """
+
+    permission_classes = [AllowAny]
+
+    def check_github_compliance(self, url):
+        """Check GitHub-related compliance criteria"""
+        try:
+            parsed_url = urlparse(url)
+            is_github = parsed_url.netloc == "github.com"
+            is_owasp_org = parsed_url.path.startswith("/OWASP/")
+
+            return {
+                "github_hosted": is_github,
+                "under_owasp_org": is_owasp_org,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+        except Exception:
+            return {
+                "github_hosted": False,
+                "under_owasp_org": False,
+                "details": {"url_checked": url, "error": "Unable to parse GitHub URL"},
+            }
+
+    def check_website_compliance(self, url):
+        """Check website-related compliance criteria"""
+        try:
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Check for OWASP mention
+            content = soup.get_text().lower()
+            has_owasp_mention = "owasp" in content
+
+            # Check for project page link
+            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            has_project_link = len(owasp_links) > 0
+
+            # Check for up-to-date info
+            has_dates = bool(soup.find_all(["time", "date"]))
+
+            return {
+                "has_owasp_mention": has_owasp_mention,
+                "has_project_link": has_project_link,
+                "has_dates": has_dates,
+                "details": {"url_checked": url, "recommendations": []},
+            }
+        except Exception as e:
+            return {
+                "has_owasp_mention": False,
+                "has_project_link": False,
+                "has_dates": False,
+                "details": {"url_checked": url, "error": str(e)},
+            }
+
+    def check_vendor_neutrality(self, url):
+        """Check vendor neutrality compliance"""
+        try:
+            response = requests.get(url, timeout=10)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            # Look for common paywall terms
+            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
+            content = soup.get_text().lower()
+            has_paywall_indicators = any(term in content for term in paywall_terms)
+
+            return {"possible_paywall": has_paywall_indicators, "details": {"url_checked": url, "recommendations": []}}
+        except Exception:
+            return {
+                "possible_paywall": None,
+                "details": {"url_checked": url, "error": "Unable to check vendor neutrality"},
+            }
+
+    def post(self, request, *args, **kwargs):
+        url = request.data.get("url")
+        if not url:
+            return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Run all compliance checks
+        github_check = self.check_github_compliance(url)
+        website_check = self.check_website_compliance(url)
+        vendor_check = self.check_vendor_neutrality(url)
+
+        # Compile recommendations
+        recommendations = []
+        if not github_check["under_owasp_org"]:
+            recommendations.append("Project should be hosted under the OWASP GitHub organization")
+        if not website_check["has_owasp_mention"]:
+            recommendations.append("Website should clearly state it is an OWASP project")
+        if not website_check["has_project_link"]:
+            recommendations.append("Website should link to the OWASP project page")
+        if vendor_check["possible_paywall"]:
+            recommendations.append("Check if the project has features behind a paywall")
+
+        report = {
+            "url": url,
+            "compliance_status": {"github": github_check, "website": website_check, "vendor_neutrality": vendor_check},
+            "recommendations": recommendations,
+            "overall_status": "needs_improvement" if recommendations else "compliant",
+        }
+
+        return Response(report, status=status.HTTP_200_OK)

@@ -3,13 +3,16 @@ import json
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db import IntegrityError
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 
 # Create your views here.
 from django.views.generic import TemplateView
 
-from website.models import Challenge, JoinRequest, Organization
+from website.models import Challenge, JoinRequest, Kudos, Organization
 
 
 class TeamOverview(TemplateView):
@@ -19,9 +22,21 @@ class TeamOverview(TemplateView):
         context = super().get_context_data(**kwargs)
         if self.request.user.is_authenticated:
             user_profile = self.request.user.userprofile
+            team_members = []
+            team_kudos = []
             if user_profile.team:
-                team_members = user_profile.team.managers.all()
-                context["team_members"] = team_members
+                user_profile.team.managers.add(user_profile.team.admin)
+                team_members = user_profile.team.managers.annotate(kudos_count=Count("kudos_received"))
+                team_kudos = Kudos.objects.filter(receiver__in=team_members).order_by("-timestamp")
+
+            received_kudos = self.request.user.kudos_received.all()
+            context.update(
+                {
+                    "team_members": team_members,
+                    "received_kudos": received_kudos,
+                    "team_kudos": team_kudos,
+                }
+            )
         return context
 
 
@@ -33,10 +48,6 @@ def search_users(request):
         users_list = [{"username": user["username"], "team": user["userprofile__team__name"]} for user in users]
         return JsonResponse(users_list, safe=False)
     return JsonResponse([], safe=False)
-
-
-from django.db import IntegrityError
-from django.http import JsonResponse
 
 
 @login_required
@@ -57,6 +68,7 @@ def create_team(request):
 
             # Create the team
             team = Organization.objects.create(name=team_name, type="team", admin=request.user, url=team_url)
+            team.managers.add(request.user)
             if team_avatar:
                 team.logo = team_avatar
                 team.save()  # Save the logo if provided
@@ -82,7 +94,7 @@ def create_team(request):
         except Exception as e:
             messages.error(request, f"An error occurred: {str(e)}")
 
-    return render(request, "create_team.html")
+    return render(request, "team_overview.html")
 
 
 @login_required
@@ -209,6 +221,30 @@ def kick_member(request):
     return JsonResponse({"success": False, "error": "Invalid request method"})
 
 
+@login_required
+def give_kudos(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            receiver_username = data.get("kudosReceiver")
+            link_url = data.get("link")
+            comment_text = data.get("comment", "")
+        except json.JSONDecodeError:
+            return JsonResponse({"success": False, "error": "Invalid request data"})
+
+        if receiver_username:
+            try:
+                receiver = User.objects.get(username=receiver_username)
+                Kudos.objects.create(sender=request.user, receiver=receiver, link=link_url, comment=comment_text)
+                return JsonResponse({"success": True, "message": "Kudos sent successfully!"})
+            except User.DoesNotExist:
+                return JsonResponse({"success": False, "error": "User does not exist"})
+
+        return JsonResponse({"success": False, "error": "Missing receiver or message"})
+
+    return JsonResponse({"success": False, "error": "Invalid request method"})
+
+
 class TeamChallenges(TemplateView):
     """View for displaying all team challenges and their progress."""
 
@@ -216,40 +252,78 @@ class TeamChallenges(TemplateView):
         # Get all team challenges
         team_challenges = Challenge.objects.filter(challenge_type="team")
         if request.user.is_authenticated:
-            user_profile = request.user.userprofile  # Get the user's profile
+            user_profile = request.user.userprofile
 
             # Check if the user belongs to a team
             if user_profile.team:
-                user_team = user_profile.team  # Get the user's team
+                user_team = user_profile.team
 
                 for challenge in team_challenges:
                     # Check if the team is a participant in this challenge
                     if user_team in challenge.team_participants.all():
-                        # Progress is already stored in the Challenge model
                         challenge.progress = challenge.progress
                     else:
-                        # Team is not a participant, set progress to 0
                         challenge.progress = 0
+
+                    # Calculate the progress circle offset
+                    circumference = 125.6
+                    challenge.stroke_dasharray = circumference
+                    challenge.stroke_dashoffset = circumference - (circumference * challenge.progress / 100)
             else:
-                # If the user is not part of a team, set progress to 0 for all challenges
                 for challenge in team_challenges:
                     challenge.progress = 0
+                    challenge.stroke_dasharray = 125.6
+                    challenge.stroke_dashoffset = 125.6
 
-        # Render the team challenges template
         return render(request, "team_challenges.html", {"team_challenges": team_challenges})
 
 
 class TeamLeaderboard(TemplateView):
-    """View to display the team leaderboard based on total points."""
+    """View to display the team leaderboard based on total points with pagination."""
 
     def get(self, request):
+        # Get all teams and their points
         teams = Organization.objects.all()
-        leaderboard = []
+        leaderboard_data = []
+
         for team in teams:
             team_points = team.team_points
-            leaderboard.append((team, team_points))
+            leaderboard_data.append((team, team_points))
 
         # Sort by points in descending order
-        leaderboard.sort(key=lambda x: x[1], reverse=True)
+        leaderboard_data.sort(key=lambda x: x[1], reverse=True)
 
-        return render(request, "team_leaderboard.html", {"leaderboard": leaderboard})
+        # Create a paginator object with 20 items per page
+        paginator = Paginator(leaderboard_data, 20)
+
+        # Get the page number from the request
+        page = request.GET.get("page", 1)
+
+        try:
+            # Get the Page object for the requested page
+            leaderboard = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page
+            leaderboard = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range, deliver last page of results
+            leaderboard = paginator.page(paginator.num_pages)
+
+        # Add rank information based on overall position
+        for index, (team, points) in enumerate(leaderboard, start=(leaderboard.number - 1) * 20 + 1):
+            if points >= 1000:
+                team.rank = "PLATINUM"
+            elif points >= 500:
+                team.rank = "GOLD"
+            elif points >= 250:
+                team.rank = "SILVER"
+            elif points >= 100:
+                team.rank = "BRONZE"
+            else:
+                team.rank = "UNRATED"
+
+        context = {
+            "leaderboard": leaderboard,
+        }
+
+        return render(request, "team_leaderboard.html", context)

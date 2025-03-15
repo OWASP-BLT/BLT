@@ -17,111 +17,28 @@
     Dive into a variety of blog posts on {% env 'PROJECT_NAME' %}. From insightful articles to engaging stories, there's something for everyone!
 {% endblock og_description %}
 {% block content %}
-    <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 20px;
-    }
-
-    .blog-title {
-        font-size: 2.5em;
-        color: #333;
-        text-align: center;
-        margin-bottom: 20px;
-    }
-
-    .post-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 15px;
-        padding: 0;
-        list-style-type: none;
-        justify-items: center;
-    }
-
-    .post-item {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        background-color: #ffffff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        text-align: center;
-        transition: transform 0.2s ease;
-    }
-
-    .post-item:hover {
-        transform: scale(1.05);
-    }
-
-    .post-link {
-        text-decoration: none;
-        color: #007bff;
-        font-weight: bold;
-    }
-
-    .post-link:hover {
-        text-decoration: underline;
-    }
-
-    .no-posts-message {
-        text-align: center;
-        color: #666;
-    }
-
-    .blog_image {
-        width: 200px;
-        height: 200px;
-        border-radius: 5px;
-        margin-bottom: 10px;
-    }
-
-    a.floating-new-blog-button {
-        position: fixed;
-        bottom: 50px;
-        left: 220px;
-        padding: 10px 15px;
-        background-color: #C51919; 
-        color: #fff;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        display: inline-flex;
-        align-items: center;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        transition: transform 0.3s ease;
-        z-index: 1000;
-    }
-    a.floating-new-blog-button:hover {
-        transform: scale(1.1); 
-        color:red;
-    }
-    a.floating-new-blog-button i {
-        margin-right: 6px;
-    }
-    </style>
     {% include "includes/sidenav.html" %}
-    <h1 class="blog-title">Blog Posts</h1>
-    <ul class="post-list">
+    <h1 class="text-3xl text-gray-800 text-center mb-5">Blog Posts</h1>
+    <ul class="grid gap-4 p-8 list-none justify-items-center grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
         {% for post in posts %}
             <a href="{% url 'post_detail' slug=post.slug %}">
-                <div class="post-item">
-                    <p class="post-link">{{ post.title }} by {{ post.author }}</p>
+                <div class="p-3 border border-gray-300 rounded bg-white shadow-lg text-center transition-transform duration-200 ease-in-out hover:scale-105">
+                    <p class="text-blue-500 font-bold">{{ post.title }} by {{ post.author }}</p>
                     {% if post.image %}
-                        <img height="200"
-                             width="200"
-                             src="{{ post.image.url }}"
+                        <img src="{{ post.image.url }}"
                              alt="{{ post.title }}"
-                             class="blog_image">
+                             width="208"
+                             height="208"
+                             class="w-52 h-52 rounded mb-2">
                     {% endif %}
                 </div>
             </a>
         {% empty %}
-            <p class="no-posts-message">No posts available.</p>
+            <p class="text-center text-gray-500">No posts available.</p>
         {% endfor %}
     </ul>
-    <a href="{% url 'post_create' %}" class="floating-new-blog-button">
-        <i class="fas fa-plus"></i> New Blog
+    <a href="{% url 'post_form' %}"
+       class="fixed bottom-12 left-52 px-4 py-2 bg-red-600 text-white rounded font-bold inline-flex items-center shadow-lg transition-transform duration-300 ease-in-out hover:scale-110 hover:text-red-600 z-50">
+        <i class="fas fa-plus mr-2"></i> New Blog
     </a>
 {% endblock content %}

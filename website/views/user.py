@@ -1,8 +1,8 @@
 import json
+import logging
 import os
 from datetime import datetime, timezone
 
-import requests
 from allauth.account.signals import user_signed_up
 from django.conf import settings
 from django.contrib import messages
@@ -19,8 +19,10 @@ from django.http import Http404, HttpResponse, HttpResponseNotFound, JsonRespons
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -32,6 +34,7 @@ from website.models import (
     IP,
     Badge,
     Challenge,
+    Contributor,
     Domain,
     GitHubIssue,
     Hunt,
@@ -39,14 +42,17 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Points,
     Tag,
+    Thread,
     User,
     UserBadge,
     UserProfile,
     Wallet,
 )
-from website.utils import is_valid_https_url, rebuild_safe_url
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(user_signed_up)
@@ -89,8 +95,8 @@ def update_bch_address(request):
     else:
         messages.error(request, "Invalid request method.")
 
-    username = request.user.username if request.user.username else "default_username"
-    return redirect(reverse("profile", args=[username]))
+        username = request.user.username if request.user.username else "default_username"
+        return redirect(reverse("profile", args=[username]))
 
 
 @login_required
@@ -107,13 +113,20 @@ def profile_edit(request):
                 form.add_error("email", "This email is already in use")
                 return render(request, "profile_edit.html", {"form": form})
 
+            # Save the form
             form.save()
+
+            # Update the User model's email
+            request.user.email = new_email
+            request.user.save()
+
             messages.success(request, "Profile updated successfully!")
             return redirect("profile", slug=request.user.username)
         else:
             messages.error(request, "Please correct the errors below.")
     else:
-        form = UserProfileForm(instance=user_profile)
+        # Initialize the form with the user's current email
+        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
 
     return render(request, "profile_edit.html", {"form": form})
 
@@ -168,17 +181,7 @@ class InviteCreate(TemplateView):
         domain = None
         if email:
             domain = email.split("@")[-1]
-            try:
-                full_url_domain = "https://" + domain + "/favicon.ico"
-                if is_valid_https_url(full_url_domain):
-                    safe_url = rebuild_safe_url(full_url_domain)
-                    response = requests.get(safe_url, timeout=5)
-                    if response.status_code == 200:
-                        exists = "exists"
-            except:
-                pass
         context = {
-            "exists": exists,
             "domain": domain,
             "email": email,
         }
@@ -188,10 +191,19 @@ class InviteCreate(TemplateView):
 def get_github_stats(user_profile):
     # Get all PRs with repo info
     user_prs = (
-        GitHubIssue.objects.filter(user_profile=user_profile, type="pull_request")
+        GitHubIssue.objects.filter(
+            Q(user_profile=user_profile) | Q(reviews__reviewer=user_profile), type="pull_request"
+        )
         .select_related("repo")
+        .distinct()
         .order_by("-created_at")
     )
+
+    # Calculate reviewed PRs
+    reviewed_count = GitHubIssue.objects.filter(
+        reviews__reviewer=user_profile,
+    ).count()
+
     print(f"Total PRs found: {user_prs.count()}")
 
     # Overall stats
@@ -209,30 +221,52 @@ def get_github_stats(user_profile):
         repo_id = pr.repo.id if pr.repo else None
         repo_url = pr.repo.repo_url if pr.repo else None
 
-        if repo_name not in repos_with_prs:
-            repos_with_prs[repo_name] = {
+        repos_with_prs.setdefault(
+            repo_name,
+            {
                 "repo_name": repo_name,
                 "repo_id": repo_id,
                 "repo_url": repo_url,
                 "pull_requests": [],
-                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0},
-            }
+                "stats": {"merged_count": 0, "open_count": 0, "closed_count": 0, "reviewed_count": 0},
+            },
+        )
 
         repos_with_prs[repo_name]["pull_requests"].append(pr)
 
-        if pr.is_merged:
-            repos_with_prs[repo_name]["stats"]["merged_count"] += 1
-        elif pr.state == "open":
-            repos_with_prs[repo_name]["stats"]["open_count"] += 1
-        elif pr.state == "closed" and not pr.is_merged:
-            repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+        # Track authored vs reviewed contributions
+        if pr.user_profile == user_profile:
+            if pr.is_merged:
+                repos_with_prs[repo_name]["stats"]["merged_count"] += 1
+            elif pr.state == "open":
+                repos_with_prs[repo_name]["stats"]["open_count"] += 1
+            elif pr.state == "closed" and not pr.is_merged:
+                repos_with_prs[repo_name]["stats"]["closed_count"] += 1
+        elif pr.reviews.filter(reviewer=user_profile).exists():
+            repos_with_prs[repo_name]["stats"]["reviewed_count"] += 1
+
+    # Get review ranking
+    all_reviewers = (
+        UserProfile.objects.annotate(review_count=Count("reviews_made"))
+        .filter(review_count__gt=0)
+        .order_by("-review_count")
+    )
+
+    review_rank = None
+    total_reviewers = all_reviewers.count()
+    for i, reviewer in enumerate(all_reviewers, 1):
+        if reviewer.id == user_profile.id:
+            review_rank = f"#{i} out of {total_reviewers}"
+            break
 
     return {
         "overall_stats": {
             "merged_count": merged_count,
             "open_count": open_count,
             "closed_count": closed_count,
+            "reviewed_count": reviewed_count,
             "user_rank": f"#{user_profile.contribution_rank} out of {contributor_count}",
+            "review_rank": review_rank,
         },
         "repos_with_prs": repos_with_prs,
     }
@@ -280,7 +314,7 @@ class UserProfileDetailView(DetailView):
         context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
-        user_points = Points.objects.filter(user=self.object)
+        user_points = Points.objects.filter(user=self.object).order_by("id")
         context["user_points"] = user_points
         context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
         context["websites"] = (
@@ -338,6 +372,7 @@ class UserProfileDetailView(DetailView):
                 "repos_with_prs": stats["repos_with_prs"],
             }
         )
+
         return context
 
     @method_decorator(login_required)
@@ -475,7 +510,8 @@ class LeaderboardBase:
 
 class GlobalLeaderboardView(LeaderboardBase, ListView):
     """
-    Returns: All users:score data in descending order
+    Returns: All users:score data in descending order,
+    including pull requests, code reviews, top visitors, and top streakers
     """
 
     model = User
@@ -489,20 +525,43 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard()
 
-        # Get pull request leaderboard
+        context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
+
+        # Pull Request Leaderboard
         pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request", is_merged=True)
             .values(
                 "user_profile__user__username",
-                "user_profile__user__email",  # For gravatar fallback
-                "user_profile__github_url",  # Using github_url instead of avatar
+                "user_profile__user__email",
+                "user_profile__github_url",
             )
             .annotate(total_prs=Count("id"))
             .order_by("-total_prs")[:10]
         )
         context["pr_leaderboard"] = pr_leaderboard
+
+        # Reviewed PR Leaderboard
+        reviewed_pr_leaderboard = (
+            GitHubIssue.objects.filter(type="pull_request")
+            .values(
+                "reviews__reviewer__user__username",
+                "reviews__reviewer__user__email",
+                "user_profile__github_url",
+            )
+            .annotate(total_reviews=Count("id"))
+            .order_by("-total_reviews")[:10]
+        )
+        context["code_review_leaderboard"] = reviewed_pr_leaderboard
+
+        # Top visitors leaderboard
+        top_visitors = (
+            UserProfile.objects.select_related("user")
+            .filter(daily_visit_count__gt=0)
+            .order_by("-daily_visit_count")[:10]
+        )
+
+        context["top_visitors"] = top_visitors
 
         return context
 
@@ -599,7 +658,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
         token = Token.objects.get(key=response.data["token"])
-        return Response({"token": token.key, "id": token.user_id})
+        return Response({"key": token.key, "id": token.user_id})
 
 
 def invite_friend(request):
@@ -655,12 +714,31 @@ def contributors_view(request, *args, **kwargs):
 def users_view(request, *args, **kwargs):
     context = {}
 
+    # Get total count of users with GitHub profiles
+    context["users_with_github_count"] = (
+        UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
+    )
+
+    # Get contributors from database
+    context["contributors"] = Contributor.objects.all().order_by("-contributions")
+    context["contributors_count"] = context["contributors"].count()
+
     context["tags_with_counts"] = (
         Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
     )
 
     tag_name = request.GET.get("tag")
-    if tag_name:
+    show_githubbers = request.GET.get("githubbers") == "true"
+    show_contributors = request.GET.get("contributors") == "true"
+
+    if show_contributors:
+        context["show_contributors"] = True
+        context["users"] = []
+    elif show_githubbers:
+        context["githubbers"] = True
+        context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
+        context["user_count"] = context["users"].count()
+    elif tag_name:
         if context["tags_with_counts"].filter(name=tag_name).exists():
             context["tag"] = tag_name
             context["users"] = UserProfile.objects.filter(tags__name=tag_name)
@@ -722,26 +800,29 @@ def get_score(request):
 @login_required(login_url="/accounts/login")
 def follow_user(request, user):
     if request.method == "GET":
-        userx = User.objects.get(username=user)
-        flag = 0
-        list_userfrof = request.user.userprofile.follows.all()
-        for prof in list_userfrof:
-            if str(prof) == (userx.email):
-                request.user.userprofile.follows.remove(userx.userprofile)
-                flag = 1
-        if flag != 1:
-            request.user.userprofile.follows.add(userx.userprofile)
-            msg_plain = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
-            msg_html = render_to_string("email/follow_user.txt", {"follower": request.user, "followed": userx})
+        try:
+            userx = User.objects.get(username=user)
+            flag = 0
+            list_userfrof = request.user.userprofile.follows.all()
+            for prof in list_userfrof:
+                if str(prof) == (userx.email):
+                    request.user.userprofile.follows.remove(userx.userprofile)
+                    flag = 1
+            if flag != 1:
+                request.user.userprofile.follows.add(userx.userprofile)
+                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
 
-            send_mail(
-                "You got a new follower!!",
-                msg_plain,
-                settings.EMAIL_TO_STRING,
-                [userx.email],
-                html_message=msg_html,
-            )
-        return HttpResponse("Success")
+                send_mail(
+                    "You got a new follower!!",
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [userx.email],
+                    html_message=msg_html,
+                )
+            return HttpResponse("Success")
+        except User.DoesNotExist:
+            return HttpResponse(f"User {user} not found", status=404)
 
 
 # get issue and comment id from url
@@ -821,6 +902,7 @@ def badge_user_list(request, badge_id):
         .select_related("user")
         .distinct()
         .annotate(awarded_at=F("user__userbadge__awarded_at"))
+        .order_by("-awarded_at")
     )
 
     return render(
@@ -934,22 +1016,9 @@ def assign_github_badge(user, action_title):
         badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.create(user=user, badge=badge)
-            print(f"Assigned '{action_title}' badge to {user.username}")
-        else:
-            print(f"{user.username} already has the '{action_title}' badge.")
+
     except Badge.DoesNotExist:
         print(f"Badge '{action_title}' does not exist.")
-
-
-# def validate_signature(payload, signature):
-#     if not signature:
-#         return False
-
-#     secret = bytes(os.environ.get("GITHUB_ACCESS_TOKEN", ""), "utf-8")
-#     computed_hmac = hmac.new(secret, payload, hashlib.sha256)
-#     computed_signature = f"sha256={computed_hmac.hexdigest()}"
-
-#     return hmac.compare_digest(computed_signature, signature)
 
 
 @method_decorator(login_required, name="dispatch")
@@ -973,3 +1042,139 @@ class UserChallengeListView(View):
             "user_challenges.html",
             {"challenges": challenges, "user_challenges": user_challenges},
         )
+
+
+@login_required
+def messaging_home(request):
+    threads = Thread.objects.filter(participants=request.user).order_by("-updated_at")
+    return render(request, "messaging.html", {"threads": threads})
+
+
+@login_required
+def start_thread(request, user_id):
+    if request.method == "POST":
+        other_user = get_object_or_404(User, id=user_id)
+
+        # Check if a thread already exists between the two users
+        thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
+
+        if not thread:
+            # Create a new thread
+            thread = Thread.objects.create()
+            thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+
+        return JsonResponse({"success": True, "thread_id": thread.id})
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def view_thread(request, thread_id):
+    thread = get_object_or_404(Thread, id=thread_id)
+    messages = thread.messages.all().order_by("timestamp")
+    # Convert the QuerySet to a list of dictionaries using values()
+    data = list(messages.values("username", "content", "timestamp"))
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_public_key(request, thread_id):
+    # Get the thread
+    thread = get_object_or_404(Thread, id=thread_id)
+
+    # Get the other participant in the thread (exclude the logged-in user)
+    other_participants = thread.participants.exclude(id=request.user.id)
+    if not other_participants.exists():
+        return JsonResponse({"error": "No other participant found"}, status=404)
+
+    other_user = other_participants.first()
+    # Access the public_key from the UserProfile
+    try:
+        public_key = other_user.userprofile.public_key
+    except Exception:
+        return JsonResponse({"error": "User profile not found"}, status=404)
+
+    if not public_key:
+        return JsonResponse({"error": "User has not provided a public key"}, status=404)
+
+    return JsonResponse({"public_key": public_key})
+
+
+@login_required
+@require_http_methods(["POST"])
+def set_public_key(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    public_key = data.get("public_key")
+    if not public_key:
+        return JsonResponse({"error": "Public key is required"}, status=400)
+
+    # Update the public_key on the user's profile
+    profile = request.user.userprofile
+    profile.public_key = public_key
+    profile.save()
+
+    return JsonResponse({"success": True, "public_key": profile.public_key})
+
+
+@login_required
+def fetch_notifications(request):
+    notifications = Notification.objects.filter(user=request.user, is_deleted=False).order_by("is_read", "-created_at")
+
+    notifications_data = [
+        {
+            "id": notification.id,
+            "message": notification.message,
+            "created_at": notification.created_at,
+            "is_read": notification.is_read,
+            "notification_type": notification.notification_type,
+            "link": notification.link,
+        }
+        for notification in notifications
+    ]
+
+    return JsonResponse({"notifications": notifications_data}, safe=False)
+
+
+@login_required
+def mark_as_read(request):
+    if request.method == "PATCH":
+        try:
+            if request.body and request.content_type == "application/json":
+                try:
+                    json.loads(request.body)
+                except json.JSONDecodeError:
+                    return JsonResponse({"status": "error", "message": "Invalid JSON in request body"}, status=400)
+
+            notifications = Notification.objects.filter(user=request.user, is_read=False)
+            notifications.update(is_read=True)
+            return JsonResponse({"status": "success"})
+        except Exception as e:
+            logger.error(f"Error marking notifications as read: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+            )
+
+
+@login_required
+def delete_notification(request, notification_id):
+    if request.method == "DELETE":
+        try:
+            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+
+            notification.is_deleted = True
+            notification.save()
+
+            return JsonResponse({"status": "success", "message": "Notification deleted successfully"})
+        except Exception as e:
+            logger.error(f"Error deleting notification: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                status=400,
+            )
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)

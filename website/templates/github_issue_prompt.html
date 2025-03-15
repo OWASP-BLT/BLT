@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+{% load gravatar %}
+{% load socialaccount %}
+{% load humanize %}
+{% providers_media_js %}
+{% load custom_tags %}
+{% block title %}
+    Submit GitHub Issue
+{% endblock title %}
+{% block description %}
+    Describe the issue you want to create on GitHub. Provide details such as the issue description and any relevant repository URL.
+{% endblock description %}
+{% block keywords %}
+    Submit GitHub Issue, GitHub Issue, Issue Description, Repository URL
+{% endblock keywords %}
+{% block og_title %}
+    Submit GitHub Issue - Detailed Reporting
+{% endblock og_title %}
+{% block og_description %}
+    Efficiently submit a GitHub issue by providing necessary details such as the issue description and relevant repository URL.
+{% endblock og_description %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="bg-[#F3F5F7] flex flex-col items-center">
+        <!-- Form -->
+        <form id="githubIssueSubmitForm"
+              method="post"
+              action="{% url 'get_github_issue' %}"
+              enctype="multipart/form-data"
+              class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md opacity-100 translate-y-0 transition-all duration-500 ease-out"
+              onsubmit="return validateGithubIssueSubmit()">
+            {% csrf_token %}
+            <!-- Description and URL -->
+            <div class="w-full pb-12">
+                <p class="text-5xl font-bold text-gray-900">GENERATE GITHUB ISSUE</p>
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <!-- Detailed Description -->
+                    <div class="sm:col-span-5">
+                        <label for="description" class="block text-2xl font-bold text-gray-900">Detailed Description</label>
+                        <div class="mt-4">
+                            <textarea id="description"
+                                      name="description"
+                                      rows="15"
+                                      placeholder="Describe the issue in detail"
+                                      class="block w-full placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-red-600"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <!-- Repository URL -->
+                <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <div class="sm:col-span-5">
+                        <label for="repository_url" class="block text-2xl font-bold text-gray-900">
+                            Enter GitHub Repository URL (Optional)
+                        </label>
+                        <div class="mt-4">
+                            <input id="repository_url"
+                                   type="text"
+                                   name="repository_url"
+                                   placeholder="Enter repository URL"
+                                   class="block w-full mt-4 placeholder:text-xl rounded-md border-0 py-5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-red-600" />
+                        </div>
+                    </div>
+                </div>
+                <!-- Submit Button -->
+                <div class="w-full mt-6 flex justify-end">
+                    <button type="submit"
+                            class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        Generate From AI
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+{% endblock content %}
+{% block after_js %}
+    <script type="text/javascript">
+    function validateGithubIssueSubmit() {
+        const descriptionInput = document.getElementById('description').value.trim();
+
+        if (descriptionInput) {
+            return true;
+        } else {
+            alert("Please fill in the description.")
+            return false;
+        }
+    }
+    </script>
+{% endblock after_js %}

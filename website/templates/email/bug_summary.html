@@ -1,0 +1,135 @@
+{% load custom_tags %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description"
+              content="Bug Summary Email from {% env 'PROJECT_NAME' %}." />
+        <meta name="keywords"
+              content="Bug, Summary, Report, {% env 'PROJECT_NAME' %}" />
+        <title>Bug Summary</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+              rel="stylesheet">
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="font-sans bg-gray-100 m-0 p-0">
+        <table class="w-full border border-gray-300" cellpadding="0" cellspacing="0">
+            <tr>
+                <td>
+                    <table class="w-full max-w-[600px] mx-auto border border-gray-300 rounded-lg"
+                           cellpadding="0"
+                           cellspacing="0">
+                        <tr>
+                            <td class="text-center py-4">
+                                <img src="https://{% env 'FQDN' %}static/img/logo-large-transparent.png"
+                                     alt="{% env 'PROJECT_NAME' %}"
+                                     width="300"
+                                     height="73"
+                                     class="block mx-auto" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-left">
+                                {% load humanize %}
+                                <h1 class="text-2xl font-bold underline mb-4">{% env 'PROJECT_NAME' %} {{ month }} Summary</h1>
+                                <p class="mb-4">The leaderboard has been reset, go forth and find bugs!</p>
+                                <p class="mb-4">{{ month }}'s Top 5 Bug Hunters:</p>
+                                <ul class="mb-4">
+                                    {% for leader in leaderboard %}
+                                        <li class="mb-2">
+                                            {{ forloop.counter|ordinal }} Place - <a href="https://{% env 'FQDN' %}/profile/{{ leader.username }}"
+    class="text-blue-500 hover:text-blue-700">{{ leader.username }}</a> ({{ leader.total_score }} points)
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="mb-4">
+                                    <a href="https://{% env 'DOMAIN_NAME' %}/"
+                                       class="text-blue-500 hover:text-blue-700">Sponsor the Leaderboard</a>
+                                </p>
+                                <p class="mb-4">(Click "Sponsor a Prize" on the leaderboard)</p>
+                                <h2 class="text-xl font-bold mb-4">--- {{ month }} Stats ---</h2>
+                                <h4 class="text-lg font-bold mb-2">Most Responsive Domains:</h4>
+                                <ul class="mb-4">
+                                    {% for domain in responsive %}<li class="mb-2">{{ domain.url }} - {{ domain.modified|timesince }} ago</li>{% endfor %}
+                                </ul>
+                                <h4 class="text-lg font-bold mb-2">Most Closed Bugs:</h4>
+                                <ul class="mb-4">
+                                    {% for domain in closed_issues %}<li class="mb-2">{{ domain.url }} - {{ domain.count }} closed bugs</li>{% endfor %}
+                                </ul>
+                                <h4 class="text-lg font-bold mb-2">Most Open Bugs:</h4>
+                                <ul class="mb-4">
+                                    {% for domain in open_issues %}<li class="mb-2">{{ domain.url }} - {{ domain.count }} opened bugs</li>{% endfor %}
+                                </ul>
+                                <h4 class="text-lg font-bold mb-2">Most Viewed Bugs:</h4>
+                                <ul class="mb-4">
+                                    {% for issue in most_viewed %}
+                                        <li class="mb-2">
+                                            {{ issue.domain }} - {{ issue.description|truncatewords:20 }} (viewed {{ issue.views|default:"0" }} times)
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <p class="mb-4">Keep your website bug free:</p>
+                                <p class="mb-4">
+                                    <a href="https://{% env 'DOMAIN_NAME' %}/hunt"
+                                       class="text-blue-500 hover:text-blue-700">Sponsor a Bug Hunt Today</a>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="bg-black text-white py-4 rounded-b-lg">
+                                <table class="w-full" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                        <td class="text-center">
+                                            <table class="inline-block" cellpadding="0" cellspacing="0">
+                                                <tr>
+                                                    <td>
+                                                        <a href="{% env 'TWITTER_URL' %}" class="inline-block mx-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 viewBox="0 0 448 512"
+                                                                 width="30"
+                                                                 fill="white">
+                                                                <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                                <path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm297.1 84L257.3 234.6 379.4 396H283.8L209 298.1 123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5L313.6 116h47.5zM323.3 367.6L153.4 142.9H125.1L296.9 367.6h26.3z" />
+                                                            </svg>
+                                                        </a>
+                                                    </td>
+                                                    <td class="w-5">&nbsp;</td>
+                                                    <td>
+                                                        <a href="{% env 'FACEBOOK_URL' %}" class="inline-block mx-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 viewBox="0 0 448 512"
+                                                                 width="30"
+                                                                 fill="white">
+                                                                <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                                <path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64h98.2V334.2H109.4V256h52.8V222.3c0-87.1 39.4-127.5 125-127.5c16.2 0 44.2 3.2 55.7 6.4V172c-6-.6-16.5-1-29.6-1c-42 0-58.2 15.9-58.2 57.2V256h83.6l-14.4 78.2H255V480H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z" />
+                                                            </svg>
+                                                        </a>
+                                                    </td>
+                                                    <td class="w-5">&nbsp;</td>
+                                                    <td>
+                                                        <a href="{% env 'GITHUB_URL' %}" class="inline-block mx-2">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 viewBox="0 0 448 512"
+                                                                 width="30"
+                                                                 fill="white">
+                                                                <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
+                                                                <path d="M448 96c0-35.3-28.7-64-64-64H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96zM265.8 407.7c0-1.8 0-6 .1-11.6c.1-11.4 .1-28.8 .1-43.7c0-15.6-5.2-25.5-11.3-30.7c37-4.1 76-9.2 76-73.1c0-18.2-6.5-27.3-17.1-39c1.7-4.3 7.4-22-1.7-45c-13.9-4.3-45.7 17.9-45.7 17.9c-13.2-3.7-27.5-5.6-41.6-5.6s-28.4 1.9-41.6 5.6c0 0-31.8-22.2-45.7-17.9c-9.1 22.9-3.5 40.6-1.7 45c-10.6 11.7-15.6 20.8-15.6 39c0 63.6 37.3 69 74.3 73.1c-4.8 4.3-9.1 11.7-10.6 22.3c-9.5 4.3-33.8 11.7-48.3-13.9c-9.1-15.8-25.5-17.1-25.5-17.1c-16.2-.2-1.1 10.2-1.1 10.2c10.8 5 18.4 24.2 18.4 24.2c9.7 29.7 56.1 19.7 56.1 19.7c0 9 .1 21.7 .1 30.6c0 4.8 .1 8.6 .1 10c0 4.3-3 9.5-11.5 8C106 393.6 59.8 330.8 59.8 257.4c0-91.8 70.2-161.5 162-161.5s166.2 69.7 166.2 161.5c.1 73.4-44.7 136.3-110.7 158.3c-8.4 1.5-11.5-3.7-11.5-8zm-90.5-54.8c-.2-1.5 1.1-2.8 3-3.2c1.9-.2 3.7 .6 3.9 1.9c.3 1.3-1 2.6-3 3c-1.9 .4-3.7-.4-3.9-1.7zm-9.1 3.2c-2.2 .2-3.7-.9-3.7-2.4c0-1.3 1.5-2.4 3.5-2.4c1.9-.2 3.7 .9 3.7 2.4c0 1.3-1.5 2.4-3.5 2.4zm-14.3-2.2c-1.9-.4-3.2-1.9-2.8-3.2s2.4-1.9 4.1-1.5c2 .6 3.3 2.1 2.8 3.4c-.4 1.3-2.4 1.9-4.1 1.3zm-12.5-7.3c-1.5-1.3-1.9-3.2-.9-4.1c.9-1.1 2.8-.9 4.3 .6c1.3 1.3 1.8 3.3 .9 4.1c-.9 1.1-2.8 .9-4.3-.6zm-8.5-10c-1.1-1.5-1.1-3.2 0-3.9c1.1-.9 2.8-.2 3.7 1.3c1.1 1.5 1.1 3.3 0 4.1c-.9 .6-2.6 0-3.7-1.5zm-6.3-8.8c-1.1-1.3-1.3-2.8-.4-3.5c.9-.9 2.4-.4 3.5 .6c1.1 1.3 1.3 2.8 .4 3.5c-.9 .9-2.4 .4-3.5-.6zm-6-6.4c-1.3-.6-1.9-1.7-1.5-2.6c.4-.6 1.5-.9 2.8-.4c1.3 .7 1.9 1.8 1.5 2.6c-.4 .9-1.7 1.1-2.8 .4z" />
+                                                            </svg>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

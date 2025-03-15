@@ -19,136 +19,165 @@
 {% endblock og_description %}
 {% block content %}
     <script src="https://cdn.tailwindcss.com" defer></script>
-    <style>
-    .alert_box{
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-        border-radius: 5px;
-        padding: 10px;
-        margin-top: 10px;
-    }
-   
-    </style>
-    <div class="container mt-12">
-        <!-- Include the left navigation -->
+    <div class="container mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
+        <!-- Left Navigation -->
         {% include "includes/sidenav.html" %}
-        <!-- Message Container for User Feedback -->
-        <div id="message-container" aria-live="polite"></div>
+        <!-- Message Container -->
+        <div id="message-container" class="mb-4" aria-live="polite"></div>
+        <!-- Start Time Log Form -->
         {% if not active_time_log %}
-            <!-- Start Time Log Form -->
-            <form id="start-time-log-form" novalidate>
+            <form id="start-time-log-form"
+                  novalidate
+                  class="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-100">
                 {% csrf_token %}
-                <div class="form-group">
-                    <label for="github_issue_url">GitHub Issue URL*</label>
+                <!-- GitHub Issue URL -->
+                <div class="space-y-2">
+                    <label for="github_issue_url"
+                           class="block text-sm font-medium text-gray-700">GitHub Issue URL*</label>
                     <input type="url"
-                           class="form-control"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                            id="github_issue_url"
                            name="github_issue_url"
                            required
                            pattern="https?://.+"
-                           aria-describedby="githubIssueHelp"
                            placeholder="https://github.com/user/repo/issues/1">
-                    <small id="githubIssueHelp" class="form-text text-muted">
-                        Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1).
-                    </small>
-                    <div class="invalid-feedback">Please provide a valid GitHub Issue URL.</div>
+                    <p class="text-xs text-gray-500">Enter a valid GitHub issue URL (e.g., https://github.com/user/repo/issues/1)</p>
+                    <div class="invalid-feedback text-red-500 text-sm mt-1"></div>
                 </div>
-                <div class="form-group">
-                    <label for="organization_search_input">Organization (optional)</label>
+                <!-- Organization Search -->
+                <div class="space-y-2 relative">
+                    <label for="organization_search_input"
+                           class="block text-sm font-medium text-gray-700">Organization (optional)</label>
                     <input type="url"
-                           class="form-control"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                            id="organization_search_input"
                            name="organization_search_input"
-                           required
-                           pattern="https?://.+"
-                           aria-describedby="orgSearch"
-                           small
-                           id="orgSearch"
-                           class="form-text text-muted">
-                    <small id="orgSearch" class="form-text text-muted">Search for organization</small>
-                    <ul id="search_results" class="max-h-[30vh] overflow-y-scroll">
+                           placeholder="Search organizations">
+                    <ul id="search_results"
+                        class="absolute z-10 w-full max-h-60 overflow-y-auto mt-1 bg-white border border-gray-200 rounded-md shadow-lg hidden">
                     </ul>
                 </div>
-                <button type="submit" class="btn btn-primary" id="start-button">Start Time Log</button>
+                <button type="submit"
+                        class="w-full flex justify-center py-3 px-6 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
+                    Start Time Log
+                </button>
             </form>
         {% endif %}
         <!-- Active Time Log Section -->
         {% if active_time_log %}
-            <div id="active-time-log" class="mt-5">
-                <h2>Active Time Log</h2>
-                <p>
-                    GitHub Issue URL:
-                    <a href="{{ active_time_log.github_issue_url }}"
-                       id="active-issue-url"
-                       target="_blank"
-                       rel="noopener noreferrer">{{ active_time_log.github_issue_url }}</a>
-                </p>
-                <p>
-                    Organization:
-                    <a href="https://{{ organization_url }}"
-                       id="active-issue-url"
-                       target="_blank"
-                       rel="noopener noreferrer">{{ organization_url }}</a>
-                </p>
-                <p>
-                    Elapsed Time: <span id="elapsed-time">00:00:00</span>
-                </p>
-                <button class="btn btn-danger" id="stop-button">Stop Time Log</button>
+            <div id="active-time-log"
+                 class="mt-8 p-6 bg-white rounded-lg shadow-md border border-gray-100">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Active Time Log</h2>
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-gray-400 mr-2"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <a href="{{ active_time_log.github_issue_url }}"
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 hover:underline">
+                            {{ active_time_log.github_issue_url | slice:"19:" | truncatechars:30 }}
+                        </a>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-gray-400 mr-2"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <a href="https://{{ organization_url }}"
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 hover:underline">{{ organization_url }}</a>
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="h-5 w-5 text-gray-400 mr-2"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-lg font-semibold text-gray-700" id="elapsed-time">00:00:00</span>
+                    </div>
+                    <button id="stop-button"
+                            class="mt-4 w-full flex justify-center py-3 px-6 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition">
+                        Stop Time Log
+                    </button>
+                </div>
             </div>
         {% endif %}
         <!-- Existing Time Logs -->
-        <h2>Existing Time Logs</h2>
-        <table class="table table-striped"
-               aria-describedby="existingLogsDescription">
-            <caption id="existingLogsDescription">List of all time logs with their details.</caption>
-            <thead>
-                <tr>
-                    <th scope="col">Start Time</th>
-                    <th scope="col">End Time</th>
-                    <th scope="col">Duration</th>
-                    <th scope="col">GitHub Issue URL</th>
-                    <th scope="col">Organization</th>
-                </tr>
-            </thead>
-            <tbody id="time-logs-table-body">
-                {% for log in time_logs %}
-                    {% if log.end_time %}
+        <div class="mt-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Existing Time Logs</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <caption class="sr-only">List of all time logs with their details</caption>
+                    <thead class="bg-gray-50">
                         <tr>
-                            <td>{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
-                            <td>{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
-                            {% comment %} Only show hours, mins, seconds {% endcomment %}
-                            <td>{{ log.duration|before_dot }}</td>
-                            <td>
-                                <a href="{{ log.github_issue_url }}"
-                                   target="_blank"
-                                   title="{{ log.github_issue_url }}"
-                                   rel="noopener noreferrer">{{ log.github_issue_url | slice:"19:"| truncatechars:30 }}</a>
-                            </td>
-                            <td>
-                                {% if log.organization %}
-                                    <a href="https://{{ log.organization }}"
-                                       target="_blank"
-                                       title="{{ log.organization }}"
-                                       rel="noopener noreferrer">{{ log.organization }}</a>
-                                {% else %}
-                                    <span>-</span>
-                                {% endif %}
-                            </td>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Start Time
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                End Time
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Duration
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                GitHub Issue
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Organization
+                            </th>
                         </tr>
-                    {% endif %}
-                {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center">No time logs available.</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="time-logs-table-body">
+                        {% for log in time_logs %}
+                            {% if log.end_time %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.start_time|date:"DATETIME_FORMAT" }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.end_time|date:"DATETIME_FORMAT" }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.duration|before_dot }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                                        <a href="{{ log.github_issue_url }}"
+                                           target="_blank"
+                                           class="hover:underline">
+                                            {{ log.github_issue_url | slice:"19:" | truncatechars:30 }}
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        {% if log.organization %}
+                                            <a href="https://{{ log.organization }}"
+                                               target="_blank"
+                                               class="text-blue-600 hover:underline">{{ log.organization }}</a>
+                                        {% else %}
+                                            <span class="text-gray-400">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="5"
+                                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                    No time logs available
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
     <script>
-    (function(){
-        'use strict';
-
         // CSRF Token Setup
         function getCookie(name) {
             const cookies = document.cookie.split(';');
@@ -172,55 +201,54 @@
             }
         });
 
-        $(document).ready(function(){
+        $(document).ready(function() {
             const apiBaseUrl = '/api/v1/timelogs/';
             const token = '{{ token }}'; // Ensure token is securely passed from the view
             let timeLogId = null;
             let timerInterval = null;
+            const organizations_list = {{organizations_list | safe}};
 
-
-            const organizations_list = {{organizations_list | safe}}
-            console.log(organizations_list)
-            
             // Handle organization search
             $("#organization_search_input").on("input", function () {
                 const searchTerm = $(this).val().trim().toLowerCase();
                 let searchResults = [];
-        
                 if (searchTerm !== "") {
                     searchResults = organizations_list.filter(function (item) {
                         return item.name.toLowerCase().includes(searchTerm);
                     });
                 }
-        
+
                 // Update the search results display
                 $("#search_results").empty();
                 if (searchResults.length > 0) {
                     $.each(searchResults, function (index, result) {
-                        const listItem = $("<li class='font-bold border-2 cursor-pointer p-2 rounded-xl m-2 transition-all hover:opacity-80 hover:bg-red-100'>")
+                        const listItem = $("<li>")
+                            .addClass("flex items-center px-4 py-3 cursor-pointer hover:bg-gray-50 transition")
                             .text(result.name)
                             .on("click", function () {
-                                // Set the clicked item as the search box value
                                 $("#organization_search_input").val(result.url);
-                                $("#search_results").html(`Selected organization: ${result.name} 🔎`);
+                                $("#search_results").html(`Selected organization: ${result.name} 🎯`);
+                                $("#search_results").removeClass("hidden");
                             });
-                    
-                        const urlTag = $("<small class='block text-gray-500'>").text(result.url);
-                    
+
+                        const urlTag = $("<span>")
+                            .addClass("ml-auto text-xs text-gray-500")
+                            .text(result.url);
+
                         listItem.append(urlTag);
-                    
-                        // Add the list item to the search results container
                         $("#search_results").append(listItem);
+                        $("#search_results").removeClass("hidden");
                     });
                 } else {
                     if (searchTerm !== "") {
-                        $("#search_results").text("No results found");
+                        $("#search_results").html("No results found");
+                        $("#search_results").removeClass("hidden");
                     } else {
                         $("#search_results").empty();
+                        $("#search_results").addClass("hidden");
                     }
                 }
             });
-
 
             // Initialize active time log if exists
             {% if active_time_log %}
@@ -231,11 +259,9 @@
                     const now = Date.now();
                     const elapsedMilliseconds = now - startTime;
                     const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
-
                     const hours = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
                     const minutes = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
                     const seconds = String(totalSeconds % 60).padStart(2, '0');
-
                     $('#elapsed-time').text(`${hours}:${minutes}:${seconds}`);
                 }
 
@@ -263,29 +289,31 @@
                 event.preventDefault();
                 const githubIssueUrl = $('#github_issue_url').val().trim();
                 const organizationURL = $('#organization_search_input').val().trim();
-                
-                // Simple URL validation for github and organization
+
+                // Simple URL validation for GitHub and organization
                 const githubUrlPattern = /^https?:\/\/github\.com\/[^\/]+\/[^\/]+\/issues\/\d+$/;
                 if (!githubUrlPattern.test(githubIssueUrl)) {
-                        // Display an alert message 
-                    $('#message-container').html(`<div class="alert_box" role="alert">
-                        Please provide a valid GitHub Issue URL.
-                    </div>`);
+                    showMessage("Please provide a valid GitHub Issue URL.", "error");
                     return;
                 }
-                //only check organizationURL if it is entered
+
                 const organizationUrlPattern = /^(https?:\/\/)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                if (organizationURL &&!organizationUrlPattern.test(organizationURL)) {
-                    // Display an alert message 
-                $('#message-container').html(`<div class="alert_box" role="alert">
-                    Please provide a valid Organization URL.
-                </div>`);
-                return;
-            }
-                let ajaxdata={
+                if (organizationURL && !organizationUrlPattern.test(organizationURL)) {
+                    showMessage("Please provide a valid Organization URL.", "error");
+                    return;
+                }
+
+                const ajaxData = {
                     'github_issue_url': githubIssueUrl,
                     'organization_url': organizationURL
-                }
+                };
+
+                const $button = $(this).find('button[type="submit"]');
+                $button.prop('disabled', true)
+                      .html(`<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 118-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                             </svg> Starting...`);
 
                 $.ajax({
                     url: apiBaseUrl + 'start/',
@@ -294,7 +322,7 @@
                         'Authorization': `Token ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    data: JSON.stringify(ajaxdata),
+                    data: JSON.stringify(ajaxData),
                     success: function(data){
                         location.reload();
                     },
@@ -305,9 +333,8 @@
                         } else if (xhr.status === 0) {
                             error = 'Network error. Please check your connection.';
                         }
-                        $('#message-container').html(`<div class="alert_box" role="alert">
-                            Error: ${error}
-                        </div>`);
+                        showMessage(error, "error");
+                        $button.prop('disabled', false).html("Start Time Log");
                     }
                 });
             });
@@ -315,15 +342,20 @@
             // Handle Stop Time Log Button Click
             $('#stop-button').on('click', function(){
                 if (!timeLogId) {
-                    $('#message-container').html(`<div class="alert_box" role="alert">
-                        No active time log to stop.
-                    </div>`);
+                    showMessage("No active time log to stop.", "error");
                     return;
                 }
 
                 if (!confirm('Are you sure you want to stop the active time log?')) {
                     return;
                 }
+
+                const $button = $(this);
+                $button.prop('disabled', true)
+                      .html(`<svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 118-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                             </svg> Stopping...`);
 
                 $.ajax({
                     url: `${apiBaseUrl}${timeLogId}/stop/`,
@@ -333,7 +365,6 @@
                         'Content-Type': 'application/json'
                     },
                     success: function(data){
-                        // Clear the timer and update UI
                         clearInterval(timerInterval);
                         location.reload();
                     },
@@ -344,13 +375,36 @@
                         } else if (xhr.status === 0) {
                             error = 'Network error. Please check your connection.';
                         }
-                        $('#message-container').html(`<div class="alert_box" role="alert">
-                            Error: ${error}
-                        </div>`);
+                        showMessage(error, "error");
+                        $button.prop('disabled', false).html("Stop Time Log");
                     }
                 });
             });
+
+            // Message Display Function
+            function showMessage(message, type = 'error') {
+                const colors = {
+                    error: 'bg-red-100 text-red-700 border-red-200',
+                    success: 'bg-green-100 text-green-700 border-green-200'
+                };
+                
+                $('#message-container').html(`
+                    <div class="rounded-md p-4 mb-4 ${colors[type]} border">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                ${type === 'error' ? 
+                                    '<svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>' 
+                                    : 
+                                    '<svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>'
+                                }
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm">${message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
         });
-    })();
     </script>
 {% endblock content %}

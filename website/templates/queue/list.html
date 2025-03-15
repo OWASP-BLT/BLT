@@ -1,0 +1,679 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}
+    Queue Management
+{% endblock title %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Queue Management</h1>
+            <div class="flex space-x-4">
+                <button id="showCreateFormBtn"
+                        class="bg-[#e74c3c] hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    Add New Item
+                </button>
+                {% if is_launch_authorized %}
+                    <button id="showLaunchControlBtn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Launch Control
+                    </button>
+                {% endif %}
+                <a href="{% url 'organizations' %}"
+                   class="bg-[#e74c3c] hover:bg-red-700 text-white font-bold py-2 px-4 rounded">Organizations</a>
+            </div>
+        </div>
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-4 mb-4 {% if message.tags == 'success' %}bg-green-100 text-green-700 border border-green-400{% elif message.tags == 'error' %}bg-red-100 text-red-700 border border-red-400{% else %}bg-blue-100 text-blue-700 border border-blue-400{% endif %} rounded">
+                        {{ message|safe }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <!-- Create Form (Hidden by default) -->
+        <div id="createFormContainer"
+             class="mb-8 bg-white p-6 rounded-lg shadow-md hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Create New Queue Item</h2>
+                <button id="closeCreateFormBtn" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create">
+                <div class="mb-4">
+                    <label for="message" class="block text-gray-700 text-sm font-bold mb-2">Message (140 characters max)</label>
+                    <div class="relative">
+                        <textarea id="createMessage"
+                                  name="message"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                                  maxlength="140"
+                                  required></textarea>
+                        <div class="absolute bottom-2 right-2 text-sm text-gray-500">
+                            <span id="createCharCount">0</span>/140
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="image" class="block text-gray-700 text-sm font-bold mb-2">Image (Optional)</label>
+                    <input type="file"
+                           name="image"
+                           id="createImage"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                           accept="image/*">
+                    <div id="createImagePreview" class="mt-2 hidden">
+                        <img id="createPreviewImg"
+                             src=""
+                             alt="Image preview"
+                             width="auto"
+                             height="128"
+                             class="h-32 w-auto object-cover rounded">
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="bg-[#e74c3c] hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Create Queue Item
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- Edit Form (Hidden by default) -->
+        <div id="editFormContainer"
+             class="mb-8 bg-white p-6 rounded-lg shadow-md hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Edit Queue Item</h2>
+                <button id="closeEditFormBtn" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="edit">
+                <input type="hidden" id="editQueueId" name="queue_id" value="">
+                <div class="mb-4">
+                    <label for="message" class="block text-gray-700 text-sm font-bold mb-2">Message (140 characters max)</label>
+                    <div class="relative">
+                        <textarea id="editMessage"
+                                  name="message"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                                  maxlength="140"
+                                  required></textarea>
+                        <div class="absolute bottom-2 right-2 text-sm text-gray-500">
+                            <span id="editCharCount">0</span>/140
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="image" class="block text-gray-700 text-sm font-bold mb-2">Image (Optional)</label>
+                    <input type="file"
+                           name="image"
+                           id="editImage"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                           accept="image/*">
+                    <div id="currentImageContainer" class="mt-2 hidden">
+                        <p class="text-sm text-gray-600 mb-1">Current Image:</p>
+                        <img id="currentImage"
+                             src=""
+                             alt="Current image"
+                             width="auto"
+                             height="128"
+                             class="h-32 w-auto object-cover rounded">
+                    </div>
+                    <div id="editImagePreview" class="mt-2 hidden">
+                        <p class="text-sm text-gray-600 mb-1">New Image Preview:</p>
+                        <img id="editPreviewImg"
+                             src=""
+                             alt="Image preview"
+                             width="auto"
+                             height="128"
+                             class="h-32 w-auto object-cover rounded">
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="bg-[#e74c3c] hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Update Queue Item
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- Delete Confirmation (Hidden by default) -->
+        <div id="deleteConfirmContainer"
+             class="mb-8 bg-white p-6 rounded-lg shadow-md hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-red-600">Confirm Delete</h2>
+                <button id="closeDeleteConfirmBtn" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <p class="mb-4">Are you sure you want to delete this queue item? This action cannot be undone.</p>
+            <div id="deleteItemDetails" class="mb-4 p-4 bg-gray-100 rounded">
+                <p class="mb-2">
+                    <span class="font-semibold">ID:</span> <span id="deleteItemId"></span>
+                </p>
+                <p class="mb-2">
+                    <span class="font-semibold">Message:</span> <span id="deleteItemMessage"></span>
+                </p>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" id="deleteQueueId" name="queue_id" value="">
+                <div class="flex justify-end space-x-4">
+                    <button type="button"
+                            id="cancelDeleteBtn"
+                            class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="bg-[#e74c3c] hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                        Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- Launch Control Section (Hidden by default) -->
+        {% if is_launch_authorized %}
+            <div id="launchControlContainer"
+                 class="mb-8 bg-white p-6 rounded-lg shadow-md hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Launch Control</h2>
+                    <button id="closeLaunchControlBtn" class="text-gray-500 hover:text-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-6 w-6"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-3">Pending Items</h3>
+                    {% if pending_items %}
+                        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            ID
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Message
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Image
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Created
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for item in pending_items %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:50 }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {% if item.image %}
+                                                    <img src="{{ item.image.url }}"
+                                                         alt="Queue image"
+                                                         width="40"
+                                                         height="40"
+                                                         class="h-10 w-10 object-cover rounded">
+                                                {% else %}
+                                                    No image
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.created|date:"M d, Y H:i" }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <form method="post" class="inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="launch">
+                                                    <input type="hidden" name="queue_id" value="{{ item.id }}">
+                                                    <button type="submit" class="text-green-600 hover:text-green-900 font-medium">Launch</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No pending items found.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No pending items to launch.</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-3">Recently Launched Items</h3>
+                    {% if launched_items %}
+                        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            ID
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Message
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Image
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Launched At
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Tweet
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for item in launched_items %}
+                                        <tr>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.id }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:50 }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {% if item.image %}
+                                                    <img src="{{ item.image.url }}"
+                                                         alt="Queue image"
+                                                         width="144"
+                                                         height="144"
+                                                         class="h-36 w-36 object-cover rounded">
+                                                {% else %}
+                                                    No image
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.launched_at|date:"M d, Y H:i" }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div id="launch-transaction-details-{{ item.id }}" hx-swap="outerHTML">
+                                                    {% if item.url %}
+                                                        <div class="mb-2">
+                                                            <a href="{{ item.url }}"
+                                                               target="_blank"
+                                                               class="text-[#e74c3c] hover:underline">View Tweet</a>
+                                                        </div>
+                                                    {% endif %}
+                                                    {% if item.txid %}
+                                                        <div class="text-xs text-gray-400 mb-2">ID: {{ item.txid }}</div>
+                                                    {% else %}
+                                                        <div class="text-xs text-gray-400 mb-2">Transaction ID: Not available</div>
+                                                    {% endif %}
+                                                    <form hx-post="{% url 'queue_update_txid' item.id %}"
+                                                          hx-target="#launch-transaction-details-{{ item.id }}"
+                                                          hx-swap="outerHTML"
+                                                          class="mt-2">
+                                                        {% csrf_token %}
+                                                        <div class="flex flex-col space-y-2">
+                                                            <input type="text"
+                                                                   name="txid"
+                                                                   placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
+                                                                   class="text-xs border rounded px-2 py-1 w-full"
+                                                                   value="{{ item.txid|default:'' }}">
+                                                            <input type="url"
+                                                                   name="url"
+                                                                   placeholder="{% if item.url %}Update URL{% else %}Add URL (optional){% endif %}"
+                                                                   class="text-xs border rounded px-2 py-1 w-full"
+                                                                   value="{{ item.url|default:'' }}">
+                                                            <button type="submit"
+                                                                    class="text-xs bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-2 rounded">
+                                                                {% if item.txid or item.url %}
+                                                                    Update
+                                                                {% else %}
+                                                                    Save
+                                                                {% endif %}
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No launched items found.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500">No items have been launched yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- Queue Items List -->
+        <div class="bg-white shadow-md rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ID
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Message
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Image
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Created
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Transaction Details
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for item in queue_items %}
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:50 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {% if item.image %}
+                                    <img src="{{ item.image.url }}"
+                                         alt="Queue image"
+                                         width="40"
+                                         height="40"
+                                         class="h-10 w-10 object-cover rounded">
+                                {% else %}
+                                    No image
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.created|date:"M d, Y H:i" }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if item.launched %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Launched</span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Pending
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div id="transaction-details-{{ item.id }}" hx-swap="outerHTML">
+                                    {% if item.url %}
+                                        <div class="mb-2">
+                                            <a href="{{ item.url }}"
+                                               target="_blank"
+                                               class="text-[#e74c3c] hover:underline">View Tweet</a>
+                                        </div>
+                                    {% endif %}
+                                    {% if item.txid %}
+                                        <div class="text-xs text-gray-400 mb-2">ID: {{ item.txid }}</div>
+                                    {% else %}
+                                        <div class="text-xs text-gray-400 mb-2">Transaction ID: Not available</div>
+                                    {% endif %}
+                                    {% if item.launched %}
+                                        <form hx-post="{% url 'queue_update_txid' item.id %}"
+                                              hx-target="#transaction-details-{{ item.id }}"
+                                              hx-swap="outerHTML"
+                                              class="mt-2">
+                                            {% csrf_token %}
+                                            <div class="flex flex-col space-y-2">
+                                                <input type="text"
+                                                       name="txid"
+                                                       placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
+                                                       class="text-xs border rounded px-2 py-1 w-full"
+                                                       value="{{ item.txid|default:'' }}">
+                                                <input type="url"
+                                                       name="url"
+                                                       placeholder="{% if item.url %}Update URL{% else %}Add URL (optional){% endif %}"
+                                                       class="text-xs border rounded px-2 py-1 w-full"
+                                                       value="{{ item.url|default:'' }}">
+                                                <button type="submit"
+                                                        class="text-xs bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-2 rounded">
+                                                    {% if item.txid or item.url %}
+                                                        Update
+                                                    {% else %}
+                                                        Save
+                                                    {% endif %}
+                                                </button>
+                                            </div>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex space-x-2">
+                                    <button class="edit-btn text-indigo-600 hover:text-indigo-900"
+                                            data-id="{{ item.id }}"
+                                            data-message="{{ item.message }}"
+                                            {% if item.image %}data-image="{{ item.image.url }}"{% endif %}>
+                                        Edit
+                                    </button>
+                                    {% if not item.launched %}
+                                        <form method="post" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="launch">
+                                            <input type="hidden" name="queue_id" value="{{ item.id }}">
+                                            <button type="submit" class="text-green-600 hover:text-green-900">Launch</button>
+                                        </form>
+                                    {% endif %}
+                                    <button class="delete-btn text-[#e74c3c] hover:text-red-900"
+                                            data-id="{{ item.id }}"
+                                            data-message="{{ item.message }}">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">No queue items found.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Create form functionality
+    const showCreateFormBtn = document.getElementById('showCreateFormBtn');
+    const closeCreateFormBtn = document.getElementById('closeCreateFormBtn');
+    const createFormContainer = document.getElementById('createFormContainer');
+    const createMessage = document.getElementById('createMessage');
+    const createCharCount = document.getElementById('createCharCount');
+    const createImage = document.getElementById('createImage');
+    const createImagePreview = document.getElementById('createImagePreview');
+    const createPreviewImg = document.getElementById('createPreviewImg');
+
+    if (showCreateFormBtn) {
+        showCreateFormBtn.addEventListener('click', function() {
+            createFormContainer.classList.remove('hidden');
+        });
+    }
+
+    if (closeCreateFormBtn) {
+        closeCreateFormBtn.addEventListener('click', function() {
+            createFormContainer.classList.add('hidden');
+        });
+    }
+
+    if (createMessage) {
+        createMessage.addEventListener('input', function() {
+            createCharCount.textContent = this.value.length;
+        });
+    }
+
+    if (createImage) {
+        createImage.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    createPreviewImg.src = e.target.result;
+                    createImagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                createImagePreview.classList.add('hidden');
+            }
+        });
+    }
+
+    // Edit form functionality
+    const editBtns = document.querySelectorAll('.edit-btn');
+    const closeEditFormBtn = document.getElementById('closeEditFormBtn');
+    const editFormContainer = document.getElementById('editFormContainer');
+    const editQueueId = document.getElementById('editQueueId');
+    const editMessage = document.getElementById('editMessage');
+    const editCharCount = document.getElementById('editCharCount');
+    const editImage = document.getElementById('editImage');
+    const currentImageContainer = document.getElementById('currentImageContainer');
+    const currentImage = document.getElementById('currentImage');
+    const editImagePreview = document.getElementById('editImagePreview');
+    const editPreviewImg = document.getElementById('editPreviewImg');
+
+    editBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const message = this.getAttribute('data-message');
+            const imageUrl = this.getAttribute('data-image');
+            
+            editQueueId.value = id;
+            editMessage.value = message;
+            editCharCount.textContent = message.length;
+            
+            if (imageUrl) {
+                currentImage.src = imageUrl;
+                currentImageContainer.classList.remove('hidden');
+            } else {
+                currentImageContainer.classList.add('hidden');
+            }
+            
+            editImagePreview.classList.add('hidden');
+            editFormContainer.classList.remove('hidden');
+        });
+    });
+
+    if (closeEditFormBtn) {
+        closeEditFormBtn.addEventListener('click', function() {
+            editFormContainer.classList.add('hidden');
+        });
+    }
+
+    if (editMessage) {
+        editMessage.addEventListener('input', function() {
+            editCharCount.textContent = this.value.length;
+        });
+    }
+
+    if (editImage) {
+        editImage.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    editPreviewImg.src = e.target.result;
+                    editImagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(this.files[0]);
+            } else {
+                editImagePreview.classList.add('hidden');
+            }
+        });
+    }
+
+    // Delete confirmation functionality
+    const deleteBtns = document.querySelectorAll('.delete-btn');
+    const closeDeleteConfirmBtn = document.getElementById('closeDeleteConfirmBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const deleteConfirmContainer = document.getElementById('deleteConfirmContainer');
+    const deleteQueueId = document.getElementById('deleteQueueId');
+    const deleteItemId = document.getElementById('deleteItemId');
+    const deleteItemMessage = document.getElementById('deleteItemMessage');
+
+    deleteBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const message = this.getAttribute('data-message');
+            
+            deleteQueueId.value = id;
+            deleteItemId.textContent = id;
+            deleteItemMessage.textContent = message;
+            
+            deleteConfirmContainer.classList.remove('hidden');
+        });
+    });
+
+    if (closeDeleteConfirmBtn) {
+        closeDeleteConfirmBtn.addEventListener('click', function() {
+            deleteConfirmContainer.classList.add('hidden');
+        });
+    }
+
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', function() {
+            deleteConfirmContainer.classList.add('hidden');
+        });
+    }
+
+    // Launch control functionality
+    const showLaunchControlBtn = document.getElementById('showLaunchControlBtn');
+    const closeLaunchControlBtn = document.getElementById('closeLaunchControlBtn');
+    const launchControlContainer = document.getElementById('launchControlContainer');
+
+    if (showLaunchControlBtn) {
+        showLaunchControlBtn.addEventListener('click', function() {
+            launchControlContainer.classList.remove('hidden');
+        });
+    }
+
+    if (closeLaunchControlBtn) {
+        closeLaunchControlBtn.addEventListener('click', function() {
+            launchControlContainer.classList.add('hidden');
+        });
+    }
+});
+    </script>
+{% endblock content %}

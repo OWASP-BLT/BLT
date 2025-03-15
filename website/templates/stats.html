@@ -17,83 +17,53 @@
 {% endblock og_description %}
 {% load humanize %}
 {% block style %}
-    <style>
-    /* Dashboard Styles */
-    .stat-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        border-radius: 12px;
-        padding: 20px;
-        position: relative;
-        overflow: hidden;
-        transition: box-shadow 0.2s ease-in-out;
-    }
-    .stat-card:hover {
-        box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
-    }
-    .stat-icon {
-        font-size: 4rem;
-        opacity: 0.15;
-        position: absolute;
-        top: 10px;
-        right: 10px;
-    }
-    .stat-content {
-        position: relative;
-        z-index: 1;
-    }
-    .stat-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-    .stat-count {
-        font-size: 2.5rem;
-        font-weight: bold;
-        display: flex;
-        align-items: center;
-    }
-    .stat-count span {
-        margin-left: 10px;
-        font-size: 1.25rem;
-        display: flex;
-        align-items: center;
-    }
-    .stat-count span i {
-        margin-right: 5px;
-    }
-    .chart-container {
-        position: relative;
-        height: 60px;
-        margin-top: 20px;
-    }
-
-    </style>
+    <!-- No custom styles needed as Tailwind handles everything -->
 {% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-4xl font-bold mb-12 text-center">System Statistics Dashboard</h1>
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl font-bold">Statistics</h2>
+            <div class="flex gap-4">
+                <a href="?period=7"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    7 Days
+                </a>
+                <a href="?period=30"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    30 Days
+                </a>
+                <a href="?period=90"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    90 Days
+                </a>
+                <a href="?period=ytd"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                    YTD
+                </a>
+            </div>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {% for stat in stats %}
-                <div class="stat-card">
-                    <i class="{{ stat.icon }} stat-icon"></i>
-                    <div class="stat-content">
-                        <div class="stat-title">{{ stat.label }}</div>
-                        <div class="stat-count">
+                <div class="relative overflow-hidden rounded-[12px] p-5 bg-gradient-to-br from-[#e74c3c] to-[#c0392b] text-white shadow-md transition-shadow hover:shadow-lg">
+                    <i class="{{ stat.icon }} absolute top-4 right-4 text-[4rem] opacity-15"></i>
+                    <div class="relative z-10">
+                        <div class="text-[1.25rem] font-semibold mb-1">{{ stat.label }}</div>
+                        <div class="flex items-center text-[2.5rem] font-bold">
                             {{ stat.count|intcomma }}
                             {% if stat.trend > 0 %}
-                                <span class="text-green-300">
-                                    <i class="fas fa-arrow-up"></i> {{ stat.trend }}
+                                <span class="ml-2 flex items-center text-green-300">
+                                    <i class="fas fa-arrow-up mr-1"></i> {{ stat.trend }}
                                 </span>
                             {% elif stat.trend < 0 %}
-                                <span class="text-red-300">
-                                    <i class="fas fa-arrow-down"></i> {{ stat.trend }}
+                                <span class="ml-2 flex items-center text-red-300">
+                                    <i class="fas fa-arrow-down mr-1"></i> {{ stat.trend }}
                                 </span>
                             {% endif %}
                         </div>
+                        <div class="text-[1rem] opacity-80 mt-1">Total: {{ stat.total_count|intcomma }}</div>
                         {% if stat.history and stat.dates %}
-                            <div class="chart-container">
+                            <div class="relative h-[60px] mt-5">
                                 <canvas id="chart-{{ forloop.counter }}"
                                         class="sparkline"
                                         data-values='{{ stat.history|safe }}'
@@ -109,46 +79,95 @@
     {% block extra_js %}
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.sparkline').forEach(function(canvas) {
-            const values = JSON.parse(canvas.dataset.values);
-            const dates = JSON.parse(canvas.dataset.dates);
-            const ctx = canvas.getContext('2d');
+        // Store chart instances globally
+        window.chartInstances = window.chartInstances || {};
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: dates,
-                    datasets: [{
-                        data: values,
-                        borderColor: 'rgba(255, 255, 255, 0.7)',
-                        borderWidth: 2,
-                        fill: false,
-                        pointRadius: 0,
-                        tension: 0.4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false },
-                    },
-                    scales: {
-                        x: { display: false },
-                        y: { display: false },
-                    },
-                    elements: {
-                        line: {
-                            borderCapStyle: 'round',
-                            borderJoinStyle: 'round',
-                        }
-                    }
+        function destroyCharts() {
+            // Destroy all existing chart instances
+            Object.values(window.chartInstances).forEach(chart => {
+                if (chart) {
+                    chart.destroy();
                 }
             });
-        });
-    });
+            window.chartInstances = {};
+        }
+
+        function initializeCharts() {
+            // First destroy any existing charts
+            destroyCharts();
+
+            // Initialize new charts
+            document.querySelectorAll('.sparkline').forEach(function(canvas) {
+                const values = JSON.parse(canvas.dataset.values);
+                const dates = JSON.parse(canvas.dataset.dates);
+                const ctx = canvas.getContext('2d');
+
+                // Create new chart instance and store it
+                window.chartInstances[canvas.id] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            data: values,
+                            borderColor: 'rgba(231, 76, 60, 0.7)',
+                            borderWidth: 2,
+                            fill: true,
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            pointRadius: 0,
+                            tension: 0.4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return tooltipItems[0].label;
+                                    },
+                                    label: function(context) {
+                                        return 'Count: ' + context.raw;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { 
+                                display: false,
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: { 
+                                display: false,
+                                beginAtZero: true,
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            });
+        }
+
+        // Initialize charts when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeCharts);
+
+        // Clean up charts when navigating away
+        window.addEventListener('beforeunload', destroyCharts);
         </script>
     {% endblock extra_js %}
 {% endblock content %}
