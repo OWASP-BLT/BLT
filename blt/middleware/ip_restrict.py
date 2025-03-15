@@ -1,4 +1,3 @@
-import asyncio
 import ipaddress
 
 from asgiref.sync import sync_to_async
