@@ -1202,15 +1202,16 @@ def robots_txt(request):
 
 def get_last_commit_date():
     try:
-        return (
-            subprocess.check_output(
-                ["git", "log", "-1", "--format=%cd"],
-                cwd=os.path.dirname(os.path.dirname(__file__)),
-            )
-            .decode("utf-8")
-            .strip()
+        result = subprocess.run(
+            ["git", "log", "-1", "--format=%cd"],
+            cwd=os.path.dirname(os.path.dirname(__file__)),
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=True,
         )
-    except FileNotFoundError:
+        return result.stdout.strip()
+    except (subprocess.SubprocessError, FileNotFoundError):
         return "Not available"
 
 
