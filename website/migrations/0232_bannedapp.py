@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0230_queue_txid_queue_url"),
+        ("website", "0231_organization_check_ins_enabled_notification"),
     ]
 
     operations = [

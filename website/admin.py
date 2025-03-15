@@ -760,6 +760,7 @@ admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
+admin.site.register(Notification)
 
 
 @admin.register(BannedApp)
