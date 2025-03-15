@@ -42,6 +42,7 @@ from website.models import (
     LectureStatus,
     Message,
     Monitor,
+    Notification,
     Organization,
     OrganizationAdmin,
     OsshCommunity,
