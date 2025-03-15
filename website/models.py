@@ -31,7 +31,6 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
-import markdown
 
 logger = logging.getLogger(__name__)
 
@@ -2451,15 +2450,15 @@ class Newsletter(models.Model):
     def format_for_email(self):
         """Format newsletter content for sending via email, converting Markdown to HTML."""
         import markdown
-        
+
         # Convert Markdown content to HTML
-        html_content = markdown.markdown(self.content, extensions=['extra', 'codehilite'])
-        
+        html_content = markdown.markdown(self.content, extensions=["extra", "codehilite"])
+
         # Return formatted content for email
         return {
-            'title': self.title,
-            'content': html_content,
-            'published_at': self.published_at,
+            "title": self.title,
+            "content": html_content,
+            "published_at": self.published_at,
         }
 
 
