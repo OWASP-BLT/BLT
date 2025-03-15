@@ -10,15 +10,45 @@
             <ul class="font-medium text-2xl mt-6 mb-0">
                 <!-- Stats Dashboard Link -->
                 <!-- Organizations Header Link -->
-                <li class="mb-2 {% if '/organizations/' in request.path %}bg-gray-200{% endif %}">
+                <li class="mb-2 {% if '/organizations/' in request.path or '/organization/' in request.path or '/hunt-drafts/' in request.path or '/organization-settings/' in request.path %}bg-gray-200{% endif %}">
                     <a href="{% url 'organizations' %}"
-                       class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                       class="flex items-center w-full no-underline p-2 {% if '/organizations/' in request.path or '/organization/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                         <div class="w-6 mr-4 text-[#e74c3c]">
                             <i class="fas fa-building fa-lg"></i>
                         </div>
                         <span>Organizations</span>
                     </a>
                 </li>
+                <!-- Organization Submenu Items -->
+                <ul class="pl-8">
+                    <li class="mb-2 {% if '/organization/domain-list/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'domain_list' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/organization/domain-list/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-globe fa-lg"></i>
+                            </div>
+                            <span>Organization Domains</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if '/organization-settings/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'organization-settings' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/organization-settings/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-cog fa-lg"></i>
+                            </div>
+                            <span>Organization Settings</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if '/hunt-drafts/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'draft_hunts' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/hunt-drafts/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-pencil-alt fa-lg"></i>
+                            </div>
+                            <span>Hunt Drafts</span>
+                        </a>
+                    </li>
+                </ul>
                 <!-- Domains Link -->
                 <!-- Submenu Items -->
                 <ul class="pl-8">
