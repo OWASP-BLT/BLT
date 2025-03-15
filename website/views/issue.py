@@ -1477,38 +1477,33 @@ class IssueView(DetailView):
     template_name = "issue.html"
 
     def get(self, request, *args, **kwargs):
-        ipdetails = IP()
         try:
             id = int(self.kwargs["slug"])
         except ValueError:
             return HttpResponseNotFound("Invalid ID: ID must be an integer")
 
         self.object = get_object_or_404(Issue, id=self.kwargs["slug"])
+
+        # Increment views on every visit
+        self.object.views = (self.object.views or 0) + 1
+        self.object.save(update_fields=["views"])
+
+        # IP logging (keep as is, but separate from views)
+        ipdetails = IP()
         ipdetails.user = self.request.user
         ipdetails.address = get_client_ip(request)
         ipdetails.issuenumber = self.object.id
         ipdetails.path = request.path
         ipdetails.agent = request.META["HTTP_USER_AGENT"]
         ipdetails.referer = request.META.get("HTTP_REFERER", None)
-
         try:
-            if self.request.user.is_authenticated:
-                try:
-                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
-                    self.object.save()
-                except:
-                    ipdetails.save()
-                    self.object.views = (self.object.views or 0) + 1
-                    self.object.save()
+            if request.user.is_authenticated:
+                IP.objects.get(user=request.user, issuenumber=self.object.id)
             else:
-                try:
-                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
-                    self.object.save()
-                except Exception as e:
-                    print(e)
-                    pass  # pass this temporarly to avoid error
-        except Exception as e:
-            pass  # pass this temporarly to avoid error
+                IP.objects.get(address=ipdetails.address, issuenumber=self.object.id)
+        except IP.DoesNotExist:
+            ipdetails.save()
+
         return super(IssueView, self).get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

@@ -111,6 +111,9 @@
            class="block text-lg font-medium text-gray-900 hover:text-[#e74c3c] transition-colors line-clamp-3">
             {{ bug.description|truncatechars:150 }}
         </a>
+        <span class="inline-block px-2 py-1 text-xs font-semibold text-gray-600 bg-gray-200 border border-gray-300 rounded mt-1">
+            <i class="fas fa-eye mr-1 text-gray-600 text-xs"></i>{{ bug.views }}
+        </span>
         <!-- URL -->
         <a href="{{ bug.url }}"
            target="_blank"
