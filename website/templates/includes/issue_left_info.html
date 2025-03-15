@@ -1,32 +1,17 @@
-<div class="flex flex-col gap-4 my-3">
-    <h3 class="text-xl font-bold">Screenshots:</h3>
-    <div id="image-slider" class="splide border border-gray-300 shadow-sm p-4 rounded-lg">
-        <div class="splide__track">
-            <ul class="splide__list">
-                {% if object.screenshot %}
-                    <li class="splide__slide">
-                        <a href="{{ object.screenshot.url }}"
-                           target="_blank"
-                           class="flex align-middle justify-center"
-                           rel="noopener noreferrer">
-                            <img src="{{ object.screenshot.url }}"
-                                 class="rounded-lg"
-                                 alt="issue screenshot"
-                                 data-lightbox="image"
-                                 height="auto"
-                                 width="auto">
-                        </a>
-                    </li>
-                    <br>
-                    <br>
-                {% else %}
-                    {% for screenshot in screenshots %}
+{% if object.screenshot or screenshots %}
+    <div class="flex flex-col gap-4 ">
+        <h3 class="text-xl font-bold">Screenshots:</h3>
+        <div id="image-slider"
+             class="splide border border-gray-300 shadow-sm p-4 rounded-lg">
+            <div class="splide__track">
+                <ul class="splide__list">
+                    {% if object.screenshot %}
                         <li class="splide__slide">
-                            <a href="{{ screenshot.image.url }}"
+                            <a href="{{ object.screenshot.url }}"
                                target="_blank"
                                class="flex align-middle justify-center"
                                rel="noopener noreferrer">
-                                <img src="{{ screenshot.image.url }}"
+                                <img src="{{ object.screenshot.url }}"
                                      class="rounded-lg"
                                      alt="issue screenshot"
                                      data-lightbox="image"
@@ -36,9 +21,27 @@
                         </li>
                         <br>
                         <br>
-                    {% endfor %}
-                {% endif %}
-            </ul>
+                    {% else %}
+                        {% for screenshot in screenshots %}
+                            <li class="splide__slide">
+                                <a href="{{ screenshot.image.url }}"
+                                   target="_blank"
+                                   class="flex align-middle justify-center"
+                                   rel="noopener noreferrer">
+                                    <img src="{{ screenshot.image.url }}"
+                                         class="rounded-lg"
+                                         alt="issue screenshot"
+                                         data-lightbox="image"
+                                         height="auto"
+                                         width="auto">
+                                </a>
+                            </li>
+                            <br>
+                            <br>
+                        {% endfor %}
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </div>
-</div>
+{% endif %}
