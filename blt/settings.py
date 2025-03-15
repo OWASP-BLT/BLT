@@ -3,11 +3,11 @@ import os
 import sys
 
 import dj_database_url
-from environ import Env
 
 # Initialize Sentry
 import sentry_sdk
 from django.utils.translation import gettext_lazy as _
+from environ import Env
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
