@@ -17,3 +17,5 @@ jobs:
         uses: OWASP-BLT/BLT-Action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
+            bounty-amount: ${{ github.event.issue.body.bounty || 0 }}
+            bounty-hours: ${{ github.event.issue.body.hours || 24 }}
