@@ -10,7 +10,7 @@ from django.conf.urls import include
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth.decorators import login_required
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
@@ -96,7 +96,6 @@ from website.views.core import (
     github_callback,
     google_callback,
     home,
-    management_commands,
     robots_txt,
     run_management_command,
     search,
@@ -310,6 +309,13 @@ from website.views.user import (
     invite_friend,
     mark_as_read,
     messaging_home,
+    newsletter_confirm,
+    newsletter_detail,
+    newsletter_home,
+    newsletter_preferences,
+    newsletter_resend_confirmation,
+    newsletter_subscribe,
+    newsletter_unsubscribe,
     profile,
     profile_edit,
     referral_signup,
@@ -711,7 +717,6 @@ urlpatterns = [
     ),
     re_path(r"^status_page/$", status_page, name="status_page"),
     re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
-    re_path(r"^status/commands/$", management_commands, name="management_commands"),
     path(r"website_stats/", website_stats, name="website_stats"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
@@ -1092,6 +1097,14 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+    # Newsletter URLs
+    path("newsletter/", newsletter_home, name="newsletter_home"),
+    path("newsletter/subscribe/", newsletter_subscribe, name="newsletter_subscribe"),
+    path("newsletter/confirm/<uuid:token>/", newsletter_confirm, name="newsletter_confirm"),
+    path("newsletter/unsubscribe/<uuid:token>/", newsletter_unsubscribe, name="newsletter_unsubscribe"),
+    path("newsletter/preferences/", newsletter_preferences, name="newsletter_preferences"),
+    path("newsletter/resend-confirmation/", newsletter_resend_confirmation, name="newsletter_resend_confirmation"),
+    path("newsletter/<slug:slug>/", newsletter_detail, name="newsletter_detail"),  # This pattern must come last
 ]
 
 if settings.DEBUG:
