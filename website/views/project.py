@@ -43,10 +43,21 @@ from website.utils import admin_required
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
 
 
-# Helper function to parse date
 def parse_date(date_str):
     """Parse GitHub API date string to datetime object"""
     return parse_datetime(date_str) if date_str else None
+
+
+def repo_activity_data(request, slug):
+    """API endpoint for repository activity data"""
+    repo = get_object_or_404(Repo, slug=slug)
+    owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
+    owner, repo_name = owner_repo.split("/")  # Changed single quotes to double quotes
+
+    # Get activity data
+    activity_data = RepoDetailView().fetch_activity_data(owner, repo_name)
+
+    return JsonResponse(activity_data)
 
 
 def blt_tomato(request):
@@ -946,37 +957,6 @@ class RepoDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
 
-        # Extract owner and repo name from repo URL
-        owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
-        owner, repo_name = owner_repo.split("/")
-
-        # Add show_repo_stats parameter set to False to hide stats section
-        context["show_repo_stats"] = False
-
-        # Get activity data only if we're showing repo stats
-        activity_data = None
-        if context["show_repo_stats"]:
-            activity_data = self.fetch_activity_data(owner, repo_name)
-        else:
-            # Create empty activity data structure to avoid template errors
-            activity_data = {
-                "issues_labels": [],
-                "issues_opened": [],
-                "issues_closed": [],
-                "pr_labels": [],
-                "pr_opened_data": [],
-                "pr_closed_data": [],
-                "commits_labels": [],
-                "commits_data": [],
-                "pushes_data": [],
-                "issue_ratio_change": 0,
-                "pr_change": 0,
-                "commit_change": 0,
-                "issue_ratio_percentage_change": 0,
-                "pr_percentage_change": 0,
-                "commit_percentage_change": 0,
-            }
-
         # Add breadcrumbs
         context["breadcrumbs"] = [
             {"title": "Repositories", "url": reverse("project_list")},
@@ -1176,21 +1156,6 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
-                "issues_labels": activity_data["issues_labels"],
-                "issues_opened": activity_data["issues_opened"],
-                "issues_closed": activity_data["issues_closed"],
-                "pr_labels": activity_data["pr_labels"],
-                "pr_opened_data": activity_data["pr_opened_data"],
-                "pr_closed_data": activity_data["pr_closed_data"],
-                "commits_labels": activity_data["commits_labels"],
-                "commits_data": activity_data["commits_data"],
-                "pushes_data": activity_data["pushes_data"],
-                "issue_ratio_change": activity_data["issue_ratio_change"],
-                "pr_change": activity_data["pr_change"],
-                "commit_change": activity_data["commit_change"],
-                "issue_ratio_percentage_change": activity_data["issue_ratio_percentage_change"],
-                "pr_percentage_change": activity_data["pr_percentage_change"],
-                "commit_percentage_change": activity_data["commit_percentage_change"],
             }
         )
 
