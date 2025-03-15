@@ -1,11 +1,40 @@
+from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.core import mail
 from django.db.transaction import atomic
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from website.utils import rebuild_safe_url
+
+
+class RebuildSafeUrlTestCase(TestCase):
+    def test_rebuild_safe_url(self):
+        print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
+        test_cases = [
+            # Test case with credentials and encoded control characters in the path.
+            (
+                "https://user:pass@example.com/%0a:%0dsome-path?query=test#ekdes",
+                "https://example.com/%250a%3A%250dsome-path",
+            ),
+            # Test case with multiple slashes in the path.
+            ("https://example.com//multiple///slashes", "https://example.com/multiple/slashes"),
+            # Test case with no modifications needed.
+            ("https://example.com/normal/path", "https://example.com/normal/path"),
+            # Test with CRLF characters.
+            ("https://example.com/%0d%0a", "https://example.com/%250d%250a"),
+            # Test with path traversal.
+            ("https://example.com/../../test", "https://example.com/test"),
+        ]
+
+        for input_url, expected in test_cases:
+            with self.subTest(url=input_url):
+                result = rebuild_safe_url(input_url)
+                self.assertEqual(result, expected)
 
 
 class APITests(APITestCase):
@@ -44,6 +73,9 @@ class APITests(APITestCase):
 
         user = get_user_model().objects.create_user(self.USERNAME, self.EMAIL, self.PASS)
 
+        # Verify the email
+        EmailAddress.objects.create(user=user, email=self.EMAIL, verified=True, primary=True)
+
         response = self.client.post(self.login_url, data=payload, status_code=200)
         self.assertEqual("key" in response.json().keys(), True)
         self.token = response.json()["key"]
@@ -59,11 +91,28 @@ class APITests(APITestCase):
     def test_registration(self):
         user_count = get_user_model().objects.all().count()
         result = self.client.post(self.register_url, data=self.REGISTRATION_DATA, status_code=201)
-        self.assertIn("key", result.data)
-        self.assertEqual(get_user_model().objects.all().count(), user_count + 1)
 
+        # Since email verification is required, we need to verify the email
+        self.assertEqual(get_user_model().objects.all().count(), user_count + 1)
         new_user = get_user_model().objects.latest("id")
         self.assertEqual(new_user.username, self.REGISTRATION_DATA["username"])
+
+        # Check that we got the verification email message
+        self.assertIn("detail", result.data)
+        self.assertEqual(result.data["detail"], "Verification e-mail sent.")
+
+        # Verify the email
+        email_address = EmailAddress.objects.get(user=new_user, email=self.EMAIL)
+        email_address.verified = True
+        email_address.save()
+
+        # Now try to login to get the key
+        login_payload = {
+            "username": self.USERNAME.lower(),
+            "password": self.PASS,
+        }
+        login_response = self.client.post(self.login_url, data=login_payload)
+        self.assertIn("key", login_response.data)
 
     def test_create_issue(self):
         @atomic

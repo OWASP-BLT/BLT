@@ -16,47 +16,7 @@
     Get a detailed view of your team members and their daily progress. Easily manage roles, statuses, and daily status reports to maintain efficient operations and improve team performance.
 {% endblock og_description %}
 {% block body %}
-    <style>
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-        }
-        .hidden {
-            display: none;
-        }
-        .expandable-row {
-            cursor: pointer;
-        }
-        .expandable-row:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-    </style>
-    <style>
-        .sort-header {
-            cursor: pointer;
-            position: relative;
-            padding-right: 20px;
-        }
-        .sort-header:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-        .sort-header::after {
-            content: '↕';
-            position: absolute;
-            right: 5px;
-            opacity: 0.5;
-        }
-        .sort-header.sort-asc::after {
-            content: '↑';
-            opacity: 1;
-        }
-        .sort-header.sort-desc::after {
-            content: '↓';
-            opacity: 1;
-        }
-    </style>
-    <div class="bottom-right">
+    <div class="fixed bottom-2.5 right-3.75">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html">
             <i class="fab fa-github"></i>
         </a>
@@ -96,7 +56,7 @@
                     <tbody>
                         {% if team_members %}
                             {% for member in team_members %}
-                                <tr class="bg-white border-b">
+                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
                                     <th scope="row"
                                         class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
                                         {% if member.user_avatar %}
@@ -180,7 +140,6 @@
                         <option value="false">Not Accomplished</option>
                     </select>
                 </div>
-                <!-- Task Filter -->
                 <div id="task-panel" class="filter-panel hidden">
                     <input type="text"
                            id="task-filter"
@@ -232,7 +191,8 @@
                     <tbody id="statusTableBody">
                         {% if daily_status_reports %}
                             {% for report in daily_status_reports %}
-                                <tr class="bg-white border-b expandable-row" onclick="toggleRow(this)">
+                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer"
+                                    onclick="toggleRow(this)">
                                     <th scope="row"
                                         class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
                                         {% if report.user.userprofile.user_avatar %}
@@ -286,188 +246,171 @@
     </div>
     <script>
         function toggleRow(row) {
-        const expandableContents = row.getElementsByClassName('expandable-content');
-        
-        for (let content of expandableContents) {
-            const shortText = content.querySelector('.short-text');
-            const fullText = content.querySelector('.full-text');
-            
-            if (shortText.classList.contains('hidden')) {
-                shortText.classList.remove('hidden');
-                fullText.classList.add('hidden');
-            } else {
-                shortText.classList.add('hidden');
-                fullText.classList.remove('hidden');
+            const expandableContents = row.getElementsByClassName('expandable-content');
+            for (let content of expandableContents) {
+                const shortText = content.querySelector('.short-text');
+                const fullText = content.querySelector('.full-text');
+                
+                if (shortText.classList.contains('hidden')) {
+                    shortText.classList.remove('hidden');
+                    fullText.classList.add('hidden');
+                } else {
+                    shortText.classList.add('hidden');
+                    fullText.classList.remove('hidden');
+                }
             }
         }
-    }
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-    const tableBody = document.getElementById('statusTableBody');
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const filterPanels = document.querySelectorAll('.filter-panel');
-    let currentTab = null;
-    let taskSearchTimeout = null;
+            const tableBody = document.getElementById('statusTableBody');
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const filterPanels = document.querySelectorAll('.filter-panel');
+            let currentTab = null;
+            let taskSearchTimeout = null;
 
-    function toggleRow(row) {
-        const expandableContents = row.getElementsByClassName('expandable-content');
-        for (let content of expandableContents) {
-            const shortText = content.querySelector('.short-text');
-            const fullText = content.querySelector('.full-text');
-            
-            if (shortText.classList.contains('hidden')) {
-                shortText.classList.remove('hidden');
-                fullText.classList.add('hidden');
-            } else {
-                shortText.classList.add('hidden');
-                fullText.classList.remove('hidden');
-            }
-        }
-    }
-
-    function updateTable(data) {
-        tableBody.innerHTML = '';
-        data.forEach(report => {
-            const row = document.createElement('tr');
-            row.className = 'bg-white border-b expandable-row hover:bg-gray-50 cursor-pointer transition-colors';
-            row.onclick = () => toggleRow(row);
-            
-            row.innerHTML = `
-                <th scope="row" class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
-                    <img src="${report.avatar_url || '/static/images/dummy-user.png'}" alt="User Avatar" class="w-10 h-10 rounded-full mr-3">
-                    ${report.username}
-                </th>
-                <td class="px-6 py-4">${report.date}</td>
-                <td class="px-6 py-4 expandable-content">
-                    <span class="short-text">${report.previous_work.slice(0, 25)}...</span>
-                    <span class="full-text hidden">${report.previous_work}</span>
-                </td>
-                <td class="px-6 py-4 expandable-content">
-                    <span class="short-text">${report.next_plan.slice(0, 25)}...</span>
-                    <span class="full-text hidden">${report.next_plan}</span>
-                </td>
-                <td class="px-6 py-4 expandable-content">
-                    <span class="short-text">${report.blockers.slice(0, 25)}...</span>
-                    <span class="full-text hidden">${report.blockers}</span>
-                </td>
-                <td class="px-6 py-4">
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${report.goal_accomplished ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                        ${report.goal_accomplished ? 'Yes' : 'No'}
-                    </span>
-                </td>
-                <td class="px-6 py-4">${report.current_mood}</td>
-            `;
-            tableBody.appendChild(row);
-        });
-    }
-
-    function fetchFilteredData(filterType, filterValue) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('filter_type', filterType);
-        url.searchParams.set('filter_value', filterValue);
-
-        fetch(url, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            updateTable(data.data);
-            if (data.data.length === 0) {
-                tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                            No reports found for the selected filter.
+            function updateTable(data) {
+                tableBody.innerHTML = '';
+                data.forEach(report => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50 transition-colors cursor-pointer';
+                    row.onclick = () => toggleRow(row);
+                    
+                    row.innerHTML = `
+                        <th scope="row" class="px-6 py-4 text-gray-900 whitespace-nowrap text-lg flex items-center">
+                            <img src="${report.avatar_url || '/static/images/dummy-user.png'}" alt="User Avatar" class="w-10 h-10 rounded-full mr-3">
+                            ${report.username}
+                        </th>
+                        <td class="px-6 py-4">${report.date}</td>
+                        <td class="px-6 py-4 expandable-content">
+                            <span class="short-text">${report.previous_work.slice(0, 25)}...</span>
+                            <span class="full-text hidden">${report.previous_work}</span>
                         </td>
-                    </tr>
-                `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            tableBody.innerHTML = `
-                    <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-red-500">
-                            Error fetching data. Please try again.
+                        <td class="px-6 py-4 expandable-content">
+                            <span class="short-text">${report.next_plan.slice(0, 25)}...</span>
+                            <span class="full-text hidden">${report.next_plan}</span>
                         </td>
-                    </tr>
-                `;
-        });
-    }
-
-    function switchTab(tabName) {
-        tabButtons.forEach(button => {
-            if (button.dataset.tab === tabName) {
-                button.classList.add('border-indigo-500', 'text-indigo-600');
-                button.classList.remove('border-transparent', 'text-gray-500');
-            } else {
-                button.classList.remove('border-indigo-500', 'text-indigo-600');
-                button.classList.add('border-transparent', 'text-gray-500');
+                        <td class="px-6 py-4 expandable-content">
+                            <span class="short-text">${report.blockers.slice(0, 25)}...</span>
+                            <span class="full-text hidden">${report.blockers}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${report.goal_accomplished ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                                ${report.goal_accomplished ? 'Yes' : 'No'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">${report.current_mood}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
             }
-        });
 
-        filterPanels.forEach(panel => {
-            panel.classList.add('hidden');
-        });
-        document.getElementById(`${tabName}-panel`).classList.remove('hidden');
-        
-        if (currentTab !== tabName) {
-            document.getElementById('user-filter').value = '';
-            document.getElementById('date-filter').value = '';
-            document.getElementById('goal-filter').value = '';
-            document.getElementById('task-filter').value = '';
-            fetchFilteredData('none', '');
-        }
-        
-        currentTab = tabName;
-    }
+            function fetchFilteredData(filterType, filterValue) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('filter_type', filterType);
+                url.searchParams.set('filter_value', filterValue);
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            switchTab(button.dataset.tab);
-        });
-    });
-
-    document.getElementById('user-filter').addEventListener('change', function() {
-        if (this.value) {
-            fetchFilteredData('user', this.value);
-        } else {
-            fetchFilteredData('none', '');
-        }
-    });
-
-    document.getElementById('date-filter').addEventListener('change', function() {
-        if (this.value) {
-            fetchFilteredData('date', this.value);
-        } else {
-            fetchFilteredData('none', '');
-        }
-    });
-
-    document.getElementById('goal-filter').addEventListener('change', function() {
-        if (this.value) {
-            fetchFilteredData('goal', this.value);
-        } else {
-            fetchFilteredData('none', '');
-        }
-    });
-
-    document.getElementById('task-filter').addEventListener('input', function() {
-        clearTimeout(taskSearchTimeout);
-        const searchValue = this.value.trim();
-        
-        taskSearchTimeout = setTimeout(() => {
-            if (searchValue) {
-                fetchFilteredData('task', searchValue);
-            } else {
-                fetchFilteredData('none', '');
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    updateTable(data.data);
+                    if (data.data.length === 0) {
+                        tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                    No reports found for the selected filter.
+                                </td>
+                            </tr>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    tableBody.innerHTML = `
+                            <tr>
+                                <td colspan="7" class="px-6 py-4 text-center text-red-500">
+                                    Error fetching data. Please try again.
+                                </td>
+                            </tr>
+                        `;
+                });
             }
-        }, 300);
-    });
 
-    switchTab('user');
-});
+            function switchTab(tabName) {
+                tabButtons.forEach(button => {
+                    if (button.dataset.tab === tabName) {
+                        button.classList.add('border-indigo-500', 'text-indigo-600');
+                        button.classList.remove('border-transparent', 'text-gray-500');
+                    } else {
+                        button.classList.remove('border-indigo-500', 'text-indigo-600');
+                        button.classList.add('border-transparent', 'text-gray-500');
+                    }
+                });
+
+                filterPanels.forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                document.getElementById(`${tabName}-panel`).classList.remove('hidden');
+                
+                if (currentTab !== tabName) {
+                    document.getElementById('user-filter').value = '';
+                    document.getElementById('date-filter').value = '';
+                    document.getElementById('goal-filter').value = '';
+                    document.getElementById('task-filter').value = '';
+                    fetchFilteredData('none', '');
+                }
+                
+                currentTab = tabName;
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    switchTab(button.dataset.tab);
+                });
+            });
+
+            document.getElementById('user-filter').addEventListener('change', function() {
+                if (this.value) {
+                    fetchFilteredData('user', this.value);
+                } else {
+                    fetchFilteredData('none', '');
+                }
+            });
+
+            document.getElementById('date-filter').addEventListener('change', function() {
+                if (this.value) {
+                    fetchFilteredData('date', this.value);
+                } else {
+                    fetchFilteredData('none', '');
+                }
+            });
+
+            document.getElementById('goal-filter').addEventListener('change', function() {
+                if (this.value) {
+                    fetchFilteredData('goal', this.value);
+                } else {
+                    fetchFilteredData('none', '');
+                }
+            });
+
+            document.getElementById('task-filter').addEventListener('input', function() {
+                clearTimeout(taskSearchTimeout);
+                const searchValue = this.value.trim();
+                
+                taskSearchTimeout = setTimeout(() => {
+                    if (searchValue) {
+                        fetchFilteredData('task', searchValue);
+                    } else {
+                        fetchFilteredData('none', '');
+                    }
+                }, 300);
+            });
+
+            switchTab('user');
+        });
     </script>
 {% endblock body %}

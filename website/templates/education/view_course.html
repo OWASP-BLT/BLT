@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto mt-10 bg-gray-2 rounded-sm shadow-md p-7">
+        <div class="flex items-center justify-center">
+            <div class="flex items-center space-x-8 max-w-4xl mx-auto p-8 bg-white relative">
+                {% if course.thumbnail %}
+                    <img src="{{ course.thumbnail.url }}"
+                         alt="Course Thumbnail"
+                         class="w-44 h-44 rounded-sm shadow-md"
+                         width="176"
+                         height="176">
+                {% else %}
+                    <div class="w-44 h-44 rounded-sm shadow-md bg-gray-100 flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-blue-600 text-6xl"></i>
+                    </div>
+                {% endif %}
+                <div class="flex flex-col space-y-4 w-full">
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fas fa-graduation-cap text-blue-600"></i>
+                        {{ course.title|capfirst }}
+                    </h1>
+                    {% if request.user == course.instructor.user %}
+                        <a href="{% url 'edit_course' course.id %}"
+                           class="self-start flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300">
+                            <i class="fas fa-edit"></i> Edit Course
+                        </a>
+                        <a href="/education/instructor_dashboard/"
+                           class="self-start flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-800 transition-colors duration-300">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                        </a>
+                    {% endif %}
+                    <p class="text-gray-600 text-sm">{{ course.description|truncatewords:50 }}</p>
+                    <div class="flex items-center space-x-4 text-sm text-gray-700 font-medium">
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-user text-gray-500"></i>
+                            <a href="/profile/{{ course.instructor.user.username }}">
+                                <span>Instructor: {{ course.instructor.user.username }}</span>
+                            </a>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i class="fas fa-calendar-alt text-gray-500"></i>
+                            <span>Updated: {{ course.updated_at|date:"F d, Y" }}</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-4 text-sm font-medium mt-2">
+                        <span class="flex items-center gap-2">
+                            <i class="fas fa-signal text-blue-500"></i>
+                            <strong>Level:</strong>
+                            {% if course.level == "BEG" %}
+                                <span class="px-2 py-1 text-green-700 bg-green-100 rounded-md text-xs font-semibold">{{ course.get_level_display }}</span>
+                            {% elif course.level == "INT" %}
+                                <span class="px-2 py-1 text-yellow-700 bg-yellow-100 rounded-md text-xs font-semibold">{{ course.get_level_display }}</span>
+                            {% elif course.level == "ADV" %}
+                                <span class="px-2 py-1 text-red-700 bg-red-100 rounded-md text-xs font-semibold">{{ course.get_level_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        {% for tag in course.tags.all %}
+                            <span class="bg-gray-200 text-gray-800 text-xs font-medium px-3 py-1 rounded-full shadow-sm">{{ tag.name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="course-content" class="mt-10 rounded-lg">
+            <div id="content-sections" class="mt-6 text-gray-700 flex justify-center">
+                <div id="loader" class="flex items-center space-x-2">
+                    <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce"></span>
+                    <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce delay-200"></span>
+                    <span class="w-5 h-5 bg-blue-500 rounded-full animate-bounce delay-400"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const loader = document.getElementById("loader");
+            const contentSections = document.getElementById("content-sections");
+    
+            const startTime = Date.now();
+    
+            fetch("{% url 'get_course_content' course.id %}")
+                .then(response => response.text())
+                .then(html => {
+                    const elapsedTime = Date.now() - startTime;
+                    const delay = Math.max(2000 - elapsedTime, 0);
+    
+                    setTimeout(() => {
+                        contentSections.innerHTML = html;
+                    }, delay);
+                })
+                .catch(error => {
+                    setTimeout(() => {
+                        contentSections.innerHTML = "<p class='text-red-600'>Failed to load course content.</p>";
+                    }, 2000);
+                });
+        });
+    </script>
+{% endblock content %}

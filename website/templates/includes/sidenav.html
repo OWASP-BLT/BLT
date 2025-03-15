@@ -49,6 +49,15 @@
                             <span>Feed</span>
                         </a>
                     </li>
+                    <li class="mb-2 {% if '/hackathons/' in request.path %}bg-gray-200{% endif %}">
+                        <a href="{% url 'hackathons' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/hackathons/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-trophy fa-lg"></i>
+                            </div>
+                            <span>Hackathons</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/issues/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'issues' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/issues' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
@@ -95,13 +104,13 @@
                             <span>Scoreboard</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/hunts/' %}bg-gray-200{% endif %}">
+                    <li class="mb-2 {% if request.path == '/bounties/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'hunts' %}"
-                           class="flex items-center w-full no-underline p-2 {% if request.path == '/hunts/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/bounties/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-bug fa-lg"></i>
                             </div>
-                            <span>Bug Bounties</span>
+                            <span>Bounties</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/reported-ips/' %}bg-gray-200{% endif %}">
@@ -138,6 +147,24 @@
                                 <i class="fas fa-door-open fa-lg"></i>
                             </div>
                             <span>Rooms</span>
+                        </a>
+                    </li>
+                    <li class="mb-2">
+                        <a href="{% url 'video_call' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/video-call/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-video fa-lg"></i>
+                            </div>
+                            <span>Video Call</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/banned-apps/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'banned_apps' %}"
+                           class="flex items-center w-full no-underline p-2 {% if request.path == '/banned-apps/' %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-ban fa-lg"></i>
+                            </div>
+                            <span>Banned Apps</span>
                         </a>
                     </li>
                 </ul>
@@ -215,6 +242,15 @@
                 </li>
                 <!-- Submenu Items -->
                 <ul class="pl-8">
+                    <li class="mb-2 {% if request.path == '/messaging/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'messaging' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/messaging/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-envelope fa-lg"></i>
+                            </div>
+                            <span>Messaging</span>
+                        </a>
+                    </li>
                     <li class="mb-2 {% if request.path == '/challenges/' %}bg-gray-200{% endif %}">
                         <a href="{% url 'user_challenges' %}"
                            class="flex items-center w-full no-underline p-2 {% if '/challenges/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
@@ -420,13 +456,13 @@
                             <span>Developer API</span>
                         </a>
                     </li>
-                    <li class="mb-2 {% if request.path == '/bltv/' %}bg-gray-200{% endif %}">
-                        <a href="{% url 'bltv' %}"
-                           class="flex items-center w-full no-underline p-2 {% if '/bltv/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
+                    <li class="mb-2 {% if request.path == '/education/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'education' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/education/' in request.path %}text-black{% else %}hover:text-red-500 text-black{% endif %}">
                             <div class="w-6 mr-4 text-[#e74c3c]">
                                 <i class="fas fa-tv fa-lg"></i>
                             </div>
-                            <span>BLTV</span>
+                            <span>Education</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if request.path == '/open-source-sorting-hat/' %}bg-gray-200{% endif %}">
@@ -445,6 +481,15 @@
                                 <i class="fas fa-sun-o fa-lg"></i>
                             </div>
                             <span>GSOC</span>
+                        </a>
+                    </li>
+                    <li class="mb-2 {% if request.path == '/roadmap/' %}bg-gray-200{% endif %}">
+                        <a href="{% url 'roadmap' %}"
+                           class="flex items-center w-full no-underline p-2 {% if '/roadmap/' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                            <div class="w-6 mr-4 text-[#e74c3c]">
+                                <i class="fas fa-road fa-lg"></i>
+                            </div>
+                            <span>Roadmap</span>
                         </a>
                     </li>
                     <li class="mb-2 {% if '/submit-roadmap-pr/' in request.path %}bg-gray-200{% endif %}">
@@ -520,6 +565,15 @@
                             <i class="fas fa-sitemap fa-lg"></i>
                         </div>
                         <span>Sitemap</span>
+                    </a>
+                </li>
+                <li class="mb-2 {% if request.path == '/roadmap/' %}bg-gray-200{% endif %}">
+                    <a href="{% url 'roadmap' %}"
+                       class="flex items-center w-full no-underline p-2 {% if '/roadmap' in request.path %}text-black{% else %}hover:text-[#e74c3c] text-black{% endif %}">
+                        <div class="w-6 mr-4 text-[#e74c3c]">
+                            <i class="fas fa-road fa-lg"></i>
+                        </div>
+                        <span>Roadmap</span>
                     </a>
                 </li>
                 <li class="mb-2 {% if request.path == '/status/' %}bg-gray-200{% endif %}">
@@ -701,13 +755,4 @@
             </ul>
         </div>
     </div>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const hamburgerButton = document.getElementById('hamburger-button');
-            const sidebar = document.getElementById('sidebar');
-            hamburgerButton.addEventListener('click', function () {
-                sidebar.classList.toggle('-translate-x-full');
-            });
-        });
-    </script>
 </div>

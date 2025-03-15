@@ -56,6 +56,8 @@ class IPRestrictMiddleware:
         Retrieve blocked user agents from cache or database.
         """
         blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+        # Filter out None values
+        blocked_user_agents = [agent for agent in blocked_user_agents if agent is not None]
         return set(self.get_cached_data("blocked_agents", blocked_user_agents))
 
     def ip_in_ips(self, ip, blocked_ips):
@@ -76,8 +78,13 @@ class IPRestrictMiddleware:
         Check if the user agent is in the list of blocked user agents by checking if the
         full user agent string contains any of the blocked substrings.
         """
+        if not user_agent or not blocked_agents:
+            return False
+
         user_agent_str = str(user_agent).strip().lower()
-        return any(blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents)
+        return any(
+            blocked_agent.lower() in user_agent_str for blocked_agent in blocked_agents if blocked_agent is not None
+        )
 
     def increment_block_count(self, ip=None, network=None, user_agent=None):
         """
@@ -96,7 +103,7 @@ class IPRestrictMiddleware:
                         user_agent_string__in=[
                             agent
                             for agent in Blocked.objects.values_list("user_agent_string", flat=True)
-                            if agent.lower() in user_agent.lower()
+                            if agent is not None and user_agent is not None and agent.lower() in user_agent.lower()
                         ]
                     )
                     .first()

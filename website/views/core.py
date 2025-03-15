@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -9,10 +10,10 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import psutil
+import pytz
 import redis
 import requests
 import requests.exceptions
-import sentry_sdk
 from allauth.socialaccount.models import SocialAccount
 from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
 from allauth.socialaccount.providers.github.views import GitHubOAuth2Adapter
@@ -32,7 +33,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
 from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db import connection, models
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -47,12 +48,14 @@ from website.models import (
     IP,
     Activity,
     Badge,
+    DailyStats,
     Domain,
     ForumCategory,
     ForumComment,
     ForumPost,
     ForumVote,
     Hunt,
+    InviteFriend,
     Issue,
     ManagementCommandLog,
     Organization,
@@ -260,14 +263,64 @@ def status_page(request):
             if github_token:
                 try:
                     print("Checking GitHub API...")
+                    # Check basic API access
                     response = requests.get(
                         "https://api.github.com/user/repos",
                         headers={"Authorization": f"token {github_token}"},
                         timeout=5,
                     )
                     status_data["github"] = response.status_code == 200
+
+                    # Get rate limit information
+                    rate_limit_response = requests.get(
+                        "https://api.github.com/rate_limit",
+                        headers={"Authorization": f"token {github_token}"},
+                        timeout=5,
+                    )
+
+                    if rate_limit_response.status_code == 200:
+                        rate_limit_data = rate_limit_response.json()
+                        status_data["github_rate_limit"] = {
+                            "core": rate_limit_data.get("resources", {}).get("core", {}),
+                            "search": rate_limit_data.get("resources", {}).get("search", {}),
+                            "graphql": rate_limit_data.get("resources", {}).get("graphql", {}),
+                            "integration_manifest": rate_limit_data.get("resources", {}).get(
+                                "integration_manifest", {}
+                            ),
+                            "code_scanning_upload": rate_limit_data.get("resources", {}).get(
+                                "code_scanning_upload", {}
+                            ),
+                        }
+
+                        # Add recent API calls history from cache if available
+                        github_api_history = cache.get("github_api_history", [])
+                        status_data["github_api_history"] = github_api_history
+
+                        # Add current rate limit to history
+                        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        core_rate_limit = rate_limit_data.get("resources", {}).get("core", {})
+
+                        if core_rate_limit:
+                            new_entry = {
+                                "timestamp": current_time,
+                                "remaining": core_rate_limit.get("remaining", 0),
+                                "limit": core_rate_limit.get("limit", 0),
+                                "used": core_rate_limit.get("used", 0),
+                                "reset": core_rate_limit.get("reset", 0),
+                            }
+
+                            # Add to history and keep last 50 entries
+                            github_api_history.append(new_entry)
+                            if len(github_api_history) > 50:
+                                github_api_history = github_api_history[-50:]
+
+                            # Update cache
+                            cache.set("github_api_history", github_api_history, 86400)  # Cache for 24 hours
+                    else:
+                        status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
                     print(f"GitHub API Error: {e}")
+                    status_data["github_rate_limit"] = None
 
         # OpenAI API check
         if CHECK_OPENAI:
@@ -452,19 +505,32 @@ def status_page(request):
         # Store the data in a format that can be safely serialized to JSON
         chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
 
+        # Prepare GitHub API history data for chart
+        if "github_api_history" in status_data and status_data["github_api_history"]:
+            # Convert the history data to JSON-serializable format
+            for entry in status_data["github_api_history"]:
+                # Ensure all values are JSON serializable
+                for key, value in entry.items():
+                    if not isinstance(value, (str, int, float, bool, type(None))):
+                        entry[key] = str(value)
+
         status_data["chart_data"] = chart_data
 
         # Cache the results
         cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
 
-    # Prepare the chart data for the template
-    template_chart_data = {
-        "dates": json.dumps(status_data["chart_data"]["dates"]),
-        "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
-        "commands": json.dumps(status_data["chart_data"]["commands"]),
-    }
+        # Prepare the chart data for the template
+        template_chart_data = {
+            "dates": json.dumps(status_data["chart_data"]["dates"]),
+            "team_joins": json.dumps(status_data["chart_data"]["team_joins"]),
+            "commands": json.dumps(status_data["chart_data"]["commands"]),
+        }
 
-    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+        # Serialize GitHub API history data for the template
+        if "github_api_history" in status_data:
+            status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
+
+        return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
 
 def github_callback(request):
@@ -1209,7 +1275,7 @@ def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
 
-    from website.models import ForumPost, GitHubIssue, Post, Repo, User  # Add BlogPost model
+    from website.models import ForumPost, GitHubIssue, Issue, Post, Repo, User, UserProfile
 
     # Get last commit date
     try:
@@ -1233,16 +1299,83 @@ def home(request):
         .order_by("-total_score")[:5]
     )
 
-    # Get top PR contributors using the leaderboard method
+    # Get top PR contributors using the leaderboard method for BLT repo in current month only
     top_pr_contributors = (
-        GitHubIssue.objects.filter(type="pull_request", is_merged=True)
-        .values("user_profile__user__username", "user_profile__user__email", "user_profile__github_url")
+        GitHubIssue.objects.filter(
+            type="pull_request",
+            is_merged=True,
+            repo__name="BLT",  # Filter for BLT repo only
+            contributor__isnull=False,  # Exclude None values
+            merged_at__month=current_time.month,  # Current month only
+            merged_at__year=current_time.year,  # Current year
+        )
+        .values("contributor__name", "contributor__avatar_url", "contributor__github_url")
         .annotate(total_prs=Count("id"))
         .order_by("-total_prs")[:5]
     )
 
+    # Get top earners
+    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
+
+    # Get top referrals
+    top_referrals = (
+        InviteFriend.objects.filter(point_by_referral__gt=0)
+        .annotate(signup_count=Count("recipients"), total_points=F("point_by_referral"))
+        .select_related("sender", "sender__userprofile")
+        .order_by("-point_by_referral")[:5]
+    )
+
+    # Get or Create InviteFriend object for logged in user
+    referral_code = None
+    if request.user.is_authenticated:
+        invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
+        referral_code = invite_friend.referral_code
+
     # Get latest blog posts
     latest_blog_posts = Post.objects.order_by("-created_at")[:2]
+
+    # Get latest bug reports
+    latest_bugs = (
+        Issue.objects.filter(hunt=None)
+        .exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
+        .order_by("-created")[:2]
+    )
+
+    # Get repository star counts for the specific repositories shown on the homepage
+    repo_stars = []
+    repo_mappings = {
+        "blt": "OWASP-BLT/BLT",
+        "flutter": "OWASP-BLT/BLT-Flutter",
+        "extension": "OWASP-BLT/BLT-Extension",
+        "action": "OWASP-BLT/BLT-Action",
+    }
+
+    for key, repo_name in repo_mappings.items():
+        try:
+            # Try to find the repository by name
+            repo_parts = repo_name.split("/")
+            if len(repo_parts) > 1:
+                repo = Repo.objects.filter(name__icontains=repo_parts[1]).first()
+            else:
+                repo = Repo.objects.filter(name__icontains=repo_name).first()
+
+            if repo:
+                repo_stars.append({"key": key, "stars": repo.stars})
+        except Exception as e:
+            print(f"Error getting star count for {repo_name}: {e}")
+
+    # Get system stats for developer mode
+    system_stats = None
+    if settings.DEBUG:
+        import django
+
+        system_stats = {
+            "memory_usage": f"{psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024):.2f} MB",
+            "cpu_percent": f"{psutil.Process(os.getpid()).cpu_percent(interval=0.1):.2f}%",
+            "python_version": f"{os.sys.version}",
+            "django_version": django.get_version(),
+            "db_connections": len(connection.queries),
+        }
 
     return render(
         request,
@@ -1250,12 +1383,20 @@ def home(request):
         {
             "last_commit": last_commit,
             "current_year": timezone.now().year,
+            "current_time": current_time,  # Add current time for month display
             "latest_repos": latest_repos,
             "total_repos": total_repos,
             "recent_posts": recent_posts,
             "top_bug_reporters": top_bug_reporters,
             "top_pr_contributors": top_pr_contributors,
-            "latest_blog_posts": latest_blog_posts,  # Add latest blog posts to context
+            "latest_blog_posts": latest_blog_posts,
+            "top_earners": top_earners,
+            "repo_stars": repo_stars,
+            "top_referrals": top_referrals,
+            "referral_code": referral_code,
+            "debug_mode": settings.DEBUG,
+            "system_stats": system_stats,
+            "latest_bugs": latest_bugs,
         },
     )
 
@@ -1482,6 +1623,27 @@ def check_owasp_compliance(request):
 def management_commands(request):
     # Get list of available management commands
     available_commands = []
+
+    # Get the date 30 days ago for stats
+    thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
+
+    # Get sort parameter from request
+    sort_param = request.GET.get("sort", "name")
+    reverse = False
+
+    # Check if sort parameter starts with '-' (descending order)
+    if sort_param.startswith("-"):
+        reverse = True
+        sort_key = sort_param[1:]  # Remove the '-' prefix
+    else:
+        sort_key = sort_param
+
+    # Validate sort key
+    valid_sort_keys = ["name", "last_run", "status", "run_count", "activity"]
+    if sort_key not in valid_sort_keys:
+        sort_key = "name"
+        sort_param = "name"
+
     for name, app_name in get_commands().items():
         # Only include commands from the website app and exclude initsuperuser
         if (
@@ -1497,6 +1659,31 @@ def management_commands(request):
                 "help_text": help_text,
             }
 
+            # Get command arguments if they exist
+            command_args = []
+            if hasattr(command_class, "add_arguments"):
+                # Create a parser to capture arguments
+                from argparse import ArgumentParser
+
+                parser = ArgumentParser()
+                # Fix: Call add_arguments directly on the command instance
+                command_class.add_arguments(parser)
+
+                # Extract argument information
+                for action in parser._actions:
+                    if action.dest != "help":  # Skip the default help action
+                        arg_info = {
+                            "name": action.dest,
+                            "flags": ", ".join(action.option_strings),
+                            "help": action.help,
+                            "required": action.required,
+                            "default": action.default if action.default != argparse.SUPPRESS else None,
+                            "type": action.type.__name__ if action.type else "str",
+                        }
+                        command_args.append(arg_info)
+
+            command_info["arguments"] = command_args
+
             # Get command logs if they exist
             log = ManagementCommandLog.objects.filter(command_name=name).first()
             if log:
@@ -1508,27 +1695,92 @@ def management_commands(request):
                     }
                 )
 
+            # Get stats data for the past 30 days if it exists
+            stats_data = []
+
+            # Create a dictionary to store values for each day in the 30-day period
+            date_range = []
+            date_values = {}
+
+            # Generate all dates in the 30-day range
+            for i in range(30):
+                date = (timezone.now() - timezone.timedelta(days=29 - i)).date()
+                date_range.append(date)
+                date_values[date.isoformat()] = 0
+
+            # Get actual stats data
+            daily_stats = DailyStats.objects.filter(name=name, created__gte=thirty_days_ago).order_by("created")
+
+            # Fill in the values we have
+            max_value = 1  # Minimum value to avoid division by zero
+            total_activity = 0  # Track total activity for sorting
+            for stat in daily_stats:
+                try:
+                    value = int(stat.value)
+                    date_key = stat.created.date().isoformat()
+                    date_values[date_key] = value
+                    total_activity += value
+                    if value > max_value:
+                        max_value = value
+                except (ValueError, TypeError, KeyError):
+                    pass
+
+            # Convert to list format for the template
+            for date in date_range:
+                date_key = date.isoformat()
+                stats_data.append(
+                    {
+                        "date": date_key,
+                        "value": date_values.get(date_key, 0),
+                        "height_percent": (date_values.get(date_key, 0) / max_value) * 100 if max_value > 0 else 0,
+                    }
+                )
+
+            command_info["stats_data"] = stats_data
+            command_info["max_value"] = max_value
+            command_info["total_activity"] = total_activity
             available_commands.append(command_info)
 
-    commands = sorted(available_commands, key=lambda x: x["name"])
-    return render(request, "management_commands.html", {"commands": commands})
+    # Sort the commands based on the sort parameter
+    def sort_commands(cmd):
+        if sort_key == "name":
+            return cmd["name"]
+        elif sort_key == "last_run":
+            return cmd.get("last_run", timezone.datetime.min.replace(tzinfo=pytz.UTC))
+        elif sort_key == "status":
+            # Sort by success status (True comes after False in ascending order)
+            return cmd.get("last_success", False)
+        elif sort_key == "run_count":
+            return cmd.get("run_count", 0)
+        elif sort_key == "activity":
+            return cmd.get("total_activity", 0)
+        else:
+            return cmd["name"]
+
+    commands = sorted(available_commands, key=sort_commands, reverse=reverse)
+
+    return render(request, "management_commands.html", {"commands": commands, "sort": sort_param, "reverse": reverse})
 
 
 def run_management_command(request):
     if request.method == "POST":
         # Check if user is superuser
         if not request.user.is_superuser:
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": "Only superusers can run management commands."})
             messages.error(request, "Only superusers can run management commands.")
             return redirect("management_commands")
 
         command = request.POST.get("command")
         logging.info(f"Running command: {command}")
-        print(f"Running command: {command}")
+
         try:
             # Only allow running commands from the website app and exclude initsuperuser
             app_name = get_commands().get(command)
             if app_name != "website" or command == "initsuperuser":
                 msg = f"Command {command} is not allowed to run from the web interface"
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": False, "error": msg})
                 messages.error(request, msg)
                 return redirect("management_commands")
 
@@ -1537,36 +1789,126 @@ def run_management_command(request):
                 command_name=command, defaults={"run_count": 0, "success": False, "last_run": timezone.now()}
             )
 
-            # Run the command
-            call_command(command)
-
             # Update the log entry
-            log_entry.success = True
+            log_entry.run_count += 1
             log_entry.last_run = timezone.now()
-            log_entry.run_count = log_entry.run_count + 1
-            log_entry.error_message = ""
             log_entry.save()
 
-            messages.success(
-                request,
-                f"Successfully ran command '{command}'. "
-                f"This command has been run {log_entry.run_count} time{'s' if log_entry.run_count != 1 else ''}.",
-            )
+            # Collect command arguments from POST data
+            command_args = []
+            command_kwargs = {}
 
-        except Exception as e:
-            sentry_sdk.capture_exception(e)
+            # Get the command class to check for arguments
+            command_class = load_command_class(app_name, command)
 
-            # Update log entry with error
-            if "log_entry" in locals():
-                log_entry.success = False
-                log_entry.last_run = timezone.now()
-                log_entry.run_count = log_entry.run_count + 1
-                log_entry.error_message = str(e)
+            # Create a parser to capture arguments
+            if hasattr(command_class, "add_arguments"):
+                from argparse import ArgumentParser
+
+                parser = ArgumentParser()
+                # Fix: Call add_arguments directly on the command instance
+                command_class.add_arguments(parser)
+
+                # Extract argument information and collect values from POST
+                for action in parser._actions:
+                    if action.dest != "help":  # Skip the default help action
+                        arg_name = action.dest
+                        arg_value = request.POST.get(arg_name)
+
+                        if arg_value:
+                            # Convert to appropriate type if needed
+                            if action.type:
+                                try:
+                                    if action.type == int:
+                                        arg_value = int(arg_value)
+                                    elif action.type == float:
+                                        arg_value = float(arg_value)
+                                    elif action.type == bool:
+                                        arg_value = arg_value.lower() in ("true", "yes", "1")
+                                except (ValueError, TypeError):
+                                    warning_msg = (
+                                        f"Could not convert argument '{arg_name}' to type "
+                                        f"{action.type.__name__}. Using as string."
+                                    )
+                                    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                                        return JsonResponse({"success": False, "error": warning_msg})
+                                    messages.warning(request, warning_msg)
+
+                            # Add to args or kwargs based on whether it's a positional or optional argument
+                            if action.option_strings:  # It's an optional argument
+                                command_kwargs[arg_name] = arg_value
+                            else:  # It's a positional argument
+                                command_args.append(arg_value)
+
+            # Run the command with collected arguments
+            try:
+                # Capture command output
+                import sys
+                from io import StringIO
+
+                # Redirect stdout to capture output
+                old_stdout = sys.stdout
+                sys.stdout = mystdout = StringIO()
+
+                call_command(command, *command_args, **command_kwargs)
+
+                # Get the output and restore stdout
+                output = mystdout.getvalue()
+                sys.stdout = old_stdout
+
+                log_entry.success = True
                 log_entry.save()
 
-            messages.error(
-                request, f"Error running command '{command}': {str(e)}. " f"Check the logs for more details."
-            )
+                # Record execution in DailyStats
+                try:
+                    # Get existing stats for today
+                    today = timezone.now().date()
+                    daily_stat, created = DailyStats.objects.get_or_create(
+                        name=command,
+                        created__date=today,
+                        defaults={"value": "1", "created": timezone.now(), "modified": timezone.now()},
+                    )
+
+                    if not created:
+                        # Increment the value
+                        try:
+                            current_value = int(daily_stat.value)
+                            daily_stat.value = str(current_value + 1)
+                            daily_stat.modified = timezone.now()
+                            daily_stat.save()
+                        except (ValueError, TypeError):
+                            # If value is not an integer, set it to 1
+                            daily_stat.value = "1"
+                            daily_stat.modified = timezone.now()
+                            daily_stat.save()
+                except Exception as stats_error:
+                    logging.error(f"Error updating DailyStats: {str(stats_error)}")
+
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": True, "output": output})
+
+                messages.success(request, f"Command '{command}' executed successfully.")
+            except Exception as e:
+                log_entry.success = False
+                log_entry.save()
+
+                error_msg = f"Error executing command '{command}': {str(e)}"
+                logging.error(error_msg)
+
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return JsonResponse({"success": False, "error": error_msg})
+
+                messages.error(request, error_msg)
+
+        except Exception as e:
+            error_msg = f"Error: {str(e)}"
+            logging.error(error_msg)
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": error_msg})
+
+            messages.error(request, error_msg)
+
     return redirect("management_commands")
 
 
@@ -1956,4 +2298,465 @@ class MapView(ListView):
             # Add more marker types here as needed
         ]
 
+        return context
+
+
+class RoadmapView(TemplateView):
+    template_name = "roadmap.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        milestones = [
+            {
+                "title": "📺 BLTV - BLT Eduction",
+                "due_date": "No due date",
+                "last_updated": "about 3 hours ago",
+                "description": "Add an educational component to BLT so that users can learn along w…",
+                "progress": "100%",
+                "open": 0,
+                "closed": 1,
+            },
+            {
+                "title": "🚀 Code Reviewer Leaderboard",
+                "due_date": "No due date",
+                "last_updated": "1 day ago",
+                "description": "Here's an Emoji Code Reviewer Leaderboard idea, ranking reviewers b…",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "Bid on Issues",
+                "due_date": "No due date",
+                "last_updated": "1 day ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🏠 Improvements",
+                "due_date": "No due date",
+                "last_updated": "5 days ago",
+                "description": "",
+                "progress": "46%",
+                "open": 7,
+                "closed": 6,
+            },
+            {
+                "title": "🔒 Protection Of Online Privacy",
+                "due_date": "No due date",
+                "last_updated": "8 days ago",
+                "description": "Web Monitoring System Implementation Plan Overview Enhances user tr…",
+                "progress": "88%",
+                "open": 1,
+                "closed": 8,
+            },
+            {
+                "title": "🧠 AI",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "🔧 App Improvements",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 16,
+                "closed": 0,
+            },
+            {
+                "title": "🛡️ OWASP tools",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 2,
+                "closed": 0,
+            },
+            {
+                "title": "🧰 Extension Improvements",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 4,
+                "closed": 0,
+            },
+            {
+                "title": "🏆 Sponsorship in app",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🎤 GitHub Sportscaster",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🥗 Daily Check-ins",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "New Project: Fresh - Daily Check-In Component for BLT Fresh is a pr…",
+                "progress": "18%",
+                "open": 9,
+                "closed": 2,
+            },
+            {
+                "title": "🔥 Time Tracking",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "Simplified Project: Sizzle - Multi-Platform Time Tracking for BLT P…",
+                "progress": "12%",
+                "open": 14,
+                "closed": 2,
+            },
+            {
+                "title": "🛡️ Trademark Defense",
+                "due_date": "No due date",
+                "last_updated": "10 days ago",
+                "description": "Protects brand integrity and legal standing, important for long-ter…",
+                "progress": "30%",
+                "open": 7,
+                "closed": 3,
+            },
+            {
+                "title": "🏢 Organization Portal in App",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "💌 Invites in app",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌍 Banned Apps Simulation in app",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Simulate app behavior in countries with restrictions to ensure compliance "
+                "and accessibility.",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🤖 Slack Bot 2.0",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 12,
+                "closed": 0,
+            },
+            {
+                "title": "🚀 OWASP BLT Adventures",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌐 Organizations",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Project: Refactor BLT Website to Combine Companies and Teams into O…",
+                "progress": "0%",
+                "open": 4,
+                "closed": 0,
+            },
+            {
+                "title": "🔧 Maintenance",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "General maintenance issues",
+                "progress": "50%",
+                "open": 16,
+                "closed": 16,
+            },
+            {
+                "title": "Bug / Issue / Project tools",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🏆 Gamification",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Project Summary: Gamification Integration for BLT Platform The gami…",
+                "progress": "15%",
+                "open": 17,
+                "closed": 3,
+            },
+            {
+                "title": "GSOC tools",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "",
+                "progress": "0%",
+                "open": 3,
+                "closed": 0,
+            },
+            {
+                "title": "🚀🎨🔄 Tailwind Migration",
+                "due_date": "No due date",
+                "last_updated": "11 days ago",
+                "description": "Migrate the remaining pages to tailwind "
+                "https://blt.owasp.org/template_list/?sort=has_style_tags",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🐞 New Issue Detail Page",
+                "due_date": "No due date",
+                "last_updated": "13 days ago",
+                "description": "Improves issue tracking efficiency and developer experience on the site.",
+                "progress": "66%",
+                "open": 3,
+                "closed": 6,
+            },
+            {
+                "title": "🥓 BACON",
+                "due_date": "No due date",
+                "last_updated": "21 days ago",
+                "description": "🥓 BACON: Blockchain Assisted Contribution Network BACON is a cuttin…",
+                "progress": "50%",
+                "open": 7,
+                "closed": 7,
+            },
+            {
+                "title": "💰 Multi-Crypto Donations",
+                "due_date": "No due date",
+                "last_updated": "about 1 month ago",
+                "description": "Overview: The Decentralized Multi-Crypto Payment Integration featur…",
+                "progress": "25%",
+                "open": 6,
+                "closed": 2,
+            },
+            {
+                "title": "💡 Suggestions",
+                "due_date": "No due date",
+                "last_updated": "about 1 month ago",
+                "description": "",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "💸 Pledge",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🌘Dark Mode",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "👷 Contributor Ranking",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "🌞💻🥉 Shows contributor github username, commits, issues opened, issu…",
+                "progress": "80%",
+                "open": 1,
+                "closed": 4,
+            },
+            {
+                "title": "✅ Bug Verifiers",
+                "due_date": "No due date",
+                "last_updated": "3 months ago",
+                "description": "Ensures bug fixes are valid and effective, maintaining site integrity.",
+                "progress": "50%",
+                "open": 1,
+                "closed": 1,
+            },
+            {
+                "title": "🤖 Artificial Intelligence",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "",
+                "progress": "100%",
+                "open": 0,
+                "closed": 2,
+            },
+            {
+                "title": "🕹️ Penteston Integration",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Enhances site security through integrated pentesting tools. We will…",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "🔔 Follower notifications",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "The feature would allow users to follow a company's bug reports and…",
+                "progress": "0%",
+                "open": 1,
+                "closed": 0,
+            },
+            {
+                "title": "📊 Review Queue",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Streamlines content moderation, improving site quality.",
+                "progress": "0%",
+                "open": 3,
+                "closed": 0,
+            },
+            {
+                "title": "🕵️ Private Bug Bounties",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "Allows companies to conduct private, paid bug bounties in a non-com…",
+                "progress": "25%",
+                "open": 3,
+                "closed": 1,
+            },
+            {
+                "title": "📡 Cyber Dashboard",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "🌞💻🥉 a comprehensive dashboard of stats and information for organiza…",
+                "progress": "0%",
+                "open": 13,
+                "closed": 0,
+            },
+            {
+                "title": "🪝 Webhooks",
+                "due_date": "No due date",
+                "last_updated": "7 months ago",
+                "description": "automate the synchronization of issue statuses between GitHub and t…",
+                "progress": "0%",
+                "open": 2,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Modern Front-End Redesign with React & Tailwind CSS (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "A complete redesign of BLT's interface, improving accessibility, usability, "
+                "and aesthetics. The new front-end will be built with React and Tailwind CSS, "
+                "ensuring high performance while maintaining a lightweight architecture under "
+                "100MB. Dark mode will be the default, with full responsiveness and an enhanced "
+                "user experience.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Organization Dashboard – Enhanced Vulnerability & Bug Management (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Redesign and expand the organization dashboard to provide seamless management of bug "
+                "bounties, security reports, and contributor metrics. Features will include advanced "
+                "filtering, real-time analytics, and improved collaboration tools for security teams.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Secure API Development & Migration to Django Ninja (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Migrate our existing and develop a secure, well-documented API with automated "
+                "security tests to support the new front-end. This may involve migrating from Django "
+                "Rest Framework to Django Ninja for improved performance, maintainability, and API "
+                "efficiency.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Gamification & Blockchain Rewards System (Ordinals & Solana) (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Introduce GitHub-integrated contribution tracking that rewards security "
+                "researchers with Bitcoin Ordinals and Solana-based incentives. This will "
+                "integrate with other parts of the website as well such as daily check-ins "
+                "and code quality. Gamification elements such as badges, leaderboards, and "
+                "contribution tiers will encourage engagement and collaboration in "
+                "open-source security.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Decentralized Bidding System for Issues (Bitcoin Cash Integration) (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Create a decentralized system where developers can bid on GitHub issues "
+                "using Bitcoin Cash, ensuring direct transactions between contributors and "
+                "project owners without BLT handling funds.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 AI-Powered Code Review & Smart Prioritization System for Maintainers (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Develop an AI-driven GitHub assistant that analyzes pull requests, detects "
+                "security vulnerabilities, and provides real-time suggestions for improving "
+                "code quality. A smart prioritization system will help maintainers rank issues "
+                "based on urgency, community impact, and dependencies.",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+            {
+                "title": "🔸 Enhanced Slack Bot & Automation System (~350h)",
+                "due_date": "No due date",
+                "last_updated": "",
+                "description": "Expand the BLT Slack bot to automate vulnerability tracking, send real-time "
+                "alerts for new issues, and integrate GitHub notifications and contributor "
+                "activity updates for teams. prioritize them based on community engagement, "
+                "growth and securing worldwide applications",
+                "progress": "0%",
+                "open": 0,
+                "closed": 0,
+            },
+        ]
+
+        context["milestones"] = milestones
+        context["milestone_count"] = len(milestones)
         return context

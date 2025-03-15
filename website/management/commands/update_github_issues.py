@@ -7,7 +7,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
-from website.models import GitHubIssue, GitHubReview, Repo, UserProfile
+from website.models import Contributor, GitHubIssue, GitHubReview, Repo, UserProfile
 
 
 class Command(LoggedBaseCommand):
@@ -60,9 +60,45 @@ class Command(LoggedBaseCommand):
                         merged = True if pr["pull_request"].get("merged_at") else False
                         repo = Repo.objects.get(name__iexact=repo_name)
 
+                        # Get or create contributor record
+                        try:
+                            # Get user details from GitHub API
+                            user_api_url = pr["user"]["url"]
+                            user_response = requests.get(user_api_url, headers=headers)
+                            user_response.raise_for_status()
+                            user_data = user_response.json()
+
+                            # Find or create contributor
+                            contributor, created = Contributor.objects.get_or_create(
+                                github_id=user_data["id"],
+                                defaults={
+                                    "name": user_data["login"],
+                                    "github_url": user_data["html_url"],
+                                    "avatar_url": user_data["avatar_url"],
+                                    "contributor_type": user_data["type"],
+                                    "contributions": 1,
+                                },
+                            )
+
+                            if not created:
+                                # Update existing contributor data
+                                contributor.name = user_data["login"]
+                                contributor.github_url = user_data["html_url"]
+                                contributor.avatar_url = user_data["avatar_url"]
+                                contributor.contributions += 1
+                                contributor.save()
+
+                            # Add contributor to repo
+                            repo.contributor.add(contributor)
+
+                        except Exception as e:
+                            self.stdout.write(self.style.WARNING(f"Error creating contributor: {str(e)}"))
+                            contributor = None
+
                         # Create or update the pull request
                         github_issue, created = GitHubIssue.objects.update_or_create(
                             issue_id=pr["number"],
+                            repo=repo,  # Add repo to the lookup to ensure uniqueness
                             defaults={
                                 "title": pr["title"],
                                 "body": pr.get("body", ""),
@@ -86,8 +122,8 @@ class Command(LoggedBaseCommand):
                                 else None,
                                 "is_merged": merged,
                                 "url": pr["html_url"],
-                                "repo": repo,
                                 "user_profile": user,
+                                "contributor": contributor,  # Link to contributor
                             },
                         )
 
@@ -96,25 +132,33 @@ class Command(LoggedBaseCommand):
 
                         # Fetch reviews for this pull request
                         reviews_url = pr["pull_request"]["url"] + "/reviews"
-                        reviews_response = requests.get(reviews_url, headers=headers)
-                        reviews_data = reviews_response.json()
+                        try:
+                            reviews_response = requests.get(reviews_url, headers=headers)
+                            reviews_response.raise_for_status()  # Check for HTTP errors
+                            reviews_data = reviews_response.json()
 
-                        # Store reviews made by the user
-                        for review in reviews_data:
-                            if review["user"]["login"] == github_username:
-                                GitHubReview.objects.update_or_create(
-                                    review_id=review["id"],
-                                    defaults={
-                                        "pull_request": github_issue,
-                                        "reviewer": user,
-                                        "body": review.get("body", ""),
-                                        "state": review["state"],
-                                        "submitted_at": timezone.make_aware(
-                                            datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
-                                        ),
-                                        "url": review["html_url"],
-                                    },
-                                )
+                            # Store reviews made by the user
+                            if isinstance(reviews_data, list):
+                                for review in reviews_data:
+                                    if review.get("user") and review["user"].get("login") == github_username:
+                                        GitHubReview.objects.update_or_create(
+                                            review_id=review["id"],
+                                            defaults={
+                                                "pull_request": github_issue,
+                                                "reviewer": user,
+                                                "body": review.get("body", ""),
+                                                "state": review["state"],
+                                                "submitted_at": timezone.make_aware(
+                                                    datetime.strptime(review["submitted_at"], "%Y-%m-%dT%H:%M:%SZ")
+                                                ),
+                                                "url": review["html_url"],
+                                            },
+                                        )
+                        except requests.exceptions.RequestException as e:
+                            self.stdout.write(
+                                self.style.ERROR(f"Error fetching reviews for PR {pr['number']}: {str(e)}")
+                            )
+                            continue
 
                     except Repo.DoesNotExist:
                         self.stdout.write(
