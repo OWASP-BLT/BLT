@@ -2333,6 +2333,7 @@ class BannedApp(models.Model):
     def __str__(self):
         return f"{self.app_name} (Banned in {self.country_name})"
 
+
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
     message = models.TextField()
