@@ -46,3 +46,4 @@ icons8-webinar-100.png
 icons8-wiki-64.png
 icon_names.txt
 linter-fail.png
+

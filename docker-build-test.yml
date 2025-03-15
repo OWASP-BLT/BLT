@@ -45,3 +45,4 @@ jobs:
 
       - name: Verify site is served
         run: curl -s http://localhost:8000
+

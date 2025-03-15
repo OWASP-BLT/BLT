@@ -416,3 +416,4 @@ class OrganizationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, org_name)
         self.assertContains(response, org_url)
+

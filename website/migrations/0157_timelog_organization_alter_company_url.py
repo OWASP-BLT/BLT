@@ -27,3 +27,4 @@ class Migration(migrations.Migration):
             field=models.URLField(unique=True),
         ),
     ]
+

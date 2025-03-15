@@ -129,3 +129,4 @@ class SlackHandlerTests(TestCase):
         # Verify contribute message was sent
         mock_client.chat_postMessage.assert_called_once()
         self.assertEqual(response.status_code, 200)
+

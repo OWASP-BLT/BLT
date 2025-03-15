@@ -37,3 +37,4 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(replace_blt_contributors_tag),
     ]
+

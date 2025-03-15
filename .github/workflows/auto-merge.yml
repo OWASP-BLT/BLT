@@ -15,3 +15,4 @@ jobs:
           target: minor
           github-token: ${{ secrets.ACCESS_TOKEN_DEPENDABOT }}
 
+

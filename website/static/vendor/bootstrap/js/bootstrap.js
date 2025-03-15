@@ -2424,3 +2424,4 @@ function escapePotentialXSS(selector) {
         }
     });
 }
+

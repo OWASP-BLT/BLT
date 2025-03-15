@@ -17,3 +17,4 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name="user_domains", to=settings.AUTH_USER_MODEL),
         ),
     ]
+

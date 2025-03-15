@@ -27,3 +27,4 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(related_name="user_subscribed_users", to=settings.AUTH_USER_MODEL),
         ),
     ]
+

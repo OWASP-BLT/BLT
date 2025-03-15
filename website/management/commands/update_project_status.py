@@ -24,3 +24,4 @@ class Command(LoggedBaseCommand):
                 self.stderr.write(msg)
 
         self.stdout.write("Project status update completed")
+

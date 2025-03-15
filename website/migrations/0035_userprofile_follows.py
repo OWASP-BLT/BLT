@@ -16,3 +16,4 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(related_name="follower", to="website.UserProfile"),
         ),
     ]
+

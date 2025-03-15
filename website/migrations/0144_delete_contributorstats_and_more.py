@@ -68,3 +68,4 @@ class Migration(migrations.Migration):
             index=models.Index(fields=["repository", "created"], name="website_con_reposit_9a7e49_idx"),
         ),
     ]
+

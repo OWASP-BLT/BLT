@@ -13,3 +13,4 @@ class MyCommentsAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Comment, MyCommentsAdmin)
+

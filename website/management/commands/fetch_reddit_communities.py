@@ -205,3 +205,4 @@ class Command(BaseCommand):
                 logger.error(f"{COLOR_RED}Failed processing topic '{topic}': {str(e)}{COLOR_RESET}")
 
         logger.info(f"{COLOR_BLUE}Finished fetching communities. Total fetched: {communities_fetched}{COLOR_RESET}")
+

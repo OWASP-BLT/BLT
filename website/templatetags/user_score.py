@@ -11,3 +11,4 @@ def score(value):
 
 
 register.filter("score", score)
+

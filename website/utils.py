@@ -930,3 +930,4 @@ class twitter:
         except Exception as e:
             logging.error(f"Error sending to Slack: {str(e)}")
             return False
+

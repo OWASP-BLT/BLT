@@ -1196,7 +1196,7 @@ class DomainView(View):
         first_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("created").first()
         last_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("-created").first()
 
-        ongoing_bughunts = Hunt.objects.filter(domain__id=domain["id"]).annotate(total_prize=Sum("huntprize__value"))[
+        ongoing_Bug Bountys = Hunt.objects.filter(domain__id=domain["id"]).annotate(total_prize=Sum("huntprize__value"))[
             :3
         ]
         context = {
@@ -1209,7 +1209,7 @@ class DomainView(View):
             "top_testers": top_testers,
             "first_bug": first_bug,
             "last_bug": last_bug,
-            "ongoing_bughunts": ongoing_bughunts,
+            "ongoing_Bug Bountys": ongoing_Bug Bountys,
         }
 
         return render(request, "organization/view_domain.html", context)
@@ -1316,21 +1316,21 @@ class OrganizationDashboardManageRolesView(View):
         return redirect("organization_manage_roles", id)
 
 
-class ShowBughuntView(View):
+class ShowBug BountyView(View):
     def get(self, request, pk, *args, **kwargs):
         hunt_obj = get_object_or_404(Hunt, pk=pk)
 
         # get issues/reports that are done between hunt.start_date and hunt.end_date
         hunt_issues = Issue.objects.filter(hunt__id=hunt_obj.id)
 
-        # total bugs reported in this bughunt
+        # total bugs reported in this Bug Bounty
         total_bugs = hunt_issues.count()
         total_bug_accepted = hunt_issues.filter(verified=True).count()
 
         total_money_distributed = hunt_issues.aggregate(total_money=Sum("rewarded"))["total_money"]
         total_money_distributed = 0 if total_money_distributed is None else total_money_distributed
 
-        bughunt_leaderboard = (
+        Bug Bounty_leaderboard = (
             hunt_issues.values("user__id", "user__username", "user__userprofile__user_avatar")
             .filter(user__isnull=False, verified=True)
             .annotate(count=Count("user__username"))
@@ -1412,11 +1412,11 @@ class ShowBughuntView(View):
             .order_by("-count")[:5]
         )
 
-        # bughunt prizes
+        # Bug Bounty prizes
         rewards = HuntPrize.objects.filter(hunt_id=hunt_obj.id)
         winners_count = {reward.id: Winner.objects.filter(prize_id=reward.id).count() for reward in rewards}
 
-        # check winner have for this bughunt
+        # check winner have for this Bug Bounty
         winners = Winner.objects.filter(hunt_id=hunt_obj.id).select_related("prize")
 
         context = {
@@ -1426,7 +1426,7 @@ class ShowBughuntView(View):
                 "total_bugs": total_bugs,
                 "total_bug_accepted": total_bug_accepted,
             },
-            "bughunt_leaderboard": bughunt_leaderboard,
+            "Bug Bounty_leaderboard": Bug Bounty_leaderboard,
             "top_testers": top_testers,
             "latest_issues": cleaned_issues,
             "rewards": rewards,
@@ -1437,10 +1437,10 @@ class ShowBughuntView(View):
             "is_hunt_manager": is_hunt_manager,
         }
 
-        return render(request, "organization/bughunt/view_bughunt.html", context)
+        return render(request, "organization/Bug Bounty/view_Bug Bounty.html", context)
 
 
-class EndBughuntView(View):
+class EndBug BountyView(View):
     def get(self, request, pk, *args, **kwargs):
         hunt = get_object_or_404(Hunt, pk=pk)
 
@@ -1459,8 +1459,8 @@ class EndBughuntView(View):
         hunt.save()
         organization = hunt.domain.organization.id
 
-        messages.success(request, f"successfully Ended Bughunt {hunt.name}")
-        return redirect("organization_manage_bughunts", id=organization)
+        messages.success(request, f"successfully Ended Bug Bounty {hunt.name}")
+        return redirect("organization_manage_Bug Bountys", id=organization)
 
 
 class AddHuntView(View):
@@ -1478,7 +1478,7 @@ class AddHuntView(View):
             "markdown_value": hunt.description,
         }
 
-        return render(request, "organization/bughunt/edit_bughunt.html", context)
+        return render(request, "organization/Bug Bounty/edit_Bug Bounty.html", context)
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
@@ -1502,7 +1502,7 @@ class AddHuntView(View):
             "domains": domains,
         }
 
-        return render(request, "organization/bughunt/add_bughunt.html", context)
+        return render(request, "organization/Bug Bounty/add_Bug Bounty.html", context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -1519,7 +1519,7 @@ class AddHuntView(View):
 
         if domain is None:
             messages.error(request, "Domain Does not exists")
-            return redirect("add_bughunt", id)
+            return redirect("add_Bug Bounty", id)
 
         start_date = data.get("start_date", datetime.now().strftime("%m/%d/%Y"))
         end_date = data.get("end_date", datetime.now().strftime("%m/%d/%Y"))
@@ -1529,12 +1529,12 @@ class AddHuntView(View):
             end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
         except ValueError:
             messages.error(request, "Invalid Date Format")
-            return redirect("add_bughunt", id)
+            return redirect("add_Bug Bounty", id)
 
         # apply validation for date not valid
         if start_date > end_date:
             messages.error(request, "Start date should be less than end date")
-            return redirect("add_bughunt", id)
+            return redirect("add_Bug Bounty", id)
 
         hunt_logo = request.FILES.get("logo", None)
         if hunt_logo is not None:
@@ -1556,11 +1556,11 @@ class AddHuntView(View):
             hunt.description = data.get("markdown-description", "")
 
             if not hunt.is_published:
-                hunt.name = data.get("bughunt_name", "")
+                hunt.name = data.get("Bug Bounty_name", "")
                 hunt.starts_on = start_date
 
             hunt.end_on = end_date
-            hunt.is_published = False if data["publish_bughunt"] == "false" else True
+            hunt.is_published = False if data["publish_Bug Bounty"] == "false" else True
 
             if hunt_logo is not None:
                 hunt.logo = f"logos/{hunt_logo.name}"
@@ -1571,13 +1571,13 @@ class AddHuntView(View):
 
         else:
             hunt = Hunt.objects.create(
-                name=data.get("bughunt_name", ""),
+                name=data.get("Bug Bounty_name", ""),
                 domain=domain,
                 url=data.get("domain_url", ""),
                 description=data.get("markdown-description", ""),
                 starts_on=start_date,
                 end_on=end_date,
-                is_published=False if data["publish_bughunt"] == "false" else True,
+                is_published=False if data["publish_Bug Bounty"] == "false" else True,
             )
 
         prizes = json.loads(data.get("prizes", "[]"))
@@ -1597,10 +1597,10 @@ class AddHuntView(View):
             )
 
         messages.success(request, "successfully added the managers")
-        return redirect("organization_manage_bughunts", id)
+        return redirect("organization_manage_Bug Bountys", id)
 
 
-class OrganizationDashboardManageBughuntView(View):
+class OrganizationDashboardManageBug BountyView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # For authenticated users, show all organizations they have access to
@@ -1633,7 +1633,7 @@ class OrganizationDashboardManageBughuntView(View):
             "end_on__month",
             "end_on__year",
         ).filter(domain__organization__id=id)
-        filtered_bughunts = {
+        filtered_Bug Bountys = {
             "all": query,
             "ongoing": query.filter(result_published=False, is_published=True),
             "ended": query.filter(result_published=True),
@@ -1646,10 +1646,10 @@ class OrganizationDashboardManageBughuntView(View):
             "organization": id,
             "organization_obj": organization_obj,
             "organizations": organizations,
-            "bughunts": filtered_bughunts.get(filter_type, []),
+            "Bug Bountys": filtered_Bug Bountys.get(filter_type, []),
         }
 
-        return render(request, "organization/bughunt/organization_manage_bughunts.html", context)
+        return render(request, "organization/Bug Bounty/organization_manage_Bug Bountys.html", context)
 
 
 @require_http_methods(["DELETE"])
@@ -1711,7 +1711,7 @@ def accept_bug(request, issue_id, reward_id=None):
                 prize_amount=reward.value,
             ).save()
 
-        return redirect("show_bughunt", pk=issue.hunt.id)
+        return redirect("show_Bug Bounty", pk=issue.hunt.id)
 
 
 @require_http_methods(["DELETE"])
@@ -1741,3 +1741,4 @@ def delete_manager(request, manager_id, domain_id):
         return JsonResponse({"success": False, "message": "Domain not found."})
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "User not found."})
+

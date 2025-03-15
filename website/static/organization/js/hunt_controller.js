@@ -108,11 +108,11 @@ function cancelForm(){
     }
 }
 
-function PublishBughunt(is_published){
+function PublishBug Bounty(is_published){
     
-    const bughuntForm = document.getElementById("add_bughunt_form");
+    const Bug BountyForm = document.getElementById("add_Bug Bounty_form");
 
-    if (bughuntForm.checkValidity()){
+    if (Bug BountyForm.checkValidity()){
         const prizeArrayInput = document.createElement('input');
         prizeArrayInput.type = 'text';
         prizeArrayInput.name = 'prizes';
@@ -120,17 +120,17 @@ function PublishBughunt(is_published){
         
         const publishHunt = document.createElement('input');
         publishHunt.type = "text";
-        publishHunt.name = "publish_bughunt";
+        publishHunt.name = "publish_Bug Bounty";
         publishHunt.value = is_published
 
-        bughuntForm.appendChild(prizeArrayInput);
-        bughuntForm.appendChild(publishHunt);
+        Bug BountyForm.appendChild(prizeArrayInput);
+        Bug BountyForm.appendChild(publishHunt);
 
-        bughuntForm.submit();
+        Bug BountyForm.submit();
     }
 
     else{
-        bughuntForm.reportValidity();
+        Bug BountyForm.reportValidity();
     }
 
     

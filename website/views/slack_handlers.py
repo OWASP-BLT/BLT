@@ -2466,3 +2466,4 @@ def handle_committee_pagination(action, body, client):
     except Exception as e:
         print(f"Error handling committee pagination: {str(e)}")
         return JsonResponse({"response_type": "ephemeral", "text": "❌ An error occurred while navigating committees."})
+

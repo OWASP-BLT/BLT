@@ -518,3 +518,4 @@ class Command(LoggedBaseCommand):
             self.stderr.write(self.style.ERROR(f"Network error sending Slack notification: {str(re)}"))
         except ValueError as ve:
             self.stderr.write(self.style.ERROR(f"Invalid message format for Slack: {str(ve)}"))
+

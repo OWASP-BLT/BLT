@@ -12,7 +12,7 @@ Users interact with the About Us component through the following steps:
 #### 3. Key Elements
 - **Navigation Sidebar**: Contains links to various sections of the BLT application, including Issues, Companies, Scoreboard, Users, Teams, Bug Bounties, and more.
 - **About BLT Section**: Provides a detailed description of the BLT project, emphasizing its open-source nature, non-commercial goals, and community-driven approach.
-- **User Benefits**: Describes the incentives for users, including points, money from sponsored bug hunts, leaderboard recognition, and tips for finding bugs.
+- **User Benefits**: Describes the incentives for users, including points, money from sponsored Bug Bountys, leaderboard recognition, and tips for finding bugs.
 - **How It Works**: Provides step-by-step instructions for testers on how to participate, including creating a user account, describing bugs, attaching screenshots, and submitting information.
 - **Organization Benefits**: Explains the advantages for organizations in maintaining a bug-free website and how they can participate in the bug bounty program.
 - **Additional Information**: Includes links to terms and conditions, privacy policy, and other relevant documentation.

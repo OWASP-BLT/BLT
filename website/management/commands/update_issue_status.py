@@ -20,3 +20,4 @@ class Command(LoggedBaseCommand):
                 self.stderr.write(f"Error updating issue {issue.id}: {str(e)}")
 
         self.stdout.write("Issue status update completed")
+

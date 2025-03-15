@@ -415,3 +415,4 @@ class Command(LoggedBaseCommand):
             except Exception as e:
                 logger.error(f"Error saving PR #{pr['number']} for repo {repo.name}: {e}")
                 self.stdout.write(self.style.ERROR(f"Failed to save PR #{pr['number']}: {e}"))
+

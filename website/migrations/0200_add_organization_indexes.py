@@ -34,3 +34,4 @@ class Migration(migrations.Migration):
             index=models.Index(fields=["project"], name="repo_project_idx"),
         ),
     ]
+

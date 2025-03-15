@@ -181,3 +181,4 @@ function validateBitCoin(address) {
 // for(var i=0; i<ethAddresses.length; i++){
 //     console.log(`${ethAddresses[i]} - ${validateEthereum(ethAddresses[i])}`)
 // }
+

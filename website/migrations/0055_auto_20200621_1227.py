@@ -15,3 +15,4 @@ class Migration(migrations.Migration):
             field=models.IntegerField(blank=True, null=True),
         ),
     ]
+

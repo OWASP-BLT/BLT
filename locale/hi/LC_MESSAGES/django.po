@@ -299,7 +299,7 @@ msgid "Max amout awarded to winner"
 msgstr "विजेता को दिया गया अधिकतम राशि"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START Bug Bounty"
 msgstr "बगहंट शुरू करें"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -396,7 +396,7 @@ msgid "Report a Bug"
 msgstr "रिपोर्ट"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bug Bountys"
 msgstr "बग हंट्स"
 
 #: website/templates/includes/navbar.html:109
@@ -404,7 +404,7 @@ msgid "Add to chrome"
 msgstr "क्रोम में जोड़ें"
 
 #: website/templates/includes/navbar.html:114
-msgid "Start a Bug Hunt"
+msgid "Start a Bug Bounty"
 msgstr "कीट का शिकार"
 
 #: website/templates/includes/navbar.html:120
@@ -643,7 +643,7 @@ msgid "Announced to Users"
 msgstr "उपयोगकर्ताओं के लिए घोषित"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the Bug Bountyer"
 msgstr "सभी पुरस्कार राशि सीधे बग हंटर के पास जाती है"
 
 #: website/templates/mobile_about.html:6
@@ -705,7 +705,7 @@ msgid "Money if you join a"
 msgstr "पैसा अगर आप शामिल होते हैं"
 
 #: website/templates/mobile_about.html:20
-msgid "Sponsored Bug Hunt"
+msgid "Sponsored Bug Bounty"
 msgstr "प्रायोजित बग हंट"
 
 #: website/templates/mobile_about.html:21
@@ -914,7 +914,7 @@ msgid "BUG TYPE"
 msgstr "बग प्रकार"
 
 #: website/templates/report.html:186
-msgid "BUG HUNT"
+msgid "Bug Bounty"
 msgstr "बग हंट"
 
 #: website/templates/report.html:195
@@ -938,7 +938,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "टीम के सदस्यों को जोड़ें"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
+msgid "Team members should be Bug Bountys users"
 msgstr "टीम के सदस्य बगहंट्स उपयोगकर्ता होने चाहिए"
 
 #: website/templates/report.html:313
@@ -980,10 +980,10 @@ msgstr "रिपोर्ट करें"
 #~ msgstr "शुरू करें "
 
 # Hindi (hi)
-#~ msgid "BUGHUNT"
+#~ msgid "Bug Bounty"
 #~ msgstr "बगहंट"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the Bug Bounty"
 #~ msgstr "बगहंट का नाम"
 
 #~ msgid "You do not have a company, create one"
@@ -994,3 +994,4 @@ msgstr "रिपोर्ट करें"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "बग विवरण"
+

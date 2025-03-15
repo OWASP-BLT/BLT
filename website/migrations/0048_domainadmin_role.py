@@ -15,3 +15,4 @@ class Migration(migrations.Migration):
             field=models.IntegerField(choices=[(0, "Super Admin"), (1, "Hunt Admin")], default=0),
         ),
     ]
+

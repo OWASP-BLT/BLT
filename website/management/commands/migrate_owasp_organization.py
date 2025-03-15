@@ -176,3 +176,4 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f"An error occurred during migration: {str(e)}"))
             # Log the full traceback for debugging
             logger.exception("Exception during OWASP organization migration")
+

@@ -124,3 +124,4 @@ peerConnection.addEventListener('negotiationneeded', () => {
     console.log('Negotiation needed');
     updateConnectionInfo(peerConnection);
 }); 
+

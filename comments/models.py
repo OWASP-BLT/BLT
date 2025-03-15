@@ -24,3 +24,4 @@ class Comment(models.Model):
 
     def children(self):
         return Comment.objects.filter(parent=self)
+

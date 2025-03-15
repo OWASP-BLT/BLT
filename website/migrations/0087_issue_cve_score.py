@@ -15,3 +15,4 @@ class Migration(migrations.Migration):
             field=models.DecimalField(blank=True, decimal_places=1, max_digits=2, null=True),
         ),
     ]
+

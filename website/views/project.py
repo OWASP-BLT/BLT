@@ -1874,3 +1874,4 @@ class RepoBadgeView(APIView):
         response["Expires"] = "0"
 
         return response
+

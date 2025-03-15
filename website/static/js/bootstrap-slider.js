@@ -1700,3 +1700,4 @@ var windowIsDefined = (typeof window === "undefined" ? "undefined" : _typeof(win
 
     return Slider;
 });
+

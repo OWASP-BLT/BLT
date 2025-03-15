@@ -42,3 +42,4 @@ The component is designed with several features to enhance performance and user 
 - **Responsive Design**: Adapts to different screen sizes and devices, providing a consistent experience across desktops, tablets, and mobile devices.
 - **Efficient Data Handling**: Utilizes efficient methods to fetch and submit data, minimizing wait times.
 - **Scalability**: Designed to handle multiple bids and submissions, maintaining performance even with a high volume of users.
+

@@ -301,3 +301,4 @@ class HackathonPrizeForm(forms.ModelForm):
             self.fields["sponsor"].queryset = HackathonSponsor.objects.filter(hackathon=hackathon)
         else:
             self.fields["sponsor"].queryset = HackathonSponsor.objects.none()
+

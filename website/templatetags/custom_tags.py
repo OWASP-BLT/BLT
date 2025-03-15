@@ -177,3 +177,4 @@ def cut(value, arg):
         return str(value).replace(arg, "")
     except (ValueError, TypeError):
         return value
+

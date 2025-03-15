@@ -35,3 +35,4 @@ class Migration(migrations.Migration):
             name="Greeting",
         ),
     ]
+

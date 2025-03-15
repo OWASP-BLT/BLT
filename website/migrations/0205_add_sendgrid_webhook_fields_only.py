@@ -52,3 +52,4 @@ class Migration(migrations.Migration):
             field=models.BooleanField(default=False, help_text="Whether the user has unsubscribed"),
         ),
     ]
+

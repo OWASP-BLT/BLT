@@ -16,11 +16,11 @@ Users interact with the Company Dashboard through the following steps:
 - **Bug List**: A list of all reported bugs for the company, categorized into open and closed tabs.
 - **Bug Report Items**: Each bug report includes a title, description snippet, status (open/closed), tags (e.g., General, Security), user who reported it, and the time since it was reported.
 - **Subscription Button**: Allows users to subscribe to updates for bugs reported for the company.
-- **Top Bug Hunters**: Displays a list of users who have reported the most bugs for the company, with their usernames and bug counts.
+- **Top Bug Bountyers**: Displays a list of users who have reported the most bugs for the company, with their usernames and bug counts.
 - **Pagination Controls**: Allows users to navigate through multiple pages of bug reports.
 
 #### 4. Visual Design
-- **Layout**: The dashboard is organized with the company information at the top, followed by the bug list in a tabbed format for open and closed bugs. The top bug hunters and subscription options are placed on the right sidebar.
+- **Layout**: The dashboard is organized with the company information at the top, followed by the bug list in a tabbed format for open and closed bugs. The top Bug Bountyers and subscription options are placed on the right sidebar.
 - **Color Scheme**: Consistent with the BLT branding, the color scheme uses red, white, and grey tones. Tags and status indicators use specific colors (e.g., green for open, red for closed) to provide visual cues.
 - **Typography**: Modern, readable fonts are used for all text elements, ensuring clarity and ease of reading.
 - **Visual Cues**: Interactive elements such as buttons and links are highlighted with colors and hover effects to indicate functionality.

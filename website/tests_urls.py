@@ -346,3 +346,4 @@
 #         else:
 #             print(f"\nAll {total_urls} URLs tested successfully!")
 #             print(f"Successful URLs: {successful_urls}")
+

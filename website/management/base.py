@@ -78,3 +78,4 @@ class LoggedBaseCommand(BaseCommand):
                 DailyStats.objects.create(name=command_name, value="1")
 
             raise
+

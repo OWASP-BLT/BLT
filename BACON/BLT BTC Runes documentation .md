@@ -42,3 +42,4 @@ bitcoin-core.daemon \-datadir=/home/apoorva/test-btc-data \-dbcache=256 \-rpcwor
 
 1. I found that ^C takes a lot of time to stop the bitcoind process,so another way to kill it instantly is finding the PID of the bitcoind process and killing it, saves a lot of time, but use with caution, since it might corrupt the indexing and syncing.
 
+

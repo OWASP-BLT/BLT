@@ -304,7 +304,7 @@ msgid "Max amout awarded to winner"
 msgstr "Montant maximal attribué au gagnant"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START Bug Bounty"
 msgstr "DÉMARRER UNE CHASSE AUX BUGS"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -401,7 +401,7 @@ msgid "Report a Bug"
 msgstr "Einen Fehler melden"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bug Bountys"
 msgstr "Fehlerjagden"
 
 #: website/templates/includes/navbar.html:109
@@ -409,7 +409,7 @@ msgid "Add to chrome"
 msgstr "Zu Chrome hinzufügen"
 
 #: website/templates/includes/navbar.html:114
-msgid "Start a Bug Hunt"
+msgid "Start a Bug Bounty"
 msgstr "Starten Sie eine Fehlerjagd"
 
 #: website/templates/includes/navbar.html:120
@@ -648,7 +648,7 @@ msgid "Announced to Users"
 msgstr "Benutzern angekündigt"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the Bug Bountyer"
 msgstr "Alle Preisgelder gehen direkt an den Bug-Jäger"
 
 #: website/templates/mobile_about.html:6
@@ -714,7 +714,7 @@ msgid "Money if you join a"
 msgstr "Geld, wenn Sie sich anschließen"
 
 #: website/templates/mobile_about.html:20
-msgid "Sponsored Bug Hunt"
+msgid "Sponsored Bug Bounty"
 msgstr "Gesponserte Bug-Suche"
 
 #: website/templates/mobile_about.html:21
@@ -929,7 +929,7 @@ msgid "BUG TYPE"
 msgstr "Fehlertyp"
 
 #: website/templates/report.html:186
-msgid "BUG HUNT"
+msgid "Bug Bounty"
 msgstr "Fehlerjagd"
 
 #: website/templates/report.html:195
@@ -953,8 +953,8 @@ msgid "ADD TEAM MEMBERS"
 msgstr "Teammitglieder hinzufügen"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
-msgstr "Teammitglieder sollten Bughunts-Benutzer sein"
+msgid "Team members should be Bug Bountys users"
+msgstr "Teammitglieder sollten Bug Bountys-Benutzer sein"
 
 #: website/templates/report.html:313
 msgid "Report Privately"
@@ -973,10 +973,10 @@ msgstr "Melden"
 #~ msgid "START A "
 #~ msgstr "STARTEN EINES "
 
-#~ msgid "BUGHUNT"
+#~ msgid "Bug Bounty"
 #~ msgstr "BUGSUCHE"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the Bug Bounty"
 #~ msgstr "Nom de la chasse aux bugs"
 
 #~ msgid "You do not have a company, create one"
@@ -987,3 +987,4 @@ msgstr "Melden"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "Fehlerbeschreibung"
+

@@ -15,3 +15,4 @@ fi
 
 # Run the application with SSL
 uvicorn blt.asgi:application --host 0.0.0.0 --port 8443 --ssl-keyfile ./ssl/key.pem --ssl-certfile ./ssl/cert.pem --log-level debug --reload --reload-include *.html
+

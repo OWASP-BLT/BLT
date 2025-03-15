@@ -20,3 +20,4 @@ class Migration(migrations.Migration):
             field=models.DateField(blank=True, help_text="Last day the user visited", null=True),
         ),
     ]
+

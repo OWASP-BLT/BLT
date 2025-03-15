@@ -36,7 +36,7 @@
                                 {% load humanize %}
                                 <h1 class="text-2xl font-bold underline mb-4">{% env 'PROJECT_NAME' %} {{ month }} Summary</h1>
                                 <p class="mb-4">The leaderboard has been reset, go forth and find bugs!</p>
-                                <p class="mb-4">{{ month }}'s Top 5 Bug Hunters:</p>
+                                <p class="mb-4">{{ month }}'s Top 5 Bug Bountyers:</p>
                                 <ul class="mb-4">
                                     {% for leader in leaderboard %}
                                         <li class="mb-2">
@@ -74,7 +74,7 @@
                                 <p class="mb-4">Keep your website bug free:</p>
                                 <p class="mb-4">
                                     <a href="https://{% env 'DOMAIN_NAME' %}/hunt"
-                                       class="text-blue-500 hover:text-blue-700">Sponsor a Bug Hunt Today</a>
+                                       class="text-blue-500 hover:text-blue-700">Sponsor a Bug Bounty Today</a>
                                 </p>
                             </td>
                         </tr>
@@ -133,3 +133,4 @@
         </table>
     </body>
 </html>
+

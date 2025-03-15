@@ -1118,3 +1118,4 @@ def set_public_key(request):
     profile.save()
 
     return JsonResponse({"success": True, "public_key": profile.public_key})
+

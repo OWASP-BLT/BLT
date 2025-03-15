@@ -1,32 +1,32 @@
-### Detailed Description of the "Start a Bughunt" UI Component and the url path is "https://blt.owasp.org/hunt/"
+### Detailed Description of the "Start a Bug Bounty" UI Component and the url path is "https://blt.owasp.org/hunt/"
 
 #### 1. **Component Overview**
-The "Start a Bughunt" UI component is designed to allow users to initiate a bug hunt within the OWASP Bug Logging Tool (BLT) application. Its primary functionalities include capturing details about the bug hunt, such as the name, URL, file uploads, and setting the prize amount for the bug hunters. This component is crucial for organizations and individuals looking to find and fix bugs in their software by incentivizing external testers.
+The "Start a Bug Bounty" UI component is designed to allow users to initiate a Bug Bounty within the OWASP Bug Logging Tool (BLT) application. Its primary functionalities include capturing details about the Bug Bounty, such as the name, URL, file uploads, and setting the prize amount for the Bug Bountyers. This component is crucial for organizations and individuals looking to find and fix bugs in their software by incentivizing external testers.
 
 #### 2. **User Interaction**
-Users interact with this component by filling out a form to start a new bug hunt. The steps involved are as follows:
-1. Enter the name of the bug hunt.
+Users interact with this component by filling out a form to start a new Bug Bounty. The steps involved are as follows:
+1. Enter the name of the Bug Bounty.
 2. Provide the URL or application name or GPS location related to the issue.
 3. Upload relevant files that may help in identifying or describing the bug.
 4. Optionally, add further descriptions.
 5. Select a subscription plan if applicable.
-6. Set the prize amount for the successful bug hunter using a slider.
-7. Click the "Start Bughunt!" button to submit the form and initiate the bug hunt.
+6. Set the prize amount for the successful Bug Bountyer using a slider.
+7. Click the "Start Bug Bounty!" button to submit the form and initiate the Bug Bounty.
 
 #### 3. **Key Elements**
-- **Name of the Bughunt Field**: An input field where users enter the name of the bug hunt.
+- **Name of the Bug Bounty Field**: An input field where users enter the name of the Bug Bounty.
 - **URL Field**: An input field for the URL or app name.
-- **File Upload Button**: A button that allows users to upload files relevant to the bug hunt.
-- **Description Field**: A text area for users to provide additional details about the bug hunt.
+- **File Upload Button**: A button that allows users to upload files relevant to the Bug Bounty.
+- **Description Field**: A text area for users to provide additional details about the Bug Bounty.
 - **Subscription Plan Dropdown**: A dropdown menu for selecting the subscription plan.
-- **Prize Amount Slider**: A slider to set the amount of prize money awarded to the successful bug hunter.
-- **Start Bughunt Button**: A button to submit the form and start the bug hunt.
+- **Prize Amount Slider**: A slider to set the amount of prize money awarded to the successful Bug Bountyer.
+- **Start Bug Bounty Button**: A button to submit the form and start the Bug Bounty.
 
 #### 4. **Visual Design**
 - **Layout**: The layout is straightforward, with fields stacked vertically. The form is positioned on the right side of the page, with clear labels and input areas.
 - **Color Scheme**: The color scheme primarily includes red, white, and black. Red is used for labels and buttons, which draws attention to important actions and fields.
 - **Typography**: The typography is clean and readable, with sans-serif fonts used for labels and input fields. Bold text highlights important labels and actions.
-- **Visual Cues**: Icons are used next to the labels to provide a visual representation of the input field's purpose. The "Start Bughunt!" button is prominently displayed in red, indicating it is the primary action.
+- **Visual Cues**: Icons are used next to the labels to provide a visual representation of the input field's purpose. The "Start Bug Bounty!" button is prominently displayed in red, indicating it is the primary action.
 
 #### 5. **Accessibility Features**
 - **Keyboard Navigation**: The form is fully navigable using the keyboard. Users can tab through the input fields and buttons.

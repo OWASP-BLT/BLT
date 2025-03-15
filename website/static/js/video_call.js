@@ -852,3 +852,4 @@ class VideoCall {
 document.addEventListener('DOMContentLoaded', () => {
     new VideoCall();
 });
+

@@ -24,3 +24,4 @@ class Command(BaseCommand):
         except Exception as e:
             logger.error(f"Error in hourly tasks: {e}")
             raise
+

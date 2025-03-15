@@ -221,7 +221,7 @@ class Command(LoggedBaseCommand):
             starts_on = timezone.now() + timedelta(days=random.randint(1, 30))
             end_on = starts_on + timedelta(days=random.randint(30, 90))
             hunt = Hunt.objects.create(
-                name=f"Bug Hunt {i+1}",
+                name=f"Bug Bounty {i+1}",
                 description=random_sentence(15),
                 prize=random.randint(100, 1000),
                 created=created_date,
@@ -402,3 +402,4 @@ class Command(LoggedBaseCommand):
         self.create_reviews(users, pull_requests, 90)
 
         self.stdout.write(self.style.SUCCESS("Done!"))
+

@@ -36,3 +36,4 @@ var MtrDatepickerDemo = (function() {
 	};
 
 })();
+

@@ -109,3 +109,4 @@ class Command(LoggedBaseCommand):
                         time.sleep(5)
 
         self.stdout.write(self.style.SUCCESS("Successfully fetched and stored trademark data for all organizations"))
+

@@ -197,3 +197,4 @@ def handle_team_sign_in_challenges(team):
     except Challenge.DoesNotExist:
         print(f"Challenge '{challenge_title}' does not exist.")
         pass
+

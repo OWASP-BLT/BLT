@@ -18,3 +18,4 @@ class Migration(migrations.Migration):
             field=models.ImageField(upload_to=b"screenshots", validators=[website.models.validate_image]),
         ),
     ]
+

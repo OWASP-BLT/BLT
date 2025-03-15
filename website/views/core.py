@@ -2760,3 +2760,4 @@ class RoadmapView(TemplateView):
         context["milestones"] = milestones
         context["milestone_count"] = len(milestones)
         return context
+

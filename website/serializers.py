@@ -103,13 +103,13 @@ class DomainSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class BugHuntPrizeSerializer(serializers.ModelSerializer):
+class Bug BountyPrizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = HuntPrize
         fields = "__all__"
 
 
-class BugHuntSerializer(serializers.ModelSerializer):
+class Bug BountySerializer(serializers.ModelSerializer):
     class Meta:
         model = Hunt
         fields = "__all__"
@@ -190,3 +190,4 @@ class RepoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Repo
         fields = ("id", "name", "url", "organization")
+

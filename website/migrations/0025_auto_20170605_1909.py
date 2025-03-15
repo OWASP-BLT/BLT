@@ -42,3 +42,4 @@ class Migration(migrations.Migration):
             field=models.ImageField(blank=True, null=True, upload_to=website.models.user_images_path),
         ),
     ]
+

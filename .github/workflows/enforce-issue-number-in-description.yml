@@ -86,3 +86,4 @@ jobs:
 
           echo "Closing issues found: $CLOSING_ISSUES"
           echo "PR description is valid with referenced closing issues."
+

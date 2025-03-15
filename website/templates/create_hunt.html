@@ -3,17 +3,17 @@
 {% load custom_tags %}
 {% load tz_detect %}
 {% block title %}
-    Start a Bughunt - OWASP {% env 'PROJECT_NAME' %}
+    Start a Bug Bounty - OWASP {% env 'PROJECT_NAME' %}
 {% endblock %}
 {% block description %}
-    Create a new bughunt by entering the URL, app name, or GPS location of the issue. Define start and end dates, domain, and prizes for the winners.
+    Create a new Bug Bounty by entering the URL, app name, or GPS location of the issue. Define start and end dates, domain, and prizes for the winners.
 {% endblock %}
-{% block keywords %}bughunt, OWASP, start a bughunt, security, rewards, prizes, bug tracking, competition{% endblock %}
+{% block keywords %}Bug Bounty, OWASP, start a Bug Bounty, security, rewards, prizes, bug tracking, competition{% endblock %}
 {% block og_title %}
-    Start a Bughunt - OWASP {% env 'PROJECT_NAME' %}
+    Start a Bug Bounty - OWASP {% env 'PROJECT_NAME' %}
 {% endblock %}
 {% block og_description %}
-    Start a new bughunt on OWASP {% env 'PROJECT_NAME' %}. Set the issue details, start/end dates, and prize information for participants.
+    Start a new Bug Bounty on OWASP {% env 'PROJECT_NAME' %}. Set the issue details, start/end dates, and prize information for participants.
 {% endblock %}
 {% block content %}
     <section>
@@ -29,7 +29,7 @@
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <div class="mb-6">
                 <h4 class="text-2xl font-bold">
-                    <span class="text-black">START A</span> BUGHUNT
+                    <span class="text-black">START A</span> Bug Bounty
                 </h4>
                 <h6 class="text-gray-600">Enter URL, App name or GPS location of issue</h6>
             </div>
@@ -39,7 +39,7 @@
                            name="name"
                            required
                            class="w-full p-2 border border-gray-300 rounded"
-                           placeholder="Enter Name for the Bughunt"
+                           placeholder="Enter Name for the Bug Bounty"
                            id="name"
                            value="">
                 </div>
@@ -154,3 +154,4 @@
   });
     </script>
 {% endblock after_js %}
+

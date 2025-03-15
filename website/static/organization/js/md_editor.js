@@ -294,3 +294,4 @@ function escapeHTML(unsafeText) {
     div.textContent = unsafeText;
     return div.innerHTML;
 }
+

@@ -184,3 +184,4 @@ def update_txid(request, queue_id):
         return render(request, "queue/partials/transaction_details.html", context)
 
     return HttpResponse("Method not allowed", status=405)
+

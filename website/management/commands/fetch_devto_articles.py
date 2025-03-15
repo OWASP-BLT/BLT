@@ -92,3 +92,4 @@ class Command(BaseCommand):
                 logger.error(f"{COLOR_RED}An unexpected error: {e}{COLOR_RESET}")
 
         self.stdout.write(self.style.SUCCESS("Finished fetching and storing articles from DEV.to."))
+

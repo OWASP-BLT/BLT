@@ -44,3 +44,4 @@ class Command(LoggedBaseCommand):
         #                 [user.email],
         #                 html_message=msg_html,
         #             )
+

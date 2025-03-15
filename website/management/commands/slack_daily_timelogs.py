@@ -74,3 +74,4 @@ class Command(LoggedBaseCommand):
             print(f"Message sent successfully: {response['ts']}")
         except Exception as e:
             print(f"Error sending message: {e}")
+

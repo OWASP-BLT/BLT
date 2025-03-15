@@ -146,3 +146,4 @@ class UserProfileUpdateTest(TestCase):
         # Verify the email was not updated
         self.user.refresh_from_db()
         self.assertEqual(self.user.email, "test@example.com")
+

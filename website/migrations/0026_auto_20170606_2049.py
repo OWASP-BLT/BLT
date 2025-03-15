@@ -18,3 +18,4 @@ class Migration(migrations.Migration):
             name="Comment",
         ),
     ]
+

@@ -15,3 +15,4 @@ class Migration(migrations.Migration):
             new_name="repo_visit_count",
         ),
     ]
+

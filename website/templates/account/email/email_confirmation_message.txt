@@ -6,3 +6,4 @@
 
 To confirm this is correct, go to {{ activate_url }}{% endblocktrans %}{% endautoescape %}{% endblock %}
 
+

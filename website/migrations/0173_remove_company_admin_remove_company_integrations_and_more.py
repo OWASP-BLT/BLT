@@ -219,3 +219,4 @@ class Migration(migrations.Migration):
             name="Company",
         ),
     ]
+

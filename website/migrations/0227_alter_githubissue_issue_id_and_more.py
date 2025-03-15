@@ -19,3 +19,4 @@ class Migration(migrations.Migration):
             unique_together={("issue_id", "repo")},
         ),
     ]
+

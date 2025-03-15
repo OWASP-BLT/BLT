@@ -7,3 +7,4 @@ from whitenoise import WhiteNoise
 
 application = get_wsgi_application()
 application = WhiteNoise(application)
+

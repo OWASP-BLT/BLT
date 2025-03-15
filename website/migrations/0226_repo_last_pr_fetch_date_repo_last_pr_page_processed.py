@@ -20,3 +20,4 @@ class Migration(migrations.Migration):
             field=models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API"),
         ),
     ]
+

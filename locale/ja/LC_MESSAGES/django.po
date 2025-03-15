@@ -302,7 +302,7 @@ msgid "Max amout awarded to winner"
 msgstr "優勝者に授与される最大金額"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START Bug Bounty"
 msgstr "バグハントを開始"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -399,7 +399,7 @@ msgid "Report a Bug"
 msgstr "バグを報告する"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bug Bountys"
 msgstr "バグハント"
 
 #: website/templates/includes/navbar.html:109
@@ -407,7 +407,7 @@ msgid "Add to chrome"
 msgstr "Chrome に追加"
 
 #: website/templates/includes/navbar.html:114
-msgid "Start a Bug Hunt"
+msgid "Start a Bug Bounty"
 msgstr "バグハントを開始する"
 
 #: website/templates/includes/navbar.html:120
@@ -647,7 +647,7 @@ msgid "Announced to Users"
 msgstr "ユーザーに発表"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the Bug Bountyer"
 msgstr "すべての賞金は直接バグハンターに支払われます"
 
 #: website/templates/mobile_about.html:6
@@ -711,7 +711,7 @@ msgid "Money if you join a"
 msgstr "参加するとお金がもらえます"
 
 #: website/templates/mobile_about.html:20
-msgid "Sponsored Bug Hunt"
+msgid "Sponsored Bug Bounty"
 msgstr "スポンサードバグハント"
 
 #: website/templates/mobile_about.html:21
@@ -922,7 +922,7 @@ msgid "BUG TYPE"
 msgstr "バグの種類"
 
 #: website/templates/report.html:186
-msgid "BUG HUNT"
+msgid "Bug Bounty"
 msgstr "バグハント"
 
 #: website/templates/report.html:195
@@ -946,7 +946,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "チームメンバーを追加"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
+msgid "Team members should be Bug Bountys users"
 msgstr "チームメンバーはバグハントのユーザーである必要があります"
 
 #: website/templates/report.html:313
@@ -967,10 +967,10 @@ msgstr "報告"
 #~ msgstr "開始する "
 
 # Japanese (ja)
-#~ msgid "BUGHUNT"
+#~ msgid "Bug Bounty"
 #~ msgstr "バグハント"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the Bug Bounty"
 #~ msgstr "バグハントの名前"
 
 #~ msgid "You do not have a company, create one"
@@ -981,3 +981,4 @@ msgstr "報告"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "バグの説明"
+

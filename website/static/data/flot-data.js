@@ -1240,3 +1240,4 @@ $(function () {
     $.plot($("#flot-bar-chart"), [barData], barOptions);
 
 });
+

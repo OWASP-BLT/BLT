@@ -45,8 +45,8 @@ from website.models import (
 )
 from website.serializers import (
     ActivityLogSerializer,
-    BugHuntPrizeSerializer,
-    BugHuntSerializer,
+    Bug BountyPrizeSerializer,
+    Bug BountySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
@@ -503,7 +503,7 @@ class UrlCheckApiViewset(APIView):
         return Response(issues[:10])
 
 
-class BugHuntApiViewset(APIView):
+class Bug BountyApiViewset(APIView):
     permission_classes = [AllowAny]
 
     def get_active_hunts(self, request, fields, *args, **kwargs):
@@ -557,17 +557,17 @@ class BugHuntApiViewset(APIView):
         return Response(hunts)
 
 
-class BugHuntApiViewsetV2(APIView):
+class Bug BountyApiViewsetV2(APIView):
     permission_classes = [AllowAny]
 
     def serialize_hunts(self, hunts):
-        hunts = BugHuntSerializer(hunts, many=True)
+        hunts = Bug BountySerializer(hunts, many=True)
 
         serialize_hunts_list = []
 
         for hunt in hunts.data:
             hunt_prizes = HuntPrize.objects.filter(hunt__id=hunt["id"])
-            hunt_prizes = BugHuntPrizeSerializer(hunt_prizes, many=True)
+            hunt_prizes = Bug BountyPrizeSerializer(hunt_prizes, many=True)
 
             serialize_hunts_list.append({**hunt, "prizes": hunt_prizes.data})
 
@@ -1031,3 +1031,4 @@ class OwaspComplianceChecker(APIView):
         }
 
         return Response(report, status=status.HTTP_200_OK)
+

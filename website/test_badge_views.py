@@ -153,3 +153,4 @@ class BadgeViewsTest(TestCase):
         visit_count = IP.objects.filter(path=url, created__date__gte=seven_days_ago).count()
         # 7 from setup + 1 from this test
         self.assertEqual(visit_count, 8)
+

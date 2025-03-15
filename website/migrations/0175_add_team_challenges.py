@@ -46,3 +46,4 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(add_team_challenges),
     ]
+

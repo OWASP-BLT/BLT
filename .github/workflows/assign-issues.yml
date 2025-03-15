@@ -17,3 +17,4 @@ jobs:
         uses: OWASP-BLT/BLT-Action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
+

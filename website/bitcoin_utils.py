@@ -54,3 +54,4 @@ def issue_asset(asset_name, amount, identifier):
 
     # The transaction ID (txid) can be used to track the issuance on the blockchain.
     return txid
+

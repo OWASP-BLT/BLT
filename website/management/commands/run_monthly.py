@@ -21,3 +21,4 @@ class Command(BaseCommand):
         except Exception as e:
             logger.error(f"Error in monthly tasks: {str(e)}")
             raise
+

@@ -25,3 +25,4 @@ class Command(LoggedBaseCommand):
             user_prof.save()
 
         return str("All users updated.")
+

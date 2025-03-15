@@ -11,3 +11,4 @@ $(document).ready(function () {
         redirectWindow.location;
     }
 });
+

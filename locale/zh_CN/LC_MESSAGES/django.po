@@ -300,7 +300,7 @@ msgid "Max amout awarded to winner"
 msgstr "授予获奖者的最大金额"
 
 #: website/templates/hunt.html:250
-msgid "START BUGHUNT"
+msgid "START Bug Bounty"
 msgstr "开始猎虫"
 
 #: website/templates/hunt.html:256 website/templates/index.html:284
@@ -397,7 +397,7 @@ msgid "Report a Bug"
 msgstr "报告错误"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bughunts"
+msgid "Bug Bountys"
 msgstr "寻找漏洞"
 
 #: website/templates/includes/navbar.html:109
@@ -405,7 +405,7 @@ msgid "Add to chrome"
 msgstr "添加到 Chrome"
 
 #: website/templates/includes/navbar.html:114
-msgid "Start a Bug Hunt"
+msgid "Start a Bug Bounty"
 msgstr "开始寻找错误"
 
 #: website/templates/includes/navbar.html:120
@@ -644,7 +644,7 @@ msgid "Announced to Users"
 msgstr "向用户宣布"
 
 #: website/templates/mobile_about.html:5
-msgid "All prize money goes directly to the bug hunter"
+msgid "All prize money goes directly to the Bug Bountyer"
 msgstr "所有奖金直接发放给漏洞猎人"
 
 #: website/templates/mobile_about.html:6
@@ -700,7 +700,7 @@ msgid "Money if you join a"
 msgstr "如果你参加"
 
 #: website/templates/mobile_about.html:20
-msgid "Sponsored Bug Hunt"
+msgid "Sponsored Bug Bounty"
 msgstr "由公司赞助的漏洞狩猎"
 
 #: website/templates/mobile_about.html:21
@@ -906,7 +906,7 @@ msgid "BUG TYPE"
 msgstr "漏洞类型"
 
 #: website/templates/report.html:186
-msgid "BUG HUNT"
+msgid "Bug Bounty"
 msgstr "漏洞猎"
 
 #: website/templates/report.html:195
@@ -930,7 +930,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "添加团队成员"
 
 #: website/templates/report.html:291
-msgid "Team members should be bughunts users"
+msgid "Team members should be Bug Bountys users"
 msgstr "团队成员应该是漏洞猎用户"
 
 #: website/templates/report.html:313
@@ -951,10 +951,10 @@ msgstr "报告"
 #~ msgstr "开始 "
 
 # Simplified Chinese (zh_CN)
-#~ msgid "BUGHUNT"
+#~ msgid "Bug Bounty"
 #~ msgstr "找 Bug"
 
-#~ msgid "Name of the bughunt"
+#~ msgid "Name of the Bug Bounty"
 #~ msgstr "猎虫名称"
 
 #~ msgid "You do not have a company, create one"
@@ -965,3 +965,4 @@ msgstr "报告"
 
 #~ msgid "BUG DESCRIPTION"
 #~ msgstr "漏洞描述"
+

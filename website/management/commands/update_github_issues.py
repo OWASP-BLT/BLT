@@ -186,3 +186,4 @@ class Command(LoggedBaseCommand):
 
         self.stdout.write("-" * 50)
         self.stdout.write(self.style.SUCCESS("GitHub data fetch completed!"))
+

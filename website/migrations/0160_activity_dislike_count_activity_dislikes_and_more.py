@@ -46,3 +46,4 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name="liked_activities", to=settings.AUTH_USER_MODEL),
         ),
     ]
+

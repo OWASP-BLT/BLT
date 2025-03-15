@@ -19,3 +19,4 @@ class Migration(migrations.Migration):
             field=models.IntegerField(choices=[(0, "Admin"), (1, "Moderator")], default=0),
         ),
     ]
+

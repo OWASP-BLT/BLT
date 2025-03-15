@@ -2352,3 +2352,4 @@ def refresh_gsoc_project(request):
         return redirect("gsoc")
 
     return redirect("gsoc")
+

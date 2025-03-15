@@ -177,3 +177,4 @@ class Command(LoggedBaseCommand):
 
         # Bulk create contributions
         Contribution.objects.bulk_create(contributions_to_create, ignore_conflicts=True)
+

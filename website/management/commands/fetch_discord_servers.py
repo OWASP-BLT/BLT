@@ -146,3 +146,4 @@ class Command(BaseCommand):
 
         except requests.exceptions.RequestException as e:
             self.stderr.write(self.style.ERROR(f"Error fetching servers: {str(e)}"))
+

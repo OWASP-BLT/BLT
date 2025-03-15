@@ -24,3 +24,4 @@ class Migration(migrations.Migration):
             field=models.ManyToManyField(blank=True, related_name="projects", to="website.contributor"),
         ),
     ]
+

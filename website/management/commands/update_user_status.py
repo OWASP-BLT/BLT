@@ -18,3 +18,4 @@ class Command(LoggedBaseCommand):
             self.stdout.write(f"Deactivated user: {user.username}")
 
         self.stdout.write("User status update completed")
+

@@ -392,3 +392,4 @@ def slack_commands(request):
             return JsonResponse({"error": "Invalid content type"}, status=415)
         return HttpResponse(handler.handle(request))
     return JsonResponse({"error": "Method not allowed"}, status=405)
+

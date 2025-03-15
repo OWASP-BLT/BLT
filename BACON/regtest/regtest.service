@@ -10,3 +10,4 @@ ExecStart=/opt/bitcoin/28.1/bin/bitcoind -conf=/blockchain/regtest/data/bitcoin.
 
 [Install]
 WantedBy=multi-user.target
+

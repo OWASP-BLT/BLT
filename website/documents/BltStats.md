@@ -1,21 +1,21 @@
 ### Detailed Description of the "Stats" UI Component and the url path is "https://blt.owasp.org/stats/" for the OWASP Bug Logging Tool (BLT) Application
 
 #### 1. Component Overview
-The "Stats" UI component in the OWASP Bug Logging Tool (BLT) application provides a comprehensive overview of the application's key statistics. This component displays aggregated data such as the total number of bugs, users, domains, extension users, and bug hunts. Additionally, it includes visual representations of monthly summaries, signups, and issue distribution. The primary functionality of this component is to present users with important metrics and trends related to the application's usage and activity.
+The "Stats" UI component in the OWASP Bug Logging Tool (BLT) application provides a comprehensive overview of the application's key statistics. This component displays aggregated data such as the total number of bugs, users, domains, extension users, and Bug Bountys. Additionally, it includes visual representations of monthly summaries, signups, and issue distribution. The primary functionality of this component is to present users with important metrics and trends related to the application's usage and activity.
 
 #### 2. User Interaction
 Users interact with the Stats component through the following steps:
-1. **Viewing Statistics**: Users can see the high-level statistics displayed at the top of the page, including the total number of bugs, users, domains, extension users, and bug hunts.
+1. **Viewing Statistics**: Users can see the high-level statistics displayed at the top of the page, including the total number of bugs, users, domains, extension users, and Bug Bountys.
 2. **Analyzing Graphs**: Users can analyze monthly summaries, signups, and issue distributions through the graphical representations provided.
 3. **Detailed Insights**: Users can hover over or click on different parts of the graphs to see more detailed data points and insights.
 
 #### 3. Key Elements
-- **High-Level Stats**: Displays the total number of bugs, users, domains, extension users, and bug hunts with distinct color-coded boxes for quick reference.
+- **High-Level Stats**: Displays the total number of bugs, users, domains, extension users, and Bug Bountys with distinct color-coded boxes for quick reference.
   - **Bugs**: Shows the total number of bugs reported.
   - **Users**: Indicates the total number of registered users.
   - **Domains**: Displays the number of domains involved.
   - **Extension Users**: Shows the number of users utilizing the browser extension.
-  - **Bug Hunts**: Indicates the total number of bug hunts conducted.
+  - **Bug Bountys**: Indicates the total number of Bug Bountys conducted.
 - **Monthly Summary Graph**: A bar chart representing the monthly activity, showcasing the number of activities per month.
 - **Monthly Signups Graph**: A bar chart displaying the number of user signups per month.
 - **Issue Distribution Chart**: A donut chart showing the distribution of issues by category, such as general, security, performance, and more.

@@ -55,3 +55,4 @@ class DomainViewTests(TestCase):
         # Check issues are displayed
         self.assertContains(response, self.open_issue.description)
         self.assertContains(response, self.closed_issue.description)
+

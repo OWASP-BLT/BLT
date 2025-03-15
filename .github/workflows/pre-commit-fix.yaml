@@ -54,3 +54,4 @@ jobs:
           git add .
           git commit -m "Apply pre-commit fixes"
           git push origin HEAD:${{ github.ref_name }}
+

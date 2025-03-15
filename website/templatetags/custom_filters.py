@@ -23,3 +23,4 @@ def before_dot(value):
 def to_json(value):
     """Convert Python object to JSON string"""
     return mark_safe(json.dumps(value, cls=DjangoJSONEncoder))
+

@@ -10,11 +10,11 @@ Users interact with the Bug Report Form through a series of steps designed to ca
 2. **Check for Duplicates**: Users can click the "Check for Duplicates" button to ensure the bug hasn't already been reported, reducing redundancy and improving efficiency.
 3. **Fill in the Bug Title**: A concise and descriptive title is entered in the "Bug Title" field, summarizing the nature of the bug.
 4. **Select Bug Type**: The user selects the appropriate category for the bug from the "Bug Type" dropdown menu, which helps in classifying and prioritizing the issue.
-5. **Choose Bug Hunt Option**: Users can select "Report Independently" or choose from a list of active bug hunts they are participating in, using the "Bug Hunt" dropdown.
+5. **Choose Bug Bounty Option**: Users can select "Report Independently" or choose from a list of active Bug Bountys they are participating in, using the "Bug Bounty" dropdown.
 6. **Upload Screenshots**: Users can upload screenshots to illustrate the bug. This is done by dragging and dropping images into the "Upload screenshots" area or by pasting images directly. The form supports PNG, JPG, and GIF formats, with a limit of up to five images.
 7. **Enter CVE ID**: If the bug is a known vulnerability, users can enter the Common Vulnerabilities and Exposures (CVE) ID in the "CVE ID" field. This helps in referencing standardized information.
 8. **Describe the Bug**: In the "Bug Description" section, users provide a detailed description of the bug. The markdown editor allows for text formatting, adding images, and embedding links. Users can preview their input to ensure clarity and completeness.
-9. **Add Team Members**: Users can add email addresses of team members who are also involved in the bug hunt. This is done in the "Add Team Members" section, enhancing collaboration.
+9. **Add Team Members**: Users can add email addresses of team members who are also involved in the Bug Bounty. This is done in the "Add Team Members" section, enhancing collaboration.
 10. **Complete CAPTCHA**: To validate the submission, users must solve a CAPTCHA challenge, which prevents automated submissions and ensures security.
 11. **Submit the Report**: Finally, users click the "Report" button to submit their bug report. There is also a "Cancel" button to discard the report if needed.
 
@@ -23,7 +23,7 @@ Users interact with the Bug Report Form through a series of steps designed to ca
 - **Check for Duplicates Button**: A button to check if the bug has already been reported.
 - **Bug Title Field**: A text input field for entering a concise title for the bug.
 - **Bug Type Dropdown**: A dropdown menu for selecting the category of the bug (e.g., General, Security, Performance).
-- **Bug Hunt Dropdown**: Options for reporting independently or as part of a bug hunt.
+- **Bug Bounty Dropdown**: Options for reporting independently or as part of a Bug Bounty.
 - **Screenshot Upload Section**: An area for uploading or pasting screenshots to provide visual evidence of the bug.
 - **CVE ID Field**: An optional input field for entering a CVE ID.
 - **Bug Description Editor**: A markdown editor with formatting options like bold, italic, adding images, and links, and a preview button.
@@ -61,3 +61,4 @@ The Bug Report Form is designed to enhance performance and user experience throu
 - **Responsive Design**: The form is fully responsive, adapting to different screen sizes and devices. This ensures that users can easily fill out the form on desktops, tablets, and mobile devices.
 - **Lazy Loading**: Images and other non-critical elements are loaded as needed, reducing the initial load time and improving the overall responsiveness of the form.
 - **Form Persistence**: The form saves users' inputs temporarily, so they do not lose information if they accidentally navigate away from the form before submitting. This feature enhances user experience by preventing data loss.
+

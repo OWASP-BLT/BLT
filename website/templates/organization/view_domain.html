@@ -279,15 +279,15 @@
             </div>
             <div class="bg-white w-full p-10 my-5">
                 <div class="w-full flex justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bughunts</h4>
+                    <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bug Bountys</h4>
                     <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                 </div>
                 <div class="flex justify-between w-full flex-wrap">
-                    {% if ongoing_bughunts %}
-                        {% for hunt in ongoing_bughunts %}
+                    {% if ongoing_Bug Bountys %}
+                        {% for hunt in ongoing_Bug Bountys %}
                             <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
                                 <div class="flex justify-center items-center w-[40%]">
-                                    <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="bughunt logo" width="128px" height="128px">
+                                    <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="Bug Bounty logo" width="128px" height="128px">
                                 </div>
                                 <div class="flex flex-col ml-5 w-[60%]">
                                     <p class="text-lg font-extrabold mt-6">{{ hunt.name }}</p>
@@ -301,7 +301,7 @@
                                                 0
                                             {% endif %}
                                         </p>
-                                        <a href="{% url 'show_bughunt' hunt.id %}"
+                                        <a href="{% url 'show_Bug Bounty' hunt.id %}"
                                            class="bg-red-600 text-white px-3 py-1 font-bold rounded-md">More info</a>
                                     </div>
                                 </div>
@@ -309,7 +309,7 @@
                         {% endfor %}
                     {% else %}
                         <div class="w-full h-full flex items-center justify-center">
-                            <p class="text-xl text-red-500">No ongoing bughunts available</p>
+                            <p class="text-xl text-red-500">No ongoing Bug Bountys available</p>
                         </div>
                     {% endif %}
                 </div>
@@ -433,3 +433,4 @@
         </script>
     </body>
 </html>
+

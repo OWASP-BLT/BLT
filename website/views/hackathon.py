@@ -612,3 +612,4 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
         messages.error(request, f"Error refreshing repository data: {str(e)}")
 
     return redirect("hackathon_detail", slug=hackathon_slug)
+

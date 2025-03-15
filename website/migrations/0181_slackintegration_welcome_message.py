@@ -19,3 +19,4 @@ class Migration(migrations.Migration):
             ),
         ),
     ]
+

@@ -465,14 +465,14 @@ class Listbounties(TemplateView):
             .all()
         )
 
-        filtered_bughunts = {
+        filtered_Bug Bountys = {
             "all": hunts,
             "ongoing": hunts.filter(result_published=False, is_published=True),
             "ended": hunts.filter(result_published=True),
             "draft": hunts.filter(result_published=False, is_published=False),
         }
 
-        hunts = filtered_bughunts.get(hunt_type, hunts)
+        hunts = filtered_Bug Bountys.get(hunt_type, hunts)
 
         if search.strip():
             hunts = hunts.filter(Q(name__icontains=search))
@@ -2657,3 +2657,4 @@ def room_messages_api(request, room_id):
         )
 
     return JsonResponse({"success": True, "count": room.messages.count(), "messages": message_data})
+

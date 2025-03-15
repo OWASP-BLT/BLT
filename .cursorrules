@@ -21,3 +21,4 @@ avoid installing packages that are not needed
 remove any <style tags and use tailwind css instead
 when fixing an issue, always fix the root cause
 
+

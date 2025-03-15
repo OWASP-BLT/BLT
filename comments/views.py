@@ -156,3 +156,4 @@ def autocomplete(request):
         results.append(r.username)
     resp = request.GET["callback"] + "(" + json.dumps(results) + ");"
     return HttpResponse(resp, content_type="application/json")
+

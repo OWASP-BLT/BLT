@@ -41,3 +41,4 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(add_profiles, reverse_code=migrations.RunPython.noop),
     ]
+

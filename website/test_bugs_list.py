@@ -141,3 +141,4 @@ class BugsListTest(TestCase):
         # We should have 21 issues total (20 new + 1 visible from setup)
         # So page 2 should have 21 - 15 = 6 issues
         self.assertEqual(len(response.context["bugs"]), 6)
+
