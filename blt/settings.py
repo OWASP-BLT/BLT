@@ -3,7 +3,7 @@ import os
 import sys
 
 import dj_database_url
-import environ
+from environ import Env
 
 # Initialize Sentry
 import sentry_sdk
@@ -11,12 +11,13 @@ from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
-environ.Env.read_env()
+# Initialize environment variables
+env = Env()
+env.read_env()
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-env = environ.Env()
 env_file = os.path.join(BASE_DIR, ".env")
-environ.Env.read_env(env_file)
+env.read_env(env_file)
 
 print(f"Reading .env file from {env_file}")
 print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
@@ -96,7 +97,6 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
-    "markdown_deux",
 )
 
 if DEBUG:
@@ -318,7 +318,7 @@ else:
         # use this to debug emails locally
         # python -m smtpd -n -c DebuggingServer localhost:1025
         # if DEBUG:
-        # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -609,13 +609,3 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
-
-MARKDOWN_DEUX_STYLES = {
-    "default": {
-        "extras": {
-            "code-friendly": None,
-            "tables": None,
-        },
-        "safe_mode": False,
-    },
-}

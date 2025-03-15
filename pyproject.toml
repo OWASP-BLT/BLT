@@ -67,12 +67,6 @@ async-timeout = "^4.0.3"
 python-dateutil = "^2.9.0.post0"
 pyzipper = "^0.3.6"
 tweepy = "^4.15.0"
-environ = "^1.0"
-google-auth = "^2.38.0"
-django-markdown-deux = "^1.0.6"
-bleach = "^6.1.0"
-django-anymail = "^10.2"
-django-ckeditor = "^6.7.0"
 
 
 [tool.poetry.group.dev.dependencies]
