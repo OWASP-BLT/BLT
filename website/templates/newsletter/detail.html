@@ -2,6 +2,7 @@
 {% load static %}
 {% load custom_tags %}
 {% load gravatar %}
+{% load custom_filters %}
 {% block title %}{{ newsletter.title }} - Newsletter{% endblock %}
 {% block description %}{{ newsletter.content|striptags|truncatechars:160 }}{% endblock %}
 {% block content %}
@@ -59,7 +60,9 @@
                         {% if newsletter.featured_image %}
                             <img class="w-full h-64 object-cover object-center"
                                  src="{{ newsletter.featured_image.url }}"
-                                 alt="{{ newsletter.title }}">
+                                 alt="{{ newsletter.title }}"
+                                 width="800"
+                                 height="256">
                         {% endif %}
                         <div class="p-6">
                             <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ newsletter.title }}</h1>
@@ -68,7 +71,7 @@
                                 <span class="mx-2">•</span>
                                 <span>{{ newsletter.view_count }} views</span>
                             </div>
-                            <div class="prose max-w-none">{{ newsletter.content|markdown }}</div>
+                            <div class="prose max-w-none">{{ newsletter.content|markdown_filter }}</div>
                             <!-- Content sections -->
                             {% if newsletter.recent_bugs_section and recent_bugs %}
                                 <div class="mt-8">

@@ -2461,4 +2461,4 @@ class NewsletterSubscriber(models.Model):
         from django.conf import settings
         from django.urls import reverse
 
-        return f"{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"
+        return f"https://{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"

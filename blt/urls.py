@@ -95,7 +95,6 @@ from website.views.core import (
     github_callback,
     google_callback,
     home,
-    management_commands,
     robots_txt,
     run_management_command,
     search,
@@ -709,7 +708,6 @@ urlpatterns = [
     ),
     re_path(r"^status_page/$", status_page, name="status_page"),
     re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
-    re_path(r"^status/commands/$", management_commands, name="management_commands"),
     path(r"website_stats/", website_stats, name="website_stats"),
     re_path(r"^issue/comment/add/$", comments.views.add_comment, name="add_comment"),
     re_path(r"^issue/comment/delete/$", comments.views.delete_comment, name="delete_comment"),
@@ -1092,12 +1090,12 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
     # Newsletter URLs
     path("newsletter/", newsletter_home, name="newsletter_home"),
-    path("newsletter/<slug:slug>/", newsletter_detail, name="newsletter_detail"),
     path("newsletter/subscribe/", newsletter_subscribe, name="newsletter_subscribe"),
     path("newsletter/confirm/<uuid:token>/", newsletter_confirm, name="newsletter_confirm"),
     path("newsletter/unsubscribe/<uuid:token>/", newsletter_unsubscribe, name="newsletter_unsubscribe"),
     path("newsletter/preferences/", newsletter_preferences, name="newsletter_preferences"),
     path("newsletter/resend-confirmation/", newsletter_resend_confirmation, name="newsletter_resend_confirmation"),
+    path("newsletter/<slug:slug>/", newsletter_detail, name="newsletter_detail"),  # This pattern must come last
 ]
 
 if settings.DEBUG:

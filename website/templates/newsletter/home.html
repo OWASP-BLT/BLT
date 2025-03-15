@@ -2,6 +2,7 @@
 {% load static %}
 {% load custom_tags %}
 {% load gravatar %}
+{% load custom_filters %}
 {% block title %}Newsletters - Bug Logging Tool{% endblock %}
 {% block description %}
     Stay updated with the latest security news, bug reports, and leaderboard updates from OWASP BLT.
@@ -32,7 +33,9 @@
                                 <div class="aspect-w-16 aspect-h-9">
                                     <img src="{{ featured_newsletter.featured_image.url }}"
                                          alt="{{ featured_newsletter.title }}"
-                                         class="object-cover w-full h-48 sm:h-64">
+                                         class="object-cover w-full h-48 sm:h-64"
+                                         width="800"
+                                         height="256">
                                 </div>
                             {% endif %}
                             <div class="p-6">
@@ -63,7 +66,7 @@
                                 </div>
                                 <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ featured_newsletter.title }}</h2>
                                 <div class="prose max-w-none mb-4 text-gray-600 line-clamp-3">
-                                    {{ featured_newsletter.content|markdown|truncatewords_html:50 }}
+                                    {{ featured_newsletter.content|markdown_filter|truncatewords_html:50 }}
                                 </div>
                                 <a href="{{ featured_newsletter.get_absolute_url }}"
                                    class="text-blue-600 hover:text-blue-800 font-medium">Read more →</a>

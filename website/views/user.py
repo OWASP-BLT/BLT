@@ -1227,7 +1227,9 @@ def newsletter_subscribe(request):
 
 def send_confirmation_email(subscriber):
     """Send confirmation email to new subscribers"""
-    confirm_url = settings.DOMAIN_NAME + reverse("newsletter_confirm", args=[subscriber.confirmation_token])
+    confirm_url = (
+        "https://" + settings.DOMAIN_NAME + reverse("newsletter_confirm", args=[subscriber.confirmation_token])
+    )
 
     context = {"name": subscriber.name or "there", "confirm_url": confirm_url, "project_name": settings.PROJECT_NAME}
 

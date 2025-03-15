@@ -57,6 +57,7 @@
                                        name="email"
                                        id="email"
                                        value="{{ subscriber.email }}"
+                                       placeholder="Your email address"
                                        disabled
                                        class="block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-gray-500 sm:text-sm">
                             </div>
@@ -148,7 +149,7 @@
             {% endif %}
             <div class="mt-6">
                 <a href="{% url 'newsletter_home' %}"
-                   class="text-sm font-medium text-blue-600 hover:text-blue-500">&larr; Back to Newsletters</a>
+                   class="text-sm font-medium text-blue-600 hover:text-blue-500">← Back to Newsletters</a>
             </div>
         </div>
     </div>

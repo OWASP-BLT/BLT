@@ -96,6 +96,7 @@ INSTALLED_APPS = (
     "dj_rest_auth.registration",
     "storages",
     "channels",
+    "markdown_deux",
 )
 
 if DEBUG:
@@ -169,7 +170,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
-                "website.views.core.newsletter_context_processor",  # Add this line
+                "website.views.core.newsletter_context_processor", 
             ],
             "loaders": (
                 [
@@ -314,10 +315,10 @@ else:
     if not TESTING:
         DEBUG = True
 
-    # use this to debug emails locally
-    # python -m smtpd -n -c DebuggingServer localhost:1025
-    # if DEBUG:
-    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+        # use this to debug emails locally
+        # python -m smtpd -n -c DebuggingServer localhost:1025
+        # if DEBUG:
+        # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -608,3 +609,13 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+MARKDOWN_DEUX_STYLES = {
+    "default": {
+        "extras": {
+            "code-friendly": None,
+            "tables": None,
+        },
+        "safe_mode": False,
+    },
+}

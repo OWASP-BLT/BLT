@@ -89,11 +89,12 @@ class Command(BaseCommand):
         context = {
             "newsletter": newsletter,
             "subscriber": subscriber,
-            "unsubscribe_url": settings.DOMAIN_NAME
+            "unsubscribe_url": "https://"
+            + settings.DOMAIN_NAME
             + reverse("newsletter_unsubscribe", args=[subscriber.confirmation_token])
             if subscriber
             else "#",
-            "view_in_browser_url": settings.DOMAIN_NAME + newsletter.get_absolute_url(),
+            "view_in_browser_url": "https://" + settings.DOMAIN_NAME + newsletter.get_absolute_url(),
             "project_name": settings.PROJECT_NAME,
             "recent_bugs": newsletter.get_recent_bugs(),
             "leaderboard": newsletter.get_leaderboard_updates(),

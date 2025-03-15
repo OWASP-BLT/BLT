@@ -1,9 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="OWASP BLT Newsletter - Security Updates and Announcements">
+        <meta name="keywords"
+              content="OWASP, BLT, Newsletter, Security, Bug Logging Tool">
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>{{ newsletter.title }}</title>
+        <title>{{ newsletter.title }} - OWASP BLT Newsletter</title>
         <style>
         @media only screen and (max-width: 620px) {
             table.body h1 {
@@ -121,8 +126,13 @@
                                                     <div style="margin-bottom: 20px; text-align: center;">
                                                         <img src="{{ newsletter.featured_image.url }}"
                                                              alt="{{ newsletter.title }}"
-                                                             style="max-width: 100%;
-                                                                    height: auto" />
+                                                             width="600"
+                                                             height="300"
+                                                             style="width: 100%;
+                                                                    max-width: 600px;
+                                                                    height: auto;
+                                                                    display: block;
+                                                                    border: 0">
                                                     </div>
                                                 {% endif %}
                                                 <h1 style="color: #000000;
@@ -146,7 +156,7 @@
                                                         <ul>
                                                             {% for bug in recent_bugs %}
                                                                 <li style="margin-bottom: 10px;">
-                                                                    <a href="{{ view_in_browser_url }}">{{ bug.description|truncatechars:100 }}</a>
+                                                                    <a href="https://{{ settings.DOMAIN_NAME }}/issue/{{ bug.id }}">{{ bug.description|truncatechars:100 }}</a>
                                                                     <div style="color: #666; font-size: 12px;">Reported on {{ bug.created|date:"F j, Y" }}</div>
                                                                 </li>
                                                             {% endfor %}
