@@ -16,106 +16,7 @@
     View the published results of the hunt or manage the results before publishing in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
 {% block content %}
-    <style>
-  #banner {
-  background:
-   url("https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg") no-repeat;
-  background-size: cover;
-  height: 400px;
-  background-position: 0 0;
-}
-
-@media screen and (max-width:768px){
-  
- #banner {
-  background-size: cover;
-  height: 300px;
-  background-position: right bottom;
-} 
-  
-#banner h1{
-  font-size: 3.2rem !important;
-}
- 
-  #banner p{
-    padding:0.5rem;
-    text-align: center;
-  }
-  
-}
-.text-light {
-  color: #f8f9fa!important;
-}
-
-h5.card-title{
-  line-height:1.6rem;
-}
-
-
-#footer a {
-    padding: 0.8rem;
-}
-.badge-organization {
-      display: inline-block;
-    padding: .25em .4em;
-    font-size: 75%;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: .25rem;
-}
-.pl-4, .px-4 {
-    padding-left: 1.5rem!important;
-}
-.mt-4, .my-4 {
-    margin-top: 1.5rem!important;
-}
-.font-italic {
-    font-style: italic!important;
-}
-.start-btn {
-    float: right;
-    margin: 100px 25px;
-    width: 150px;
-}
-.time-remaining-btn {
-    float: right;
-    margin: 100px 25px;
-    width: auto;
-
-}
-.table {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.table td,
-.table th {
-  border: 1px solid #ddd;
-  padding: 8px;
-}
-
-table.table tbody tr.selected {
-  background-color: #f2f2f2;
-}
-
-.table tr:hover {
-  background-color: #ddd !important;
-}
-
-.table th {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  text-align: left;
-  background-color: #4caf50;
-  color: white;
-}
-
-    </style>
+    {% load static %}
     <section>
         {% include "includes/organization_sidenav.html" %}
     </section>
@@ -123,41 +24,42 @@ table.table tbody tr.selected {
     <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
           rel="stylesheet">
     <main class="-mt-10 -mx-8">
-        <article id="banner" class="jumbotron jumbotron-fluid">
-            <div class="font-italic pl-4 mt-4 text-light">
-                <h1 class="display-1 font-italic">
+        <article id="banner"
+                 class="jumbotron jumbotron-fluid bg-cover bg-center h-[400px] md:h-[300px] bg-[url('https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg')]">
+            <div class="italic pl-6 mt-6 text-white">
+                <h1 class="text-6xl md:text-5xl italic">
                     {{ hunt.domain.organization.name }}
-                    <span class="badge-organization badge-primary shadow">{{ hunt.domain.name }}</span>
+                    <span class="inline-block px-2 py-1 text-sm font-bold leading-none text-white bg-blue-500 rounded shadow">{{ hunt.domain.name }}</span>
                 </h1>
-                <p class="lead mt-5">Ended</p>
+                <p class="text-xl mt-5">Ended</p>
             </div>
         </article>
     </main>
     {% if hunt.result_published %}
-        <table class="table">
+        <table class="w-full border-collapse font-sans">
             <thead>
-                <tr>
-                    <th>id</th>
-                    <th>name</th>
+                <tr class="bg-green-500 text-white">
+                    <th class="p-3 text-left">id</th>
+                    <th class="p-3 text-left">name</th>
                 </tr>
             </thead>
             <tbody>
                 {% if winner.winner %}
-                    <tr>
-                        <td>1</td>
-                        <td>{{ winner.winner }}</td>
+                    <tr class="hover:bg-gray-100">
+                        <td class="p-2 border">1</td>
+                        <td class="p-2 border">{{ winner.winner }}</td>
                     </tr>
                 {% endif %}
                 {% if winner.runner %}
-                    <tr>
-                        <td>2</td>
-                        <td>{{ winner.runner }}</td>
+                    <tr class="hover:bg-gray-100">
+                        <td class="p-2 border">2</td>
+                        <td class="p-2 border">{{ winner.runner }}</td>
                     </tr>
                 {% endif %}
                 {% if winner.second_runner %}
-                    <tr>
-                        <td>3</td>
-                        <td>{{ winner.second_runner }}</td>
+                    <tr class="hover:bg-gray-100">
+                        <td class="p-2 border">3</td>
+                        <td class="p-2 border">{{ winner.second_runner }}</td>
                     </tr>
                 {% endif %}
             </tbody>
@@ -165,42 +67,47 @@ table.table tbody tr.selected {
     {% else %}
         <form method="post" id="publish_result">
             {% csrf_token %}
-            <table class="table">
+            <table class="w-full border-collapse font-sans">
                 <thead>
-                    <tr>
-                        <th>
+                    <tr class="bg-green-500 text-white">
+                        <th class="p-3 text-left">
                             <input type="checkbox" class="checkAll" name="checkAll" />
                         </th>
-                        <th>id</th>
-                        <th>points</th>
-                        <th>description</th>
-                        <th>type</th>
+                        <th class="p-3 text-left">id</th>
+                        <th class="p-3 text-left">points</th>
+                        <th class="p-3 text-left">description</th>
+                        <th class="p-3 text-left">type</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for issue in issues %}
-                        <tr>
-                            {% if issue.verified %}
-                                <td>
-                                    <input type="checkbox" name="item_{{ issue.pk }}" checked>
-                                </td>
-                            {% else %}
-                                <td>
-                                    <input type="checkbox" name="item_{{ issue.pk }}">
-                                </td>
-                            {% endif %}
-                            <td>{{ forloop.counter }}</td>
-                            <td>
-                                <input type="number" value="{{ issue.score }}" name="value_{{ issue.pk }}" />
+                        <tr class="hover:bg-gray-100">
+                            <td class="p-2 border">
+                                <input type="checkbox"
+                                       name="item_{{ issue.pk }}"
+                                       {% if issue.verified %}checked{% endif %}>
                             </td>
-                            <td>{{ issue.description }}</td>
-                            <td>{{ issue.get_label_display }}</td>
+                            <td class="p-2 border">{{ forloop.counter }}</td>
+                            <td class="p-2 border">
+                                <input type="number"
+                                       value="{{ issue.score }}"
+                                       name="value_{{ issue.pk }}"
+                                       class="w-full p-1 border rounded">
+                            </td>
+                            <td class="p-2 border">{{ issue.description }}</td>
+                            <td class="p-2 border">{{ issue.get_label_display }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <button class="btn btn-danger" name="submit" value="save">Save</button>
-            <button class="btn btn-danger" name="submit" value="publish">Save and Publish Result</button>
+            <div class="mt-4">
+                <button class="px-4 py-2 bg-red-500 text-white rounded"
+                        name="submit"
+                        value="save">Save</button>
+                <button class="px-4 py-2 bg-red-500 text-white rounded"
+                        name="submit"
+                        value="publish">Save and Publish Result</button>
+            </div>
         </form>
     {% endif %}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"

@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -298,12 +299,15 @@ from website.views.user import (
     contributors,
     contributors_view,
     create_wallet,
+    delete_notification,
     deletions,
+    fetch_notifications,
     follow_user,
     get_public_key,
     get_score,
     github_webhook,
     invite_friend,
+    mark_as_read,
     messaging_home,
     newsletter_confirm,
     newsletter_detail,
@@ -355,6 +359,8 @@ handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
 urlpatterns = [
+    path("banned-apps/", BannedAppsView.as_view(), name="banned_apps"),
+    path("api/banned-apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
@@ -638,6 +644,9 @@ urlpatterns = [
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
+    path("notifications/fetch/", fetch_notifications, name="fetch_notifications"),
+    path("notifications/mark_all_read", mark_as_read, name="mark_all_read"),
+    path("notifications/delete_notification/<int:notification_id>", delete_notification, name="delete_notification"),
     re_path(
         r"^googleplayapp/$",
         TemplateView.as_view(template_name="coming_soon.html"),

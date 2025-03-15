@@ -46,6 +46,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Newsletter,
     NewsletterSubscriber,
     Points,
@@ -1126,6 +1127,65 @@ def set_public_key(request):
     return JsonResponse({"success": True, "public_key": profile.public_key})
 
 
+@login_required
+def fetch_notifications(request):
+    notifications = Notification.objects.filter(user=request.user, is_deleted=False).order_by("is_read", "-created_at")
+
+    notifications_data = [
+        {
+            "id": notification.id,
+            "message": notification.message,
+            "created_at": notification.created_at,
+            "is_read": notification.is_read,
+            "notification_type": notification.notification_type,
+            "link": notification.link,
+        }
+        for notification in notifications
+    ]
+
+    return JsonResponse({"notifications": notifications_data}, safe=False)
+
+
+@login_required
+def mark_as_read(request):
+    if request.method == "PATCH":
+        try:
+            if request.body and request.content_type == "application/json":
+                try:
+                    json.loads(request.body)
+                except json.JSONDecodeError:
+                    return JsonResponse({"status": "error", "message": "Invalid JSON in request body"}, status=400)
+
+            notifications = Notification.objects.filter(user=request.user, is_read=False)
+            notifications.update(is_read=True)
+            return JsonResponse({"status": "success"})
+        except Exception as e:
+            logger.error(f"Error marking notifications as read: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+            )
+
+
+@login_required
+def delete_notification(request, notification_id):
+    if request.method == "DELETE":
+        try:
+            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+
+            notification.is_deleted = True
+            notification.save()
+
+            return JsonResponse({"status": "success", "message": "Notification deleted successfully"})
+        except Exception as e:
+            logger.error(f"Error deleting notification: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                status=400,
+            )
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
+
+ 
 def newsletter_home(request):
     """View for displaying list of published newsletters"""
     newsletters = Newsletter.objects.filter(status="published").order_by("-published_at")

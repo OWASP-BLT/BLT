@@ -7,81 +7,41 @@
 {% block og_description %}Discover a variety of domains with their logos and names listed.{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-    .main {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        margin-right: 50px;
-        column-gap: 20px;
-        row-gap: 20px;
-        margin-left: 60px;
-        margin-top: 50px;
-        justify-items: center;
-        justify-content: center;
-    }
-
-    .container {
-        width: 100%;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 16px;
-        box-shadow: 5px 5px 180px 6px #0000000f;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .container img {
-        width: 100px;
-        height: 100px;
-        object-fit: contain;
-        margin-bottom: 10px;
-    }
-
-    .container a {
-        font-size: 18px;
-        font-weight: bold;
-        color: #333;
-        text-decoration: none;
-    }
-
-    .container a:hover {
-        color: #007bff;
-    }
-    </style>
-    <div class="main">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mx-16 mt-12 justify-items-center">
         {% for objects in domain %}
-            <div class="container">
+            <div class="w-full p-5 bg-white rounded-2xl shadow-[5px_5px_180px_6px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col items-center">
                 {% if objects.get_logo and objects.get_logo != "None" %}
                     <img src="{{ objects.get_logo }}"
                          alt="{{ objects.name }}"
                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
+                         class="w-[100px] h-[100px] object-contain mb-2.5"
                          width="100"
                          height="100">
                 {% endif %}
-                <div class="{% if objects.get_logo and objects.get_logo != 'None' %}hidden{% endif %} w-[100px] h-[100px] rounded bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">
+                <div class="{% if objects.get_logo and objects.get_logo != 'None' %}hidden{% endif %} w-[100px] h-[100px] rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">
                     {{ objects.name|slice:":1"|upper }}
                 </div>
-                <a href="{{ objects.get_absolute_url }}">{{ objects.name }}</a>
+                <a href="{{ objects.get_absolute_url }}"
+                   class="text-lg font-bold text-gray-700 hover:text-blue-600 no-underline">{{ objects.name }}</a>
             </div>
         {% endfor %}
     </div>
-    <div>
-        {% if is_paginated %}
-            <div class="col-md-12">
-                <div class="text-center">
-                    {% if page_obj.has_previous %}
-                        <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}"
-                           class="btn btn-default">Prev</a>
-                    {% endif %}
-                    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    {% if page_obj.has_next %}
-                        <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}"
-                           class="btn btn-default">Next</a>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
-    </div>
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="text-center mt-8">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}"
+                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                    Prev
+                </a>
+            {% endif %}
+            <span class="mx-4 text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}"
+                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                    Next
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
 {% endblock content %}
