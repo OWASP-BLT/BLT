@@ -203,7 +203,13 @@ class Command(LoggedBaseCommand):
             repo.forks = repo_data.get("forks_count", 0)
             repo.open_issues = repo_data.get("open_issues_count", 0)
             repo.watchers = repo_data.get("watchers_count", 0)
-            repo.description = repo_data.get("description", "")
+
+            # Truncate description if it's too long to prevent database errors
+            description = repo_data.get("description", "")
+            if description and len(description) > 255:
+                description = description[:252] + "..."
+            repo.description = description
+
             repo.primary_language = repo_data.get("language", "")
             repo.is_archived = repo_data.get("archived", False)
 
@@ -294,10 +300,14 @@ class Command(LoggedBaseCommand):
     def fetch_closed_prs(self, owner, repo_name):
         """
         Fetch closed pull requests from GitHub API.
+        Only fetches PRs from the past year.
         """
         prs = []
         page = 1
         per_page = 100
+
+        # Calculate date one year ago for filtering
+        one_year_ago = (timezone.now() - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         headers = {"Accept": "application/vnd.github.v3+json"}
         if settings.GITHUB_TOKEN:
@@ -306,8 +316,11 @@ class Command(LoggedBaseCommand):
         while True:
             url = (
                 f"https://api.github.com/repos/{owner}/{repo_name}/pulls"
-                f"?state=closed&per_page={per_page}&page={page}"
+                f"?state=closed&per_page={per_page}&page={page}&sort=updated&direction=desc"
+                f"&since={one_year_ago}"
             )
+
+            self.stdout.write(f"Fetching PRs from: {url}")
 
             try:
                 response = requests.get(url, headers=headers)
@@ -317,7 +330,23 @@ class Command(LoggedBaseCommand):
                 if not data:
                     break
 
-                prs.extend(data)
+                # Filter PRs to only include those updated in the last year
+                filtered_data = []
+                for pr in data:
+                    updated_at = datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")
+                    updated_at = timezone.make_aware(updated_at)
+                    if updated_at >= timezone.now() - timedelta(days=365):
+                        filtered_data.append(pr)
+                    else:
+                        # Since results are sorted by updated_at, we can break early
+                        break
+
+                if not filtered_data:
+                    break
+
+                prs.extend(filtered_data)
+                self.stdout.write(f"Found {len(filtered_data)} PRs on page {page}")
+
                 page += 1
 
                 # Check if we've reached the last page
@@ -328,6 +357,7 @@ class Command(LoggedBaseCommand):
                 logger.error(f"Error fetching closed PRs for {owner}/{repo_name}: {e}")
                 break
 
+        self.stdout.write(f"Total PRs fetched: {len(prs)}")
         return prs
 
     @transaction.atomic
@@ -337,43 +367,51 @@ class Command(LoggedBaseCommand):
         """
         # Process issues with $ in labels
         for issue in dollar_issues:
-            GitHubIssue.objects.update_or_create(
-                issue_id=issue["number"],
-                repo=repo,
-                defaults={
-                    "title": issue["title"],
-                    "body": issue.get("body", ""),
-                    "state": issue["state"],
-                    "type": "issue",
-                    "created_at": timezone.make_aware(datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "updated_at": timezone.make_aware(datetime.strptime(issue["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "closed_at": timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                    if issue.get("closed_at")
-                    else None,
-                    "url": issue["html_url"],
-                    "has_dollar_tag": True,
-                },
-            )
+            try:
+                GitHubIssue.objects.update_or_create(
+                    issue_id=issue["number"],
+                    repo=repo,
+                    defaults={
+                        "title": issue["title"],
+                        "body": issue.get("body", ""),
+                        "state": issue["state"],
+                        "type": "issue",
+                        "created_at": timezone.make_aware(datetime.strptime(issue["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "updated_at": timezone.make_aware(datetime.strptime(issue["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "closed_at": timezone.make_aware(datetime.strptime(issue["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                        if issue.get("closed_at")
+                        else None,
+                        "url": issue["html_url"],
+                        "has_dollar_tag": True,
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error saving issue #{issue['number']} for repo {repo.name}: {e}")
+                self.stdout.write(self.style.ERROR(f"Failed to save issue #{issue['number']}: {e}"))
 
         # Process closed pull requests
         for pr in closed_prs:
-            GitHubIssue.objects.update_or_create(
-                issue_id=pr["number"],
-                repo=repo,
-                defaults={
-                    "title": pr["title"],
-                    "body": pr.get("body", ""),
-                    "state": pr["state"],
-                    "type": "pull_request",
-                    "created_at": timezone.make_aware(datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "updated_at": timezone.make_aware(datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
-                    "closed_at": timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                    if pr.get("closed_at")
-                    else None,
-                    "merged_at": timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
-                    if pr.get("merged_at")
-                    else None,
-                    "is_merged": bool(pr.get("merged_at")),
-                    "url": pr["html_url"],
-                },
-            )
+            try:
+                GitHubIssue.objects.update_or_create(
+                    issue_id=pr["number"],
+                    repo=repo,
+                    defaults={
+                        "title": pr["title"],
+                        "body": pr.get("body", ""),
+                        "state": pr["state"],
+                        "type": "pull_request",
+                        "created_at": timezone.make_aware(datetime.strptime(pr["created_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "updated_at": timezone.make_aware(datetime.strptime(pr["updated_at"], "%Y-%m-%dT%H:%M:%SZ")),
+                        "closed_at": timezone.make_aware(datetime.strptime(pr["closed_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                        if pr.get("closed_at")
+                        else None,
+                        "merged_at": timezone.make_aware(datetime.strptime(pr["merged_at"], "%Y-%m-%dT%H:%M:%SZ"))
+                        if pr.get("merged_at")
+                        else None,
+                        "is_merged": bool(pr.get("merged_at")),
+                        "url": pr["html_url"],
+                    },
+                )
+            except Exception as e:
+                logger.error(f"Error saving PR #{pr['number']} for repo {repo.name}: {e}")
+                self.stdout.write(self.style.ERROR(f"Failed to save PR #{pr['number']}: {e}"))

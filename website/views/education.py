@@ -239,6 +239,7 @@ def edit_section(request, section_id):
 
 
 @instructor_required
+@require_POST
 def delete_section(request, section_id):
     """Delete a section and all its lectures"""
     section = get_object_or_404(Section, id=section_id)

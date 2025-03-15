@@ -504,7 +504,7 @@
                     <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
                         <div class="p-4 border-b border-gray-200 bg-[#e74c3c] text-white">
                             <div class="flex items-center justify-between">
-                                <h3 class="text-lg font-bold">Top PR Contributors</h3>
+                                <h3 class="text-lg font-bold">TOP BLT PRs - {{ current_time|date:"M" }}</h3>
                                 <i class="fas fa-code-branch"></i>
                             </div>
                         </div>
@@ -514,45 +514,36 @@
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
-                                            <a href="{% url 'profile' slug=user.user_profile__user__username %}"
+                                            <a href="{{ user.contributor__github_url }}"
+                                               target="_blank"
                                                class="text-sm hover:text-[#e74c3c] font-medium flex items-center gap-2">
-                                                {% if user.user_profile__github_url %}
-                                                    <img src="https://github.com/{{ user.user_profile__user__username }}.png"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% elif user.user_profile__user__userprofile.avatar %}
-                                                    <img src="{{ user.user_profile__user__userprofile.avatar }}"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
-                                                         width="24"
-                                                         height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
-                                                {% elif user.user_profile__user__socialaccount_set.all.0.get_avatar_url %}
-                                                    <img src="{{ user.user_profile__user__socialaccount_set.all.0.get_avatar_url }}"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                {% if user.contributor__avatar_url %}
+                                                    <img src="{{ user.contributor__avatar_url }}"
+                                                         alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
                                                          class="w-6 h-6 rounded-full"
                                                          onerror="this.src='{% static 'images/dummy-user.png' %}'">
                                                 {% else %}
-                                                    <img src="{% gravatar_url user.user_profile__user__email 50 %}"
-                                                         alt="{{ user.user_profile__user__username }}'s avatar"
+                                                    <img src="{% static 'images/dummy-user.png' %}"
+                                                         alt="{{ user.contributor__name }}'s avatar"
                                                          width="24"
                                                          height="24"
-                                                         class="w-6 h-6 rounded-full"
-                                                         onerror="this.src='{% static 'images/dummy-user.png' %}'">
+                                                         class="w-6 h-6 rounded-full">
                                                 {% endif %}
-                                                {{ user.user_profile__user__username }}
+                                                {{ user.contributor__name }}
                                             </a>
                                         </div>
                                         <span class="text-sm text-gray-500">{{ user.total_prs }} PRs</span>
                                     </div>
                                 {% empty %}
                                     <div class="text-center text-gray-500">
-                                        <p>No PR contributions yet</p>
+                                        <p>No BLT PRs for {{ current_time|date:"F Y" }}</p>
+                                        <a href="https://github.com/OWASP-BLT/BLT/pulls"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline text-sm mt-2 inline-block">
+                                            <i class="fas fa-external-link-alt mr-1"></i>View PRs on GitHub
+                                        </a>
                                     </div>
                                 {% endfor %}
                             </div>

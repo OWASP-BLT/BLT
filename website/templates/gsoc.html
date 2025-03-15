@@ -209,25 +209,54 @@
             </div>
             <!-- Top Contributors Leaderboard -->
             <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Top Contributors for GSoC 2025 Projects</h2>
-                <p class="text-gray-700 mb-4">
-                    For transparency, we are implementing a Top contributors List  for students this year. This demonstrates our commitment to working students who are contunually contributing while also signaling our intent to other projects and organizations.
-                </p>
+                <h2 class="text-3xl font-bold text-gray-900 mb-6">Top OWASP GSoC 2025 Contributors and Projects</h2>
+                <p class="text-gray-700 mb-4">A glimpse of the top contributors and projects with the most PRs for OWASP GSoC 2025.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {% for project, data in projects.items %}
                         <div class="bg-gray-50 rounded-lg p-6">
-                            <a href="{{ data.repo_url }}"
-                               target="_blank"
-                               class="text-xl font-semibold text-gray-900 mb-4">
-                                {{ project }} - Total PRs:
-                                <span class="text-red-600 font-bold">{{ data.total_prs }}</span>
-                            </a>
+                            <div class="flex justify-between items-center mb-4">
+                                <a href="{{ data.repo_url }}"
+                                   target="_blank"
+                                   class="text-xl font-semibold text-gray-900">
+                                    {{ project }} - Total PRs:
+                                    <span class="text-red-600 font-bold">{{ data.total_prs }}</span>
+                                </a>
+                                <form action="{% url 'refresh_gsoc_project' %}"
+                                      method="post"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="project_name" value="{{ project }}">
+                                    <div class="flex items-center space-x-2">
+                                        <button type="submit"
+                                                class="bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-3 rounded-md text-sm flex items-center">
+                                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                                        </button>
+                                        <div class="flex items-center">
+                                            <input type="checkbox"
+                                                   id="reset_counter_{{ project|slugify }}"
+                                                   name="reset_counter"
+                                                   value="true"
+                                                   class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                             <div class="space-y-3">
                                 {% for contributor in data.contributors %}
                                     <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
-                                        <a href="{{ contributor.url }}"
-                                           target="_blank"
-                                           class="text-gray-700 hover:text-red-600">{{ contributor.username }}</a>
+                                        <div class="flex items-center">
+                                            <img src="{{ contributor.avatar_url }}"
+                                                 alt="{{ contributor.username }}"
+                                                 class="w-8 h-8 rounded-full mr-3"
+                                                 width="32"
+                                                 height="32">
+                                            {% with repo_parts=data.repo_url|cut:"https://github.com/" %}
+                                                <a href="https://github.com/{{ repo_parts }}/issues?q=is%3Apr+author%3A{{ contributor.username }}"
+                                                   target="_blank"
+                                                   title="View {{ contributor.username }}'s PRs in {{ repo_parts }}"
+                                                   class="text-gray-700 hover:text-red-600">{{ contributor.username }}</a>
+                                            {% endwith %}
+                                        </div>
                                         <span class="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded">
                                             {{ contributor.prs }} PR
                                             {% if contributor.prs != 1 %}s{% endif %}
