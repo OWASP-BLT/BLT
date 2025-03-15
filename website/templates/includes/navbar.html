@@ -33,6 +33,20 @@
                 }
             });
         }
+
+        // JavaScript to toggle the sidenav menu on mobile when the hamburger icon is pressed
+        const sidenavToggleButton = document.getElementById('dropdown-toggle-mobile');
+        const sidenavMenu = document.getElementById('dropdown-mobile');
+        if (sidenavToggleButton && sidenavMenu) {
+            sidenavToggleButton.addEventListener('click', () => {
+                sidenavMenu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!sidenavToggleButton.contains(e.target) && !sidenavMenu.contains(e.target)) {
+                    sidenavMenu.classList.add('hidden');
+                }
+            });
+        }
     });
 </script>
 <nav class="relative top-0 border-b h-[80px] w-auto flex flex-col justify-center items-center">
