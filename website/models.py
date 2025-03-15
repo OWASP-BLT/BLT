@@ -461,7 +461,7 @@ class Issue(models.Model):
     markdown_description = models.TextField(null=True, blank=True)
     captcha = CaptchaField()
     label = models.PositiveSmallIntegerField(choices=labels, default=0)
-    views = models.IntegerField(null=True, blank=True)
+    views = models.IntegerField(default=0)
     verified = models.BooleanField(default=False)
     score = models.IntegerField(null=True, blank=True)
     status = models.CharField(max_length=10, default="open", null=True, blank=True)
