@@ -1,8 +1,10 @@
+import ipaddress
 import argparse
 import json
 import logging
 import os
 import re
+import socket
 import subprocess
 import tracemalloc
 import urllib
@@ -27,7 +29,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
-from django.core.exceptions import FieldError
+from django.core.exceptions import FieldError, ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
@@ -1536,23 +1538,50 @@ def sync_github_projects(request):
 
 
 def check_owasp_compliance(request):
-    """
-    View to check OWASP project compliance with guidelines.
-    Combines form and results in a single template.
-    """
     if request.method == "POST":
         url = request.POST.get("url", "").strip()
         if not url:
             messages.error(request, "Please provide a valid URL")
             return redirect("check_owasp_compliance")
 
+        # Validate URL format and accessibility
         try:
-            # Parse URL to determine if it's a GitHub repository
-            is_github = "github.com" in url.lower()
-            is_owasp_org = "github.com/owasp" in url.lower()
+            if not url.startswith(("http://", "https://")):
+                url = "https://" + url
 
-            # Fetch and analyze website content
-            response = requests.get(url, timeout=10, verify=False)
+            parsed = urlparse(url)
+            hostname = parsed.hostname
+            if not hostname:
+                raise ValidationError("Invalid hostname")
+
+            # Prevent SSRF by validating hostname
+            addr_info = socket.getaddrinfo(hostname, None)
+            for info in addr_info:
+                ip = info[4][0]
+                ip_obj = ipaddress.ip_address(ip)
+                if (
+                    ip_obj.is_private
+                    or ip_obj.is_loopback
+                    or ip_obj.is_reserved
+                    or ip_obj.is_multicast
+                    or ip_obj.is_link_local
+                    or ip_obj.is_unspecified
+                ):
+                    raise ValidationError("Invalid IP address")
+
+            # Create safe URL with only scheme, netloc and path
+            safe_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+
+            # Parse URL to determine if it's a GitHub repository
+            is_github = hostname and (hostname == "github.com" or hostname.endswith(".github.com"))
+            is_owasp_org = (
+                hostname
+                and (hostname == "github.com" or hostname.endswith(".github.com"))
+                and "/owasp" in parsed.path.lower()
+            )
+
+            # Fetch and analyze website content with proper verification
+            response = requests.get(safe_url, timeout=10, verify=True)
             soup = BeautifulSoup(response.text.lower(), "html.parser")
             content = soup.get_text().lower()
 
@@ -1612,10 +1641,12 @@ def check_owasp_compliance(request):
 
             return render(request, "check_owasp_compliance.html", context)
 
-        except requests.RequestException as e:
-            messages.error(request, f"Error accessing the URL: {str(e)}. Please check if the URL is accessible.")
-        except Exception as e:
-            messages.error(request, f"Error checking compliance: {str(e)}. Please try again.")
+        except (ValidationError, socket.gaierror, ValueError) as e:
+            messages.error(request, "Invalid or inaccessible URL provided")
+            return redirect("check_owasp_compliance")
+        except requests.exceptions.RequestException:
+            messages.error(request, "Could not access the provided URL")
+            return redirect("check_owasp_compliance")
 
     return render(request, "check_owasp_compliance.html")
 
