@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+{% load gravatar %}
 {% load custom_tags %}
+{% load static %}
 {% block metaTags %}
     <title>
         {% block title %}
@@ -37,53 +39,125 @@
 {% load gravatar %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-['Ubuntu'] lg:pl-0 overflow-x-hidden">
-        <!-- Navigation Bar -->
-        <div class="flex justify-between items-center gap-2 mx-4">
-            <nav class="flex items-center space-x-2">
-                <a href="{% url 'issues' %}" class="text-[#80708f]">Issues</a>
-                <i class="fa-solid fa-chevron-right"></i>
-                <a href="{% url 'domain' object.domain.name %}">
-                    <img src="{{ object.domain.get_logo }}"
-                         alt="Organization Logo"
-                         class="rounded w-4 h-4"
-                         width="16"
-                         height="16">
-                </a>
-                <a href="{% url 'domain' object.domain.name %}">{{ object.domain.name }}</a>
-                <span class="font-bold">#{{ object.id }}</span>
-                {% if status == "open" %}
-                    <span class="bg-red-100 text-red-800 text-lg font-medium px-2.5 py-0.5 rounded">Ongoing</span>
-                {% else %}
-                    <span class="bg-green-100 text-green-800 text-lg font-medium px-2.5 py-0.5 rounded">Resolved</span>
-                {% endif %}
+
+    <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
+
+    <div class=" flex lg:flex-row flex-col gap-4 mt-10">
+
+        <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 shadow-md rounded-xl p-4">
+            <nav class="flex items-center p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <div class="flex items-center space-x-3 truncate">
+                    <a href="{% url 'issues' %}" class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center">
+                        <i class="fas fa-bug mr-2"></i>
+                        <span class="font-medium">Issues</span>
+                    </a>
+                    <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
+                    <div class="flex items-center space-x-2">
+                        <a href="{% url 'domain' object.domain.name %}" class="flex items-center hover:text-[#e74c3c] transition-colors duration-200">
+                            <img src="{{ object.domain.get_logo }}"
+                                 alt="Organization Logo"
+                                 class="w-5 h-5 rounded-md shadow-sm"
+                                 width="20"
+                                 height="20">
+                            <span class="ml-2 font-medium">{{ object.domain.name }}</span>
+                        </a>
+                        <span class="text-gray-400">/</span>
+                        <span class="font-mono text-gray-600">#{{ object.id }}</span>
+                    </div>
+                </div>
+                <div class="ml-auto">
+                    {% if status == "open" %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
+                            <span class="w-2 h-2 bg-[#e74c3c] rounded-full mr-2 animate-pulse"></span>
+                            Ongoing
+                        </span>
+                    {% else %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Resolved
+                        </span>
+                    {% endif %}
+                </div>
             </nav>
-        </div>
-        <!-- Spacer -->
-        <div class="h-[3vh]"></div>
-        <!-- Issue Title -->
-        <h2 class="font-['Ubuntu'] font-bold text-3xl max-sm:w-[70%] w-[90%] line-clamp-3 ml-6"
-            title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
-        <!-- Issue URL -->
-        <p>
-            <a href="{{ object.url }}"
-               title="{{ object.url }}"
-               class="text-[#7e22ce] ml-6 font-thin truncate w-[80%]"
-               target="_blank"
-               rel="noopener noreferrer">{{ object.url }}</a>
-        </p>
-        <!-- Divider -->
-        <div class="border-b-2 border-[#584ac080] mt-4">
-            <div class="max-sm:absolute top-[15%] max-sm:pt-2 max-sm:ml-[80%] ml-6">
-                {% include "includes/_like_dislike_share.html" %}
+
+
+          <div class="flex flex-col gap-5 px-2">
+
+           <div class="flex flex-col gap-2">
+            <h2 class="text-3xl font-bold text-gray-900 leading-tight tracking-tight max-w-3xl truncate"
+                title="{{ object.description|escapejs }}">
+                {{ object.description|escapejs }}
+            </h2>
+
+            {% if object.markdown_description %}
+            <p class="text-lg text-gray-700 font-medium"
+               id="bug_report">{{ object.markdown_description }}</p>
+            {% endif %}
+          </div>
+            <a 
+            href="{{ object.url }}"
+            title="{{ object.url }}" 
+            target="_blank" 
+            class="flex items-center gap-3 border px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-fit">
+                <img src="{{ object.domain.get_logo }}"
+                alt="Organization Logo"
+                class="w-5 h-5 rounded-md shadow-sm"
+                width="20"
+                height="20">
+                <p 
+                   class="text-[#e74c3c] hover:text-[#e74c3c] font-medium truncate transition-colors duration-200"
+                   rel="noopener noreferrer">
+                    {{ object.url }}
+                </p>
+            </a>
+
+            <div class="flex items-center">
+                <img class="size-8 rounded-full object-cover"
+                     src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+                     alt="User Profile Logo"
+                     width="32px"
+                     height="32px">
+                <div class="ml-3">
+                    <div class="text-gray-700">
+                        {% if object.user.username %}
+                            <a href="{% url 'profile' slug=object.user.username %}"
+                               class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
+                        {% else %}
+                            Anonymous
+                        {% endif %}
+                        <span class="">found this issue on {{ object.created  }}</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        <!-- Issue Info Sections -->
-        <div class="flex bg-white max-sm:flex-col-reverse">
+
             {% include "./includes/issue_left_info.html" %}
+
+            {% include "includes/_like_dislike_share.html" %}
+
+
+
+          </div>
+
+    
+
+        </div>
+
+        <div class="lg:w-[25%] w-full border border-gray-300 shadow-md rounded-xl p-4">
             {% include "./includes/issue_right_info.html" %}
         </div>
+
     </div>
+
+    <div>{% include "comments2.html" %}</div>
+
+    </div>
+
+
+
+
+
+
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script>
