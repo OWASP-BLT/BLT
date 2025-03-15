@@ -47,11 +47,13 @@
                             {% if comment.author_fk.user_avatar %}
                                 <img class="w-10 h-10 rounded-full object-cover"
                                      src="{{ MEDIA_URL }}{{ comment.author_fk.user_avatar }}"
-                                     alt="{{ comment.author }} profile">
+                                     alt="{{ comment.author }} profile"
+                                     width="40" height="40">
                             {% else %}
                                 <img class="w-10 h-10 rounded-full object-cover"
                                      src="{% static 'images/dummy-user.png' %}"
-                                     alt="User profile">
+                                     alt="User profile"
+                                     width="40" height="40">
                             {% endif %}
                             <div>
                                 <p class="text-lg font-medium text-gray-900">{{ comment.author }}</p>
@@ -130,7 +132,8 @@
                                 <div class="flex items-center space-x-3">
                                     <img class="w-8 h-8 rounded-full object-cover"
                                          {% if user.userprofile.user_avatar %} src="{{ MEDIA_URL }}{{ user.userprofile.user_avatar }}" {% else %} src="{% static 'images/dummy-user.png' %}" {% endif %}
-                                         alt="{{ child_comment.author }} profile">
+                                         alt="{{ child_comment.author }} profile"
+                                         width="32" height="32">
                                     <div>
                                         <p class="text-base font-medium text-gray-900">{{ child_comment.author }}</p>
                                         <p class="text-xs text-gray-500">
