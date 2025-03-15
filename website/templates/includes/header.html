@@ -264,6 +264,27 @@
             </button>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburgerButton = document.getElementById('hamburger-button');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (hamburgerButton && sidebar) {
+                hamburgerButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    sidebar.classList.toggle('-translate-x-full');
+                });
+                
+                // Close sidebar when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!hamburgerButton.contains(e.target) && !sidebar.contains(e.target)) {
+                        sidebar.classList.add('-translate-x-full');
+                    }
+                });
+            }
+        });
+    </script>
 </nav>
 <!-- Chatbot -->
 <div class="bg-gray-100 chat-Zindex">
@@ -815,18 +836,6 @@
                 notificationDropdown.classList.add("hidden");
             }
         });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const hamburgerButton = document.getElementById('hamburger-button');
-        const sidebar = document.querySelector('.sidebar');
-
-        if (hamburgerButton && sidebar) {
-            hamburgerButton.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                sidebar.classList.toggle('-translate-x-full');
-            });
-        }
-
     });
+
 </script>
