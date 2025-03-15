@@ -1,20 +1,21 @@
 {% load static %}
-<section id="comment_root" class="w-full bg-white rounded-lg shadow-md border border-gray-300 p-6">
+<section id="comment_root"
+         class="w-full bg-white rounded-lg shadow-md border border-gray-300 p-6">
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-900">Comments ({{ all_comment | length }})</h2>
     </div>
-    
     {% if user.is_authenticated %}
         <form class="mb-8" id="comments">
             {% csrf_token %}
             <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
                 <label for="comment" class="sr-only">Your comment</label>
                 <input type="text" id="replying_to_input" hidden>
-                <input type="hidden" id="content_type" name="content_type" value="{{ content_type }}">
-                
+                <input type="hidden"
+                       id="content_type"
+                       name="content_type"
+                       value="{{ content_type }}">
                 <div id="replying_to_root" class="mb-2"></div>
                 <div id="add_update_label" class="mb-2"></div>
-                
                 <textarea id="comment"
                           rows="4"
                           name="comment"
@@ -32,10 +33,11 @@
         </form>
     {% else %}
         <div class="p-6 mb-6 bg-gray-50 rounded-lg border border-gray-200 text-center">
-            <p class="text-lg text-gray-700">To comment, please <a href="#" class="text-red-600 hover:underline font-medium">sign in</a>.</p>
+            <p class="text-lg text-gray-700">
+                To comment, please <a href="#" class="text-red-600 hover:underline font-medium">sign in</a>.
+            </p>
         </div>
     {% endif %}
-    
     <div class="comment_group space-y-6">
         {% for comment in all_comment %}
             {% if comment.parent is None %}
@@ -58,13 +60,15 @@
                                 </p>
                             </div>
                         </div>
-                        
                         {% if user.username == comment.author %}
                             <div class="relative">
                                 <button id="dropdownComment1Button"
                                         data-dropdown-toggle="dropdownComment{{ comment.id }}"
                                         class="p-1.5 text-gray-500 rounded-lg hover:bg-gray-100">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                    <svg class="w-5 h-5"
+                                         fill="currentColor"
+                                         viewBox="0 0 20 20"
+                                         xmlns="http://www.w3.org/2000/svg">
                                         <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                     </svg>
                                 </button>
@@ -87,31 +91,39 @@
                             </div>
                         {% endif %}
                     </div>
-                    
                     <p class="text-gray-800 mb-4 main_text">{{ comment.text | safe }}</p>
-                    
                     <div class="flex items-center space-x-4">
                         <button type="button"
                                 onclick="add_reply('{{ comment.id }}','{{ comment.author }}')"
                                 class="flex items-center text-sm text-gray-500 hover:text-red-600">
-                            <svg class="mr-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path>
+                            <svg class="mr-1.5 w-4 h-4"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6">
+                                </path>
                             </svg>
                             Reply
                         </button>
-                        
                         <button type="button"
                                 onclick="see_replies('{{ comment.id }}','{{ comment.user }}')"
                                 class="flex items-center text-sm text-gray-500 hover:text-red-600">
-                            <svg class="mr-1.5 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            <svg class="mr-1.5 w-4 h-4"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                </path>
                             </svg>
                             {{ comment.children | length }} Replies
                         </button>
                     </div>
                 </article>
-                
-                <div class="w-full pl-6 md:pl-12" id="comment_replies_{{ comment.id }}" hidden>
+                <div class="w-full pl-6 md:pl-12"
+                     id="comment_replies_{{ comment.id }}"
+                     hidden>
                     {% for child_comment in comment.children %}
                         <article class="p-6 bg-white rounded-lg border border-gray-100 mb-4">
                             <div class="flex justify-between items-start mb-4">
@@ -126,13 +138,15 @@
                                         </p>
                                     </div>
                                 </div>
-                                
                                 {% if user.username == child_comment.author %}
                                     <div class="relative">
                                         <button id="dropdownComment1Button"
                                                 data-dropdown-toggle="dropdownComment{{ child_comment.id }}"
                                                 class="p-1.5 text-gray-500 rounded-lg hover:bg-gray-100">
-                                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                            <svg class="w-5 h-5"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 20 20"
+                                                 xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                             </svg>
                                         </button>
@@ -155,7 +169,6 @@
                                     </div>
                                 {% endif %}
                             </div>
-                            
                             <p class="text-gray-800 text-sm main_text">{{ child_comment.text | safe }}</p>
                         </article>
                     {% endfor %}
@@ -167,7 +180,6 @@
             </div>
         {% endfor %}
     </div>
-    
     <script>
         function initDropDown(){
             document.querySelectorAll("[data-dropdown-toggle]").forEach((toggle) => {

@@ -2,55 +2,55 @@
 {% load custom_tags %}
 {% load static %}
 <div class="flex flex-col items-start gap-6">
-        <h4 class="text-xl font-semibold">Event ID  <span class="text-gray-500">#{{ object.id }}</span></h4>
-        <div class="flex justify-start items-center px-3 py-2 rounded-full border border-gray-300 w-full shadow-sm">
-            <img class="w-[50px] rounded-full h-[50px] object-cover"
-                 src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
-                 alt="User Profile Logo"
-                 width="32px"
-                 height="32px">
-            <div class="ml-3">
-                <div>
-                    {% if object.user.username %}
-                        <a href="{% url 'profile' slug=object.user.username %}"
-                           class="!text-[#7e22ce] hover:!text-[#ab71dd] font-bold">@{{ object.user.username }}</a>
-                    {% else %}
-                        Anonymous
-                    {% endif %}
-                </div>
-                <div>
-                    {% if object.user %}<span class="font-bold">Total Points: </span> {{ users_score|default:0 }}{% endif %}
-                </div>
+    <h4 class="text-xl font-semibold">
+        Event ID  <span class="text-gray-500">#{{ object.id }}</span>
+    </h4>
+    <div class="flex justify-start items-center px-3 py-2 rounded-full border border-gray-300 w-full shadow-sm">
+        <img class="w-[50px] rounded-full h-[50px] object-cover"
+             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+             alt="User Profile Logo"
+             width="32px"
+             height="32px">
+        <div class="ml-3">
+            <div>
+                {% if object.user.username %}
+                    <a href="{% url 'profile' slug=object.user.username %}"
+                       class="!text-[#7e22ce] hover:!text-[#ab71dd] font-bold">@{{ object.user.username }}</a>
+                {% else %}
+                    Anonymous
+                {% endif %}
+            </div>
+            <div>
+                {% if object.user %}<span class="font-bold">Total Points:</span> {{ users_score|default:0 }}{% endif %}
             </div>
         </div>
-        <div class="w-full my-2">
-    {% include "./crypto_donation.html" with included_in_issue_page=True %}
     </div>
-
-
+    <div class="w-full my-2">{% include "./crypto_donation.html" with included_in_issue_page=True %}</div>
     <div class="flex flex-col gap-4 w-full">
         <div class="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 w-full">
             <div class="flex items-center space-x-4">
-                <img class="w-12 h-12 rounded-lg object-cover shadow-sm" 
+                <img class="w-12 h-12 rounded-lg object-cover shadow-sm"
                      src="{{ object.domain.get_logo }}"
                      alt="Domain Logo"
                      width="48"
                      height="48">
                 <div class="flex-1 min-w-0">
-                    <a href="{% url 'domain' slug=object.domain.name %}" 
+                    <a href="{% url 'domain' slug=object.domain.name %}"
                        class="text-gray-900 font-medium hover:text-[#e74c3c] transition-colors duration-200 truncate block">
                         {{ object.domain.name }}
                     </a>
                     <div class="flex items-center mt-1">
-                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <svg class="w-4 h-4 text-gray-500"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span class="ml-1.5 text-sm text-gray-600">{{ issue_count }} Issues Reported</span>
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 w-full">
             <div class="flex items-center space-x-4">
                 {% if browser_family %}
@@ -63,12 +63,13 @@
                     {% endwith %}
                 {% endif %}
                 <div class="flex-1 min-w-0">
-                    <div class="text-gray-900 font-medium">
-                        {{ browser_family }} {{ browser_version }}
-                    </div>
+                    <div class="text-gray-900 font-medium">{{ browser_family }} {{ browser_version }}</div>
                     <div class="flex items-center mt-1">
-                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        <svg class="w-4 h-4 text-gray-500"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         <span class="ml-1.5 text-sm text-gray-600">{{ os_family }}</span>
                     </div>
@@ -76,7 +77,6 @@
             </div>
         </div>
     </div>
-
     <div class="flex flex-col gap-4">
         <!-- Added On -->
         <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
@@ -85,7 +85,6 @@
                 <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.created }}</span>
             </div>
         </div>
-        
         <!-- Bug Type -->
         <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
             <div class="flex gap-3 items-center">
@@ -93,100 +92,103 @@
                 <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.get_label_display }}</span>
             </div>
         </div>
-        
         <!-- CVE Score -->
         {% if object.cve_score %}
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-3 items-center">
-                <span class="text-gray-700 font-medium">CVE Score</span>
-                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.cve_score }}</span>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- CVE ID -->
-        {% if object.cve_id %}
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-3 items-center">
-                <span class="text-gray-700 font-medium">CVE ID</span>
-                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.cve_id }}</span>
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- Submitted -->
-        {% if object.hunt %}
-        <a href="{% url 'show_bughunt' object.hunt.id %}" class="hover:no-underline">
-            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:border-[#e74c3c] transition-colors duration-200">
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
                 <div class="flex gap-3 items-center">
-                    <span class="text-gray-700 font-medium">Submitted</span>
-                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.hunt.name }}</span>
+                    <span class="text-gray-700 font-medium">CVE Score</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.cve_score }}</span>
                 </div>
             </div>
-        </a>
-        {% else %}
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-3 items-center">
-                <span class="text-gray-700 font-medium">Submitted</span>
-                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">Independently</span>
-            </div>
-        </div>
         {% endif %}
-        
+        <!-- CVE ID -->
+        {% if object.cve_id %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">CVE ID</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.cve_id }}</span>
+                </div>
+            </div>
+        {% endif %}
+        <!-- Submitted -->
+        {% if object.hunt %}
+            <a href="{% url 'show_bughunt' object.hunt.id %}"
+               class="hover:no-underline">
+                <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:border-[#e74c3c] transition-colors duration-200">
+                    <div class="flex gap-3 items-center">
+                        <span class="text-gray-700 font-medium">Submitted</span>
+                        <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.hunt.name }}</span>
+                    </div>
+                </div>
+            </a>
+        {% else %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">Submitted</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">Independently</span>
+                </div>
+            </div>
+        {% endif %}
         <!-- OS Version -->
         <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
             <div class="flex gap-3 items-center">
                 <span class="text-gray-700 font-medium">OS Version</span>
-                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{% if os_version %}{{ os_version }}{% else %}Unknown{% endif %}</span>
+                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">
+                    {% if os_version %}
+                        {{ os_version }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </span>
             </div>
         </div>
-        
         <!-- Github URL -->
         {% if object.domain.github %}
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-2 items-center">
-                <span class="text-gra3-700 font-medium">Github URL</span>
-                <div class="flex items-center">
-                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all mr-2">{{ object.domain.github }}</span>
-                    <a href="{{ object.domain.github }}" target="_blank" class="text-gray-600 hover:text-[#e74c3c]">
-                        <i class="fas fa-external-link-alt"></i>
-                    </a>
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-2 items-center">
+                    <span class="text-gra3-700 font-medium">Github URL</span>
+                    <div class="flex items-center">
+                        <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all mr-2">{{ object.domain.github }}</span>
+                        <a href="{{ object.domain.github }}"
+                           target="_blank"
+                           class="text-gray-600 hover:text-[#e74c3c]">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Github Issues URL -->
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-2 items-center">
-                <span class="text-gra3-700 font-medium">Github Issues URL</span>
-                <div class="flex items-center">
-                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all mr-2">{{ github_issues_url }}</span>
-                    <a href="{{ github_issues_url }}" target="_blank" class="text-gray-600 hover:text-[#e74c3c]">
-                        <i class="fas fa-external-link-alt"></i>
-                    </a>
+            <!-- Github Issues URL -->
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-2 items-center">
+                    <span class="text-gra3-700 font-medium">Github Issues URL</span>
+                    <div class="flex items-center">
+                        <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all mr-2">{{ github_issues_url }}</span>
+                        <a href="{{ github_issues_url }}"
+                           target="_blank"
+                           class="text-gray-600 hover:text-[#e74c3c]">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
-        
         <!-- Email Clicks -->
         {% if email_clicks %}
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-3 items-center">
-                <span class="text-gray-700 font-medium">Email Clicks</span>
-                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ email_clicks }}</span>
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">Email Clicks</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ email_clicks }}</span>
+                </div>
             </div>
-        </div>
         {% endif %}
-        
         <!-- Email Events -->
         {% if email_events %}
-        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
-            <div class="flex gap-3 items-center">
-                <span class="text-gray-700 font-medium">Email Events</span>
-                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ email_events }}</span>
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">Email Events</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ email_events }}</span>
+                </div>
             </div>
-        </div>
         {% endif %}
     </div>
 </div>
