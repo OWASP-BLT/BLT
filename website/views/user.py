@@ -46,9 +46,9 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
-    Notification,
     Newsletter,
     NewsletterSubscriber,
+    Notification,
     Points,
     Tag,
     Thread,
@@ -1185,7 +1185,7 @@ def delete_notification(request, notification_id):
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
 
- 
+
 def newsletter_home(request):
     """View for displaying list of published newsletters"""
     newsletters = Newsletter.objects.filter(status="published").order_by("-published_at")
@@ -1202,7 +1202,7 @@ def newsletter_home(request):
             action_type="view",
             title="Viewed newsletters",
             content_type=ContentType.objects.get_for_model(Newsletter),
-            object_id=1,
+            object_id=featured_newsletter.id if featured_newsletter else 0,
         )
 
     return render(
@@ -1440,4 +1440,7 @@ def newsletter_resend_confirmation(request):
 
         return JsonResponse({"success": True})
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        logger.error(f"Error in newsletter_resend_confirmation: {str(e)}")
+        return JsonResponse(
+            {"success": False, "error": "An error occurred while processing your request. Please try again later."}
+        )

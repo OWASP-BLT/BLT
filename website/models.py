@@ -31,6 +31,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import storage
 from mdeditor.fields import MDTextField
 from rest_framework.authtoken.models import Token
+import markdown
 
 logger = logging.getLogger(__name__)
 
@@ -654,7 +655,7 @@ class Winner(models.Model):
 
 
 class Points(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="points")
     issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
     domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     score = models.IntegerField()
@@ -2448,16 +2449,17 @@ class Newsletter(models.Model):
         self.save(update_fields=["email_sent", "email_sent_at"])
 
     def format_for_email(self):
-        """Format the newsletter content for email sending"""
-        from django.utils.html import strip_tags
-
-        email_body = self.content
-        plain_text = strip_tags(email_body).replace("&nbsp;", " ")
-
+        """Format newsletter content for sending via email, converting Markdown to HTML."""
+        import markdown
+        
+        # Convert Markdown content to HTML
+        html_content = markdown.markdown(self.content, extensions=['extra', 'codehilite'])
+        
+        # Return formatted content for email
         return {
-            "subject": self.email_subject or f"Newsletter: {self.title}",
-            "html_content": email_body,
-            "plain_text": plain_text,
+            'title': self.title,
+            'content': html_content,
+            'published_at': self.published_at,
         }
 
 
@@ -2548,4 +2550,4 @@ class NewsletterSubscriber(models.Model):
 
         scheme = "https" if not settings.DEBUG else "http"
 
-        return f"{scheme}://{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"        
+        return f"{scheme}://{settings.DOMAIN_NAME}{reverse('newsletter_unsubscribe', args=[self.confirmation_token])}"

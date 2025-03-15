@@ -42,7 +42,10 @@
                                 <div class="ml-3">
                                     <p class="text-sm text-yellow-700">
                                         Your email address has not been confirmed yet. Please check your inbox for a confirmation email.
-                                        <a href="#" class="font-medium underline" id="resend-confirmation">Resend confirmation email</a>
+                                        <a href="#"
+                                           class="font-medium underline"
+                                           id="resend-confirmation"
+                                           data-email="{{ subscriber.email }}">Resend confirmation email</a>
                                     </p>
                                 </div>
                             </div>
@@ -158,6 +161,7 @@
             // Handle resend confirmation email click
             const resendLink = document.getElementById('resend-confirmation');
             if (resendLink) {
+                const subscriberEmail = resendLink.getAttribute('data-email');
                 resendLink.addEventListener('click', function(e) {
                     e.preventDefault();
                     
@@ -174,7 +178,7 @@
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            email: '{{ subscriber.email }}'
+                            email: subscriberEmail
                         })
                     })
                     .then(response => response.json())
