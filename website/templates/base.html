@@ -396,5 +396,8 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
         <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
         <script src="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.js"></script>
+        {% if user.is_authenticated %}
+            <script src="{% static 'js/notifications.js' %}"></script>
+        {% endif %}
     </body>
 </html>

@@ -93,8 +93,10 @@ from website.views.core import (
     facebook_callback,
     features_view,
     find_key,
-    github_callback,
+    github_login_view,
     google_callback,
+    handler404,
+    handler500,
     home,
     management_commands,
     robots_txt,
@@ -139,6 +141,7 @@ from website.views.education import (
     view_course,
     view_lecture,
 )
+from website.views.github_oauth import github_oauth_login
 from website.views.hackathon import (
     HackathonCreateView,
     HackathonDetailView,
@@ -371,8 +374,9 @@ urlpatterns = [
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("accounts/", include("allauth.urls")),
     path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
-    path("auth/github/", GithubLogin.as_view(), name="github_login"),
-    path("accounts/github/login/callback/", github_callback, name="github_callback"),
+    path("accounts/github/login/", github_login_view, name="github_login"),
+    path("github-oauth/", github_oauth_login, name="github_oauth_direct"),
+    path("auth/github/", GithubLogin.as_view(), name="auth_github"),
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     path("auth/github/url/", github_views.oauth2_login),
     path("auth/google/", GoogleLogin.as_view(), name="google_login"),
@@ -380,7 +384,6 @@ urlpatterns = [
     path("accounts/facebook/login/callback/", facebook_callback, name="facebook_callback"),
     re_path(r"^auth/facebook/connect/$", FacebookConnect.as_view(), name="facebook_connect"),
     re_path(r"^auth/google/connect/$", GoogleConnect.as_view(), name="google_connect"),
-    path("auth/github/url/", github_views.oauth2_login),
     path(
         "oauth/slack/callback/",
         SlackCallbackView.as_view(),

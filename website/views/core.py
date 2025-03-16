@@ -74,6 +74,7 @@ from website.utils import analyze_pr_content, fetch_github_data, safe_redirect_a
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
+logger = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
@@ -534,10 +535,73 @@ def status_page(request):
 
 
 def github_callback(request):
-    ALLOWED_HOSTS = ["github.com"]
-    params = urllib.parse.urlencode(request.GET)
-    url = f"{settings.CALLBACK_URL_FOR_GITHUB}?{params}"
-    return safe_redirect_allowed(url, ALLOWED_HOSTS)
+    """
+    Handle GitHub OAuth callback.
+    For django-allauth, we redirect to the callback URL as it will handle the authentication flow.
+    """
+    try:
+        return redirect("socialaccount_connections")
+    except Exception as e:
+        messages.error(request, "An error occurred during GitHub authentication. Please try again.")
+        logger.error(f"GitHub authentication error: {str(e)}")
+
+
+def github_login_view(request):
+    """
+    Production-ready view to handle GitHub login requests.
+    Ensures the GitHub OAuth provider is properly configured in the database
+    before redirecting to GitHub for authentication.
+    """
+    try:
+        # Check if GitHub credentials are configured
+        client_id = settings.SOCIALACCOUNT_PROVIDERS.get("github", {}).get("CLIENT_ID", "")
+        client_secret = settings.SOCIALACCOUNT_PROVIDERS.get("github", {}).get("SECRET", "")
+
+        if not client_id or not client_secret:
+            logger.error("GitHub OAuth credentials missing in settings")
+            messages.error(
+                request, "GitHub authentication is temporarily unavailable. Please try again later or contact support."
+            )
+            return redirect("account_login")
+
+        from allauth.socialaccount.models import SocialApp
+        from django.contrib.sites.models import Site
+
+        site = Site.objects.get_current()
+
+        current_domain = request.get_host()
+        if site.domain != current_domain and not settings.DEBUG:
+            logger.info(f"Updating site domain from {site.domain} to {current_domain}")
+            site.domain = current_domain
+            site.name = current_domain
+            site.save()
+
+        social_app, created = SocialApp.objects.get_or_create(
+            provider="github", defaults={"name": "GitHub", "client_id": client_id, "secret": client_secret, "key": ""}
+        )
+
+        if not created:
+            if social_app.client_id != client_id or social_app.secret != client_secret:
+                social_app.client_id = client_id
+                social_app.secret = client_secret
+                social_app.save()
+                logger.info("Updated GitHub OAuth credentials in database")
+        else:
+            logger.info("Created new GitHub OAuth app in database")
+
+        if site not in social_app.sites.all():
+            social_app.sites.add(site)
+            logger.info(f"Added site '{site.domain}' to GitHub OAuth app")
+
+        # Use the direct OAuth handler
+        from website.views.github_oauth import github_oauth_login
+
+        return github_oauth_login(request)
+
+    except Exception as e:
+        logger.error(f"Error in GitHub login view: {str(e)}", exc_info=True)
+        messages.error(request, "An error occurred during authentication setup. Please try again later.")
+        return redirect("account_login")
 
 
 def google_callback(request):
@@ -917,7 +981,14 @@ class GithubLogin(SocialLoginView):
 
     @property
     def callback_url(self):
-        return self.request.build_absolute_uri(reverse("github_callback"))
+        # use the correct callback URL from settings
+        callback_url = settings.CALLBACK_URL_FOR_GITHUB
+        client_id = settings.SOCIALACCOUNT_PROVIDERS.get("github", {}).get("CLIENT_ID", "")
+        if not client_id:
+            logger.error("GitHub Client ID is not set correctly in settings")
+        logger.debug(f"Using GitHub callback URL: {callback_url}")
+        logger.debug(f"GitHub Client ID length: {len(client_id)}")
+        return callback_url
 
 
 class FacebookConnect(SocialConnectView):

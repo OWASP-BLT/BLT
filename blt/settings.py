@@ -30,6 +30,7 @@ PROJECT_NAME = "BLT"
 DOMAIN_NAME = "blt.owasp.org"
 FQDN = "blt.owasp.org"
 DOMAIN_NAME_PREVIOUS = os.environ.get("DOMAIN_NAME_PREVIOUS", "BLT")
+CALLBACK_URL_FOR_GITHUB = os.environ.get("CALLBACK_URL_FOR_GITHUB", f"https://{FQDN}/accounts/github/login/callback/")
 
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
@@ -313,10 +314,10 @@ else:
     if not TESTING:
         DEBUG = True
 
-    # use this to debug emails locally
-    # python -m smtpd -n -c DebuggingServer localhost:1025
-    # if DEBUG:
-    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+        # use this to debug emails locally
+        # python -m smtpd -n -c DebuggingServer localhost:1025
+        # if DEBUG:
+        # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
@@ -334,6 +335,13 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
+
+# Add social account login settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = "none"
+SOCIALACCOUNT_EMAIL_REQUIRED = False
+SOCIALACCOUNT_QUERY_EMAIL = True
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -486,6 +494,8 @@ SOCIALACCOUNT_PROVIDERS = {
     "github": {
         "SCOPE": ["user", "repo"],
         "AUTH_PARAMS": {"access_type": "online"},
+        "CLIENT_ID": os.environ.get("GITHUB_CLIENT_ID", ""),
+        "SECRET": os.environ.get("GITHUB_CLIENT_SECRET", ""),
     },
     "google": {
         "SCOPE": ["profile", "email"],
@@ -511,6 +521,9 @@ SOCIALACCOUNT_PROVIDERS = {
         "VERSION": "v7.0",
     },
 }
+
+github_client_id = os.environ.get("GITHUB_CLIENT_ID", "")
+github_client_secret = os.environ.get("GITHUB_CLIENT_SECRET", "")
 
 ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
 SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
@@ -607,3 +620,16 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Session settings for improved OAuth flow
+SESSION_COOKIE_SAMESITE = "Lax"  # Allow cookies to be sent on redirects from GitHub
+SESSION_COOKIE_SECURE = False if DEBUG else True  # Use secure cookies in production
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookie
+SESSION_ENGINE = "django.contrib.sessions.backends.db"  # Use database-backed sessions for reliability
+SESSION_SAVE_EVERY_REQUEST = True  # Save the session data on every request
+
+# Session expiry time (30 days)
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 30
+
+# For OAuth security
+OAUTH_STATE_TIMEOUT = 300
