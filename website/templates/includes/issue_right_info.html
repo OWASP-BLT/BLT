@@ -1,108 +1,194 @@
 {% load gravatar %}
 {% load custom_tags %}
 {% load static %}
-<div class="border-l-2 border-[#584ac080] w-[27%] flex flex-col items-start max-sm:w-[100%]">
-    <div class="h-[5vh]"></div>
-    <div class="max-sm:ml-[3.45%] ml-[10%]">
-        <h4 class="text-2xl font-bold mb-3">Event ID: {{ object.id }}</h4>
-        <div class="flex justify-start items-center">
-            <img class="w-[50px] rounded-full h-[50px] object-cover"
-                 src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
-                 alt="User Profile Logo"
-                 width="32px"
-                 height="32px">
-            <div class="ml-3">
-                <div>
-                    {% if object.user.username %}
-                        <a href="{% url 'profile' slug=object.user.username %}"
-                           class="!text-[#7e22ce] font-bold">{{ object.user.username }}</a>
+<div class="flex flex-col items-start gap-6">
+    <h4 class="text-xl font-semibold">
+        Event ID  <span class="text-gray-500">#{{ object.id }}</span>
+    </h4>
+    <div class="flex justify-start items-center px-3 py-2 rounded-full border border-gray-300 w-full shadow-sm">
+        <img class="w-[50px] rounded-full h-[50px] object-cover"
+             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+             alt="User Profile Logo"
+             width="32px"
+             height="32px">
+        <div class="ml-3">
+            <div>
+                {% if object.user.username %}
+                    <a href="{% url 'profile' slug=object.user.username %}"
+                       class="!text-[#7e22ce] hover:!text-[#ab71dd] font-bold">@{{ object.user.username }}</a>
+                {% else %}
+                    Anonymous
+                {% endif %}
+            </div>
+            <div>
+                {% if object.user %}<span class="font-bold">Total Points:</span> {{ users_score|default:0 }}{% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="w-full my-2">{% include "./crypto_donation.html" with included_in_issue_page=True %}</div>
+    <div class="flex flex-col gap-4 w-full">
+        <div class="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 w-full">
+            <div class="flex items-center space-x-4">
+                <img class="w-12 h-12 rounded-lg object-cover shadow-sm"
+                     src="{{ object.domain.get_logo }}"
+                     alt="Domain Logo"
+                     width="48"
+                     height="48">
+                <div class="flex-1 min-w-0">
+                    <a href="{% url 'domain' slug=object.domain.name %}"
+                       class="text-gray-900 font-medium hover:text-[#e74c3c] transition-colors duration-200 truncate block">
+                        {{ object.domain.name }}
+                    </a>
+                    <div class="flex items-center mt-1">
+                        <svg class="w-4 h-4 text-gray-500"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="ml-1.5 text-sm text-gray-600">{{ issue_count }} Issues Reported</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200 w-full">
+            <div class="flex items-center space-x-4">
+                {% if browser_family %}
+                    {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
+                        <img class="w-12 h-12 rounded-lg object-cover shadow-sm"
+                             src="{% static image_static %}"
+                             alt="Browser Logo"
+                             width="48"
+                             height="48">
+                    {% endwith %}
+                {% endif %}
+                <div class="flex-1 min-w-0">
+                    <div class="text-gray-900 font-medium">{{ browser_family }} {{ browser_version }}</div>
+                    <div class="flex items-center mt-1">
+                        <svg class="w-4 h-4 text-gray-500"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span class="ml-1.5 text-sm text-gray-600">{{ os_family }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-col gap-4">
+        <!-- Added On -->
+        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+            <div class="flex gap-3 items-center">
+                <span class="text-gray-700 font-medium">Added On</span>
+                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.created }}</span>
+            </div>
+        </div>
+        <!-- Bug Type -->
+        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+            <div class="flex gap-3 items-center">
+                <span class="text-gray-700 font-medium">Bug Type</span>
+                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.get_label_display }}</span>
+            </div>
+        </div>
+        <!-- CVE Score -->
+        {% if object.cve_score %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">CVE Score</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.cve_score }}</span>
+                </div>
+            </div>
+        {% endif %}
+        <!-- CVE ID -->
+        {% if object.cve_id %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">CVE ID</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.cve_id }}</span>
+                </div>
+            </div>
+        {% endif %}
+        <!-- Submitted -->
+        {% if object.hunt %}
+            <a href="{% url 'show_bughunt' object.hunt.id %}"
+               class="hover:no-underline">
+                <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:border-[#e74c3c] transition-colors duration-200">
+                    <div class="flex gap-3 items-center">
+                        <span class="text-gray-700 font-medium">Submitted</span>
+                        <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ object.hunt.name }}</span>
+                    </div>
+                </div>
+            </a>
+        {% else %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">Submitted</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">Independently</span>
+                </div>
+            </div>
+        {% endif %}
+        <!-- OS Version -->
+        <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+            <div class="flex gap-3 items-center">
+                <span class="text-gray-700 font-medium">OS Version</span>
+                <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">
+                    {% if os_version %}
+                        {{ os_version }}
                     {% else %}
-                        Anonymous
+                        Unknown
                     {% endif %}
-                </div>
-                <div>
-                    {% if object.user %}<span class="font-bold">Total Points =</span> {{ users_score }}{% endif %}
-                </div>
+                </span>
             </div>
         </div>
-    </div>
-    <div class="h-[2vh]"></div>
-    {% include "./crypto_donation.html" with included_in_issue_page=True %}
-    <div class="h-[2vh]"></div>
-    <div class="max-sm:ml-[3.45%] ml-[10%]">
-        <div class="flex justify-start items-center">
-            <img class="w-[45px] rounded-full h-[45px] object-cover"
-                 src="{{ object.domain.get_logo }}"
-                 alt="User Profile Logo"
-                 width="32px"
-                 height="32px">
-            <div class="ml-3">
-                <div class="truncate hover:!text-black hover:underline">
-                    <a class="hover:!text-black"
-                       href="{% url 'domain' slug=object.domain.name %}">Reported on {{ object.domain.name }}</a>
-                </div>
-                <div>
-                    Issues Reported: <span class="font-bold">{{ issue_count }}</span>
+        <!-- Github URL -->
+        {% if object.domain.github %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-2 items-center">
+                    <span class="text-gra3-700 font-medium">Github URL</span>
+                    <div class="flex items-center">
+                        <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all mr-2">{{ object.domain.github }}</span>
+                        <a href="{{ object.domain.github }}"
+                           target="_blank"
+                           class="text-gray-600 hover:text-[#e74c3c]">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="h-[2vh]"></div>
-    <div class="max-sm:ml-[3.45%] ml-[10%]">
-        <div class="flex justify-start items-center">
-            {% if browser_family %}
-                {% with "img/browser-logos/"|add:browser_family|add:"/"|add:browser_family|add:"_64x64.png"|lower as image_static %}
-                    <img class="w-[45px] h-[45px] rounded-full object-cover"
-                         src="{% static image_static %}"
-                         alt="Browser Image"
-                         width="auto"
-                         height="auto">
-                {% endwith %}
-            {% endif %}
-            <div class="ml-3">
-                <div>Browser Version: {{ browser_version }}</div>
-                <div>
-                    <span class="font-bold">Operating System</span> {{ os_family }}
+            <!-- Github Issues URL -->
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-2 items-center">
+                    <span class="text-gra3-700 font-medium">Github Issues URL</span>
+                    <div class="flex items-center">
+                        <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all mr-2">{{ github_issues_url }}</span>
+                        <a href="{{ github_issues_url }}"
+                           target="_blank"
+                           class="text-gray-600 hover:text-[#e74c3c]">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
+        <!-- Email Clicks -->
+        {% if email_clicks %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">Email Clicks</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ email_clicks }}</span>
+                </div>
+            </div>
+        {% endif %}
+        <!-- Email Events -->
+        {% if email_events %}
+            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                <div class="flex gap-3 items-center">
+                    <span class="text-gray-700 font-medium">Email Events</span>
+                    <span class="text-gray-800 font-mono bg-gray-100 px-4 py-1 rounded-md select-all break-all">{{ email_events }}</span>
+                </div>
+            </div>
+        {% endif %}
     </div>
-    <div class="h-[2vh]"></div>
-    {% include "./tiny-cards.html" with left="Added On" right=object.created %}
-    <div class="h-[0.4vh]"></div>
-    {% include "./tiny-cards.html" with left="Bug Type" right=object.get_label_display %}
-    {% if object.cve_score %}
-        {% include "./tiny-cards.html" with insideIFCondition=True left="CVE Score" right=object.cve_score %}
-    {% endif %}
-    {% if object.cve_id %}
-        {% include "./tiny-cards.html" with insideIFCondition=True left="CVE ID" right=object.cve_id %}
-    {% endif %}
-    {% if object.hunt %}
-        <a href="{% url 'show_bughunt' object.hunt.id %}">
-            {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right=object.hunt.name %}
-        </a>
-    {% else %}
-        {% include "./tiny-cards.html" with insideIFCondition=True left="Submitted" right="Independently" %}
-    {% endif %}
-    <div class="h-[0.4vh]"></div>
-    {% if os_version %}
-        {% include "./tiny-cards.html" with left="OS Version:" right=os_version %}
-    {% else %}
-        {% include "./tiny-cards.html" with left="OS Version:" right="Unknown" %}
-    {% endif %}
-    <div class="h-[0.4vh]"></div>
-    {% if object.domain.github %}
-        {% include "./tiny-cards.html" with left="Github URL:" right=object.domain.github link=object.domain.github %}
-        <div class="h-[0.4vh]"></div>
-        {% include "./tiny-cards.html" with left="Github Issues URL:" right=github_issues_url link=github_issues_url %}
-    {% endif %}
-    {% if email_clicks %}
-        <div class="h-[0.4vh]"></div>
-        {% include "./tiny-cards.html" with left="Email Clicks:" right=email_clicks %}
-    {% endif %}
-    {% if email_events %}
-        <div class="h-[0.4vh]"></div>
-        {% include "./tiny-cards.html" with left="Email Events:" right=email_events %}
-    {% endif %}
-    <div class="h-[2vh]"></div>
 </div>
