@@ -97,18 +97,23 @@ class HackathonDetailView(DetailView):
         """Helper method to create a base query for pull requests."""
         query = GitHubIssue.objects.filter(
             repo__in=repo_ids,
-            created_at__gte=hackathon.start_time,
-            created_at__lte=hackathon.end_time,
             type="pull_request",
         )
 
         if is_merged is not None:
             query = query.filter(is_merged=is_merged)
             if is_merged:
+                # For merged PRs, only include those merged during the hackathon
                 query = query.filter(
                     merged_at__gte=hackathon.start_time,
                     merged_at__lte=hackathon.end_time,
                 )
+        else:
+            # For all PRs (merged or not), include those created during the hackathon
+            query = query.filter(
+                created_at__gte=hackathon.start_time,
+                created_at__lte=hackathon.end_time,
+            )
 
         return query
 
@@ -478,14 +483,13 @@ def _process_pull_request(pr_data, hackathon, repo):
         merged_at = timezone.datetime.strptime(pr_data["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
 
     # Check if PR is relevant to the hackathon
-    # Include PRs that were merged during the hackathon timeframe
     is_relevant = False
 
     # If PR was merged during the hackathon timeframe
     if is_merged and merged_at and hackathon.start_time <= merged_at <= hackathon.end_time:
         is_relevant = True
-    # Or if PR was created during the hackathon timeframe
-    elif hackathon.start_time <= created_at <= hackathon.end_time:
+    # Or if PR was created during the hackathon timeframe (for non-merged PRs)
+    elif not is_merged and hackathon.start_time <= created_at <= hackathon.end_time:
         is_relevant = True
 
     if not is_relevant:
