@@ -1,4 +1,6 @@
-when using cursor rules, show five emojis that are related to the task at hand also give a confidence score 1-100 and a haiku of the change you're about ot make please also show a relavant image from giphy or tenor to go along with work you are doing
+when using cursor rules, show five emojis that are related to the task at hand also give a 
+confidence score 1-100 and a haiku of the change you're about to make please also show a few 
+lines of ascii art that shows what your face looks like during this code change with an apprpripate expression.
 {
     "urlModules": {
         "website/urls.py": "blt/urls.py"
