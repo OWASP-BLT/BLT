@@ -141,7 +141,7 @@ from website.views.education import (
     view_course,
     view_lecture,
 )
-from website.views.github_oauth import github_oauth_login
+from website.views.github_oauth import github_oauth_callback, github_oauth_login
 from website.views.hackathon import (
     HackathonCreateView,
     HackathonDetailView,
@@ -376,6 +376,7 @@ urlpatterns = [
     path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
     path("accounts/github/login/", github_login_view, name="github_login"),
     path("github-oauth/", github_oauth_login, name="github_oauth_direct"),
+    path("accounts/github/login/callback/", github_oauth_callback, name="github_oauth_callback"),
     path("auth/github/", GithubLogin.as_view(), name="auth_github"),
     re_path(r"^auth/github/connect/$", GithubConnect.as_view(), name="github_connect"),
     path("auth/github/url/", github_views.oauth2_login),
