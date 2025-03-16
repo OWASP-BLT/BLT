@@ -3,20 +3,21 @@ import os
 import sys
 
 import dj_database_url
-import environ
 
 # Initialize Sentry
 import sentry_sdk
 from django.utils.translation import gettext_lazy as _
+from environ import Env
 from google.oauth2 import service_account
 from sentry_sdk.integrations.django import DjangoIntegration
 
-environ.Env.read_env()
+# Initialize environment variables
+env = Env()
+env.read_env()
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-env = environ.Env()
 env_file = os.path.join(BASE_DIR, ".env")
-environ.Env.read_env(env_file)
+env.read_env(env_file)
 
 print(f"Reading .env file from {env_file}")
 print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
@@ -169,6 +170,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
+                "website.views.core.newsletter_context_processor",
             ],
             "loaders": (
                 [
@@ -313,10 +315,10 @@ else:
     if not TESTING:
         DEBUG = True
 
-    # use this to debug emails locally
-    # python -m smtpd -n -c DebuggingServer localhost:1025
-    # if DEBUG:
-    #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+        # use this to debug emails locally
+        # python -m smtpd -n -c DebuggingServer localhost:1025
+        # if DEBUG:
+        # EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DATABASES = {
     "default": {
