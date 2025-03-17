@@ -1,22 +1,30 @@
 {% extends "base.html" %}
-{% load static %}
-{% load i18n %}
+ {% load static %}
+ {% load i18n %}
 
-{% block natural_content %}
-    <div class="flex min-h-screen items-center justify-center bg-gray-100">
-        <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-            <h2 class="text-center text-2xl font-semibold">
+ {% block natural_content %}
+     <div class="flex min-h-screen items-center justify-center bg-gray-100">
+         <div class="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
+             <h2 class="text-center text-2xl font-semibold">
                 {% block auth_title %}{% endblock auth_title %}
-            </h2>
-            <p class="text-center text-gray-500 mt-2">
+                {% block auth_title %}
+                {% endblock auth_title %}
+             </h2>
+             <p class="text-center text-gray-500 mt-2">
                 {% block auth_description %}{% endblock auth_description %}
-            </p>
-            <div class="mt-4">
+                {% block auth_description %}
+                {% endblock auth_description %}
+             </p>
+             <div class="mt-4">
                 {% block auth_form %}{% endblock auth_form %}
-            </div>
-            <div class="mt-6 text-center text-sm text-gray-600">
+                {% block auth_form %}
+                {% endblock auth_form %}
+             </div>
+             <div class="mt-6 text-center text-sm text-gray-600">
                 {% block auth_footer %}{% endblock auth_footer %}
-            </div>
-        </div>
-    </div>
-{% endblock natural_content %}
+                {% block auth_footer %}
+                {% endblock auth_footer %}
+             </div>
+         </div>
+     </div>
+     
