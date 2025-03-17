@@ -21,90 +21,36 @@
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
-{% block style %}
-    <style>
-    .captcha-form img{
-        width: 300px;
-        
-    }
-    .captcha-form input{
-        width: 100%;
-        border-width: 1px;
-        border-color: black;
-        padding: 10px;
-        font-size: 1.4rem;
-        margin-left: 0.5rem;
-        border-radius: 0.5rem;
-    }
-    @media (max-width:1130px) {
-        #bug-description-container{
-            flex-direction: column;
-        }
-        #bug-description-container div{
-            width: 100%;
-        }
-    }
-    @media (max-width: 1514px) {
-        #files_manage{
-            width: 100%;
-            height: max-content;
-            justify-content: space-around;
-        }
-        #files_manage div{
-            margin-top: 20px;
-        }
-        #screenshot-container{
-            width: 73vw;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        #duplicate-container .list-container {
-            width: 95% !important;
-        }
-        #duplicate-container .issue-description {
-            font-size: 1rem;
-        }
-        #duplicate-container .modal-content {
-            width: 90% !important;
-            margin-top: 2rem !important;
-        }
-    }
-    </style>
-{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div id="duplicate-container"
-         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-10 bg-black bg-opacity-50"
+         class="fixed w-full h-full top-0 left-0 overflow-y-auto z-[10000] bg-black/80 backdrop-blur-sm"
          hidden>
-        <div class="flex flex-col w-full h-full items-center">
-            <div class="w-full flex bg-red-500 items-center justify-between p-4">
-                <button id="close-duplicate-container"
-                        class="flex w-[30px] h-[30px] bg-white justify-center items-center rounded-full hover:bg-red-100 hover:shadow-md no-underline">
-                    <i class="text-red-500 scale-150 fa-sharp fa-solid fa-xmark cursor-pointer transition duration-200"></i>
-                </button>
-                <div class="flex items-center">
-                    <p class="text-3xl font-bold text-white">DUPLICATE ISSUES</p>
+        <div class="flex flex-col w-full  h-full items-center ">
+            <div class=" flex bg-red-500 mx-4 lg:mx-0 rounded-xl flex-col justify-center items-center  mt-10 w-full lg:max-w-[1400px]">
+                <div class="w-full flex bg-red-500 rounded-t-lg  select-none items-center justify-between py-1 px-4">
+                    <h1 class=" text-center text-white font-bold text-2xl p-4 w-full">{% trans "DUPLICATE ISSUES" %}</h1>
+                    <button id="close-duplicate-container"
+                            class="flex w-10 h-10 bg-white justify-center items-center rounded-full hover:bg-red-100 hover:shadow-md transition-all duration-200">
+                        <i class="text-red-500 scale-150 fa-sharp fa-solid fa-xmark cursor-pointer"></i>
+                    </button>
                 </div>
-                <div class="w-[30px]"></div>
-            </div>
-            <div class="w-full flex justify-center mx-auto">
-                <div class="p-4 w-[50%] mt-10 bg-white rounded-lg border shadow-xl sm:p-8 border-gray-200 modal-content">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-red-500">Latest Issues</h3>
+                <div class="p-6 w-full bg-white rounded-b-lg shadow-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-6 select-none">
+                        <h3 class="text-2xl font-bold text-red-500">{% trans "Latest Issues" %}</h3>
                         <a href=""
                            id="view_all"
-                           class="text-lg font-medium text-blue-600 hover:underline">View all</a>
+                           class="text-lg font-medium text-blue-600 hover:underline hover:text-blue-500">View all</a>
                     </div>
                     <div class="flow-root">
                         <ul role="list"
                             id="duplicate-list"
-                            class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto">
+                            class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                         </ul>
                     </div>
-                    <div class="p-6 border-t border-gray-200 bg-gray-100 text-center">
+                    <div class="pt-6 border-t border-gray-300  text-center ">
                         <button onclick="$('#duplicate-container').hide()"
-                                class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors">
+                                class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 font-medium">
                             Close List
                         </button>
                     </div>
@@ -112,278 +58,261 @@
             </div>
         </div>
     </div>
-    <form id="createIssueForm"
-          method='post'
-          action="#"
-          enctype="multipart/form-data"
-          class="w-full md:max-w-[1650px] md:mx-auto px-4 md:px-0  my-5"
-          onsubmit="return validateCVE()">
-        {% csrf_token %}
-        <div class="w-full pb-12">
-            <p class="text-4xl font-extrabold text-black/80 text-gray-900">{% trans "REPORT A BUG" %}</p>
-            <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                <div class="sm:col-span-5 flex items-end">
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="w-[90%] mx-auto">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 md:px-8 py-8 mb-8">
+                <div class="flex items-center gap-6">
+                    <div class="size-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
+                        <i class="fas fa-bug text-2xl text-white"></i>
+                    </div>
                     <div>
-                        <label for="url"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">
-                            {% trans "Domain URL" %}
-                        </label>
-                        <div class="mt-2 w-full md:max-w-[700px]">
-                            <input id="url"
-                                   type="text"
-                                   name="url"
-                                   value="{{ request.GET.url }}{{ form.url.value|default:'' }}"
-                                   autocomplete="domain_name"
-                                   placeholder="https://example.com/report"
-                                   required
-                                   data-intro="Enter the website's complete url where you found the bug."
-                                   data-step="1"
-                                   class="w-full placeholder:select-none text-xl placeholder:text-xl rounded-md border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
+                        <h1 class="text-3xl font-bold text-gray-800">{% trans "REPORT A BUG" %}</h1>
+                        <p class="text-gray-600 mt-2">Help improve security by reporting vulnerabilities</p>
+                    </div>
+                </div>
+            </div>
+            <form id="createIssueForm"
+                  method="post"
+                  action="#"
+                  enctype="multipart/form-data"
+                  onsubmit="return validateCVE()">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <label for="url" class="text-xl font-semibold text-gray-900">{% trans "Domain URL" %}</label>
+                                    <button type="button"
+                                            class="duplicates inline-flex items-center px-3 py-2 font-medium rounded-lg bg-[#e74c3c] text-white hover:bg-[#c0392b] transition-colors duration-200">
+                                        <i class="fas fa-search mr-2"></i>
+                                        {% trans "Check Duplicates" %}
+                                    </button>
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <input id="url"
+                                           type="text"
+                                           name="url"
+                                           value="{{ request.GET.url }}{{ form.url.value|default:'' }}"
+                                           placeholder="https://example.com/report"
+                                           required
+                                           class="placeholder:text-base flex-1 text-lg placeholder:text-gray-400 rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
+                                </div>
+                                {% if top_domains %}
+                                    <div class="mt-4 space-y-3">
+                                        <div class="flex items-center gap-2">
+                                            <svg class="w-5 h-5 text-gray-500"
+                                                 fill="none"
+                                                 stroke="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            <span class="text-sm font-medium text-gray-700">Quick Access Domains</span>
+                                        </div>
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                            {% for domain in top_domains %}
+                                                <button type="button"
+                                                        onclick="fillUrl('{{ domain.domain__name }}')"
+                                                        class="group flex items-center gap-3 p-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-all duration-200 hover:border-[#e74c3c] hover:shadow-sm">
+                                                    <div class="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg group-hover:bg-white transition-colors">
+                                                        <img src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}"
+                                                             alt="{{ domain.domain__name }}"
+                                                             class="w-5 h-5 rounded transition-transform group-hover:scale-110"
+                                                             width="20"
+                                                             height="20">
+                                                    </div>
+                                                    <span class="flex-1 text-sm font-medium text-gray-700 truncate group-hover:text-[#e74c3c]">
+                                                        {{ domain.domain__name }}
+                                                    </span>
+                                                </button>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                    <!-- Top Domains List -->
-                    <div class="overflow-hidden ">
-                        <div class="flex mx-4 space-x-3">
-                            {% for domain in top_domains %}
-                                <img src="https://www.google.com/s2/favicons?sz=32&domain_url={{ domain.domain__name }}"
-                                     alt="{{ domain.domain__name }}"
-                                     class="cursor-pointer rounded-lg p-1 bg-gray-200 hover:bg-gray-300 hover:scale-110 transition duration-300 ease-in-out w-12 h-12"
-                                     onclick="fillUrl('{{ domain.domain__name }}')"
-                                     width="64px"
-                                     height="64px">
-                                <!-- JavaScript function to fill URL -->
-                            {% endfor %}
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div class="lg:col-span-2">
+                                    <label for="description" class="block text-xl font-semibold text-gray-900">{% trans "Bug Title" %}</label>
+                                    <input type="text"
+                                           name="description"
+                                           id="description"
+                                           value="{{ request.GET.description }}{{ form.description.value|default:'' }}"
+                                           placeholder="XSS Vulnerability in Bug Report Editor"
+                                           required
+                                           class="w-full text-lg placeholder:text-gray-400 placeholder:text-base rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 focus:ring-2 transition-shadow duration-200" />
+                                </div>
+                                <div>
+                                    <label for="label" class="block text-xl font-semibold text-gray-900">{% trans "Bug Type" %}</label>
+                                    <select name="label"
+                                            id="labelSelect"
+                                            required
+                                            class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2 transition-shadow duration-200">
+                                        <option value="0">General</option>
+                                        <option value="1">Number error</option>
+                                        <option value="2">Functional</option>
+                                        <option value="3">Performance</option>
+                                        <option value="4">Security</option>
+                                        <option value="5">Typo</option>
+                                        <option value="6">Design</option>
+                                        <option value="7">Server down</option>
+                                        <option value="8">Trademark Squatting</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <div class="h-full flex items-end w-full">
-                    <a class="duplicates select-none w-full py-3  rounded-md hover:text-white cursor-pointer hover:no-underline hover:shadow-form bg-red-500 hover:bg-red-700 items-center justify-center flex text-xl font-medium text-white outline-none">
-                        {% trans "Check for Duplicates" %}
-                    </a>
-                </div>
-            </div>
-            <script>
-                    // JavaScript function to fill the URL input field
-                    function fillUrl(url) {
-                        document.getElementById('url').value = url;
-                    }
-            </script>
-            <div class="mt-12 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                <div class="sm:col-span-5">
-                    <label for="description"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">{% trans "Bug title" %}</label>
-                    <div class="mt-2">
-                        <input type="text"
-                               name="description"
-                               value="{{ request.GET.description }}{{ form.description.value|default:'' }}"
-                               id="description"
-                               autocomplete="domain_url"
-                               placeholder="XSS Vulnerability in Bug Report Editor"
-                               required
-                               data-intro="Enter Bug report title"
-                               data-step="1"
-                               class="w-full placeholder:select-none text-xl placeholder:text-xl rounded-md border-0 py-3 px-4 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:leading-6" />
-                    </div>
-                </div>
-                <div class="sm:col-span-1 w-full min-w-[150px]">
-                    <label for="label"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">{% trans "Bug type" %}</label>
-                    <div class="mt-2">
-                        <select name="label"
-                                id="labelSelect"
-                                required
-                                data-intro="Categorize the bug."
-                                data-step="3"
-                                class="flex w-full text-lg placeholder:select-none outline-none  rounded-md border-0 py-3 px-3 text-gray-900 shadow-sm ring-1 ring-inset bg-zinc-100 ring-gray-300 focus:ring-2 focus:ring-inset">
-                            <option value="0" selected="selected">General</option>
-                            <option value="1">Number error</option>
-                            <option value="2">Functional</option>
-                            <option value="3">Performance</option>
-                            <option value="4">Security</option>
-                            <option value="5">Typo</option>
-                            <option value="6">Design</option>
-                            <option value="7">Server down</option>
-                            <option value="8">Trademark Squatting</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-12 mt-10">
-                <div class="sm:col-span-1 w-full min-w-[150px]">
-                    <label for="hunt"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">{% trans "Bug hunt" %}</label>
-                    <div class="mt-2">
-                        <select name="hunt"
-                                required
-                                data-intro="Categorize the bug."
-                                data-step="3"
-                                class="flex w-full text-lg placeholder:select-none  rounded-md border-0 py-3 px-3 text-gray-900 shadow-sm ring-1 ring-inset bg-zinc-100 ring-gray-300 focus:ring-2 outline-none focus:ring-inset">
-                            {% if not report_on_hunt %}
-                                <option value="None">{% trans "Report Independently" %}</option>
-                            {% endif %}
-                            {% for hunt in hunts %}<option value="{{ hunt.id }}">{{ hunt.name }}</option>{% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="space-y-12 mt-10">
-                <div class="w-full max-h-max flex justify-between flex-wrap ">
-                    <div id="screenshot-hash-container"></div>
-                    <div class="col-span-full select-none" id="screenshot-upload-container">
-                        <label for="file"
-                               class="block text-2xl font-semibold leading-6 text-gray-900">
-                            {% trans "Screenshots" %}
-                        </label>
-                        <div id="screenshot-container"
-                             onclick="document.getElementById('screenshots').click()"
-                             class="mt-2 flex w-[350px] group h-full items-center justify-center rounded-lg border hover:bg-red-100/10 border-dashed border-gray-900/25 hover:border-red-500 transition-all duration-200 ease-in-out cursor-pointer px-6 py-5 text-red-500">
-                            <div class="text-center">
-                                <svg class="mx-auto h-16 w-16"
-                                     viewBox="0 0 24 24"
-                                     fill="currentColor"
-                                     aria-hidden="true">
-                                    <path fill-rule="evenodd" d="M1.5 6a2.25 2.25 0 012.25-2.25h16.5A2.25 2.25 0 0122.5 6v12a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 18V6zM3 16.06V18c0 .414.336.75.75.75h16.5A.75.75 0 0021 18v-1.94l-2.69-2.689a1.5 1.5 0 00-2.12 0l-.88.879.97.97a.75.75 0 11-1.06 1.06l-5.16-5.159a1.5 1.5 0 00-2.12 0L3 16.061zm10.125-7.81a1.125 1.125 0 112.25 0 1.125 1.125 0 01-2.25 0z" clip-rule="evenodd" />
-                                </svg>
-                                <div class="flex-col items-center justify-center text-2xl leading-6 text-gray-600">
-                                    <label class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                        <span class="text-red-600">{% trans "Upload screenshots" %}</span>
-                                        <input id="screenshots"
-                                               name="screenshots"
-                                               type="file"
-                                               class="sr-only"
-                                               accept="image/*"
-                                               multiple
-                                               required
-                                               max="4" />
-                                    </label>
-                                    <div class="flex flex-col my-5 items-center justify-center">
-                                        <p class="text-center text-xl  font-semibold text-gray-500">{% trans "Paste your Images here" %}</p>
-                                        <p class="text-center text-xl  font-semibold text-gray-500">{% trans "or drag and drop" %}</p>
+                        <div class="bg-white rounded-md border border-gray-200 shadow-sm p-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="text-xl font-semibold text-gray-900 truncate">{% trans "Bug Description" %}</h2>
+                                    <div class="flex gap-2">
+                                        <button type="button"
+                                                onclick="insertMarkdown('bold')"
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                            <i class="fas fa-bold"></i>
+                                        </button>
+                                        <button type="button"
+                                                onclick="insertMarkdown('italic')"
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                            <i class="fas fa-italic"></i>
+                                        </button>
+                                        <button type="button"
+                                                onclick="insertMarkdown('image')"
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                            <i class="fas fa-image"></i>
+                                        </button>
+                                        <button type="button"
+                                                onclick="insertMarkdown('link')"
+                                                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors duration-200">
+                                            <i class="fas fa-link"></i>
+                                        </button>
+                                        <button type="button"
+                                                onclick="togglePreview()"
+                                                class="px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-md transition-colors duration-200">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                     </div>
                                 </div>
-                                <script>
-                                        document.getElementById('pasteArea').addEventListener('paste', function (e) {
-                                            var items = (event.clipboardData || event.originalEvent.clipboardData).items;
-                                            for (var index in items) {
-                                                var item = items[index];
-                                                if (item.kind === 'file') {
-                                                    var blob = item.getAsFile();
-                                                    var reader = new FileReader();
-                                                    reader.onload = function(event){
-                                                        var img = new Image();
-                                                        img.src = event.target.result;
-
-                                                        var file = new File([blob], "pasted-image.png", {type: blob.type});
-
-                                                        var dt = new DataTransfer();
-                                                        var file_input = document.getElementById('screenshots');
-
-                                                        // Add the existing files to the DataTransfer
-                                                        for (var i = 0; i < file_input.files.length; i++) {
-                                                            dt.items.add(file_input.files[i]);
-                                                        }
-
-                                                        // Add the new file to the DataTransfer
-                                                        dt.items.add(file);
-
-                                                        // Replace the file input's FileList with the new one
-                                                        file_input.files = dt.files;
-                                                        file_input.dispatchEvent(new Event('change'));
-
-                                                    };
-                                                    reader.readAsDataURL(blob);
-                                                }
-                                            }
-                                        });
-                                </script>
-                                <p class="text-lg  text-gray-400 group-hover:text-gray-600 transition-all duration-200 ease-in-out">
-                                    PNG, JPG, GIF up to 5 images.
-                                </p>
+                                <textarea id="markdownInput"
+                                          name="markdown_description"
+                                          class="w-full placeholder:text-base h-[300px] p-4 text-gray-700 border border-gray-200 rounded-lg "
+                                          placeholder="Enter your markdown here..."></textarea>
+                                <div id="preview-area"
+                                     class="hidden w-full h-[300px] p-4 bg-gray-50 border border-gray-200 rounded-lg overflow-y-auto prose prose-sm max-w-none">
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div id="files_manage"
-                         multiple
-                         class="w-[75%] ml-6 md:ml-0 flex items-end mt-6 flex-wrap min-h-[180px]"></div>
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                            <label for="hunt" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "Bug Hunt" %}</label>
+                            <select name="hunt"
+                                    required
+                                    class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2  transition-shadow duration-200">
+                                {% if not report_on_hunt %}
+                                    <option value="None">{% trans "Report Independently" %}</option>
+                                {% endif %}
+                                {% for hunt in hunts %}
+                                    <option value="{{ hunt.id }}">{{ hunt.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                            <label for="cve_id" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "CVE ID" %}</label>
+                            <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full">
+                                <input class="flex-1 placeholder:text-base text-lg sm:text-base md:text-lg placeholder:text-gray-400 rounded-lg border border-gray-300 py-2 px-4 transition-shadow duration-200 min-w-0"
+                                       type="text"
+                                       placeholder="CVE-XXXX-XXXX"
+                                       id="cve_id_input"
+                                       name="cve_id"
+                                       pattern="CVE-\d{4}-\d{4,7}"
+                                       title="Please enter a valid CVE ID format (e.g. CVE-2024-1234)">
+                                <button type="button"
+                                        onclick="validateCVE()"
+                                        class="px-3 md:py-1 py-4 text-xs sm:text-sm md:text-base bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 shrink-0 w-full sm:w-auto">
+                                    <i class="fas fa-check md:text-base text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                            <label class="block text-xl font-semibold text-gray-900 mb-4">{% trans "Screenshots" %}</label>
+                            <div id="screenshot-container"
+                                 onclick="document.getElementById('screenshots').click()"
+                                 class="relative group border-2 border-dashed border-gray-300 hover:border-[#e74c3c] rounded-xl p-6 transition-all duration-200 cursor-pointer">
+                                <div class="text-center">
+                                    <div class="w-16 h-16 mx-auto mb-4 text-gray-400 group-hover:text-[#e74c3c] transition-colors duration-200">
+                                        <i class="fas fa-cloud-upload-alt text-4xl"></i>
+                                    </div>
+                                    <div class="space-y-2">
+                                        <label class="text-lg font-medium text-[#e74c3c] cursor-pointer hover:text-[#c0392b]">
+                                            {% trans "Upload screenshots" %}
+                                            <input id="screenshots"
+                                                   name="screenshots"
+                                                   type="file"
+                                                   class="sr-only"
+                                                   accept="image/*"
+                                                   multiple
+                                                   required
+                                                   max="4" />
+                                        </label>
+                                        <p class="text-sm text-gray-500">{% trans "Drag & drop or click to upload" %}</p>
+                                        <p class="text-xs text-gray-400">PNG, JPG, GIF up to 5 images</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="files_manage"
+                                 class="mt-4 w-full flex flex-col gap-4 items-center"></div>
+                        </div>
+                        <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-xl font-semibold text-gray-900">{% trans "Team Members" %}</h2>
+                                <button onclick="add_email_container()"
+                                        type="button"
+                                        class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg bg-[#e74c3c] text-white hover:bg-[#c0392b] transition-colors duration-200">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    {% trans "Add" %}
+                                </button>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-4">{% trans "Team members should be bughunts users" %}.</p>
+                            <div class="space-y-3" id="email-container">
+                                <label class="block font-medium text-gray-700">{% trans "Email address:" %}</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="w-full border-b border-zinc-700/20 pb-10 my-10"></div>
-            <div class="mb-6">
-                <div class="flex flex-col space-y-2">
-                    <label for="cve_id"
-                           class="block text-2xl font-semibold leading-6 text-gray-900">{% trans "CVE ID" %}</label>
-                    <div class="flex items-center space-x-2">
-                        <input class="w-fit placeholder:select-none placeholder:text-lg text-lg  px-4 py-2 border border-gray-300 rounded-md "
-                               type="text"
-                               placeholder="CVE-XXXX-XXXX"
-                               id="cve_id_input"
-                               name="cve_id"
-                               pattern="CVE-\d{4}-\d{4,7}"
-                               title="Please enter a valid CVE ID format (e.g. CVE-2024-1234)">
+                <div class="mt-8 bg-white rounded-lg border border-gray-200 shadow-sm flex md:flex-row flex-col items-center justify-between gap-8 px-6 py-5">
+                    <div class="flex flex-col items-start gap-2">
+                        <div class="flex items-center gap-2">
+                            <input id="report_anonymous"
+                                   type="checkbox"
+                                   name="report_anonymous"
+                                   class="w-5 h-5 rounded-lg text-[#e74c3c]  cursor-pointer">
+                            <p for="report_anonymous"
+                               class=" font-medium text-gray-900 cursor-pointer select-none">
+                                {% trans "Report Anonymously" %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4 md:flex-row items-center justify-center [&>img]:w-[150px] md:[&>input]:w-[30%] [&>input]:w-[50%] [&>input]:border [&>input]:border-black [&>input]:p-[10px] [&>input]:text-[1.4rem] [&>input]:ml-2 [&>input]:rounded">
+                        {{ captcha_form.captcha }}
+                    </div>
+                    <div class="flex gap-4  justify-center">
                         <button type="button"
-                                onclick="validateCVE()"
-                                class="select-none w-fit py-2 px-4 rounded-md hover:text-white cursor-pointer hover:no-underline hover:shadow-form bg-red-500 hover:bg-red-700 items-center justify-center flex text-xl font-medium text-white outline-none">
-                            {% trans "Validate" %}
+                                onclick="cancelForm()"
+                                class="px-6 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors duration-200 font-medium">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit"
+                                name="reportbug_button"
+                                class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium">
+                            {% trans "Report" %}
                         </button>
                     </div>
                 </div>
-            </div>
-            <div id="bug-description-container"
-                 class="w-full   justify-between   flex flex-col  md:flex-row  gap-6 ">
-                <div class="w-1/2">{% include "includes/md_editor.html" %}</div>
-                <div class="w-1/2 border border-gray-900/10 rounded-md p-6">
-                    <div class="flex w-full items-center justify-between">
-                        <h2 class="block text-2xl font-semibold leading-6 text-gray-900">{% trans "ADD TEAM MEMBERS" %}</h2>
-                        <button onclick="add_email_container()"
-                                type="button"
-                                class="select-none w-fit py-2 px-4 rounded-md hover:text-white cursor-pointer hover:no-underline hover:shadow-form bg-red-500 hover:bg-red-700 items-center justify-center flex text-xl font-medium text-white outline-none transition-all duration-200 ease-in-out">
-                            {% trans "Add Email" %}
-                        </button>
-                    </div>
-                    <p class="text-lg leading-6 text-gray-600">{% trans "Team members should be bughunts users" %}.</p>
-                    <div class=" my-4 overflow-y-scroll" id="email-container">
-                        <label for="team_members"
-                               class="block text-xl font-medium leading-6 text-gray-900">
-                            {% trans "Email address:" %}
-                        </label>
-                    </div>
-                </div>
-            </div>
-            <div class="w-full border-b border-zinc-700/20  my-10"></div>
-            <div class="w-full flex flex-col md:flex-row items-center  justify-between gap-x-6 ">
-                <div class="flex  w-full gap-2 justify-between items-center flex-col md:flex-row ">
-                    <div class="w-full gap-1  flex items-center ">
-                        <input id="report_anonymous"
-                               type="checkbox"
-                               name="report_anonymous"
-                               class="w-7 h-7 rounded-md cursor-pointer text-blue-600 bg-gray-100 border-gray-300  ">
-                        <p for="report_anonymous"
-                           class="w-full select-none text-start px-2 text-2xl font-medium text-gray-900">
-                            {% trans "Report Anonymously" %}
-                        </p>
-                    </div>
-                    <div class="captcha-form flex  flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
-                </div>
-                <div class="w-full gap-4 flex justify-evenly md:justify-end">
-                    <button type="button"
-                            onclick="cancelForm()"
-                            class="rounded-md bg-gray-400 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-gray-500 transition-all duration-200 ease-in-out">
-                        {% trans "Cancel" %}
-                    </button>
-                    <button type="submit"
-                            name="reportbug_button"
-                            class="rounded-md bg-red-500 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-600 transition-all duration-200 ease-in-out">
-                        {% trans "Report" %}
-                    </button>
-                </div>
-            </div>
+            </form>
         </div>
-    </form>
-    {% comment %} <div id="image-preview-wrapper" class="justify-center items-center w-[100vw] h-[100vh] z-30 fixed bg-gray-500 bg-opacity-50" hidden>
-        <div class="bg-red-500 fixed w-[60%] h-[60%]">
-            <img src="" alt="image" class="w-full h-full" id="image-preview" width="100%" height="100%">
-        </div>
-    </div> {% endcomment %}
+    </div>
 {% endblock content %}
 {% block after_js %}
     <script type="text/javascript">
@@ -491,20 +420,20 @@
         let add_duplicates = (issue) => {
             $("#duplicate-list").append(
                 `
-                    <li class="py-3 sm:py-4 border-x-gray-500 border-t-2 cursor-pointer hover:shadow-lg transition-all">
-                        <div class="flex items-center space-x-4 p-2">
+                    <li class="py-2 border-x-gray-500 border-t-2 cursor-pointer hover:bg-gray-100 transition-all duration-200">
+                        <div class="flex items-center space-x-4 px-2 py-1">
                             <div class="flex-shrink-0">
-                                <img class="w-[60px] h-[60px] rounded-full" src="{% media_url %}${issue.user__userprofile__user_avatar}" alt="Neil image" width="60px" height="60px">
+                                <img class="w-[50px] h-[50px] rounded-full" src="{% media_url %}${issue.user__userprofile__user_avatar}" alt="Neil image" width="50px" height="50px">
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-3xl font-medium text-gray-900 text-black">
+                                <p class="text-xl font-bold text-black/90">
                                     ${issue.description.substring(0, 50)}...
                                 </p>
-                                <a href="/issue/${issue.id}" class="text-2xl text-gray-500 truncate dark:text-gray-400">
+                                <a href="/issue/${issue.id}" class="text-lg text-gray-500 hover:text-red-500 truncate">
                                     /issue/${issue.id}
                                 </a>
                             </div>
-                            <div class="inline-flex items-center text-base text-xl font-semibold text-gray-900 dark:text-white">
+                            <div class="inline-flex items-center text-base text-lg font-medium text-gray-500">
                                     ${issue.created__day}/${issue.created__month}/${issue.created__year}
                                 </div>
                         </div>
@@ -537,7 +466,7 @@
         const email_container_child_html = document.createElement('div');
         email_container_child_html.innerHTML = `
             <div class="mt-2 flex flex-row items-center w-[70%]">
-                <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600" />
+                <input name="team_members" type="email" autocomplete="email" required class="w-[90%] mt-2 text-xl block rounded-md border-0 py-3 pl-3 text-gray-900 shadow-sm  placeholder:text-gray-400 ring-1 ring-gray-300" />
                 <button type="button" onclick="remove_email_container()">
                     <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
                 </button>
@@ -625,5 +554,89 @@
             });
         }
     });
+
+    function fillUrl(domain) {
+        const urlInput = document.getElementById('url');
+        if (!domain.startsWith('http')) {
+            domain = 'https://' + domain;
+        }
+        urlInput.value = domain;
+    }
+
+    // Remove the old domain click handler and use this one
+    document.addEventListener('DOMContentLoaded', function() {
+        const domainButtons = document.querySelectorAll('[onclick^="fillUrl"]');
+        domainButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const domain = this.querySelector('span').textContent.trim();
+                fillUrl(domain);
+            });
+        });
+    });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="text/javascript">
+    function insertMarkdown(type) {
+        const editor = document.getElementById('markdownInput');
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const selectedText = editor.value.substring(start, end);
+        let insertion = '';
+
+        switch(type) {
+            case 'bold':
+                insertion = selectedText ? `**${selectedText}**` : '**bold text**';
+                break;
+            case 'italic':
+                insertion = selectedText ? `*${selectedText}*` : '*italic text*';
+                break;
+            case 'image':
+                insertion = '![image description](image url)';
+                break;
+            case 'link':
+                insertion = selectedText ? `[${selectedText}](url)` : '[link text](url)';
+                break;
+        }
+
+        editor.focus();
+        document.execCommand('insertText', false, insertion);
+
+        // For browsers that don't support execCommand
+        if (!document.execCommand) {
+            const before = editor.value.substring(0, start);
+            const after = editor.value.substring(end);
+            editor.value = before + insertion + after;
+        }
+
+        // Update cursor position
+        const newCursorPos = start + insertion.length;
+        editor.setSelectionRange(newCursorPos, newCursorPos);
+    }
+
+    function togglePreview() {
+        const editor = document.getElementById('markdownInput');
+        const preview = document.getElementById('preview-area');
+        const previewBtn = document.querySelector('button:contains("Preview")');
+
+        if (preview.classList.contains('hidden')) {
+            // Show preview
+            preview.innerHTML = marked.parse(editor.value);
+            preview.classList.remove('hidden');
+            editor.classList.add('hidden');
+            previewBtn.textContent = 'Edit';
+        } else {
+            // Show editor
+            preview.classList.add('hidden');
+            editor.classList.remove('hidden');
+            previewBtn.textContent = 'Preview';
+        }
+    }
+    marked.setOptions({
+        sanitize: true,
+        breaks: true
+    });
+
+
     </script>
 {% endblock after_js %}

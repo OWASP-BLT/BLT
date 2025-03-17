@@ -5,6 +5,8 @@ import time
 import psutil
 import requests
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
 from django.db import connection
 from django.db.models import Count, Q
 from django.http import JsonResponse
@@ -12,7 +14,7 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_protect
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 from django.views.generic import DetailView, ListView
 
 from website.models import Organization, Repo
@@ -37,7 +39,11 @@ class RepoListView(ListView):
         # Handle organization filter
         organization = self.request.GET.get("organization")
         if organization:
-            queryset = queryset.filter(organization__id=organization)
+            try:
+                organization = int(organization)
+                queryset = queryset.filter(organization__id=organization)
+            except (ValueError, TypeError):
+                raise ValueError("Invalid organization ID: must be a valid integer.")
 
         # Handle search query
         search_query = self.request.GET.get("q")
@@ -330,6 +336,18 @@ class RepoDetailView(DetailView):
         # Add system stats to context
         context["system_stats"] = system_stats
 
+        # Add GitHub issues and PRs to context
+        context["github_issues"] = repo.github_issues.filter(type="issue").order_by("-updated_at")[:10]
+        context["github_prs"] = repo.github_issues.filter(type="pull_request").order_by("-updated_at")[:10]
+
+        # Add counts for issues and PRs
+        context["github_issues_count"] = repo.github_issues.filter(type="issue").count()
+        context["github_prs_count"] = repo.github_issues.filter(type="pull_request").count()
+
+        # Add dollar tag issues
+        context["dollar_tag_issues"] = repo.github_issues.filter(has_dollar_tag=True).order_by("-updated_at")[:5]
+        context["dollar_tag_issues_count"] = repo.github_issues.filter(has_dollar_tag=True).count()
+
         return context
 
 
@@ -525,5 +543,89 @@ def add_repo(request):
     except Exception as e:
         return JsonResponse(
             {"status": "error", "message": f"An error occurred: {str(e)}"},
+            status=500,
+        )
+
+
+@login_required
+@require_POST
+def refresh_repo_data(request, repo_id):
+    """
+    Run the update_repos_dynamic command for a specific repository
+    """
+    try:
+        print(f"Refresh request received for repo_id: {repo_id}")
+
+        # Check if the repository exists
+        repo = Repo.objects.get(id=repo_id)
+
+        # Log the refresh attempt
+        print(f"Refreshing repository data for {repo.name} (ID: {repo_id})")
+        print(f"Repository URL: {repo.repo_url}")
+
+        try:
+            # Run the command with the specific repo ID
+            print("Calling update_repos_dynamic command...")
+            call_command("update_repos_dynamic", repo_id=repo_id)
+            print("Command completed successfully")
+
+            # Refresh the repo object to get the latest data
+            repo.refresh_from_db()
+
+            # Get updated counts
+            issues_count = repo.github_issues.filter(type="issue").count()
+            prs_count = repo.github_issues.filter(type="pull_request").count()
+            dollar_tag_count = repo.github_issues.filter(has_dollar_tag=True).count()
+
+            # Log the results
+            print(
+                f"Repository refresh complete. Issues: {issues_count}, "
+                f"PRs: {prs_count}, Bounty Issues: {dollar_tag_count}"
+            )
+
+            return JsonResponse(
+                {
+                    "status": "success",
+                    "message": "Repository data refreshed successfully",
+                    "data": {
+                        "issues_count": issues_count,
+                        "prs_count": prs_count,
+                        "dollar_tag_count": dollar_tag_count,
+                        "last_updated": repo.last_updated.isoformat() if repo.last_updated else None,
+                    },
+                }
+            )
+        except Exception as cmd_error:
+            print(f"Error running command: {str(cmd_error)}")
+            print(f"Error type: {type(cmd_error).__name__}")
+            import traceback
+
+            traceback.print_exc()
+
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": f"Error running update command: {str(cmd_error)}",
+                    "error_type": type(cmd_error).__name__,
+                },
+                status=500,
+            )
+
+    except Repo.DoesNotExist:
+        print(f"Repository with ID {repo_id} not found")
+        return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+    except Exception as e:
+        print(f"Error refreshing repository data: {str(e)}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+
+        traceback.print_exc()
+
+        return JsonResponse(
+            {
+                "status": "error",
+                "message": f"An error occurred while refreshing repository data: {str(e)}",
+                "error_type": type(e).__name__,
+            },
             status=500,
         )

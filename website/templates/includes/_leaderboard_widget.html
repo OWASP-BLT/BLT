@@ -1,196 +1,160 @@
 {% load gravatar %}
 {% load humanize %}
-<style>
-    .crypto-address {
-    text-align: center;
-    }
-
-    .dialog {
-        position: relative;
-    }
-
-    .arrow-container {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: max-content;
-    }
-
-    .arrow-btn {
-        background: none;
-        border: none;
-        color: black;
-        font-size: 40px;
-        cursor: pointer;
-        font-weight: bold;
-        margin: 0 0px;
-    }
-
-    .crypto-name {
-    text-align: center;
-    width: 100%;
-    font-size: 20px;
-    color: white;
-    background-color: #ff4444;
-    display: inline-block;
-    margin: 0 auto; /* Center the element horizontally */
-}
-
-    .slideshow {
-        margin-top: 50px;
-    }
-
-    .navigation {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        display: flex;
-        justify-content: center;
-    }
-
-    .nav-btn {
-        width: 70px;
-        height: 40px;
-        border: 1px solid #0e0d0d;
-        margin: 6px;
-        cursor: pointer;
-        transition: 0.4s;
-    }
-    .nav-btn.active {
-    background: red; /* Change to whatever red color you prefer */
-    color: white; /* Change text color to contrast with the red background */
-    }
-    .nav-btn:hover {
-        background: #fff;
-    }
-
-    input[name="r"] {
-        position: absolute;
-        visibility: hidden;
-    }
-
-    #btc:checked ~ .s1 {
-        margin-left: -20%;
-    }
-
-    #eth:checked ~ .s1 {
-        margin-left: -40%;
-    }
-
-    #bch:checked ~ .s1 {
-        margin-left: -60%;
-    }
-
-</style>
-<div class="row-start-1 flex flex-col p-5 pt-3 bg-[white] m-1 row-span-2 rounded-[2.5rem]  border-[#e8e8e8] border-2 font-['Inter'] h-[630px]">
-    <div class="font-['Barlow_Semi_Condensed'] font-semibold text-[black] text-[25px] mb-2 sm:text-[12px] md:text-[18px] lg:text-[18px] text-center">
-        LEADERBOARD
+<div class="flex flex-col p-5 pt-3 bg-white m-1 rounded-[2.5rem] border-2 border-gray-200 font-['Inter'] h-[630px] shadow-sm hover:shadow-md transition-shadow duration-300">
+    <!-- Header -->
+    <div class="font-['Barlow_Semi_Condensed'] font-semibold text-black text-2xl mb-4 text-center">
+        <span class="inline-flex items-center gap-2">
+            <i class="fas fa-trophy text-[#e74c3c]"></i>
+            LEADERBOARD
+        </span>
     </div>
-    <div class="text-[18px] sm:text-[11px] md:text-[16px] leading-tight bg-[#EAEAEA] font-semibold p-3  rounded-2xl text-wrap">
-        1st Place for {% now "F" %} receives:
-        <div class="bg-white p-2 text-[1.35rem] sm:text-[8px] md:text-[14px] leading-tight rounded-xl border-[#BF1919] border-2 text-wrap flex flex-col items-center">
-            No sponsored prizes this month
-            <br>
+    <!-- Prize Section -->
+    <div class="bg-gray-100 rounded-xl p-4 mb-4">
+        <div class="text-base font-semibold mb-2">1st Place for {% now "F" %} receives:</div>
+        <div class="bg-white p-4 rounded-lg border-2 border-[#e74c3c] flex flex-col items-center gap-3">
+            <span class="text-gray-700">No sponsored prizes this month</span>
             <a href="{% url 'sponsor' %}"
-               class="bg-red-500 text-white p-1 whitespace-nowrap text-xl sm:text-[7px] md:text-[14px] leading-tight border border-[#ac2925] hover:bg-[#c9302c] hover:border-[#761c19] hover:text-[#e8e8e8] rounded-lg block w-full text-wrap">Sponsor a Prize</a>
+               class="w-full py-2 px-4 bg-[#e74c3c] hover:bg-[#c0392b] text-white text-center rounded-lg transition-colors duration-200 text-sm font-medium">
+                Sponsor a Prize
+            </a>
         </div>
     </div>
-    <div class="users-all h-full max-h-full overflow-hidden my-3 font-['Barlow']">
+    <!-- Users List -->
+    <div class="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
         {% if not leaderboard %}
-            Leaderboard has been reset for {% now "F" %}, be the first to find issues!
+            <div class="text-center text-gray-500 py-4">
+                Leaderboard has been reset for {% now "F" %}, be the first to find issues!
+            </div>
         {% endif %}
         {% for leader in leaderboard %}
-            <div class="flex flex-row h-[4rem] items-center my-2 mx-1 hover:bg-[#e8e8e8] rounded-2xl">
-                <a href="{% url 'profile' slug=leader.username %}"
-                   class="h-full w-[8rem] flex justify-center items-center scale-[0.65] relative">
-                    {% if leader.userprofile.avatar %}
-                        <img src="{{ leader.userprofile.avatar }}"
-                             class="h-[30px] object-cover img-responsive rounded-full"
-                             width="30"
-                             height="30"
-                             alt="user avatar">
-                    {% elif user.socialaccount_set.all.0.get_avatar_url %}
-                        <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
-                             class="h-[30px] object-cover img-responsive rounded-full"
-                             width="30"
-                             height="30"
-                             alt="user avatar">
-                    {% else %}
-                        <img src="{% gravatar_url leader.email 50 %}"
-                             class="h-[30px] object-cover img-responsive rounded-full"
-                             width="30"
-                             height="30"
-                             alt="user avatar">
-                    {% endif %}
+            <div class="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors duration-200 group">
+                <!-- Avatar Section -->
+                <div class="relative">
+                    <a href="{% url 'profile' slug=leader.username %}" class="block">
+                        {% if leader.userprofile.avatar %}
+                            <img src="{{ leader.userprofile.avatar }}"
+                                 class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
+                                 alt="{{ leader.username }}"
+                                 width="48"
+                                 height="48">
+                        {% elif user.socialaccount_set.all.0.get_avatar_url %}
+                            <img src="{{ leader.socialaccount_set.all.0.get_avatar_url }}"
+                                 class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
+                                 alt="{{ leader.username }}"
+                                 width="48"
+                                 height="48">
+                        {% else %}
+                            <img src="{% gravatar_url leader.email 50 %}"
+                                 class="w-12 h-12 rounded-full object-cover ring-2 ring-[#e74c3c] ring-offset-2"
+                                 alt="{{ leader.username }}"
+                                 width="48"
+                                 height="48">
+                        {% endif %}
+                    </a>
                     {% if forloop.counter == 1 %}
-                        <i class="fas fa-medal text-[gold] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                        <div class="absolute -top-1 -left-1 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg">
+                            <i class="fas fa-trophy text-white text-sm"></i>
+                        </div>
                     {% elif forloop.counter == 2 %}
-                        <i class="fas fa-medal text-[silver] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                        <div class="absolute -top-1 -left-1 w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center shadow-lg">
+                            <i class="fas fa-medal text-white text-sm"></i>
+                        </div>
                     {% elif forloop.counter == 3 %}
-                        <i class="fas fa-medal text-[bronze] text-2xl absolute top-0 left-0 transform -translate-x-1/2 -translate-y-1/2"></i>
+                        <div class="absolute -top-1 -left-1 w-6 h-6 bg-orange-400 rounded-full flex items-center justify-center shadow-lg">
+                            <i class="fas fa-award text-white text-sm"></i>
+                        </div>
                     {% endif %}
-                </a>
-                <span class="w-full overflow-clip font-semibold text-[#500000bd] text-[12px] mb-2">{{ leader.username }}</span>
+                </div>
+                <!-- User Info -->
+                <div class="flex-1 min-w-0">
+                    <a href="{% url 'profile' slug=leader.username %}"
+                       class="text-gray-900 font-medium hover:text-[#e74c3c] transition-colors duration-200">
+                        {{ leader.username }}
+                    </a>
+                    <div class="text-sm text-gray-500">{{ leader.total_score|intcomma }} Points</div>
+                </div>
+                <!-- Tip Button -->
                 <button type="button"
                         id="openModal-{{ leader.id }}"
-                        class="btn btn-danger text-black"
+                        class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-1.5"
                         onclick="openModal('{{ leader.userprofile.btc_address }}','{{ leader.userprofile.eth_address }}','{{ leader.userprofile.bch_address }}', '{{ leader.id }}')">
-                    TIP:<i class="fab fa-btc"></i>
+                    <i class="fab fa-btc text-[#e74c3c]"></i>
+                    <span>Tip</span>
                 </button>
-                <dialog id="dialog-{{ leader.id }}" class="dialog">
-                    <input type="radio" name="r" id="bch-{{ leader.id }}" checked class="active">
-                    <input type="radio" name="r" id="eth-{{ leader.id }}">
-                    <input type="radio" name="r" id="btc-{{ leader.id }}">
-                    <div class="navigation">
-                        <button class="nav-btn" id="bch-btn-{{ leader.id }}">BCH</button>
-                        <button class="nav-btn" id="eth-btn-{{ leader.id }}">Ethereum</button>
-                        <button class="nav-btn" id="btc-btn-{{ leader.id }}">Bitcoin</button>
+                <!-- Crypto Modal -->
+                <dialog id="dialog-{{ leader.id }}"
+                        class="p-0 rounded-xl shadow-xl backdrop:bg-gray-900/50">
+                    <div class="w-[400px] max-w-full">
+                        <!-- Modal Header -->
+                        <div class="bg-[#e74c3c] p-4 text-white">
+                            <h3 class="text-lg font-semibold text-center">Send Tip to {{ leader.username }}</h3>
+                        </div>
+                        <!-- Crypto Navigation -->
+                        <div class="flex border-b border-gray-200">
+                            <button class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none nav-btn"
+                                    id="bch-btn-{{ leader.id }}">BCH</button>
+                            <button class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none nav-btn"
+                                    id="eth-btn-{{ leader.id }}">ETH</button>
+                            <button class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none nav-btn"
+                                    id="btc-btn-{{ leader.id }}">BTC</button>
+                        </div>
+                        <!-- QR Code Section -->
+                        <div id="slideshow-{{ leader.id }}" class="p-6 text-center">
+                            <img id="qr-image-{{ leader.id }}"
+                                 alt="QR Code"
+                                 class="mx-auto mb-4 rounded-lg shadow-sm"
+                                 width="400"
+                                 height="300">
+                            <div id="crypto-name-{{ leader.id }}"
+                                 class="text-lg font-medium text-gray-900 mb-2"></div>
+                            <div id="crypto-address-{{ leader.id }}"
+                                 class="text-sm text-gray-500 break-all bg-gray-50 p-3 rounded-lg"></div>
+                        </div>
+                        <!-- Close Button -->
+                        <div class="p-4 bg-gray-50">
+                            <button id="close-{{ leader.id }}"
+                                    class="w-full py-2 px-4 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-lg transition-colors duration-200 text-sm font-medium">
+                                Close
+                            </button>
+                        </div>
                     </div>
-                    <div id="slideshow-{{ leader.id }}" class="slideshow">
-                        <img id="qr-image-{{ leader.id }}" alt="QR Code" height="300" width="400">
-                        <p id="crypto-name-{{ leader.id }}" class="crypto-name"></p>
-                        <p id="crypto-address-{{ leader.id }}" class="crypto-address"></p>
-                    </div>
-                    <button id="close-{{ leader.id }}" class="btn btn-danger w-full">Close</button>
                 </dialog>
             </div>
         {% endfor %}
     </div>
-    <div>
+    <!-- Footer Links -->
+    <div class="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-200">
         <a href="{% url 'leaderboard_global' %}"
-           class="btn btn-default btn-block submit_button p-2 rounded-2xl">View All</a>
+           class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 text-center text-sm font-medium">
+            View All
+        </a>
         <a href="{% url 'leaderboard_specific_month' %}"
-           class="btn btn-default btn-block submit_button p-2 rounded-2xl text-wrap">Filter Monthly</a>
+           class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 text-center text-sm font-medium">
+            Filter Monthly
+        </a>
         <a href="{% url 'leaderboard_eachmonth' %}"
-           class="btn btn-default btn-block submit_button p-2 rounded-2xl text-wrap">View Monthly</a>
+           class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200 text-center text-sm font-medium">
+            View Monthly
+        </a>
     </div>
 </div>
-{% comment %} positions the leaderboard rightmost {% endcomment %}
 <script>
-
-
-
     const openModal = (btc, eth, bch, userId) => {
         const cryptoOptions = [
-        { name: 'Bitcoin Cash', address: bch },
-        { name: 'Ethereum', address: eth },
-        { name: 'Bitcoin', address: btc }
+            { name: 'Bitcoin Cash', address: bch },
+            { name: 'Ethereum', address: eth },
+            { name: 'Bitcoin', address: btc }
         ];
         let currentIndex = 0;
+
         const updateSlide = () => {
             let { name, address } = cryptoOptions[currentIndex];
             if (address == '' || address == 'None') {
                 address = "qr5yccf7j4dpjekyz3vpawgaarl352n7yv5d5mtzzc";
-                document.getElementById('crypto-name-'+userId).textContent = `No address:Will go to BLT Donation`;
+                document.getElementById('crypto-name-'+userId).textContent = `No address: Will go to BLT Donation`;
                 document.getElementById('qr-image-'+userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
                 document.getElementById('crypto-address-'+userId).textContent = `BCH: ${address}`;
-            }
-            else{
+            } else {
                 document.getElementById('crypto-name-'+userId).textContent = name;
                 document.getElementById('qr-image-' + userId).src = `https://api.qrserver.com/v1/create-qr-code/?data=${address}&size=400x300`;
                 document.getElementById('crypto-address-' + userId).textContent = `${address}`;
@@ -199,46 +163,52 @@
 
         updateSlide();
 
+        const dialog = document.getElementById('dialog-' + userId);
+        const buttons = dialog.querySelectorAll('.nav-btn');
+
         document.getElementById('openModal-' + userId).addEventListener('click', function() {
-            document.getElementById('dialog-' + userId).showModal();
+            dialog.showModal();
         });
 
         document.getElementById('close-' + userId).addEventListener('click', function() {
-            document.getElementById('dialog-' + userId).close();
+            dialog.close();
         });
-        document.getElementById('bch-btn-' + userId).classList.add('active'); // Highlight BCH button by default
+
+        // Update active state for buttons
+        const setActiveButton = (button) => {
+            buttons.forEach(btn => btn.classList.remove('bg-[#e74c3c]', 'text-white'));
+            button.classList.add('bg-[#e74c3c]', 'text-white');
+        };
+
+        // Set initial active state
+        setActiveButton(document.getElementById('bch-btn-' + userId));
+
         document.getElementById('bch-btn-' + userId).addEventListener('click', function() {
             currentIndex = 0;
             updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
+            setActiveButton(this);
         });
 
         document.getElementById('eth-btn-' + userId).addEventListener('click', function() {
             currentIndex = 1;
             updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
+            setActiveButton(this);
         });
 
         document.getElementById('btc-btn-' + userId).addEventListener('click', function() {
             currentIndex = 2;
             updateSlide();
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
+            setActiveButton(this);
         });
-    
-        
     };
-    
+
     document.addEventListener('DOMContentLoaded', function() {
-      const grid = document.querySelector('.hero-bugs-container');
-      const child = document.querySelector('.leaderboard-widget');
+        const grid = document.querySelector('.hero-bugs-container');
+        const child = document.querySelector('.leaderboard-widget');
 
-      if (grid && child) {
-        const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
-
-        child.style.gridColumn = columns;
-      }
+        if (grid && child) {
+            const columns = getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+            child.style.gridColumn = columns;
+        }
     });
 </script>

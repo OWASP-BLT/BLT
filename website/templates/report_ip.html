@@ -21,52 +21,6 @@
 {% block og_description %}
     Efficiently report an IP by providing necessary details such as the activity title, IP address, activity type, and a comprehensive description.
 {% endblock og_description %}
-{% block style %}
-    <style>
-    .captcha-form img{
-        width: 100px;
-        margin-right: 10px;
-    }
-    .captcha-form input{
-        width: 100%;
-        border-width: 1px;
-        border-color: black;
-        padding: 10px;
-        font-size: 1.4rem;
-    }
-
-    @media (max-width:1130px) {
-        #bug-description-container{
-            flex-direction: column;
-        }
-        #bug-description-container div{
-            width: 100%;
-        }
-    }
-
-    @media (max-width: 1514px) {
-        #files_manage{
-            width: 100%;
-            height: max-content;
-            justify-content: space-around;
-            
-        }
-        #files_manage div{
-            margin-top: 20px;
-        }
-        #screenshot-container{
-            width: 73vw
-        }
-    }
-
-    .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-    }
-
-    </style>
-{% endblock style %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
@@ -157,7 +111,11 @@
                 <!-- Captcha -->
                 <div class="w-full mt-6 flex flex-col md:flex-row items-center justify-between gap-x-6 ">
                     <div class="flex h-full justify-between items-center flex-col my-16 md:flex-row md:mt-0">
-                        <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">{{ captcha_form.captcha }}</div>
+                        <div class="captcha-form flex ml-10 flex-col w-full md:flex-row items-center">
+                            <div class="[&_img]:w-36 [&_img]:mr-2.5 [&_input]:w-full [&_input]:border [&_input]:border-black [&_input]:p-2.5 [&_input]:text-lg">
+                                {{ captcha_form.captcha }}
+                            </div>
+                        </div>
                     </div>
                     <div class="w-full flex justify-evenly md:justify-end">
                         <button type="button"
