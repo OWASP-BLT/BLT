@@ -1487,17 +1487,48 @@ def stats_dashboard(request):
 
         # Combine all stats
         stats = {
-            "users": {"total": users["total"], "active": users["active"], "total_all_time": total_users},
-            "issues": {"total": issues["total"], "open": issues["open"], "total_all_time": total_issues},
-            "domains": {"total": domains["total"], "active": domains["active"], "total_all_time": total_domains},
+            "users": {
+                "total": users["total"],
+                "active": users["active"],
+                "total_all_time": total_users,
+                "active_percentage": round((users["active"] / users["total"] * 100) if users["total"] > 0 else 0),
+            },
+            "issues": {
+                "total": issues["total"],
+                "open": issues["open"],
+                "total_all_time": total_issues,
+                "open_percentage": round((issues["open"] / issues["total"] * 100) if issues["total"] > 0 else 0),
+            },
+            "domains": {
+                "total": domains["total"],
+                "active": domains["active"],
+                "total_all_time": total_domains,
+                "active_percentage": round((domains["active"] / domains["total"] * 100) if domains["total"] > 0 else 0),
+            },
             "organizations": {
                 "total": organizations["total"],
                 "active": organizations["active"],
                 "total_all_time": total_organizations,
+                "active_percentage": round(
+                    (organizations["active"] / organizations["total"] * 100) if organizations["total"] > 0 else 0
+                ),
             },
-            "hunts": {"total": hunts["total"], "active": hunts["active"], "total_all_time": total_hunts},
-            "points": {"total": points, "total_all_time": total_points},
-            "projects": {"total": projects, "total_all_time": total_projects},
+            "hunts": {
+                "total": hunts["total"],
+                "active": hunts["active"],
+                "total_all_time": total_hunts,
+                "active_percentage": round((hunts["active"] / hunts["total"] * 100) if hunts["total"] > 0 else 0),
+            },
+            "points": {
+                "total": points,
+                "total_all_time": total_points,
+                "percentage": round((points / total_points * 100) if total_points > 0 else 0),
+            },
+            "projects": {
+                "total": projects,
+                "total_all_time": total_projects,
+                "percentage": round((projects / total_projects * 100) if total_projects > 0 else 0),
+            },
             "activities": {
                 "total": activities,
                 "total_all_time": total_activities,
