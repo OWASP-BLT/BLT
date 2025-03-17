@@ -112,7 +112,7 @@
         </span>
     </button>
     <button class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
-            onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
+            onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}?next={{ request.path }}`{% endif %}"
             id="subscribe_domain_btn">
         {% if user.is_authenticated and subscribed_to_domain %}
             <div class="flex flex-row gap-2 items-center">
