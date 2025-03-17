@@ -1,5 +1,7 @@
 {% extends "base.html" %}
+{% load gravatar %}
 {% load custom_tags %}
+{% load static %}
 {% block metaTags %}
     <title>
         {% block title %}
@@ -36,76 +38,181 @@
 {% load static %}
 {% load gravatar %}
 {% block content %}
-    <style>
-    .nav-btn.active {
-    background: red; /* Change to whatever red color you prefer */
-    color: white; /* Change text color to contrast with the red background */
-    }
-
-    .splide__slide img {
-        width: 100%;
-        height: auto;
-      }
-
-    input[name="r"] {
-        position: absolute;
-        visibility: hidden;
-    }
-
-    #btc:checked ~ .s1 {
-        margin-left: -20%;
-    }
-
-    #eth:checked ~ .s1 {
-        margin-left: -40%;
-    }
-
-    #bch:checked ~ .s1 {
-        margin-left: -60%;
-    }
-    </style>
     {% include "includes/sidenav.html" %}
-    <div class="pt-8 pb-16 lg:pt-16 lg:pb-24 bg-[#FAF9FB] font-[ubuntu] lg:pl-0 overflow-x-hidden">
-        <div class="flex mr-[2%] ml-[2%] justify-between row gap-[8px] items-center">
-            <nav class="left-issue flex items-center mr-auto">
-                <a href="{% url 'issues' %}" class="!text-[#80708f] mx-4">Issues</a>
-                <i class="fa-solid fa-chevron-right"></i>
-                <a href="{% url 'domain' object.domain.name %}" class=" mx-4">
-                    <img src="{{ object.domain.get_logo }}"
-                         class="rounded"
-                         width="16"
-                         height="16"
-                         alt="Organization Logo">
-                </a>
-                <a href="{% url 'domain' object.domain.name %}"><span>{{ object.domain.name }}</span></a> &nbsp;<span class="font-bold">#{{ object.id }}</span>&nbsp;
-                {% if status == "open" %}
-                    <span class="bg-red-100 text-red-800 text-xl font-medium me-2 px-2.5 py-0.5 rounded">Ongoing</span>
-                {% else %}
-                    <span class="bg-green-100 text-green-800 text-xl font-medium me-2 px-2.5 py-0.5 rounded">Resolved</span>
+    <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
+        <div class=" flex lg:flex-row flex-col gap-4 mt-10">
+            <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 shadow-md rounded-xl p-4">
+                <nav class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="flex items-center space-x-3 truncate">
+                        <a href="{% url 'issues' %}"
+                           class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center">
+                            <i class="fas fa-bug mr-2"></i>
+                            <span class="font-medium">Issues</span>
+                        </a>
+                        <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
+                        <div class="flex items-center space-x-2">
+                            <a href="{% url 'domain' object.domain.name %}"
+                               class="flex items-center hover:text-[#e74c3c] transition-colors duration-200">
+                                <img src="{{ object.domain.get_logo }}"
+                                     alt="Organization Logo"
+                                     class="w-5 h-5 rounded-md shadow-sm"
+                                     width="20"
+                                     height="20">
+                                <span class="ml-2 font-medium">{{ object.domain.name }}</span>
+                            </a>
+                            <span class="text-gray-400">/</span>
+                            <span class="font-mono text-gray-600">#{{ object.id }}</span>
+                        </div>
+                        <div class="ml-4">
+                            {% if status == "open" %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
+                                    <span class="w-2 h-2 bg-[#e74c3c] rounded-full mr-2 animate-pulse"></span>
+                                    Ongoing
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">
+                                    <i class="fas fa-check-circle mr-2"></i>
+                                    Resolved
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <span id="likes"
+                          class="flex flex-row gap-2 items-center px-5 rounded-lg py-1 bg-blue-100">
+                        {{ object.views }}
+                        <span>Views</span>
+                        <i class="fa-solid fa-eye size-6 pt-1"></i>
+                    </span>
+                </nav>
+                <div class="flex flex-col gap-5 px-2">
+                    <div class="flex flex-col gap-2">
+                        <h2 class="text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full"
+                            title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
+                        {% if object.markdown_description %}
+                            <p class="text-lg text-gray-700 font-medium" id="bug_report">{{ object.markdown_description }}</p>
+                        {% endif %}
+                    </div>
+                    <a href="{{ object.url }}"
+                       title="{{ object.url }}"
+                       target="_blank"
+                       class="flex items-center gap-3 border px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-fit">
+                        <img src="{{ object.domain.get_logo }}"
+                             alt="Organization Logo"
+                             class="w-5 h-5 rounded-md shadow-sm"
+                             width="20"
+                             height="20">
+                        <p class="text-[#e74c3c] hover:text-[#e74c3c] font-medium truncate transition-colors duration-200"
+                           rel="noopener noreferrer">{{ object.url }}</p>
+                    </a>
+                    <div class="flex items-center">
+                        <img class="size-8 rounded-full object-cover"
+                             src="{% if object.user.username %} {% if object.user.userprofile.user_avatar %}{{ MEDIA_URL }}{{ object.user.userprofile.user_avatar }}{% else %}{% gravatar_url object.user.email 100 %}{% endif %}{% else %}{% static 'images/dummy-user.png' %}{% endif %}"
+                             alt="User Profile Logo"
+                             width="32px"
+                             height="32px">
+                        <div class="ml-3">
+                            <div class="text-gray-700">
+                                {% if object.user.username %}
+                                    <a href="{% url 'profile' slug=object.user.username %}"
+                                       class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">@{{ object.user.username }}</a>
+                                {% else %}
+                                    Anonymous
+                                {% endif %}
+                                <span class="text-gray-900">found this issue on {{ object.created }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% include "includes/_like_dislike_share.html" %}
+                    {% include "./includes/issue_left_info.html" %}
+                </div>
+            </div>
+            <div class="lg:w-[25%] flex flex-col gap-4 w-full ">
+                {% if request.user.is_superuser or request.user == object.user %}
+                    <div class="border border-gray-300 shadow-md rounded-xl p-4 flex flex-wrap gap-x-3 gap-y-3 justify-center items-center">
+                        {% if request.user.is_superuser or request.user == object.user %}
+                            {% if object.user %}
+                                <form method="post"
+                                      action="{% url 'remove_user_from_issue' id=object.id %}"
+                                      class=" flex flex-row gap-x-3 items-center">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
+                                    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
+                                            id="report-anonymously"
+                                            type="submit"
+                                            onclick="return confirm('Are you sure you want to report it anonymously?')">
+                                        <div class="flex flex-row gap-2 items-center">
+                                            <span>Anonymous</span>
+                                            <i class="fa-regular fa-user"></i>
+                                        </div>
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200"
+                                    id="edit-issue">
+                                <div class="flex flex-row gap-2 items-center">
+                                    <span class="max-sm:text-[12px]">Edit</span>
+                                    <i class="fa-regular fa-pen-to-square"></i>
+                                </div>
+                            </button>
+                        {% endif %}
+                        {% if request.user.is_superuser or request.user == object.user %}
+                            <button onclick="deleteIssue({{ object.id }})"
+                                    class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 hover:bg-gray-100 transition duration-200">
+                                <div class="flex flex-row gap-2 items-center">
+                                    <span class="max-sm:text-[12px]">Delete</span>
+                                    <i class="fa-solid fa-trash"></i>
+                                </div>
+                            </button>
+                        {% endif %}
+                        {% if request.user.is_superuser or request.user == object.user %}
+                            <button type="button"
+                                    onclick="resolveIssue()"
+                                    class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-red-500 hover:bg-red-600 transition-all duration-200 border-gray-300 px-4 py-3 ">
+                                {% if status == "open" %}
+                                    Close Issue
+                                {% else %}
+                                    Open Issue
+                                {% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
                 {% endif %}
-            </nav>
-        </div>
-        <div class="h-[3vh]"></div>
-        <h2 class="font-[ubuntu] font-bold text-[30px] max-sm:w-[70%] w-[90%] line-clamp-3 ml-[3.5%]"
-            title="{{ object.description |escapejs }}">{{ object.description |escapejs }}</h2>
-        <p>
-            <a href="{{ object.url }}"
-               title="{{ object.url }}"
-               class="!text-[#7e22ce] ml-[3.5%] font-thin w-[80%] truncate"
-               target="_blank"
-               rel="noopener noreferrer">{{ object.url }}</a>
-        </p>
-        <br>
-        <div class="border-b-2 border-[#584ac080]">
-            <div class="right-data max-sm:absolute top-[15%] max-sm:pt-2 max-sm:ml-[80%] ml-[3.50%] ">
-                {% include "includes/_like_dislike_share.html" %}
+                <div class="border border-gray-300 shadow-md rounded-xl p-4">{% include "./includes/issue_right_info.html" %}</div>
             </div>
         </div>
-        <div class="flex bg-white max-sm:flex-col-reverse">
-            {% include "./includes/issue_left_info.html" %}
-            {% include "./includes/issue_right_info.html" %}
-        </div>
+        <div>{% include "comments2.html" %}</div>
     </div>
+    <!-- Scripts -->
+    <script>
+        function deleteIssue(issueId) {
+            if (!confirm('Are you sure you want to delete this issue?')) {
+                return;
+            }
+            
+            fetch(`/delete_issue/${issueId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    throw new Error('Delete failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                $.notify("Failed to delete issue", {
+                    style: "custom",
+                    className: "danger"
+                });
+            });
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
     <script>
     var flagClose = document.getElementById("close-flag");
@@ -113,17 +220,21 @@
     var flagModal = document.getElementById("flag-modal");
     var likeModal = document.getElementById("like-modal");
     var flagOpen = document.getElementById("open-flag");
-    flagClose.addEventListener("click",()=>{
-        flagModal.style.display="none";
+
+    flagClose.addEventListener("click", () => {
+        flagModal.style.display = "none";
     });
-    likeClose.addEventListener("click",()=>{
-        likeModal.style.display="none";
+
+    likeClose.addEventListener("click", () => {
+        likeModal.style.display = "none";
     });
+
     function flagOpenn() {
-        flagModal.style.cssText = "display:block !important;"
+        flagModal.style.cssText = "display:block !important;";
     }
+
     function likeOpenn() {
-        likeModal.style.cssText = "display:block !important;"
+        likeModal.style.cssText = "display:block !important;";
     }
     </script>
     <script>
@@ -140,19 +251,19 @@
             integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
             crossorigin="anonymous"></script>
     <script>
-    document.addEventListener( 'DOMContentLoaded', function() {
-        var elms = document.getElementsByClassName( 'splide' );
-        for ( var i = 0; i < elms.length; i++ ) {
-            new Splide( elms[i], {
+    document.addEventListener('DOMContentLoaded', function () {
+        var elms = document.getElementsByClassName('splide');
+        for (var i = 0; i < elms.length; i++) {
+            new Splide(elms[i], {
                 perPage: 3,
                 breakpoints: {
                     640: {
                         perPage: 1,
                     },
                 },
-          } ).mount();
+            }).mount();
         }
-      } );
+    });
     </script>
     <!-- <script>
     function edit(){

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ title }} - Hackathon{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">{{ title }}</h1>
+            <p class="text-gray-600 mb-6">Add a sponsor to support the hackathon</p>
+            <div class="bg-white rounded-lg shadow p-6">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                    <div class="space-y-6 mb-6">
+                        <!-- Organization -->
+                        <div>
+                            <label for="{{ form.organization.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 mb-1">
+                                Organization <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.organization }}
+                            {% if form.organization.errors %}<p class="mt-1 text-sm text-red-600">{{ form.organization.errors.0 }}</p>{% endif %}
+                        </div>
+                        <!-- Sponsor Level -->
+                        <div>
+                            <label for="{{ form.sponsor_level.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 mb-1">
+                                Sponsor Level <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.sponsor_level }}
+                            {% if form.sponsor_level.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.sponsor_level.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        <!-- Logo -->
+                        <div>
+                            <label for="{{ form.logo.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                            {{ form.logo }}
+                            {% if form.logo.errors %}<p class="mt-1 text-sm text-red-600">{{ form.logo.errors.0 }}</p>{% endif %}
+                            <p class="mt-1 text-xs text-gray-500">Upload a logo for the sponsor (optional)</p>
+                        </div>
+                        <!-- Website -->
+                        <div>
+                            <label for="{{ form.website.id_for_label }}"
+                                   class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                            {{ form.website }}
+                            {% if form.website.errors %}<p class="mt-1 text-sm text-red-600">{{ form.website.errors.0 }}</p>{% endif %}
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-4">
+                        <a href="{% url 'hackathon_detail' hackathon.slug %}"
+                           class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            Cancel
+                        </a>
+                        <button type="submit"
+                                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            {{ submit_text }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

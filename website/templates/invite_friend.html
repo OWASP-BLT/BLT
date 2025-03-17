@@ -18,19 +18,12 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <style>
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-        }
-    </style>
-    <div class="bottom-right">
+    <div class="absolute bottom-2.5 right-4 flex space-x-4">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/invite_friend.html">
-            <i class="fab fa-github"></i>
+            <i class="fab fa-github text-2xl text-gray-700 hover:text-gray-900"></i>
         </a>
         <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=421%3A26&t=pqxWpF3hcYxjEDrs-1">
-            <i class="fab fa-figma"></i>
+            <i class="fab fa-figma text-2xl text-gray-700 hover:text-gray-900"></i>
         </a>
     </div>
     <div class="mx-auto my-12 p-6  rounded-lg shadow-xl max-w-3xl">

@@ -7,99 +7,28 @@
         <meta name="description" content="Report Issues & Win Prizes">
         <meta name="keywords" content="report, issues, win, prizes">
         <title>Report Issues & Win Prizes</title>
-        <style type="text/css">
-        body {
-            padding: 0px;
-            margin: 0px;
-            font-family: Work Sans;
-        }
-
-        #content {
-            padding: 100px;
-            position: relative;
-            margin: auto;
-            width: 644px;
-            height: 546px;
-            display: block;
-            background: #FFFFFF;
-            border: 1px solid #D2D2D2;
-            box-sizing: border-box;
-            box-shadow: 0px 6px 13px rgba(0, 0, 0, 0.23);
-        }
-
-        #header {
-            position: relative;
-            -webkit-box-shadow: 0px 4px 10px -2px rgba(0, 0, 0, 0.3);
-            -moz-box-shadow: 0px 4px 10px -2px rgba(0, 0, 0, 0.3);
-            box-shadow: 0 4px 10px -2px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            height: 132px;
-            box-shadow: 0px 6px 13px rgba(0, 0, 0, 0.23);
-        }
-
-        #banner {
-            padding-top: 50px;
-            width: 100%;
-            height: 703px;
-            background: url('../static/img/img_bg.png');
-            background-repeat: no-repeat;
-            background-size: cover;
-        }
-
-        #logo {
-            height: 100px;
-            width: 250px;
-            display: block;
-            margin-left: 20px;
-        }
-
-        #tagline {
-            display: block;
-            margin-left: 33px;
-            margin-top: -19px;
-            font-weight: 500;
-        }
-
-
-        @font-face {
-            font-family: 'Work Sans';
-            font-style: normal;
-            font-weight: 400;
-            src: local(''),
-                url('../static/fonts/work-sans/work-sans-v9-latin-regular.woff2') format('woff2'),
-                url('../static/fonts/work-sans/work-sans-v9-latin-regular.woff') format('woff');
-        }
-
-        @font-face {
-            font-family: 'Work Sans';
-            font-style: normal;
-            font-weight: 500;
-            src: local(''),
-                url('../static/fonts/work-sans/work-sans-v9-latin-500.woff2') format('woff2'),
-                url('../static/fonts/work-sans/work-sans-v9-latin-500.woff') format('woff');
-        }
-
-        @font-face {
-            font-family: 'Work Sans';
-            font-style: normal;
-            font-weight: 600;
-            src: local(''),
-                url('../static/fonts/work-sans/work-sans-v9-latin-600.woff2') format('woff2'),
-                url('../static/fonts/work-sans/work-sans-v9-latin-600.woff') format('woff');
-        }
-        </style>
+        <!-- Include Tailwind CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+              rel="stylesheet">
     </head>
-    <body>
-        <div id="header">
-            <img id="logo"
-                 src="../static/img/Logo.svg"
-                 alt="Bug Bounty Logo"
-                 width="100%"
-                 height="100%" />
-            <span id="tagline">Report Issues & Win Prizes</span>
+    <body class="font-sans">
+        <!-- Header -->
+        <div class="w-full h-32 shadow-md">
+            <div class="container mx-auto flex items-center h-full">
+                <img id="logo"
+                     src="../static/img/Logo.svg"
+                     alt="Bug Bounty Logo"
+                     class="h-24 w-64 ml-5"
+                     width="256"
+                     height="96">
+                <span id="tagline" class="ml-8 text-xl font-medium">Report Issues & Win Prizes</span>
+            </div>
         </div>
-        <div id="banner">
-            <div id="content"></div>
+        <!-- Banner -->
+        <div class="w-full h-[703px] bg-[url('../static/img/img_bg.png')] bg-cover bg-no-repeat">
+            <div class="container mx-auto pt-12">
+                <div class="w-[644px] h-[546px] mx-auto bg-white border border-gray-300 shadow-lg"></div>
+            </div>
         </div>
     </body>
 </html>

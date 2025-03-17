@@ -11,6 +11,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token }}">
         {% block metaTags %}
             <!-- Title Block -->
             <title>
@@ -36,7 +37,7 @@
             <meta property="og:description"
                   content="{% block og_description %}{% env 'PROJECT_NAME' %} allows anyone to submit an issue from any website. For example if you saw a broken button on Amazon.com you can report the issue on {% env 'PROJECT_NAME' %} and then get a point! The more bugs you find the more points you get. Bugs can be verified for extra points and organizations can get involved and help out.{% endblock og_description %}" />
             <meta property="og:type" content="website" />
-            <!-- Leaflet CSS -->
+            <!-- Leaflet CSS here -->
             <link rel="stylesheet"
                   href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
                   crossorigin="" />
@@ -47,7 +48,11 @@
                   href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
             <!-- Fullscreen Control CSS -->
             <link rel="stylesheet"
-                  href="https://unpkg.com/leaflet.fullscreen@1.6.0/Control.FullScreen.css" />
+                  href="https://unpkg.com/leaflet.fullscreen@2.4.0/Control.FullScreen.css" />
+            <!-- HTMX for interactive UI updates -->
+            <script src="https://unpkg.com/htmx.org@1.9.10"
+                    integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC"
+                    crossorigin="anonymous"></script>
         {% endblock metaTags %}
         <link rel="preconnect" href="https://fonts.gstatic.com">
         <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -88,6 +93,12 @@
         <script src="{% static 'js/notify.js' %}"></script>
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Add Moment.js and DateRangePicker dependencies -->
+        <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+        <link rel="stylesheet"
+              type="text/css"
+              href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
         {% if not DEBUG %}
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                     crossorigin="anonymous"></script>
@@ -188,26 +199,6 @@
                 };
             });
         </script>
-        <style>
-            .animate-slide-in {
-                animation: slideIn 0.3s ease-out;
-            }
-            
-            @keyframes slideIn {
-                from {
-                    transform: translateX(-100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            
-            .message-alert {
-                transition: opacity 0.3s ease-out;
-            }
-        </style>
         {% block extra_js %}
         {% endblock extra_js %}
         <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>

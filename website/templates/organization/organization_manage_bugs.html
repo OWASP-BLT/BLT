@@ -16,14 +16,7 @@
     View and manage all bugs in your system. Easily filter, view, and update bug statuses to maintain efficient operations.
 {% endblock og_description %}
 {% block body %}
-    <style>
-        .bottom-right {
-            position: absolute;
-            bottom: 10px;
-            right: 15px;
-        }
-    </style>
-    <div class="bottom-right">
+    <div class="fixed bottom-2.5 right-3.75">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_bugs.html">
             <i class="fab fa-github"></i>
         </a>
@@ -63,7 +56,7 @@
                     <tbody>
                         {% if issues %}
                             {% for issue in issues %}
-                                <tr class="bg-white border-b">
+                                <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
                                     <th scope="row"
                                         class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
                                         {{ issue.description|slice:":25" }}...

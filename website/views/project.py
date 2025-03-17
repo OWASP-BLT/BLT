@@ -1,3 +1,4 @@
+import concurrent.futures
 import ipaddress
 import json
 import re
@@ -40,6 +41,12 @@ from website.models import IP, BaconToken, Contribution, Contributor, Contributo
 from website.utils import admin_required
 
 # logging.getLogger("matplotlib").setLevel(logging.ERROR)
+
+
+# Helper function to parse date
+def parse_date(date_str):
+    """Parse GitHub API date string to datetime object"""
+    return parse_datetime(date_str) if date_str else None
 
 
 def blt_tomato(request):
@@ -660,7 +667,7 @@ class ProjectsDetailView(DetailView):
             }
         )
 
-        # Add organization context if it exists
+        # Add organization context if it exists!
         if project.organization:
             context["organization"] = project.organization
 
@@ -740,9 +747,235 @@ class RepoDetailView(DetailView):
             print(f"Error fetching GitHub contributors: {e}")
             return []
 
+    def fetch_activity_data(self, owner, repo_name):
+        """Fetch detailed activity data for charts"""
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=60)
+        headers = {
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+        base_url = f"https://api.github.com/repos/{owner}/{repo_name}"
+
+        def fetch_all_pages(url):
+            results = []
+            page = 1
+            while True:
+                response = requests.get(f"{url}&page={page}", headers=headers)
+                if response.status_code != 200 or not response.json():
+                    break
+                results.extend(response.json())
+                page += 1
+                if "Link" not in response.headers or 'rel="next"' not in response.headers["Link"]:
+                    break
+            return results
+
+        # Fetching data concurrently
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = {
+                "issues": executor.submit(
+                    fetch_all_pages, f"{base_url}/issues?state=all&since={start_date.isoformat()}&per_page=100"
+                ),
+                "pulls": executor.submit(
+                    fetch_all_pages, f"{base_url}/pulls?state=all&since={start_date.isoformat()}&per_page=100"
+                ),
+                "commits": executor.submit(
+                    fetch_all_pages, f"{base_url}/commits?since={start_date.isoformat()}&per_page=100"
+                ),
+            }
+
+            data = {}
+            for key, future in futures.items():
+                try:
+                    data[key] = future.result()
+                except Exception as e:
+                    print(f"Error fetching {key}: {e}")
+                    data[key] = []
+
+        # Processing data for charts
+        dates = [(end_date - timedelta(days=x)).strftime("%Y-%m-%d") for x in range(30)]
+
+        # Defining time periods
+        current_month_start = end_date - timedelta(days=30)
+        previous_month_start = current_month_start - timedelta(days=30)
+
+        def calculate_period_metrics(data, start_date, end_date):
+            """Calculate metrics for a specific time period"""
+            start_date = timezone.make_aware(datetime.combine(start_date, datetime.min.time()))
+            end_date = timezone.make_aware(datetime.combine(end_date, datetime.max.time()))
+
+            return {
+                "issues_opened": len(
+                    [
+                        i
+                        for i in data["issues"]
+                        if i.get("created_at")
+                        and start_date <= parse_date(i["created_at"]) <= end_date
+                        and "pull_request" not in i
+                    ]
+                ),
+                "issues_closed": len(
+                    [
+                        i
+                        for i in data["issues"]
+                        if i.get("closed_at")
+                        and start_date <= parse_date(i["closed_at"]) <= end_date
+                        and "pull_request" not in i
+                    ]
+                ),
+                "prs_opened": len(
+                    [
+                        p
+                        for p in data["pulls"]
+                        if p.get("created_at") and start_date <= parse_date(p["created_at"]) <= end_date
+                    ]
+                ),
+                "prs_closed": len(
+                    [
+                        p
+                        for p in data["pulls"]
+                        if p.get("closed_at") and start_date <= parse_date(p["closed_at"]) <= end_date
+                    ]
+                ),
+                "commits": len(
+                    [
+                        c
+                        for c in data["commits"]
+                        if c.get("commit", {}).get("author", {}).get("date")
+                        and start_date <= parse_date(c["commit"]["author"]["date"]) <= end_date
+                    ]
+                ),
+            }
+
+        # Calculating metrics for both periods
+        current_metrics = calculate_period_metrics(data, current_month_start.date(), end_date.date())
+        previous_metrics = calculate_period_metrics(data, previous_month_start.date(), current_month_start.date())
+
+        # Calculating percentage changes
+        def calculate_percentage_change(current, previous):
+            """Calculates percentage change between two periods"""
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return ((current - previous) / previous) * 100
+
+        def calculate_ratio(current, previous):
+            if previous == 0:
+                return 1 if current > 0 else 0
+            return current / previous
+
+        changes = {
+            "issue_ratio_percentage_change": calculate_percentage_change(
+                (calculate_ratio(current_metrics["issues_opened"], current_metrics["issues_closed"])),
+                (calculate_ratio(previous_metrics["issues_opened"], previous_metrics["issues_closed"])),
+            ),
+            "issue_ratio_change": (calculate_ratio(current_metrics["issues_opened"], current_metrics["issues_closed"]))
+            - (calculate_ratio(previous_metrics["issues_opened"], previous_metrics["issues_closed"])),
+            "pr_percentage_change": calculate_percentage_change(
+                current_metrics["prs_opened"], previous_metrics["prs_opened"]
+            ),
+            "pr_change": current_metrics["prs_opened"] - previous_metrics["prs_opened"],
+            "commit_percentage_change": calculate_percentage_change(
+                current_metrics["commits"], previous_metrics["commits"]
+            ),
+            "commit_change": current_metrics["commits"] - previous_metrics["commits"],
+        }
+
+        chart_data = {
+            "issues_labels": dates,
+            "issues_opened": [],
+            "issues_closed": [],
+            "pr_labels": dates,
+            "pr_opened_data": [],
+            "pr_closed_data": [],
+            "commits_labels": dates,
+            "commits_data": [],
+            "pushes_data": [],
+            "issue_ratio_change": round(changes["issue_ratio_change"], 2),
+            "pr_change": changes["pr_change"],
+            "commit_change": changes["commit_change"],
+            "issue_ratio_percentage_change": round(changes["issue_ratio_percentage_change"], 2),
+            "pr_percentage_change": round(changes["pr_percentage_change"], 2),
+            "commit_percentage_change": round(changes["commit_percentage_change"], 2),
+        }
+
+        for date in dates:
+            # Counting issues with safe null checks
+            issues_opened = len(
+                [
+                    i
+                    for i in data["issues"]
+                    if i.get("created_at") and i["created_at"].startswith(date) and "pull_request" not in i
+                ]
+            )
+
+            issues_closed = len(
+                [
+                    i
+                    for i in data["issues"]
+                    if i.get("closed_at") and i["closed_at"].startswith(date) and "pull_request" not in i
+                ]
+            )
+
+            # Counting PRs with safe null checks
+            prs_opened = len([p for p in data["pulls"] if p.get("created_at") and p["created_at"].startswith(date)])
+
+            prs_closed = len([p for p in data["pulls"] if p.get("closed_at") and p["closed_at"].startswith(date)])
+
+            # Counting commits with safe null checks
+            day_commits = [
+                c
+                for c in data["commits"]
+                if (
+                    c.get("commit", {}).get("author", {}).get("date") and c["commit"]["author"]["date"].startswith(date)
+                )
+            ]
+            commits_count = len(day_commits)
+            pushes_count = len(set(c.get("sha", "") for c in day_commits))
+
+            # Adding to chart data
+            chart_data["issues_opened"].append(issues_opened)
+            chart_data["issues_closed"].append(issues_closed)
+            chart_data["pr_opened_data"].append(prs_opened)
+            chart_data["pr_closed_data"].append(prs_closed)
+            chart_data["commits_data"].append(commits_count)
+            chart_data["pushes_data"].append(pushes_count)
+
+        return chart_data
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         repo = self.get_object()
+
+        # Extract owner and repo name from repo URL
+        owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
+        owner, repo_name = owner_repo.split("/")
+
+        # Add show_repo_stats parameter set to False to hide stats section
+        context["show_repo_stats"] = False
+
+        # Get activity data only if we're showing repo stats
+        activity_data = None
+        if context["show_repo_stats"]:
+            activity_data = self.fetch_activity_data(owner, repo_name)
+        else:
+            # Create empty activity data structure to avoid template errors
+            activity_data = {
+                "issues_labels": [],
+                "issues_opened": [],
+                "issues_closed": [],
+                "pr_labels": [],
+                "pr_opened_data": [],
+                "pr_closed_data": [],
+                "commits_labels": [],
+                "commits_data": [],
+                "pushes_data": [],
+                "issue_ratio_change": 0,
+                "pr_change": 0,
+                "commit_change": 0,
+                "issue_ratio_percentage_change": 0,
+                "pr_percentage_change": 0,
+                "commit_percentage_change": 0,
+            }
 
         # Add breadcrumbs
         context["breadcrumbs"] = [
@@ -943,6 +1176,21 @@ class RepoDetailView(DetailView):
                 "start_date": start_date,
                 "end_date": end_date,
                 "is_paginated": paginator.num_pages > 1,  # Add this
+                "issues_labels": activity_data["issues_labels"],
+                "issues_opened": activity_data["issues_opened"],
+                "issues_closed": activity_data["issues_closed"],
+                "pr_labels": activity_data["pr_labels"],
+                "pr_opened_data": activity_data["pr_opened_data"],
+                "pr_closed_data": activity_data["pr_closed_data"],
+                "commits_labels": activity_data["commits_labels"],
+                "commits_data": activity_data["commits_data"],
+                "pushes_data": activity_data["pushes_data"],
+                "issue_ratio_change": activity_data["issue_ratio_change"],
+                "pr_change": activity_data["pr_change"],
+                "commit_change": activity_data["commit_change"],
+                "issue_ratio_percentage_change": activity_data["issue_ratio_percentage_change"],
+                "pr_percentage_change": activity_data["pr_percentage_change"],
+                "commit_percentage_change": activity_data["commit_percentage_change"],
             }
         )
 
@@ -1404,6 +1652,95 @@ class RepoDetailView(DetailView):
                     {
                         "status": "error",
                         "message": "An unexpected error occurred",
+                    },
+                    status=500,
+                )
+
+        elif section == "ai_summary":
+            try:
+                repo = self.get_object()
+
+                # Get GitHub API token
+                github_token = getattr(settings, "GITHUB_TOKEN", None)
+                if not github_token:
+                    return JsonResponse(
+                        {"status": "error", "message": "GitHub token not configured"},
+                        status=500,
+                    )
+
+                # Extract owner/repo from GitHub URL
+                match = re.match(r"https://github.com/([^/]+)/([^/]+)/?", repo.repo_url)
+                if not match:
+                    return JsonResponse(
+                        {"status": "error", "message": "Invalid repository URL"},
+                        status=400,
+                    )
+
+                owner, repo_name = match.groups()
+
+                # Fetch README content from GitHub API
+                readme_url = f"https://api.github.com/repos/{owner}/{repo_name}/readme"
+                headers = {
+                    "Authorization": f"token {github_token}",
+                    "Accept": "application/vnd.github.v3+json",
+                }
+
+                response = requests.get(readme_url, headers=headers)
+
+                if response.status_code == 200:
+                    readme_data = response.json()
+                    # README content is base64 encoded
+                    import base64
+
+                    readme_content = base64.b64decode(readme_data.get("content", "")).decode("utf-8")
+
+                    # Store README content
+                    repo.readme_content = readme_content
+
+                    # Generate AI summary if AI service is configured
+                    ai_service_url = getattr(settings, "AI_SERVICE_URL", None)
+                    if ai_service_url:
+                        try:
+                            # Call AI service to generate summary
+                            ai_response = requests.post(ai_service_url, json={"text": readme_content}, timeout=10)
+
+                            if ai_response.status_code == 200:
+                                ai_data = ai_response.json()
+                                repo.ai_summary = ai_data.get("summary", "No summary available.")
+                            else:
+                                repo.ai_summary = "Failed to generate summary from AI service."
+                        except Exception:
+                            repo.ai_summary = "Error connecting to AI service."
+                    else:
+                        # If no AI service is configured, create a simple summary
+                        if len(readme_content) > 500:
+                            repo.ai_summary = readme_content[:500] + "..."
+                        else:
+                            repo.ai_summary = readme_content
+
+                    repo.save()
+
+                    return JsonResponse(
+                        {
+                            "status": "success",
+                            "message": "AI summary updated successfully",
+                            "data": {"ai_summary": repo.ai_summary or "No summary available."},
+                        }
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            "status": "error",
+                            "message": f"GitHub API error: {response.status_code}",
+                        },
+                        status=response.status_code,
+                    )
+
+            except Exception as e:
+                return JsonResponse(
+                    {
+                        "status": "error",
+                        "message": f"An unexpected error occurred: {str(e)}",
                     },
                     status=500,
                 )
