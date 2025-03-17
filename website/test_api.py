@@ -1,6 +1,10 @@
+from io import BytesIO
+from unittest.mock import Mock
+
 from allauth.account.models import EmailAddress
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.transaction import atomic
 from django.test import TestCase
 from django.urls import reverse
@@ -8,12 +12,9 @@ from django.utils import timezone
 from django.utils.encoding import force_str
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from io import BytesIO
-from unittest.mock import Mock
-from website.utils import validate_file_type
 
-from website.utils import rebuild_safe_url
+from website.utils import rebuild_safe_url, validate_file_type
+
 
 class FileValidationTest(APITestCase):
     def test_valid_png(self):
@@ -21,19 +22,15 @@ class FileValidationTest(APITestCase):
         file_content = b"fake png content"
         file = InMemoryUploadedFile(
             file=BytesIO(file_content),
-            field_name='thumbnail',
-            name='test.png',
-            content_type='image/png',
+            field_name="thumbnail",
+            name="test.png",
+            content_type="image/png",
             size=len(file_content),
-            charset=None
+            charset=None,
         )
         request = Mock()
-        request.FILES = {'thumbnail': file}
-        is_valid, error_message = validate_file_type(
-            request,
-            'thumbnail',
-            allowed_extensions=['png']
-        )
+        request.FILES = {"thumbnail": file}
+        is_valid, error_message = validate_file_type(request, "thumbnail", allowed_extensions=["png"])
         self.assertTrue(is_valid, "Validation should pass for a valid PNG file")
         self.assertIsNone(error_message, "Error message should be None for a valid file")
 
@@ -42,19 +39,15 @@ class FileValidationTest(APITestCase):
         file_content = b"fake pdf content"
         file = InMemoryUploadedFile(
             file=BytesIO(file_content),
-            field_name='thumbnail',
-            name='test.pdf',
-            content_type='application/pdf',
+            field_name="thumbnail",
+            name="test.pdf",
+            content_type="application/pdf",
             size=len(file_content),
-            charset=None
+            charset=None,
         )
         request = Mock()
-        request.FILES = {'thumbnail': file}
-        is_valid, error_message = validate_file_type(
-            request,
-            'thumbnail',
-            allowed_extensions=['png']
-        )
+        request.FILES = {"thumbnail": file}
+        is_valid, error_message = validate_file_type(request, "thumbnail", allowed_extensions=["png"])
         self.assertFalse(is_valid, "Validation should fail for an invalid extension")
         self.assertIsNotNone(error_message, "Error message should be set for an invalid file")
 
@@ -62,13 +55,11 @@ class FileValidationTest(APITestCase):
         """Test when no file is provided."""
         request = Mock()
         request.FILES = {}
-        is_valid, error_message = validate_file_type(
-            request,
-            'thumbnail',
-            allowed_extensions=['png']
-        )
+        is_valid, error_message = validate_file_type(request, "thumbnail", allowed_extensions=["png"])
         self.assertTrue(is_valid, "Validation should pass when no file is provided")
         self.assertIsNone(error_message, "Error message should be None when no file is provided")
+
+
 class RebuildSafeUrlTestCase(TestCase):
     def test_rebuild_safe_url(self):
         print("=== STARTING REBUILD SAFE URL TESTS - UNIQUE MARKER ===")
