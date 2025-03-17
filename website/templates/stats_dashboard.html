@@ -359,10 +359,10 @@
         const activityChartOptions = {
             series: [{
                 name: 'Issues',
-                data: [28, 45, 35, 50, 32, 55, 23, 30, 25, 40, 30, 45]
+                data: {{ issues_time_series|safe|default:'[0,0,0,0,0,0,0,0,0,0,0,0]' }}
             }, {
                 name: 'Users',
-                data: [14, 25, 20, 25, 28, 15, 21, 35, 15, 25, 20, 15]
+                data: {{ users_time_series|safe|default:'[0,0,0,0,0,0,0,0,0,0,0,0]' }}
             }],
             chart: {
                 type: 'area',
@@ -472,7 +472,9 @@
         const issueStatusChartOptions = {
             series: [
                 parseInt(document.getElementById('issuesCounter').getAttribute('data-value') || '0', 10),
-                42, 35, 20
+                {{ stats.issues.fixed|default:0 }}, 
+                {{ stats.issues.in_review|default:0 }}, 
+                {{ stats.issues.invalid|default:0 }}
             ],
             chart: {
                 type: 'donut',
