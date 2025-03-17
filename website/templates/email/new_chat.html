@@ -1,34 +1,80 @@
 {% load custom_tags %}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Encrypted Chat</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px;">
-    <div style="max-width: 600px; margin: 0 auto;">
-        <div style="background-color: #e74c3c; color: white; padding: 10px 20px; text-align: center;">
-            <h1>New Encrypted Chat</h1>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="Notification for a new encrypted chat on OWASP BLT">
+        <meta name="keywords"
+              content="OWASP, BLT, encrypted chat, secure messaging">
+        <title>New Encrypted Chat</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                margin: 0;
+                padding: 20px;
+            }
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+            }
+            .header {
+                background-color: #e74c3c;
+                color: white;
+                padding: 10px 20px;
+                text-align: center;
+            }
+            .content {
+                padding: 20px;
+                border: 1px solid #ddd;
+                border-top: none;
+            }
+            .button {
+                display: inline-block;
+                background-color: #e74c3c;
+                color: white;
+                text-decoration: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+            }
+            .footer {
+                margin-top: 20px;
+                font-size: 12px;
+                color: #777;
+                text-align: center;
+            }
+            .center-text {
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>New Encrypted Chat</h1>
+            </div>
+            <div class="content">
+                <p>Hello {{ recipient_username }},</p>
+                <p>
+                    <strong>{{ sender_username }}</strong> has started a new encrypted chat with you on OWASP BLT.
+                </p>
+                <p>Click the button below to view and respond to the conversation:</p>
+                <p class="center-text">
+                    <a href="{{ chat_url }}" class="button">Open Chat</a>
+                </p>
+                <p>This is a secure chat with end-to-end encryption. Only you and {{ sender_username }} can read the messages.</p>
+                <p>
+                    Regards,
+                    <br>
+                    The OWASP BLT Team
+                </p>
+            </div>
+            <div class="footer">
+                <p>If you're having trouble with the button above, copy and paste this link into your browser: {{ chat_url }}</p>
+            </div>
         </div>
-        <div style="padding: 20px; border: 1px solid #ddd; border-top: none;">
-            <p>Hello {{ recipient_username }},</p>
-            
-            <p><strong>{{ sender_username }}</strong> has started a new encrypted chat with you on OWASP BLT.</p>
-            
-            <p>Click the button below to view and respond to the conversation:</p>
-            
-            <p style="text-align: center;">
-                <a href="{{ chat_url }}" style="display: inline-block; background-color: #e74c3c; color: white; text-decoration: none; padding: 10px 20px; border-radius: 5px;">Open Chat</a>
-            </p>
-            
-            <p>This is a secure chat with end-to-end encryption. Only you and {{ sender_username }} can read the messages.</p>
-            
-            <p>Regards,<br>The OWASP BLT Team</p>
-        </div>
-        <div style="margin-top: 20px; font-size: 12px; color: #777; text-align: center;">
-            <p>If you're having trouble with the button above, copy and paste this link into your browser: {{ chat_url }}</p>
-        </div>
-    </div>
-</body>
+    </body>
 </html>

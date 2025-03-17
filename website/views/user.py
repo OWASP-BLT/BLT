@@ -1056,7 +1056,7 @@ def start_thread(request, user_id):
 
         # Check if a thread already exists between the two users
         thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
-        
+
         # Flag if this is a new thread (for sending email)
         is_new_thread = not thread
 
@@ -1064,23 +1064,23 @@ def start_thread(request, user_id):
             # Create a new thread
             thread = Thread.objects.create()
             thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
-            
+
             # Send email notification to the recipient for new thread
             if other_user.email:
                 subject = f"New encrypted chat from {request.user.username} on OWASP BLT"
-                chat_url = request.build_absolute_uri(reverse('messaging'))
-                
+                chat_url = request.build_absolute_uri(reverse("messaging"))
+
                 # Create context for the email template
                 context = {
-                    'sender_username': request.user.username,
-                    'recipient_username': other_user.username,
-                    'chat_url': chat_url,
+                    "sender_username": request.user.username,
+                    "recipient_username": other_user.username,
+                    "chat_url": chat_url,
                 }
-                
+
                 # Render the email content
-                msg_plain = render_to_string('email/new_chat.txt', context)
-                msg_html = render_to_string('email/new_chat.html', context)
-                
+                msg_plain = render_to_string("email/new_chat.txt", context)
+                msg_html = render_to_string("email/new_chat.html", context)
+
                 # Send the email
                 send_mail(
                     subject,
