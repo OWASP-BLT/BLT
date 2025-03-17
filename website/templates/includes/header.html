@@ -213,6 +213,24 @@
                                     <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
+                            <li>
+                                <a href="{% url 'domain_list' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-globe fa-fw"></i> {% trans "Organization Domains" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization-settings' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-cog fa-fw"></i> {% trans "Organization Settings" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'draft_hunts' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-pencil-alt fa-fw"></i> {% trans "Hunt Drafts" %}
+                                </a>
+                            </li>
                             <!-- Divider -->
                             <li class="border my-2 w-full"></li>
                             <li>

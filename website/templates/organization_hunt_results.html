@@ -1,4 +1,4 @@
-{% extends "base_dashboard.html" %}
+{% extends "organization/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}
     Hunt Results - {{ hunt.domain.organization.name }} - {% env 'PROJECT_NAME' %} Dashboard
@@ -15,157 +15,158 @@
 {% block og_description %}
     View the published results of the hunt or manage the results before publishing in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
-{% block content %}
-    {% load static %}
-    <section>
-        {% include "includes/organization_sidenav.html" %}
-    </section>
-    <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
-    <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
-          rel="stylesheet">
-    <main class="-mt-10 -mx-8">
-        <article id="banner"
-                 class="jumbotron jumbotron-fluid bg-cover bg-center h-[400px] md:h-[300px] bg-[url('https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg')]">
-            <div class="italic pl-6 mt-6 text-white">
-                <h1 class="text-6xl md:text-5xl italic">
-                    {{ hunt.domain.organization.name }}
-                    <span class="inline-block px-2 py-1 text-sm font-bold leading-none text-white bg-blue-500 rounded shadow">{{ hunt.domain.name }}</span>
-                </h1>
-                <p class="text-xl mt-5">Ended</p>
-            </div>
-        </article>
-    </main>
-    {% if hunt.result_published %}
-        <table class="w-full border-collapse font-sans">
-            <thead>
-                <tr class="bg-green-500 text-white">
-                    <th class="p-3 text-left">id</th>
-                    <th class="p-3 text-left">name</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if winner.winner %}
-                    <tr class="hover:bg-gray-100">
-                        <td class="p-2 border">1</td>
-                        <td class="p-2 border">{{ winner.winner }}</td>
-                    </tr>
-                {% endif %}
-                {% if winner.runner %}
-                    <tr class="hover:bg-gray-100">
-                        <td class="p-2 border">2</td>
-                        <td class="p-2 border">{{ winner.runner }}</td>
-                    </tr>
-                {% endif %}
-                {% if winner.second_runner %}
-                    <tr class="hover:bg-gray-100">
-                        <td class="p-2 border">3</td>
-                        <td class="p-2 border">{{ winner.second_runner }}</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    {% else %}
-        <form method="post" id="publish_result">
-            {% csrf_token %}
+{% block body %}
+    <div>
+        <div class="col_3">
+            {% include "includes/organization_sidenav.html" %}
+        </div>
+        <link href="{% static 'mdeditor/css/editormd.min.css' %}" rel="stylesheet">
+        <link href="{% static 'mdeditor/css/editormd.preview.css' %}"
+              rel="stylesheet">
+        <main class="-mt-10 -mx-8">
+            <article id="banner"
+                     class="jumbotron jumbotron-fluid bg-cover bg-center h-[400px] md:h-[300px] bg-[url('https://i.postimg.cc/FzSHSbhQ/img-soccer.jpg')]">
+                <div class="italic pl-6 mt-6 text-white">
+                    <h1 class="text-6xl md:text-5xl italic">
+                        {{ hunt.domain.organization.name }}
+                        <span class="inline-block px-2 py-1 text-sm font-bold leading-none text-white bg-blue-500 rounded shadow">{{ hunt.domain.name }}</span>
+                    </h1>
+                    <p class="text-xl mt-5">Ended</p>
+                </div>
+            </article>
+        </main>
+        {% if hunt.result_published %}
             <table class="w-full border-collapse font-sans">
                 <thead>
                     <tr class="bg-green-500 text-white">
-                        <th class="p-3 text-left">
-                            <input type="checkbox" class="checkAll" name="checkAll" />
-                        </th>
                         <th class="p-3 text-left">id</th>
-                        <th class="p-3 text-left">points</th>
-                        <th class="p-3 text-left">description</th>
-                        <th class="p-3 text-left">type</th>
+                        <th class="p-3 text-left">name</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for issue in issues %}
+                    {% if winner.winner %}
                         <tr class="hover:bg-gray-100">
-                            <td class="p-2 border">
-                                <input type="checkbox"
-                                       name="item_{{ issue.pk }}"
-                                       {% if issue.verified %}checked{% endif %}>
-                            </td>
-                            <td class="p-2 border">{{ forloop.counter }}</td>
-                            <td class="p-2 border">
-                                <input type="number"
-                                       value="{{ issue.score }}"
-                                       name="value_{{ issue.pk }}"
-                                       class="w-full p-1 border rounded">
-                            </td>
-                            <td class="p-2 border">{{ issue.description }}</td>
-                            <td class="p-2 border">{{ issue.get_label_display }}</td>
+                            <td class="p-2 border">1</td>
+                            <td class="p-2 border">{{ winner.winner }}</td>
                         </tr>
-                    {% endfor %}
+                    {% endif %}
+                    {% if winner.runner %}
+                        <tr class="hover:bg-gray-100">
+                            <td class="p-2 border">2</td>
+                            <td class="p-2 border">{{ winner.runner }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if winner.second_runner %}
+                        <tr class="hover:bg-gray-100">
+                            <td class="p-2 border">3</td>
+                            <td class="p-2 border">{{ winner.second_runner }}</td>
+                        </tr>
+                    {% endif %}
                 </tbody>
             </table>
-            <div class="mt-4">
-                <button class="px-4 py-2 bg-red-500 text-white rounded"
-                        name="submit"
-                        value="save">Save</button>
-                <button class="px-4 py-2 bg-red-500 text-white rounded"
-                        name="submit"
-                        value="publish">Save and Publish Result</button>
-            </div>
-        </form>
-    {% endif %}
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
-            integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-            crossorigin="anonymous"></script>
-    <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
-    <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
-    <script type="text/javascript">
-  $(document).ready(function() {
-  $(".checkAll").on("click", function() {
-    $(this)
-      .closest("table")
-      .find("tbody :checkbox")
-      .prop("checked", this.checked)
-      .closest("tr")
-      .toggleClass("selected", this.checked);
-  });
-
-  $("tbody :checkbox").on("click", function() {
-    $(this)
-      .closest("tr")
-      .toggleClass("selected", this.checked);
-
-    // add selected class on check all
-    $(this).closest("table")
-      .find(".checkAll")
-      .prop("checked",
+        {% else %}
+            <form method="post" id="publish_result">
+                {% csrf_token %}
+                <table class="w-full border-collapse font-sans">
+                    <thead>
+                        <tr class="bg-green-500 text-white">
+                            <th class="p-3 text-left">
+                                <input type="checkbox" class="checkAll" name="checkAll" />
+                            </th>
+                            <th class="p-3 text-left">id</th>
+                            <th class="p-3 text-left">points</th>
+                            <th class="p-3 text-left">description</th>
+                            <th class="p-3 text-left">type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                            <tr class="hover:bg-gray-100">
+                                <td class="p-2 border">
+                                    <input type="checkbox"
+                                           name="item_{{ issue.pk }}"
+                                           {% if issue.verified %}checked{% endif %}>
+                                </td>
+                                <td class="p-2 border">{{ forloop.counter }}</td>
+                                <td class="p-2 border">
+                                    <input type="number"
+                                           value="{{ issue.score }}"
+                                           name="value_{{ issue.pk }}"
+                                           class="w-full p-1 border rounded">
+                                </td>
+                                <td class="p-2 border">{{ issue.description }}</td>
+                                <td class="p-2 border">{{ issue.get_label_display }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-red-500 text-white rounded"
+                            name="submit"
+                            value="save">Save</button>
+                    <button class="px-4 py-2 bg-red-500 text-white rounded"
+                            name="submit"
+                            value="publish">Save and Publish Result</button>
+                </div>
+            </form>
+        {% endif %}
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+                integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+                crossorigin="anonymous"></script>
+        <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
+        <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
+        <script type="text/javascript">
+      $(document).ready(function() {
+      $(".checkAll").on("click", function() {
         $(this)
           .closest("table")
-          .find("tbody :checkbox:checked").length ==
-          $(this)
-            .closest("table")
-            .find("tbody :checkbox").length
-      );
-  });
-});
-
-    </script>
-    <script>
-  $(function () {
-      editormd.markdownToHTML("content", {
-          emoji           : true,
-          taskList        : true,
-          tex             : true,  
-          flowChart       : true,  
-          sequenceDiagram : true,  
+          .find("tbody :checkbox")
+          .prop("checked", this.checked)
+          .closest("tr")
+          .toggleClass("selected", this.checked);
       });
 
-      $(".reference-link").each(function (i,obj) {
-        console.log(obj)
-      })
-  })
+      $("tbody :checkbox").on("click", function() {
+        $(this)
+          .closest("tr")
+          .toggleClass("selected", this.checked);
 
-    </script>
-{% endblock content %}
+        // add selected class on check all
+        $(this).closest("table")
+          .find(".checkAll")
+          .prop("checked",
+            $(this)
+              .closest("table")
+              .find("tbody :checkbox:checked").length ==
+              $(this)
+                .closest("table")
+                .find("tbody :checkbox").length
+          );
+      });
+    });
+
+        </script>
+        <script>
+      $(function () {
+          editormd.markdownToHTML("content", {
+              emoji           : true,
+              taskList        : true,
+              tex             : true,  
+              flowChart       : true,  
+              sequenceDiagram : true,  
+          });
+
+          $(".reference-link").each(function (i,obj) {
+            console.log(obj)
+          })
+      })
+
+        </script>
+    </div>
+{% endblock body %}
