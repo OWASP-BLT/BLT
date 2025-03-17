@@ -1,27 +1,24 @@
+{% extends 'base.html' %}
 {% load i18n %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="blt make organization bug tracking easy">
-        <meta name="keywords"
-              content="blt, bug, tracking, organization, easy, register">
-        <title>{% trans "Register Organization" %}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
-              rel="stylesheet">
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-              integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
-              crossorigin="anonymous"
-              referrerpolicy="no-referrer" />
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body class="min-h-screen flex flex-col">
+{% block title %}
+    {% trans "Register Organization" %}
+{% endblock title %}
+{% block description %}
+    {% trans 'blt make organization bug tracking easy' %}
+{% endblock description %}
+{% block keywords %}
+    {% trans 'blt, bug, tracking, organization, easy, register' %}
+{% endblock keywords %}
+{% block og_title %}
+    {% trans "Register Organization" %}
+{% endblock og_title %}
+{% block og_description %}
+    {% trans 'blt make organization bug tracking easy' %}
+{% endblock og_description %}
+{% block content %}
+    {% include 'includes/sidenav.html' %}
+    <div class=" flex flex-col">
         <div class="flex-1 bg-[#F3F5F7] flex flex-col items-center">
             <form method="post"
                   action="#"
@@ -44,7 +41,7 @@
                                        name="organization_name"
                                        id="organization_name"
                                        autocomplete="organization_name"
-                                       placeholder="Organization Name"
+                                       placeholder="{% trans 'Organization Name' %}"
                                        required
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
@@ -59,7 +56,7 @@
                                        name="organization_url"
                                        id="organization_url"
                                        autocomplete="organization_url"
-                                       placeholder="https://Organization_domain.xyz"
+                                       placeholder="{% trans 'https://Organization_domain.xyz' %}"
                                        required
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
@@ -74,7 +71,7 @@
                                        name="support_email"
                                        id="support_email"
                                        autocomplete="email"
-                                       placeholder="Organization@domain.xyz"
+                                       placeholder="{% trans 'Organization@domain.xyz' %}"
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
                         </div>
@@ -88,7 +85,7 @@
                                        name="twitter_url"
                                        id="twitter_url"
                                        autocomplete="twitter"
-                                       placeholder="https://twitter.com/handle"
+                                       placeholder="{% trans 'https://twitter.com/handle' %}"
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
                         </div>
@@ -102,7 +99,7 @@
                                        name="facebook_url"
                                        id="facebook_url"
                                        autocomplete="facebook"
-                                       placeholder="https://facebook.com/handle"
+                                       placeholder="{% trans 'https://facebook.com/handle' %}"
                                        class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
                             </div>
                         </div>
@@ -182,7 +179,7 @@
                                 class="ml-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex h-8 w-8"
                                 data-dismiss-target="#alert-border-2"
                                 aria-label="Close">
-                            <span class="sr-only">Dismiss</span>
+                            <span class="sr-only">{% trans "Dismiss" %}</span>
                             <svg aria-hidden="true"
                                  class="w-5 h-5"
                                  fill="currentColor"
@@ -210,7 +207,7 @@
                                 class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex h-8 w-8"
                                 data-dismiss-target="#alert-border-2"
                                 aria-label="Close">
-                            <span class="sr-only">Dismiss</span>
+                            <span class="sr-only">{% trans "Dismiss" %}</span>
                             <svg aria-hidden="true"
                                  class="w-5 h-5"
                                  fill="currentColor"
@@ -224,17 +221,9 @@
                 {% endif %}
             {% endfor %}
         {% endif %}
-        <div class="p-4 text-right bg-[#F3F5F7]">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/register_organization.html"
-               class="ml-2 text-gray-600 hover:text-gray-900">
-                <i class="fab fa-github"></i>
-            </a>
-            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1"
-               class="ml-2 text-gray-600 hover:text-gray-900">
-                <i class="fab fa-figma"></i>
-            </a>
-        </div>
-    </body>
+    </div>
+{% endblock %}
+{% block scripts %}
     <script>
     function removeErrors(){
         var errors = document.getElementsByClassName('popup-errors');
@@ -245,7 +234,6 @@
             error.remove();
         });
     }
-
 
     function remove_email_container(){
         let email_container = document.getElementById("email-container");
@@ -268,11 +256,9 @@
         email_container.appendChild(email_container_child_html)
     }
 
-    </script>
-    <script>
     function cancelForm(){
         let deleteForm = document.getElementById("deleteForm");
-        let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
+        let confirmDelete = confirm("{% trans 'Are you sure you want to cancel, your progress would be lost.' %}");
         if (confirmDelete === true){
             deleteForm.submit();
         }
@@ -301,4 +287,4 @@
     }
 
     </script>
-</html>
+{% endblock %}
