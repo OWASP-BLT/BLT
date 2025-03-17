@@ -33,7 +33,8 @@
                 </p>
                 <p class="flex flex-col items-center justify-center text-sm mt-10 text-center">
                     <span>{% trans "Already have an account" %}?</span>
-                    <a href="{% url 'account_login' %}" class="underline text-white">{% trans "Login" %}!</a>
+                    <a href="{% url 'account_login' %}?next={{ request.path }}"
+                       class="underline text-white">{% trans "Login" %}!</a>
                 </p>
                 <p class="mt-6 text-sm text-center text-white">
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline">{% trans "conditions" %}</a>

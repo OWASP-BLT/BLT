@@ -17,7 +17,7 @@ import tweepy
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
+from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -41,6 +41,26 @@ WHITELISTED_IMAGE_TYPES = {
     "jpg": "image/jpeg",
     "png": "image/png",
 }
+
+
+def validate_file_type(request, file_field_name, allowed_extensions, allowed_mime_types=None, max_size=None):
+    file = request.FILES.get(file_field_name)
+    if not file:
+        return True, None  # File is optional; skip validation if not provided
+
+    extension_validator = FileExtensionValidator(allowed_extensions=allowed_extensions)
+    try:
+        extension_validator(file)
+    except ValidationError:
+        return False, f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}"
+
+    if allowed_mime_types and file.content_type not in allowed_mime_types:
+        return False, f"Invalid MIME type. Allowed: {', '.join(allowed_mime_types)}"
+
+    if max_size and file.size > max_size:
+        return False, f"File size exceeds the maximum limit of {max_size} bytes."
+
+    return True, None
 
 
 def get_client_ip(request):

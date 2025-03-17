@@ -69,7 +69,7 @@
                 {% endif %}
                 <form class="flex flex-col space-y-4 login"
                       method="post"
-                      action="{% url 'account_login' %}">
+                      action="{% url 'account_login' %}?next={{ request.path }}">
                     {% csrf_token %}
                     {% if redirect_field_value %}
                         <input type="hidden"
