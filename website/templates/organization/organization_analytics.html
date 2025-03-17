@@ -70,6 +70,19 @@
                     </div>
                 </div>
             </div>
+            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
+                        <i class="fa-solid fa-shield-halved fa-2x text-black"></i>
+                    </div>
+                    <div>
+                        <a href="#security-incidents">
+                            <p class="text-black text-3xl font-bold">{{ security_incidents_summary.total_security_issues }}</p>
+                            <p class="text-black text-md font-extralight">Security Issues</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="flex flex-col lg:flex-row gap-y-5 mt-4">
             <div class="flex flex-col ps-8 gap-5 ">
@@ -262,6 +275,57 @@
                             ${{ money_spent }}
                         </div>
                     {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Security Incidents Summary Section -->
+    <div id="security-incidents" class="w-full px-8 mt-8">
+        <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Security Incidents Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Recent Incidents -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Incidents (30 days)</h3>
+                    <p class="text-3xl font-bold text-red-600">{{ security_incidents_summary.recent_incidents }}</p>
+                </div>
+                
+                <!-- Average Resolution Time -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Avg Resolution Time</h3>
+                    <p class="text-3xl font-bold text-gray-700">
+                        {% if security_incidents_summary.avg_resolution_time %}
+                            {{ security_incidents_summary.avg_resolution_time|timedelta }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <!-- Severity Distribution -->
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Severity Distribution</h3>
+                    <div class="space-y-2">
+                        {% for severity in security_incidents_summary.severity_distribution %}
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Level {{ severity.severity }}</span>
+                                <span class="font-semibold">{{ severity.count }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Top Affected Domains -->
+                <div class="bg-gray-50 p-4 rounded-lg md:col-span-2 lg:col-span-3">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Affected Domains</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {% for domain in security_incidents_summary.top_affected_domains %}
+                            <div class="bg-white p-3 rounded-md shadow-sm">
+                                <p class="font-medium text-gray-800">{{ domain.domain__name }}</p>
+                                <p class="text-sm text-gray-600">{{ domain.count }} incidents</p>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
         </div>
