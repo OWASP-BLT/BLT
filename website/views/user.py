@@ -1078,7 +1078,7 @@ def start_thread(request, user_id):
                 }
 
                 # Render the email content
-                msg_plain = render_to_string("email/new_chat.txt", context)
+                msg_plain = render_to_string("email/new_chat.html", context)
                 msg_html = render_to_string("email/new_chat.html", context)
 
                 # Send the email
