@@ -31,6 +31,11 @@ DOMAIN_NAME = "blt.owasp.org"
 FQDN = "blt.owasp.org"
 DOMAIN_NAME_PREVIOUS = os.environ.get("DOMAIN_NAME_PREVIOUS", "BLT")
 
+# Staging to production redirect settings
+STAGING_DOMAIN = os.environ.get("STAGING_DOMAIN", "blt-staging.herokuapp.com")
+PRODUCTION_DOMAIN = os.environ.get("PRODUCTION_DOMAIN", "blt.owasp.org")
+ENABLE_STAGING_REDIRECT = os.environ.get("ENABLE_STAGING_REDIRECT", "False").lower() == "true"
+
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
 
@@ -107,6 +112,7 @@ SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "blt.middleware.domain.DomainMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
