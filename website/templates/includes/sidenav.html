@@ -613,6 +613,30 @@
                         </div>
                     </div>
                 </form>
+                <!-- Design Link -->
+                <div class="px-2 py-2">
+                    <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">Resources</span>
+                </div>
+                <a href="https://www.figma.com/file/2lfEZKvqcb4WxRPYEwJqeE/OWASP-BLT?type=design&node-id=0%3A1&mode=design&t=Hy0GZXlVxBPHQMxr-1"
+                   class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200"
+                   target="_blank"
+                   rel="noopener noreferrer">
+                    <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c] transition-all duration-200">
+                        <i class="fab fa-figma"></i>
+                    </div>
+                    <span class="truncate">Design</span>
+                </a>
+                <!-- Edit Link -->
+                {% get_current_template as current_template %}
+                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
+                   class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200"
+                   target="_blank"
+                   rel="noopener">
+                    <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md bg-gray-100 text-gray-500 group-hover:bg-[#fde0dd] group-hover:text-[#e74c3c] transition-all duration-200">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <span class="truncate">Edit this page</span>
+                </a>
             </nav>
         </div>
     </div>
