@@ -234,6 +234,7 @@ class OrganizationDashboardAnalyticsView(View):
 
         # Calculate average resolution time
         resolved_issues = security_issues.filter(status="resolved")
+        resolved_issues = resolved_issues.filter(resolved_at__isnull=False)
         avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("resolved_at") - F("created_at")))["avg_time"]
 
         return {
