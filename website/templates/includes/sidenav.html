@@ -111,6 +111,42 @@
                         </a>
                     </div>
                 </div>
+                <!-- Communication Section -->
+                <div>
+                    <div class="px-2 py-2">
+                        <span class="text-sm text-red-500 font-semibold uppercase tracking-wider">Communication</span>
+                    </div>
+                    <div class="ml-2 mt-1 space-y-1">
+                        <a href="{% url 'similarity_scan' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.path == '/similarity_scan/' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.path == '/similarity_scan/' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-clone"></i>
+                            </div>
+                            <span class="truncate">SimilarityScan</span>
+                        </a>
+                        <a href="{% url 'rooms_list' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.path == '/discussion-rooms/' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.path == '/discussion-rooms/' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <span class="truncate">Rooms</span>
+                        </a>
+                        <a href="{% url 'video_call' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.path == '/video_call/' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.path == '/video_call/' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <span class="truncate">Video Call</span>
+                        </a>
+                        <a href="{% url 'banned_apps' %}"
+                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md {% if request.path == '/banned_apps/' %}bg-[#feeae9] text-[#e74c3c]{% else %}text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                            <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center {% if request.path == '/banned_apps/' %}text-[#e74c3c]{% else %}text-gray-500 group-hover:text-[#e74c3c]{% endif %} transition-all duration-200">
+                                <i class="fas fa-ban"></i>
+                            </div>
+                            <span class="truncate">Banned Apps</span>
+                        </a>
+                    </div>
+                </div>
                 <!-- Projects Section -->
                 <div>
                     <div class="px-2 py-2">
