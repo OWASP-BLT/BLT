@@ -2907,6 +2907,9 @@ class BountyPayoutsView(ListView):
                             not existing_issue.assignee or assignee_username != existing_issue.assignee.name
                         ):
                             existing_issue.assignee = assignee_contributor
+                        elif not assignee_username:
+                            # Explicitly set assignee to None if no assignee was found in GitHub data
+                            existing_issue.assignee = None
 
                         # Only update payment info if not already set and GitHub shows it's paid
                         if is_paid and not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
@@ -2951,7 +2954,8 @@ class BountyPayoutsView(ListView):
                         p2p_amount_usd=p2p_amount_usd,
                         user_profile=user_profile,
                         contributor=contributor,
-                        assignee=assignee_contributor,
+                        # Only set assignee if we have a valid assignee_username
+                        assignee=assignee_contributor if assignee_username else None,
                     )
 
                     # Set payment information if available from labels
@@ -3058,6 +3062,99 @@ class BountyPayoutsView(ListView):
                         messages.error(request, "Issue not found")
                     except Exception as e:
                         error_message = "Error deleting issue"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "refresh_assignee":
+            # Refresh assignee for an issue (staff only)
+            if not request.user.is_staff:
+                messages.error(request, "You don't have permission to refresh issue assignees")
+            else:
+                issue_id = request.POST.get("issue_id")
+                if not issue_id:
+                    messages.error(request, "No issue ID provided")
+                else:
+                    try:
+                        # Get the issue from the database
+                        issue = GitHubIssue.objects.get(id=issue_id)
+
+                        # Extract the issue number and repo from the URL
+                        url_parts = issue.url.split("/")
+                        if len(url_parts) >= 7:
+                            repo_owner = url_parts[3]
+                            repo_name = url_parts[4]
+                            issue_number = url_parts[6]
+
+                            # Construct GitHub API URL for the issue
+                            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues/{issue_number}"
+
+                            # Set up headers with GitHub token if available
+                            headers = {}
+                            if settings.GITHUB_TOKEN:
+                                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                            # Make the API request
+                            response = requests.get(api_url, headers=headers, timeout=10)
+
+                            if response.status_code == 200:
+                                issue_data = response.json()
+
+                                # Extract assignee information
+                                assignee_username = None
+                                if issue_data.get("assignee") and issue_data["assignee"].get("login"):
+                                    assignee_username = issue_data["assignee"]["login"]
+                                elif (
+                                    issue_data.get("assignees")
+                                    and len(issue_data["assignees"]) > 0
+                                    and issue_data["assignees"][0].get("login")
+                                ):
+                                    assignee_username = issue_data["assignees"][0]["login"]
+
+                                # Update the assignee
+                                if assignee_username:
+                                    # Try to find or create the contributor
+                                    from website.models import Contributor
+
+                                    assignee_contributor = Contributor.objects.filter(name=assignee_username).first()
+
+                                    if not assignee_contributor:
+                                        # If we have the ID from the API response, use it
+                                        github_id = None
+                                        if issue_data.get("assignee") and issue_data["assignee"].get("id"):
+                                            github_id = issue_data["assignee"]["id"]
+                                            avatar_url = issue_data["assignee"].get("avatar_url", "")
+
+                                            # Create contributor
+                                            assignee_contributor = Contributor.objects.create(
+                                                name=assignee_username,
+                                                github_id=github_id,
+                                                github_url=f"https://github.com/{assignee_username}",
+                                                avatar_url=avatar_url,
+                                                contributor_type="User",
+                                                contributions=0,
+                                            )
+
+                                    # Update the issue with the assignee
+                                    issue.assignee = assignee_contributor
+                                    issue.save()
+                                    msg = f"Updated assignee to {assignee_username} for issue #{issue_number}"
+                                    messages.success(request, msg)
+                                else:
+                                    # Clear the assignee if none found
+                                    issue.assignee = None
+                                    issue.save()
+                                    msg = f"Cleared assignee for issue #{issue_number} (no assignee on GitHub)"
+                                    messages.success(request, msg)
+                            else:
+                                msg = f"Failed to fetch issue from GitHub API: {response.status_code}"
+                                messages.error(request, msg)
+                        else:
+                            msg = "Invalid issue URL format"
+                            messages.error(request, msg)
+
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error refreshing assignee"
                         messages.error(request, f"{error_message}: {str(e)}")
 
         return redirect("bounty_payouts")
