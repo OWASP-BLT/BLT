@@ -2766,6 +2766,11 @@ class BountyPayoutsView(ListView):
         action = request.POST.get("action")
 
         if action == "refresh_issues":
+            # Staff permission check for refreshing issues
+            if not request.user.is_authenticated or not request.user.is_staff:
+                messages.error(request, "You don't have permission to perform this action.")
+                return redirect("bounty_payouts")
+
             # Fetch closed issues with $5 tag from GitHub by default
             try:
                 issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
@@ -2969,6 +2974,10 @@ class BountyPayoutsView(ListView):
 
         elif action == "pay_bounty":
             # Process payment for an issue
+            # Staff permission check
+            if not request.user.is_authenticated or not request.user.is_staff:
+                messages.error(request, "You don't have permission to perform this action.")
+                return redirect("bounty_payouts")
             tx_id = request.POST.get("tx_id")
             issue_id = request.POST.get("issue_id")
             payment_method = request.POST.get("payment_method")
