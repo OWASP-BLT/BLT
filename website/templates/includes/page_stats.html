@@ -17,10 +17,10 @@
     </div>
     <!-- Stats Content -->
     <div class="bg-white shadow-lg rounded-lg p-3 w-64">
-        <div class="text-sm font-medium text-gray-700 mb-2">Page Statistics</div>
-        <!-- Sparkline Chart -->
+        <div class="text-sm font-medium text-gray-700 mb-2">Page Statistics (Last 30 Days)</div>
+        <!-- Bar Chart -->
         <div class="mb-3">
-            <canvas id="sparklineChart" height="40"></canvas>
+            <canvas id="pageViewsChart" height="100"></canvas>
         </div>
         <!-- Vote Buttons -->
         <div class="flex justify-between items-center">
@@ -52,132 +52,189 @@
     </div>
 </div>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // Function to initialize chart when Chart.js is available
-    function initializeChart() {
-      if (typeof Chart === 'undefined') {
-        console.log('Chart.js not yet loaded, retrying...');
-        setTimeout(initializeChart, 100);
-        return;
-      }
-      
-      // Set up the sparkline chart
-      const ctx = document.getElementById('sparklineChart').getContext('2d');
-      const pageViews = {{ page_views|safe }};
-      
-      const sparklineChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: Array.from({ length: pageViews.length }, (_, i) => i + 1),
-          datasets: [{
-            label: 'Page Views',
-            data: pageViews,
-            borderColor: '#e74c3c',
-            backgroundColor: 'rgba(231, 76, 60, 0.1)',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: true,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              enabled: true
-            }
-          },
-          scales: {
-            x: {
-              display: false
-            },
-            y: {
-              display: false,
-              beginAtZero: true
-            }
-          }
+document.addEventListener('DOMContentLoaded', function() {
+    const initializeChart = function() {
+        // Wait for Chart.js to be available
+        if (typeof Chart === 'undefined') {
+            console.log('Chart.js not yet loaded, retrying...');
+            setTimeout(initializeChart, 100);
+            return;
         }
-      });
-    }
+        
+        const ctx = document.getElementById('pageViewsChart').getContext('2d');
+        
+        // Safely parse the page views data from Django template
+        // Safely parse the page views data from Django template
+let pageViewsData;
+try {
+  
     
-    // Start initialization process
+    // Try to parse the data, ensuring it's an array of numbers
+    pageViewsData = JSON.parse('{{ page_views|safe|escapejs }}');
+    console.log(pageViewsData);
+    
+    // Ensure the data consists of numbers
+    pageViewsData = pageViewsData.map(count => Number(count) || 0);
+    
+} catch (e) {
+    console.error('Failed to parse page views data:', e);
+    pageViewsData = Array(30).fill(0);
+}
+        // Generate labels for the last 30 days (day numbers only)
+        const labels = [];
+        const today = new Date();
+        for (let i = 29; i >= 0; i--) {
+            const date = new Date(today);
+            date.setDate(date.getDate() - i);
+            labels.push(date.getDate());
+        }
+        
+        // Create the chart
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Unique Views',
+                    data: pageViewsData,
+                    backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                    borderColor: '#e74c3c',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                const date = new Date(today);
+                                date.setDate(date.getDate() - (29 - tooltipItems[0].dataIndex));
+                                return date.toLocaleDateString();
+                            },
+                            label: function(context) {
+                                const count = context.raw || 0;
+                                return count + ' view' + (count !== 1 ? 's' : '');
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(200, 200, 200, 0.2)'
+                        },
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+    };
+    
+    // Initialize the chart
     initializeChart();
     
-    // Handle voting
+    // Set up vote functionality
+    const pageStatsContainer = document.getElementById('pageStatsContainer');
     const upvoteBtn = document.getElementById('upvoteBtn');
     const downvoteBtn = document.getElementById('downvoteBtn');
     const upvoteCount = document.getElementById('upvoteCount');
     const downvoteCount = document.getElementById('downvoteCount');
     const currentTemplate = '{{ current_template }}';
-    const pageStatsContainer = document.getElementById('pageStatsContainer');
     
-    // Mobile touch support
-    pageStatsContainer.addEventListener('touchstart', function() {
-      if (pageStatsContainer.classList.contains('translate-y-0')) {
-        pageStatsContainer.classList.remove('translate-y-0');
-        pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
-      } else {
-        pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
-        pageStatsContainer.classList.add('translate-y-0');
-      }
+    // Add touch support for mobile devices
+    pageStatsContainer.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        if (pageStatsContainer.classList.contains('translate-y-0')) {
+            pageStatsContainer.classList.remove('translate-y-0');
+            pageStatsContainer.classList.add('translate-y-[calc(100%-40px)]');
+        } else {
+            pageStatsContainer.classList.remove('translate-y-[calc(100%-40px)]');
+            pageStatsContainer.classList.add('translate-y-0');
+        }
     });
     
-    // Get CSRF token from cookie
+    // CSRF token helper
     function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
         }
-      }
-      return cookieValue;
+        return cookieValue;
     }
+    
     const csrftoken = getCookie('csrftoken');
     
+    // Vote submission handler
     function submitVote(voteType) {
-      const formData = new FormData();
-      formData.append('template_name', currentTemplate);
-      formData.append('vote_type', voteType);
-      
-      fetch('{% url "page_vote" %}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': csrftoken
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          upvoteCount.textContent = data.upvotes;
-          downvoteCount.textContent = data.downvotes;
-        } else {
-          console.error('Error:', data.message);
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-      });
+        const formData = new FormData();
+        formData.append('template_name', currentTemplate);
+        formData.append('vote_type', voteType);
+        
+        fetch('{% url "page_vote" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrftoken
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                upvoteCount.textContent = data.upvotes;
+                downvoteCount.textContent = data.downvotes;
+            } else {
+                console.error('Error:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting vote:', error);
+        });
     }
     
+    // Event listeners for vote buttons
     upvoteBtn.addEventListener('click', function(e) {
-      e.stopPropagation(); // Prevent triggering container's click event
-      submitVote('upvote');
+        e.stopPropagation();
+        submitVote('upvote');
     });
     
     downvoteBtn.addEventListener('click', function(e) {
-      e.stopPropagation(); // Prevent triggering container's click event
-      submitVote('downvote');
+        e.stopPropagation();
+        submitVote('downvote');
     });
-  });
+});
 </script>
