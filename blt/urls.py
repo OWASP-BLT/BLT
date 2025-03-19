@@ -189,6 +189,7 @@ from website.views.issue import (
     vote_count,
 )
 from website.views.organization import (
+    BountyPayoutsView,
     CreateHunt,
     DomainDetailView,
     DomainList,
@@ -633,6 +634,7 @@ urlpatterns = [
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
+    path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
