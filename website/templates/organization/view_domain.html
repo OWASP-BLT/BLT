@@ -398,6 +398,8 @@
                 </div>
             </div>
         </div>
+    {% endblock content %}
+    {% block scripts %}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
             const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart|escapejs | safe }}');
@@ -438,5 +440,4 @@
             );
         });
         </script>
-    </body>
-{% endblock content %}
+    {% endblock scripts %}
