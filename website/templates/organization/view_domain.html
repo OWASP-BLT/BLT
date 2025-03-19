@@ -1,26 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="description"
-              content="View domain details, including domain name, URL, organization information, and social media links. Keep track of all your domains easily.">
-        <meta name="keywords"
-              content="view domain, domain details, domain information, domain URL, organization information, social media links">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
-                integrity="sha384-zVyRZ9eQ45iRS7ZRZQSFKGJpypyxssU6clBCysSqzjmdGWNn8//uC8dh9DabpAbK"
-                crossorigin="anonymous"></script>
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-              integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
-              crossorigin="anonymous"
-              referrerpolicy="no-referrer" />
-        <title>Domain Info</title>
-    </head>
-    <body>
+{% extends "base.html" %}
+{% block head %}
+    <title>Domain Info - {{ name }}</title>
+{% endblock head %}
+{% block meta %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description"
+          content="View domain details, including domain name, URL, organization information, and social media links. Keep track of all your domains easily.">
+    <meta name="keywords"
+          content="view domain, domain details, domain information, domain URL, organization information, social media links">
+{% endblock meta %}
+{% block scripts %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
+            integrity="sha384-zVyRZ9eQ45iRS7ZRZQSFKGJpypyxssU6clBCysSqzjmdGWNn8//uC8dh9DabpAbK"
+            crossorigin="anonymous"></script>
+{% endblock scripts %}
+{% block styles %}
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+          integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer" />
+{% endblock styles %}
+{% block title %}
+    <title>Domain Info</title>
+{% endblock title %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div>
         <div class="fixed bottom-2.5 right-3.75">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/view_domains.html">
                 <i class="fab fa-github"></i>
@@ -432,4 +442,4 @@
         });
         </script>
     </body>
-</html>
+{% endblock content %}
