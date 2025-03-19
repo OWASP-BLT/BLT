@@ -2967,12 +2967,11 @@ class BountyPayoutsView(ListView):
                     count += 1
 
                 msg = f"Successfully added {count} new closed issues with bounty."
-                messages.success(request, msg)
-            except Exception as e:
-                error_message = "Error fetching issues from GitHub"
-                messages.error(request, f"{error_message}: {str(e)}")
-
-        elif action == "pay_bounty":
+                elif action == "pay_bounty":
+                # Process payment for an issue
+                if not request.user.is_superuser:
+                messages.error(request, "You don't have permission to record payments")
+                return redirect("bounty_payouts")
             # Process payment for an issue
             # Staff permission check
             if not request.user.is_authenticated or not request.user.is_staff:
