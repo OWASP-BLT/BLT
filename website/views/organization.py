@@ -2681,8 +2681,9 @@ class BountyPayoutsView(ListView):
         elif payment_status == "unpaid":
             queryset = queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
 
-        # Return ordered queryset
-        return queryset.order_by("-created_at")
+        # Return ordered queryset - order by closed_at date (most recent first)
+        # This will show issues that were closed most recently at the top
+        return queryset.order_by("-closed_at")
 
     def get_context_data(self, **kwargs):
         """
