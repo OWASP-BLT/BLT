@@ -128,9 +128,9 @@ class IPRestrictMiddleware:
         """
         if not ip:
             return
-        
+
         await sync_to_async(self._record_ip)(ip, agent, path)
-            
+
     def _record_ip(self, ip, agent, path):
         """
         Helper method to record IP information
@@ -196,7 +196,7 @@ class IPRestrictMiddleware:
 
         # Record IP information
         await self.record_ip_async(ip, agent, request.path)
-            
+
         # Continue with the request
         response = await self.get_response(request)
         return response
@@ -236,6 +236,6 @@ class IPRestrictMiddleware:
         # Record IP information
         if ip:
             self._record_ip(ip, agent, request.path)
-            
+
         # Continue with the request
         return self.get_response(request)
