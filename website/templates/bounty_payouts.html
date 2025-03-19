@@ -267,7 +267,7 @@
                                             </div>
                                         {% else %}
                                             <div class="text-sm font-medium text-red-600 mb-2">Unpaid</div>
-                                            {% if request.user.is_staff or request.user.is_superuser %}
+                                            {% if request.user.is_superuser %}
                                                 <form method="post" action="" class="mt-1 flex flex-col gap-1">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="action" value="pay_bounty">
@@ -343,6 +343,12 @@
                                                         });
                                                     });
                                                 </script>
+                                            {% else %}
+                                                {% if request.user.is_staff %}
+                                                    <div class="text-xs text-gray-500 mt-1">
+                                                        <i class="fa fa-lock mr-1"></i> Only superusers can record payments
+                                                    </div>
+                                                {% endif %}
                                             {% endif %}
                                         {% endif %}
                                     </td>
