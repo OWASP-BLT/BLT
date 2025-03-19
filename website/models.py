@@ -1674,6 +1674,13 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    assignee = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues_assignee",
+    )
     # Peer-to-Peer Payment Fields
     p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
     p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -1747,6 +1754,75 @@ class GitHubIssue(models.Model):
             logger = logging.getLogger(__name__)
             logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
             return []
+
+    def add_comment(self, comment_text):
+        """
+        Adds a comment to this GitHub issue via the GitHub API.
+        Returns True if successful, False otherwise.
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for adding comments
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        data = {"body": comment_text}
+
+        try:
+            response = requests.post(api_url, headers=headers, json=data)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            # Log the error but don't raise it
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
+            return False
+
+    def add_labels(self, labels):
+        """
+        Adds labels to this GitHub issue via the GitHub API.
+        Parameters:
+            labels: List of label strings to add
+        Returns True if successful, False otherwise.
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for adding labels
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        data = {"labels": labels}
+
+        try:
+            response = requests.post(api_url, headers=headers, json=data)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            # Log the error but don't raise it
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
+            return False
 
 
 class BaconEarning(models.Model):

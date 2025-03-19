@@ -2657,3 +2657,407 @@ def room_messages_api(request, room_id):
         )
 
     return JsonResponse({"success": True, "count": room.messages.count(), "messages": message_data})
+
+
+class BountyPayoutsView(ListView):
+    model = GitHubIssue
+    template_name = "bounty_payouts.html"
+    context_object_name = "issues"
+    paginate_by = 20
+
+    def get_queryset(self):
+        """
+        Filter the queryset to only show dollar-tagged closed issues,
+        with optional payment status filtering.
+        """
+        # Start with the base queryset of dollar-tagged closed issues
+        queryset = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
+
+        # Apply payment status filter if specified
+        payment_status = self.request.GET.get("payment_status", "all")
+
+        if payment_status == "paid":
+            queryset = queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+        elif payment_status == "unpaid":
+            queryset = queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
+
+        # Return ordered queryset
+        return queryset.order_by("-created_at")
+
+    def get_context_data(self, **kwargs):
+        """
+        Add additional context data for the template:
+        - Count of issues by state and payment status
+        - Current filters
+        """
+        context = super().get_context_data(**kwargs)
+
+        # Base queryset for dollar-tagged issues (GitHub issues with bounties)
+        base_queryset = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
+
+        # Get payment status filter from request or default to "all"
+        payment_status = self.request.GET.get("payment_status", "all")
+
+        # Apply payment status filters to the queryset
+        if payment_status == "paid":
+            filtered_queryset = base_queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+        elif payment_status == "unpaid":
+            filtered_queryset = base_queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
+        else:  # 'all'
+            filtered_queryset = base_queryset
+
+        # Calculate counts for the stats
+        total_count = filtered_queryset.count()
+        paid_count = base_queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False)).count()
+        unpaid_count = base_queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True).count()
+
+        # Add all context data
+        context.update(
+            {
+                "total_count": total_count,
+                "paid_count": paid_count,
+                "unpaid_count": unpaid_count,
+                "current_payment_status": payment_status,
+            }
+        )
+
+        return context
+
+    def github_issues_with_bounties(self, label="$5", issue_state="closed", page=1, per_page=100):
+        """
+        Fetch GitHub issues with a specific bounty label directly from GitHub API
+        Default to closed issues instead of open, and fetch 100 per page without date limitations
+        """
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
+        cached_issues = cache.get(cache_key)
+
+        if cached_issues:
+            return cached_issues
+
+        # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
+        encoded_label = label.replace("$", "%24")
+        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
+        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+
+        headers = {}
+        if settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                issues = data.get("items", [])
+
+                # Cache the results for 30 minutes
+                cache.set(cache_key, issues, 60 * 30)
+
+                return issues
+            else:
+                # Log the error response from GitHub
+                logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
+                return []
+        except Exception as e:
+            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            return []
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests for refreshing issues or processing payments"""
+        action = request.POST.get("action")
+
+        if action == "refresh_issues":
+            # Staff permission check for refreshing issues
+            if not request.user.is_authenticated or not request.user.is_staff:
+                messages.error(request, "You don't have permission to perform this action.")
+                return redirect("bounty_payouts")
+
+            # Fetch closed issues with $5 tag from GitHub by default
+            try:
+                issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
+                count = 0
+
+                for issue_data in issues:
+                    github_url = issue_data["html_url"]
+
+                    # Extract owner, repo, and issue number from URL
+                    parts = github_url.split("/")
+                    owner = parts[3]
+                    repo_name = parts[4]
+
+                    # Find or create the repo
+                    repo_url = f"https://github.com/{owner}/{repo_name}"
+                    repo, created = Repo.objects.get_or_create(
+                        repo_url=repo_url,
+                        defaults={
+                            "name": repo_name,
+                            "slug": f"{owner}-{repo_name}",
+                        },
+                    )
+
+                    # Set bounty amount to exactly $5
+                    p2p_amount_usd = 5
+
+                    # Check for payment-related labels
+                    sponsors_tx_id = None
+                    bch_tx_id = None
+                    is_paid = False
+
+                    for label in issue_data.get("labels", []):
+                        label_name = label.get("name", "").lower()
+                        if "paid" in label_name:
+                            is_paid = True
+                        if "sponsors" in label_name:
+                            sponsors_tx_id = "from_github_label"
+                        if "bch" in label_name:
+                            bch_tx_id = "from_github_label"
+
+                    # Get GitHub username from the issue (if available)
+                    github_username = None
+                    if issue_data.get("user") and issue_data["user"].get("login"):
+                        github_username = issue_data["user"]["login"]
+
+                    # Get assignee if available
+                    assignee_username = None
+                    assignee_contributor = None
+                    if issue_data.get("assignee") and issue_data["assignee"].get("login"):
+                        assignee_username = issue_data["assignee"]["login"]
+                    elif (
+                        issue_data.get("assignees")
+                        and len(issue_data["assignees"]) > 0
+                        and issue_data["assignees"][0].get("login")
+                    ):
+                        assignee_username = issue_data["assignees"][0]["login"]
+
+                    # Create or get Contributor for assignee if username exists
+                    if assignee_username:
+                        from website.models import Contributor
+
+                        try:
+                            # Try to get the contributor by name first
+                            assignee_contributor = Contributor.objects.filter(name=assignee_username).first()
+
+                            if not assignee_contributor:
+                                # Need to get or generate a valid github_id
+                                github_id = None
+
+                                # If we have the ID from the API response, use it
+                                if issue_data.get("assignee") and issue_data["assignee"].get("id"):
+                                    github_id = issue_data["assignee"]["id"]
+                                else:
+                                    # Try to fetch user data from GitHub API to get ID
+                                    headers = {}
+                                    if settings.GITHUB_TOKEN:
+                                        headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                                    github_api_url = f"https://api.github.com/users/{assignee_username}"
+                                    try:
+                                        user_response = requests.get(github_api_url, headers=headers, timeout=5)
+                                        if user_response.status_code == 200:
+                                            user_data = user_response.json()
+                                            github_id = user_data.get("id")
+                                            avatar_url = user_data.get("avatar_url", "")
+
+                                            # Create the contributor with proper data
+                                            assignee_contributor = Contributor.objects.create(
+                                                name=assignee_username,
+                                                github_id=github_id,
+                                                github_url=f"https://github.com/{assignee_username}",
+                                                avatar_url=avatar_url,
+                                                contributor_type="User",
+                                                contributions=0,
+                                            )
+                                        else:
+                                            # If API call fails, log the error
+                                            status_code = user_response.status_code
+                                            error_msg = "Failed to fetch GitHub user data"
+                                            logger.error(f"{error_msg} for {assignee_username}: {status_code}")
+                                    except Exception as e:
+                                        error_msg = "Error fetching GitHub user data"
+                                        logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                        except Exception as e:
+                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            assignee_contributor = None
+
+                    # Try to find a matching user profile for the GitHub username
+                    user_profile = None
+                    if github_username:
+                        from website.models import UserProfile
+
+                        # First try to match by the github_url field
+                        github_url_to_match = f"https://github.com/{github_username}"
+                        user_profile = UserProfile.objects.filter(github_url=github_url_to_match).first()
+
+                        # If not found, try to match by username directly
+                        if not user_profile:
+                            from django.contrib.auth.models import User
+
+                            user = User.objects.filter(username__iexact=github_username).first()
+                            if user:
+                                user_profile = UserProfile.objects.filter(user=user).first()
+
+                    # Skip if issue already exists - update payment status instead
+                    existing_issue = GitHubIssue.objects.filter(url=github_url).first()
+                    if existing_issue:
+                        # Update user profile if we found a match and it's not already set
+                        if user_profile and not existing_issue.user_profile:
+                            existing_issue.user_profile = user_profile
+
+                        # Update assignee if different
+                        if assignee_contributor and (
+                            not existing_issue.assignee or assignee_username != existing_issue.assignee.name
+                        ):
+                            existing_issue.assignee = assignee_contributor
+
+                        # Only update payment info if not already set and GitHub shows it's paid
+                        if is_paid and not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
+                            if sponsors_tx_id:
+                                existing_issue.sponsors_tx_id = sponsors_tx_id
+                                existing_issue.p2p_payment_created_at = timezone.now()
+                            elif bch_tx_id:
+                                existing_issue.bch_tx_id = bch_tx_id
+                                existing_issue.p2p_payment_created_at = timezone.now()
+
+                        existing_issue.save()
+                        continue
+
+                    # Determine if it's a PR or an issue
+                    is_pr = "pull_request" in issue_data
+                    issue_type = "pull_request" if is_pr else "issue"
+
+                    # Create the contributor if GitHub username exists but no matching user profile
+                    contributor = None
+                    if github_username and not user_profile:
+                        from website.models import Contributor
+
+                        contributor, _ = Contributor.objects.get_or_create(
+                            name=github_username, defaults={"name": github_username}
+                        )
+
+                    # Create the GitHub issue
+                    new_issue = GitHubIssue(
+                        issue_id=issue_data["id"],
+                        title=issue_data["title"],
+                        body=issue_data.get("body", ""),
+                        state=issue_data["state"],
+                        type=issue_type,
+                        created_at=issue_data["created_at"],
+                        updated_at=issue_data["updated_at"],
+                        closed_at=issue_data.get("closed_at"),
+                        merged_at=None,
+                        is_merged=False,
+                        url=github_url,
+                        repo=repo,
+                        has_dollar_tag=True,
+                        p2p_amount_usd=p2p_amount_usd,
+                        user_profile=user_profile,
+                        contributor=contributor,
+                        assignee=assignee_contributor,
+                    )
+
+                    # Set payment information if available from labels
+                    if is_paid:
+                        if sponsors_tx_id:
+                            new_issue.sponsors_tx_id = sponsors_tx_id
+                            new_issue.p2p_payment_created_at = timezone.now()
+                        elif bch_tx_id:
+                            new_issue.bch_tx_id = bch_tx_id
+                            new_issue.p2p_payment_created_at = timezone.now()
+
+                    new_issue.save()
+                    count += 1
+
+                msg = f"Successfully added {count} new closed issues with bounty."
+                messages.success(request, msg)
+            except Exception as e:
+                error_message = "Error fetching issues from GitHub"
+                messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "pay_bounty":
+            # Process payment for an issue
+            # Superuser permission check
+            if not request.user.is_authenticated or not request.user.is_superuser:
+                messages.error(request, "Only superusers can record payments.")
+                return redirect("bounty_payouts")
+
+            tx_id = request.POST.get("tx_id")
+            issue_id = request.POST.get("issue_id")
+            payment_method = request.POST.get("payment_method")
+
+            if not (tx_id and issue_id and payment_method):
+                messages.error(request, "Missing required payment information")
+            elif payment_method not in ["sponsors", "bch"]:
+                messages.error(request, "Invalid payment method")
+            else:
+                try:
+                    issue = GitHubIssue.objects.get(id=issue_id)
+
+                    if payment_method == "sponsors":
+                        issue.sponsors_tx_id = tx_id
+                        issue.sent_by_user = request.user
+                        issue.p2p_payment_created_at = timezone.now()
+
+                        # Add GitHub Sponsors label and payment comment
+                        labels_to_add = ["paid", "sponsors"]
+                        comment_text = f"This issue has been paid via GitHub Sponsors. Transaction ID: {tx_id}"
+                    elif payment_method == "bch":
+                        issue.bch_tx_id = tx_id
+                        issue.sent_by_user = request.user
+                        issue.p2p_payment_created_at = timezone.now()
+
+                        # Add BCH label and payment comment
+                        labels_to_add = ["paid", "bch"]
+                        # Add link to BCH transaction explorer
+                        comment_text = (
+                            f"This issue has been paid via Bitcoin Cash. Transaction ID: {tx_id}\n"
+                            f"View transaction: https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
+                        )
+
+                    # Save the issue first
+                    issue.save()
+
+                    # Add labels and comment to GitHub
+                    labels_success = issue.add_labels(labels_to_add)
+                    comment_success = issue.add_comment(comment_text)
+
+                    # Create success message
+                    success_message = f"Payment recorded for issue #{issue.issue_id}"
+                    if labels_success:
+                        success_message += ". Labels added on GitHub"
+                    if comment_success:
+                        success_message += ". Comment added on GitHub"
+
+                    messages.success(request, success_message)
+
+                    # If we couldn't update GitHub, log it but don't error to the user
+                    if not (labels_success and comment_success):
+                        logger.warning(
+                            f"Could not fully update GitHub for issue {issue.issue_id}. "
+                            f"Labels success: {labels_success}, Comment success: {comment_success}"
+                        )
+                except GitHubIssue.DoesNotExist:
+                    messages.error(request, "Issue not found")
+                except Exception as e:
+                    error_message = "Error recording payment"
+                    messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "delete_issue":
+            # Delete an issue (superuser only)
+            if not request.user.is_superuser:
+                messages.error(request, "You don't have permission to delete issues")
+            else:
+                issue_id = request.POST.get("issue_id")
+                if not issue_id:
+                    messages.error(request, "No issue ID provided")
+                else:
+                    try:
+                        issue = GitHubIssue.objects.get(id=issue_id)
+                        issue_title = issue.title
+                        issue.delete()
+                        messages.success(request, f"Successfully deleted issue: {issue_title}")
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error deleting issue"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        return redirect("bounty_payouts")
