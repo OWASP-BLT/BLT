@@ -177,9 +177,97 @@
                                                                 </svg>
                                                             </button>
                                                         </form>
+                                                        <!-- Pull request refresh button -->
+                                                        <form method="post" action="" class="ml-2 inline">
+                                                            {% csrf_token %}
+                                                            <input type="hidden" name="action" value="refresh_pull_requests">
+                                                            <input type="hidden" name="issue_id" value="{{ issue.id }}">
+                                                            <button type="submit"
+                                                                    class="text-blue-600 hover:text-[#e74c3c] transition-colors"
+                                                                    title="Refresh linked pull requests from GitHub">
+                                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                                     class="h-4 w-4"
+                                                                     fill="none"
+                                                                     viewBox="0 0 24 24"
+                                                                     stroke="currentColor">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                                                </svg>
+                                                            </button>
+                                                        </form>
                                                     {% endif %}
                                                 </div>
                                                 <div class="text-xs text-gray-500">{{ issue.repo.name }} • {{ issue.created_at|date:"M d, Y" }}</div>
+                                                <!-- Linked Pull Requests Section -->
+                                                {% if issue.linked_pull_requests.all %}
+                                                    <div class="mt-2 text-xs">
+                                                        <div class="text-gray-700 font-medium mb-1">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 class="h-3.5 w-3.5 inline-block -mt-0.5 text-[#e74c3c]"
+                                                                 fill="none"
+                                                                 viewBox="0 0 24 24"
+                                                                 stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                                            </svg>
+                                                            Linked PRs:
+                                                        </div>
+                                                        <ul class="pl-5 space-y-1">
+                                                            {% for pr in issue.linked_pull_requests.all %}
+                                                                <li class="flex items-center">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                         class="h-3 w-3 mr-1 text-purple-600"
+                                                                         fill="none"
+                                                                         viewBox="0 0 24 24"
+                                                                         stroke="currentColor">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                                                    </svg>
+                                                                    <a href="{{ pr.url }}"
+                                                                       target="_blank"
+                                                                       class="text-blue-600 hover:text-[#e74c3c] truncate">
+                                                                        #{{ pr.issue_id }}: {{ pr.title|truncatechars:40 }}
+                                                                        <span class="text-gray-500 font-normal">
+                                                                            by
+                                                                            {% if pr.contributor %}
+                                                                                {{ pr.contributor.name }}
+                                                                            {% elif pr.user_profile %}
+                                                                                {{ pr.user_profile.user.username }}
+                                                                            {% else %}
+                                                                                Unknown
+                                                                            {% endif %}
+                                                                        </span>
+                                                                    </a>
+                                                                    {% if pr.is_merged %}
+                                                                        <span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 rounded text-[10px] font-medium">Merged</span>
+                                                                    {% elif pr.state == 'closed' %}
+                                                                        <span class="ml-1 px-1.5 py-0.5 bg-red-100 text-red-800 rounded text-[10px] font-medium">Closed</span>
+                                                                    {% else %}
+                                                                        <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded text-[10px] font-medium">Open</span>
+                                                                    {% endif %}
+                                                                </li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% elif issue.type == 'issue' and request.user.is_staff %}
+                                                    <div class="mt-2 text-xs">
+                                                        <div class="text-gray-500 italic flex items-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 class="h-3.5 w-3.5 mr-1 text-gray-400"
+                                                                 fill="none"
+                                                                 viewBox="0 0 24 24"
+                                                                 stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            No linked pull requests found. Click the
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 class="inline-block h-3.5 w-3.5 text-[#e74c3c]"
+                                                                 fill="none"
+                                                                 viewBox="0 0 24 24"
+                                                                 stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                                            </svg>
+                                                            button to fetch linked PRs from GitHub.
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
                                                 <!-- Tags/Labels -->
                                                 <div class="mt-1 flex flex-wrap gap-1">
                                                     <!-- Removed unnecessary tags: closed, issue, $5 -->
@@ -194,17 +282,17 @@
                                         <div class="flex items-center">
                                             {% if issue.assignee %}
                                                 <div class="mr-3">
-                                                    <img src="https://github.com/{{ issue.assignee|escape }}.png"
-                                                         alt="{{ issue.assignee|escape }}"
+                                                    <img src="{{ issue.assignee.avatar_url }}"
+                                                         alt="{{ issue.assignee.name }}"
                                                          class="rounded-full"
                                                          width="40"
                                                          height="40">
                                                 </div>
                                                 <div>
-                                                    <a href="https://github.com/{{ issue.assignee|escape }}"
+                                                    <a href="{{ issue.assignee.github_url }}"
                                                        target="_blank"
                                                        class="font-medium text-blue-600 hover:underline">
-                                                        {{ issue.assignee|escape }}
+                                                        {{ issue.assignee.name }}
                                                     </a>
                                                     {% if issue.user_profile and issue.user_profile.bch_address %}
                                                         <div class="text-xs text-gray-600 mt-1">
@@ -213,59 +301,6 @@
                                                                   title="{{ issue.user_profile.bch_address|escape }}">{{ issue.user_profile.bch_address|slice:":15"|escape }}...</span>
                                                             <button class="copy-btn text-blue-500 hover:text-blue-700 ml-1"
                                                                     onclick="copyBchAddress('{{ issue.user_profile.bch_address|escapejs }}')">
-                                                                <i class="fa fa-copy"></i>
-                                                            </button>
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% elif issue.user_profile and issue.user_profile.user.username %}
-                                                {% load gravatar %}
-                                                <div class="mr-3">
-                                                    <img src="{% gravatar issue.user_profile.user.email 40 %}"
-                                                         alt="{{ issue.user_profile.user.username|escape }}"
-                                                         class="rounded-full"
-                                                         width="40"
-                                                         height="40">
-                                                </div>
-                                                <div>
-                                                    <a href="https://github.com/{{ issue.user_profile.user.username|escape }}"
-                                                       target="_blank"
-                                                       class="font-medium text-blue-600 hover:underline">
-                                                        {{ issue.user_profile.user.username|escape }}
-                                                    </a>
-                                                    {% if issue.user_profile.bch_address %}
-                                                        <div class="text-xs text-gray-600 mt-1">
-                                                            <i class="fa fa-bitcoin" aria-hidden="true"></i>
-                                                            <span class="bch-address"
-                                                                  title="{{ issue.user_profile.bch_address|escape }}">{{ issue.user_profile.bch_address|slice:":15"|escape }}...</span>
-                                                            <button class="copy-btn text-blue-500 hover:text-blue-700 ml-1"
-                                                                    onclick="copyBchAddress('{{ issue.user_profile.bch_address|escapejs }}')">
-                                                                <i class="fa fa-copy"></i>
-                                                            </button>
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                            {% elif issue.contributor %}
-                                                <div class="mr-3">
-                                                    <img src="https://github.com/{{ issue.contributor.name|escape }}.png"
-                                                         alt="{{ issue.contributor.name|escape }}"
-                                                         class="rounded-full"
-                                                         width="40"
-                                                         height="40">
-                                                </div>
-                                                <div>
-                                                    <a href="https://github.com/{{ issue.contributor.name|escape }}"
-                                                       target="_blank"
-                                                       class="font-medium text-blue-600 hover:underline">
-                                                        {{ issue.contributor.name|escape }}
-                                                    </a>
-                                                    {% if issue.contributor.bch_address %}
-                                                        <div class="text-xs text-gray-600 mt-1">
-                                                            <i class="fa fa-bitcoin" aria-hidden="true"></i>
-                                                            <span class="bch-address"
-                                                                  title="{{ issue.contributor.bch_address|escape }}">{{ issue.contributor.bch_address|slice:":15"|escape }}...</span>
-                                                            <button class="copy-btn text-blue-500 hover:text-blue-700 ml-1"
-                                                                    onclick="copyBchAddress('{{ issue.contributor.bch_address|escapejs }}')">
                                                                 <i class="fa fa-copy"></i>
                                                             </button>
                                                         </div>

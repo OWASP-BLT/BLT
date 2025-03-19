@@ -505,7 +505,7 @@ class Listbounties(TemplateView):
                         prs = GitHubIssue.objects.filter(
                             type="pull_request",
                             is_merged=True,
-                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
                             + str(issue_number),
                         ).order_by("-merged_at")[:3]
 
@@ -612,7 +612,7 @@ def load_more_issues(request):
                     prs = GitHubIssue.objects.filter(
                         type="pull_request",
                         is_merged=True,
-                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]fixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
                         + str(issue_number),
                     ).order_by("-merged_at")[:3]
 
@@ -2681,6 +2681,9 @@ class BountyPayoutsView(ListView):
         elif payment_status == "unpaid":
             queryset = queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
 
+        # Prefetch linked pull requests for better performance
+        queryset = queryset.prefetch_related("linked_pull_requests")
+
         # Return ordered queryset - order by closed_at date (most recent first)
         # This will show issues that were closed most recently at the top
         return queryset.order_by("-closed_at")
@@ -2764,6 +2767,9 @@ class BountyPayoutsView(ListView):
 
     def post(self, request, *args, **kwargs):
         """Handle POST requests for refreshing issues or processing payments"""
+        # Import timezone here to make it available to all actions in the method
+        from django.utils import timezone
+
         action = request.POST.get("action")
 
         if action == "refresh_issues":
@@ -2774,6 +2780,9 @@ class BountyPayoutsView(ListView):
 
             # Fetch closed issues with $5 tag from GitHub by default
             try:
+                # Import required models
+                from website.models import GitHubIssue, Repo
+
                 issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
                 count = 0
 
@@ -2784,6 +2793,7 @@ class BountyPayoutsView(ListView):
                     parts = github_url.split("/")
                     owner = parts[3]
                     repo_name = parts[4]
+                    issue_number = parts[6]
 
                     # Find or create the repo
                     repo_url = f"https://github.com/{owner}/{repo_name}"
@@ -2817,64 +2827,68 @@ class BountyPayoutsView(ListView):
                     if issue_data.get("user") and issue_data["user"].get("login"):
                         github_username = issue_data["user"]["login"]
 
-                    # Get assignee if available
+                    # Extract assignee information from GitHub data
+                    # GitHub provides both an 'assignee' field and an 'assignees' array
                     assignee_username = None
                     assignee_contributor = None
+
+                    # Clear logging for debugging
+                    logger.info(f"Processing GitHub issue #{issue_data.get('number')} - {issue_data.get('title')}")
+
+                    # First check the single assignee field (this is the primary field to check)
                     if issue_data.get("assignee") and issue_data["assignee"].get("login"):
                         assignee_username = issue_data["assignee"]["login"]
+                        logger.info(f"Found assignee from single field: {assignee_username}")
+                    # If no single assignee, check the assignees array (backup check)
                     elif (
                         issue_data.get("assignees")
+                        and isinstance(issue_data["assignees"], list)
                         and len(issue_data["assignees"]) > 0
-                        and issue_data["assignees"][0].get("login")
                     ):
-                        assignee_username = issue_data["assignees"][0]["login"]
+                        if issue_data["assignees"][0].get("login"):
+                            assignee_username = issue_data["assignees"][0]["login"]
+                            logger.info(f"Found assignee from array: {assignee_username}")
 
-                    # Create or get Contributor for assignee if username exists
+                    logger.info(f"Final assignee determination: {assignee_username if assignee_username else 'None'}")
+
+                    # Create or get the contributor for the assignee if we have one
                     if assignee_username:
                         from website.models import Contributor
 
                         try:
-                            # Try to get the contributor by name first
-                            assignee_contributor = Contributor.objects.filter(name=assignee_username).first()
+                            assignee_contributor, created = Contributor.objects.get_or_create(
+                                name=assignee_username, defaults={"name": assignee_username}
+                            )
+                            logger.info(
+                                f"Assignee contributor {'created' if created else 'retrieved'}: {assignee_username}"
+                            )
 
-                            if not assignee_contributor:
-                                # Need to get or generate a valid github_id
-                                github_id = None
+                            # If we just created this contributor, try to get their GitHub data
+                            if created:
+                                try:
+                                    import requests
 
-                                # If we have the ID from the API response, use it
-                                if issue_data.get("assignee") and issue_data["assignee"].get("id"):
-                                    github_id = issue_data["assignee"]["id"]
-                                else:
-                                    # Try to fetch user data from GitHub API to get ID
                                     headers = {}
                                     if settings.GITHUB_TOKEN:
                                         headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
-                                    github_api_url = f"https://api.github.com/users/{assignee_username}"
-                                    try:
-                                        user_response = requests.get(github_api_url, headers=headers, timeout=5)
-                                        if user_response.status_code == 200:
-                                            user_data = user_response.json()
-                                            github_id = user_data.get("id")
-                                            avatar_url = user_data.get("avatar_url", "")
-
-                                            # Create the contributor with proper data
-                                            assignee_contributor = Contributor.objects.create(
-                                                name=assignee_username,
-                                                github_id=github_id,
-                                                github_url=f"https://github.com/{assignee_username}",
-                                                avatar_url=avatar_url,
-                                                contributor_type="User",
-                                                contributions=0,
-                                            )
-                                        else:
-                                            # If API call fails, log the error
-                                            status_code = user_response.status_code
-                                            error_msg = "Failed to fetch GitHub user data"
-                                            logger.error(f"{error_msg} for {assignee_username}: {status_code}")
-                                    except Exception as e:
-                                        error_msg = "Error fetching GitHub user data"
-                                        logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                                    response = requests.get(
+                                        f"https://api.github.com/users/{assignee_username}", headers=headers, timeout=5
+                                    )
+                                    if response.status_code == 200:
+                                        user_data = response.json()
+                                        if user_data.get("name"):
+                                            assignee_contributor.full_name = user_data["name"]
+                                        if user_data.get("email"):
+                                            assignee_contributor.email = user_data["email"]
+                                        assignee_contributor.save()
+                                    else:
+                                        logger.warning(
+                                            f"GitHub API returned {response.status_code} for user {assignee_username}"
+                                        )
+                                except Exception as e:
+                                    error_msg = "Error fetching GitHub user data"
+                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
                         except Exception as e:
                             logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
                             assignee_contributor = None
@@ -2903,14 +2917,15 @@ class BountyPayoutsView(ListView):
                         if user_profile and not existing_issue.user_profile:
                             existing_issue.user_profile = user_profile
 
-                        # Update assignee if different
-                        if assignee_contributor and (
-                            not existing_issue.assignee or assignee_username != existing_issue.assignee.name
-                        ):
+                        # Always update the assignee based on what we got from GitHub
+                        previous_assignee = existing_issue.assignee.name if existing_issue.assignee else "None"
+                        if assignee_username and assignee_contributor:
                             existing_issue.assignee = assignee_contributor
-                        elif not assignee_username:
-                            # Explicitly set assignee to None if no assignee was found in GitHub data
+                            logger.info(f"Updated assignee from {previous_assignee} to {assignee_username}")
+                        else:
+                            # Explicitly clear the assignee if none was found
                             existing_issue.assignee = None
+                            logger.info(f"Cleared assignee (was {previous_assignee})")
 
                         # Only update payment info if not already set and GitHub shows it's paid
                         if is_paid and not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
@@ -2920,6 +2935,9 @@ class BountyPayoutsView(ListView):
                             elif bch_tx_id:
                                 existing_issue.bch_tx_id = bch_tx_id
                                 existing_issue.p2p_payment_created_at = timezone.now()
+
+                        # Fetch linked pull requests for this issue
+                        self.fetch_linked_pull_requests(existing_issue, owner, repo_name, issue_number)
 
                         existing_issue.save()
                         continue
@@ -2969,6 +2987,10 @@ class BountyPayoutsView(ListView):
                             new_issue.p2p_payment_created_at = timezone.now()
 
                     new_issue.save()
+
+                    # Fetch linked pull requests for this issue
+                    self.fetch_linked_pull_requests(new_issue, owner, repo_name, issue_number)
+
                     count += 1
 
                 msg = f"Successfully added {count} new closed issues with bounty."
@@ -2978,75 +3000,78 @@ class BountyPayoutsView(ListView):
                 messages.error(request, f"{error_message}: {str(e)}")
 
         elif action == "pay_bounty":
-            # Process payment for an issue
-            # Superuser permission check
-            if not request.user.is_authenticated or not request.user.is_superuser:
-                messages.error(request, "Only superusers can record payments.")
-                return redirect("bounty_payouts")
-
-            tx_id = request.POST.get("tx_id")
-            issue_id = request.POST.get("issue_id")
-            payment_method = request.POST.get("payment_method")
-
-            if not (tx_id and issue_id and payment_method):
-                messages.error(request, "Missing required payment information")
-            elif payment_method not in ["sponsors", "bch"]:
-                messages.error(request, "Invalid payment method")
+            # Record bounty payment (superusers only)
+            if not request.user.is_superuser:
+                messages.error(request, "You don't have permission to record bounty payments")
             else:
-                try:
-                    issue = GitHubIssue.objects.get(id=issue_id)
+                issue_id = request.POST.get("issue_id")
+                tx_id = request.POST.get("tx_id", "").strip()
+                payment_method = request.POST.get("payment_method", "").strip()
 
-                    if payment_method == "sponsors":
-                        issue.sponsors_tx_id = tx_id
-                        issue.sent_by_user = request.user
-                        issue.p2p_payment_created_at = timezone.now()
+                if not issue_id or not tx_id:
+                    messages.error(request, "Missing issue ID or transaction ID")
+                elif payment_method not in ["sponsors", "bch"]:
+                    messages.error(request, "Invalid payment method")
+                else:
+                    try:
+                        # Import necessary models at the function level
+                        from django.utils import timezone
 
-                        # Add GitHub Sponsors label and payment comment
-                        labels_to_add = ["paid", "sponsors"]
-                        comment_text = f"This issue has been paid via GitHub Sponsors. Transaction ID: {tx_id}"
-                    elif payment_method == "bch":
-                        issue.bch_tx_id = tx_id
-                        issue.sent_by_user = request.user
-                        issue.p2p_payment_created_at = timezone.now()
+                        from website.models import GitHubIssue
 
-                        # Add BCH label and payment comment
-                        labels_to_add = ["paid", "bch"]
-                        # Add link to BCH transaction explorer
-                        comment_text = (
-                            f"This issue has been paid via Bitcoin Cash. Transaction ID: {tx_id}\n"
-                            f"View transaction: https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
-                        )
+                        issue = GitHubIssue.objects.get(id=issue_id)
 
-                    # Save the issue first
-                    issue.save()
+                        if payment_method == "sponsors":
+                            issue.sponsors_tx_id = tx_id
+                            issue.sent_by_user = request.user
+                            issue.p2p_payment_created_at = timezone.now()
 
-                    # Add labels and comment to GitHub
-                    labels_success = issue.add_labels(labels_to_add)
-                    comment_success = issue.add_comment(comment_text)
+                            # Add GitHub Sponsors label and payment comment
+                            labels_to_add = ["paid", "sponsors"]
+                            comment_text = f"This issue has been paid via GitHub Sponsors. Transaction ID: {tx_id}"
+                        elif payment_method == "bch":
+                            issue.bch_tx_id = tx_id
+                            issue.sent_by_user = request.user
+                            issue.p2p_payment_created_at = timezone.now()
 
-                    # Create success message
-                    success_message = f"Payment recorded for issue #{issue.issue_id}"
-                    if labels_success:
-                        success_message += ". Labels added on GitHub"
-                    if comment_success:
-                        success_message += ". Comment added on GitHub"
+                            # Add BCH label and payment comment
+                            labels_to_add = ["paid", "bch"]
+                            # Add link to BCH transaction explorer
+                            comment_text = (
+                                f"This issue has been paid via Bitcoin Cash. Transaction ID: {tx_id}\n"
+                                f"View transaction: https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
+                            )
 
-                    messages.success(request, success_message)
+                        # Save the issue first
+                        issue.save()
 
-                    # If we couldn't update GitHub, log it but don't error to the user
-                    if not (labels_success and comment_success):
-                        logger.warning(
-                            f"Could not fully update GitHub for issue {issue.issue_id}. "
-                            f"Labels success: {labels_success}, Comment success: {comment_success}"
-                        )
-                except GitHubIssue.DoesNotExist:
-                    messages.error(request, "Issue not found")
-                except Exception as e:
-                    error_message = "Error recording payment"
-                    messages.error(request, f"{error_message}: {str(e)}")
+                        # Add labels and comment to GitHub
+                        labels_success = issue.add_labels(labels_to_add)
+                        comment_success = issue.add_comment(comment_text)
+
+                        # Create success message
+                        success_message = f"Payment recorded for issue #{issue.issue_id}"
+                        if labels_success:
+                            success_message += ". Labels added on GitHub"
+                        if comment_success:
+                            success_message += ". Comment added on GitHub"
+
+                        messages.success(request, success_message)
+
+                        # If we couldn't update GitHub, log it but don't error to the user
+                        if not (labels_success and comment_success):
+                            logger.warning(
+                                f"Could not fully update GitHub for issue {issue.issue_id}. "
+                                f"Labels success: {labels_success}, Comment success: {comment_success}"
+                            )
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error recording payment"
+                        messages.error(request, f"{error_message}: {str(e)}")
 
         elif action == "delete_issue":
-            # Delete an issue (superuser only)
+            # Delete an issue (superusers only)
             if not request.user.is_superuser:
                 messages.error(request, "You don't have permission to delete issues")
             else:
@@ -3055,6 +3080,9 @@ class BountyPayoutsView(ListView):
                     messages.error(request, "No issue ID provided")
                 else:
                     try:
+                        # Import necessary models at the function level
+                        from website.models import GitHubIssue
+
                         issue = GitHubIssue.objects.get(id=issue_id)
                         issue_title = issue.title
                         issue.delete()
@@ -3075,6 +3103,13 @@ class BountyPayoutsView(ListView):
                     messages.error(request, "No issue ID provided")
                 else:
                     try:
+                        # Import necessary modules at the function level
+                        import requests
+                        from django.conf import settings
+
+                        # Ensure all required models are imported
+                        from website.models import Contributor, GitHubIssue
+
                         # Get the issue from the database
                         issue = GitHubIssue.objects.get(id=issue_id)
 
@@ -3115,36 +3150,58 @@ class BountyPayoutsView(ListView):
                                     # Try to find or create the contributor
                                     from website.models import Contributor
 
+                                    # First try to find by username
                                     assignee_contributor = Contributor.objects.filter(name=assignee_username).first()
 
                                     if not assignee_contributor:
-                                        # If we have the ID from the API response, use it
+                                        # If not found, fetch complete user data from GitHub API
                                         github_id = None
                                         if issue_data.get("assignee") and issue_data["assignee"].get("id"):
-                                            github_id = issue_data["assignee"]["id"]
-                                            avatar_url = issue_data["assignee"].get("avatar_url", "")
+                                            # Get detailed user info from GitHub API
+                                            user_api_url = f"https://api.github.com/users/{assignee_username}"
+                                            user_response = requests.get(user_api_url, headers=headers, timeout=10)
 
-                                            # Create contributor
-                                            assignee_contributor = Contributor.objects.create(
-                                                name=assignee_username,
-                                                github_id=github_id,
-                                                github_url=f"https://github.com/{assignee_username}",
-                                                avatar_url=avatar_url,
-                                                contributor_type="User",
-                                                contributions=0,
-                                            )
+                                            if user_response.status_code == 200:
+                                                user_data = user_response.json()
+                                                # Create contributor with complete data
+                                                assignee_contributor = Contributor.objects.create(
+                                                    name=assignee_username,
+                                                    github_id=user_data["id"],
+                                                    github_url=user_data["html_url"],
+                                                    avatar_url=user_data["avatar_url"],
+                                                    contributor_type=user_data.get("type", "User"),
+                                                    contributions=0,
+                                                )
+                                            else:
+                                                # Fallback to basic data if API call fails
+                                                github_id = issue_data["assignee"]["id"]
+                                                avatar_url = issue_data["assignee"].get("avatar_url", "")
+                                                # Create contributor with minimal data
+                                                assignee_contributor = Contributor.objects.create(
+                                                    name=assignee_username,
+                                                    github_id=github_id,
+                                                    github_url=f"https://github.com/{assignee_username}",
+                                                    avatar_url=avatar_url,
+                                                    contributor_type="User",
+                                                    contributions=0,
+                                                )
 
                                     # Update the issue with the assignee
                                     issue.assignee = assignee_contributor
-                                    issue.save()
-                                    msg = f"Updated assignee to {assignee_username} for issue #{issue_number}"
-                                    messages.success(request, msg)
                                 else:
                                     # Clear the assignee if none found
                                     issue.assignee = None
-                                    issue.save()
-                                    msg = f"Cleared assignee for issue #{issue_number} (no assignee on GitHub)"
-                                    messages.success(request, msg)
+
+                                # Also fetch linked pull requests for this issue
+                                self.fetch_linked_pull_requests(issue, repo_owner, repo_name, issue_number)
+
+                                # Save the issue after all updates
+                                issue.save()
+
+                                msg = f"Updated issue #{issue_number} with assignee "
+                                msg += f"{assignee_username}" if assignee_username else "(none)"
+                                msg += " and refreshed linked pull requests"
+                                messages.success(request, msg)
                             else:
                                 msg = f"Failed to fetch issue from GitHub API: {response.status_code}"
                                 messages.error(request, msg)
@@ -3155,7 +3212,297 @@ class BountyPayoutsView(ListView):
                     except GitHubIssue.DoesNotExist:
                         messages.error(request, "Issue not found")
                     except Exception as e:
-                        error_message = "Error refreshing assignee"
+                        error_message = "Error refreshing issue data"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "refresh_pull_requests":
+            # Refresh pull requests for an issue (staff only)
+            if not request.user.is_staff:
+                messages.error(request, "You don't have permission to refresh linked pull requests")
+            else:
+                issue_id = request.POST.get("issue_id")
+                if not issue_id:
+                    messages.error(request, "No issue ID provided")
+                else:
+                    try:
+                        # Import necessary modules at the function level
+                        import requests
+                        from django.conf import settings
+
+                        from website.models import GitHubIssue
+
+                        # Get the issue from the database
+                        issue = GitHubIssue.objects.get(id=issue_id)
+
+                        # Only proceed if it's an issue, not a PR
+                        if issue.type != "issue":
+                            messages.error(request, "Can only fetch linked PRs for issues, not for PRs")
+                        else:
+                            # Extract the issue number and repo from the URL
+                            url_parts = issue.url.split("/")
+                            if len(url_parts) >= 7:
+                                repo_owner = url_parts[3]
+                                repo_name = url_parts[4]
+                                issue_number = url_parts[6]
+
+                                # First, clear existing linked pull requests
+                                initial_count = issue.linked_pull_requests.count()
+                                issue.linked_pull_requests.clear()
+
+                                # Fetch linked pull requests for this issue
+                                self.fetch_linked_pull_requests(issue, repo_owner, repo_name, issue_number)
+
+                                # Save the issue and return a success message
+                                new_count = issue.linked_pull_requests.count()
+                                messages.success(
+                                    request,
+                                    f"Refreshed linked pull requests for issue #{issue_number}. "
+                                    f"Found {new_count} PRs (was {initial_count} before).",
+                                )
+                            else:
+                                messages.error(request, "Invalid issue URL format")
+
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error refreshing linked pull requests"
                         messages.error(request, f"{error_message}: {str(e)}")
 
         return redirect("bounty_payouts")
+
+    def fetch_linked_pull_requests(self, issue, owner, repo_name, issue_number):
+        """
+        Fetch pull requests linked to the given issue using GitHub's API Timeline Events
+        that contain the "connected" and "cross-referenced" events in the Development section.
+        """
+        if issue.type != "issue":
+            return  # Only fetch linked PRs for actual issues, not for PRs
+
+        # Import necessary modules
+        import logging
+        import time  # Import time just once
+
+        import requests
+        from django.conf import settings
+        from django.contrib.auth.models import User
+
+        from website.models import Contributor, GitHubIssue, Repo, UserProfile
+
+        logger = logging.getLogger(__name__)
+
+        # First try the timeline API to get connected PRs (official Development section links)
+        timeline_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}/timeline"
+
+        headers = {
+            "Accept": "application/vnd.github.mockingbird-preview+json",  # Preview header for timeline events
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)",  # Good practice to use a proper user agent
+        }
+
+        try:
+            response = requests.get(timeline_url, headers=headers, timeout=10)
+
+            # Handle rate limiting
+            if (
+                response.status_code == 403
+                and "X-RateLimit-Remaining" in response.headers
+                and int(response.headers["X-RateLimit-Remaining"]) == 0
+            ):
+                reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                current_time = int(time.time())
+                minutes_to_reset = max(1, int((reset_time - current_time) / 60))
+
+                logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
+                return
+
+            response.raise_for_status()
+            timeline_events = response.json()
+
+            # Track the PR URLs we've already processed to avoid duplicates
+            processed_pr_urls = set()
+
+            for event in timeline_events:
+                # Look for "connected" and "cross-referenced" events which link PRs to issues
+                if event.get("event") in ["connected", "cross-referenced"]:
+                    # Extract the PR information
+                    if event.get("source") and event["source"].get("type") == "pull_request":
+                        pr_url = event["source"].get("issue", {}).get("html_url")
+
+                        if not pr_url or pr_url in processed_pr_urls:
+                            continue
+
+                        processed_pr_urls.add(pr_url)
+
+                        # Extract PR details
+                        pr_parts = pr_url.split("/")
+                        if len(pr_parts) < 7:
+                            logger.warning(f"Invalid PR URL format: {pr_url}")
+                            continue
+
+                        pr_owner = pr_parts[3]
+                        pr_repo_name = pr_parts[4]
+                        pr_number = pr_parts[6]
+
+                        # Find or create the repo for this PR
+                        pr_repo_url = f"https://github.com/{pr_owner}/{pr_repo_name}"
+                        try:
+                            pr_repo, _ = Repo.objects.get_or_create(
+                                repo_url=pr_repo_url,
+                                defaults={
+                                    "name": pr_repo_name,
+                                    "slug": f"{pr_owner}-{pr_repo_name}",
+                                },
+                            )
+                        except Exception as e:
+                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            continue
+
+                        # Check if we already have this PR in our database
+                        existing_pr = GitHubIssue.objects.filter(url=pr_url, type="pull_request").first()
+
+                        if existing_pr:
+                            # Link the existing PR to this issue
+                            issue.linked_pull_requests.add(existing_pr)
+
+                            # Update the PR state if needed
+                            try:
+                                pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
+                                pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
+
+                                if pr_response.status_code == 200:
+                                    pr_data = pr_response.json()
+                                    # Update state, merged status, and timestamps
+                                    existing_pr.state = pr_data["state"]
+                                    existing_pr.is_merged = pr_data.get("merged", False)
+                                    if pr_data.get("closed_at"):
+                                        existing_pr.closed_at = pr_data["closed_at"]
+                                    if pr_data.get("merged_at"):
+                                        existing_pr.merged_at = pr_data["merged_at"]
+                                    existing_pr.updated_at = pr_data["updated_at"]
+                                    existing_pr.save()
+                                    logger.info(
+                                        f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
+                                    )
+                            except Exception as e:
+                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
+
+                            logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
+                        else:
+                            # Fetch PR details from GitHub API
+                            pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
+                            try:
+                                pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
+
+                                # Handle rate limiting for the PR request
+                                if (
+                                    pr_response.status_code == 403
+                                    and "X-RateLimit-Remaining" in pr_response.headers
+                                    and int(pr_response.headers["X-RateLimit-Remaining"]) == 0
+                                ):
+                                    logger.warning("GitHub API rate limit exceeded while fetching PR details.")
+                                    # Still continue with other PRs
+                                    continue
+
+                                pr_response.raise_for_status()
+                                pr_data = pr_response.json()
+
+                                # Determine PR author
+                                github_username = None
+                                if pr_data.get("user") and pr_data["user"].get("login"):
+                                    github_username = pr_data["user"]["login"]
+
+                                # Try to find user profile matching the PR author
+                                user_profile = None
+                                contributor = None
+
+                                if github_username:
+                                    # First try to match by github_url
+                                    github_url_to_match = f"https://github.com/{github_username}"
+                                    user_profile = UserProfile.objects.filter(github_url=github_url_to_match).first()
+
+                                    # If not found, try to match by username
+                                    if not user_profile:
+                                        user = User.objects.filter(username__iexact=github_username).first()
+                                        if user:
+                                            user_profile = UserProfile.objects.filter(user=user).first()
+
+                                    # If still not found, create/get a contributor
+                                    if not user_profile:
+                                        try:
+                                            contributor, _ = Contributor.objects.get_or_create(
+                                                name=github_username, defaults={"name": github_username}
+                                            )
+                                        except Exception as e:
+                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
+                                            contributor = None
+
+                                # Check if PR is merged
+                                is_merged = pr_data.get("merged", False)
+                                merged_at = pr_data.get("merged_at")
+
+                                try:
+                                    # Create the PR object
+                                    new_pr = GitHubIssue(
+                                        issue_id=pr_data["id"],
+                                        title=pr_data["title"],
+                                        body=pr_data.get("body", ""),
+                                        state=pr_data["state"],
+                                        type="pull_request",
+                                        created_at=pr_data["created_at"],
+                                        updated_at=pr_data["updated_at"],
+                                        closed_at=pr_data.get("closed_at"),
+                                        merged_at=merged_at,
+                                        is_merged=is_merged,
+                                        url=pr_url,
+                                        repo=pr_repo,
+                                        user_profile=user_profile,
+                                        contributor=contributor,
+                                    )
+                                    new_pr.save()
+
+                                    # Link the new PR to this issue
+                                    issue.linked_pull_requests.add(new_pr)
+                                    logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
+                                except Exception as e:
+                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
+                                    continue
+
+                            except requests.exceptions.RequestException as e:
+                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
+                                continue
+
+            # As a fallback, also check for PRs that mention this issue in their body with closing keywords
+            self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            # Fall back to regex-based search for PRs mentioning this issue
+            self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
+
+    def find_prs_mentioning_issue(self, issue, owner, repo_name, issue_number):
+        """
+        Find pull requests that mention this issue using closing keywords
+        like "Closes #123" or "Fixes #123" in their body.
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            # Look for PRs in our database that mention this issue with closing keywords
+            closing_pattern = (
+                r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|"
+                r"[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#" + str(issue_number)
+            )
+
+            prs = GitHubIssue.objects.filter(
+                type="pull_request",
+                body__iregex=closing_pattern,
+                repo__name=repo_name,
+            )
+
+            for pr in prs:
+                issue.linked_pull_requests.add(pr)
+
+        except Exception as e:
+            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
