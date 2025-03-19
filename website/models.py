@@ -1693,6 +1693,14 @@ class GitHubIssue(models.Model):
         related_name="github_issue_p2p_payments",
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    # Related pull requests
+    linked_pull_requests = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="linked_issues",
+        limit_choices_to={"type": "pull_request"},
+    )
 
     class Meta:
         # Make the combination of issue_id and repo unique
