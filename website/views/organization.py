@@ -2818,9 +2818,9 @@ class BountyPayoutsView(ListView):
                         if "paid" in label_name:
                             is_paid = True
                         if "sponsors" in label_name:
-                            sponsors_tx_id = "from_github_label"
+                            sponsors_tx_id = ""
                         if "bch" in label_name:
-                            bch_tx_id = "from_github_label"
+                            bch_tx_id = ""
 
                     # Get GitHub username from the issue (if available)
                     github_username = None
@@ -2922,6 +2922,10 @@ class BountyPayoutsView(ListView):
                         if assignee_username and assignee_contributor:
                             existing_issue.assignee = assignee_contributor
                             logger.info(f"Updated assignee from {previous_assignee} to {assignee_username}")
+
+                            # Extract payment info when refreshing assignee if no payment info exists
+                            if not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
+                                self.extract_payment_info_from_comments(existing_issue, owner, repo_name, issue_number)
                         else:
                             # Explicitly clear the assignee if none was found
                             existing_issue.assignee = None
@@ -2935,6 +2939,9 @@ class BountyPayoutsView(ListView):
                             elif bch_tx_id:
                                 existing_issue.bch_tx_id = bch_tx_id
                                 existing_issue.p2p_payment_created_at = timezone.now()
+                            else:
+                                # Try to extract payment info from GitHub issue comments
+                                self.extract_payment_info_from_comments(existing_issue, owner, repo_name, issue_number)
 
                         # Fetch linked pull requests for this issue
                         self.fetch_linked_pull_requests(existing_issue, owner, repo_name, issue_number)
@@ -2987,6 +2994,15 @@ class BountyPayoutsView(ListView):
                             new_issue.p2p_payment_created_at = timezone.now()
 
                     new_issue.save()
+
+                    # Try to extract payment info from comments when first creating the issue
+                    # regardless of whether it's marked as paid or not
+                    if not (new_issue.sponsors_tx_id or new_issue.bch_tx_id):
+                        self.extract_payment_info_from_comments(new_issue, owner, repo_name, issue_number)
+                    # If the issue is marked as paid but no transaction ID from labels,
+                    # try to extract payment info from comments
+                    elif is_paid and not (new_issue.sponsors_tx_id or new_issue.bch_tx_id):
+                        self.extract_payment_info_from_comments(new_issue, owner, repo_name, issue_number)
 
                     # Fetch linked pull requests for this issue
                     self.fetch_linked_pull_requests(new_issue, owner, repo_name, issue_number)
@@ -3254,10 +3270,43 @@ class BountyPayoutsView(ListView):
 
                                 # Save the issue and return a success message
                                 new_count = issue.linked_pull_requests.count()
+
+                                # If the issue is marked as paid but has no transaction ID,
+                                # check the comments for payment information
+                                payment_msg = ""
+                                if issue.state == "closed" and not (issue.sponsors_tx_id or issue.bch_tx_id):
+                                    # Check for "paid" label in GitHub - we need to fetch issue details again
+                                    api_url = (
+                                        f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues/{issue_number}"
+                                    )
+                                    headers = {
+                                        "Accept": "application/vnd.github.v3+json",
+                                        "Authorization": f"token {settings.GITHUB_TOKEN}",
+                                    }
+                                    issue_response = requests.get(api_url, headers=headers, timeout=10)
+
+                                    if issue_response.status_code == 200:
+                                        issue_data = issue_response.json()
+                                        is_paid = False
+                                        for label in issue_data.get("labels", []):
+                                            if "paid" in label.get("name", "").lower():
+                                                is_paid = True
+                                                break
+
+                                        if is_paid:
+                                            if self.extract_payment_info_from_comments(
+                                                issue, repo_owner, repo_name, issue_number
+                                            ):
+                                                # Add payment info to success message if found
+                                                if issue.sponsors_tx_id:
+                                                    payment_msg = " Also found Sponsors transaction ID in comments."
+                                                elif issue.bch_tx_id:
+                                                    payment_msg = " Also found BCH transaction ID in comments."
+
                                 messages.success(
                                     request,
                                     f"Refreshed linked pull requests for issue #{issue_number}. "
-                                    f"Found {new_count} PRs (was {initial_count} before).",
+                                    f"Found {new_count} PRs (was {initial_count} before).{payment_msg}",
                                 )
                             else:
                                 messages.error(request, "Invalid issue URL format")
@@ -3501,8 +3550,234 @@ class BountyPayoutsView(ListView):
                 repo__name=repo_name,
             )
 
+            # Track which PRs have already been linked to avoid duplicates
+            already_linked_pr_ids = set(issue.linked_pull_requests.values_list("id", flat=True))
+
+            # Only add PRs that aren't already linked
             for pr in prs:
-                issue.linked_pull_requests.add(pr)
+                if pr.id not in already_linked_pr_ids:
+                    issue.linked_pull_requests.add(pr)
+                    already_linked_pr_ids.add(pr.id)
+                    logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
 
         except Exception as e:
             logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+
+    def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
+        """
+        Search for transaction IDs in GitHub issue comments when an issue has a "paid" tag.
+        Update the GitHubIssue record with the transaction ID and payment date.
+
+        Transaction IDs are typically mentioned in comments with patterns like:
+        - "Transaction ID: abc123"
+        - "txid: abc123"
+        - "Payment sent: abc123"
+        - BCH tx: 2b0a7c0f443ecc950425db4162492363736634c989d8e9152146e6e36049be38
+        - Sponsors tx: ch_3R0guXEQsq43iHhX1vaps2xm
+        """
+        import logging
+        import re
+        from datetime import datetime
+
+        import requests
+        from django.conf import settings
+        from django.utils import timezone
+
+        logger = logging.getLogger(__name__)
+
+        # Check if issue already has payment info
+        if issue.sponsors_tx_id or issue.bch_tx_id or issue.p2p_payment_created_at:
+            # Only skip if we have real transaction IDs (not placeholders)
+            has_sponsors_placeholder = issue.sponsors_tx_id == "from_github_label"
+            has_bch_placeholder = issue.bch_tx_id == "from_github_label"
+
+            # If all payment info is just placeholders, continue processing
+            if has_sponsors_placeholder or has_bch_placeholder:
+                logger.info(f"Issue #{issue_number}: Has placeholder payment info")
+            # If we have real payment info, skip processing
+            elif issue.sponsors_tx_id or issue.bch_tx_id:
+                sponsors_id = issue.sponsors_tx_id or "None"
+                bch_id = issue.bch_tx_id or "None"
+                logger.info(f"Issue #{issue_number}: Already has payment info - sponsors:{sponsors_id}, BCH:{bch_id}")
+                return False
+
+        # Get comments for this issue from GitHub API
+        comments_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}/comments"
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)",
+        }
+
+        try:
+            logger.info(f"Fetching comments for issue #{issue_number} from {comments_url}")
+            response = requests.get(comments_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            comments = response.json()
+            logger.info(f"Found {len(comments)} comments for issue #{issue_number}")
+
+            # Get issue labels to determine if we should look for BCH or Sponsors transaction IDs
+            search_for_bch = False
+            search_for_sponsors = False
+
+            # Check issue labels
+            issue_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
+            issue_response = requests.get(issue_url, headers=headers, timeout=10)
+            if issue_response.status_code == 200:
+                issue_data = issue_response.json()
+                for label in issue_data.get("labels", []):
+                    label_name = label.get("name", "").lower()
+                    if "bch" in label_name:
+                        search_for_bch = True
+                        logger.info(f"Issue #{issue_number}: Found BCH label")
+                    if "sponsor" in label_name:
+                        search_for_sponsors = True
+                        logger.info(f"Issue #{issue_number}: Found Sponsor label")
+
+            # If no specific labels found, search for both types
+            if not search_for_bch and not search_for_sponsors:
+                search_for_bch = True
+                search_for_sponsors = True
+                logger.info(f"Issue #{issue_number}: No payment labels, searching for both types")
+
+            # Specific patterns for BCH addresses (64-character hex strings)
+            bch_patterns = [
+                r"[Bb][Cc][Hh]\s*(?:[Tt][Xx]|[Tt]ransaction|[Aa]ddress|[Pp]ayment)[:=\s]\s*([a-fA-F0-9]{64})",
+                r"[Bb]itcoin\s*[Cc]ash\s*(?:[Tt][Xx]|[Tt]ransaction|[Aa]ddress|[Pp]ayment)[:=\s]\s*([a-fA-F0-9]{64})",
+                r"[Tt]ransaction\s*(?:[Ii][Dd]|ID|id|hash)[:=\s]\s*([a-fA-F0-9]{64})",
+                r"[Tt][Xx][Ii][Dd][:=\s]\s*([a-fA-F0-9]{64})",
+                # Generic BCH address pattern (64 hex chars)
+                r"(?<![a-zA-Z0-9])([a-fA-F0-9]{64})(?![a-zA-Z0-9])",
+            ]
+
+            # Specific patterns for GitHub Sponsors transactions (format: ch_XXXXXXXXXXXXXXXXXXXX)
+            sponsors_patterns = [
+                r"[Ss]ponsors\s*(?:[Tt][Xx]|[Tt]ransaction|[Pp]ayment)[:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                r"[Gg]itHub\s*[Ss]ponsors\s*(?:[Tt][Xx]|[Tt]ransaction|[Pp]ayment)[:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                r"[Tt]ransaction\s*(?:[Ii][Dd]|ID|id|hash)[:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                r"[Tt][Xx][Ii][Dd][:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                # Generic GitHub Sponsors pattern
+                r"(?<![a-zA-Z0-9])(ch_[a-zA-Z0-9]{20,})(?![a-zA-Z0-9])",
+            ]
+
+            # General patterns that could match either type
+            general_patterns = [
+                r"[Pp]ayment\s*(?:[Ss]ent|[Ii][Dd]|ID|id)[:=\s]\s*([a-zA-Z0-9_-]{6,64})",
+                r"[Tt]ransfer\s*[Ii][Dd][:=\s]\s*([a-zA-Z0-9_-]{6,64})",
+                r"[Pp]ayment\s*[Cc]onfirmation[:=\s]\s*([a-zA-Z0-9_-]{6,64})",
+            ]
+
+            # Look for transaction IDs in comments
+            for index, comment in enumerate(comments):
+                comment_body = comment.get("body", "")
+                comment_date = comment.get("created_at")
+
+                # Skip if comment body is empty
+                if not comment_body:
+                    continue
+
+                logger.info(f"Analyzing comment #{index+1} for issue #{issue_number}: {comment_body[:100]}...")
+
+                # Process BCH patterns first if BCH label exists
+                if search_for_bch:
+                    for pattern in bch_patterns:
+                        match = re.search(pattern, comment_body)
+                        if match:
+                            tx_id = match.group(1).strip()
+                            logger.info(f"Found potential BCH transaction ID: {tx_id} using pattern {pattern}")
+
+                            # Validate BCH transaction ID (should be 64 hex chars)
+                            if len(tx_id) == 64 and all(c in "0123456789abcdefABCDEF" for c in tx_id):
+                                issue.bch_tx_id = tx_id
+
+                                # Set payment date
+                                if comment_date:
+                                    try:
+                                        payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                        issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                    except ValueError:
+                                        issue.p2p_payment_created_at = timezone.now()
+
+                                issue.save()
+                                logger.info(f"Set BCH transaction ID: {tx_id}")
+                                return True
+
+                # Process Sponsors patterns if Sponsors label exists
+                if search_for_sponsors:
+                    for pattern in sponsors_patterns:
+                        match = re.search(pattern, comment_body)
+                        if match:
+                            tx_id = match.group(1).strip()
+                            logger.info(f"Found potential Sponsors transaction ID: {tx_id} using pattern {pattern}")
+
+                            # Validate Sponsors transaction ID (should start with ch_)
+                            if tx_id.startswith("ch_") and len(tx_id) >= 10:
+                                issue.sponsors_tx_id = tx_id
+
+                                # Set payment date
+                                if comment_date:
+                                    try:
+                                        payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                        issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                    except ValueError:
+                                        issue.p2p_payment_created_at = timezone.now()
+
+                                issue.save()
+                                logger.info(f"Set Sponsors transaction ID: {tx_id}")
+                                return True
+
+                # Try general patterns as a fallback
+                for pattern in general_patterns:
+                    match = re.search(pattern, comment_body)
+                    if match:
+                        tx_id = match.group(1).strip()
+                        logger.info(f"Found potential transaction ID: {tx_id} using general pattern {pattern}")
+
+                        # Determine tx type based on format and context
+                        if tx_id.startswith("ch_") and search_for_sponsors:
+                            issue.sponsors_tx_id = tx_id
+                            tx_type = "Sponsors"
+                        elif len(tx_id) == 64 and all(c in "0123456789abcdefABCDEF" for c in tx_id) and search_for_bch:
+                            issue.bch_tx_id = tx_id
+                            tx_type = "BCH"
+                        elif "bch" in comment_body.lower() or "bitcoin cash" in comment_body.lower():
+                            issue.bch_tx_id = tx_id
+                            tx_type = "BCH"
+                        elif "sponsor" in comment_body.lower() or "github sponsor" in comment_body.lower():
+                            issue.sponsors_tx_id = tx_id
+                            tx_type = "Sponsors"
+                        else:
+                            # Default based on prioritized label
+                            if search_for_bch and not search_for_sponsors:
+                                issue.bch_tx_id = tx_id
+                                tx_type = "BCH"
+                            else:
+                                issue.sponsors_tx_id = tx_id
+                                tx_type = "Sponsors"
+
+                        # Set payment date
+                        if comment_date:
+                            try:
+                                payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                logger.info(f"Setting payment date to comment date: {payment_date}")
+                            except ValueError:
+                                issue.p2p_payment_created_at = timezone.now()
+                                logger.info("Failed to parse comment date, using current time")
+
+                        issue.save()
+                        logger.info(f"Set {tx_type} transaction ID: {tx_id}")
+                        return True
+
+            # If no transaction ID found but we have a "paid" tag, just set the payment date
+            logger.info(f"No transaction ID found in comments for issue #{issue_number}")
+            if not issue.p2p_payment_created_at:
+                issue.p2p_payment_created_at = timezone.now()
+                issue.save()
+                logger.info(f"Set payment date for issue #{issue_number} without finding a transaction ID")
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            return False
