@@ -240,8 +240,11 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // Initialize the chart
+    // Initialize the chart
     initializeChart();
     
+    // Set up vote functionality
+    const pageStatsContainer = document.getElementById('pageStatsContainer');
     // Set up vote functionality
     const pageStatsContainer = document.getElementById('pageStatsContainer');
     const upvoteBtn = document.getElementById('upvoteBtn');
@@ -294,10 +297,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         return cookieValue;
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
+    
     
     const csrftoken = getCookie('csrftoken');
     
+    // Vote submission handler
     // Vote submission handler
     function submitVote(voteType) {
         const formData = new FormData();
@@ -332,7 +349,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event listeners for vote buttons
+    // Event listeners for vote buttons
     upvoteBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        submitVote('upvote');
         e.stopPropagation();
         submitVote('upvote');
     });
@@ -340,6 +360,9 @@ document.addEventListener('DOMContentLoaded', function() {
     downvoteBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         submitVote('downvote');
+        e.stopPropagation();
+        submitVote('downvote');
     });
+});
 });
 </script>
