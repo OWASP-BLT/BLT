@@ -188,6 +188,7 @@
                                             <i class="fas fa-link"></i>
                                         </button>
                                         <button type="button"
+                                                id="preview-toggle-btn"
                                                 onclick="togglePreview()"
                                                 class="px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-md transition-colors duration-200">
                                             <i class="fas fa-eye"></i>
@@ -617,19 +618,21 @@
     function togglePreview() {
         const editor = document.getElementById('markdownInput');
         const preview = document.getElementById('preview-area');
-        const previewBtn = document.querySelector('button:contains("Preview")');
+        const previewBtn = document.getElementById('preview-toggle-btn');
 
         if (preview.classList.contains('hidden')) {
             // Show preview
             preview.innerHTML = marked.parse(editor.value);
             preview.classList.remove('hidden');
             editor.classList.add('hidden');
-            previewBtn.textContent = 'Edit';
+            previewBtn.innerHTML = '<i class="fas fa-edit"></i>';
+            previewBtn.setAttribute('title', 'Edit');
         } else {
             // Show editor
             preview.classList.add('hidden');
             editor.classList.remove('hidden');
-            previewBtn.textContent = 'Preview';
+            previewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            previewBtn.setAttribute('title', 'Preview');
         }
     }
     marked.setOptions({
