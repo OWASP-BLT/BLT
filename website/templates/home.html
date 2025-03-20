@@ -830,65 +830,80 @@
         <section class="py-12 bg-gray-50">
             <div class="max-w-7xl mx-auto px-4">
                 <h2 class="text-3xl font-bold text-center mb-12">Tools for Organizations</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-6">
+                <!-- Primary Tools Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
                     <!-- Organizations -->
                     <a href="{% url 'organizations' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-building text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Organizations</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Browse and manage organizations</p>
+                    </a>
+                    <!-- Add Organization -->
+                    <a href="{% url 'register_organization' %}"
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        <i class="fas fa-plus text-3xl text-[#e74c3c] mb-3"></i>
+                        <span class="text-lg font-medium text-center">Register Organization</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Add your company to our platform</p>
                     </a>
                     <!-- Domains -->
                     <a href="{% url 'domains' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-globe text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Domains</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Manage website domains and assets</p>
                     </a>
                     <!-- Bugs -->
                     <a href="{% url 'issues' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-bug text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Bugs</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">View and track reported vulnerabilities</p>
                     </a>
                     <!-- Issues -->
                     <a href="{% url 'github_issues' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-exclamation-circle text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Issues</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Track GitHub issues and tasks</p>
                     </a>
+                </div>
+                <!-- Secondary Tools Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
                     <!-- Bounties -->
                     <a href="{% url 'hunts' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-dollar-sign text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Bounties</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Set up and manage bug bounty programs</p>
                     </a>
                     <!-- Check-ins -->
                     <a href="{% url 'checkIN' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-calendar-check text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Check-ins</span>
+                        <p class="text-xs text-gray-600 text-center mt-1">Schedule and track security reviews</p>
                     </a>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Time Logs -->
                     <a href="{% url 'sizzle' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-clock text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Time Logs</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Track time spent on security tasks</p>
+                        <p class="text-xs text-gray-600 text-center mt-1">Track time spent on security tasks</p>
                     </a>
                     <!-- Trademarks -->
                     <a href="{% url 'trademark_search' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-trademark text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Trademarks</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Manage intellectual property</p>
+                        <p class="text-xs text-gray-600 text-center mt-1">Search and monitor trademark usage</p>
                     </a>
                     <!-- Map -->
                     <a href="{% url 'map' %}"
-                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-shadow">
+                       class="bg-white rounded-xl shadow-md p-6 flex flex-col items-center hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                         <i class="fas fa-map-marked-alt text-3xl text-[#e74c3c] mb-3"></i>
                         <span class="text-lg font-medium text-center">Map</span>
-                        <p class="text-sm text-gray-600 text-center mt-2">Visualize global security impact</p>
+                        <p class="text-xs text-gray-600 text-center mt-1">View global security activity</p>
                     </a>
                 </div>
             </div>
