@@ -5,7 +5,6 @@ import os
 import smtplib
 import socket
 import uuid
-from collections import defaultdict
 from datetime import datetime
 from urllib.parse import urlparse
 
@@ -80,6 +79,7 @@ from website.utils import (
     is_valid_https_url,
     rebuild_safe_url,
     safe_redirect_request,
+    validate_screenshot_hash,
 )
 
 from .constants import GSOC25_PROJECTS
@@ -945,7 +945,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             "report.html",
                             {"form": self.get_form(), "captcha_form": CaptchaForm()},
                         )
-
             tokenauth = False
             obj = form.save(commit=False)
             report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
@@ -979,6 +978,165 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 if domain is None:
                     domain = Domain.objects.create(name=clean_domain, url=clean_domain)
                     domain.save()
+
+            # Don't save issue if security vulnerability
+            if form.instance.label == "4" or form.instance.label == 4:
+                dest_email = getattr(domain, "email", None)
+                if not dest_email and domain.organization:
+                    dest_email = getattr(domain.organization, "email", None)
+
+                if dest_email:
+                    import logging
+                    import secrets
+                    import string
+                    import tempfile
+                    from pathlib import Path
+
+                    import pyzipper
+                    from django.core.exceptions import ValidationError
+                    from django.core.mail import EmailMessage
+
+                    logger = logging.getLogger(__name__)
+
+                    try:
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            password = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(11))
+                            zip_path = os.path.join(temp_dir, "security_report.zip")
+
+                            screenshot_paths = []
+
+                            if self.request.FILES.getlist("screenshots"):
+                                for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
+                                    file_path = os.path.join(
+                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                    )
+                                    with open(file_path, "wb+") as destination:
+                                        for chunk in screenshot.chunks():
+                                            destination.write(chunk)
+                                    screenshot_paths.append(file_path)
+
+                            elif self.request.POST.get("screenshot-hash"):
+                                screenshot_hashes = self.request.POST.get("screenshot-hash").split(",")
+
+                                for idx, screenshot_hash in enumerate(screenshot_hashes):
+                                    try:
+                                        validate_screenshot_hash(screenshot_hash.strip())
+                                    except ValidationError as e:
+                                        messages.error(self.request, str(e))
+                                        return HttpResponseRedirect("/")
+
+                                    orig_path = os.path.join(
+                                        settings.MEDIA_ROOT, "uploads", f"{screenshot_hash.strip()}.png"
+                                    )
+
+                                    if not orig_path.startswith(os.path.abspath(settings.MEDIA_ROOT)):
+                                        messages.error(self.request, f"Invalid screenshot hash: {screenshot_hash}.")
+                                        return HttpResponseRedirect("/")
+
+                                    if os.path.exists(orig_path):
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx+1}.png")
+                                        import shutil
+
+                                        shutil.copy(orig_path, dest_path)
+                                        screenshot_paths.append(dest_path)
+
+                            details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
+                            with open(details_md_path, "w", encoding="utf-8") as f:
+                                f.write("# Security Vulnerability Report\n\n")
+                                f.write(f"**URL:** {obj.url}\n")
+                                f.write(f"**Domain:** {clean_domain}\n")
+
+                                if obj.cve_id:
+                                    f.write(f"**CVE ID:** {obj.cve_id}\n")
+
+                                f.write("\n**Description:**\n")
+                                f.write(f"{obj.description}\n\n")
+
+                                if obj.markdown_description:
+                                    f.write("## Detailed Description\n")
+                                    f.write(f"{obj.markdown_description}\n\n")
+
+                                if (
+                                    self.request.user.is_authenticated
+                                    and self.request.POST.get("report_anonymous", "off") != "on"
+                                ):
+                                    username = self.request.user.username or "Unknown User"
+                                    email = self.request.user.email if self.request.user.email else "No email provided"
+
+                                    f.write("### Reported by:\n")
+                                    f.write(f"- **Name:** {username}\n")
+                                    f.write(f"- **Email:** {email}\n")
+
+                                    user_profile = getattr(self.request.user, "userprofile", None)
+                                    if user_profile:
+                                        if user_profile.github_url:
+                                            github_username = user_profile.github_url.rstrip("/").split("/")[-1]
+                                            sponsors_url = f"https://github.com/sponsors/{github_username}"
+                                            f.write(
+                                                f"- **💖 GitHub Sponsors:** [Sponsor]({sponsors_url}) (or [Profile]({user_profile.github_url}))\n"
+                                            )
+                                        if user_profile.btc_address:
+                                            f.write(f"- **🟠 BTC Address:** {user_profile.btc_address}\n")
+                                        if user_profile.bch_address:
+                                            f.write(f"- **💚 BCH Address:** {user_profile.bch_address}\n")
+                                        if user_profile.eth_address:
+                                            f.write(f"- **💎 ETH Address:** {user_profile.eth_address}\n")
+
+                                    f.write(f"\n**Report Date:** {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+
+                            screenshot_paths.append(details_md_path)
+
+                            with pyzipper.AESZipFile(
+                                zip_path, "w", compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES
+                            ) as zipf:
+                                zipf.setpassword(password.encode())
+                                for file in screenshot_paths:
+                                    zipf.write(file, arcname=os.path.basename(file))
+
+                            email_subject = f"Security Vulnerability Report for {clean_domain}"
+                            html_body = render_to_string(
+                                "email/security_report.html",
+                                {"clean_domain": clean_domain, "password": password},
+                            )
+
+                            try:
+                                email = EmailMessage(
+                                    subject=email_subject,
+                                    body=html_body,
+                                    from_email=settings.DEFAULT_FROM_EMAIL,
+                                    to=[dest_email],
+                                )
+                                email.content_subtype = "html"
+
+                                with open(zip_path, "rb") as f:
+                                    email.attach("security_report.zip", f.read(), "application/zip")
+
+                                email.send(fail_silently=False)
+
+                                messages.success(
+                                    self.request,
+                                    "Security vulnerability report sent securely to the organization. Thank you for your report.",
+                                )
+                                return HttpResponseRedirect("/")
+                            except Exception as e:
+                                logger.error(f"Error while sending email: {e}")
+                                messages.error(
+                                    self.request,
+                                    "Could not mail security report. Please try again later.",
+                                )
+                                return HttpResponseRedirect("/")
+
+                    except Exception as e:
+                        logger.error(f"Unexpected error: {e}")
+                        messages.error(self.request, "An unexpected error occurred while processing the report.")
+                        return HttpResponseRedirect("/")
+
+                else:
+                    messages.warning(
+                        self.request,
+                        "Could not send security vulnerability report as no contact email is available for this domain.",
+                    )
+                    return HttpResponseRedirect("/")
 
             hunt = self.request.POST.get("hunt", None)
             if hunt is not None and hunt != "None":
@@ -2020,57 +2178,49 @@ def page_vote(request):
 
 
 class GsocView(View):
+    # Fixed start date: 2024-11-11
     SINCE_DATE = timezone.make_aware(datetime(2024, 11, 11))
 
     def fetch_model_prs(self, repo_names):
-        contributors = defaultdict(lambda: {"count": 0, "github_url": ""})
         total_pr_count = 0
 
         # Filter repos by name
         repos = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repo_names])
 
-        # Fetch merged PRs
-        prs = GitHubIssue.objects.filter(
-            repo__in=repos, type="pull_request", is_merged=True, merged_at__gte=self.SINCE_DATE
-        ).select_related("user_profile__user")
+        # Get all contributors who are linked to these repos
+        contributors_with_prs = []
+        for repo in repos:
+            # Get contributors for this repo
+            for contributor in repo.contributor.all():
+                # Count PRs for this contributor in this repo
+                pr_count = GitHubIssue.objects.filter(
+                    contributor=contributor,
+                    repo=repo,
+                    type="pull_request",
+                    is_merged=True,
+                    merged_at__gte=self.SINCE_DATE,
+                ).count()
 
-        for pr in prs:
-            total_pr_count += 1
+                if pr_count > 0:
+                    contributors_with_prs.append(
+                        {
+                            "contributor": contributor,
+                            "pr_count": pr_count,
+                            "url": contributor.github_url,
+                            "username": contributor.name,
+                            "avatar_url": contributor.avatar_url,
+                            "prs": pr_count,  # For backward compatibility with template
+                        }
+                    )
+                    total_pr_count += pr_count
 
-            # First try to get the user profile from the PR
-            user_profile = pr.user_profile
-            github_url = None
-
-            if user_profile and user_profile.github_url:
-                github_url = user_profile.github_url
-            else:
-                # If no user profile, try to extract GitHub username from PR URL
-                # Example PR URL: https://github.com/adeyosemanputra/PyGoat/pull/123
-                try:
-                    # Extract username from PR URL by parsing the URL
-                    pr_url_parts = pr.url.split("/")
-                    if len(pr_url_parts) >= 5 and pr_url_parts[2] == "github.com":
-                        # Construct a GitHub profile URL
-                        github_url = f"https://github.com/{pr_url_parts[3]}"
-                except (IndexError, AttributeError):
-                    # If we can't extract the username, skip this PR
-                    continue
-
-            # Skip bot accounts
-            if github_url and not github_url.endswith("[bot]") and "bot" not in github_url.lower():
-                contributors[github_url]["count"] += 1
-                contributors[github_url]["github_url"] = github_url
+        # Sort by PR count (descending)
+        sorted_contributors = sorted(contributors_with_prs, key=lambda x: x["pr_count"], reverse=True)
 
         # Get top 10 contributors
-        top_contributors = sorted(contributors.items(), key=lambda item: item[1]["count"], reverse=True)[:10]
+        top_contributors = sorted_contributors[:10]
 
-        # Format top contributors list
-        formatted_contributors = [
-            {"url": url, "username": url.rstrip("/").split("/")[-1], "prs": data["count"]}
-            for url, data in top_contributors
-        ]
-
-        return formatted_contributors, total_pr_count
+        return top_contributors, total_pr_count
 
     def get_repo_url(self, repo_names):
         if not repo_names:
@@ -2080,7 +2230,7 @@ class GsocView(View):
         try:
             repo = Repo.objects.filter(name=repo_name).first()
             return repo.repo_url if repo else f"https://github.com/{repo_names[0]}"
-        except:
+        except Exception:
             return f"https://github.com/{repo_names[0]}"
 
     def build_project_data(self, project, repo_names):
@@ -2111,6 +2261,7 @@ def refresh_gsoc_project(request):
     """
     if request.method == "POST":
         project_name = request.POST.get("project_name")
+        reset_counter = request.POST.get("reset_counter") == "true"
 
         if not project_name or project_name not in GSOC25_PROJECTS:
             messages.error(request, "Invalid project name")
@@ -2123,18 +2274,38 @@ def refresh_gsoc_project(request):
             messages.error(request, f"No repositories found for project {project_name}")
             return redirect("gsoc")
 
-        # Set the since date to November 11, 2024
-        # Create a timezone-aware datetime using Django's timezone
+        # Fixed start date: 2024-11-11
         since_date = timezone.make_aware(datetime(2024, 11, 11))
-
-        # Calculate days between now and the since date
-        days = (timezone.now() - since_date).days
 
         try:
             # Call the fetch_gsoc_prs command with the specific repositories
             # We pass the repositories as a comma-separated string
             repo_list = ",".join(repos)
-            call_command("fetch_gsoc_prs", repos=repo_list, days=days)
+            command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
+
+            # Add reset flag if requested
+            if reset_counter:
+                command_args.append("--reset")
+                messages.info(request, f"Resetting page counter for {project_name} repositories")
+
+            # Run the command
+            call_command(*command_args)
+
+            # Debug: Count how many GitHubIssues were created with contributors
+            repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
+            issue_count = GitHubIssue.objects.filter(
+                repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
+            ).count()
+
+            contributor_count = GitHubIssue.objects.filter(
+                repo__in=repo_objs,
+                type="pull_request",
+                is_merged=True,
+                merged_at__gte=since_date,
+                contributor__isnull=False,
+            ).count()
+
+            messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
 
             # Update user profiles for PRs that don't have them
             for repo_full_name in repos:

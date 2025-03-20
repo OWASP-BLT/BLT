@@ -1,333 +1,347 @@
+{% extends 'base.html' %}
 {% load i18n %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="blt make organization bug tracking easy">
-        <meta name="keywords"
-              content="blt, bug, tracking, organization, easy, register">
-        <title>{% trans "Register Organization" %}</title>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
-              rel="stylesheet">
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-              integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
-              crossorigin="anonymous"
-              referrerpolicy="no-referrer" />
-        <script src="https://cdn.tailwindcss.com"></script>
-    </head>
-    <body>
-        <style>
-            .page-container {
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .content {
-                flex: 1;
-            }
-
-            .bottom-links {
-                padding: 15px;
-                text-align: right;
-                background-color: #F3F5F7;
-            }
-
-            .bottom-links a {
-                margin-left: 10px;
-                color: #666;
-                text-decoration: none;
-            }
-
-            .bottom-links a:hover {
-                color: #333;
-            }
-        </style>
-        <div class="page-container">
-            <div class="content">
-                <div class="bg-[#F3F5F7] flex flex-col items-center">
-                    <form method='post'
-                          action="#"
-                          enctype="multipart/form-data"
-                          class="w-[96%] bg-white rounded-2xl p-10 my-5 shadow-md">
-                        <div class="w-full mb-5">
-                            <p class="text-gray-300 font-satoshi font-bold text-[35px]">{% trans "Register Organization" %}</p>
-                        </div>
-                        {% csrf_token %}
-                        <div class="pb-12">
-                            <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Information" %}</h2>
-                            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                                <div class="sm:col-span-3">
-                                    <label for="domain_name"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Name" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="organization_name"
-                                               id="organization_name"
-                                               autocomplete="organization_name"
-                                               placeholder="Organization Name"
-                                               required
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-3">
-                                    <label for="organization_url"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Url" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="organization_url"
-                                               id="organization_url"
-                                               autocomplete="organization_url"
-                                               placeholder="https://Organization_domain.xyz"
-                                               required
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2 sm:col-start-1">
-                                    <label for="support_email"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Support Email (Optional)" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="email"
-                                               name="support_email"
-                                               id="support_email"
-                                               autocomplete="email"
-                                               placeholder="Organization@domain.xyz"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label for="twitter_url"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Twitter URL (Optional)" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="twitter_url"
-                                               id="twitter_url"
-                                               autocomplete="twitter"
-                                               placeholder="https://twitter.com/handle"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                                <div class="sm:col-span-2">
-                                    <label for="facebook_url"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Facebook URL (Optional)" %}
-                                    </label>
-                                    <div class="mt-2">
-                                        <input type="text"
-                                               name="facebook_url"
-                                               id="facebook_url"
-                                               autocomplete="facebook"
-                                               placeholder="https://facebook.com/handle"
-                                               class="block w-full rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-12">
-                            <div class="border-b border-gray-900/10 pb-12">
-                                <div class="col-span-full mb-5">
-                                    <label for="organization_logo"
-                                           class="block text-sm font-medium leading-6 text-gray-900">
-                                        {% trans "Organization Logo" %}
-                                    </label>
-                                    <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
-                                        <div id="previewLogoDiv"
-                                             class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
-                                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <label for="logo"
-                                               class="relative cursor-pointer rounded-md bg-white font-semibold text-red-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-red-600 focus-within:ring-offset-2 hover:text-red-500">
-                                            <span class="text-red-600">{% trans "Upload logo" %}</span>
-                                            <input id="logo"
-                                                   name="logo"
-                                                   type="file"
-                                                   class="sr-only"
-                                                   required
-                                                   onchange="displayLogoPreview()" />
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="pb-12 mt-5">
-                            <h2 class="text-base font-semibold leading-7 text-gray-900">{% trans "Organization Managers" %}</h2>
-                            <p class="mt-1 text-sm leading-6 text-gray-600">
-                                {% trans "Add Emails which will be allowed to add domains" %}.
-                                <br>
-                                {% trans "Email should be registerd user on BLT" %}.
-                            </p>
-                            <button onclick="add_email_container()"
-                                    type="button"
-                                    class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
-                                {% trans "Add Email" %}
-                            </button>
-                            <div class="sm:col-span-4 mt-5" id="email-container">
-                                <label for="email" class="block text-sm font-medium leading-6 text-gray-900">{% trans "Email address" %}</label>
-                            </div>
-                        </div>
-                        <div class="mt-6 flex items-center justify-end gap-x-6">
-                            <button type="button"
-                                    onclick="cancelForm()"
-                                    class="text-md font-semibold leading-6 text-gray-900">{% trans "Cancel" %}</button>
-                            <button type="submit"
-                                    class="rounded-md bg-red-600 px-11 py-3 text-md font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
-                                {% trans "Save" %}
-                            </button>
-                        </div>
-                    </form>
+{% block title %}
+    {% trans "Register Organization" %}
+{% endblock title %}
+{% block description %}
+    {% trans 'blt make organization bug tracking easy' %}
+{% endblock description %}
+{% block keywords %}
+    {% trans 'blt, bug, tracking, organization, easy, register' %}
+{% endblock keywords %}
+{% block og_title %}
+    {% trans "Register Organization" %}
+{% endblock og_title %}
+{% block og_description %}
+    {% trans 'blt make organization bug tracking easy' %}
+{% endblock og_description %}
+{% block content %}
+    {% include 'includes/sidenav.html' %}
+    <div class="flex flex-col min-h-screen">
+        <div class="flex-1  flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
+            <div class="w-full lg:max-w-[90%]">
+                <!-- Page Header -->
+                <div class="mb-8 text-center">
+                    <h1 class="text-3xl font-bold text-red-500 sm:text-4xl ">{% trans "Register Organization" %}</h1>
+                    <p class="mt-3 text-gray-600 max-w-2xl mx-auto">
+                        {% trans "Join our platform and manage your organization's bug tracking efficiently." %}
+                    </p>
                 </div>
-                {% if messages %}
-                    {% for message in messages %}
-                        {% if message.level_tag == 'error' %}
-                            <div id="alert-border-2"
-                                 class="popup-errors flex p-4 mb-4 w-[30vw] text-red-800 border-t-4 border-red-300 bg-red-50 absolute bottom-10 right-10"
-                                 role="alert">
-                                <svg class="flex-shrink-0 w-5 h-5"
-                                     fill="currentColor"
-                                     viewBox="0 0 20 20"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
-                                    </path>
-                                </svg>
-                                <div class="ml-3 text-sm font-medium">{{ message }}</div>
-                                <button type="button"
-                                        onclick="removeErrors()"
-                                        class="ml-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg focus:ring-2 focus:ring-red-400 p-1.5 hover:bg-red-200 inline-flex h-8 w-8"
-                                        data-dismiss-target="#alert-border-2"
-                                        aria-label="Close">
-                                    <span class="sr-only">Dismiss</span>
-                                    <svg aria-hidden="true"
-                                         class="w-5 h-5"
-                                         fill="currentColor"
-                                         viewBox="0 0 20 20"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
-                                        </path>
-                                    </svg>
-                                </button>
+                <!-- Registration Form -->
+                <form method="post"
+                      action="#"
+                      enctype="multipart/form-data"
+                      class="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+                    {% csrf_token %}
+                    <!-- Organization Information Section -->
+                    <div class="p-6 sm:p-8 border-b border-gray-200">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
+                                <i class="fas fa-building fa-lg"></i>
                             </div>
-                        {% else %}
-                            <div id="alert-border-2"
-                                 class="popup-errors flex p-4 mb-4 w-[30vw] text-green-800 border-t-4 border-green-300 bg-green-50 absolute bottom-10 right-10"
-                                 role="alert">
-                                <svg class="flex-shrink-0 w-5 h-5"
-                                     fill="currentColor"
-                                     viewBox="0 0 20 20"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
-                                    </path>
-                                </svg>
-                                <div class="ml-3 text-sm font-medium">{{ message }}</div>
-                                <button type="button"
-                                        onclick="removeErrors()"
-                                        class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg focus:ring-2 focus:ring-green-400 p-1.5 hover:bg-green-200 inline-flex h-8 w-8"
-                                        data-dismiss-target="#alert-border-2"
-                                        aria-label="Close">
-                                    <span class="sr-only">Dismiss</span>
-                                    <svg aria-hidden="true"
-                                         class="w-5 h-5"
-                                         fill="currentColor"
-                                         viewBox="0 0 20 20"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
-                                        </path>
-                                    </svg>
-                                </button>
+                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Information" %}</h2>
+                        </div>
+                        <div class="grid grid-cols-1 gap-y-6 gap-x-6 sm:grid-cols-6">
+                            <!-- Organization Name -->
+                            <div class="sm:col-span-3">
+                                <label for="organization_name"
+                                       class="block text-lg font-medium text-gray-700">
+                                    {% trans "Organization Name" %} <span class="text-[#e74c3c]">*</span>
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <input type="text"
+                                           name="organization_name"
+                                           id="organization_name"
+                                           autocomplete="organization_name"
+                                           placeholder="{% trans 'Enter organization name' %}"
+                                           required
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
                             </div>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            </div>
-            <div class="bottom-links">
-                <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/register_organization.html">
-                    <i class="fab fa-github"></i>
-                </a>
-                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-                    <i class="fab fa-figma"></i>
-                </a>
+                            <!-- Organization URL -->
+                            <div class="sm:col-span-3">
+                                <label for="organization_url"
+                                       class="block text-lg font-medium text-gray-700">
+                                    {% trans "Organization URL" %} <span class="text-[#e74c3c]">*</span>
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fas fa-globe"></i>
+                                    </div>
+                                    <input type="text"
+                                           name="organization_url"
+                                           id="organization_url"
+                                           autocomplete="organization_url"
+                                           placeholder="{% trans 'https://organization.com' %}"
+                                           required
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                            <!-- Support Email -->
+                            <div class="sm:col-span-2">
+                                <label for="support_email" class="block text-lg font-medium text-gray-700">
+                                    {% trans "Support Email" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fas fa-envelope"></i>
+                                    </div>
+                                    <input type="email"
+                                           name="support_email"
+                                           id="support_email"
+                                           autocomplete="email"
+                                           placeholder="{% trans 'support@organization.com' %}"
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                            <!-- Twitter URL -->
+                            <div class="sm:col-span-2">
+                                <label for="twitter_url" class="block text-lg font-medium text-gray-700">
+                                    {% trans "Twitter URL" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fab fa-twitter"></i>
+                                    </div>
+                                    <input type="text"
+                                           name="twitter_url"
+                                           id="twitter_url"
+                                           autocomplete="twitter"
+                                           placeholder="{% trans 'https://twitter.com/handle' %}"
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                            <!-- Facebook URL -->
+                            <div class="sm:col-span-2">
+                                <label for="facebook_url" class="block text-lg font-medium text-gray-700">
+                                    {% trans "Facebook URL" %} <span class="text-gray-500 text-xs">({% trans "Optional" %})</span>
+                                </label>
+                                <div class="mt-1 relative border border-gray-200 rounded-md shadow-sm">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                        <i class="fab fa-facebook"></i>
+                                    </div>
+                                    <input type="text"
+                                           name="facebook_url"
+                                           id="facebook_url"
+                                           autocomplete="facebook"
+                                           placeholder="{% trans 'https://facebook.com/handle' %}"
+                                           class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Organization Logo Section -->
+                    <div class="p-6 sm:p-8 border-b border-gray-200">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
+                                <i class="fas fa-image fa-lg"></i>
+                            </div>
+                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Logo" %}</h2>
+                        </div>
+                        <div class="flex items-center space-x-6">
+                            <div id="previewLogoDiv"
+                                 class="h-24 w-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-[#e74c3c]">
+                                <svg class="h-12 w-12"
+                                     viewBox="0 0 24 24"
+                                     fill="currentColor"
+                                     aria-hidden="true">
+                                    <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="flex flex-col">
+                                <label for="logo"
+                                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] cursor-pointer">
+                                    <i class="fas fa-upload mr-2"></i> {% trans "Upload logo" %}
+                                    <input id="logo"
+                                           name="logo"
+                                           type="file"
+                                           class="sr-only"
+                                           required
+                                           onchange="displayLogoPreview()" />
+                                </label>
+                                <p class="mt-2 text-sm text-gray-500">{% trans "PNG, JPG or GIF up to 2MB" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Organization Managers Section -->
+                    <div class="p-6 sm:p-8">
+                        <div class="flex items-center mb-6">
+                            <div class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-md bg-[#e74c3c] bg-opacity-10 text-[#e74c3c]">
+                                <i class="fas fa-users fa-lg"></i>
+                            </div>
+                            <h2 class="ml-4 text-xl font-semibold text-gray-900">{% trans "Organization Managers" %}</h2>
+                        </div>
+                        <p class="mb-4 text-sm text-gray-600">
+                            {% trans "Add emails of users who will be allowed to manage domains. Email addresses must belong to registered BLT users." %}
+                        </p>
+                        <div id="email-container" class="space-y-3 mb-6">
+                            <label for="email" class="block text-lg font-medium text-gray-700">
+                                {% trans "Email addresses" %} <span class="text-[#e74c3c]">*</span>
+                            </label>
+                            <!-- Email inputs will be added here dynamically -->
+                        </div>
+                        <button type="button"
+                                onclick="add_email_container()"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            <i class="fas fa-plus mr-2 text-[#e74c3c]"></i>
+                            {% trans "Add Email" %}
+                        </button>
+                    </div>
+                    <!-- Form Actions -->
+                    <div class="px-6 py-4 sm:px-8 bg-gray-50 flex items-center justify-end space-x-4 border-t border-gray-200">
+                        <button type="button"
+                                onclick="cancelForm()"
+                                class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm  font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            <i class="fas fa-times mr-2"></i>
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit"
+                                class="inline-flex items-center px-6 py-3 border border-transparent  font-medium rounded-md shadow-sm text-white bg-[#e74c3c] hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            <i class="fas fa-save mr-2"></i>
+                            {% trans "Save Organization" %}
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-    </body>
+        <!-- Notification Messages -->
+        {% if messages %}
+            <div id="notification-container"
+                 class="fixed bottom-5 right-5 z-50 space-y-4">
+                {% for message in messages %}
+                    {% if message.level_tag == 'error' %}
+                        <div id="alert-error-{{ forloop.counter }}"
+                             class="popup-errors flex items-start p-4 mb-4 w-80 text-red-800 border-l-4 border-[#e74c3c] bg-red-50 rounded-md shadow-lg"
+                             role="alert">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-exclamation-circle text-[#e74c3c]"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">{% trans "Error" %}</h3>
+                                <div class="mt-1 text-sm text-red-700">{{ message }}</div>
+                            </div>
+                            <button type="button"
+                                    onclick="removeError('alert-error-{{ forloop.counter }}')"
+                                    class="ml-auto -mx-1.5 -my-1.5 bg-red-50 text-red-500 rounded-lg p-1.5 hover:bg-red-100 inline-flex h-8 w-8 items-center justify-center"
+                                    aria-label="{% trans 'Dismiss' %}">
+                                <span class="sr-only">{% trans "Dismiss" %}</span>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% else %}
+                        <div id="alert-success-{{ forloop.counter }}"
+                             class="popup-errors flex items-start p-4 mb-4 w-80 text-green-800 border-l-4 border-green-500 bg-green-50 rounded-md shadow-lg"
+                             role="alert">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <i class="fas fa-check-circle text-green-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-green-800">{% trans "Success" %}</h3>
+                                <div class="mt-1 text-sm text-green-700">{{ message }}</div>
+                            </div>
+                            <button type="button"
+                                    onclick="removeError('alert-success-{{ forloop.counter }}')"
+                                    class="ml-auto -mx-1.5 -my-1.5 bg-green-50 text-green-500 rounded-lg p-1.5 hover:bg-green-100 inline-flex h-8 w-8 items-center justify-center"
+                                    aria-label="{% trans 'Dismiss' %}">
+                                <span class="sr-only">{% trans "Dismiss" %}</span>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block scripts %}
     <script>
-    function removeErrors(){
-        var errors = document.getElementsByClassName('popup-errors');
-        var errorsArray = Array.from(errors);
+    function removeErrors() {
+        const errors = document.getElementsByClassName('popup-errors');
+        const errorsArray = Array.from(errors);
 
         // Remove each element from the DOM
         errorsArray.forEach(function(error) {
             error.remove();
         });
     }
-
-
-    function remove_email_container(){
-        let email_container = document.getElementById("email-container");
-        let lst_child = email_container.lastElementChild;
-        email_container.removeChild(lst_child);
-    }
-
-    function add_email_container(){
-        const email_container_child_html = document.createElement('div');
-        email_container_child_html.innerHTML = `
-            <div class="mt-2 flex flex-row items-center w-[50%]">
-                <input name="email" type="email" autocomplete="email" required class="w-[90%] block rounded-md border-0 py-1.5 pl-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-red-600 sm:text-sm sm:leading-6" />
-                <button type="button" onclick="remove_email_container()">
-                    <i class="fa-sharp fa-solid fa-trash fa-lg text-[#596780] ml-4 hover:text-black"></i>
-                </button>
-            </div>
-        `;
-
-        let email_container = document.getElementById("email-container");
-        email_container.appendChild(email_container_child_html)
-    }
-
-    </script>
-    <script>
-    function cancelForm(){
-        let deleteForm = document.getElementById("deleteForm");
-        let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
-        if (confirmDelete === true){
-            deleteForm.submit();
+    
+    function removeError(id) {
+        const error = document.getElementById(id);
+        if (error) {
+            error.remove();
         }
     }
 
+    function remove_email_container() {
+        const email_container = document.getElementById("email-container");
+        const lastChild = email_container.lastElementChild;
+        if (lastChild && lastChild.tagName !== 'LABEL') {
+            email_container.removeChild(lastChild);
+        }
+    }
+
+    function add_email_container() {
+        const email_container = document.getElementById("email-container");
+        const emailInputGroup = document.createElement('div');
+        emailInputGroup.className = 'flex items-center space-x-2';
+        emailInputGroup.innerHTML = `
+            <div class="relative border border-gray-200 rounded-md shadow-sm lg:w-96 w-full">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <input name="email" type="email" autocomplete="email" required placeholder="{% trans 'manager@organization.com' %}" class="block w-full pl-10 py-3 border-gray-200 rounded-md text-gray-900 placeholder:text-base text-base" />
+            </div>
+            <button type="button" onclick="remove_email_container()" class="inline-flex items-center p-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                <i class="fas fa-trash text-[#e74c3c]"></i>
+            </button>
+        `;
+
+        email_container.appendChild(emailInputGroup);
+    }
+
+    function cancelForm() {
+        const confirmDelete = confirm("{% trans 'Are you sure you want to cancel? Your progress will be lost.' %}");
+        if (confirmDelete) {
+            window.location.href = "{% url 'organizations' %}";
+        }
+    }
 
     function displayLogoPreview() {
-        var fileInput = document.getElementById("logo");
-        var previewDiv = document.getElementById("previewLogoDiv");
+        const fileInput = document.getElementById("logo");
+        const previewDiv = document.getElementById("previewLogoDiv");
 
         if (fileInput.files.length > 0) {
-            var file = fileInput.files[0];
-            var reader = new FileReader();
+            const file = fileInput.files[0];
+            const reader = new FileReader();
 
             reader.onload = function(event) {
-            var preview = document.createElement("img");
-            preview.src = event.target.result;
-            previewDiv.innerHTML = "";
-            previewDiv.appendChild(preview);
+                previewDiv.innerHTML = "";
+                previewDiv.className = "h-24 w-24 rounded-lg overflow-hidden border-2 border-[#e74c3c]";
+                
+                const preview = document.createElement("img");
+                preview.src = event.target.result;
+                preview.className = "h-full w-full object-cover";
+                previewDiv.appendChild(preview);
             };
 
             reader.readAsDataURL(file);
         } else {
-            previewDiv.innerHTML = "";
+            previewDiv.innerHTML = `
+                <svg class="h-12 w-12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0021.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 003.065 7.097A9.716 9.716 0 0012 21.75a9.716 9.716 0 006.685-2.653zm-12.54-1.285A7.486 7.486 0 0112 15a7.486 7.486 0 015.855 2.812A8.224 8.224 0 0112 20.25a8.224 8.224 0 01-5.855-2.438zM15.75 9a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" clip-rule="evenodd" />
+                </svg>
+            `;
+            previewDiv.className = "h-24 w-24 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 text-[#e74c3c]";
         }
     }
 
+    // Add the first email container by default
+    document.addEventListener('DOMContentLoaded', function() {
+        add_email_container();
+    });
     </script>
-</html>
+{% endblock %}

@@ -24,6 +24,7 @@ from django.db import models, transaction
 from django.db.models import Count
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
 from google.api_core.exceptions import NotFound
@@ -170,6 +171,9 @@ class Organization(models.Model):
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
         default=OrganisationType.ORGANIZATION.value,
+    )
+    check_ins_enabled = models.BooleanField(
+        default=False, help_text="Indicates if the organization has check-ins enabled"
     )
 
     # Address fields
@@ -1079,6 +1083,8 @@ class Contributor(models.Model):
     contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
     contributions = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
+    # Note: The repos relationship is defined in the Repo model as:
+    # contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
 
     def __str__(self):
         return self.name
@@ -1488,6 +1494,8 @@ class Repo(models.Model):
     ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
+    last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1632,7 +1640,7 @@ class GitHubIssue(models.Model):
         ("pull_request", "Pull Request"),
     ]
 
-    issue_id = models.BigIntegerField(unique=True)
+    issue_id = models.BigIntegerField()  # Removed unique=True
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)
@@ -1659,6 +1667,20 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    contributor = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues",
+    )
+    assignee = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues_assignee",
+    )
     # Peer-to-Peer Payment Fields
     p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
     p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -1671,9 +1693,21 @@ class GitHubIssue(models.Model):
         related_name="github_issue_p2p_payments",
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    # Related pull requests
+    linked_pull_requests = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="linked_issues",
+        limit_choices_to={"type": "pull_request"},
+    )
+
+    class Meta:
+        # Make the combination of issue_id and repo unique
+        unique_together = ("issue_id", "repo")
 
     def __str__(self):
-        return f"{self.title} by {self.user_profile.user.username} - {self.state}"
+        return f"{self.title} by {self.user_profile.user.username if self.user_profile else 'Unknown'} - {self.state}"
 
     def get_comments(self):
         """
@@ -1728,6 +1762,75 @@ class GitHubIssue(models.Model):
             logger = logging.getLogger(__name__)
             logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
             return []
+
+    def add_comment(self, comment_text):
+        """
+        Adds a comment to this GitHub issue via the GitHub API.
+        Returns True if successful, False otherwise.
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for adding comments
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        data = {"body": comment_text}
+
+        try:
+            response = requests.post(api_url, headers=headers, json=data)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            # Log the error but don't raise it
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
+            return False
+
+    def add_labels(self, labels):
+        """
+        Adds labels to this GitHub issue via the GitHub API.
+        Parameters:
+            labels: List of label strings to add
+        Returns True if successful, False otherwise.
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for adding labels
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        data = {"labels": labels}
+
+        try:
+            response = requests.post(api_url, headers=headers, json=data)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            # Log the error but don't raise it
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
+            return False
 
 
 class BaconEarning(models.Model):
@@ -2072,6 +2175,11 @@ class Hackathon(models.Model):
     max_participants = models.PositiveIntegerField(null=True, blank=True)
     # Link to repositories that are part of this hackathon
     repositories = models.ManyToManyField(Repo, related_name="hackathons", blank=True)
+    # Sponsor information
+    sponsor_note = models.TextField(
+        blank=True, null=True, help_text="Additional information about sponsorship opportunities"
+    )
+    sponsor_link = models.URLField(blank=True, null=True, help_text="Link to sponsorship information or application")
 
     class Meta:
         ordering = ["-start_time"]
@@ -2138,6 +2246,29 @@ class Hackathon(models.Model):
                     leaderboard[user_id]["prs"].append(pr)
                 else:
                     leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
+            elif pr.contributor and pr.contributor.github_id:
+                # Skip bot accounts
+                github_username = pr.contributor.name
+                if github_username and (github_username.endswith("[bot]") or "bot" in github_username.lower()):
+                    continue
+
+                # If no user profile but has contributor, use contributor as key
+                contributor_id = f"contributor_{pr.contributor.id}"
+                if contributor_id in leaderboard:
+                    leaderboard[contributor_id]["count"] += 1
+                    leaderboard[contributor_id]["prs"].append(pr)
+                else:
+                    leaderboard[contributor_id] = {
+                        "user": {
+                            "username": pr.contributor.name or pr.contributor.github_id,
+                            "email": "",
+                            "id": contributor_id,
+                        },
+                        "count": 1,
+                        "prs": [pr],
+                        "is_contributor": True,
+                        "contributor": pr.contributor,  # Include the contributor object
+                    }
 
         # Convert to list and sort by count (descending)
         leaderboard_list = list(leaderboard.values())
@@ -2208,6 +2339,8 @@ class Queue(models.Model):
     modified = models.DateTimeField(auto_now=True)
     launched = models.BooleanField(default=False)
     launched_at = models.DateTimeField(null=True, blank=True)
+    txid = models.CharField(max_length=255, null=True, blank=True)
+    url = models.URLField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created"]
@@ -2250,3 +2383,64 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class BannedApp(models.Model):
+    APP_TYPES = (
+        ("social", "Social Media"),
+        ("messaging", "Messaging"),
+        ("gaming", "Gaming"),
+        ("streaming", "Streaming"),
+        ("other", "Other"),
+    )
+
+    country_name = models.CharField(max_length=100)
+    country_code = models.CharField(max_length=2)  # ISO 2-letter code
+    app_name = models.CharField(max_length=100)
+    app_type = models.CharField(max_length=20, choices=APP_TYPES)
+    ban_reason = models.TextField()
+    ban_date = models.DateField(default=timezone.now)
+    source_url = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Banned App"
+        verbose_name_plural = "Banned Apps"
+        ordering = ["country_name", "app_name"]
+        indexes = [
+            models.Index(fields=["country_name"]),
+            models.Index(fields=["country_code"]),
+        ]
+
+    def __str__(self):
+        return f"{self.app_name} (Banned in {self.country_name})"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    NOTIFICATION_TYPES = [
+        ("general", "General"),
+        ("alert", "Alert"),
+        ("reminder", "Reminder"),
+        ("promo", "Promotional"),
+        ("reward", "Rewards"),
+    ]
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default="general")
+
+    link = models.CharField(max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username} - {self.notification_type}"
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.save()
+
+    class Meta:
+        ordering = ["is_read", "-created_at"]

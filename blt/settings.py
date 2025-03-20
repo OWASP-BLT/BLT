@@ -31,6 +31,11 @@ DOMAIN_NAME = "blt.owasp.org"
 FQDN = "blt.owasp.org"
 DOMAIN_NAME_PREVIOUS = os.environ.get("DOMAIN_NAME_PREVIOUS", "BLT")
 
+# Staging to production redirect settings
+STAGING_DOMAIN = os.environ.get("STAGING_DOMAIN", "blt-staging.herokuapp.com")
+PRODUCTION_DOMAIN = os.environ.get("PRODUCTION_DOMAIN", "blt.owasp.org")
+ENABLE_STAGING_REDIRECT = os.environ.get("ENABLE_STAGING_REDIRECT", "False").lower() == "true"
+
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
 
@@ -107,6 +112,7 @@ SOCIAL_AUTH_GITHUB_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "blank")
 
 MIDDLEWARE = (
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "blt.middleware.domain.DomainMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -170,20 +176,22 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "django.template.context_processors.i18n",
             ],
-            "loaders": [
-                "django.template.loaders.filesystem.Loader",
-                "django.template.loaders.app_directories.Loader",
-            ]
-            if DEBUG
-            else [
-                (
-                    "django.template.loaders.cached.Loader",
-                    [
-                        "django.template.loaders.filesystem.Loader",
-                        "django.template.loaders.app_directories.Loader",
-                    ],
-                ),
-            ],
+            "loaders": (
+                [
+                    "django.template.loaders.filesystem.Loader",
+                    "django.template.loaders.app_directories.Loader",
+                ]
+                if DEBUG
+                else [
+                    (
+                        "django.template.loaders.cached.Loader",
+                        [
+                            "django.template.loaders.filesystem.Loader",
+                            "django.template.loaders.app_directories.Loader",
+                        ],
+                    ),
+                ]
+            ),
         },
     },
 ]
@@ -253,6 +261,8 @@ if SENTRY_DSN:
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
+# Set the custom email backend that sends Slack notifications
+EMAIL_BACKEND = "blt.mail.SlackNotificationEmailBackend"
 
 REPORT_EMAIL = os.environ.get("REPORT_EMAIL", "blank")
 REPORT_EMAIL_PASSWORD = os.environ.get("REPORT_PASSWORD", "blank")
@@ -316,6 +326,10 @@ else:
     # if DEBUG:
     #     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+    # Keep using our custom backend even in debug mode
+    # But make sure we keep the EMAIL_BACKEND setting from above
+    pass
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -330,7 +344,7 @@ else:
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

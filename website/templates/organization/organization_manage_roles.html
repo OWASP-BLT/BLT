@@ -16,56 +16,7 @@
     Oversee roles within your domains efficiently. Add new managers, view and manage existing ones to ensure smooth operations.
 {% endblock og_description %}
 {% block body %}
-    <style>
-    .bottom-right {
-        position: absolute;
-        bottom: 10px;
-        right: 15px;
-    }
-    .relative {
-        position: relative;
-    }
-
-    .group:hover .group-hover\:opacity-100 {
-        opacity: 1;
-    }
-
-    .group:hover .group-hover\:bg-red-700 {
-        background-color: #c53030; /* Darker red on hover */
-    }
-
-    .group {
-        transition: background-color 0.3s, opacity 0.3s;
-    }
-
-    .group .text-center {
-        transition: color 0.3s;
-    }
-
-    .hove_button {
-        width: 32px; /* Adjust width for round shape */
-        height: 32px; /* Adjust height for round shape */
-        border-radius: 50%; /* Ensure the button is round */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: absolute;
-        top: 2px; /* Position from the top */
-        right: 2px; /* Position from the right */
-        cursor: pointer;
-        transition: background-color 0.3s, opacity 0.3s;
-    }
-
-    .hove_button span {
-        font-size: 20px; /* Adjust font size for the "-" sign */
-    }
-
-    #user-selection-container {
-        max-height: 150px; /* Adjust height based on your needs */
-        overflow-y: auto; /* Enable vertical scrolling */
-    }
-    </style>
-    <div class="bottom-right">
+    <div class="fixed bottom-2.5 right-3.75">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_manage_roles.html">
             <i class="fab fa-github"></i>
         </a>
@@ -104,7 +55,7 @@
                                 <p class="text-sm text-gray-500 text-center group-hover:opacity-100">Domain Manager</p>
                             </a>
                             {% if domain.organization_admin == request.user %}
-                                <button class="hove_button p-2 bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-700"
+                                <button class="absolute top-0.5 right-0.5 w-8 h-8 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 hover:bg-red-700 transition-all flex items-center justify-center"
                                         data-manager-id="{{ manager.id }}"
                                         data-domain-id="{{ domain.id }}"
                                         onclick="deleteManager(event)">
@@ -120,7 +71,7 @@
     </div>
     <!-- add domain popup overlay -->
     <div id="addManagersFormCont"
-         class="w-full h-full absolute hidden items-center justify-center bg-black bg-opacity-20">
+         class="fixed inset-0 hidden items-center justify-center bg-black bg-opacity-20">
         <form class="flex flex-col w-[30%] h-[60%] bg-white rounded-lg p-8 z-10"
               action="#"
               method="post">
@@ -139,7 +90,8 @@
                             class="w-[120px] h-[40px] bg-red-500 text-white font-bold rounded-md mt-2 hover:bg-red-600 transition-all">
                         Add User
                     </button>
-                    <div class="mt-5" id="user-selection-container">
+                    <div class="mt-5 max-h-[150px] overflow-y-auto"
+                         id="user-selection-container">
                         <label for="user" class="block text-sm font-medium leading-6 text-gray-900">Select Domain Manager</label>
                     </div>
                 </div>
@@ -180,11 +132,10 @@
         updateUserSelections();
     }
 
-
     function getUserOptions(excludeList) {
         let optionsHtml = '<option value="" disabled selected>Select a user</option>';
         {% for user in organization_users %}
-            if (!assignedUsers.includes('{{ user.username }}') && !excludeList.includes('{{ user.username }}')) {
+            if (!assignedUsers.includes('{{ user.username }}') {
                 optionsHtml += `<option value="{{ user.username }}">{{ user.username }} ({{ user.email }})</option>`;
             }
         {% endfor %}
@@ -193,12 +144,10 @@
 
     function updateUserSelections() {
         const selects = document.querySelectorAll('#user-selection-container select');
-        console.log(selects);
         const selectedUsers = Array.from(selects).map(select => select.value);
 
         selects.forEach(select => {
             const currentValue = select.value;
-            console.log(currentValue);
             select.innerHTML = getUserOptions(selectedUsers.filter(user => user !== currentValue));
             select.value = currentValue;  // Preserve the current value after options are updated
         });
@@ -218,7 +167,6 @@
                 console.error('Script element with ID "assigned_users" not found.');
             }
         }
-        console.log(assignedUsers);
 
         if (index == 0) {
             modal.classList.add('hidden');
@@ -266,9 +214,9 @@
             });
         }
     }
-
-    // Utility function to get CSRF token from cookies
-    function getCookie(name) {
+    
+     // Utility function to get CSRF token from cookies
+     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');

@@ -6,33 +6,6 @@
           href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script type="module"
             src="https://cdn.jsdelivr.net/npm/emoji-picker-element@latest/index.js"></script>
-    <style>
-        .emoji-picker-container {
-            position: relative;
-        }
-        emoji-picker {
-            position: absolute;
-            bottom: 100%;
-            right: 0;
-            display: none;
-        }
-        .emoji-picker-container.show emoji-picker {
-            display: block;
-        }
-    </style>
-    <style>
-    .docs_style {
-        background-color: #EF4444!important;
-        color: white!important;
-    }
-    .docs_style:hover {
-        background-color: #dc2626!important;
-    }
-    .disabled-button {
-        background-color: #a1a1aa !important;
-        cursor: not-allowed !important;
-    }
-    </style>
     <div class="container mx-auto p-6">
         {% include "includes/sidenav.html" %}
         <div class="main-content w-full py-8">
@@ -95,15 +68,17 @@
                     </div>
                     <div class="form-group mb-10">
                         <label for="feeling_card" class="block text-gray-700 font-medium mb-2">How are you feeling today?</label>
-                        <div class="emoji-picker-container">
+                        <div class="emoji-picker-container relative">
                             <textarea id="feeling_card"
                                       name="feeling"
                                       rows="5"
                                       class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
                             <button id="emoji-trigger"
                                     type="button"
-                                    class="mt-2 px-4 py-2 text-white rounded">😊</button>
-                            <emoji-picker id="emoji-picker"></emoji-picker>
+                                    class="mt-2 px-4 py-2 text-white rounded border border-red-600 hover:bg-red-600">
+                                😊
+                            </button>
+                            <emoji-picker id="emoji-picker" class="absolute bottom-full right-0 hidden"></emoji-picker>
                         </div>
                     </div>
                     <div class="text-center">
@@ -127,17 +102,16 @@
             const container = document.querySelector('.emoji-picker-container');
 
             emojiTrigger.addEventListener('click', () => {
-                container.classList.toggle('show');
+                emojiPicker.classList.toggle('hidden');
             });
 
             document.addEventListener('click', (event) => {
                 if (!container.contains(event.target)) {
-                    container.classList.remove('show');
+                    emojiPicker.classList.add('hidden');
                 }
             });
 
             emojiPicker.addEventListener('emoji-click', (event) => {
-                
                 const emoji = event.detail.emoji.unicode;
                 textarea.value += emoji;
                 textarea.focus();

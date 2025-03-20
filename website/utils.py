@@ -4,17 +4,20 @@ import hashlib
 import logging
 import os
 import re
+import socket
 import time
 from collections import deque
-from urllib.parse import urlparse, urlsplit, urlunparse
+from ipaddress import ip_address
+from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
 import markdown
 import numpy as np
 import requests
+import tweepy
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
+from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -38,6 +41,26 @@ WHITELISTED_IMAGE_TYPES = {
     "jpg": "image/jpeg",
     "png": "image/png",
 }
+
+
+def validate_file_type(request, file_field_name, allowed_extensions, allowed_mime_types=None, max_size=None):
+    file = request.FILES.get(file_field_name)
+    if not file:
+        return True, None  # File is optional; skip validation if not provided
+
+    extension_validator = FileExtensionValidator(allowed_extensions=allowed_extensions)
+    try:
+        extension_validator(file)
+    except ValidationError:
+        return False, f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}"
+
+    if allowed_mime_types and file.content_type not in allowed_mime_types:
+        return False, f"Invalid MIME type. Allowed: {', '.join(allowed_mime_types)}"
+
+    if max_size and file.size > max_size:
+        return False, f"File size exceeds the maximum limit of {max_size} bytes."
+
+    return True, None
 
 
 def get_client_ip(request):
@@ -93,7 +116,7 @@ def get_email_from_domain(domain_name):
 def image_validator(img):
     try:
         filesize = img.file.size
-    except:
+    except Exception:
         filesize = img.size
 
     extension = img.name.split(".")[-1]
@@ -128,9 +151,58 @@ def is_valid_https_url(url):
         return False
 
 
+def is_dns_safe(hostname):
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False  # Unable to resolve hostname; treat as unsafe.
+    for result in resolved:
+        ip_str = result[4][0]
+        try:
+            ip = ip_address(ip_str)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                return False
+        except ValueError:
+            continue
+    return True
+
+
 def rebuild_safe_url(url):
     parsed_url = urlparse(url)
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+
+    if parsed_url.scheme not in ("http", "https"):
+        return None
+
+    netloc = parsed_url.netloc.split("@")[-1]
+
+    hostname = urlparse(f"http://{netloc}").hostname
+    if not hostname:
+        return None
+
+    try:
+        ip = ip_address(hostname)
+        if ip.is_private or ip.is_loopback:
+            return None
+    except ValueError:
+        if not is_dns_safe(hostname):
+            return None
+
+    path = parsed_url.path
+    path = path.replace("\r", "").replace("\n", "")
+    path = path.replace("/..", "").replace("/", "/")
+
+    # Collapse multiple slashes into a single slash
+    path = re.sub(r"/{2,}", "/", path)
+    if path in ("", "."):
+        path = "/"
+    # Ensure the path starts with a slash
+    elif not path.startswith("/"):
+        path = "/" + path
+    encoded_path = quote(path, safe="/")
+
+    safe_url = urlunparse((parsed_url.scheme, netloc, encoded_path, "", "", ""))
+
+    return safe_url
 
 
 def get_github_issue_title(github_issue_url):
@@ -146,21 +218,6 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
-
-
-def is_safe_url(url, allowed_hosts, allowed_paths=None):
-    if not is_valid_https_url(url):
-        return False
-
-    parsed_url = urlparse(url)
-
-    if parsed_url.netloc not in allowed_hosts:
-        return False
-
-    if allowed_paths and parsed_url.path not in allowed_paths:
-        return False
-
-    return True
 
 
 def safe_redirect_allowed(url, allowed_hosts, allowed_paths=None):
@@ -707,3 +764,225 @@ def get_page_votes(template_name):
     )
 
     return upvotes, downvotes
+
+
+def validate_screenshot_hash(screenshot_hash):
+    """
+    Validate that the screenshot_hash only contains alphanumeric characters,
+    hyphens, or underscores.
+    """
+    if not re.match(r"^[a-zA-Z0-9_-]+$", screenshot_hash):
+        raise ValidationError(
+            "Invalid screenshot hash. Only alphanumeric characters, hyphens, and underscores are allowed."
+        )
+
+
+# Twitter namespace
+class twitter:
+    @staticmethod
+    def send_tweet(message, image_path=None):
+        """
+        Send a tweet using the Twitter API.
+
+        Args:
+            message (str): The message to tweet
+            image_path (str, optional): Path to an image to include in the tweet
+
+        Returns:
+            dict: A dictionary containing:
+                - success (bool): Whether the tweet was sent successfully
+                - url (str): The URL of the tweet if successful
+                - txid (str): The ID of the tweet if successful
+                - error (str): Error message if unsuccessful
+        """
+        try:
+            # Initialize Twitter API client
+            auth = tweepy.OAuth1UserHandler(
+                settings.APP_KEY, settings.APP_KEY_SECRET, settings.ACCESS_TOKEN, settings.ACCESS_TOKEN_SECRET
+            )
+            api = tweepy.API(auth)
+
+            # Send tweet with or without media
+            if image_path:
+                status = api.update_status_with_media(status=message, filename=image_path)
+            else:
+                status = api.update_status(status=message)
+
+            # Get tweet URL
+            tweet_url = f"https://twitter.com/user/status/{status.id}"
+
+            # Send to Discord
+            twitter.send_to_discord(message, tweet_url, image_path)
+
+            # Send to Slack
+            twitter.send_to_slack(message, tweet_url, image_path)
+
+            return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
+        except Exception as e:
+            logging.error(f"Error sending tweet: {str(e)}")
+
+            # Still try to send to Discord and Slack even if Twitter fails
+            try:
+                twitter.send_to_discord(message, None, image_path, error=str(e))
+                twitter.send_to_slack(message, None, image_path, error=str(e))
+            except Exception as comm_error:
+                logging.error(f"Error sending to communication channels: {str(comm_error)}")
+
+            return {"success": False, "url": None, "txid": None, "error": str(e)}
+
+    @staticmethod
+    def send_to_discord(message, tweet_url=None, image_path=None, error=None):
+        """
+        Send a message to the #project-blt Discord channel.
+
+        Args:
+            message (str): The message to send
+            tweet_url (str, optional): URL of the tweet
+            image_path (str, optional): Path to an image
+            error (str, optional): Error message if the tweet failed
+        """
+        try:
+            # Get Discord webhook URL from environment
+            webhook_url = os.environ.get("DISCORD_WEBHOOK_URL")
+            if not webhook_url:
+                logging.warning("Discord webhook URL not configured")
+                return
+
+            # Prepare the payload
+            payload = {"content": f"**New Tweet**\n{message}", "embeds": []}
+
+            # Add tweet URL if available
+            if tweet_url:
+                payload["content"] += f"\n{tweet_url}"
+
+            # Add error information if available
+            if error:
+                payload["embeds"].append(
+                    {
+                        "title": "Error sending tweet",
+                        "description": error,
+                        "color": 0xE74C3C,  # Red color
+                    }
+                )
+
+            # Send the request
+            files = {}
+            if image_path:
+                with open(image_path, "rb") as img:
+                    files = {"file": (os.path.basename(image_path), img)}
+                    response = requests.post(webhook_url, data={"payload_json": str(payload)}, files=files)
+            else:
+                response = requests.post(webhook_url, json=payload)
+
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            logging.error(f"Error sending to Discord: {str(e)}")
+            return False
+
+    @staticmethod
+    def send_to_slack(message, tweet_url=None, image_path=None, error=None):
+        """
+        Send a message to the #project-blt Slack channel.
+
+        Args:
+            message (str): The message to send
+            tweet_url (str, optional): URL of the tweet
+            image_path (str, optional): Path to an image
+            error (str, optional): Error message if the tweet failed
+        """
+        try:
+            # Get the OWASP BLT organization's Slack integration
+            from website.models import Organization, SlackIntegration
+
+            # Find the OWASP BLT organization
+            owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
+            if not owasp_org:
+                logging.warning("OWASP BLT organization not found")
+                return False
+
+            # Find the Slack integration for the organization
+            slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
+
+            if not slack_integration or not slack_integration.bot_access_token:
+                logging.warning("Slack integration not found or token missing")
+                return False
+
+            # Get the bot token and channel ID
+            bot_token = slack_integration.bot_access_token
+            channel_id = slack_integration.default_channel_id
+
+            # If no channel ID is set, try to find the #project-blt channel
+            if not channel_id:
+                try:
+                    # Use Slack API to find the channel
+                    headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
+                    response = requests.get("https://slack.com/api/conversations.list", headers=headers)
+                    response.raise_for_status()
+
+                    data = response.json()
+                    if data.get("ok"):
+                        for channel in data.get("channels", []):
+                            if channel.get("name") == "project-blt":
+                                channel_id = channel.get("id")
+                                break
+                except Exception as e:
+                    logging.error(f"Error finding #project-blt channel: {str(e)}")
+                    return False
+
+            if not channel_id:
+                logging.warning("Could not find #project-blt channel")
+                return False
+
+            # Prepare the message blocks
+            blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": f"*New Tweet*\n{message}"}}]
+
+            # Add tweet URL if available
+            if tweet_url:
+                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"<{tweet_url}|View Tweet>"}})
+
+            # Add error information if available
+            if error:
+                blocks.append(
+                    {"type": "section", "text": {"type": "mrkdwn", "text": f"*Error sending tweet:*\n{error}"}}
+                )
+
+            # Prepare the payload
+            payload = {
+                "channel": channel_id,
+                "blocks": blocks,
+                "text": f"New Tweet: {message}",  # Fallback text
+            }
+
+            # Send the message
+            headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
+
+            # If there's an image, upload it first
+            if image_path:
+                try:
+                    # Upload the file
+                    upload_response = requests.post(
+                        "https://slack.com/api/files.upload",
+                        headers={"Authorization": f"Bearer {bot_token}"},
+                        files={"file": open(image_path, "rb")},
+                        data={"channels": channel_id, "initial_comment": f"New Tweet: {message}"},
+                    )
+
+                    if not upload_response.json().get("ok"):
+                        logging.warning(f"Error uploading image to Slack: {upload_response.json().get('error')}")
+                except Exception as e:
+                    logging.error(f"Error uploading image to Slack: {str(e)}")
+
+            # Send the message
+            response = requests.post("https://slack.com/api/chat.postMessage", headers=headers, json=payload)
+
+            response.raise_for_status()
+
+            if not response.json().get("ok"):
+                logging.warning(f"Error sending message to Slack: {response.json().get('error')}")
+                return False
+
+            return True
+        except Exception as e:
+            logging.error(f"Error sending to Slack: {str(e)}")
+            return False

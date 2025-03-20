@@ -20,240 +20,129 @@
 {% load socialaccount %}
 {% load humanize %}
 {% providers_media_js %}
-{% block style %}
-    <style>
-  .duplicates {
-    border-radius: 0px;
-  }
-
-  table {
-    border: 1px solid #ccc;
-    border-collapse: collapse;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    table-layout: fixed;
-  }
-
-  table caption {
-    font-size: 1.5em;
-    margin: .5em 0 .75em;
-    text-align: center;
-  }
-
-  table tr {
-    background-color: #f8f8f8;
-    border: 1px solid #ddd;
-    padding: .35em;
-  }
-
-  table th,
-  table td {
-    padding: .625em;
-    text-align: center;
-  }
-
-  table th {
-    font-size: .85em;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-  }
-
-  @media screen and (max-width: 600px) {
-    table {
-      border: 0;
-    }
-
-    table caption {
-      font-size: 1.3em;
-    }
-
-    table thead {
-      border: none;
-      clip: rect(0 0 0 0);
-      height: 1px;
-      margin: -1px;
-      overflow: hidden;
-      padding: 0;
-      position: absolute;
-      width: 1px;
-    }
-
-    table tr {
-      border-bottom: 3px solid #ddd;
-      display: block;
-      margin-bottom: .625em;
-    }
-
-    table td {
-      border-bottom: 1px solid #ddd;
-      display: block;
-      font-size: .8em;
-      text-align: right;
-    }
-
-    table td::before {
-      /*
-    * aria-label has no advantage, it won't be read inside a table
-    content: attr(aria-label);
-    */
-      content: attr(data-label);
-      float: left;
-      font-weight: bold;
-      text-transform: uppercase;
-    }
-
-    table td:last-child {
-      border-bottom: 0;
-    }
-  }
-    </style>
-    <section>
-        {% include "includes/user_sidenav.html" %}
-    </section>
+<section>
+    {% include "includes/user_sidenav.html" %}
+</section>
 {% endblock style %}
 {% block content %}
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <script src="{% static 'js/activity.js' %}"></script>
-    <form action="{% url 'submit_bug' hunt.pk %}"
-          method="post"
-          enctype="multipart/form-data">
-        {% csrf_token %}
-        <div class="row main">
-            <div class="panel-heading">
-                <div class="panel-title text-center">
-                    <h1 class="title">Report a bug</h1>
-                    <hr />
-                </div>
+    {% block content %}
+        <form action="{% url 'submit_bug' hunt.pk %}"
+              method="post"
+              enctype="multipart/form-data"
+              class="bg-white p-6 rounded-lg shadow-md">
+            {% csrf_token %}
+            <div class="text-center mb-6">
+                <h1 class="text-2xl font-bold">Report a Bug</h1>
+                <hr class="my-4">
             </div>
             <section>
                 {% include "includes/user_sidenav.html" %}
             </section>
-            <div class="main-issue-form main-center">
-                <form class="form-horizontal" method="post" action="#">
-                    <div class="form-group{% if form.url.errors %} has-error{% endif %}">
-                        <div class="input-group">
-                            <span class="input-group-addon"><i class="fa fa-external-link" aria-hidden="true"></i></span>
-                            {% if request.GET.url %}
-                                <input class="form-control required"
-                                       type="url"
-                                       data-intro="Enter the website's complete url where you found the bug."
-                                       data-step="1"
-                                       placeholder="https://testsite.com/bug-found"
-                                       name="url"
-                                       value="{{ request.GET.url }}">
-                            {% else %}
-                                <input class="form-control required"
-                                       data-intro="Enter the website's complete url where you found the bug."
-                                       data-step="1"
-                                       placeholder="https://testsite.com/bug-found"
-                                       name="url"
-                                       value="{{ form.url.value|default:"" }}">
-                            {% endif %}
-                            <a class="btn btn-info form-control duplicates">Check for Duplicates</a>
-                        </div>
-                        <span class="message"></span>
-                        <span class="help-block">{{ form.url.errors }}</span>
-                    </div>
-                    <div class="form-group{% if form.description.errors %} has-error{% endif %}">
-                        <div class="input-group">
-                            <span class="input-group-addon"><i class="fa fa-pencil-square-o" aria-hidden="true"></i></span>
-                            <textarea data-required="true"
-                                      name="description"
-                                      id="description"
-                                      data-intro="Describe the nature of bug."
-                                      data-step="2"
-                                      class="form-control required"
-                                      rows="3"
-                                      placeholder="Describe bug issue">{{ form.description.value|default:"" }}</textarea>
-                        </div>
-                        <span class="help-block">{{ form.description.errors }}</span>
-                    </div>
-                    <div class="input-group">
-                        <span class="input-group-addon">
-                            <i class="fa fa-list" aria-hidden="true"></i>
+            <div class="space-y-4">
+                <!-- URL Input -->
+                <div class="form-group{% if form.url.errors %} has-error{% endif %}">
+                    <div class="flex items-center">
+                        <span class="bg-gray-200 p-3 rounded-l-lg">
+                            <i class="fa fa-external-link" aria-hidden="true"></i>
                         </span>
-                        <select required
-                                data-intro="Categorize the bug."
-                                data-step="3"
-                                name="label"
-                                class="form-control">
-                            <option value="0" selected="selected">General</option>
-                            <option value="1">Number error</option>
-                            <option value="2">Functional</option>
-                            <option value="3">Performance</option>
-                            <option value="4">Security</option>
-                            <option value="5">Typo</option>
-                            <option value="6">Design</option>
-                        </select>
+                        <input class="flex-1 p-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               type="url"
+                               placeholder="https://testsite.com/bug-found"
+                               name="url"
+                               value="{{ request.GET.url|default:form.url.value|default:'' }}">
+                        <button class="ml-2 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-200">
+                            Check for Duplicates
+                        </button>
                     </div>
-                    <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
-                        {% if request.GET.hash %}
-                        </br>
+                    {% if form.url.errors %}<span class="text-red-500 text-sm">{{ form.url.errors }}</span>{% endif %}
+                </div>
+                <!-- Description Textarea -->
+                <div class="form-group{% if form.description.errors %} has-error{% endif %}">
+                    <div class="flex items-center">
+                        <span class="bg-gray-200 p-3 rounded-l-lg">
+                            <i class="fa fa-pencil-square-o" aria-hidden="true"></i>
+                        </span>
+                        <textarea class="flex-1 p-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  name="description"
+                                  rows="3"
+                                  placeholder="Describe bug issue">{{ form.description.value|default:'' }}</textarea>
+                    </div>
+                    {% if form.description.errors %}<span class="text-red-500 text-sm">{{ form.description.errors }}</span>{% endif %}
+                </div>
+                <!-- Bug Type Dropdown -->
+                <div class="flex items-center">
+                    <span class="bg-gray-200 p-3 rounded-l-lg">
+                        <i class="fa fa-list" aria-hidden="true"></i>
+                    </span>
+                    <select class="flex-1 p-3 border border-gray-300 rounded-r-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            name="label"
+                            required>
+                        <option value="0" selected>General</option>
+                        <option value="1">Number error</option>
+                        <option value="2">Functional</option>
+                        <option value="3">Performance</option>
+                        <option value="4">Security</option>
+                        <option value="5">Typo</option>
+                        <option value="6">Design</option>
+                    </select>
+                </div>
+                <!-- Screenshot Upload -->
+                <div class="form-group{% if form.screenshot.errors %} has-error{% endif %}">
+                    {% if request.GET.hash %}
                         <img src="{{ MEDIA_URL }}uploads/{{ request.GET.hash }}.png"
-                             class="img-responsive img-thumbnail screenshot-hash"
-                             width="100%"
-                             height="100%"
-                             alt="screenshot">
-                        <input type="hidden"
-                               class="required"
-                               name="screenshot-hash"
-                               value="{{ request.GET.hash }}">
+                             class="w-full h-auto rounded-lg mb-4"
+                             alt="screenshot"
+                             width="1200"
+                             height="630">
+                        <input type="hidden" name="screenshot-hash" value="{{ request.GET.hash }}">
                     {% else %}
-                        <br>
-                        <span>
-                            <input type="file"
-                                   class="required"
-                                   id="${multipartFilePath}"
-                                   name="screenshot" />
-                            <button class="btn btn-primary btn-block"
-                                    data-intro="Upload a screenshot of the concerned page."
-                                    data-step="4"
-                                    name="test_files"
-                                    type="button">
+                        <div class="flex items-center">
+                            <input type="file" class="hidden" id="screenshot" name="screenshot" />
+                            <label for="screenshot"
+                                   class="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-200 cursor-pointer">
                                 <i class="fa fa-upload" aria-hidden="true"></i> Upload Screenshot
-                            </button>
-                            <span class="help-block{% if form.screenshot.errors %} has-error{% endif %}">{{ form.screenshot.errors }}</span>
-                            <span class="badge badge-important"></span>
-                        </span>
+                            </label>
+                        </div>
+                        {% if form.screenshot.errors %}<span class="text-red-500 text-sm">{{ form.screenshot.errors }}</span>{% endif %}
                     {% endif %}
                 </div>
-            </form>
-            <button type="submit"
-                    name="reportbug_button"
-                    id="btn"
-                    class="btn btn-default btn-block"
-                    data-intro="Click here to report the bug."
-                    data-step="5">
-                Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
-            </button>
-        </div>
-    </div>
-</form>
-<table>
-    {% if issue_list %}
-        <caption>Report Summary</caption>
-        <thead>
-            <tr>
-                <th scope="col">id</th>
-                <th scope="col">URL</th>
-                <th scope="col">Description</th>
-                <th scope="col">Type</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for issue in issue_list %}
-                <tr>
-                    <td data-label="id">{{ forloop.counter }}</td>
-                    <td data-label="url">{{ issue.url }}</td>
-                    <td data-label="desc">{{ issue.description }}</td>
-                    <td data-label="type">{{ issue.get_label_display }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    {% endif %}
-</table>
-<script type="text/javascript">
+                <!-- Submit Button -->
+                <button type="submit"
+                        class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition duration-200">
+                    Report Bug <i class="fa fa-trophy" aria-hidden="true">+3</i>
+                </button>
+            </div>
+        </form>
+        <!-- Report Summary Table -->
+        {% if issue_list %}
+            <div class="mt-8 overflow-x-auto">
+                <table class="w-full border-collapse border border-gray-300">
+                    <caption class="text-xl font-bold mb-4">Report Summary</caption>
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="p-3 border border-gray-300">ID</th>
+                            <th class="p-3 border border-gray-300">URL</th>
+                            <th class="p-3 border border-gray-300">Description</th>
+                            <th class="p-3 border border-gray-300">Type</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issue_list %}
+                            <tr class="bg-white even:bg-gray-50">
+                                <td class="p-3 border border-gray-300 text-center" data-label="ID">{{ forloop.counter }}</td>
+                                <td class="p-3 border border-gray-300" data-label="URL">{{ issue.url }}</td>
+                                <td class="p-3 border border-gray-300" data-label="Description">{{ issue.description }}</td>
+                                <td class="p-3 border border-gray-300" data-label="Type">{{ issue.get_label_display }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    {% endblock content %}
+    <script type="text/javascript">
   function sanitizeInput(input) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(input));
@@ -300,5 +189,5 @@
       });
     });
   });
-</script>
+    </script>
 {% endblock body %}
