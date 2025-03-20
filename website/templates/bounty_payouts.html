@@ -66,10 +66,18 @@
                             {% if current_payment_status != 'all' %}
                                 that are
                                 {% if current_payment_status == 'paid' %}
-                                    paid
+                                    <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245+label%3Apaid"
+                                       target="_blank"
+                                       class="text-blue-600 hover:text-[#e74c3c] hover:underline">paid</a>
                                 {% else %}
-                                    unpaid
+                                    <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245+-label%3Apaid"
+                                       target="_blank"
+                                       class="text-blue-600 hover:text-[#e74c3c] hover:underline">unpaid</a>
                                 {% endif %}
+                            {% else %}
+                                <a href="https://github.com/OWASP-BLT/BLT/issues?q=is%3Aissue+state%3Aclosed+label%3A%245"
+                                   target="_blank"
+                                   class="text-blue-600 hover:text-[#e74c3c] hover:underline">(view on GitHub)</a>
                             {% endif %}
                         </span>
                     </div>
@@ -88,6 +96,31 @@
                             Unpaid
                         </a>
                     </div>
+                </div>
+            </div>
+            <!-- Help Info Section -->
+            <div class="bg-blue-50 p-4 rounded-lg shadow-sm mb-6 border border-blue-100">
+                <h3 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-5 w-5 mr-2 text-blue-600"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Information About Bounty Issues
+                </h3>
+                <div class="text-sm text-gray-700">
+                    <p class="mb-2">
+                        <span class="font-medium">How issues are added:</span> Issues from GitHub with the <code class="bg-gray-100 px-1 py-0.5 rounded">$5</code> label are fetched and displayed here.
+                        The refresh happens when a staff member clicks "Fetch New GitHub Issues with $5 Bounty".
+                    </p>
+                    <p class="mb-0">
+                        <span class="font-medium">Note:</span> If you see issues locally that aren't on production,
+                        it may be due to <a href="#" class="text-blue-600 hover:text-[#e74c3c] hover:underline">caching</a>,
+                        <a href="#" class="text-blue-600 hover:text-[#e74c3c] hover:underline">GitHub API rate limits</a>, or
+                        issues needing to be refreshed on production.
+                    </p>
                 </div>
             </div>
             <!-- Issues Table - Updated container with better overflow handling -->
@@ -432,6 +465,34 @@
                                             </svg>
                                             <p class="text-gray-600 font-medium">No bounty issues found</p>
                                             <p class="text-gray-500 text-sm mt-1">Try changing your filters or click "Fetch New GitHub Issues with $5 Bounty"</p>
+                                            <div class="mt-3 text-sm text-gray-600">
+                                                <p class="mb-1">
+                                                    Recent issues like <a href="https://github.com/OWASP-BLT/BLT/issues/2912"
+    target="_blank"
+    class="text-blue-600 hover:text-[#e74c3c] hover:underline">#2912</a> may not appear yet.
+                                                </p>
+                                                <p>They need to be refreshed from GitHub manually by a staff member.</p>
+                                            </div>
+                                            {% if request.user.is_staff %}
+                                                <div class="mt-4">
+                                                    <form method="post" action="">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="refresh_issues">
+                                                        <button type="submit"
+                                                                class="px-4 py-2 bg-[#e74c3c] hover:bg-opacity-90 text-white rounded-md shadow-sm transition duration-300 font-medium flex items-center justify-center">
+                                                            <svg class="w-5 h-5 mr-2"
+                                                                 fill="none"
+                                                                 stroke="currentColor"
+                                                                 viewBox="0 0 24 24"
+                                                                 xmlns="http://www.w3.org/2000/svg">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                                                                </path>
+                                                            </svg>
+                                                            Refresh Issues from GitHub Now
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            {% endif %}
                                         </div>
                                     </td>
                                 </tr>
