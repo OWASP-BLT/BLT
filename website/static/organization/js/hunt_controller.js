@@ -55,28 +55,79 @@ function add_prize(){
     if (prize_description_sanitized === "..."){
         prize_description_sanitized = "No Description";
     }
-    prize_container_child_html.innerHTML = `
-        <div id="prize-container-${prize_data.id}" class="bg-white rounded-lg shadow-lg p-6 w-72 mr-5 relative">
-            <button onclick="remove_prize(${prize_data.id})" class="absolute top-2 right-2 text-red-500">x</button>
-            <h2 class="text-2xl font-bold mb-4 text-gray-800">${escapeHTML(prize_name_sanitized)}</h2>
-            <div class="mb-4">
-                <p class="text-red-500 font-bold">Cash Value (USD)</p>
-                <p class="text-gray-800">$${prize_data.cash_value}</p>
-            </div>
-            <div class="mb-4">
-                <p class="text-gray-800 font-bold">Number of Winning Projects</p>
-                <p class="text-gray-600">${sanitizedNumberOfWinningProjects}</p>
-            </div>
-            <div class="mb-4">
-                <p class="text-gray-800 font-bold">Reward All Valid Submission</p>
-                <p class="text-gray-600">${prize_data.every_valid_submissions}</p>
-            </div>
-            <div class="mb-4">
-                <p class="text-red-500 font-bold">Prize Description</p>
-                <p class="text-gray-800">${escapeHTML(prize_description_sanitized)}</p>
-            </div>
-        </div>
-    `;
+    // Create a container for the prize
+const prizeContainer = document.createElement('div');
+prizeContainer.id = `prize-container-${prize_data.id}`;
+prizeContainer.classList.add("bg-white", "rounded-lg", "shadow-lg", "p-6", "w-72", "mr-5", "relative");
+
+// Create the remove button
+const removeBtn = document.createElement('button');
+removeBtn.classList.add("absolute", "top-2", "right-2", "text-red-500");
+removeBtn.textContent = "x";
+removeBtn.addEventListener('click', () => remove_prize(prize_data.id));
+prizeContainer.appendChild(removeBtn);
+
+// Create the prize name heading
+const heading = document.createElement('h2');
+heading.classList.add("text-2xl", "font-bold", "mb-4", "text-gray-800");
+heading.textContent = escapeHTML(prize_name_sanitized);
+prizeContainer.appendChild(heading);
+
+// Create Cash Value section
+const cashDiv = document.createElement('div');
+cashDiv.classList.add("mb-4");
+const cashLabel = document.createElement('p');
+cashLabel.classList.add("text-red-500", "font-bold");
+cashLabel.textContent = "Cash Value (USD)";
+cashDiv.appendChild(cashLabel);
+const cashValue = document.createElement('p');
+cashValue.classList.add("text-gray-800");
+cashValue.textContent = `$${prize_data.cash_value}`;
+cashDiv.appendChild(cashValue);
+prizeContainer.appendChild(cashDiv);
+
+// Create Number of Winning Projects section
+const projectsDiv = document.createElement('div');
+projectsDiv.classList.add("mb-4");
+const projectsLabel = document.createElement('p');
+projectsLabel.classList.add("text-gray-800", "font-bold");
+projectsLabel.textContent = "Number of Winning Projects";
+projectsDiv.appendChild(projectsLabel);
+const projectsValue = document.createElement('p');
+projectsValue.classList.add("text-gray-600");
+projectsValue.textContent = sanitizedNumberOfWinningProjects;
+projectsDiv.appendChild(projectsValue);
+prizeContainer.appendChild(projectsDiv);
+
+// Create Reward All Valid Submission section
+const validDiv = document.createElement('div');
+validDiv.classList.add("mb-4");
+const validLabel = document.createElement('p');
+validLabel.classList.add("text-gray-800", "font-bold");
+validLabel.textContent = "Reward All Valid Submission";
+validDiv.appendChild(validLabel);
+const validValue = document.createElement('p');
+validValue.classList.add("text-gray-600");
+validValue.textContent = prize_data.every_valid_submissions;
+validDiv.appendChild(validValue);
+prizeContainer.appendChild(validDiv);
+
+// Create Prize Description section
+const descDiv = document.createElement('div');
+descDiv.classList.add("mb-4");
+const descLabel = document.createElement('p');
+descLabel.classList.add("text-red-500", "font-bold");
+descLabel.textContent = "Prize Description";
+descDiv.appendChild(descLabel);
+const descValue = document.createElement('p');
+descValue.classList.add("text-gray-800");
+descValue.textContent = escapeHTML(prize_description_sanitized);
+descDiv.appendChild(descValue);
+prizeContainer.appendChild(descDiv);
+
+// Append the complete prize container to the list
+list_prize_container.appendChild(prizeContainer);
+
 
     list_prize_container.appendChild(prize_container_child_html);
     function escapeHTML(unsafeText) {
