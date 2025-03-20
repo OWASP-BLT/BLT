@@ -573,7 +573,7 @@ def fetch_video_data(video_url):
     host = parsed_url.hostname
     if host and (host.endswith("youtube.com") or host == "youtu.be"):
         return fetch_youtube_video_data(video_url)
-    elif host and host.endswith("vimeo.com"):
+    elif host and (host == "vimeo.com" or host.endswith(".vimeo.com")):
         return fetch_vimeo_video_data(video_url)
     return None
 
