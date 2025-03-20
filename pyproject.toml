@@ -68,6 +68,7 @@ python-dateutil = "^2.9.0.post0"
 pyzipper = "^0.3.6"
 tweepy = "^4.15.0"
 better-profanity = "^0.7.0"
+celery = "^5.4.0"
 
 
 [tool.poetry.group.dev.dependencies]

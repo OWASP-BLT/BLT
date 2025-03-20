@@ -271,6 +271,7 @@ from website.views.project import (
     repo_activity_data,
     select_contribution,
 )
+from website.views.project_leaderboard import ProjectLeaderboardView, project_leaderboard_data, refresh_project_stats
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
@@ -1093,6 +1094,10 @@ urlpatterns = [
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
+    # project stats
+    path("project_leaderboard/", ProjectLeaderboardView.as_view(), name="project_leaderboard"),
+    path("project_leaderboard/refresh/<int:project_id>/", refresh_project_stats, name="refresh_project_stats"),
+    path("project_leaderboard/data/", project_leaderboard_data, name="project_leaderboard_data"),
 ]
 
 if settings.DEBUG:
