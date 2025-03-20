@@ -48,4 +48,3 @@ class Command(BaseCommand):
         except Exception as e:
             logger.error("Error in daily tasks", exc_info=True)
             raise
-

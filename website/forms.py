@@ -168,7 +168,7 @@ class GitHubIssueForm(forms.Form):
                 "placeholder": "https://github.com/owner/repo/issues/123",
             }
         ),
-        help_text=("Enter the full URL to the GitHub issue with a bounty label " "(containing a $ sign)"),
+        help_text=("Enter the full URL to the GitHub issue with a bounty label (containing a $ sign)"),
     )
 
     def clean_github_url(self):
@@ -301,4 +301,3 @@ class HackathonPrizeForm(forms.ModelForm):
             self.fields["sponsor"].queryset = HackathonSponsor.objects.filter(hackathon=hackathon)
         else:
             self.fields["sponsor"].queryset = HackathonSponsor.objects.none()
-

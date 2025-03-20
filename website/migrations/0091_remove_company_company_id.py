@@ -14,4 +14,3 @@ class Migration(migrations.Migration):
             name="company_id",
         ),
     ]
-

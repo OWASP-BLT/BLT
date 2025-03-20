@@ -146,4 +146,3 @@ class Command(LoggedBaseCommand):
             self.stdout.write(f"Updated contributor count to {len(contributors)}")
 
         self.stdout.write(self.style.SUCCESS(f"Successfully fetched contributors for project {project.name}"))
-

@@ -97,4 +97,3 @@ class Migration(migrations.Migration):
         ),
         migrations.RunPython(set_is_owasp_repo),
     ]
-

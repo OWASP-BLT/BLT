@@ -430,4 +430,3 @@ class Command(LoggedBaseCommand):
                     "contributions": 0,
                 },
             )
-

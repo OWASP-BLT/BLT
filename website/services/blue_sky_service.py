@@ -44,4 +44,3 @@ class BlueSkyService:
         except Exception as e:
             print(f"Error in post_with_image: {e}")
             raise
-

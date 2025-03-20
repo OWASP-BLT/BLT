@@ -46,4 +46,3 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(add_single_user_challenges),
     ]
-

@@ -164,4 +164,3 @@ class BiddingTestCase(TestCase):
         self.assertEqual(new_bid.issue_url, self.valid_github_issue_url)
         self.assertEqual(float(new_bid.amount_bch), float(self.bid_amount))
         self.assertEqual(new_bid.status, "Open")
-

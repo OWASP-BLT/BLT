@@ -15,4 +15,3 @@ class Migration(migrations.Migration):
             field=models.GenericIPAddressField(blank=True, null=True),
         ),
     ]
-

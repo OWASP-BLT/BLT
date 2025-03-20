@@ -15,4 +15,3 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(blank=True, help_text="When repositories were last updated", null=True),
         ),
     ]
-

@@ -14,4 +14,3 @@ class Migration(migrations.Migration):
             name="github_username",
         ),
     ]
-

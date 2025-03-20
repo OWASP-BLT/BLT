@@ -73,4 +73,3 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(fields=["slug"], name="unique_organization_slug"),
         ),
     ]
-

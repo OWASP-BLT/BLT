@@ -125,4 +125,3 @@ class Command(BaseCommand):
                 logger.error(f"Error processing PR #{pr.issue_id}: {str(e)}")
 
         logger.info(f"Synced {len(all_contributors)} contributors for {repo.name}")
-

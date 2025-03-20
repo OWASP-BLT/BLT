@@ -24,4 +24,3 @@ class Migration(migrations.Migration):
             name="SuggestionVotes",
         ),
     ]
-

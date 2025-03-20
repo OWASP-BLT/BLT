@@ -20,4 +20,3 @@ class Migration(migrations.Migration):
             field=models.URLField(blank=True, null=True),
         ),
     ]
-

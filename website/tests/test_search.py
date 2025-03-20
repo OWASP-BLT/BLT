@@ -57,4 +57,3 @@ class SearchViewTests(TestCase):
         request.user = self.user
         response = search(request)
         self.assertEqual(response.status_code, 200)
-

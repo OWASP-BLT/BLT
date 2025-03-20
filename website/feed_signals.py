@@ -146,4 +146,3 @@ def update_user_streak(sender, instance, created, **kwargs):
             UserProfile.objects.create(
                 user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )
-

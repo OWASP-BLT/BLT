@@ -133,7 +133,7 @@ class Command(BaseCommand):
                         channel.tags.add(tag)
 
                     status = "Created" if created else "Updated"
-                    self.stdout.write(self.style.SUCCESS(f"\n{'='*50}"))
+                    self.stdout.write(self.style.SUCCESS(f"\n{'=' * 50}"))
                     self.stdout.write(self.style.SUCCESS(f"{status} Server: {channel.name}"))
                     self.stdout.write(self.style.NOTICE(f"Description: {channel.description[:100]}..."))
                     self.stdout.write(self.style.WARNING(f"Members: {channel.member_count:,}"))
@@ -141,9 +141,8 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SQL_FIELD(f"Logo URL: {channel.logo_url}"))
                     self.stdout.write(self.style.NOTICE(f"Tags: {', '.join(tag.name for tag in channel.tags.all())}"))
 
-            self.stdout.write(self.style.SUCCESS(f"\n{'='*50}"))
+            self.stdout.write(self.style.SUCCESS(f"\n{'=' * 50}"))
             self.stdout.write(self.style.SUCCESS(f"\nTotal unique servers processed: {len(all_servers)}"))
 
         except requests.exceptions.RequestException as e:
             self.stderr.write(self.style.ERROR(f"Error fetching servers: {str(e)}"))
-

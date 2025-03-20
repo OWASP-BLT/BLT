@@ -656,4 +656,3 @@ class VideoCallConsumer(AsyncWebsocketConsumer):
     async def call_ended(self, event):
         # Notify client that call has ended
         await self.send(text_data=json.dumps({"type": "call_ended"}))
-

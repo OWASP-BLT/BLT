@@ -16,4 +16,3 @@ class Command(LoggedBaseCommand):
                 superuser.save()
             else:
                 print("Skipping superuser creation in non-debug mode")
-

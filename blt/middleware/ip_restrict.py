@@ -165,4 +165,3 @@ class IPRestrictMiddleware:
                     IP.objects.create(address=ip, agent=agent, count=1, path=request.path)
 
         return self.get_response(request)
-

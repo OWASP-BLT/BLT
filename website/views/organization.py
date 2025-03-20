@@ -75,8 +75,7 @@ def add_domain_to_organization(request):
         try:
             domain = Domain.objects.get(id=request.POST.get("domain"))
             organization_name = request.POST.get("organization")
-            organization = Organization.objects.filter(
-                name=organization_name).first()
+            organization = Organization.objects.filter(name=organization_name).first()
 
             if not organization:
                 url = domain.url
@@ -106,24 +105,20 @@ def add_domain_to_organization(request):
                         pass
 
                 if is_private:
-                    messages.error(
-                        request, "Invalid domain: Cannot use internal or private addresses")
+                    messages.error(request, "Invalid domain: Cannot use internal or private addresses")
                     return redirect("domain", slug=domain.url)
 
                 try:
                     response = requests.get(url, timeout=5)
                     soup = BeautifulSoup(response.text, "html.parser")
                     if organization_name in soup.get_text():
-                        organization = Organization.objects.create(
-                            name=organization_name)
+                        organization = Organization.objects.create(name=organization_name)
                         domain.organization = organization
                         domain.save()
-                        messages.success(
-                            request, "Organization added successfully")
+                        messages.success(request, "Organization added successfully")
                         return redirect("domain", slug=domain.url)
                     else:
-                        messages.error(
-                            request, "Organization not found in the domain")
+                        messages.error(request, "Organization not found in the domain")
                         return redirect("domain", slug=domain.url)
                 except requests.RequestException:
                     messages.error(request, "Could not connect to the domain")
@@ -149,8 +144,7 @@ def organization_dashboard(request, template="index_organization.html"):
         organization_admin = OrganizationAdmin.objects.get(user=request.user)
         if not organization_admin.is_active:
             return HttpResponseRedirect("/")
-        hunts = Hunt.objects.filter(
-            is_published=True, domain=organization_admin.domain)
+        hunts = Hunt.objects.filter(is_published=True, domain=organization_admin.domain)
         upcoming_hunt = []
         ongoing_hunt = []
         previous_hunt = []
@@ -198,8 +192,7 @@ def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_o
 
 def weekly_report(request):
     domains = Domain.objects.all()
-    report_data = [
-        "Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
+    report_data = ["Hey This is a weekly report from OWASP BLT regarding the bugs reported for your organization!"]
     try:
         for domain in domains:
             open_issues = domain.open_issues
@@ -218,8 +211,7 @@ def weekly_report(request):
                 description = issue.description
                 views = issue.views
                 label = issue.get_label_display()
-                report_data.append(
-                    f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
+                report_data.append(f"\n Description: {description} \n Views: {views} \n Labels: {label} \n")
 
         report_string = "".join(report_data)
         send_mail(
@@ -239,8 +231,7 @@ def weekly_report(request):
 def organization_hunt_results(request, pk, template="organization_hunt_results.html"):
     hunt = get_object_or_404(Hunt, pk=pk)
     issues = (
-        Issue.objects.filter(hunt=hunt).exclude(
-            Q(is_hidden=True) & ~Q(user_id=request.user.id)).order_by("-created")
+        Issue.objects.filter(hunt=hunt).exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id)).order_by("-created")
     )
 
     context = {}
@@ -341,8 +332,7 @@ def subscribe_to_domains(request, pk):
     if domain is None:
         return JsonResponse("ERROR", safe=False, status=400)
 
-    already_subscribed = request.user.userprofile.subscribed_domains.filter(
-        pk=domain.id).exists()
+    already_subscribed = request.user.userprofile.subscribed_domains.filter(pk=domain.id).exists()
 
     if already_subscribed:
         request.user.userprofile.subscribed_domains.remove(domain)
@@ -366,11 +356,9 @@ class DomainList(TemplateView):
             return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = self.model.objects.filter(
-                organization=domain_admin.organization).order_by("-created")
+            domain = self.model.objects.filter(organization=domain_admin.organization).order_by("-created")
         else:
-            domain = self.model.objects.filter(
-                pk=domain_admin.domain.pk).order_by("-created")
+            domain = self.model.objects.filter(pk=domain_admin.domain.pk).order_by("-created")
         context = {"domains": domain}
         return render(request, self.template_name, context)
 
@@ -400,8 +388,7 @@ class Joinorganization(TemplateView):
                 return JsonResponse({"error": "Empty Fields"})
             paymentType = request.POST["paymentType"]
             if paymentType == "wallet":
-                wallet, created = Wallet.objects.get_or_create(
-                    user=request.user)
+                wallet, created = Wallet.objects.get_or_create(user=request.user)
                 if wallet.current_balance < sub.charge_per_month:
                     return JsonResponse({"error": "insufficient balance in Wallet"})
                 wallet.withdraw(sub.charge_per_month)
@@ -491,13 +478,11 @@ class Listbounties(TemplateView):
             hunts = hunts.filter(Q(name__icontains=search))
 
         if start_date:
-            start_date = datetime.strptime(
-                start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            start_date = datetime.strptime(start_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(starts_on__gte=start_date)
 
         if end_date:
-            end_date = datetime.strptime(
-                end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
+            end_date = datetime.strptime(end_date, "%m/%d/%Y").strftime("%Y-%m-%d %H:%M")
             hunts = hunts.filter(end_on__gte=end_date)
 
         if domain and domain != "Select Domain":
@@ -508,8 +493,7 @@ class Listbounties(TemplateView):
         issue_state = request.GET.get("issue_state", "open")
 
         try:
-            github_issues = self.github_issues_with_bounties(
-                "$5", issue_state=issue_state)
+            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
 
             # For closed issues, fetch related PRs from database
             if issue_state == "closed":
@@ -539,8 +523,7 @@ class Listbounties(TemplateView):
 
                         issue["related_prs"] = related_prs
                     except Exception as e:
-                        logger.error(
-                            f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
                         issue["related_prs"] = []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
@@ -563,8 +546,7 @@ class Listbounties(TemplateView):
         if cached_issues is not None:
             return cached_issues
 
-        params = {"labels": label, "state": issue_state,
-                  "per_page": per_page, "page": page}
+        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
 
         headers = {}
         github_token = getattr(settings, "GITHUB_API_TOKEN", None)
@@ -618,8 +600,7 @@ def load_more_issues(request):
 
     try:
         view = Listbounties()
-        issues = view.github_issues_with_bounties(
-            "$5", issue_state=state, page=page)
+        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
 
         # For closed issues, fetch related PRs from database for other than first batch of issues
         if issues and state == "closed":
@@ -649,8 +630,7 @@ def load_more_issues(request):
 
                     issue["related_prs"] = related_prs
                 except Exception as e:
-                    logger.error(
-                        f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
                     issue["related_prs"] = []
 
         return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
@@ -673,8 +653,7 @@ class DraftHunts(TemplateView):
             if domain_admin.role == 0:
                 hunt = self.model.objects.filter(is_published=False)
             else:
-                hunt = self.model.objects.filter(
-                    is_published=False, domain=domain_admin.domain)
+                hunt = self.model.objects.filter(is_published=False, domain=domain_admin.domain)
             context = {"hunts": hunt}
             return render(request, self.template_name, context)
         except OrganizationAdmin.DoesNotExist:
@@ -696,8 +675,7 @@ class UpcomingHunts(TemplateView):
             if domain_admin.role == 0:
                 hunts = self.model.objects.filter(is_published=True)
             else:
-                hunts = self.model.objects.filter(
-                    is_published=True, domain=domain_admin.domain)
+                hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
             new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -722,8 +700,7 @@ class OngoingHunts(TemplateView):
             if domain_admin.role == 0:
                 hunts = self.model.objects.filter(is_published=True)
             else:
-                hunts = self.model.objects.filter(
-                    is_published=True, domain=domain_admin.domain)
+                hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
             new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -748,8 +725,7 @@ class PreviousHunts(TemplateView):
             if domain_admin.role == 0:
                 hunts = self.model.objects.filter(is_published=True)
             else:
-                hunts = self.model.objects.filter(
-                    is_published=True, domain=domain_admin.domain)
+                hunts = self.model.objects.filter(is_published=True, domain=domain_admin.domain)
             new_hunt = []
             for hunt in hunts:
                 if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
@@ -765,8 +741,7 @@ class PreviousHunts(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES,
-                               instance=request.user.userprofile)
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
@@ -784,14 +759,11 @@ class OrganizationSettings(TemplateView):
             if not domain_admin.is_active:
                 return HttpResponseRedirect("/")
             domain_admins = []
-            domain_list = Domain.objects.filter(
-                organization=domain_admin.organization)
+            domain_list = Domain.objects.filter(organization=domain_admin.organization)
             if domain_admin.role == 0:
-                domain_admins = OrganizationAdmin.objects.filter(
-                    organization=domain_admin.organization, is_active=True)
+                domain_admins = OrganizationAdmin.objects.filter(organization=domain_admin.organization, is_active=True)
             else:
-                domain_admins = OrganizationAdmin.objects.filter(
-                    domain=domain_admin.domain, is_active=True)
+                domain_admins = OrganizationAdmin.objects.filter(domain=domain_admin.domain, is_active=True)
             context = {
                 "admins": domain_admins,
                 "user": domain_admin,
@@ -803,8 +775,7 @@ class OrganizationSettings(TemplateView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES,
-                               instance=request.user.userprofile)
+        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
@@ -885,8 +856,7 @@ class DomainDetailView(ListView):
             # Fetch the related organization
             organization = domain.organization
             if organization is None:
-                organizations = Organization.objects.filter(
-                    name__iexact=domain.get_name)
+                organizations = Organization.objects.filter(name__iexact=domain.get_name)
                 if organizations.exists():
                     organization = organizations.first()
 
@@ -894,8 +864,7 @@ class DomainDetailView(ListView):
 
             if organization:
                 # Fetch related trademarks for the organization, ordered by filing date
-                trademarks = Trademark.objects.filter(
-                    organization=organization).order_by("-filing_date")
+                trademarks = Trademark.objects.filter(organization=organization).order_by("-filing_date")
                 context["trademarks"] = trademarks
 
             # Get open and closed issues
@@ -922,8 +891,7 @@ class DomainDetailView(ListView):
             except PageNotAnInteger:
                 openissue_paginated = open_paginator.page(1)
             except EmptyPage:
-                openissue_paginated = open_paginator.page(
-                    open_paginator.num_pages)
+                openissue_paginated = open_paginator.page(open_paginator.num_pages)
 
             # Handle pagination for closed issues
             closed_paginator = Paginator(closed_issues, self.paginate_by)
@@ -933,8 +901,7 @@ class DomainDetailView(ListView):
             except PageNotAnInteger:
                 closeissue_paginated = closed_paginator.page(1)
             except EmptyPage:
-                closeissue_paginated = closed_paginator.page(
-                    closed_paginator.num_pages)
+                closeissue_paginated = closed_paginator.page(closed_paginator.num_pages)
 
             context.update(
                 {
@@ -943,8 +910,7 @@ class DomainDetailView(ListView):
                     "closed_net": closed_issues,
                     "closed": closeissue_paginated,
                     "leaderboard": (
-                        User.objects.filter(issue__domain=domain).annotate(
-                            total=Count("issue")).order_by("-total")
+                        User.objects.filter(issue__domain=domain).annotate(total=Count("issue")).order_by("-total")
                     ),
                     "current_month": datetime.now().month,
                     "domain_graph": (
@@ -978,8 +944,7 @@ class DomainDetailView(ListView):
 
             # Add activity screenshots
             context["activity_screenshots"] = {
-                activity: IssueScreenshot.objects.filter(
-                    issue=activity.pk).first()
+                activity: IssueScreenshot.objects.filter(issue=activity.pk).first()
                 for activity in context["activities"]
             }
 
@@ -1013,15 +978,13 @@ class ScoreboardView(ListView):
 
         return Domain.objects.annotate(
             open_issues_count=Count("issue", filter=Q(issue__status="open")),
-            closed_issues_count=Count(
-                "issue", filter=Q(issue__status="closed")),
+            closed_issues_count=Count("issue", filter=Q(issue__status="closed")),
         ).order_by(sort_by)
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
         context["user"] = self.request.GET.get("user")
-        context["sort_by"] = self.request.GET.get(
-            "sort_by", "open_issues_count")
+        context["sort_by"] = self.request.GET.get("sort_by", "open_issues_count")
         context["sort_order"] = self.request.GET.get("sort_order", "desc")
         return context
 
@@ -1037,8 +1000,7 @@ class HuntCreate(CreateView):
 
         domain, created = Domain.objects.get_or_create(
             name=self.request.POST.get("url").replace("www.", ""),
-            defaults={"url": "http://" +
-                      self.request.POST.get("url").replace("www.", "")},
+            defaults={"url": "http://" + self.request.POST.get("url").replace("www.", "")},
         )
         self.object.domain = domain
 
@@ -1052,8 +1014,7 @@ class InboundParseWebhookView(View):
         for event in json.loads(data):
             try:
                 # Try to find a matching domain first
-                domain = Domain.objects.filter(
-                    email__iexact=event.get("email")).first()
+                domain = Domain.objects.filter(email__iexact=event.get("email")).first()
                 if domain:
                     domain.email_event = event.get("event")
                     if event.get("event") == "click":
@@ -1061,8 +1022,7 @@ class InboundParseWebhookView(View):
                     domain.save()
 
                 # Try to find a matching user profile
-                user = User.objects.filter(
-                    email__iexact=event.get("email")).first()
+                user = User.objects.filter(email__iexact=event.get("email")).first()
                 if user and hasattr(user, "userprofile"):
                     profile = user.userprofile
                     event_type = event.get("event")
@@ -1087,8 +1047,7 @@ class InboundParseWebhookView(View):
                     profile.save()
 
             except (Domain.DoesNotExist, User.DoesNotExist, AttributeError, ValueError, json.JSONDecodeError) as e:
-                logger.error(
-                    f"Error processing SendGrid webhook event: {str(e)}")
+                logger.error(f"Error processing SendGrid webhook event: {str(e)}")
 
         return JsonResponse({"detail": "Inbound Sendgrid Webhook received"})
 
@@ -1106,8 +1065,7 @@ class CreateHunt(TemplateView):
                 return HttpResponseRedirect("/")
             domain = []
             if domain_admin.role == 0:
-                domain = Domain.objects.filter(
-                    organization=domain_admin.organization)
+                domain = Domain.objects.filter(organization=domain_admin.organization)
             else:
                 domain = Domain.objects.filter(pk=domain_admin.domain.pk)
 
@@ -1124,8 +1082,7 @@ class CreateHunt(TemplateView):
                 domain_admin.role == 1
                 and (str(domain_admin.domain.pk) == ((request.POST["domain"]).split("-"))[0].replace(" ", ""))
             ) or domain_admin.role == 0:
-                wallet, created = Wallet.objects.get_or_create(
-                    user=request.user)
+                wallet, created = Wallet.objects.get_or_create(user=request.user)
                 total_amount = (
                     Decimal(request.POST["prize_winner"])
                     + Decimal(request.POST["prize_runner"])
@@ -1134,8 +1091,7 @@ class CreateHunt(TemplateView):
                 if total_amount > wallet.current_balance:
                     return HttpResponse("Insufficient balance")
                 hunt = Hunt()
-                hunt.domain = Domain.objects.get(
-                    pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 data = {}
                 data["content"] = request.POST["content"]
                 data["start_date"] = request.POST["start_date"]
@@ -1148,8 +1104,7 @@ class CreateHunt(TemplateView):
                 if domain_admin.role == 1:
                     if hunt.domain != domain_admin.domain:
                         return HttpResponse("Domain mismatch")
-                hunt.domain = Domain.objects.get(
-                    pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+                hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
                 tzsign = 1
                 offset = request.POST["tzoffset"]
                 if int(offset) < 0:
@@ -1158,32 +1113,22 @@ class CreateHunt(TemplateView):
                 start_date = form.cleaned_data["start_date"]
                 end_date = form.cleaned_data["end_date"]
                 if tzsign > 0:
-                    start_date = start_date + \
-                        timedelta(hours=int(int(offset) / 60),
-                                  minutes=int(int(offset) % 60))
-                    end_date = end_date + \
-                        timedelta(hours=int(int(offset) / 60),
-                                  minutes=int(int(offset) % 60))
+                    start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 else:
-                    start_date = start_date - \
-                        timedelta(hours=int(int(offset) / 60),
-                                  minutes=int(int(offset) % 60))
-                    end_date = end_date - \
-                        timedelta(hours=int(int(offset) / 60),
-                                  minutes=int(int(offset) % 60))
+                    start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+                    end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
                 hunt.starts_on = start_date
                 hunt.prize_winner = Decimal(request.POST["prize_winner"])
                 hunt.prize_runner = Decimal(request.POST["prize_runner"])
-                hunt.prize_second_runner = Decimal(
-                    request.POST["prize_second_runner"])
+                hunt.prize_second_runner = Decimal(request.POST["prize_second_runner"])
                 hunt.end_on = end_date
                 hunt.name = request.POST["name"]
                 hunt.description = form.cleaned_data["content"]
                 wallet.withdraw(total_amount)
                 wallet.save()
                 try:
-                    hunt.is_published = request.POST.get(
-                        "publish", False) == "on"
+                    hunt.is_published = request.POST.get("publish", False) == "on"
                 except KeyError:
                     hunt.is_published = False
                 hunt.save()
@@ -1207,8 +1152,7 @@ def user_sizzle_report(request, username):
     response_data = []
     for date, logs in grouped_logs.items():
         first_log = logs[0]
-        total_duration = sum(
-            (log.duration for log in logs if log.duration), timedelta())
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
 
         total_duration_seconds = total_duration.total_seconds()
         formatted_duration = f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
@@ -1240,8 +1184,7 @@ def user_sizzle_report(request, username):
 def sizzle_daily_log(request):
     try:
         if request.method == "GET":
-            reports = DailyStatusReport.objects.filter(
-                user=request.user).order_by("-date")
+            reports = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
             return render(request, "sizzle/sizzle_daily_status.html", {"reports": reports})
 
         if request.method == "POST":
@@ -1250,8 +1193,7 @@ def sizzle_daily_log(request):
             blockers = request.POST.get("blockers")
             goal_accomplished = request.POST.get("goal_accomplished") == "on"
             current_mood = request.POST.get("feeling")
-            print(previous_work, next_plan, blockers,
-                  goal_accomplished, current_mood)
+            print(previous_work, next_plan, blockers, goal_accomplished, current_mood)
 
             DailyStatusReport.objects.create(
                 user=request.user,
@@ -1263,8 +1205,7 @@ def sizzle_daily_log(request):
                 current_mood=current_mood,
             )
 
-            messages.success(
-                request, "Daily status report submitted successfully.")
+            messages.success(request, "Daily status report submitted successfully.")
             return JsonResponse(
                 {
                     "success": "true",
@@ -1281,8 +1222,7 @@ def sizzle_daily_log(request):
 
 @login_required
 def TimeLogListView(request):
-    time_logs = TimeLog.objects.filter(
-        user=request.user).order_by("-start_time")
+    time_logs = TimeLog.objects.filter(user=request.user).order_by("-start_time")
     active_time_log = time_logs.filter(end_time__isnull=True).first()
 
     # print the all details of the active time log
@@ -1324,8 +1264,7 @@ def TimeLogListAPIView(request):
     if not start_date or not end_date:
         return JsonResponse({"error": "Invalid date format."}, status=status.HTTP_400_BAD_REQUEST)
 
-    time_logs = TimeLog.objects.filter(user=request.user, created__range=[
-                                       start_date, end_date]).order_by("created")
+    time_logs = TimeLog.objects.filter(user=request.user, created__range=[start_date, end_date]).order_by("created")
 
     grouped_logs = defaultdict(list)
     for log in time_logs:
@@ -1335,8 +1274,7 @@ def TimeLogListAPIView(request):
     response_data = []
     for date, logs in grouped_logs.items():
         first_log = logs[0]
-        total_duration = sum(
-            (log.duration for log in logs if log.duration), timedelta())
+        total_duration = sum((log.duration for log in logs if log.duration), timedelta())
 
         total_duration_seconds = total_duration.total_seconds()
         formatted_duration = f"{int(total_duration_seconds // 60)} min {int(total_duration_seconds % 60)} sec"
@@ -1366,8 +1304,7 @@ def sizzle_docs(request):
 def sizzle(request):
     # Aggregate leaderboard data: username and total_duration
     leaderboard_qs = (
-        TimeLog.objects.values("user__username").annotate(
-            total_duration=Sum("duration")).order_by("-total_duration")
+        TimeLog.objects.values("user__username").annotate(total_duration=Sum("duration")).order_by("-total_duration")
     )
 
     # Process leaderboard to include formatted_duration
@@ -1387,16 +1324,14 @@ def sizzle(request):
     sizzle_data = None
 
     if request.user.is_authenticated:
-        last_data = TimeLog.objects.filter(
-            user=request.user).order_by("-created").first()
+        last_data = TimeLog.objects.filter(user=request.user).order_by("-created").first()
 
         if last_data:
             all_data = TimeLog.objects.filter(user=request.user, created__date=last_data.created.date()).order_by(
                 "created"
             )
 
-            total_duration = sum(
-                (entry.duration for entry in all_data if entry.duration), timedelta())
+            total_duration = sum((entry.duration for entry in all_data if entry.duration), timedelta())
 
             formatted_duration = format_timedelta(total_duration)
 
@@ -1425,14 +1360,12 @@ def trademark_detailview(request, slug):
     if settings.USPTO_API is None:
         return HttpResponse("API KEY NOT SETUP")
 
-    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (
-        slug)
+    trademark_available_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkAvailable/%s" % (slug)
     headers = {
         "x-rapidapi-host": "uspto-trademark.p.rapidapi.com",
         "x-rapidapi-key": settings.USPTO_API,
     }
-    trademark_available_response = requests.get(
-        trademark_available_url, headers=headers)
+    trademark_available_response = requests.get(trademark_available_url, headers=headers)
     ta_data = trademark_available_response.json()
 
     if trademark_available_response.status_code == 429:
@@ -1444,13 +1377,10 @@ def trademark_detailview(request, slug):
         return render(request, "trademark_detailview.html", {"error_message": error_message, "query": slug})
 
     if ta_data[0].get("available") == "no":
-        trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (
-            slug)
-        trademark_search_response = requests.get(
-            trademark_search_url, headers=headers)
+        trademark_search_url = "https://uspto-trademark.p.rapidapi.com/v1/trademarkSearch/%s/active" % (slug)
+        trademark_search_response = requests.get(trademark_search_url, headers=headers)
         ts_data = trademark_search_response.json()
-        context = {"count": ts_data.get(
-            "count"), "items": ts_data.get("items"), "query": slug}
+        context = {"count": ts_data.get("count"), "items": ts_data.get("items"), "query": slug}
     else:
         context = {"available": ta_data[0].get("available"), "query": slug}
 
@@ -1471,8 +1401,7 @@ def view_hunt(request, pk, template="view_hunt.html"):
     if ((hunt.starts_on - datetime.now(timezone.utc)).total_seconds()) > 0:
         hunt_active = False
         hunt_completed = False
-        time_remaining = naturaltime(
-            datetime.now(timezone.utc) - hunt.starts_on)
+        time_remaining = naturaltime(datetime.now(timezone.utc) - hunt.starts_on)
     elif ((hunt.end_on - datetime.now(timezone.utc)).total_seconds()) < 0:
         hunt_active = False
         hunt_completed = True
@@ -1503,13 +1432,11 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
                 return HttpResponseRedirect("/")
         domain = []
         if domain_admin.role == 0:
-            domain = Domain.objects.filter(
-                organization=domain_admin.organization)
+            domain = Domain.objects.filter(organization=domain_admin.organization)
         else:
             domain = Domain.objects.filter(pk=domain_admin.domain.pk)
         initial = {"content": hunt.description}
-        context = {"hunt": hunt, "domains": domain,
-                   "hunt_form": HuntForm(initial)}
+        context = {"hunt": hunt, "domains": domain, "hunt_form": HuntForm(initial)}
         return render(request, template, context)
     else:
         data = {}
@@ -1526,8 +1453,7 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         if domain_admin.role == 1:
             if hunt.domain != domain_admin.domain:
                 return HttpResponse("Domain mismatch")
-        hunt.domain = Domain.objects.get(
-            pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
+        hunt.domain = Domain.objects.get(pk=(request.POST["domain"]).split("-")[0].replace(" ", ""))
         tzsign = 1
         offset = request.POST["tzoffset"]
         if int(offset) < 0:
@@ -1536,19 +1462,11 @@ def organization_dashboard_hunt_edit(request, pk, template="organization_dashboa
         start_date = form.cleaned_data["start_date"]
         end_date = form.cleaned_data["end_date"]
         if tzsign > 0:
-            start_date = start_date + \
-                timedelta(hours=int(int(offset) / 60),
-                          minutes=int(int(offset) % 60))
-            end_date = end_date + \
-                timedelta(hours=int(int(offset) / 60),
-                          minutes=int(int(offset) % 60))
+            start_date = start_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date + timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         else:
-            start_date = start_date - \
-                timedelta(hours=int(int(offset) / 60),
-                          minutes=int(int(offset) % 60))
-            end_date = end_date - \
-                timedelta(hours=int(int(offset) / 60),
-                          minutes=int(int(offset) % 60))
+            start_date = start_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
+            end_date = end_date - timedelta(hours=int(int(offset) / 60), minutes=int(int(offset) % 60))
         hunt.starts_on = start_date
         hunt.end_on = end_date
         hunt.name = request.POST["name"]
@@ -1584,8 +1502,7 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
         return redirect("/")
 
     except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist) as e:
-        logger.error(
-            f"Error in organization_dashboard_domain_detail: {str(e)}")
+        logger.error(f"Error in organization_dashboard_domain_detail: {str(e)}")
         return redirect("/")
 
 
@@ -1593,11 +1510,9 @@ def organization_dashboard_domain_detail(request, pk, template="organization_das
 def add_or_update_domain(request):
     if request.method == "POST":
         try:
-            organization_admin = OrganizationAdmin.objects.get(
-                user=request.user)
+            organization_admin = OrganizationAdmin.objects.get(user=request.user)
             subscription = organization_admin.organization.subscription
-            count_domain = Domain.objects.filter(
-                organization=organization_admin.organization).count()
+            count_domain = Domain.objects.filter(organization=organization_admin.organization).count()
 
             try:
                 domain_pk = request.POST["id"]
@@ -1667,8 +1582,7 @@ def add_or_update_organization(request):
             organization.is_active = request.POST.get("verify") == "on"
 
             try:
-                organization.subscription = Subscription.objects.get(
-                    name=request.POST["subscription"])
+                organization.subscription = Subscription.objects.get(name=request.POST["subscription"])
             except (Subscription.DoesNotExist, KeyError):
                 pass
 
@@ -1744,8 +1658,7 @@ def update_role(request):
                     elif request.POST["role@" + value] == "9":
                         domain_admin.is_active = False
                     if request.POST["domain@" + value] != "":
-                        domain_admin.domain = Domain.objects.get(
-                            pk=request.POST["domain@" + value])
+                        domain_admin.domain = Domain.objects.get(pk=request.POST["domain@" + value])
                     else:
                         domain_admin.domain = None
                     domain_admin.save()
@@ -1870,8 +1783,7 @@ class ReportIpView(FormView):
                     },
                 )
             if IpReport.objects.filter(ip_address=ip_address, ip_type=ip_type).exists():
-                messages.error(
-                    request, "This IP address has already been reported.")
+                messages.error(request, "This IP address has already been reported.")
                 return render(
                     request,
                     self.template_name,
@@ -1890,12 +1802,10 @@ class ReportIpView(FormView):
         reporter_ip = get_client_ip(self.request)
         limit = 50 if self.request.user.is_authenticated else 30
         today = now().date()
-        recent_reports_count = IpReport.objects.filter(
-            reporter_ip_address=reporter_ip, created=today).count()
+        recent_reports_count = IpReport.objects.filter(reporter_ip_address=reporter_ip, created=today).count()
 
         if recent_reports_count >= limit:
-            messages.error(
-                self.request, "You have reached the daily limit for IP reports.")
+            messages.error(self.request, "You have reached the daily limit for IP reports.")
             return render(
                 self.request,
                 self.template_name,
@@ -1939,8 +1849,7 @@ def feed(request):
 
     # Check if the user has the mentor badge
     if request.user.is_authenticated:
-        is_mentor = UserBadge.objects.filter(
-            user=request.user, badge__title="Mentor").exists()
+        is_mentor = UserBadge.objects.filter(user=request.user, badge__title="Mentor").exists()
     else:
         is_mentor = False
 
@@ -2065,8 +1974,7 @@ def truncate_text(text, length=15):
 def add_sizzle_checkIN(request):
     # Fetch yesterday's report
     yesterday = now().date() - timedelta(days=1)
-    yesterday_report = DailyStatusReport.objects.filter(
-        user=request.user, date=yesterday).first()
+    yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
     return render(
         request,
@@ -2165,8 +2073,7 @@ class RoomsListView(ListView):
         for room in context["rooms"]:
             room.message_count = room.messages.count()
             # Get messages in reverse chronological order (newest first)
-            room.recent_messages = room.messages.all().order_by(
-                "-timestamp")[:3]
+            room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
 
         # Add breadcrumbs
         context["breadcrumbs"] = [{"title": "Discussion Rooms", "url": None}]
@@ -2206,8 +2113,7 @@ def join_room(request, room_id):
     room_messages = room.messages.all().order_by("-timestamp")
 
     # Add breadcrumbs context
-    breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {
-        "title": room.name, "url": None}]
+    breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
 
     return render(request, "join_room.html", {"room": room, "room_messages": room_messages, "breadcrumbs": breadcrumbs})
 
@@ -2222,8 +2128,7 @@ def delete_room(request, room_id):
     is_anon_creator = request.user.is_anonymous and room.session_key == request.session.session_key
 
     if not (is_admin or is_anon_creator):
-        messages.error(
-            request, "You don't have permission to delete this room.")
+        messages.error(request, "You don't have permission to delete this room.")
         return redirect("rooms_list")
 
     room.delete()
@@ -2240,8 +2145,7 @@ class OrganizationDetailView(DetailView):
             super()
             .get_queryset()
             .prefetch_related(
-                Prefetch(
-                    "domain_set", queryset=Domain.objects.prefetch_related("issue_set")),
+                Prefetch("domain_set", queryset=Domain.objects.prefetch_related("issue_set")),
                 Prefetch(
                     "domain_set__issue_set",
                     queryset=Issue.objects.filter(status="open"),
@@ -2270,12 +2174,9 @@ class OrganizationDetailView(DetailView):
             project_repos = project.repos.all()
             # We don't need to add to total_repos here since we're counting directly from organization.repos
 
-            total_prs = sum(repo.open_pull_requests +
-                            repo.closed_pull_requests for repo in project_repos)
-            total_contributors = sum(
-                repo.contributor_count for repo in project_repos)
-            top_projects.append(
-                {"project": project, "total_prs": total_prs, "total_contributors": total_contributors})
+            total_prs = sum(repo.open_pull_requests + repo.closed_pull_requests for repo in project_repos)
+            total_contributors = sum(repo.contributor_count for repo in project_repos)
+            top_projects.append({"project": project, "total_prs": total_prs, "total_contributors": total_contributors})
 
         # Sort by total PRs and get top 10
         top_projects.sort(key=lambda x: x["total_prs"], reverse=True)
@@ -2285,10 +2186,8 @@ class OrganizationDetailView(DetailView):
         domains = organization.domain_set.all()
 
         # Calculate statistics
-        total_open_issues = sum(len(domain.open_issues_list)
-                                for domain in domains)
-        total_closed_issues = sum(len(domain.closed_issues_list)
-                                  for domain in domains)
+        total_open_issues = sum(len(domain.open_issues_list) for domain in domains)
+        total_closed_issues = sum(len(domain.closed_issues_list) for domain in domains)
 
         # Get view count
         view_count = IP.objects.filter(path=self.request.path).count()
@@ -2339,10 +2238,8 @@ class OrganizationListView(ListView):
             .annotate(
                 domain_count=Count("domain", distinct=True),
                 total_issues=Count("domain__issue", distinct=True),
-                open_issues=Count("domain__issue", filter=Q(
-                    domain__issue__status="open"), distinct=True),
-                closed_issues=Count("domain__issue", filter=Q(
-                    domain__issue__status="closed"), distinct=True),
+                open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
+                closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
             )
             .select_related("admin")
@@ -2375,11 +2272,9 @@ class OrganizationListView(ListView):
         )
 
         # Extract slugs and get organizations in a single query
-        slugs = [path.split("/")[2]
-                 for path in recent_org_paths if len(path.split("/")) > 2]
+        slugs = [path.split("/")[2] for path in recent_org_paths if len(path.split("/")) > 2]
         recently_viewed = (
-            Organization.objects.filter(slug__in=slugs).prefetch_related(
-                "domain_set").order_by("-created")[:5]
+            Organization.objects.filter(slug__in=slugs).prefetch_related("domain_set").order_by("-created")[:5]
         )
 
         context["recently_viewed"] = recently_viewed
@@ -2388,13 +2283,11 @@ class OrganizationListView(ListView):
         today = timezone.now().date()
         orgs_with_views = []
         for org in self.get_queryset():
-            view_count = IP.objects.filter(
-                path=f"/organization/{org.slug}/", created__date=today).count()
+            view_count = IP.objects.filter(path=f"/organization/{org.slug}/", created__date=today).count()
             orgs_with_views.append((org, view_count))
 
         # Sort by view count and get top 5
-        most_popular = [org for org, _ in sorted(
-            orgs_with_views, key=lambda x: x[1], reverse=True)[:5]]
+        most_popular = [org for org, _ in sorted(orgs_with_views, key=lambda x: x[1], reverse=True)[:5]]
         context["most_popular"] = most_popular
 
         # Get total count using cached queryset
@@ -2402,8 +2295,7 @@ class OrganizationListView(ListView):
 
         # Get top tags by usage count
         top_tags = (
-            Tag.objects.annotate(org_count=Count("organization")).filter(
-                org_count__gt=0).order_by("-org_count")[:10]
+            Tag.objects.annotate(org_count=Count("organization")).filter(org_count__gt=0).order_by("-org_count")[:10]
         )
 
         context["top_tags"] = top_tags
@@ -2460,8 +2352,7 @@ def update_organization_repos(request, slug):
                 organization.save()
                 messages.success(request, "GitHub URL added successfully.")
             else:
-                messages.error(
-                    request, "This organization doesn't have a GitHub URL set.")
+                messages.error(request, "This organization doesn't have a GitHub URL set.")
                 return redirect("organization_detail", slug=slug)
 
         # Extract GitHub organization name from URL
@@ -2509,14 +2400,12 @@ def update_organization_repos(request, slug):
 
                     if response.status_code == 200:
                         rate_data = response.json()
-                        core_rate = rate_data.get(
-                            "resources", {}).get("core", {})
+                        core_rate = rate_data.get("resources", {}).get("core", {})
                         remaining = core_rate.get("remaining", 0)
                         limit = core_rate.get("limit", 0)
                         reset_time = core_rate.get("reset", 0)
                         reset_datetime = datetime.fromtimestamp(reset_time)
-                        reset_str = reset_datetime.strftime(
-                            "%Y-%m-%d %H:%M:%S")
+                        reset_str = reset_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
                         yield (
                             f"data: $ GitHub API token is valid. Rate limit: {remaining}/{limit}, "
@@ -2526,8 +2415,7 @@ def update_organization_repos(request, slug):
                         if remaining < 50:
                             yield "data: $ Warning: GitHub API rate limit is low. Updates may be incomplete.\n\n"
                     else:
-                        response_text = response.text[:200] + "..." if len(
-                            response.text) > 200 else response.text
+                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                         yield f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
                         yield "data: DONE\n\n"
                         return
@@ -2559,11 +2447,9 @@ def update_organization_repos(request, slug):
                         yield "data: DONE\n\n"
                         return
                     elif response.status_code != 200:
-                        response_text = response.text[:200] + "..." if len(
-                            response.text) > 200 else response.text
+                        response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                         yield (
-                            f"data: $ Error: GitHub API returned {response.status_code}. "
-                            f"Response: {response_text}\n\n"
+                            f"data: $ Error: GitHub API returned {response.status_code}. Response: {response_text}\n\n"
                         )
                         yield "data: DONE\n\n"
                         return
@@ -2580,10 +2466,8 @@ def update_organization_repos(request, slug):
                                 from django.core.files.base import ContentFile
 
                                 logo_filename = f"{github_org_name}_logo.png"
-                                logo_content = ContentFile(
-                                    logo_response.content)
-                                organization.logo.save(
-                                    logo_filename, logo_content, save=True)
+                                logo_content = ContentFile(logo_response.content)
+                                organization.logo.save(logo_filename, logo_content, save=True)
                                 yield "data: $ Organization logo updated successfully\n\n"
                             else:
                                 yield f"data: $ Failed to fetch logo: {logo_response.status_code}\n\n"
@@ -2607,8 +2491,7 @@ def update_organization_repos(request, slug):
 
                         response = requests.get(
                             repos_api_url,
-                            params={"page": page, "per_page": 100,
-                                    "type": "public"},
+                            params={"page": page, "per_page": 100, "type": "public"},
                             headers={
                                 "Authorization": f"token {settings.GITHUB_TOKEN}",
                                 "Accept": "application/vnd.github.v3+json",
@@ -2617,29 +2500,21 @@ def update_organization_repos(request, slug):
                         )
 
                         if response.status_code == 403:
-                            response_text = response.text[:200] + "..." if len(
-                                response.text) > 200 else response.text
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             if "rate limit" in response.text.lower():
-                                yield (
-                                    f"data: $ Error: GitHub API rate limit exceeded. " f"Response: {response_text}\n\n"
-                                )
+                                yield (f"data: $ Error: GitHub API rate limit exceeded. Response: {response_text}\n\n")
                             else:
                                 yield (
-                                    f"data: $ Error: GitHub API access forbidden (403). "
-                                    f"Response: {response_text}\n\n"
+                                    f"data: $ Error: GitHub API access forbidden (403). Response: {response_text}\n\n"
                                 )
                             break
                         elif response.status_code == 401:
-                            response_text = response.text[:200] + "..." if len(
-                                response.text) > 200 else response.text
-                            yield (
-                                f"data: $ Error: GitHub authentication failed (401). " f"Response: {response_text}\n\n"
-                            )
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
+                            yield (f"data: $ Error: GitHub authentication failed (401). Response: {response_text}\n\n")
                             yield "data: DONE\n\n"
                             return
                         elif response.status_code != 200:
-                            response_text = response.text[:200] + "..." if len(
-                                response.text) > 200 else response.text
+                            response_text = response.text[:200] + "..." if len(response.text) > 200 else response.text
                             yield (
                                 f"data: $ Error: GitHub API returned {response.status_code}. "
                                 f"Response: {response_text}\n\n"
@@ -2690,8 +2565,7 @@ def update_organization_repos(request, slug):
                                 if repo_data.get("topics"):
                                     for topic in repo_data["topics"]:
                                         tag_slug = slugify(topic)
-                                        tag, _ = Tag.objects.get_or_create(
-                                            slug=tag_slug, defaults={"name": topic})
+                                        tag, _ = Tag.objects.get_or_create(slug=tag_slug, defaults={"name": topic})
                                         repo.tags.add(tag)
 
                             except Exception as e:
@@ -2717,8 +2591,7 @@ def update_organization_repos(request, slug):
 
         return StreamingHttpResponse(event_stream(), content_type="text/event-stream")
     except Exception as e:
-        messages.error(
-            request, f"An unexpected error occurred: {str(e)[:100]}")
+        messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
         return redirect("organization_detail", slug=slug)
 
 
@@ -2764,8 +2637,7 @@ def send_message_api(request):
 def room_messages_api(request, room_id):
     """API endpoint for getting room messages"""
     room = get_object_or_404(Room, id=room_id)
-    messages = room.messages.all().order_by(
-        "-timestamp")[:10]  # Get the 10 most recent messages
+    messages = room.messages.all().order_by("-timestamp")[:10]  # Get the 10 most recent messages
 
     message_data = []
     for message in messages:
@@ -2794,18 +2666,15 @@ class BountyPayoutsView(ListView):
         with optional payment status filtering.
         """
         # Start with the base queryset of dollar-tagged closed issues
-        queryset = GitHubIssue.objects.filter(
-            has_dollar_tag=True, state="closed")
+        queryset = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
 
         # Apply payment status filter if specified
         payment_status = self.request.GET.get("payment_status", "all")
 
         if payment_status == "paid":
-            queryset = queryset.filter(
-                Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+            queryset = queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
         elif payment_status == "unpaid":
-            queryset = queryset.filter(
-                sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
+            queryset = queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
 
         # Prefetch linked pull requests for better performance
         queryset = queryset.prefetch_related("linked_pull_requests")
@@ -2823,28 +2692,23 @@ class BountyPayoutsView(ListView):
         context = super().get_context_data(**kwargs)
 
         # Base queryset for dollar-tagged issues (GitHub issues with bounties)
-        base_queryset = GitHubIssue.objects.filter(
-            has_dollar_tag=True, state="closed")
+        base_queryset = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
 
         # Get payment status filter from request or default to "all"
         payment_status = self.request.GET.get("payment_status", "all")
 
         # Apply payment status filters to the queryset
         if payment_status == "paid":
-            filtered_queryset = base_queryset.filter(
-                Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+            filtered_queryset = base_queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
         elif payment_status == "unpaid":
-            filtered_queryset = base_queryset.filter(
-                sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
+            filtered_queryset = base_queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
         else:  # 'all'
             filtered_queryset = base_queryset
 
         # Calculate counts for the stats
         total_count = filtered_queryset.count()
-        paid_count = base_queryset.filter(
-            Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False)).count()
-        unpaid_count = base_queryset.filter(
-            sponsors_tx_id__isnull=True, bch_tx_id__isnull=True).count()
+        paid_count = base_queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False)).count()
+        unpaid_count = base_queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True).count()
 
         # Add all context data
         context.update(
@@ -2890,8 +2754,7 @@ class BountyPayoutsView(ListView):
                 return issues
             else:
                 # Log the error response from GitHub
-                logger.error(
-                    f"GitHub API error: {response.status_code} - {response.text[:200]}")
+                logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
                 return []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
@@ -2907,8 +2770,7 @@ class BountyPayoutsView(ListView):
         if action == "refresh_issues":
             # Staff permission check for refreshing issues
             if not request.user.is_authenticated or not request.user.is_staff:
-                messages.error(
-                    request, "You don't have permission to perform this action.")
+                messages.error(request, "You don't have permission to perform this action.")
                 return redirect("bounty_payouts")
 
             # Fetch closed issues with $5 tag from GitHub by default
@@ -2916,8 +2778,7 @@ class BountyPayoutsView(ListView):
                 # Import required models
                 from website.models import GitHubIssue, Repo
 
-                issues = self.github_issues_with_bounties(
-                    "$5", "closed", per_page=100)
+                issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
                 count = 0
 
                 for issue_data in issues:
@@ -2967,14 +2828,12 @@ class BountyPayoutsView(ListView):
                     assignee_contributor = None
 
                     # Clear logging for debugging
-                    logger.info(
-                        f"Processing GitHub issue #{issue_data.get('number')} - {issue_data.get('title')}")
+                    logger.info(f"Processing GitHub issue #{issue_data.get('number')} - {issue_data.get('title')}")
 
                     # First check the single assignee field (this is the primary field to check)
                     if issue_data.get("assignee") and issue_data["assignee"].get("login"):
                         assignee_username = issue_data["assignee"]["login"]
-                        logger.info(
-                            f"Found assignee from single field: {assignee_username}")
+                        logger.info(f"Found assignee from single field: {assignee_username}")
                     # If no single assignee, check the assignees array (backup check)
                     elif (
                         issue_data.get("assignees")
@@ -2983,11 +2842,9 @@ class BountyPayoutsView(ListView):
                     ):
                         if issue_data["assignees"][0].get("login"):
                             assignee_username = issue_data["assignees"][0]["login"]
-                            logger.info(
-                                f"Found assignee from array: {assignee_username}")
+                            logger.info(f"Found assignee from array: {assignee_username}")
 
-                    logger.info(
-                        f"Final assignee determination: {assignee_username if assignee_username else 'None'}")
+                    logger.info(f"Final assignee determination: {assignee_username if assignee_username else 'None'}")
 
                     # Create or get the contributor for the assignee if we have one
                     if assignee_username:
@@ -2995,8 +2852,7 @@ class BountyPayoutsView(ListView):
 
                         try:
                             assignee_contributor, created = Contributor.objects.get_or_create(
-                                name=assignee_username, defaults={
-                                    "name": assignee_username}
+                                name=assignee_username, defaults={"name": assignee_username}
                             )
                             logger.info(
                                 f"Assignee contributor {'created' if created else 'retrieved'}: {assignee_username}"
@@ -3027,11 +2883,9 @@ class BountyPayoutsView(ListView):
                                         )
                                 except Exception as e:
                                     error_msg = "Error fetching GitHub user data"
-                                    logger.error(
-                                        f"{error_msg} for {assignee_username}: {str(e)}")
+                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
                         except Exception as e:
-                            logger.error(
-                                f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
                             assignee_contributor = None
 
                     # Try to find a matching user profile for the GitHub username
@@ -3041,22 +2895,18 @@ class BountyPayoutsView(ListView):
 
                         # First try to match by the github_url field
                         github_url_to_match = f"https://github.com/{github_username}"
-                        user_profile = UserProfile.objects.filter(
-                            github_url=github_url_to_match).first()
+                        user_profile = UserProfile.objects.filter(github_url=github_url_to_match).first()
 
                         # If not found, try to match by username directly
                         if not user_profile:
                             from django.contrib.auth.models import User
 
-                            user = User.objects.filter(
-                                username__iexact=github_username).first()
+                            user = User.objects.filter(username__iexact=github_username).first()
                             if user:
-                                user_profile = UserProfile.objects.filter(
-                                    user=user).first()
+                                user_profile = UserProfile.objects.filter(user=user).first()
 
                     # Skip if issue already exists - update payment status instead
-                    existing_issue = GitHubIssue.objects.filter(
-                        url=github_url).first()
+                    existing_issue = GitHubIssue.objects.filter(url=github_url).first()
                     if existing_issue:
                         # Update user profile if we found a match and it's not already set
                         if user_profile and not existing_issue.user_profile:
@@ -3066,18 +2916,15 @@ class BountyPayoutsView(ListView):
                         previous_assignee = existing_issue.assignee.name if existing_issue.assignee else "None"
                         if assignee_username and assignee_contributor:
                             existing_issue.assignee = assignee_contributor
-                            logger.info(
-                                f"Updated assignee from {previous_assignee} to {assignee_username}")
+                            logger.info(f"Updated assignee from {previous_assignee} to {assignee_username}")
 
                             # Extract payment info when refreshing assignee if no payment info exists
                             if not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
-                                self.extract_payment_info_from_comments(
-                                    existing_issue, owner, repo_name, issue_number)
+                                self.extract_payment_info_from_comments(existing_issue, owner, repo_name, issue_number)
                         else:
                             # Explicitly clear the assignee if none was found
                             existing_issue.assignee = None
-                            logger.info(
-                                f"Cleared assignee (was {previous_assignee})")
+                            logger.info(f"Cleared assignee (was {previous_assignee})")
 
                         # Only update payment info if not already set and GitHub shows it's paid
                         if is_paid and not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
@@ -3089,12 +2936,10 @@ class BountyPayoutsView(ListView):
                                 existing_issue.p2p_payment_created_at = timezone.now()
                             else:
                                 # Try to extract payment info from GitHub issue comments
-                                self.extract_payment_info_from_comments(
-                                    existing_issue, owner, repo_name, issue_number)
+                                self.extract_payment_info_from_comments(existing_issue, owner, repo_name, issue_number)
 
                         # Fetch linked pull requests for this issue
-                        self.fetch_linked_pull_requests(
-                            existing_issue, owner, repo_name, issue_number)
+                        self.fetch_linked_pull_requests(existing_issue, owner, repo_name, issue_number)
 
                         existing_issue.save()
                         continue
@@ -3109,8 +2954,7 @@ class BountyPayoutsView(ListView):
                         from website.models import Contributor
 
                         contributor, _ = Contributor.objects.get_or_create(
-                            name=github_username, defaults={
-                                "name": github_username}
+                            name=github_username, defaults={"name": github_username}
                         )
 
                     # Create the GitHub issue
@@ -3149,17 +2993,14 @@ class BountyPayoutsView(ListView):
                     # Try to extract payment info from comments when first creating the issue
                     # regardless of whether it's marked as paid or not
                     if not (new_issue.sponsors_tx_id or new_issue.bch_tx_id):
-                        self.extract_payment_info_from_comments(
-                            new_issue, owner, repo_name, issue_number)
+                        self.extract_payment_info_from_comments(new_issue, owner, repo_name, issue_number)
                     # If the issue is marked as paid but no transaction ID from labels,
                     # try to extract payment info from comments
                     elif is_paid and not (new_issue.sponsors_tx_id or new_issue.bch_tx_id):
-                        self.extract_payment_info_from_comments(
-                            new_issue, owner, repo_name, issue_number)
+                        self.extract_payment_info_from_comments(new_issue, owner, repo_name, issue_number)
 
                     # Fetch linked pull requests for this issue
-                    self.fetch_linked_pull_requests(
-                        new_issue, owner, repo_name, issue_number)
+                    self.fetch_linked_pull_requests(new_issue, owner, repo_name, issue_number)
 
                     count += 1
 
@@ -3172,16 +3013,14 @@ class BountyPayoutsView(ListView):
         elif action == "pay_bounty":
             # Record bounty payment (superusers only)
             if not request.user.is_superuser:
-                messages.error(
-                    request, "You don't have permission to record bounty payments")
+                messages.error(request, "You don't have permission to record bounty payments")
             else:
                 issue_id = request.POST.get("issue_id")
                 tx_id = request.POST.get("tx_id", "").strip()
                 payment_method = request.POST.get("payment_method", "").strip()
 
                 if not issue_id or not tx_id:
-                    messages.error(
-                        request, "Missing issue ID or transaction ID")
+                    messages.error(request, "Missing issue ID or transaction ID")
                 elif payment_method not in ["sponsors", "bch"]:
                     messages.error(request, "Invalid payment method")
                 else:
@@ -3245,8 +3084,7 @@ class BountyPayoutsView(ListView):
         elif action == "delete_issue":
             # Delete an issue (superusers only)
             if not request.user.is_superuser:
-                messages.error(
-                    request, "You don't have permission to delete issues")
+                messages.error(request, "You don't have permission to delete issues")
             else:
                 issue_id = request.POST.get("issue_id")
                 if not issue_id:
@@ -3259,8 +3097,7 @@ class BountyPayoutsView(ListView):
                         issue = GitHubIssue.objects.get(id=issue_id)
                         issue_title = issue.title
                         issue.delete()
-                        messages.success(
-                            request, f"Successfully deleted issue: {issue_title}")
+                        messages.success(request, f"Successfully deleted issue: {issue_title}")
                     except GitHubIssue.DoesNotExist:
                         messages.error(request, "Issue not found")
                     except Exception as e:
@@ -3270,8 +3107,7 @@ class BountyPayoutsView(ListView):
         elif action == "refresh_assignee":
             # Refresh assignee for an issue (staff only)
             if not request.user.is_staff:
-                messages.error(
-                    request, "You don't have permission to refresh issue assignees")
+                messages.error(request, "You don't have permission to refresh issue assignees")
             else:
                 issue_id = request.POST.get("issue_id")
                 if not issue_id:
@@ -3304,8 +3140,7 @@ class BountyPayoutsView(ListView):
                                 headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
 
                             # Make the API request
-                            response = requests.get(
-                                api_url, headers=headers, timeout=10)
+                            response = requests.get(api_url, headers=headers, timeout=10)
 
                             if response.status_code == 200:
                                 issue_data = response.json()
@@ -3327,8 +3162,7 @@ class BountyPayoutsView(ListView):
                                     from website.models import Contributor
 
                                     # First try to find by username
-                                    assignee_contributor = Contributor.objects.filter(
-                                        name=assignee_username).first()
+                                    assignee_contributor = Contributor.objects.filter(name=assignee_username).first()
 
                                     if not assignee_contributor:
                                         # If not found, fetch complete user data from GitHub API
@@ -3336,8 +3170,7 @@ class BountyPayoutsView(ListView):
                                         if issue_data.get("assignee") and issue_data["assignee"].get("id"):
                                             # Get detailed user info from GitHub API
                                             user_api_url = f"https://api.github.com/users/{assignee_username}"
-                                            user_response = requests.get(
-                                                user_api_url, headers=headers, timeout=10)
+                                            user_response = requests.get(user_api_url, headers=headers, timeout=10)
 
                                             if user_response.status_code == 200:
                                                 user_data = user_response.json()
@@ -3347,15 +3180,13 @@ class BountyPayoutsView(ListView):
                                                     github_id=user_data["id"],
                                                     github_url=user_data["html_url"],
                                                     avatar_url=user_data["avatar_url"],
-                                                    contributor_type=user_data.get(
-                                                        "type", "User"),
+                                                    contributor_type=user_data.get("type", "User"),
                                                     contributions=0,
                                                 )
                                             else:
                                                 # Fallback to basic data if API call fails
                                                 github_id = issue_data["assignee"]["id"]
-                                                avatar_url = issue_data["assignee"].get(
-                                                    "avatar_url", "")
+                                                avatar_url = issue_data["assignee"].get("avatar_url", "")
                                                 # Create contributor with minimal data
                                                 assignee_contributor = Contributor.objects.create(
                                                     name=assignee_username,
@@ -3373,8 +3204,7 @@ class BountyPayoutsView(ListView):
                                     issue.assignee = None
 
                                 # Also fetch linked pull requests for this issue
-                                self.fetch_linked_pull_requests(
-                                    issue, repo_owner, repo_name, issue_number)
+                                self.fetch_linked_pull_requests(issue, repo_owner, repo_name, issue_number)
 
                                 # Save the issue after all updates
                                 issue.save()
@@ -3399,8 +3229,7 @@ class BountyPayoutsView(ListView):
         elif action == "refresh_pull_requests":
             # Refresh pull requests for an issue (staff only)
             if not request.user.is_staff:
-                messages.error(
-                    request, "You don't have permission to refresh linked pull requests")
+                messages.error(request, "You don't have permission to refresh linked pull requests")
             else:
                 issue_id = request.POST.get("issue_id")
                 if not issue_id:
@@ -3418,8 +3247,7 @@ class BountyPayoutsView(ListView):
 
                         # Only proceed if it's an issue, not a PR
                         if issue.type != "issue":
-                            messages.error(
-                                request, "Can only fetch linked PRs for issues, not for PRs")
+                            messages.error(request, "Can only fetch linked PRs for issues, not for PRs")
                         else:
                             # Extract the issue number and repo from the URL
                             url_parts = issue.url.split("/")
@@ -3433,8 +3261,7 @@ class BountyPayoutsView(ListView):
                                 issue.linked_pull_requests.clear()
 
                                 # Fetch linked pull requests for this issue
-                                self.fetch_linked_pull_requests(
-                                    issue, repo_owner, repo_name, issue_number)
+                                self.fetch_linked_pull_requests(issue, repo_owner, repo_name, issue_number)
 
                                 # Save the issue and return a success message
                                 new_count = issue.linked_pull_requests.count()
@@ -3451,8 +3278,7 @@ class BountyPayoutsView(ListView):
                                         "Accept": "application/vnd.github.v3+json",
                                         "Authorization": f"token {settings.GITHUB_TOKEN}",
                                     }
-                                    issue_response = requests.get(
-                                        api_url, headers=headers, timeout=10)
+                                    issue_response = requests.get(api_url, headers=headers, timeout=10)
 
                                     if issue_response.status_code == 200:
                                         issue_data = issue_response.json()
@@ -3478,8 +3304,7 @@ class BountyPayoutsView(ListView):
                                     f"Found {new_count} PRs (was {initial_count} before).{payment_msg}",
                                 )
                             else:
-                                messages.error(
-                                    request, "Invalid issue URL format")
+                                messages.error(request, "Invalid issue URL format")
 
                     except GitHubIssue.DoesNotExist:
                         messages.error(request, "Issue not found")
@@ -3531,11 +3356,9 @@ class BountyPayoutsView(ListView):
             ):
                 reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
                 current_time = int(time.time())
-                minutes_to_reset = max(
-                    1, int((reset_time - current_time) / 60))
+                minutes_to_reset = max(1, int((reset_time - current_time) / 60))
 
-                logger.warning(
-                    f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
+                logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
                 return
 
             response.raise_for_status()
@@ -3549,8 +3372,7 @@ class BountyPayoutsView(ListView):
                 if event.get("event") in ["connected", "cross-referenced"]:
                     # Extract the PR information
                     if event.get("source") and event["source"].get("type") == "pull_request":
-                        pr_url = event["source"].get(
-                            "issue", {}).get("html_url")
+                        pr_url = event["source"].get("issue", {}).get("html_url")
 
                         if not pr_url or pr_url in processed_pr_urls:
                             continue
@@ -3578,13 +3400,11 @@ class BountyPayoutsView(ListView):
                                 },
                             )
                         except Exception as e:
-                            logger.error(
-                                f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
                             continue
 
                         # Check if we already have this PR in our database
-                        existing_pr = GitHubIssue.objects.filter(
-                            url=pr_url, type="pull_request").first()
+                        existing_pr = GitHubIssue.objects.filter(url=pr_url, type="pull_request").first()
 
                         if existing_pr:
                             # Link the existing PR to this issue
@@ -3593,15 +3413,13 @@ class BountyPayoutsView(ListView):
                             # Update the PR state if needed
                             try:
                                 pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
-                                pr_response = requests.get(
-                                    pr_api_url, headers=headers, timeout=10)
+                                pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
 
                                 if pr_response.status_code == 200:
                                     pr_data = pr_response.json()
                                     # Update state, merged status, and timestamps
                                     existing_pr.state = pr_data["state"]
-                                    existing_pr.is_merged = pr_data.get(
-                                        "merged", False)
+                                    existing_pr.is_merged = pr_data.get("merged", False)
                                     if pr_data.get("closed_at"):
                                         existing_pr.closed_at = pr_data["closed_at"]
                                     if pr_data.get("merged_at"):
@@ -3612,17 +3430,14 @@ class BountyPayoutsView(ListView):
                                         f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
                                     )
                             except Exception as e:
-                                logger.error(
-                                    f"Error updating PR state for {pr_url}: {str(e)}")
+                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
 
-                            logger.info(
-                                f"Linked existing PR #{pr_number} to issue #{issue_number}")
+                            logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
                         else:
                             # Fetch PR details from GitHub API
                             pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
                             try:
-                                pr_response = requests.get(
-                                    pr_api_url, headers=headers, timeout=10)
+                                pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
 
                                 # Handle rate limiting for the PR request
                                 if (
@@ -3630,8 +3445,7 @@ class BountyPayoutsView(ListView):
                                     and "X-RateLimit-Remaining" in pr_response.headers
                                     and int(pr_response.headers["X-RateLimit-Remaining"]) == 0
                                 ):
-                                    logger.warning(
-                                        "GitHub API rate limit exceeded while fetching PR details.")
+                                    logger.warning("GitHub API rate limit exceeded while fetching PR details.")
                                     # Still continue with other PRs
                                     continue
 
@@ -3650,27 +3464,22 @@ class BountyPayoutsView(ListView):
                                 if github_username:
                                     # First try to match by github_url
                                     github_url_to_match = f"https://github.com/{github_username}"
-                                    user_profile = UserProfile.objects.filter(
-                                        github_url=github_url_to_match).first()
+                                    user_profile = UserProfile.objects.filter(github_url=github_url_to_match).first()
 
                                     # If not found, try to match by username
                                     if not user_profile:
-                                        user = User.objects.filter(
-                                            username__iexact=github_username).first()
+                                        user = User.objects.filter(username__iexact=github_username).first()
                                         if user:
-                                            user_profile = UserProfile.objects.filter(
-                                                user=user).first()
+                                            user_profile = UserProfile.objects.filter(user=user).first()
 
                                     # If still not found, create/get a contributor
                                     if not user_profile:
                                         try:
                                             contributor, _ = Contributor.objects.get_or_create(
-                                                name=github_username, defaults={
-                                                    "name": github_username}
+                                                name=github_username, defaults={"name": github_username}
                                             )
                                         except Exception as e:
-                                            logger.error(
-                                                f"Error creating contributor for {github_username}: {str(e)}")
+                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
                                             contributor = None
 
                                 # Check if PR is merged
@@ -3699,28 +3508,22 @@ class BountyPayoutsView(ListView):
 
                                     # Link the new PR to this issue
                                     issue.linked_pull_requests.add(new_pr)
-                                    logger.info(
-                                        f"Created and linked new PR #{pr_number} to issue #{issue_number}")
+                                    logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
                                 except Exception as e:
-                                    logger.error(
-                                        f"Error saving PR {pr_url}: {str(e)}")
+                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
                                     continue
 
                             except requests.exceptions.RequestException as e:
-                                logger.error(
-                                    f"Error fetching PR details for {pr_url}: {str(e)}")
+                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
                                 continue
 
             # As a fallback, also check for PRs that mention this issue in their body with closing keywords
-            self.find_prs_mentioning_issue(
-                issue, owner, repo_name, issue_number)
+            self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
         except requests.exceptions.RequestException as e:
-            logger.error(
-                f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
             # Fall back to regex-based search for PRs mentioning this issue
-            self.find_prs_mentioning_issue(
-                issue, owner, repo_name, issue_number)
+            self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
 
     def find_prs_mentioning_issue(self, issue, owner, repo_name, issue_number):
         """
@@ -3745,20 +3548,17 @@ class BountyPayoutsView(ListView):
             )
 
             # Track which PRs have already been linked to avoid duplicates
-            already_linked_pr_ids = set(
-                issue.linked_pull_requests.values_list("id", flat=True))
+            already_linked_pr_ids = set(issue.linked_pull_requests.values_list("id", flat=True))
 
             # Only add PRs that aren't already linked
             for pr in prs:
                 if pr.id not in already_linked_pr_ids:
                     issue.linked_pull_requests.add(pr)
                     already_linked_pr_ids.add(pr.id)
-                    logger.info(
-                        f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
+                    logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
 
         except Exception as e:
-            logger.error(
-                f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
 
     def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
         """
@@ -3790,14 +3590,12 @@ class BountyPayoutsView(ListView):
 
             # If all payment info is just placeholders, continue processing
             if has_sponsors_placeholder or has_bch_placeholder:
-                logger.info(
-                    f"Issue #{issue_number}: Has placeholder payment info")
+                logger.info(f"Issue #{issue_number}: Has placeholder payment info")
             # If we have real payment info, skip processing
             elif issue.sponsors_tx_id or issue.bch_tx_id:
                 sponsors_id = issue.sponsors_tx_id or "None"
                 bch_id = issue.bch_tx_id or "None"
-                logger.info(
-                    f"Issue #{issue_number}: Already has payment info - sponsors:{sponsors_id}, BCH:{bch_id}")
+                logger.info(f"Issue #{issue_number}: Already has payment info - sponsors:{sponsors_id}, BCH:{bch_id}")
                 return False
 
         # Get comments for this issue from GitHub API
@@ -3809,13 +3607,11 @@ class BountyPayoutsView(ListView):
         }
 
         try:
-            logger.info(
-                f"Fetching comments for issue #{issue_number} from {comments_url}")
+            logger.info(f"Fetching comments for issue #{issue_number} from {comments_url}")
             response = requests.get(comments_url, headers=headers, timeout=10)
             response.raise_for_status()
             comments = response.json()
-            logger.info(
-                f"Found {len(comments)} comments for issue #{issue_number}")
+            logger.info(f"Found {len(comments)} comments for issue #{issue_number}")
 
             # Get issue labels to determine if we should look for BCH or Sponsors transaction IDs
             search_for_bch = False
@@ -3823,8 +3619,7 @@ class BountyPayoutsView(ListView):
 
             # Check issue labels
             issue_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
-            issue_response = requests.get(
-                issue_url, headers=headers, timeout=10)
+            issue_response = requests.get(issue_url, headers=headers, timeout=10)
             if issue_response.status_code == 200:
                 issue_data = issue_response.json()
                 for label in issue_data.get("labels", []):
@@ -3834,15 +3629,13 @@ class BountyPayoutsView(ListView):
                         logger.info(f"Issue #{issue_number}: Found BCH label")
                     if "sponsor" in label_name:
                         search_for_sponsors = True
-                        logger.info(
-                            f"Issue #{issue_number}: Found Sponsor label")
+                        logger.info(f"Issue #{issue_number}: Found Sponsor label")
 
             # If no specific labels found, search for both types
             if not search_for_bch and not search_for_sponsors:
                 search_for_bch = True
                 search_for_sponsors = True
-                logger.info(
-                    f"Issue #{issue_number}: No payment labels, searching for both types")
+                logger.info(f"Issue #{issue_number}: No payment labels, searching for both types")
 
             # Specific patterns for BCH addresses (64-character hex strings)
             bch_patterns = [
@@ -3880,8 +3673,7 @@ class BountyPayoutsView(ListView):
                 if not comment_body:
                     continue
 
-                logger.info(
-                    f"Analyzing comment #{index+1} for issue #{issue_number}: {comment_body[:100]}...")
+                logger.info(f"Analyzing comment #{index + 1} for issue #{issue_number}: {comment_body[:100]}...")
 
                 # Process BCH patterns first if BCH label exists
                 if search_for_bch:
@@ -3889,8 +3681,7 @@ class BountyPayoutsView(ListView):
                         match = re.search(pattern, comment_body)
                         if match:
                             tx_id = match.group(1).strip()
-                            logger.info(
-                                f"Found potential BCH transaction ID: {tx_id} using pattern {pattern}")
+                            logger.info(f"Found potential BCH transaction ID: {tx_id} using pattern {pattern}")
 
                             # Validate BCH transaction ID (should be 64 hex chars)
                             if len(tx_id) == 64 and all(c in "0123456789abcdefABCDEF" for c in tx_id):
@@ -3899,10 +3690,8 @@ class BountyPayoutsView(ListView):
                                 # Set payment date
                                 if comment_date:
                                     try:
-                                        payment_date = datetime.strptime(
-                                            comment_date, "%Y-%m-%dT%H:%M:%SZ")
-                                        issue.p2p_payment_created_at = timezone.make_aware(
-                                            payment_date)
+                                        payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                        issue.p2p_payment_created_at = timezone.make_aware(payment_date)
                                     except ValueError:
                                         issue.p2p_payment_created_at = timezone.now()
 
@@ -3916,8 +3705,7 @@ class BountyPayoutsView(ListView):
                         match = re.search(pattern, comment_body)
                         if match:
                             tx_id = match.group(1).strip()
-                            logger.info(
-                                f"Found potential Sponsors transaction ID: {tx_id} using pattern {pattern}")
+                            logger.info(f"Found potential Sponsors transaction ID: {tx_id} using pattern {pattern}")
 
                             # Validate Sponsors transaction ID (should start with ch_)
                             if tx_id.startswith("ch_") and len(tx_id) >= 10:
@@ -3926,16 +3714,13 @@ class BountyPayoutsView(ListView):
                                 # Set payment date
                                 if comment_date:
                                     try:
-                                        payment_date = datetime.strptime(
-                                            comment_date, "%Y-%m-%dT%H:%M:%SZ")
-                                        issue.p2p_payment_created_at = timezone.make_aware(
-                                            payment_date)
+                                        payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                        issue.p2p_payment_created_at = timezone.make_aware(payment_date)
                                     except ValueError:
                                         issue.p2p_payment_created_at = timezone.now()
 
                                 issue.save()
-                                logger.info(
-                                    f"Set Sponsors transaction ID: {tx_id}")
+                                logger.info(f"Set Sponsors transaction ID: {tx_id}")
                                 return True
 
                 # Try general patterns as a fallback
@@ -3943,8 +3728,7 @@ class BountyPayoutsView(ListView):
                     match = re.search(pattern, comment_body)
                     if match:
                         tx_id = match.group(1).strip()
-                        logger.info(
-                            f"Found potential transaction ID: {tx_id} using general pattern {pattern}")
+                        logger.info(f"Found potential transaction ID: {tx_id} using general pattern {pattern}")
 
                         # Determine tx type based on format and context
                         if tx_id.startswith("ch_") and search_for_sponsors:
@@ -3971,33 +3755,26 @@ class BountyPayoutsView(ListView):
                         # Set payment date
                         if comment_date:
                             try:
-                                payment_date = datetime.strptime(
-                                    comment_date, "%Y-%m-%dT%H:%M:%SZ")
-                                issue.p2p_payment_created_at = timezone.make_aware(
-                                    payment_date)
-                                logger.info(
-                                    f"Setting payment date to comment date: {payment_date}")
+                                payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                logger.info(f"Setting payment date to comment date: {payment_date}")
                             except ValueError:
                                 issue.p2p_payment_created_at = timezone.now()
-                                logger.info(
-                                    "Failed to parse comment date, using current time")
+                                logger.info("Failed to parse comment date, using current time")
 
                         issue.save()
                         logger.info(f"Set {tx_type} transaction ID: {tx_id}")
                         return True
 
             # If no transaction ID found but we have a "paid" tag, just set the payment date
-            logger.info(
-                f"No transaction ID found in comments for issue #{issue_number}")
+            logger.info(f"No transaction ID found in comments for issue #{issue_number}")
             if not issue.p2p_payment_created_at:
                 issue.p2p_payment_created_at = timezone.now()
                 issue.save()
-                logger.info(
-                    f"Set payment date for issue #{issue_number} without finding a transaction ID")
+                logger.info(f"Set payment date for issue #{issue_number} without finding a transaction ID")
 
             return False
 
         except Exception as e:
-            logger.error(
-                f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
             return False

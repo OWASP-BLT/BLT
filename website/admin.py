@@ -367,11 +367,9 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
 
 def block_ip(modeladmin, request, queryset):
     for ip in queryset:
-        Blocked.objects.create(
-            address=ip.address, count=ip.count, created=timezone.now())
+        Blocked.objects.create(address=ip.address, count=ip.count, created=timezone.now())
 
-    modeladmin.message_user(
-        request, "Selected IPs have been blocked successfully.")
+    modeladmin.message_user(request, "Selected IPs have been blocked successfully.")
 
 
 block_ip.short_description = "Block selected IPs"
@@ -380,8 +378,7 @@ block_ip.short_description = "Block selected IPs"
 def unblock_ip(modeladmin, request, queryset):
     for ip in queryset:
         Blocked.objects.filter(ip=ip.address).delete()
-    modeladmin.message_user(
-        request, "Selected IPs have ben unblocked successfully")
+    modeladmin.message_user(request, "Selected IPs have ben unblocked successfully")
 
 
 unblock_ip.short_description = "Unblock selected IPs"
@@ -389,11 +386,9 @@ unblock_ip.short_description = "Unblock selected IPs"
 
 def block_user_agent(modeladmin, request, queryset):
     for ip in queryset:
-        Blocked.objects.create(user_agent_string=ip.agent,
-                               count=ip.count, created=timezone.now())
+        Blocked.objects.create(user_agent_string=ip.agent, count=ip.count, created=timezone.now())
 
-    modeladmin.message_user(
-        request, "Selected UserAgent have been blocked successfully.")
+    modeladmin.message_user(request, "Selected UserAgent have been blocked successfully.")
 
 
 block_user_agent.short_description = "Block selected UserAgent"
@@ -403,8 +398,7 @@ def unblock_user_agent(modeladmin, request, queryset):
     for ip in queryset:
         Blocked.objects.filter(user_agent_string=ip.agent).delete()
 
-    modeladmin.message_user(
-        request, "Selected UserAgent have been unblocked successfully.")
+    modeladmin.message_user(request, "Selected UserAgent have been unblocked successfully.")
 
 
 unblock_user_agent.short_description = "Unblock selected UserAgent"
@@ -474,8 +468,7 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class ForumPostAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "description",
-                    "up_votes", "down_votes", "status", "created")
+    list_display = ("id", "user", "title", "description", "up_votes", "down_votes", "status", "created")
     list_filter = ("status", "category")
     search_fields = ("title", "description", "user__username")
 
@@ -560,8 +553,7 @@ class TimeLogAdmin(admin.ModelAdmin):
 
 
 class ContributionAdmin(admin.ModelAdmin):
-    list_display = ("user", "title", "description",
-                    "status", "created", "txid")
+    list_display = ("user", "title", "description", "status", "created", "txid")
     list_filter = ["status", "user"]
     search_fields = ["title", "description", "user__username"]
     date_hierarchy = "created"
@@ -793,8 +785,7 @@ admin.site.register(Notification)
 
 @admin.register(BannedApp)
 class BannedAppAdmin(admin.ModelAdmin):
-    list_display = ("app_name", "country_name", "country_code",
-                    "app_type", "ban_date", "is_active")
+    list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
     list_filter = ("app_type", "is_active", "ban_date")
     search_fields = ("country_name", "country_code", "app_name", "ban_reason")
     date_hierarchy = "ban_date"
@@ -803,6 +794,5 @@ class BannedAppAdmin(admin.ModelAdmin):
     fieldsets = (
         ("App Information", {"fields": ("app_name", "app_type")}),
         ("Country Information", {"fields": ("country_name", "country_code")}),
-        ("Ban Details", {"fields": ("ban_reason",
-         "ban_date", "source_url", "is_active")}),
+        ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
     )

@@ -22,4 +22,3 @@ class Migration(migrations.Migration):
             field=mdeditor.fields.MDTextField(blank=True, null=True),
         ),
     ]
-

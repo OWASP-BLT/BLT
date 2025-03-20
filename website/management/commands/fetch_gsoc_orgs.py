@@ -134,4 +134,3 @@ class Command(BaseCommand):
             elif "discord" in value:
                 org.discord_url = value
             org.save()
-

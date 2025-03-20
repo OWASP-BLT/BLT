@@ -50,4 +50,3 @@ class Command(LoggedBaseCommand):
             [email],
             fail_silently=False,
         )
-

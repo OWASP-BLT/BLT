@@ -239,4 +239,3 @@ class APITests(APITestCase):
             for n in range(0, count):
                 message = "Test is failed"
                 self.assertTrue(response.data["results"][n].is_hidden, message)
-

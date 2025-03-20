@@ -7,7 +7,7 @@ from website.models import SlackIntegration, TimeLog
 
 
 class Command(LoggedBaseCommand):
-    help = "Sends messages to organizations with a Slack integration for " "Sizzle timelogs to be run every hour."
+    help = "Sends messages to organizations with a Slack integration for Sizzle timelogs to be run every hour."
 
     def handle(self, *args, **kwargs):
         # Get the current hour in UTC
@@ -44,9 +44,7 @@ class Command(LoggedBaseCommand):
                         st = timelog.start_time
                         et = timelog.end_time
                         issue_url = timelog.github_issue_url if timelog.github_issue_url else "No issue URL"
-                        summary_message += (
-                            f"Task: {timelog}\n" f"Start: {st}\n" f"End: {et}\n" f"Issue URL: {issue_url}\n\n"
-                        )
+                        summary_message += f"Task: {timelog}\nStart: {st}\nEnd: {et}\nIssue URL: {issue_url}\n\n"
                         total_time += et - st
 
                     human_friendly_total_time = self.format_timedelta(total_time)
@@ -74,4 +72,3 @@ class Command(LoggedBaseCommand):
             print(f"Message sent successfully: {response['ts']}")
         except Exception as e:
             print(f"Error sending message: {e}")
-

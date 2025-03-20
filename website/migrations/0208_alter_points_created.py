@@ -16,4 +16,3 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(default=django.utils.timezone.now),
         ),
     ]
-

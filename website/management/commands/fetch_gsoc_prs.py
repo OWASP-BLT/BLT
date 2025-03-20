@@ -380,4 +380,3 @@ class Command(BaseCommand):
         self.stdout.write(f"Updated {updated_count} existing PRs in the database")
 
         return added_count, updated_count
-

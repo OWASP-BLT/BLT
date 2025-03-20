@@ -543,4 +543,3 @@ def create_or_update_course(request):
     except Exception as e:
         print(f"Error in create_or_update_course: {e}")
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
-

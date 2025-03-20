@@ -89,4 +89,3 @@ class Command(BaseCommand):
             log_entry.success = False
             log_entry.error_message = str(e)
             log_entry.save()
-

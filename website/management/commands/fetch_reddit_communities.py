@@ -124,11 +124,11 @@ class Command(BaseCommand):
         """Save subreddit data to database"""
         try:
             community, created = OsshCommunity.objects.update_or_create(
-                external_id=f'reddit-{data["id"]}',
+                external_id=f"reddit-{data['id']}",
                 defaults={
                     "name": data["display_name"],
                     "description": data.get("description", "")[:500],
-                    "website": f'https://reddit.com/r/{data["display_name"]}',
+                    "website": f"https://reddit.com/r/{data['display_name']}",
                     "source": "Reddit",
                     "category": "community",
                     "contributors_count": data["subscribers"],
@@ -205,4 +205,3 @@ class Command(BaseCommand):
                 logger.error(f"{COLOR_RED}Failed processing topic '{topic}': {str(e)}{COLOR_RESET}")
 
         logger.info(f"{COLOR_BLUE}Finished fetching communities. Total fetched: {communities_fetched}{COLOR_RESET}")
-

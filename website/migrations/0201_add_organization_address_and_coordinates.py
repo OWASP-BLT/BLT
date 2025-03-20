@@ -60,4 +60,3 @@ class Migration(migrations.Migration):
             ),
         ),
     ]
-

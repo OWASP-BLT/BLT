@@ -37,4 +37,3 @@ with open("app.py", "a") as f:
     f.write(fix_code + "\n")
 
 print("Fix generated and written to app.py")
-

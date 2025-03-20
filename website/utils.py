@@ -322,7 +322,7 @@ def generate_embedding(text, retries=2, backoff_factor=2):
 
         except Exception as e:
             # If rate-limiting error occurs, wait and retry
-            print(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            print(f"Error encountered: {e}. Retrying in {2**attempt} seconds.")
             time.sleep(2**attempt)  # Exponential backoff
 
     print(f"Failed to complete request after {retries} attempts.")
@@ -986,4 +986,3 @@ class twitter:
         except Exception as e:
             logging.error(f"Error sending to Slack: {str(e)}")
             return False
-

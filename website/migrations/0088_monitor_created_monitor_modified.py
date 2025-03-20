@@ -22,4 +22,3 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(auto_now=True),
         ),
     ]
-

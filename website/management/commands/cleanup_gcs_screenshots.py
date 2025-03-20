@@ -48,4 +48,3 @@ class Command(LoggedBaseCommand):
             self.stdout.write("No orphaned files found.")
         else:
             self.stdout.write(f"Total orphaned files: {len(orphaned_files)}")
-

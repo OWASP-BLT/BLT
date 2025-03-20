@@ -10,4 +10,3 @@ class Migration(migrations.Migration):
             "0153_delete_contributorstats",
         ),  # Update with the correct last migration in your app
     ]
-

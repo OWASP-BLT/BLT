@@ -264,4 +264,3 @@ class Command(BaseCommand):
             except Exception as e:
                 logger.error(f"{COLOR_RED}Error processing repository {repo_data['full_name']}: {str(e)}{COLOR_RESET}")
                 continue
-

@@ -327,4 +327,3 @@ class TeamLeaderboard(TemplateView):
         }
 
         return render(request, "team_leaderboard.html", context)
-

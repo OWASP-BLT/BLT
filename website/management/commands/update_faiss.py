@@ -61,4 +61,3 @@ class Command(LoggedBaseCommand):
 #                 f.write(f"{doc_file.name}\n")
 
 #         self.stdout.write(self.style.SUCCESS("Documents embedded and saved successfully"))
-

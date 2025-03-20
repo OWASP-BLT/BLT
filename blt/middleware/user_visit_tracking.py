@@ -13,4 +13,3 @@ class VisitTrackingMiddleware:
 
         response = self.get_response(request)
         return response
-

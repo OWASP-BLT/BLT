@@ -124,4 +124,3 @@ class Command(LoggedBaseCommand):
             self.stderr.write(
                 f"Failed to fetch trademark data for {organization.name}. Please check the API or credentials."
             )
-

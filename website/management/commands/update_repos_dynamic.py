@@ -239,7 +239,7 @@ class Command(LoggedBaseCommand):
         self.save_issues_and_prs(repo, dollar_issues, closed_prs)
 
         # Log the results
-        msg = f"Found {len(dollar_issues)} issues with $ tags and " f"{len(closed_prs)} closed PRs for {repo.name}"
+        msg = f"Found {len(dollar_issues)} issues with $ tags and {len(closed_prs)} closed PRs for {repo.name}"
         self.stdout.write(self.style.SUCCESS(msg))
 
     def fetch_dollar_issues(self, owner, repo_name):
@@ -256,10 +256,7 @@ class Command(LoggedBaseCommand):
 
         while True:
             # GitHub API doesn't support direct search for $ in labels, so we'll fetch all issues and filter
-            url = (
-                f"https://api.github.com/repos/{owner}/{repo_name}/issues"
-                f"?state=open&per_page={per_page}&page={page}"
-            )
+            url = f"https://api.github.com/repos/{owner}/{repo_name}/issues?state=open&per_page={per_page}&page={page}"
 
             try:
                 response = requests.get(url, headers=headers)
@@ -415,4 +412,3 @@ class Command(LoggedBaseCommand):
             except Exception as e:
                 logger.error(f"Error saving PR #{pr['number']} for repo {repo.name}: {e}")
                 self.stdout.write(self.style.ERROR(f"Failed to save PR #{pr['number']}: {e}"))
-

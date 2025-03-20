@@ -31,4 +31,3 @@ class RoomsViewTests(TestCase):
         # Verify our test room is in the queryset
         rooms = response.context["rooms"]
         self.assertTrue(any(room.name == "Test Room" for room in rooms))
-

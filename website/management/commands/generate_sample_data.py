@@ -154,8 +154,8 @@ class Command(LoggedBaseCommand):
         for i in range(count):
             created_date = timezone.now() - timedelta(days=random.randint(1, 365))
             domain = Domain.objects.create(
-                name=f"domain{i+1}.example.com",
-                url=f"https://domain{i+1}.example.com",
+                name=f"domain{i + 1}.example.com",
+                url=f"https://domain{i + 1}.example.com",
                 organization=random.choice(organizations),
                 created=created_date,
             )
@@ -170,7 +170,7 @@ class Command(LoggedBaseCommand):
             issue = Issue.objects.create(
                 user=random.choice(users),
                 domain=random.choice(domains),
-                url=f"https://example.com/issue/{i+1}",
+                url=f"https://example.com/issue/{i + 1}",
                 description=random_sentence(10),
                 status=random.choice(status_choices),
                 created=created_date,
@@ -186,7 +186,7 @@ class Command(LoggedBaseCommand):
             pull_request = GitHubIssue.objects.create(
                 issue_id=random.randint(1000000, 9000000),
                 title=random_sentence(5),
-                url=f"https://example.com/pr/{i+1}",
+                url=f"https://example.com/pr/{i + 1}",
                 created_at=created_date,
                 updated_at=created_date + timedelta(days=random.randint(1, 180)),
                 repo=random.choice(repos),
@@ -209,7 +209,7 @@ class Command(LoggedBaseCommand):
                 state=random.choice(["APPROVED", "CHANGES_REQUESTED", "COMMENTED"]),
                 submitted_at=created_date,
                 body=random_sentence(5),
-                url=f"https://example.com/review/{i+1}",
+                url=f"https://example.com/review/{i + 1}",
             )
             reviews.append(review)
         return reviews
@@ -221,13 +221,13 @@ class Command(LoggedBaseCommand):
             starts_on = timezone.now() + timedelta(days=random.randint(1, 30))
             end_on = starts_on + timedelta(days=random.randint(30, 90))
             hunt = Hunt.objects.create(
-                name=f"Bug Bounty {i+1}",
+                name=f"Bug Bounty {i + 1}",
                 description=random_sentence(15),
                 prize=random.randint(100, 1000),
                 created=created_date,
                 starts_on=starts_on,
                 end_on=end_on,
-                url=f"https://hunt-{i+1}.example.com",
+                url=f"https://hunt-{i + 1}.example.com",
                 domain=random.choice(Domain.objects.all()),
                 plan="free",
                 is_published=True,
@@ -293,7 +293,7 @@ class Command(LoggedBaseCommand):
     def create_badges(self, count=10):
         badges = []
         for i in range(count):
-            badge = Badge.objects.create(title=f"Badge {i+1}", description=random_sentence(), type="automatic")
+            badge = Badge.objects.create(title=f"Badge {i + 1}", description=random_sentence(), type="automatic")
             badges.append(badge)
         return badges
 
@@ -311,7 +311,7 @@ class Command(LoggedBaseCommand):
     def create_tags(self, count=20):
         tags = []
         for i in range(count):
-            tag = Tag.objects.create(name=f"tag_{i+1}")
+            tag = Tag.objects.create(name=f"tag_{i + 1}")
             tags.append(tag)
         return tags
 
@@ -322,21 +322,21 @@ class Command(LoggedBaseCommand):
         # First create projects
         for i in range(count // 2):  # Create half as many projects as repos
             project = Project.objects.create(
-                name=f"Project {i+1}",
+                name=f"Project {i + 1}",
                 description=random_sentence(),
                 organization=random.choice(organizations),
-                url=f"https://project-{i+1}.example.com",
+                url=f"https://project-{i + 1}.example.com",
             )
             projects.append(project)
 
         # Then create repos
         for i in range(count):
             repo = Repo.objects.create(
-                name=f"repo_{i+1}",
+                name=f"repo_{i + 1}",
                 description=random_sentence(),
-                repo_url=f"https://github.com/org/repo_{i+1}",
+                repo_url=f"https://github.com/org/repo_{i + 1}",
                 project=random.choice(projects),
-                slug=f"repo-{i+1}",
+                slug=f"repo-{i + 1}",
                 is_main=random.choice([True, False]),
                 is_wiki=random.choice([True, False]),
                 stars=random.randint(0, 1000),
@@ -402,4 +402,3 @@ class Command(LoggedBaseCommand):
         self.create_reviews(users, pull_requests, 90)
 
         self.stdout.write(self.style.SUCCESS("Done!"))
-

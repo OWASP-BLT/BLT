@@ -50,4 +50,3 @@ class IssueCommentTests(TestCase):
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Comment.objects.filter(pk=comment.pk).exists())
-

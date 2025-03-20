@@ -584,4 +584,3 @@ GSOC25_PROJECTS = {
     "PYGOAT": ["adeyosemanputra/PyGoat"],
     "OpenCRE": ["OWASP/OpenCRE"],
 }
-

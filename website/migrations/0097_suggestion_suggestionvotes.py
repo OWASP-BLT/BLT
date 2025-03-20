@@ -77,4 +77,3 @@ class Migration(migrations.Migration):
             ],
         ),
     ]
-

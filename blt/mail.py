@@ -81,12 +81,7 @@ class SlackNotificationEmailBackend(SMTPBackend):
                 subject = message.subject
 
                 # Prepare the message blocks
-                email_text = (
-                    f"*📧 Email Sent*\n"
-                    f"*From:* {message.from_email}\n"
-                    f"*To:* {recipients}\n"
-                    f"*Subject:* {subject}"
-                )
+                email_text = f"*📧 Email Sent*\n*From:* {message.from_email}\n*To:* {recipients}\n*Subject:* {subject}"
 
                 blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": email_text}}]
 
@@ -113,12 +108,7 @@ class SlackNotificationEmailBackend(SMTPBackend):
                 subject = message.subject
 
                 # Create multiline string for better readability
-                email_text = (
-                    f"*📧 Email Sent*\n"
-                    f"*From:* {message.from_email}\n"
-                    f"*To:* {recipients}\n"
-                    f"*Subject:* {subject}"
-                )
+                email_text = f"*📧 Email Sent*\n*From:* {message.from_email}\n*To:* {recipients}\n*Subject:* {subject}"
 
                 # Prepare the message payload
                 payload = {"blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": email_text}}]}

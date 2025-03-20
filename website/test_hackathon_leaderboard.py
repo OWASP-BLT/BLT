@@ -328,4 +328,3 @@ class HackathonLeaderboardTestCase(TestCase):
         # User 1 should be third with 1 PR
         self.assertEqual(leaderboard[2]["user"].id, self.user1.id)
         self.assertEqual(leaderboard[2]["count"], 1)
-

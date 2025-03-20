@@ -58,4 +58,3 @@ class Command(LoggedBaseCommand):
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"Error generating summary for {repo.name}: {e}"))
                 continue
-

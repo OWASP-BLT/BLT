@@ -111,4 +111,3 @@ class ForumTests(TestCase):
         response = self.client.get(reverse("view_forum"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, comment_data["content"])
-

@@ -130,8 +130,7 @@ def like_issue(request, issue_pk):
     total_votes = UserProfile.objects.filter(issue_upvoted=issue).count()
     context["object"] = issue
     context["likes"] = total_votes
-    context["isLiked"] = UserProfile.objects.filter(
-        issue_upvoted=issue, user=request.user).exists()
+    context["isLiked"] = UserProfile.objects.filter(issue_upvoted=issue, user=request.user).exists()
     return HttpResponse("Success")
 
 
@@ -151,8 +150,7 @@ def dislike_issue(request, issue_pk):
     total_votes = UserProfile.objects.filter(issue_downvoted=issue).count()
     context["object"] = issue
     context["dislikes"] = total_votes
-    context["isDisliked"] = UserProfile.objects.filter(
-        issue_downvoted=issue, user=request.user).exists()
+    context["isDisliked"] = UserProfile.objects.filter(issue_downvoted=issue, user=request.user).exists()
     return HttpResponse("Success")
 
 
@@ -183,8 +181,7 @@ def create_github_issue(request, id):
         for screenshot in screenshot_all:
             screenshot_text += f"![{screenshot.image.name}]({settings.FQDN}{screenshot.image.url})\n"
 
-        github_url = issue.domain.github.replace(
-            "https", "git").replace("http", "git") + ".git"
+        github_url = issue.domain.github.replace("https", "git").replace("http", "git") + ".git"
         from giturlparse import parse as parse_github_url
 
         p = parse_github_url(github_url)
@@ -202,8 +199,7 @@ def create_github_issue(request, id):
             response = requests.post(
                 url,
                 data=json.dumps(issue_data),
-                headers={
-                    "Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"},
+                headers={"Authorization": f"token {os.environ.get('GITHUB_TOKEN')}"},
             )
             if response.status_code == 201:
                 response_data = response.json()
@@ -286,8 +282,7 @@ def UpdateIssue(request):
                     "action": "closed",
                 },
             )
-            subject = issue.domain.name + " bug # " + \
-                str(issue.id) + " closed by " + request.user.username
+            subject = issue.domain.name + " bug # " + str(issue.id) + " closed by " + request.user.username
 
         elif request.POST.get("action") == "open":
             issue.status = "open"
@@ -303,15 +298,12 @@ def UpdateIssue(request):
                     "action": "opened",
                 },
             )
-            subject = issue.domain.name + " bug # " + \
-                str(issue.id) + " opened by " + request.user.username
+            subject = issue.domain.name + " bug # " + str(issue.id) + " opened by " + request.user.username
 
         mailer = settings.EMAIL_TO_STRING
         email_to = issue.user.email
-        send_mail(subject, msg_plain, mailer, [
-                  email_to], html_message=msg_html)
-        send_mail(subject, msg_plain, mailer, [
-                  issue.domain.email], html_message=msg_html)
+        send_mail(subject, msg_plain, mailer, [email_to], html_message=msg_html)
+        send_mail(subject, msg_plain, mailer, [issue.domain.email], html_message=msg_html)
         issue.save()
         return HttpResponse("Updated")
 
@@ -321,17 +313,14 @@ def UpdateIssue(request):
 
 def newhome(request, template="bugs_list.html"):
     if request.user.is_authenticated:
-        email_record = EmailAddress.objects.filter(
-            email=request.user.email).first()
+        email_record = EmailAddress.objects.filter(email=request.user.email).first()
         if email_record:
             if not email_record.verified:
                 messages.error(request, "Please verify your email address.")
         else:
-            messages.error(
-                request, "No email associated with your account. Please add an email.")
+            messages.error(request, "No email associated with your account. Please add an email.")
 
-    issues_queryset = Issue.objects.exclude(
-        Q(is_hidden=True) & ~Q(user_id=request.user.id))
+    issues_queryset = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=request.user.id))
     paginator = Paginator(issues_queryset, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
@@ -339,8 +328,7 @@ def newhome(request, template="bugs_list.html"):
     issues_with_screenshots = page_obj.object_list.prefetch_related(
         Prefetch("screenshots", queryset=IssueScreenshot.objects.all())
     )
-    bugs_screenshots = {issue: issue.screenshots.all(
-    )[:3] for issue in issues_with_screenshots}
+    bugs_screenshots = {issue: issue.screenshots.all()[:3] for issue in issues_with_screenshots}
 
     current_time = timezone.now()
     leaderboard = (
@@ -434,8 +422,7 @@ def search_issues(request, template="search.html"):
         query = query[6:]
     if stype == "issue" or stype is None:
         if request.user.is_anonymous:
-            issues = Issue.objects.filter(
-                Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
+            issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(Q(is_hidden=True))[0:20]
         else:
             issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
                 Q(is_hidden=True) & ~Q(user_id=request.user.id)
@@ -530,8 +517,7 @@ def SaveBiddingData(request):
         username = request.POST.get("user")
 
         # Check if this is a test request
-        is_test = request.META.get(
-            "HTTP_ACCEPT") == "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+        is_test = request.META.get("HTTP_ACCEPT") == "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
 
         # Check if user is authenticated
         if not request.user.is_authenticated and not is_test:
@@ -555,8 +541,7 @@ def SaveBiddingData(request):
 
         # Validate inputs
         if not username or not url or not amount:
-            messages.error(
-                request, "Please provide a GitHub username, issue URL, and bid amount.")
+            messages.error(request, "Please provide a GitHub username, issue URL, and bid amount.")
             if is_test:
                 return HttpResponse(status=400)
             return redirect("BiddingData")
@@ -608,19 +593,16 @@ def SaveBiddingData(request):
         )
         return redirect("BiddingData")
 
-    bids = Bid.objects.all().order_by(
-        "-created")[:20]  # Show most recent bids first
+    bids = Bid.objects.all().order_by("-created")[:20]  # Show most recent bids first
     return render(request, "bidding.html", {"bids": bids})
 
 
 def fetch_current_bid(request):
     if request.method == "POST":
-        unique_issue_links = Bid.objects.values_list(
-            "issue_url", flat=True).distinct()
+        unique_issue_links = Bid.objects.values_list("issue_url", flat=True).distinct()
         data = json.loads(request.body)
         issue_url = data.get("issue_url")
-        bid = Bid.objects.filter(
-            issue_url=issue_url).order_by("-created").first()
+        bid = Bid.objects.filter(issue_url=issue_url).order_by("-created").first()
         if bid is not None:
             return JsonResponse(
                 {
@@ -685,11 +667,9 @@ class IssueBaseCreate(object):
         if self.request.POST.get("screenshot-hash"):
             filename = self.request.POST.get("screenshot-hash")
             extension = filename.split(".")[-1]
-            self.request.POST["screenshot-hash"] = filename[:99] + \
-                str(uuid.uuid4()) + "." + extension
+            self.request.POST["screenshot-hash"] = filename[:99] + str(uuid.uuid4()) + "." + extension
 
-            reopen = default_storage.open(
-                "uploads/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
+            reopen = default_storage.open("uploads/" + self.request.POST.get("screenshot-hash") + ".png", "rb")
             django_file = File(reopen)
             obj.screenshot.save(
                 self.request.POST.get("screenshot-hash") + ".png",
@@ -705,8 +685,7 @@ class IssueBaseCreate(object):
         return HttpResponseRedirect(obj.get_absolute_url())
 
     def process_issue(self, user, obj, created, domain, tokenauth=False, score=3):
-        Points.objects.create(user=user, issue=obj,
-                              score=score, reason="Issue reported")
+        Points.objects.create(user=user, issue=obj, score=score, reason="Issue reported")
         messages.success(self.request, "Bug added ! +" + str(score))
 
         if created:
@@ -721,10 +700,8 @@ class IssueBaseCreate(object):
             name = email_to.split("@")[0]
 
             try:
-                msg_plain = render_to_string(
-                    "email/domain_added.html", {"domain": domain.name, "name": name})
-                msg_html = render_to_string(
-                    "email/domain_added.html", {"domain": domain.name, "name": name})
+                msg_plain = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
+                msg_html = render_to_string("email/domain_added.html", {"domain": domain.name, "name": name})
 
                 send_mail(
                     domain.name + " added to " + settings.PROJECT_NAME,
@@ -734,8 +711,7 @@ class IssueBaseCreate(object):
                     html_message=msg_html,
                 )
             except (smtplib.SMTPException, socket.gaierror, ConnectionRefusedError) as e:
-                messages.warning(
-                    self.request, "Issue created successfully, but notification email could not be sent.")
+                messages.warning(self.request, "Issue created successfully, but notification email could not be sent.")
         else:
             email_to = domain.email
             try:
@@ -802,16 +778,14 @@ class IssueBaseCreate(object):
                     html_message=msg_html,
                 )
             except (smtplib.SMTPException, socket.gaierror, ConnectionRefusedError, TemplateDoesNotExist) as e:
-                messages.warning(
-                    self.request, "Issue created successfully, but notification email could not be sent.")
+                messages.warning(self.request, "Issue created successfully, but notification email could not be sent.")
 
         return HttpResponseRedirect("/")
 
 
 class IssueCreate(IssueBaseCreate, CreateView):
     model = Issue
-    fields = ["url", "description", "domain",
-              "label", "markdown_description", "cve_id"]
+    fields = ["url", "description", "domain", "label", "markdown_description", "cve_id"]
     template_name = "report.html"
 
     def get_initial(self):
@@ -833,9 +807,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 if isinstance(self.request.POST.get("file"), six.string_types):
                     import imghdr
 
-                    data = "data:image/" + \
-                        self.request.POST.get(
-                            "type") + ";base64," + self.request.POST.get("file")
+                    data = "data:image/" + self.request.POST.get("type") + ";base64," + self.request.POST.get("file")
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
                     if "data:" in data and ";base64," in data:
@@ -856,19 +828,16 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         file_extension,
                     )
 
-                    self.request.FILES["screenshot"] = ContentFile(
-                        decoded_file, name=complete_file_name)
+                    self.request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
         except:
             tokenauth = False
         initial = super(IssueCreate, self).get_initial()
         if self.request.POST.get("screenshot-hash"):
-            initial["screenshot"] = "uploads/" + \
-                self.request.POST.get("screenshot-hash") + ".png"
+            initial["screenshot"] = "uploads/" + self.request.POST.get("screenshot-hash") + ".png"
         return initial
 
     def post(self, request, *args, **kwargs):
-        url = request.POST.get("url").replace(
-            "www.", "").replace("https://", "")
+        url = request.POST.get("url").replace("www.", "").replace("https://", "")
 
         request.POST._mutable = True
         request.POST.update(url=url)
@@ -939,12 +908,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
-        recent_issues_count = Issue.objects.filter(
-            reporter_ip_address=reporter_ip, created__date=today).count()
+        recent_issues_count = Issue.objects.filter(reporter_ip_address=reporter_ip, created__date=today).count()
 
         if recent_issues_count >= limit:
-            messages.error(
-                self.request, "You have reached your issue creation limit for today.")
+            messages.error(self.request, "You have reached your issue creation limit for today.")
             return render(self.request, "report.html", {"form": self.get_form()})
         form.instance.reporter_ip_address = reporter_ip
 
@@ -981,8 +948,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         )
             tokenauth = False
             obj = form.save(commit=False)
-            report_anonymous = self.request.POST.get(
-                "report_anonymous", "off") == "on"
+            report_anonymous = self.request.POST.get("report_anonymous", "off") == "on"
 
             if report_anonymous:
                 obj.user = None
@@ -1011,8 +977,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             if not domain_exists:
                 domain = Domain.objects.filter(name=clean_domain).first()
                 if domain is None:
-                    domain = Domain.objects.create(
-                        name=clean_domain, url=clean_domain)
+                    domain = Domain.objects.create(name=clean_domain, url=clean_domain)
                     domain.save()
 
             # Don't save issue if security vulnerability
@@ -1036,17 +1001,15 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     try:
                         with tempfile.TemporaryDirectory() as temp_dir:
-                            password = "".join(secrets.choice(
-                                string.ascii_letters + string.digits) for _ in range(11))
-                            zip_path = os.path.join(
-                                temp_dir, "security_report.zip")
+                            password = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(11))
+                            zip_path = os.path.join(temp_dir, "security_report.zip")
 
                             screenshot_paths = []
 
                             if self.request.FILES.getlist("screenshots"):
                                 for idx, screenshot in enumerate(self.request.FILES.getlist("screenshots")):
                                     file_path = os.path.join(
-                                        temp_dir, f"screenshot_{idx+1}{Path(screenshot.name).suffix}"
+                                        temp_dir, f"screenshot_{idx + 1}{Path(screenshot.name).suffix}"
                                     )
                                     with open(file_path, "wb+") as destination:
                                         for chunk in screenshot.chunks():
@@ -1054,13 +1017,11 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                     screenshot_paths.append(file_path)
 
                             elif self.request.POST.get("screenshot-hash"):
-                                screenshot_hashes = self.request.POST.get(
-                                    "screenshot-hash").split(",")
+                                screenshot_hashes = self.request.POST.get("screenshot-hash").split(",")
 
                                 for idx, screenshot_hash in enumerate(screenshot_hashes):
                                     try:
-                                        validate_screenshot_hash(
-                                            screenshot_hash.strip())
+                                        validate_screenshot_hash(screenshot_hash.strip())
                                     except ValidationError as e:
                                         messages.error(self.request, str(e))
                                         return HttpResponseRedirect("/")
@@ -1070,20 +1031,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                     )
 
                                     if not orig_path.startswith(os.path.abspath(settings.MEDIA_ROOT)):
-                                        messages.error(
-                                            self.request, f"Invalid screenshot hash: {screenshot_hash}.")
+                                        messages.error(self.request, f"Invalid screenshot hash: {screenshot_hash}.")
                                         return HttpResponseRedirect("/")
 
                                     if os.path.exists(orig_path):
-                                        dest_path = os.path.join(
-                                            temp_dir, f"screenshot_{idx+1}.png")
+                                        dest_path = os.path.join(temp_dir, f"screenshot_{idx + 1}.png")
                                         import shutil
 
                                         shutil.copy(orig_path, dest_path)
                                         screenshot_paths.append(dest_path)
 
-                            details_md_path = os.path.join(
-                                temp_dir, "vulnerability_details.md")
+                            details_md_path = os.path.join(temp_dir, "vulnerability_details.md")
                             with open(details_md_path, "w", encoding="utf-8") as f:
                                 f.write("# Security Vulnerability Report\n\n")
                                 f.write(f"**URL:** {obj.url}\n")
@@ -1110,28 +1068,22 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                     f.write(f"- **Name:** {username}\n")
                                     f.write(f"- **Email:** {email}\n")
 
-                                    user_profile = getattr(
-                                        self.request.user, "userprofile", None)
+                                    user_profile = getattr(self.request.user, "userprofile", None)
                                     if user_profile:
                                         if user_profile.github_url:
-                                            github_username = user_profile.github_url.rstrip(
-                                                "/").split("/")[-1]
+                                            github_username = user_profile.github_url.rstrip("/").split("/")[-1]
                                             sponsors_url = f"https://github.com/sponsors/{github_username}"
                                             f.write(
                                                 f"- **💖 GitHub Sponsors:** [Sponsor]({sponsors_url}) (or [Profile]({user_profile.github_url}))\n"
                                             )
                                         if user_profile.btc_address:
-                                            f.write(
-                                                f"- **🟠 BTC Address:** {user_profile.btc_address}\n")
+                                            f.write(f"- **🟠 BTC Address:** {user_profile.btc_address}\n")
                                         if user_profile.bch_address:
-                                            f.write(
-                                                f"- **💚 BCH Address:** {user_profile.bch_address}\n")
+                                            f.write(f"- **💚 BCH Address:** {user_profile.bch_address}\n")
                                         if user_profile.eth_address:
-                                            f.write(
-                                                f"- **💎 ETH Address:** {user_profile.eth_address}\n")
+                                            f.write(f"- **💎 ETH Address:** {user_profile.eth_address}\n")
 
-                                    f.write(
-                                        f"\n**Report Date:** {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                                    f.write(f"\n**Report Date:** {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
                             screenshot_paths.append(details_md_path)
 
@@ -1140,14 +1092,12 @@ class IssueCreate(IssueBaseCreate, CreateView):
                             ) as zipf:
                                 zipf.setpassword(password.encode())
                                 for file in screenshot_paths:
-                                    zipf.write(
-                                        file, arcname=os.path.basename(file))
+                                    zipf.write(file, arcname=os.path.basename(file))
 
                             email_subject = f"Security Vulnerability Report for {clean_domain}"
                             html_body = render_to_string(
                                 "email/security_report.html",
-                                {"clean_domain": clean_domain,
-                                    "password": password},
+                                {"clean_domain": clean_domain, "password": password},
                             )
 
                             try:
@@ -1160,8 +1110,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                                 email.content_subtype = "html"
 
                                 with open(zip_path, "rb") as f:
-                                    email.attach(
-                                        "security_report.zip", f.read(), "application/zip")
+                                    email.attach("security_report.zip", f.read(), "application/zip")
 
                                 email.send(fail_silently=False)
 
@@ -1180,8 +1129,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                     except Exception as e:
                         logger.error(f"Unexpected error: {e}")
-                        messages.error(
-                            self.request, "An unexpected error occurred while processing the report.")
+                        messages.error(self.request, "An unexpected error occurred while processing the report.")
                         return HttpResponseRedirect("/")
 
                 else:
@@ -1226,8 +1174,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             if self.request.POST.get("screenshot-hash"):
                 try:
                     # Fix path separators and use os.path.join for cross-platform compatibility
-                    screenshot_path = os.path.join(
-                        "uploads", f"{self.request.POST.get('screenshot-hash')}.png")
+                    screenshot_path = os.path.join("uploads", f"{self.request.POST.get('screenshot-hash')}.png")
 
                     try:
                         reopen = default_storage.open(screenshot_path, "rb")
@@ -1241,8 +1188,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
                         if "reopen" in locals():
                             reopen.close()
                 except FileNotFoundError:
-                    messages.error(
-                        self.request, "Screenshot file not found. Please try uploading again.")
+                    messages.error(self.request, "Screenshot file not found. Please try uploading again.")
                     return render(
                         self.request,
                         "report.html",
@@ -1253,28 +1199,23 @@ class IssueCreate(IssueBaseCreate, CreateView):
             for screenshot in self.request.FILES.getlist("screenshots"):
                 filename = screenshot.name
                 extension = filename.split(".")[-1]
-                screenshot.name = (
-                    filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
-                default_storage.save(
-                    f"screenshots/{screenshot.name}", screenshot)
-                IssueScreenshot.objects.create(
-                    image=f"screenshots/{screenshot.name}", issue=obj)
+                screenshot.name = (filename[:10] + str(uuid.uuid4()))[:40] + "." + extension
+                default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                IssueScreenshot.objects.create(image=f"screenshots/{screenshot.name}", issue=obj)
 
             # Handle team members
             team_members_id = [
                 member["id"]
                 for member in User.objects.values("id").filter(email__in=self.request.POST.getlist("team_members"))
             ] + [self.request.user.id]
-            team_members_id = [
-                member_id for member_id in team_members_id if member_id is not None]
+            team_members_id = [member_id for member_id in team_members_id if member_id is not None]
             obj.team_members.set(team_members_id)
 
             obj.save()
 
             if not report_anonymous:
                 if self.request.user.is_authenticated:
-                    total_issues = Issue.objects.filter(
-                        user=self.request.user).count()
+                    total_issues = Issue.objects.filter(user=self.request.user).count()
                     user_prof = UserProfile.objects.get(user=self.request.user)
                     if total_issues <= 10:
                         user_prof.title = 1
@@ -1288,10 +1229,8 @@ class IssueCreate(IssueBaseCreate, CreateView):
                     user_prof.save()
 
                 if tokenauth:
-                    total_issues = Issue.objects.filter(
-                        user=User.objects.get(id=token.user_id)).count()
-                    user_prof = UserProfile.objects.get(
-                        user=User.objects.get(id=token.user_id))
+                    total_issues = Issue.objects.filter(user=User.objects.get(id=token.user_id)).count()
+                    user_prof = UserProfile.objects.get(user=User.objects.get(id=token.user_id))
                     if total_issues <= 10:
                         user_prof.title = 1
                     elif total_issues <= 50:
@@ -1310,12 +1249,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
 
                 from giturlparse import parse
 
-                github_url = domain.github.replace(
-                    "https", "git").replace("http", "git") + ".git"
+                github_url = domain.github.replace("https", "git").replace("http", "git") + ".git"
                 p = parse(github_url)
 
-                url = "https://api.github.com/repos/%s/%s/issues" % (
-                    p.owner, p.repo)
+                url = "https://api.github.com/repos/%s/%s/issues" % (p.owner, p.repo)
 
                 if not obj.user:
                     the_user = "Anonymous"
@@ -1339,16 +1276,14 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 r = requests.post(
                     url,
                     json.dumps(issue),
-                    headers={"Authorization": "token " +
-                             os.environ.get("GITHUB_TOKEN")},
+                    headers={"Authorization": "token " + os.environ.get("GITHUB_TOKEN")},
                 )
                 response = r.json()
                 try:
                     obj.github_url = response["html_url"]
                 except Exception as e:
                     send_mail(
-                        "Error in github issue creation for " +
-                        str(domain.name) + ", check your github settings",
+                        "Error in github issue creation for " + str(domain.name) + ", check your github settings",
                         "Error in github issue creation, check your github settings\n"
                         + " your current settings are: "
                         + str(domain.github)
@@ -1369,12 +1304,10 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 return HttpResponseRedirect("/")
 
             if tokenauth:
-                self.process_issue(User.objects.get(
-                    id=token.user_id), obj, domain_exists, domain, True)
+                self.process_issue(User.objects.get(id=token.user_id), obj, domain_exists, domain, True)
                 return JsonResponse("Created", safe=False)
             else:
-                self.process_issue(self.request.user, obj,
-                                   domain_exists, domain)
+                self.process_issue(self.request.user, obj, domain_exists, domain)
                 return HttpResponseRedirect("/")
 
         return create_issue(self, form)
@@ -1386,8 +1319,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             self.request.GET = {}
 
         context = super(IssueCreate, self).get_context_data(**kwargs)
-        context["activities"] = Issue.objects.exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
+        context["activities"] = Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))[0:10]
         context["captcha_form"] = CaptchaForm()
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -1408,20 +1340,17 @@ class IssueCreate(IssueBaseCreate, CreateView):
             )
             context["report_on_hunt"] = True
         else:
-            context["hunts"] = Hunt.objects.values("id", "name").filter(
-                is_published=True, result_published=False)
+            context["hunts"] = Hunt.objects.values("id", "name").filter(is_published=True, result_published=False)
             context["report_on_hunt"] = False
 
         context["top_domains"] = (
-            Issue.objects.values("domain__name").annotate(
-                count=Count("domain__name")).order_by("-count")[:30]
+            Issue.objects.values("domain__name").annotate(count=Count("domain__name")).order_by("-count")[:30]
         )
 
         # Add top users data
         top_users = (
             User.objects.annotate(
-                issue_count=Count("issue", filter=Q(
-                    issue__status="open") & ~Q(issue__is_hidden=True))
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
             )
             .filter(issue_count__gt=0)
             .order_by("-issue_count")[:10]
@@ -1465,14 +1394,12 @@ class AllIssuesView(ListView):
         context["user"] = self.request.GET.get("user")
         context["activity_screenshots"] = {}
         for activity in self.activities:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
-                issue=activity).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity).first()
 
         # Add top users data
         top_users = (
             User.objects.annotate(
-                issue_count=Count("issue", filter=Q(
-                    issue__status="open") & ~Q(issue__is_hidden=True))
+                issue_count=Count("issue", filter=Q(issue__status="open") & ~Q(issue__is_hidden=True))
             )
             .filter(issue_count__gt=0)
             .order_by("-issue_count")[:10]
@@ -1526,8 +1453,7 @@ class SpecificIssuesView(ListView):
         return self.activities
 
     def get_context_data(self, *args, **kwargs):
-        context = super(SpecificIssuesView, self).get_context_data(
-            *args, **kwargs)
+        context = super(SpecificIssuesView, self).get_context_data(*args, **kwargs)
         paginator = Paginator(self.activities, self.paginate_by)
         page = self.request.GET.get("page")
 
@@ -1569,8 +1495,7 @@ class IssueView(DetailView):
         try:
             if self.request.user.is_authenticated:
                 try:
-                    objectget = IP.objects.get(
-                        user=self.request.user, issuenumber=self.object.id)
+                    objectget = IP.objects.get(user=self.request.user, issuenumber=self.object.id)
                     self.object.save()
                 except:
                     ipdetails.save()
@@ -1578,8 +1503,7 @@ class IssueView(DetailView):
                     self.object.save()
             else:
                 try:
-                    objectget = IP.objects.get(address=get_client_ip(
-                        request), issuenumber=self.object.id)
+                    objectget = IP.objects.get(address=get_client_ip(request), issuenumber=self.object.id)
                     self.object.save()
                 except Exception as e:
                     print(e)
@@ -1598,37 +1522,26 @@ class IssueView(DetailView):
             context["os_family"] = user_agent.os.family
             context["os_version"] = user_agent.os.version_string
 
-        context["screenshots"] = IssueScreenshot.objects.filter(
-            issue=self.object)
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
         context["total_score"] = list(
-            Points.objects.filter(user=self.object.user).aggregate(
-                total_score=Sum("score")).values()
+            Points.objects.filter(user=self.object.user).aggregate(total_score=Sum("score")).values()
         )[0]
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["issue_count"] = Issue.objects.filter(
-            url__contains=self.object.domain_name).count()
+        context["issue_count"] = Issue.objects.filter(url__contains=self.object.domain_name).count()
         context["all_comment"] = self.object.comments.all()
         context["all_users"] = User.objects.all()
-        context["likes"] = UserProfile.objects.filter(
-            issue_upvoted=self.object).count()
-        context["likers"] = UserProfile.objects.filter(
-            issue_upvoted=self.object)
-        context["dislikes"] = UserProfile.objects.filter(
-            issue_downvoted=self.object).count()
-        context["dislikers"] = UserProfile.objects.filter(
-            issue_downvoted=self.object)
+        context["likes"] = UserProfile.objects.filter(issue_upvoted=self.object).count()
+        context["likers"] = UserProfile.objects.filter(issue_upvoted=self.object)
+        context["dislikes"] = UserProfile.objects.filter(issue_downvoted=self.object).count()
+        context["dislikers"] = UserProfile.objects.filter(issue_downvoted=self.object)
 
-        context["flags"] = UserProfile.objects.filter(
-            issue_flaged=self.object).count()
-        context["flagers"] = UserProfile.objects.filter(
-            issue_flaged=self.object)
+        context["flags"] = UserProfile.objects.filter(issue_flaged=self.object).count()
+        context["flagers"] = UserProfile.objects.filter(issue_flaged=self.object)
 
-        context["screenshots"] = IssueScreenshot.objects.filter(
-            issue=self.object).all()
-        context["content_type"] = ContentType.objects.get_for_model(
-            Issue).model
+        context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object).all()
+        context["content_type"] = ContentType.objects.get_for_model(Issue).model
 
         return context
 
@@ -1675,9 +1588,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                 if isinstance(request.POST.get("file"), six.string_types):
                     import imghdr
 
-                    data = "data:image/" + \
-                        request.POST.get("type") + ";base64," + \
-                        request.POST.get("file")
+                    data = "data:image/" + request.POST.get("type") + ";base64," + request.POST.get("file")
                     data = data.replace(" ", "")
                     data += "=" * ((4 - len(data) % 4) % 4)
                     if "data:" in data and ";base64," in data:
@@ -1698,8 +1609,7 @@ def submit_bug(request, pk, template="hunt_submittion.html"):
                         file_extension,
                     )
 
-                    request.FILES["screenshot"] = ContentFile(
-                        decoded_file, name=complete_file_name)
+                    request.FILES["screenshot"] = ContentFile(decoded_file, name=complete_file_name)
             issue = Issue()
             issue.label = label
             issue.url = url
@@ -1734,8 +1644,7 @@ def delete_content_comment(request):
     content = content_type_obj.get_object_for_this_type(pk=content_pk)
 
     if request.method == "POST":
-        comment = Comment.objects.get(
-            pk=int(request.POST["comment_pk"]), author=request.user.username)
+        comment = Comment.objects.get(pk=int(request.POST["comment_pk"]), author=request.user.username)
         comment.delete()
 
     context = {
@@ -1775,8 +1684,7 @@ def comment_on_content(request, content_pk):
 
     if request.method == "POST" and isinstance(request.user, User):
         comment = escape(request.POST.get("comment", ""))
-        replying_to_input = request.POST.get(
-            "replying_to_input", "").split("#")
+        replying_to_input = request.POST.get("replying_to_input", "").split("#")
 
         if content is None:
             raise Http404("Content does not exist, cannot comment")
@@ -1785,8 +1693,7 @@ def comment_on_content(request, content_pk):
             replying_to_user = replying_to_input[0]
             replying_to_comment_id = replying_to_input[1]
 
-            parent_comment = Comment.objects.filter(
-                pk=replying_to_comment_id).first()
+            parent_comment = Comment.objects.filter(pk=replying_to_comment_id).first()
 
             if content_type not in VALID_CONTENT_TYPES:
                 messages.error(request, "Invalid content type.")
@@ -1884,8 +1791,7 @@ def IssueEdit(request):
         uri = request.POST.get("domain")
         link = uri.replace("www.", "")
         if request.user == issue.user or request.user.is_superuser:
-            domain, created = Domain.objects.get_or_create(
-                name=link, defaults={"url": "http://" + link})
+            domain, created = Domain.objects.get_or_create(name=link, defaults={"url": "http://" + link})
             issue.domain = domain
             if uri[:4] != "http" and uri[:5] != "https":
                 uri = "https://" + uri
@@ -1932,8 +1838,7 @@ class GithubIssueView(TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         # Check if the user has a GitHub social token
-        has_github_token = SocialToken.objects.filter(
-            account__user=request.user, account__provider="github").exists()
+        has_github_token = SocialToken.objects.filter(account__user=request.user, account__provider="github").exists()
 
         # Redirect to social connections if no token is found
         if not has_github_token:
@@ -1946,22 +1851,18 @@ class GithubIssueView(TemplateView):
         title = request.POST.get("issue_title")
         description = request.POST.get("description")
 
-        repository = request.POST.get("repository_url").replace(
-            "https://github.com/", "").replace(".git", "")
+        repository = request.POST.get("repository_url").replace("https://github.com/", "").replace(".git", "")
         labels = request.POST.get("labels")
-        labels_list = [label.strip()
-                       for label in labels.split(",")] if labels else []
+        labels_list = [label.strip() for label in labels.split(",")] if labels else []
         try:
-            access_token = SocialToken.objects.get(
-                account__user=request.user, account__provider="github")
+            access_token = SocialToken.objects.get(account__user=request.user, account__provider="github")
         except SocialToken.DoesNotExist:
             print("Access token not found")
             return redirect("github_login")
 
         token = access_token.token
         # Create GitHub issue
-        issue = self.create_github_issue(
-            repository, title, description, token, labels_list)
+        issue = self.create_github_issue(repository, title, description, token, labels_list)
 
         if "id" in issue:
             success_message = f"Issue successfully created: #{issue['number']} - {issue['title']}"
@@ -1971,8 +1872,7 @@ class GithubIssueView(TemplateView):
 
     def create_github_issue(self, repo, title, description, access_token, labels_list):
         url = f"https://api.github.com/repos/{repo}/issues"
-        headers = {"Authorization": f"token {access_token}",
-                   "Accept": "application/vnd.github.v3+json"}
+        headers = {"Authorization": f"token {access_token}", "Accept": "application/vnd.github.v3+json"}
         data = {"title": title, "body": description, "labels": labels_list}
         response = requests.post(url, json=data, headers=headers)
         return response.json()
@@ -2010,8 +1910,7 @@ def get_github_issue(request):
 
 def generate_github_issue(description):
     try:
-        client = OpenAI(api_key=os.getenv(
-            "OPENAI_API_KEY", "sk-proj-1234567890"))
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 
         # Call the OpenAI API with the gpt-4o-mini model
         response = client.chat.completions.create(
@@ -2078,8 +1977,7 @@ def contribute(request):
         issues = r.json()
         for issue in issues:
             try:
-                created_at = datetime.strptime(
-                    issue.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
+                created_at = datetime.strptime(issue.get("created_at"), "%Y-%m-%dT%H:%M:%SZ")
             except Exception:
                 created_at = None
             good_first_issues.append(
@@ -2123,14 +2021,10 @@ class GitHubIssuesView(ListView):
 
         # Add counts for filtering
         context["total_count"] = GitHubIssue.objects.count()
-        context["open_count"] = GitHubIssue.objects.filter(
-            state="open").count()
-        context["closed_count"] = GitHubIssue.objects.filter(
-            state="closed").count()
-        context["pr_count"] = GitHubIssue.objects.filter(
-            type="pull_request").count()
-        context["issue_count"] = GitHubIssue.objects.filter(
-            type="issue").count()
+        context["open_count"] = GitHubIssue.objects.filter(state="open").count()
+        context["closed_count"] = GitHubIssue.objects.filter(state="closed").count()
+        context["pr_count"] = GitHubIssue.objects.filter(type="pull_request").count()
+        context["issue_count"] = GitHubIssue.objects.filter(type="issue").count()
 
         # Add current filter states
         context["current_type"] = self.request.GET.get("type", "all")
@@ -2149,8 +2043,7 @@ class GitHubIssuesView(ListView):
 
             # Check if this issue already exists
             if GitHubIssue.objects.filter(url=github_url).exists():
-                messages.warning(
-                    request, "This GitHub issue is already in our database.")
+                messages.warning(request, "This GitHub issue is already in our database.")
                 return redirect("github_issues")
 
             # Extract owner, repo, and issue number from URL
@@ -2164,8 +2057,7 @@ class GitHubIssuesView(ListView):
             from django.conf import settings
 
             api_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
-            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}",
-                       "Accept": "application/vnd.github.v3+json"}
+            headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
 
             try:
                 response = requests.get(api_url, headers=headers)
@@ -2222,8 +2114,7 @@ class GitHubIssuesView(ListView):
                     new_issue.user_profile = request.user.userprofile
 
                 new_issue.save()
-                messages.success(
-                    request, "GitHub issue with bounty added successfully!")
+                messages.success(request, "GitHub issue with bounty added successfully!")
 
             except requests.exceptions.RequestException:
                 messages.error(
@@ -2273,8 +2164,7 @@ def page_vote(request):
 
         # Get or create the DailyStats entry
         try:
-            stat, created = DailyStats.objects.get_or_create(
-                name=vote_key, defaults={"value": "0"})
+            stat, created = DailyStats.objects.get_or_create(name=vote_key, defaults={"value": "0"})
             # Increment the vote count
             current_value = int(stat.value)
             stat.value = str(current_value + 1)
@@ -2298,8 +2188,7 @@ class GsocView(View):
         total_pr_count = 0
 
         # Filter repos by name
-        repos = Repo.objects.filter(
-            name__in=[name.split("/")[-1] for name in repo_names])
+        repos = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repo_names])
 
         # Get all contributors who are linked to these repos
         contributors_with_prs = []
@@ -2329,8 +2218,7 @@ class GsocView(View):
                     total_pr_count += pr_count
 
         # Sort by PR count (descending)
-        sorted_contributors = sorted(
-            contributors_with_prs, key=lambda x: x["pr_count"], reverse=True)
+        sorted_contributors = sorted(contributors_with_prs, key=lambda x: x["pr_count"], reverse=True)
 
         # Get top 10 contributors
         top_contributors = sorted_contributors[:10]
@@ -2361,12 +2249,10 @@ class GsocView(View):
         project_data = {}
 
         for project, repo_names in GSOC25_PROJECTS.items():
-            project_data[project] = self.build_project_data(
-                project, repo_names)
+            project_data[project] = self.build_project_data(project, repo_names)
 
         # Sort projects by total PRs
-        sorted_project_data = dict(sorted(project_data.items(
-        ), key=lambda item: item[1]["total_prs"], reverse=True))
+        sorted_project_data = dict(sorted(project_data.items(), key=lambda item: item[1]["total_prs"], reverse=True))
 
         return render(request, "gsoc.html", {"projects": sorted_project_data})
 
@@ -2388,8 +2274,7 @@ def refresh_gsoc_project(request):
         repos = GSOC25_PROJECTS.get(project_name, [])
 
         if not repos:
-            messages.error(
-                request, f"No repositories found for project {project_name}")
+            messages.error(request, f"No repositories found for project {project_name}")
             return redirect("gsoc")
 
         # Fixed start date: 2024-11-11
@@ -2399,21 +2284,18 @@ def refresh_gsoc_project(request):
             # Call the fetch_gsoc_prs command with the specific repositories
             # We pass the repositories as a comma-separated string
             repo_list = ",".join(repos)
-            command_args = ["fetch_gsoc_prs",
-                            f"--repos={repo_list}", "--verbose"]
+            command_args = ["fetch_gsoc_prs", f"--repos={repo_list}", "--verbose"]
 
             # Add reset flag if requested
             if reset_counter:
                 command_args.append("--reset")
-                messages.info(
-                    request, f"Resetting page counter for {project_name} repositories")
+                messages.info(request, f"Resetting page counter for {project_name} repositories")
 
             # Run the command
             call_command(*command_args)
 
             # Debug: Count how many GitHubIssues were created with contributors
-            repo_objs = Repo.objects.filter(
-                name__in=[name.split("/")[-1] for name in repos])
+            repo_objs = Repo.objects.filter(name__in=[name.split("/")[-1] for name in repos])
             issue_count = GitHubIssue.objects.filter(
                 repo__in=repo_objs, type="pull_request", is_merged=True, merged_at__gte=since_date
             ).count()
@@ -2426,8 +2308,7 @@ def refresh_gsoc_project(request):
                 contributor__isnull=False,
             ).count()
 
-            messages.info(
-                request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
+            messages.info(request, f"Debug info: Found {issue_count} PRs, {contributor_count} with contributors linked")
 
             # Update user profiles for PRs that don't have them
             for repo_full_name in repos:
@@ -2454,8 +2335,7 @@ def refresh_gsoc_project(request):
                                         continue
 
                                     # Find existing user profile with this GitHub URL
-                                    user_profile = UserProfile.objects.filter(
-                                        github_url=github_url).first()
+                                    user_profile = UserProfile.objects.filter(github_url=github_url).first()
 
                                     if user_profile:
                                         # Link the PR to the user profile
@@ -2464,15 +2344,13 @@ def refresh_gsoc_project(request):
                             except (IndexError, AttributeError):
                                 continue
                 except Exception as e:
-                    messages.warning(
-                        request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
+                    messages.warning(request, f"Error updating user profiles for {repo_full_name}: {str(e)}")
 
             messages.success(
                 request, f"Successfully refreshed PRs for {project_name}. {len(repos)} repositories processed."
             )
         except Exception as e:
-            messages.error(
-                request, f"Error refreshing PRs for {project_name}: {str(e)}")
+            messages.error(request, f"Error refreshing PRs for {project_name}: {str(e)}")
 
         return redirect("gsoc")
 

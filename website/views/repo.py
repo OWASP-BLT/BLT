@@ -370,7 +370,7 @@ def add_repo(request):
         match = re.match(r"^(?:https?://)?github\.com/([^/]+)/([^/]+)/?$", repo_url)
         if not match:
             error_msg = (
-                "Invalid GitHub repository URL. " "Please provide a URL in the format: https://github.com/owner/repo"
+                "Invalid GitHub repository URL. Please provide a URL in the format: https://github.com/owner/repo"
             )
             return JsonResponse(
                 {"status": "error", "message": error_msg},
@@ -629,4 +629,3 @@ def refresh_repo_data(request, repo_id):
             },
             status=500,
         )
-
