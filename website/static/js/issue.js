@@ -353,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const repo = 'OWASP-BLT/BLT'; // Replace with your repo
         const perPage = 30; // GitHub API default
         
         try {
@@ -366,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Get issues for the current page
-            const url = `https://api.github.com/repos/${repo}/issues?state=all&per_page=${perPage}&page=${page}`;
+            const url = `https://api.github.com/repos/OWASP-BLT/BLT/issues?state=all&per_page=${perPage}&page=${page}`;
             const response = await fetch(url);
             
             if (!response.ok) throw new Error('GitHub API request failed');
