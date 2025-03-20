@@ -14,6 +14,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    BannedApp,
     Bid,
     Blocked,
     ChatBotLog,
@@ -41,6 +42,7 @@ from website.models import (
     LectureStatus,
     Message,
     Monitor,
+    Notification,
     Organization,
     OrganizationAdmin,
     OsshCommunity,
@@ -599,6 +601,26 @@ class GitHubIssueAdmin(admin.ModelAdmin):
     ]
     date_hierarchy = "created_at"
 
+    # Using raw_id_fields for the linked_pull_requests field is the most efficient
+    # way to handle this self-referential relationship in admin
+    raw_id_fields = ["linked_pull_requests"]
+
+    def get_queryset(self, request):
+        """
+        Optimize the queryset for admin list view by using select_related for ForeignKey relationships.
+        This reduces the number of database queries and improves performance.
+        """
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related(
+            "user_profile",
+            "user_profile__user",
+            "contributor",
+            "sent_by_user",
+            "repo",
+            "assignee",
+        )
+        return queryset
+
 
 class GitHubReviewAdmin(admin.ModelAdmin):
     list_display = (
@@ -758,3 +780,19 @@ admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
+admin.site.register(Notification)
+
+
+@admin.register(BannedApp)
+class BannedAppAdmin(admin.ModelAdmin):
+    list_display = ("app_name", "country_name", "country_code", "app_type", "ban_date", "is_active")
+    list_filter = ("app_type", "is_active", "ban_date")
+    search_fields = ("country_name", "country_code", "app_name", "ban_reason")
+    date_hierarchy = "ban_date"
+    ordering = ("country_name", "app_name")
+
+    fieldsets = (
+        ("App Information", {"fields": ("app_name", "app_type")}),
+        ("Country Information", {"fields": ("country_name", "country_code")}),
+        ("Ban Details", {"fields": ("ban_reason", "ban_date", "source_url", "is_active")}),
+    )
