@@ -204,8 +204,12 @@
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="flex items-center justify-center">
                 <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
-                <div class="mx-4">
-                    <i class="fas fa-code-branch text-2xl text-[#e74c3c]"></i>
+                <div class="mx-2">
+                    <a href="{% url 'register_organization' %}"
+                       class=" flex items-center justify-center gap-3 px-4 py-3 text-xl rounded-md border border-gray-300  hover:text-black hover:shadow-md transition-all duration-300">
+                        <i class="fas fa-building text-[#e74c3c]"></i>
+                        <span class="font-medium text-center">Register Organization</span>
+                    </a>
                 </div>
                 <div class="flex-grow h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
             </div>
