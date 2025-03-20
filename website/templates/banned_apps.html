@@ -187,7 +187,7 @@
                 return;
             }
             
-            fetch(`/api/banned-apps/search/?country=${encodeURIComponent(country)}`)
+            fetch(`/api/banned_apps/search/?country=${encodeURIComponent(country)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.apps.length === 0) {
