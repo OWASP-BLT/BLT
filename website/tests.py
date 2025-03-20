@@ -1,9 +1,11 @@
 import os
 import time
+from unittest.mock import patch
 
 import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.mail import send_mail
 from django.test import Client, LiveServerTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -49,7 +51,8 @@ class MySeleniumTests(LiveServerTestCase):
         options.add_argument("--disable-extensions")
         options.add_argument("--disable-dev-tools")
         options.add_argument("--remote-debugging-pipe")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option(
+            "excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 
@@ -114,7 +117,8 @@ class MySeleniumTests(LiveServerTestCase):
         self.assertEqual(user.email, "bugbugbug@bugbug.com")
 
         # Verify the email
-        email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
+        email_address = EmailAddress.objects.filter(
+            user=user, email=user.email).first()
         if email_address:
             # If email address exists, just verify it
             email_address.verified = True
@@ -122,10 +126,12 @@ class MySeleniumTests(LiveServerTestCase):
             email_address.save()
         else:
             # Create a new verified email address
-            EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+            EmailAddress.objects.create(
+                user=user, email=user.email, verified=True, primary=True)
 
         # Test passes if we can create and verify the user
-        self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
+        self.assertTrue(EmailAddress.objects.filter(
+            user=user, verified=True).exists())
 
     @override_settings(DEBUG=True)
     def test_login(self):
@@ -134,7 +140,8 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("bugbug (0 Pts)", body.text)
 
@@ -146,18 +153,26 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        self.selenium.find_element("name", "url").send_keys("https://blt.owasp.org/report/")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
-        self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
+        # Add explicit wait for the URL input field
+        url_input = WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.NAME, "url")))
+        url_input.send_keys("https://blt.owasp.org/report/")
+        self.selenium.find_element("id", "description").send_keys(
+            "XSS Attack on Google")  # title of bug
+        self.selenium.find_element(
+            "id", "markdownInput").send_keys("Description of bug")
+        Imagepath = os.path.abspath(os.path.join(
+            os.getcwd(), "website/static/img/background.jpg"))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
         # pass captacha if in test mode
         self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
         self.selenium.find_element("name", "reportbug_button").click()
         self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 
@@ -169,18 +184,24 @@ class MySeleniumTests(LiveServerTestCase):
         self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body")))
         self.selenium.get("%s%s" % (self.live_server_url, "/report/"))
-        self.selenium.find_element("name", "url").send_keys("https://google.com")
-        self.selenium.find_element("id", "description").send_keys("XSS Attack on Google")  # title of bug
-        self.selenium.find_element("id", "markdownInput").send_keys("Description of bug")
-        Imagepath = os.path.abspath(os.path.join(os.getcwd(), "website/static/img/background.jpg"))
+        self.selenium.find_element(
+            "name", "url").send_keys("https://google.com")
+        self.selenium.find_element("id", "description").send_keys(
+            "XSS Attack on Google")  # title of bug
+        self.selenium.find_element(
+            "id", "markdownInput").send_keys("Description of bug")
+        Imagepath = os.path.abspath(os.path.join(
+            os.getcwd(), "website/static/img/background.jpg"))
         self.selenium.find_element("name", "screenshots").send_keys(Imagepath)
         # pass captacha if in test mode
         self.selenium.find_element("name", "captcha_1").send_keys("PASSED")
         self.selenium.find_element("name", "reportbug_button").click()
         self.selenium.get("%s%s" % (self.live_server_url, "/all_activity/"))
-        WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+        WebDriverWait(self.selenium, 30).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body")))
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 
@@ -196,7 +217,8 @@ class MySeleniumTests(LiveServerTestCase):
         # Get all users from the fixture
         for user in User.objects.all():
             if user.email:  # Only process users with emails
-                email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
+                email_address = EmailAddress.objects.filter(
+                    user=user, email=user.email).first()
                 if email_address:
                     # If email address exists, just verify it
                     email_address.verified = True
@@ -204,7 +226,8 @@ class MySeleniumTests(LiveServerTestCase):
                     email_address.save()
                 else:
                     # Create a new verified email address
-                    EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
+                    EmailAddress.objects.create(
+                        user=user, email=user.email, verified=True, primary=True)
 
 
 class HideImage(TestCase):
@@ -219,11 +242,13 @@ class HideImage(TestCase):
 
     def test_on_hide(self):
         Test_Object = Issue.objects.get(url="test.com")
-        issue_screenshot_list_orignal = IssueScreenshot.objects.filter(issue=Test_Object.id)
+        issue_screenshot_list_orignal = IssueScreenshot.objects.filter(
+            issue=Test_Object.id)
 
         Test_Object.is_hidden = True
         Test_Object.save()
-        issue_screenshot_list_new = IssueScreenshot.objects.filter(issue=Test_Object.id)
+        issue_screenshot_list_new = IssueScreenshot.objects.filter(
+            issue=Test_Object.id)
 
         for screenshot in issue_screenshot_list_orignal:
             filename = screenshot.image.name
@@ -240,10 +265,13 @@ class HideImage(TestCase):
 class RemoveUserFromIssueTest(TestCase):
     def setUp(self):
         # Create a user, an anonymous user, and an issue
-        self.user = User.objects.create_user(username="testuser", password="password")
-        self.anonymous_user = User.objects.create_user(username="anonymous", password="password")
+        self.user = User.objects.create_user(
+            username="testuser", password="password")
+        self.anonymous_user = User.objects.create_user(
+            username="anonymous", password="password")
 
-        self.issue = Issue.objects.create(user=self.user, description="Test Issue")
+        self.issue = Issue.objects.create(
+            user=self.user, description="Test Issue")
 
         # Create corresponding activity
         self.activity = Activity.objects.create(
@@ -270,8 +298,10 @@ class RemoveUserFromIssueTest(TestCase):
 class LeaderboardTests(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user1 = User.objects.create_user(username="user1", password="password")
-        self.user2 = User.objects.create_user(username="user2", password="password")
+        self.user1 = User.objects.create_user(
+            username="user1", password="password")
+        self.user2 = User.objects.create_user(
+            username="user2", password="password")
 
         # Create user profiles
         self.profile1, _ = UserProfile.objects.get_or_create(user=self.user1)
@@ -284,7 +314,8 @@ class LeaderboardTests(TestCase):
         self.profile2.save()
 
         # Create test domain and issues
-        self.domain = Domain.objects.create(name="example.com", url="http://example.com")
+        self.domain = Domain.objects.create(
+            name="example.com", url="http://example.com")
         self.issue1 = Issue.objects.create(user=self.user1, domain=self.domain)
         self.issue2 = Issue.objects.create(user=self.user2, domain=self.domain)
 
@@ -381,7 +412,8 @@ class ProjectPageTest(TestCase):
 
 class OrganizationTests(TestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass123", email="test@example.com")
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass123", email="test@example.com")
         self.client.login(username="testuser", password="testpass123")
 
     def test_create_and_list_organization(self):
@@ -417,3 +449,41 @@ class OrganizationTests(TestCase):
         self.assertContains(response, org_name)
         self.assertContains(response, org_url)
 
+
+class SlackEmailBackendTest(TestCase):
+    """Test the SlackNotificationEmailBackend to ensure it sends Slack notifications."""
+
+    @patch("requests.post")
+    @override_settings(EMAIL_BACKEND="blt.mail.SlackNotificationEmailBackend")
+    def test_email_sends_slack_notification(self, mock_post):
+        """Test that sending an email triggers a Slack notification."""
+        # Mock the response from Slack API
+        mock_post.return_value.json.return_value = {"ok": True}
+        mock_post.return_value.status_code = 200
+
+        # Send a test email
+        subject = "Test Subject"
+        message = "This is a test message."
+        from_email = "test@example.com"
+        recipient_list = ["recipient@example.com"]
+
+        # Set the SLACK_WEBHOOK_URL environment variable for the test
+        with patch.dict("os.environ", {"SLACK_WEBHOOK_URL": "https://hooks.slack.com/test"}):
+            send_mail(subject, message, from_email, recipient_list)
+
+        # Verify that requests.post was called with appropriate arguments
+        mock_post.assert_called_once()
+
+        # Check that the Slack webhook URL was used
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://hooks.slack.com/test")
+
+        # Check that the payload contains the email details
+        payload = kwargs["json"]
+        self.assertIn("blocks", payload)
+
+        # Check that the message blocks contain our email information
+        block_text = payload["blocks"][0]["text"]["text"]
+        self.assertIn("Test Subject", block_text)
+        self.assertIn("test@example.com", block_text)
+        self.assertIn("recipient@example.com", block_text)

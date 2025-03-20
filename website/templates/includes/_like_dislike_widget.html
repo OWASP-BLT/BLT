@@ -1,215 +1,140 @@
 {% load gravatar %}
 {% load custom_tags %}
-<button disabled
-        class="like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
-        type="button">
-    <span id="likes" class="flex flex-row gap-2 items-center">
-        {{ object.views }}
-        <span>Views</span>
-        <svg xmlns="http://www.w3.org/2000/svg"
-             viewBox="0 0 562 352"
-             class="mt-[-2px]"
-             height="13px"
-             width="13px">
-            <path d="M288 80c-65.2 0-118.8 29.6-159.9 67.7C89.6 183.5 63 226 49.4 256c13.6 30 40.2 72.5 78.6 108.3C169.2 402.4 222.8 432 288 432s118.8-29.6 159.9-67.7C486.4 328.5 513 286 526.6 256c-13.6-30-40.2-72.5-78.6-108.3C406.8 109.6 353.2 80 288 80zM95.4 112.6C142.5 68.8 207.2 32 288 32s145.5 36.8 192.6 80.6c46.8 43.5 78.1 95.4 93 131.1c3.3 7.9 3.3 16.7 0 24.6c-14.9 35.7-46.2 87.7-93 131.1C433.5 443.2 368.8 480 288 480s-145.5-36.8-192.6-80.6C48.6 356 17.3 304 2.5 268.3c-3.3-7.9-3.3-16.7 0-24.6C17.3 208 48.6 156 95.4 112.6zM288 336c44.2 0 80-35.8 80-80s-35.8-80-80-80c-.7 0-1.3 0-2 0c1.3 5.1 2 10.5 2 16c0 35.3-28.7 64-64 64c-5.5 0-10.9-.7-16-2c0 .7 0 1.3 0 2c0 44.2 35.8 80 80 80zm0-208a128 128 0 1 1 0 256 128 128 0 1 1 0-256z" />
-        </svg>
-    </span>
-</button>
-<button class="like_unlike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
-        type="button">
-    <span id="likes" class="flex flex-row gap-2 items-center">
-        {{ likes }}
-        <span {% if request.user.is_authenticated %} name="{{ object.pk }}" id="like_unlike" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}>Likes</span>
-        {% if isLiked %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 fill="#ff0000"
-                 viewBox="0 0 512 512"
-                 height="13px"
-                 width="13px">
-                <path d="M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 272 247.1c0-29.2 13.3-56.7 36-75l7.4-5.9c26.5-21.2 44.6-51 51.2-84.2l2.3-11.4c5.2-26 30.5-42.9 56.5-37.7zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z" />
-            </svg>
-        {% else %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 fill="#ff0000"
-                 height="13px"
-                 width="13px"
-                 viewBox="0 0 512 512">
-                <path d="M323.8 34.8c-38.2-10.9-78.1 11.2-89 49.4l-5.7 20c-3.7 13-10.4 25-19.5 35l-51.3 56.4c-8.9 9.8-8.2 25 1.6 33.9s25 8.2 33.9-1.6l51.3-56.4c14.1-15.5 24.4-34 30.1-54.1l5.7-20c3.6-12.7 16.9-20.1 29.7-16.5s20.1 16.9 16.5 29.7l-5.7 20c-5.7 19.9-14.7 38.7-26.6 55.5c-5.2 7.3-5.8 16.9-1.7 24.9s12.3 13 21.3 13L448 224c8.8 0 16 7.2 16 16c0 6.8-4.3 12.7-10.4 15c-7.4 2.8-13 9-14.9 16.7s.1 15.8 5.3 21.7c2.5 2.8 4 6.5 4 10.6c0 7.8-5.6 14.3-13 15.7c-8.2 1.6-15.1 7.3-18 15.2s-1.6 16.7 3.6 23.3c2.1 2.7 3.4 6.1 3.4 9.9c0 6.7-4.2 12.6-10.2 14.9c-11.5 4.5-17.7 16.9-14.4 28.8c.4 1.3 .6 2.8 .6 4.3c0 8.8-7.2 16-16 16H286.5c-12.6 0-25-3.7-35.5-10.7l-61.7-41.1c-11-7.4-25.9-4.4-33.3 6.7s-4.4 25.9 6.7 33.3l61.7 41.1c18.4 12.3 40 18.8 62.1 18.8H384c34.7 0 62.9-27.6 64-62c14.6-11.7 24-29.7 24-50c0-4.5-.5-8.8-1.3-13c15.4-11.7 25.3-30.2 25.3-51c0-6.5-1-12.8-2.8-18.7C504.8 273.7 512 257.7 512 240c0-35.3-28.6-64-64-64l-92.3 0c4.7-10.4 8.7-21.2 11.8-32.2l5.7-20c10.9-38.2-11.2-78.1-49.4-89zM32 192c-17.7 0-32 14.3-32 32V448c0 17.7 14.3 32 32 32H96c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32H32z" />
-            </svg>
-        {% endif %}
-        {% if likers %}
-            <span class="w-[1.7vw] z-[9999999]" onclick="likeOpenn();">
-                <i class="text-black fa-solid fa-caret-down w-full  bg-[#eaeaea] rounded-lg">
-                </i>
-            </span>
-        {% endif %}
-    </span>
-</button>
-<button {% if request.user.is_authenticated %} name="{{ object.pk }}" type="submit" id="dislike-btn" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
-        class="dislike rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4"
-        type="button">
-    <span id="dislikes" class="flex flex-row gap-2 items-center">
-        {{ dislikes }}
-        <span>Dislikes</span>
-        {% if dislikes %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 512 512"
-                 height="13px"
-                 width="13px"
-                 fill="#8faa8757">
-                <path d="M313.4 479.1c26-5.2 42.9-30.5 37.7-56.5l-2.3-11.4c-5.3-26.7-15.1-52.1-28.8-75.2H464c26.5 0 48-21.5 48-48c0-18.5-10.5-34.6-25.9-42.6C497 236.6 504 223.1 504 208c0-23.4-16.8-42.9-38.9-47.1c4.4-7.3 6.9-15.8 6.9-24.9c0-21.3-13.9-39.4-33.1-45.6c.7-3.3 1.1-6.8 1.1-10.4c0-26.5-21.5-48-48-48H294.5c-19 0-37.5 5.6-53.3 16.1L202.7 73.8C176 91.6 160 121.6 160 153.7V192v48 24.9c0 29.2 13.3 56.7 36 75l7.4 5.9c26.5 21.2 44.6 51 51.2 84.2l2.3 11.4c5.2 26 30.5 42.9 56.5 37.7zM32 384H96c17.7 0 32-14.3 32-32V128c0-17.7-14.3-32-32-32H32C14.3 96 0 110.3 0 128V352c0 17.7 14.3 32 32 32z" />
-            </svg>
-        {% else %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 512 512"
-                 height="13px"
-                 width="13px"
-                 fill="#8faa8757">
-                <path d="M323.8 477.2c-38.2 10.9-78.1-11.2-89-49.4l-5.7-20c-3.7-13-10.4-25-19.5-35l-51.3-56.4c-8.9-9.8-8.2-25 1.6-33.9s25-8.2 33.9 1.6l51.3 56.4c14.1 15.5 24.4 34 30.1 54.1l5.7 20c3.6 12.7 16.9 20.1 29.7 16.5s20.1-16.9 16.5-29.7l-5.7-20c-5.7-19.9-14.7-38.7-26.6-55.5c-5.2-7.3-5.8-16.9-1.7-24.9s12.3-13 21.3-13L448 288c8.8 0 16-7.2 16-16c0-6.8-4.3-12.7-10.4-15c-7.4-2.8-13-9-14.9-16.7s.1-15.8 5.3-21.7c2.5-2.8 4-6.5 4-10.6c0-7.8-5.6-14.3-13-15.7c-8.2-1.6-15.1-7.3-18-15.2s-1.6-16.7 3.6-23.3c2.1-2.7 3.4-6.1 3.4-9.9c0-6.7-4.2-12.6-10.2-14.9c-11.5-4.5-17.7-16.9-14.4-28.8c.4-1.3 .6-2.8 .6-4.3c0-8.8-7.2-16-16-16H286.5c-12.6 0-25 3.7-35.5 10.7l-61.7 41.1c-11 7.4-25.9 4.4-33.3-6.7s-4.4-25.9 6.7-33.3l61.7-41.1c18.4-12.3 40-18.8 62.1-18.8H384c34.7 0 62.9 27.6 64 62c14.6 11.7 24 29.7 24 50c0 4.5-.5 8.8-1.3 13c15.4 11.7 25.3 30.2 25.3 51c0 6.5-1 12.8-2.8 18.7C504.8 238.3 512 254.3 512 272c0 35.3-28.6 64-64 64l-92.3 0c4.7 10.4 8.7 21.2 11.8 32.2l5.7 20c10.9 38.2-11.2 78.1-49.4 89zM32 384c-17.7 0-32-14.3-32-32V128c0-17.7 14.3-32 32-32H96c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32H32z" />
-            </svg>
-        {% endif %}
-    </span>
-</button>
-<button class="flag-unflag rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
-        type="button">
-    <span id="flags" class="flex flex-row gap-2 items-center">
-        {{ flags }}
-        <span {% if request.user.is_authenticated %} name="{{ object.pk }}" id="flag-unflag" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}>Flag</span>
-        {% if isFlagged %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 height="13px"
-                 width="13px"
-                 fill="#0786fb4d"
-                 viewBox="0 0 448 512">
-                <path d="M64 32C64 14.3 49.7 0 32 0S0 14.3 0 32V64 368 480c0 17.7 14.3 32 32 32s32-14.3 32-32V352l64.3-16.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 48V32z" />
-            </svg>
-        {% else %}
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 448 512"
-                 height="13px"
-                 width="13px"
-                 fill="#0786fb4d">
-                <path d="M48 24C48 10.7 37.3 0 24 0S0 10.7 0 24V64 350.5 400v88c0 13.3 10.7 24 24 24s24-10.7 24-24V388l80.3-20.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L48 52V24zm0 77.5l96.6-24.2c27-6.7 55.5-3.6 80.4 8.8c54.9 27.4 118.7 29.7 175 6.8V334.7l-24.4 9.1c-33.7 12.6-71.2 10.7-103.4-5.4c-48.2-24.1-103.3-30.1-155.6-17.1L48 338.5v-237z" />
-            </svg>
-        {% endif %}
-        {% if flagers %}
-            <span class="w-[1.7vw] z-[9999999]" onclick="flagOpenn();">
-                <i class="text-black fa-solid fa-caret-down w-full  bg-[#eaeaea] rounded-lg">
-                </i>
-            </span>
-        {% endif %}
-    </span>
-</button>
-<button {% if request.user.is_authenticated %} name="{{ object.pk }}" id="bookmark" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
-        class="bookmark rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4 "
-        type="button">
-    <span id="bookmark" class="flex flex-row gap-2 items-center">
-        {% if bookmarked %}
-            <span>Unbookmark</span>
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 448 512"
-                 height="13px"
-                 width="13px"
-                 fill="#842adb4d">
-                <path d="M0 96C0 43 43 0 96 0h96V190.7c0 13.4 15.5 20.9 26 12.5L272 160l54 43.2c10.5 8.4 26 .9 26-12.5V0h32 32c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32v64c17.7 0 32 14.3 32 32s-14.3 32-32 32H384 96c-53 0-96-43-96-96V96zM64 416c0 17.7 14.3 32 32 32H352V384H96c-17.7 0-32 14.3-32 32z" />
-            </svg>
-        {% else %}
-            <span>Bookmark</span>
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 viewBox="0 0 384 512"
-                 height="13px"
-                 width="13px"
-                 fill="#842adb4d">
-                <path d="M0 48C0 21.5 21.5 0 48 0l0 48V441.4l130.1-92.9c8.3-6 19.6-6 27.9 0L336 441.4V48H48V0H336c26.5 0 48 21.5 48 48V488c0 9-5 17.2-13 21.3s-17.6 3.4-24.9-1.8L192 397.5 37.9 507.5c-7.3 5.2-16.9 5.9-24.9 1.8S0 497 0 488V48z" />
-            </svg>
-        {% endif %}
-    </span>
-</button>
-<button class="relative border-[1px] inline-block shadow-sm rounded-xl  mb-3 transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
-        onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}`{% endif %}"
-        id="subscribe_domain_btn">
-    {% if user.is_authenticated and subscribed_to_domain %}
-        <div class="flex flex-row gap-2 items-center">
-            <span>Unsubscribe</span>
-            <svg viewBox="0 0 16 16" fill="currentColor" height="13px" width="13px">
-                <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
-                </path>
-                <path d="M.801 16.5a.798.798 0 0 1-.563-.234.786.786 0 0 1 0-1.127L14.635.733a.798.798 0 0 1 1.127 0 .787.787 0 0 1 0 1.127L1.365 16.266A.84.84 0 0 1 .8 16.5Z">
-                </path>
-            </svg>
-        </div>
-    {% else %}
-        <div class="flex flex-row gap-2 items-center">
-            <span>Subscribe</span>
-            <svg viewBox="0 0 16 16" fill="currentColor" height="13px" width="13px">
-                <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
-                </path>
-            </svg>
-        </div>
-    {% endif %}
-</button>
-<a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
-   target="_blank"
-   rel="noopener noreferrer"
-   class="rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2  text-[1.1rem] leading-4 p-4">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
-<a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} onclick="createIssue()" name="{{ object.pk }}" id="create_issue" {% endif %}
-   rel="noopener noreferrer"
-   class="rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] !bg-white border-black-2  text-[1.1rem] max-sm:text-[1rem] leading-4 p-4 hover:!text-[#3e3446]">
-    {% if github_link != "empty" %}
-        GitHub Link
-    {% else %}
-        Create Issue
-    {% endif %}
-&nbsp;<i class="fas fa-external-link fa-lg"></i></a>
-<button onclick="copyClipboard()"
-        class="max-sm:text-start rounded-2xl border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-[#3e3446] bg-white border-black-2  text-[1.1rem] leading-4 p-4">
-    Copy &nbsp;<i class="fa-solid fa-copy fa-lg text-red-[#4A6676]"></i>
-</button>
-{% if request.user.is_superuser or request.user == object.user %}
-    {% if object.user %}
-        <form method="post"
-              action="{% url 'remove_user_from_issue' id=object.id %}"
-              class="m-0 p-0 inline  mb-3">
-            {% csrf_token %}
-            <input type="hidden" name="token" value="{{ csrf_token }}" class="m-0 p-0" />
-            <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
-                    id="report-anonymously"
-                    type="submit"
-                    onclick="return confirm('Are you sure you want to report it anonymously?')">
-                <div class="flex flex-row gap-2 items-center">
-                    <span class="max-sm:text-[12px]">Anonymous</span>
-                    <i class="fa-regular fa-user text-[13px]"></i>
-                </div>
-            </button>
-        </form>
-    {% endif %}
-    <button class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4"
-            id="edit-issue">
-        <div class="flex flex-row gap-2 items-center">
-            <span class="max-sm:text-[12px]">Edit</span>
-            <i class="fa-regular fa-pen-to-square text-[13px]"></i>
-        </div>
+<div class="flex flex-wrap gap-x-3 gap-y-3">
+    <button class="like_unlike border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm "
+            type="button">
+        <span id="likes" class="flex flex-row gap-2 items-center">
+            {{ likes }}
+            <span {% if request.user.is_authenticated %} name="{{ object.pk }}" id="like_unlike" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}>Likes</span>
+            {% if isLiked %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="#ff0000"
+                     viewBox="0 0 512 512"
+                     height="13px"
+                     width="13px">
+                    <path d="M313.4 32.9c26 5.2 42.9 30.5 37.7 56.5l-2.3 11.4c-5.3 26.7-15.1 52.1-28.8 75.2H464c26.5 0 48 21.5 48 48c0 18.5-10.5 34.6-25.9 42.6C497 275.4 504 288.9 504 304c0 23.4-16.8 42.9-38.9 47.1c4.4 7.3 6.9 15.8 6.9 24.9c0 21.3-13.9 39.4-33.1 45.6c.7 3.3 1.1 6.8 1.1 10.4c0 26.5-21.5 48-48 48H294.5c-19 0-37.5-5.6-53.3-16.1l-38.5-25.7C176 420.4 160 390.4 160 358.3V320 272 247.1c0-29.2 13.3-56.7 36-75l7.4-5.9c26.5-21.2 44.6-51 51.2-84.2l2.3-11.4c5.2-26 30.5-42.9 56.5-37.7zM32 192H96c17.7 0 32 14.3 32 32V448c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32V224c0-17.7 14.3-32 32-32z" />
+                </svg>
+            {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="#ff0000"
+                     height="13px"
+                     width="13px"
+                     viewBox="0 0 512 512">
+                    <path d="M323.8 34.8c-38.2-10.9-78.1 11.2-89 49.4l-5.7 20c-3.7 13-10.4 25-19.5 35l-51.3 56.4c-8.9 9.8-8.2 25 1.6 33.9s25 8.2 33.9-1.6l51.3-56.4c14.1-15.5 24.4-34 30.1-54.1l5.7-20c3.6-12.7 16.9-20.1 29.7-16.5s20.1 16.9 16.5 29.7l-5.7 20c-5.7 19.9-14.7 38.7-26.6 55.5c-5.2 7.3-5.8 16.9-1.7 24.9s12.3 13 21.3 13L448 224c8.8 0 16 7.2 16 16c0 6.8-4.3 12.7-10.4 15c-7.4 2.8-13 9-14.9 16.7s.1 15.8 5.3 21.7c2.5 2.8 4 6.5 4 10.6c0 7.8-5.6 14.3-13 15.7c-8.2 1.6-15.1 7.3-18 15.2s-1.6 16.7 3.6 23.3c2.1 2.7 3.4 6.1 3.4 9.9c0 6.7-4.2 12.6-10.2 14.9c-11.5 4.5-17.7 16.9-14.4 28.8c.4 1.3 .6 2.8 .6 4.3c0 8.8-7.2 16-16 16H286.5c-12.6 0-25-3.7-35.5-10.7l-61.7-41.1c-11-7.4-25.9-4.4-33.3 6.7s-4.4 25.9 6.7 33.3l61.7 41.1c18.4 12.3 40 18.8 62.1 18.8H384c34.7 0 62.9-27.6 64-62c14.6-11.7 24-29.7 24-50c0-4.5-.5-8.8-1.3-13c15.4-11.7 25.3-30.2 25.3-51c0-6.5-1-12.8-2.8-18.7C504.8 273.7 512 257.7 512 240c0-35.3-28.6-64-64-64l-92.3 0c4.7-10.4 8.7-21.2 11.8-32.2l5.7-20c10.9-38.2-11.2-78.1-49.4-89zM32 192c-17.7 0-32 14.3-32 32V448c0 17.7 14.3 32 32 32H96c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32H32z" />
+                </svg>
+            {% endif %}
+            {% if likers %}
+                <span class="w-[1.7vw] z-[9999999]" onclick="likeOpenn();">
+                    <i class="text-black fa-solid fa-caret-down w-full  bg-[#eaeaea] rounded-lg">
+                    </i>
+                </span>
+            {% endif %}
+        </span>
     </button>
-{% endif %}
-{% if request.user.is_superuser or request.user == object.user %}
-    <button onclick="deleteIssue({{ object.id }})"
-            class="relative border-[1px] inline-block shadow-sm rounded-xl transform-[0] font-medium text-[#3e3446] bg-white border-black-2 text-[1.1rem] leading-4 p-4">
-        <div class="flex flex-row gap-2 items-center">
-            <span class="max-sm:text-[12px]">Delete</span>
-            <i class="fa-solid fa-trash text-[13px]"></i>
-        </div>
+    <button {% if request.user.is_authenticated %} name="{{ object.pk }}" type="submit" id="dislike-btn" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
+            class="dislike border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
+            type="button">
+        <span id="dislikes" class="flex flex-row gap-2 items-center">
+            {{ dislikes }}
+            <span>Dislikes</span>
+            {% if dislikes %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 512 512"
+                     height="13px"
+                     width="13px"
+                     fill="#8faa8757">
+                    <path d="M313.4 479.1c26-5.2 42.9-30.5 37.7-56.5l-2.3-11.4c-5.3-26.7-15.1-52.1-28.8-75.2H464c26.5 0 48-21.5 48-48c0-18.5-10.5-34.6-25.9-42.6C497 236.6 504 223.1 504 208c0-23.4-16.8-42.9-38.9-47.1c4.4-7.3 6.9-15.8 6.9-24.9c0-21.3-13.9-39.4-33.1-45.6c.7-3.3 1.1-6.8 1.1-10.4c0-26.5-21.5-48-48-48H294.5c-19 0-37.5 5.6-53.3 16.1L202.7 73.8C176 91.6 160 121.6 160 153.7V192v48 24.9c0 29.2 13.3 56.7 36 75l7.4 5.9c26.5 21.2 44.6 51 51.2 84.2l2.3 11.4c5.2 26 30.5 42.9 56.5 37.7zM32 384H96c17.7 0 32-14.3 32-32V128c0-17.7-14.3-32-32-32H32C14.3 96 0 110.3 0 128V352c0 17.7 14.3 32 32 32z" />
+                </svg>
+            {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 512 512"
+                     height="13px"
+                     width="13px"
+                     fill="#8faa8757">
+                    <path d="M323.8 477.2c-38.2 10.9-78.1-11.2-89-49.4l-5.7-20c-3.7-13-10.4-25-19.5-35l-51.3-56.4c-8.9-9.8-8.2-25 1.6-33.9s25-8.2 33.9 1.6l51.3 56.4c14.1 15.5 24.4 34 30.1 54.1l5.7 20c3.6 12.7 16.9 20.1 29.7 16.5s20.1-16.9 16.5-29.7l-5.7-20c-5.7-19.9-14.7-38.7-26.6-55.5c-5.2-7.3-5.8-16.9-1.7-24.9s12.3-13 21.3-13L448 288c8.8 0 16-7.2 16-16c0-6.8-4.3-12.7-10.4-15c-7.4-2.8-13-9-14.9-16.7s.1-15.8 5.3-21.7c2.5-2.8 4-6.5 4-10.6c0-7.8-5.6-14.3-13-15.7c-8.2-1.6-15.1-7.3-18-15.2s-1.6-16.7 3.6-23.3c2.1-2.7 3.4-6.1 3.4-9.9c0-6.7-4.2-12.6-10.2-14.9c-11.5-4.5-17.7-16.9-14.4-28.8c.4-1.3 .6-2.8 .6-4.3c0-8.8-7.2-16-16-16H286.5c-12.6 0-25 3.7-35.5 10.7l-61.7 41.1c-11 7.4-25.9 4.4-33.3-6.7s-4.4-25.9 6.7-33.3l61.7-41.1c18.4-12.3 40-18.8 62.1-18.8H384c34.7 0 62.9 27.6 64 62c14.6 11.7 24 29.7 24 50c0 4.5-.5 8.8-1.3 13c15.4 11.7 25.3 30.2 25.3 51c0 6.5-1 12.8-2.8 18.7C504.8 238.3 512 254.3 512 272c0 35.3-28.6 64-64 64l-92.3 0c4.7 10.4 8.7 21.2 11.8 32.2l5.7 20c10.9 38.2-11.2 78.1-49.4 89zM32 384c-17.7 0-32-14.3-32-32V128c0-17.7 14.3-32 32-32H96c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32H32z" />
+                </svg>
+            {% endif %}
+        </span>
     </button>
-{% endif %}
-{% if request.user.is_superuser or request.user == object.user %}
-    <button type="button"
-            onclick="resolveIssue()"
-            class="rounded-2xl h-auto border-[1px] shadow-sm mb-3 cursor-pointer relative transform-[0] font-medium text-white bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:bg-gradient-to-br focus:outline-none border-black-2  text-[1.1rem] leading-4 p-4 ">
-        {% if status == "open" %}
-            Close Issue
+    <button class="flag-unflag border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm "
+            type="button">
+        <span id="flags" class="flex flex-row gap-2 items-center">
+            {{ flags }}
+            <span {% if request.user.is_authenticated %} name="{{ object.pk }}" id="flag-unflag" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}>Flag</span>
+            {% if isFlagged %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     height="13px"
+                     width="13px"
+                     fill="#0786fb4d"
+                     viewBox="0 0 448 512">
+                    <path d="M64 32C64 14.3 49.7 0 32 0S0 14.3 0 32V64 368 480c0 17.7 14.3 32 32 32s32-14.3 32-32V352l64.3-16.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L64 48V32z" />
+                </svg>
+            {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 448 512"
+                     height="13px"
+                     width="13px"
+                     fill="#0786fb4d">
+                    <path d="M48 24C48 10.7 37.3 0 24 0S0 10.7 0 24V64 350.5 400v88c0 13.3 10.7 24 24 24s24-10.7 24-24V388l80.3-20.1c41.1-10.3 84.6-5.5 122.5 13.4c44.2 22.1 95.5 24.8 141.7 7.4l34.7-13c12.5-4.7 20.8-16.6 20.8-30V66.1c0-23-24.2-38-44.8-27.7l-9.6 4.8c-46.3 23.2-100.8 23.2-147.1 0c-35.1-17.6-75.4-22-113.5-12.5L48 52V24zm0 77.5l96.6-24.2c27-6.7 55.5-3.6 80.4 8.8c54.9 27.4 118.7 29.7 175 6.8V334.7l-24.4 9.1c-33.7 12.6-71.2 10.7-103.4-5.4c-48.2-24.1-103.3-30.1-155.6-17.1L48 338.5v-237z" />
+                </svg>
+            {% endif %}
+            {% if flagers %}
+                <span class="w-[1.7vw] z-[9999999]" onclick="flagOpenn();">
+                    <i class="text-black fa-solid fa-caret-down w-full  bg-[#eaeaea] rounded-lg">
+                    </i>
+                </span>
+            {% endif %}
+        </span>
+    </button>
+    <button {% if request.user.is_authenticated %} name="{{ object.pk }}" id="bookmark" {% else %} onclick="window.location.href='/accounts/login'" {% endif %}
+            class="bookmark border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm "
+            type="button">
+        <span id="bookmark" class="flex flex-row gap-2 items-center">
+            {% if bookmarked %}
+                <span>Unbookmark</span>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 448 512"
+                     height="13px"
+                     width="13px"
+                     fill="#842adb4d">
+                    <path d="M0 96C0 43 43 0 96 0h96V190.7c0 13.4 15.5 20.9 26 12.5L272 160l54 43.2c10.5 8.4 26 .9 26-12.5V0h32 32c17.7 0 32 14.3 32 32V352c0 17.7-14.3 32-32 32v64c17.7 0 32 14.3 32 32s-14.3 32-32 32H384 96c-53 0-96-43-96-96V96zM64 416c0 17.7 14.3 32 32 32H352V384H96c-17.7 0-32 14.3-32 32z" />
+                </svg>
+            {% else %}
+                <span>Bookmark</span>
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 384 512"
+                     height="13px"
+                     width="13px"
+                     fill="#842adb4d">
+                    <path d="M0 48C0 21.5 21.5 0 48 0l0 48V441.4l130.1-92.9c8.3-6 19.6-6 27.9 0L336 441.4V48H48V0H336c26.5 0 48 21.5 48 48V488c0 9-5 17.2-13 21.3s-17.6 3.4-24.9-1.8L192 397.5 37.9 507.5c-7.3 5.2-16.9 5.9-24.9 1.8S0 497 0 488V48z" />
+                </svg>
+            {% endif %}
+        </span>
+    </button>
+    <button class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm"
+            onclick="{% if user.is_authenticated %}subscribe_domain(){% else %}window.location.href=`{% url 'account_login' %}?next={{ request.path }}`{% endif %}"
+            id="subscribe_domain_btn">
+        {% if user.is_authenticated and subscribed_to_domain %}
+            <div class="flex flex-row gap-2 items-center">
+                <span>Unsubscribe</span>
+                <svg viewBox="0 0 16 16" fill="currentColor" height="13px" width="13px">
+                    <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
+                    </path>
+                    <path d="M.801 16.5a.798.798 0 0 1-.563-.234.786.786 0 0 1 0-1.127L14.635.733a.798.798 0 0 1 1.127 0 .787.787 0 0 1 0 1.127L1.365 16.266A.84.84 0 0 1 .8 16.5Z">
+                    </path>
+                </svg>
+            </div>
         {% else %}
-            Open Issue
+            <div class="flex flex-row gap-2 items-center">
+                <span>Subscribe</span>
+                <svg viewBox="0 0 16 16" fill="currentColor" height="13px" width="13px">
+                    <path d="M10.533 14.07h3.466a.76.76 0 0 0 .58-.28.74.74 0 0 0 .19-.57l-.57-6.55a.13.13 0 0 0 0-.06A6.42 6.42 0 0 0 8 0a6.42 6.42 0 0 0-6.18 6.65v.06l-.57 6.55a.74.74 0 0 0 .19.57.76.76 0 0 0 .56.24h3.468A2.64 2.64 0 0 0 8 16a2.64 2.64 0 0 0 2.533-1.93Zm-1.654 0H7.121a1.13 1.13 0 0 0 1.758 0Zm4.32-1.5H2.8l.5-5.79v-.13A4.92 4.92 0 0 1 8 1.54a4.92 4.92 0 0 1 4.7 5.11v.19l.5 5.73Z">
+                    </path>
+                </svg>
+            </div>
         {% endif %}
     </button>
+<<<<<<< HEAD
 {% endif %}
 <script>
 function deleteIssue(issueId) {
@@ -242,3 +167,23 @@ function deleteIssue(issueId) {
 }
 </script>
 
+=======
+    <a href="https://twitter.com/intent/tweet?text=Bug Found on @{{ object.domain_title }} - {{ object.description }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] hover:text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm">Tweet &nbsp;<i class="fa-brands fa-x-twitter fa-lg"></i></a>
+    <a {% if github_link != "empty" %} target="_blank" href="{{ github_link }}" {% else %} onclick="createIssue()" name="{{ object.pk }}" id="create_issue" {% endif %}
+       rel="noopener noreferrer"
+       class="border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] hover:text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm">
+        {% if github_link != "empty" %}
+            GitHub Link
+        {% else %}
+            Create Issue
+        {% endif %}
+    &nbsp;<i class="fas fa-external-link fa-lg"></i></a>
+    <button onclick="copyClipboard()"
+            class="max-sm:text-start border rounded-xl hover:bg-gray-100 transition-all duration-200 cursor-pointer font-medium text-[#3e3446] bg-white border-gray-300 px-4 py-3 shadow-sm">
+        Copy &nbsp;<i class="fa-solid fa-copy fa-lg text-red-[#4A6676]"></i>
+    </button>
+</div>
+>>>>>>> upstream/main

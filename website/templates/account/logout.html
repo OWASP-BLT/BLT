@@ -20,7 +20,8 @@
 {% block content %}
     <h1>{% trans "Sign Out" %}</h1>
     <p>{% trans "Are you sure?" %}</p>
-    <form method="post" action="{% url 'account_logout' %}">
+    <form method="post"
+          action="{% url 'account_logout' %}?next={{ request.path }}">
         {% csrf_token %}
         {% if redirect_field_value %}
             <input type="hidden"

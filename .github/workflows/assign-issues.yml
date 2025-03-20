@@ -17,4 +17,4 @@ jobs:
         uses: OWASP-BLT/BLT-Action@main
         with:
             repo-token: ${{ secrets.GITHUB_TOKEN }}
-
+            giphy-api-key: ${{ secrets.GIPHY_KEY }}

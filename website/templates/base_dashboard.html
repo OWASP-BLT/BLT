@@ -104,7 +104,7 @@
                                 {% trans "Change Password" %}</a>
                             </li>
                             <li>
-                            <a href="{% url 'account_logout' %}"><i class="fa fa-sign-out"></i>
+                            <a href="{% url 'account_logout' %}?next={{ request.path }}"><i class="fa fa-sign-out"></i>
                         {% trans "Logout" %}</a>
                     </li>
                 </ul>

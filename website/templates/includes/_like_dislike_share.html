@@ -1,138 +1,120 @@
 {% load gravatar %}
 {% load custom_tags %}
-{% comment %} three dot  {% endcomment %}
-<button id="dropdownDefaultButton"
-        data-dropdown-toggle="dropdown"
-        class="md:hidden like_unlike border-[1px] rounded-2xl shadow-sm mb-3 cursor-pointer relative transform-[0] font-bold text-[#3e3446] bg-white border-black-2  text-[#0.875rem] leading-4 p-4 "
-        type="button">
-    <svg viewBox="0 0 16 16" fill="currentColor" height="12px" width="12px">
-        <circle cx="8" cy="8" r="1.31"></circle><circle cx="1.31" cy="8" r="1.31"></circle><circle cx="14.69" cy="8" r="1.31"></circle>
-    </svg>
-</button>
-<!-- Dropdown menu -->
-<div id="dropdown"
-     class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44">
-    <ul class="py-2 m-2 rounded text-gray-700"
-        aria-labelledby="dropdownDefaultButton">
-        <span class="md:hidden flex flex-col">{% include "./_like_dislike_widget.html" with device="mobile" %}</span>
-    </ul>
-</div>
-<span class="max-sm:hidden">{% include "./_like_dislike_widget.html" with device="desktop" %}</span>
-{% comment %} list of flags modal  {% endcomment %}
-<div id="flag-modal"
-     class="hidden relative z-10"
-     aria-labelledby="modal-title"
-     role="dialog"
-     aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-         aria-hidden="true"></div>
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start lg:w-full">
-                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                            <div class="mt-2">
-                                <h3>Flagged by:</h3>
-                                <br>
-                                <p class="text-xl">
-                                    <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
+<!-- Modern redesigned like/dislike/share component -->
+<div class="flex flex-wrap gap-x-3 w-full items-center border-y border-gray-300 py-6 my-3">
+    <!-- We're removing the three-dot dropdown button for mobile -->
+    <!-- Like/dislike widget for all screen sizes -->
+    {% include "./_like_dislike_widget.html" %}
+    <!-- Flag modal -->
+    <div id="flag-modal"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3 class="text-lg font-semibold text-gray-900">Flagged by:</h3>
+                                    <div class="mt-4">
+                                        <div class="space-y-3">
                                             {% for usr in flagers %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                <div class="flex items-center p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                                                     {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <td>
-                                                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
+                                                        <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                             class="h-10 w-10 rounded-full object-cover"
+                                                             alt="{{ usr.user.username }}"
+                                                             height="40"
+                                                             width="40">
                                                     {% else %}
-                                                        <td>
-                                                            <img src="{% gravatar_url usr.user.email 50 %}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
+                                                        <img src="{% gravatar_url usr.user.email 50 %}"
+                                                             class="h-10 w-10 rounded-full object-cover"
+                                                             alt="{{ usr.user.username }}"
+                                                             height="40"
+                                                             width="40">
                                                     {% endif %}
-                                                    <td>
-                                                        &nbsp; <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
-                                                    </td>
-                                                </tr>
+                                                    <a href="{% url 'profile' slug=usr.user.username %}"
+                                                       class="ml-3 font-medium text-gray-700 hover:text-gray-900">
+                                                        {{ usr.user.username }}
+                                                    </a>
+                                                </div>
                                             {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                    <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                            id="close-flag">Close</button>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-flag">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<div id="like-modal"
-     class="hidden relative z-10"
-     aria-labelledby="modal-title"
-     role="dialog"
-     aria-modal="true">
-    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-         aria-hidden="true"></div>
-    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
-        <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
-                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start lg:w-full">
-                        <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
-                            <div class="mt-2">
-                                <h3>Liked By:</h3>
-                                <br>
-                                <p class="text-xl">
-                                    <table class="table-auto w-full border-spacing-52">
-                                        <tbody>
+    <!-- Like modal -->
+    <div id="like-modal"
+         class="hidden relative z-10"
+         aria-labelledby="modal-title"
+         role="dialog"
+         aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+             aria-hidden="true"></div>
+        <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 max-sm:w-full lg:w-[30vw] ">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start lg:w-full">
+                            <div class="mt-3 sm:ml-4 sm:mt-0 sm:text-left lg:w-full">
+                                <div class="mt-2">
+                                    <h3 class="text-lg font-semibold text-gray-900">Liked By:</h3>
+                                    <div class="mt-4">
+                                        <div class="space-y-3">
                                             {% for usr in likers %}
-                                                <tr class="shadow-lg m-3 w-full rounded">
+                                                <div class="flex items-center p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                                                     {% if usr.user.socialaccount_set.all.0.get_avatar_url %}
-                                                        <td>
-                                                            <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
+                                                        <img src="{{ usr.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                             class="h-10 w-10 rounded-full object-cover"
+                                                             alt="{{ usr.user.username }}"
+                                                             height="40"
+                                                             width="40">
                                                     {% else %}
-                                                        <td>
-                                                            <img src="{% gravatar_url usr.user.email 50 %}"
-                                                                 height="50px"
-                                                                 width="50px"
-                                                                 alt="{{ usr.user.username }}">
-                                                        </td>
+                                                        <img src="{% gravatar_url usr.user.email 50 %}"
+                                                             class="h-10 w-10 rounded-full object-cover"
+                                                             alt="{{ usr.user.username }}"
+                                                             height="40"
+                                                             width="40">
                                                     {% endif %}
-                                                    <td>
-                                                        &nbsp; <a href="{% url 'profile' slug=usr.user.username %}">{{ usr.user.username }}</a>
-                                                    </td>
-                                                </tr>
+                                                    <a href="{% url 'profile' slug=usr.user.username %}"
+                                                       class="ml-3 font-medium text-gray-700 hover:text-gray-900">
+                                                        {{ usr.user.username }}
+                                                    </a>
+                                                </div>
                                             {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                    <button type="button"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-xl font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                            id="close-like">Close</button>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button"
+                                class="inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                id="close-like">Close</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+<!-- Keep the existing JavaScript -->
 <script>
     function copyClipboard() {
         var textToCopy = "Bug Found on @{{ object.domain_title|escapejs }} - {{ object.description|escapejs }} Report: https://{% env 'FQDN' %}/issue/{{ object.id }}";
@@ -143,9 +125,9 @@
             style: "custom",
             className: "success"
         });
-      }
+    }
 
-      function like_unlike_handler(e) {
+    function like_unlike_handler(e) {
         e.preventDefault();
         var issue_pk = $(this).attr('name');
         $.ajax({
@@ -154,23 +136,10 @@
             data: {},
             success: function (data) {
                 window.location.reload();
-                // $('.like_unlike').remove();
-                // $('#like-container').append(data);
-                // if ($("#dislike-btn i").hasClass("fa-solid")) {
-                // var dislikes = $("#dislikes").text();
-                //     dislikes =  dislikes-1;
-                //     $('#dislike-btn').html(
-                //         dislikes+`&nbsp;
-                //         <i class="fa-regular fa-thumbs-down text-3xl text-black"></i>`
-                //     );
-                // }
             },
         });
-        // Later, when you want to "destroy" the event handler:
-        // $('body').off('click', '.like_unlike', like_unlike_handler);
     }
 
-    // Attach the click event handler
     $('body').on('click', '#like_unlike', like_unlike_handler);
 
     function dislike_handler(e){
@@ -182,19 +151,8 @@
             data: {},
             success: function (data) {
                 window.location.reload();
-                // $('.dislike').remove();
-                // $("#dislike-container").append(data);
-                // if ($("#like_unlike i").hasClass("fa-solid")) {
-                //     var likes = $("#likes").text();
-                //     likes = likes-1;
-                //     $('#like_unlike').html(
-                //         likes+`&nbsp;
-                //         <i class="fa-regular fa-thumbs-up text-3xl text-black"></i>`
-                //     );
-                // }
             },
         });
-        // $('body').off('click', '.dislike', dislike_handler);
     }
     $('body').on('click', '#dislike-btn', dislike_handler);
 </script>
@@ -207,18 +165,11 @@
             url: '/flag_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                // Test this behaviour
                 window.location.reload();
-                // $('#flag-unflag').remove();
-                // $('#flag-container').append(data);
             },
         });
-            // Later, when you want to "destroy" the event handler:
-            // Remove destroy
-        // $('body').off('click', '#flag-unflag', flag_unflag_handler);
     }
 
-    // Attach the click event handler
     $('body').on('click', '#flag-unflag', flag_unflag_handler);
 
 </script>
@@ -231,24 +182,7 @@
             url: '/save_issue/' + issue_pk + '/',
             data: {},
             success: function (data) {
-                // Test this behaviour
                 window.location.reload();
-                //if (data === "REMOVED"){
-                    // $('.bookmark i').removeClass('fa-solid');
-                    // $('.bookmark i').addClass('fa-regular');
-                    // $.notify("Bookmark Removed!", {
-                    //     style: "custom",
-                    //     className: "success"
-                    // });
-                //}
-                //else{
-                    // $('.bookmark i').removeClass('fa-regular');
-                    // $('.bookmark i').addClass('fa-solid');
-                    // $.notify("Bookmark Added!", {
-                    //     style: "custom",
-                    //     className: "success"
-                    // });
-                //}
             },
             error: function (e) {
                 $.notify("Some error occurred!", {
@@ -259,11 +193,9 @@
         });
     }
 
-    // Attach the click event handler
     $('body').on('click', '#bookmark', bookmark_handler);
 </script>
 <script>
-
     async function resolveIssue(){
         var id = {{object.pk}};
 
@@ -381,22 +313,6 @@
             data: {},
             success: function (data) {
                 window.location.reload();
-                
-                // if (data === "SUBSCRIBED"){
-                //     $("#subscribe_domain_btn").text("Unsubscribe");
-                //     $.notify("Subscribed!", {
-                //         style: "custom",
-                //         className: "success"
-                //     });
-                // }
-
-                // else if (data === "UNSUBSCRIBED"){
-                //     $("#subscribe_domain_btn").text("Subscribe");
-                //     $.notify("Unsubscribed!", {
-                //         style: "custom",
-                //         className: "success"
-                //     });
-                // }
             },
             error: function () {
                 $.notify("Some error occurred!", {
@@ -406,5 +322,21 @@
             }
         })
     }
+    
+    function likeOpenn() {
+        document.getElementById('like-modal').classList.remove('hidden');
+    }
+    
+    function flagOpenn() {
+        document.getElementById('flag-modal').classList.remove('hidden');
+    }
+    
+    document.getElementById('close-like').addEventListener('click', function() {
+        document.getElementById('like-modal').classList.add('hidden');
+    });
+    
+    document.getElementById('close-flag').addEventListener('click', function() {
+        document.getElementById('flag-modal').classList.add('hidden');
+    });
 </script>
 

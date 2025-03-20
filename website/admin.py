@@ -14,6 +14,7 @@ from import_export.admin import ImportExportModelAdmin
 from website.models import (
     IP,
     Activity,
+    BannedApp,
     Bid,
     Blocked,
     ChatBotLog,
@@ -41,6 +42,7 @@ from website.models import (
     LectureStatus,
     Message,
     Monitor,
+    Notification,
     Organization,
     OrganizationAdmin,
     OsshCommunity,
@@ -365,9 +367,11 @@ class IssueScreenshotAdmin(admin.ModelAdmin):
 
 def block_ip(modeladmin, request, queryset):
     for ip in queryset:
-        Blocked.objects.create(address=ip.address, count=ip.count, created=timezone.now())
+        Blocked.objects.create(
+            address=ip.address, count=ip.count, created=timezone.now())
 
-    modeladmin.message_user(request, "Selected IPs have been blocked successfully.")
+    modeladmin.message_user(
+        request, "Selected IPs have been blocked successfully.")
 
 
 block_ip.short_description = "Block selected IPs"
@@ -376,7 +380,8 @@ block_ip.short_description = "Block selected IPs"
 def unblock_ip(modeladmin, request, queryset):
     for ip in queryset:
         Blocked.objects.filter(ip=ip.address).delete()
-    modeladmin.message_user(request, "Selected IPs have ben unblocked successfully")
+    modeladmin.message_user(
+        request, "Selected IPs have ben unblocked successfully")
 
 
 unblock_ip.short_description = "Unblock selected IPs"
@@ -384,9 +389,11 @@ unblock_ip.short_description = "Unblock selected IPs"
 
 def block_user_agent(modeladmin, request, queryset):
     for ip in queryset:
-        Blocked.objects.create(user_agent_string=ip.agent, count=ip.count, created=timezone.now())
+        Blocked.objects.create(user_agent_string=ip.agent,
+                               count=ip.count, created=timezone.now())
 
-    modeladmin.message_user(request, "Selected UserAgent have been blocked successfully.")
+    modeladmin.message_user(
+        request, "Selected UserAgent have been blocked successfully.")
 
 
 block_user_agent.short_description = "Block selected UserAgent"
@@ -396,7 +403,8 @@ def unblock_user_agent(modeladmin, request, queryset):
     for ip in queryset:
         Blocked.objects.filter(user_agent_string=ip.agent).delete()
 
-    modeladmin.message_user(request, "Selected UserAgent have been unblocked successfully.")
+    modeladmin.message_user(
+        request, "Selected UserAgent have been unblocked successfully.")
 
 
 unblock_user_agent.short_description = "Unblock selected UserAgent"
@@ -466,7 +474,8 @@ class ChatBotLogAdmin(admin.ModelAdmin):
 
 
 class ForumPostAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "title", "description", "up_votes", "down_votes", "status", "created")
+    list_display = ("id", "user", "title", "description",
+                    "up_votes", "down_votes", "status", "created")
     list_filter = ("status", "category")
     search_fields = ("title", "description", "user__username")
 
@@ -551,7 +560,8 @@ class TimeLogAdmin(admin.ModelAdmin):
 
 
 class ContributionAdmin(admin.ModelAdmin):
-    list_display = ("user", "title", "description", "status", "created", "txid")
+    list_display = ("user", "title", "description",
+                    "status", "created", "txid")
     list_filter = ["status", "user"]
     search_fields = ["title", "description", "user__username"]
     date_hierarchy = "created"
@@ -598,6 +608,26 @@ class GitHubIssueAdmin(admin.ModelAdmin):
         "bch_tx_id",
     ]
     date_hierarchy = "created_at"
+
+    # Using raw_id_fields for the linked_pull_requests field is the most efficient
+    # way to handle this self-referential relationship in admin
+    raw_id_fields = ["linked_pull_requests"]
+
+    def get_queryset(self, request):
+        """
+        Optimize the queryset for admin list view by using select_related for ForeignKey relationships.
+        This reduces the number of database queries and improves performance.
+        """
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related(
+            "user_profile",
+            "user_profile__user",
+            "contributor",
+            "sent_by_user",
+            "repo",
+            "assignee",
+        )
+        return queryset
 
 
 class GitHubReviewAdmin(admin.ModelAdmin):
@@ -758,4 +788,21 @@ admin.site.register(Room, RoomAdmin)
 admin.site.register(DailyStats, DailyStatsAdmin)
 admin.site.register(Queue, QueueAdmin)
 admin.site.register(JoinRequest, JoinRequestAdmin)
+admin.site.register(Notification)
 
+
+@admin.register(BannedApp)
+class BannedAppAdmin(admin.ModelAdmin):
+    list_display = ("app_name", "country_name", "country_code",
+                    "app_type", "ban_date", "is_active")
+    list_filter = ("app_type", "is_active", "ban_date")
+    search_fields = ("country_name", "country_code", "app_name", "ban_reason")
+    date_hierarchy = "ban_date"
+    ordering = ("country_name", "app_name")
+
+    fieldsets = (
+        ("App Information", {"fields": ("app_name", "app_type")}),
+        ("Country Information", {"fields": ("country_name", "country_code")}),
+        ("Ban Details", {"fields": ("ban_reason",
+         "ban_date", "source_url", "is_active")}),
+    )

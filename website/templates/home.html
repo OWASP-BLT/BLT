@@ -387,7 +387,7 @@
                         </div>
                     </div>
                     <div class="flex justify-center">
-                        <a href="{% url 'account_login' %}"
+                        <a href="{% url 'account_login' %}?next={{ request.path }}"
                            class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] hover:text-white transition-colors">
                             <i class="fas fa-sign-in-alt mr-2"></i>Sign In to Participate
                         </a>

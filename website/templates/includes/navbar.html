@@ -63,7 +63,7 @@
                     {% if request.user.is_authenticated %}
                         <li class="border my-2 -mx-4"></li>
                         <li>
-                            <a href="{% url 'account_logout' %}">
+                            <a href="{% url 'account_logout' %}?next={{ request.path }}">
                                 <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                             </a>
                         </li>
@@ -75,7 +75,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{% url 'account_login' %}">
+                            <a href="{% url 'account_login' %}?next={{ request.path }}">
                                 <i class="fa fa-sign-in fa-fw"></i> {% trans "Login" %}
                             </a>
                         </li>
@@ -187,7 +187,7 @@
                         <!-- divider -->
                         <li class="border my-4 -mx-8"></li>
                         <li>
-                            <a href="{% url 'account_logout' %}">
+                            <a href="{% url 'account_logout' %}?next={{ request.path }}">
                                 <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                             </a>
                         </li>
@@ -200,13 +200,14 @@
                 <a href="{% url 'account_signup' %}"
                    class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
                 {% trans "Signup" %}</a>
-                <a href="{% url 'account_login' %}"
+                <a href="{% url 'account_login' %}?next={{ request.path }}"
                    data-toggle="modal"
                    class="h-[38px] px-[25px] py-[9px] bg-red-500 hover:bg-red-600 hover:no-underline text-white font-bold text-2xl mr-[20px] hover:text-white">
                 {% trans "Login" %}</a>
             </div>
             <!-- Log in icon -->
-            <a href="{% url 'account_login' %}" class="block sm:hidden mr-[30px]">
+            <a href="{% url 'account_login' %}?next={{ request.path }}"
+               class="block sm:hidden mr-[30px]">
                 <i class="fa fa-user !text-5xl text-red-500"></i>
             </a>
         {% endif %}
