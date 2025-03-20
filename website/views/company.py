@@ -200,15 +200,20 @@ class OrganizationDashboardAnalyticsView(View):
         )
 
         # Calculate severity distribution
-        severity_counts = security_issues.values("severity").annotate(count=Count("id"))
+        # Note: Check if the severity field exists - currently not defined in the Issue model
+        try:
+            severity_counts = security_issues.values("severity").annotate(count=Count("id"))
+        except FieldError:
+            # Severity field doesn't exist, provide empty list
+            severity_counts = []
 
         # Get recent security incidents (last 30 days)
-        recent_incidents = security_issues.filter(created_at__gte=timezone.now() - timezone.timedelta(days=30))
+        recent_incidents = security_issues.filter(created__gte=timezone.now() - timedelta(days=30))
 
         # Calculate average resolution time
         resolved_issues = security_issues.filter(status="resolved")
-        resolved_issues = resolved_issues.filter(resolved_at__isnull=False)
-        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("resolved_at") - F("created_at")))["avg_time"]
+        resolved_issues = resolved_issues.filter(closed_date__isnull=False)
+        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
 
         return {
             "total_security_issues": security_issues.count(),
