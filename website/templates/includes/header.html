@@ -24,8 +24,10 @@
                     </button>
                     <!-- Mega Menu Toggle -->
                     <button id="mega-menu-button"
-                            type="button"
-                            class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500">
+                            aria-expanded="false"
+                            aria-controls="mega-menu"
+                            class="hidden md:inline-flex group items-center gap-2 rounded-md p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500">
+                        <span class="sr-only">Open menu</span>
                         <i class="fa fa-th-large md:text-xl text-lg"></i>
                     </button>
                 </div>
@@ -38,11 +40,10 @@
                          height="50" />
                 </a>
                 <!-- Mega Menu Content -->
-                <div id="mega-menu-content"
-                     class="hidden fixed top-[80px] left-0 right-0 bg-white shadow-lg border-b border-gray-200 z-50 max-h-[80vh] overflow-y-auto">
+                <div class="mega-menu hidden fixed top-[80px] left-0 right-0 bg-white shadow-lg border-b max-h-[80vh] overflow-y-auto z-50">
                     <div class="container mx-auto px-4 py-6">
-                        <div class="grid grid-cols-5 gap-6">
-                            <!-- Column 1: Organizations & Communication -->
+                        <div class="grid grid-cols-5 gap-8">
+                            <!-- Column 1: Organizations Part 1 -->
                             <div>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">Organizations</h3>
                                 <ul class="space-y-2">
@@ -69,6 +70,34 @@
                                     <li>
                                         <a href="{% url 'issues' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bugs</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'github_issues' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Issues</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'sizzle' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-fire w-5 mr-2"></i>Time Logs</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'checkIN' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-user-check w-5 mr-2"></i>Check-In</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'scoreboard' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trophy w-5 mr-2"></i>Scoreboard</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'hunts' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bounties</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'reported_ips_list' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-exclamation-triangle w-5 mr-2"></i>Reported IPs</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'trademark_search' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-registered w-5 mr-2"></i>Trademarks</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Communication</h3>
@@ -120,10 +149,7 @@
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hands-helping w-5 mr-2"></i>Bacon Requests</a>
                                     </li>
                                 </ul>
-                            </div>
-                            <!-- Column 3: Users & Teams -->
-                            <div>
-                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">Users</h3>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Users</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'users' %}"
@@ -141,12 +167,50 @@
                                         <a href="{% url 'leaderboard_global' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-medal w-5 mr-2"></i>Leaderboard</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'contributors' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-laptop-code w-5 mr-2"></i>Contributors</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'deletions' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trash-alt w-5 mr-2"></i>Takedowns</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'badges' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-certificate w-5 mr-2"></i>Badges</a>
+                                    </li>
                                 </ul>
-                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Teams</h3>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Language</h3>
+                                <form action="{% url 'set_language' %}"
+                                      method="post"
+                                      class="flex items-center">
+                                    {% csrf_token %}
+                                    <i class="fas fa-globe-americas w-5 mr-2 text-gray-700"></i>
+                                    <select name="language"
+                                            onchange="this.form.submit()"
+                                            class="form-select w-full text-gray-700 hover:text-[#e74c3c] bg-white border border-gray-300 rounded-md">
+                                        {% get_current_language as LANGUAGE_CODE %}
+                                        {% get_available_languages as LANGUAGES %}
+                                        {% for lang_code, lang_name in LANGUAGES %}
+                                            <option value="{{ lang_code }}"
+                                                    {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
+                                                {{ lang_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </form>
+                            </div>
+                            <!-- Column 3: Teams and About -->
+                            <div>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">Teams</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'team_overview' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-users w-5 mr-2"></i>Teams</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'team_overview' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-users w-5 mr-2"></i>Your Team</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'team_challenges' %}"
@@ -157,10 +221,7 @@
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-medal w-5 mr-2"></i>Team Leaderboard</a>
                                     </li>
                                 </ul>
-                            </div>
-                            <!-- Column 4: About & Contribute -->
-                            <div>
-                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">About Us</h3>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">About Us</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'about' %}"
@@ -168,26 +229,65 @@
                                     </li>
                                     <li>
                                         <a href="{% url 'features' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-gear w-5 mr-2"></i>Features</a>
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fa-solid fa-gear w-5 mr-2"></i>Features</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'sponsor' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-handshake w-5 mr-2"></i>Sponsorships</a>
                                     </li>
                                     <li>
+                                        <a href="https://owasp.org/www-project-bug-logging-tool/"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-shield-alt w-5 mr-2"></i>OWASP Project</a>
+                                    </li>
+                                    <li>
                                         <a href="{% url 'donate' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-donate w-5 mr-2"></i>Donations</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'view_forum' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-comments w-5 mr-2"></i>Forum</a>
+                                    </li>
                                 </ul>
-                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Contribute</h3>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Resources</h3>
+                                <ul class="space-y-2">
+                                    <li>
+                                        <a href="https://www.figma.com/file/2lfEZKvqcb4WxRPYEwJqeE/OWASP-BLT?type=design&node-id=0%3A1&mode=design&t=Hy0GZXlVxBPHQMxr-1"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-figma w-5 mr-2"></i>Design</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-edit w-5 mr-2"></i>Edit this page</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- Column 4: Contribute and GitHub -->
+                            <div>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">Contribute</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'contribution_guidelines' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hands-helping w-5 mr-2"></i>Contribute</a>
                                     </li>
                                     <li>
+                                        <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-book w-5 mr-2"></i>Documentation</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://blt.owasp.org/swagger/"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-cogs w-5 mr-2"></i>Developer API</a>
+                                    </li>
+                                    <li>
                                         <a href="{% url 'education' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-tv w-5 mr-2"></i>Education</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'ossh_home' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hat-wizard w-5 mr-2"></i>Open Source Sorting Hat</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'gsoc' %}"
@@ -197,20 +297,66 @@
                                         <a href="{% url 'roadmap' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-road w-5 mr-2"></i>Roadmap</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'submit-roadmap-pr' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>Submit PR for review</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'github_issue_prompt' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>Create an Issue</a>
+                                    </li>
+                                </ul>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">GitHub</h3>
+                                <ul class="space-y-2">
+                                    <li>
+                                        <a href="https://github.com/OWASP/BLT"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-github w-5 mr-2"></i>GitHub</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT/"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>BLT Core</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT-Flutter"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-mobile-alt w-5 mr-2"></i>BLT Flutter</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT-Extension"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>BLT Extension</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT-Action"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-play-circle w-5 mr-2"></i>BLT Action</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT-Bacon"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-coins w-5 mr-2"></i>BLT BACON</a>
+                                    </li>
+                                    <li>
+                                        <a href="https://github.com/OWASP-BLT/BLT-Lettuce"
+                                           target="_blank"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-leaf w-5 mr-2"></i>BLT Lettuce</a>
+                                    </li>
                                 </ul>
                             </div>
-                            <!-- Column 5: Apps & Social -->
+                            <!-- Column 5: Apps, Social, Site Info -->
                             <div>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mb-4">Apps</h3>
                                 <ul class="space-y-2">
                                     <li>
-                                        <a href="{% url 'extension' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>Chrome Extension</a>
-                                    </li>
-                                    <li>
                                         <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
                                            target="_blank"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-apple w-5 mr-2"></i>iPhone App</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'extension' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>Chrome Extension</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Social Links</h3>
@@ -235,13 +381,44 @@
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-slack w-5 mr-2"></i>Slack</a>
                                     </li>
                                 </ul>
+                                <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Site Info</h3>
+                                <ul class="space-y-2">
+                                    <li>
+                                        <a href="{% url 'sitemap' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-sitemap w-5 mr-2"></i>Sitemap</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'roadmap' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-road w-5 mr-2"></i>Roadmap</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'status_page' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-check-circle w-5 mr-2"></i>Status</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'stats' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-line w-5 mr-2"></i>Stats</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'stats_dashboard' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-bar w-5 mr-2"></i>Stats Dashboard</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'template_list' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-list w-5 mr-2"></i>Template List</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'website_stats' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-line w-5 mr-2"></i>Website Stats</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'terms' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-file-contract w-5 mr-2"></i>Terms</a>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
                     </div>
-                    <button id="close-mega-menu"
-                            class="absolute top-4 right-4 text-gray-500 hover:text-[#e74c3c]">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
                 </div>
             </div>
             <!-- Search Bar -->
@@ -1060,51 +1237,47 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const megaMenuButton = document.getElementById('mega-menu-button');
-    const megaMenuContent = document.getElementById('mega-menu-content');
-    const closeMegaMenu = document.getElementById('close-mega-menu');
-    
-    function closeMegaMenuIfOpen() {
-        if (!megaMenuContent.classList.contains('hidden')) {
-            megaMenuContent.classList.add('hidden');
-        }
-    }
-    
-    // Add scroll event listener
-    let lastScrollPosition = window.scrollY;
-    window.addEventListener('scroll', function() {
-        const currentScrollPosition = window.scrollY;
-        if (currentScrollPosition !== lastScrollPosition) {
-            closeMegaMenuIfOpen();
-        }
-        lastScrollPosition = currentScrollPosition;
-    });
-    
+    const megaMenu = document.querySelector('.mega-menu');
+    let isMenuOpen = false;
+
     // Toggle menu on button click
     megaMenuButton.addEventListener('click', function(e) {
-        e.preventDefault();
         e.stopPropagation();
-        megaMenuContent.classList.toggle('hidden');
+        isMenuOpen = !isMenuOpen;
+        megaMenu.classList.toggle('hidden');
+        
+        // Update button aria attributes
+        megaMenuButton.setAttribute('aria-expanded', isMenuOpen);
     });
-    
-    // Close menu when clicking close button
-    closeMegaMenu.addEventListener('click', function() {
-        closeMegaMenuIfOpen();
-    });
-    
+
     // Close menu when clicking outside
     document.addEventListener('click', function(e) {
-        if (!megaMenuButton.contains(e.target) && 
-            !megaMenuContent.contains(e.target) && 
-            !megaMenuContent.classList.contains('hidden')) {
-            closeMegaMenuIfOpen();
+        if (isMenuOpen && !megaMenu.contains(e.target) && e.target !== megaMenuButton) {
+            megaMenu.classList.add('hidden');
+            isMenuOpen = false;
+            megaMenuButton.setAttribute('aria-expanded', 'false');
         }
     });
-    
+
     // Close menu on escape key
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeMegaMenuIfOpen();
+        if (e.key === 'Escape' && isMenuOpen) {
+            megaMenu.classList.add('hidden');
+            isMenuOpen = false;
+            megaMenuButton.setAttribute('aria-expanded', 'false');
         }
+    });
+
+    // Close menu on scroll
+    let lastScrollPosition = window.pageYOffset;
+    window.addEventListener('scroll', function() {
+        const currentScrollPosition = window.pageYOffset;
+        if (isMenuOpen && Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
+            megaMenu.classList.add('hidden');
+            isMenuOpen = false;
+            megaMenuButton.setAttribute('aria-expanded', 'false');
+        }
+        lastScrollPosition = currentScrollPosition;
     });
 });
 </script>
