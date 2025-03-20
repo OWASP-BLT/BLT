@@ -110,7 +110,8 @@ def memory_usage_by_module(limit=1000):
             module_usage[filename] = module_usage.get(filename, 0) + stat.size
 
     # Sort by highest usage
-    sorted_by_usage = sorted(module_usage.items(), key=lambda x: x[1], reverse=True)[:limit]
+    sorted_by_usage = sorted(module_usage.items(
+    ), key=lambda x: x[1], reverse=True)[:limit]
 
     tracemalloc.stop()
     return sorted_by_usage
@@ -181,7 +182,8 @@ def status_page(request):
             .distinct()
             .annotate(
                 last_run=models.Max("last_run"),
-                last_success=models.ExpressionWrapper(models.Q(success=True), output_field=models.BooleanField()),
+                last_success=models.ExpressionWrapper(
+                    models.Q(success=True), output_field=models.BooleanField()),
                 run_count=models.Count("id"),
             )
             .order_by("command_name")
@@ -201,7 +203,8 @@ def status_page(request):
                 }
 
                 # Get command logs if they exist
-                log = ManagementCommandLog.objects.filter(command_name=name).first()
+                log = ManagementCommandLog.objects.filter(
+                    command_name=name).first()
                 if log:
                     command_info.update(
                         {
@@ -238,7 +241,8 @@ def status_page(request):
                 )
                 if response.status_code == 200:
                     status_data["bitcoin"] = True
-                    status_data["bitcoin_block"] = response.json().get("result", {}).get("blocks")
+                    status_data["bitcoin_block"] = response.json().get(
+                        "result", {}).get("blocks")
             except requests.exceptions.RequestException as e:
                 print(f"Bitcoin RPC Error: {e}")
 
@@ -293,12 +297,14 @@ def status_page(request):
                         }
 
                         # Add recent API calls history from cache if available
-                        github_api_history = cache.get("github_api_history", [])
+                        github_api_history = cache.get(
+                            "github_api_history", [])
                         status_data["github_api_history"] = github_api_history
 
                         # Add current rate limit to history
                         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        core_rate_limit = rate_limit_data.get("resources", {}).get("core", {})
+                        core_rate_limit = rate_limit_data.get(
+                            "resources", {}).get("core", {})
 
                         if core_rate_limit:
                             new_entry = {
@@ -315,7 +321,9 @@ def status_page(request):
                                 github_api_history = github_api_history[-50:]
 
                             # Update cache
-                            cache.set("github_api_history", github_api_history, 86400)  # Cache for 24 hours
+                            # Cache for 24 hours
+                            cache.set("github_api_history",
+                                      github_api_history, 86400)
                     else:
                         status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
@@ -372,7 +380,8 @@ def status_page(request):
             print("Getting database connection count...")
             if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
-                    cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
                     status_data["db_connection_count"] = cursor.fetchone()[0]
 
         # Redis stats
@@ -428,14 +437,16 @@ def status_page(request):
             last_24h = timezone.now() - timedelta(hours=24)
 
             # Get last activity
-            last_activity = SlackBotActivity.objects.order_by("-created").first()
+            last_activity = SlackBotActivity.objects.order_by(
+                "-created").first()
 
             # Get bot activity metrics
             bot_metrics = {
                 "total_activities": SlackBotActivity.objects.count(),
                 "last_24h_activities": SlackBotActivity.objects.filter(created__gte=last_24h).count(),
                 "success_rate": (
-                    SlackBotActivity.objects.filter(success=True).count() / SlackBotActivity.objects.count() * 100
+                    SlackBotActivity.objects.filter(success=True).count(
+                    ) / SlackBotActivity.objects.count() * 100
                     if SlackBotActivity.objects.exists()
                     else 0
                 ),
@@ -462,7 +473,8 @@ def status_page(request):
 
         # Get daily counts for team joins and commands
         team_joins = (
-            SlackBotActivity.objects.filter(activity_type="team_join", created__gte=start_date, created__lte=end_date)
+            SlackBotActivity.objects.filter(
+                activity_type="team_join", created__gte=start_date, created__lte=end_date)
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(count=Count("id"))
@@ -470,7 +482,8 @@ def status_page(request):
         )
 
         commands = (
-            SlackBotActivity.objects.filter(activity_type="command", created__gte=start_date, created__lte=end_date)
+            SlackBotActivity.objects.filter(
+                activity_type="command", created__gte=start_date, created__lte=end_date)
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(count=Count("id"))
@@ -503,7 +516,8 @@ def status_page(request):
                     commands_counts[i] = cmd["count"]
 
         # Store the data in a format that can be safely serialized to JSON
-        chart_data = {"dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
+        chart_data = {
+            "dates": dates, "team_joins": team_joins_counts, "commands": commands_counts}
 
         # Prepare GitHub API history data for chart
         if "github_api_history" in status_data and status_data["github_api_history"]:
@@ -528,7 +542,8 @@ def status_page(request):
 
         # Serialize GitHub API history data for the template
         if "github_api_history" in status_data:
-            status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
+            status_data["github_api_history"] = json.dumps(
+                status_data["github_api_history"])
 
         return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
 
@@ -575,10 +590,14 @@ def search(request, template="search.html"):
         issues = Issue.objects.filter(Q(description__icontains=query), hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=request.user.id)
         )
-        domains = Domain.objects.filter(Q(url__icontains=query), hunt=None)[0:20]
-        users = User.objects.filter(username__icontains=query).exclude(is_superuser=True).order_by("-points")[0:20]
-        projects = Project.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
-        repos = Repo.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+        domains = Domain.objects.filter(
+            Q(url__icontains=query), hunt=None)[0:20]
+        users = User.objects.filter(username__icontains=query).exclude(
+            is_superuser=True).order_by("-points")[0:20]
+        projects = Project.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query))
+        repos = Repo.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query))
 
         context = {
             "request": request,
@@ -627,7 +646,8 @@ def search(request, template="search.html"):
             .order_by("-total_score")[0:20]
         )
         for userprofile in users:
-            userprofile.badges = UserBadge.objects.filter(user=userprofile.user)
+            userprofile.badges = UserBadge.objects.filter(
+                user=userprofile.user)
         context = {
             "request": request,
             "query": query,
@@ -668,10 +688,12 @@ def search(request, template="search.html"):
         }
     elif stype == "tags":
         tags = Tag.objects.filter(name__icontains=query)
-        matching_organizations = Organization.objects.filter(tags__in=tags).distinct()
+        matching_organizations = Organization.objects.filter(
+            tags__in=tags).distinct()
         matching_domains = Domain.objects.filter(tags__in=tags).distinct()
         matching_issues = Issue.objects.filter(tags__in=tags).distinct()
-        matching_user_profiles = UserProfile.objects.filter(tags__in=tags).distinct()
+        matching_user_profiles = UserProfile.objects.filter(
+            tags__in=tags).distinct()
         matching_repos = Repo.objects.filter(tags__in=tags).distinct()
         for org in matching_organizations:
             d = Domain.objects.filter(organization=org).first()
@@ -795,7 +817,8 @@ def vote_forum_post(request):
 
             post = ForumPost.objects.get(id=post_id)
             vote, created = ForumVote.objects.get_or_create(
-                post=post, user=request.user, defaults={"up_vote": up_vote, "down_vote": down_vote}
+                post=post, user=request.user, defaults={
+                    "up_vote": up_vote, "down_vote": down_vote}
             )
 
             if not created:
@@ -804,8 +827,10 @@ def vote_forum_post(request):
                 vote.save()
 
             # Update vote counts
-            post.up_votes = ForumVote.objects.filter(post=post, up_vote=True).count()
-            post.down_votes = ForumVote.objects.filter(post=post, down_vote=True).count()
+            post.up_votes = ForumVote.objects.filter(
+                post=post, up_vote=True).count()
+            post.down_votes = ForumVote.objects.filter(
+                post=post, down_vote=True).count()
             post.save()
 
             return JsonResponse({"success": True, "up_vote": post.up_votes, "down_vote": post.down_votes})
@@ -825,10 +850,12 @@ def set_vote_status(request):
         try:
             data = json.loads(request.body)
             post_id = data.get("id")
-            vote = ForumVote.objects.filter(post_id=post_id, user=request.user).first()
+            vote = ForumVote.objects.filter(
+                post_id=post_id, user=request.user).first()
 
             return JsonResponse(
-                {"up_vote": vote.up_vote if vote else False, "down_vote": vote.down_vote if vote else False}
+                {"up_vote": vote.up_vote if vote else False,
+                    "down_vote": vote.down_vote if vote else False}
             )
         except json.JSONDecodeError:
             return JsonResponse({"status": "error", "message": "Invalid JSON data"})
@@ -875,7 +902,8 @@ def add_forum_comment(request):
                 return JsonResponse({"status": "error", "message": "Missing required fields"})
 
             post = ForumPost.objects.get(id=post_id)
-            comment = ForumComment.objects.create(post=post, user=request.user, content=content)
+            comment = ForumComment.objects.create(
+                post=post, user=request.user, content=content)
 
             return JsonResponse({"status": "success", "comment_id": comment.id})
         except ForumPost.DoesNotExist:
@@ -892,13 +920,15 @@ def view_forum(request):
     categories = ForumCategory.objects.all()
     selected_category = request.GET.get("category")
 
-    posts = ForumPost.objects.select_related("user", "category").prefetch_related("comments").all()
+    posts = ForumPost.objects.select_related(
+        "user", "category").prefetch_related("comments").all()
 
     if selected_category:
         posts = posts.filter(category_id=selected_category)
 
     return render(
-        request, "forum.html", {"categories": categories, "posts": posts, "selected_category": selected_category}
+        request, "forum.html", {"categories": categories,
+                                "posts": posts, "selected_category": selected_category}
     )
 
 
@@ -965,7 +995,8 @@ class UploadCreate(View):
 
     def post(self, request, *args, **kwargs):
         data = request.FILES.get("image")
-        result = default_storage.save("uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
+        result = default_storage.save(
+            "uploads/" + self.kwargs["hash"] + ".png", ContentFile(data.read()))
         return JsonResponse({"status": result})
 
 
@@ -1136,7 +1167,8 @@ def view_suggestions(request):
     elif sort == "most_votes":
         suggestions = suggestions.order_by("-up_votes")
     elif sort == "most_comments":
-        suggestions = suggestions.annotate(comment_count=Count("comments")).order_by("-comment_count")
+        suggestions = suggestions.annotate(
+            comment_count=Count("comments")).order_by("-comment_count")
     else:  # newest
         suggestions = suggestions.order_by("-created")
 
@@ -1159,7 +1191,8 @@ def sitemap(request):
 
 def badge_list(request):
     badges = Badge.objects.all()
-    badges = Badge.objects.annotate(user_count=Count("userbadge")).order_by("-user_count")
+    badges = Badge.objects.annotate(
+        user_count=Count("userbadge")).order_by("-user_count")
     return render(request, "badges.html", {"badges": badges})
 
 
@@ -1246,7 +1279,8 @@ def submit_roadmap_pr(request):
                 return JsonResponse({"error": "Invalid PR or issue number format"}, status=400)
 
             pr_data = fetch_github_data(owner, repo, "pulls", pr_number)
-            roadmap_data = fetch_github_data(owner, repo, "issues", issue_number)
+            roadmap_data = fetch_github_data(
+                owner, repo, "issues", issue_number)
 
             if "error" in pr_data or "error" in roadmap_data:
                 return JsonResponse(
@@ -1289,12 +1323,14 @@ def home(request):
     total_repos = Repo.objects.count()
 
     # Get recent forum posts
-    recent_posts = ForumPost.objects.select_related("user", "category").order_by("-created")[:5]
+    recent_posts = ForumPost.objects.select_related(
+        "user", "category").order_by("-created")[:5]
 
     # Get top bug reporters for current month
     current_time = timezone.now()
     top_bug_reporters = (
-        User.objects.filter(points__created__month=current_time.month, points__created__year=current_time.year)
+        User.objects.filter(points__created__month=current_time.month,
+                            points__created__year=current_time.year)
         .annotate(bug_count=Count("points", filter=Q(points__score__gt=0)), total_score=Sum("points__score"))
         .order_by("-total_score")[:5]
     )
@@ -1315,7 +1351,8 @@ def home(request):
     )
 
     # Get top earners
-    top_earners = UserProfile.objects.filter(winnings__gt=0).select_related("user").order_by("-winnings")[:5]
+    top_earners = UserProfile.objects.filter(
+        winnings__gt=0).select_related("user").order_by("-winnings")[:5]
 
     # Get top referrals
     top_referrals = (
@@ -1328,7 +1365,8 @@ def home(request):
     # Get or Create InviteFriend object for logged in user
     referral_code = None
     if request.user.is_authenticated:
-        invite_friend, created = InviteFriend.objects.get_or_create(sender=request.user)
+        invite_friend, created = InviteFriend.objects.get_or_create(
+            sender=request.user)
         referral_code = invite_friend.referral_code
 
     # Get latest blog posts
@@ -1355,7 +1393,8 @@ def home(request):
             # Try to find the repository by name
             repo_parts = repo_name.split("/")
             if len(repo_parts) > 1:
-                repo = Repo.objects.filter(name__icontains=repo_parts[1]).first()
+                repo = Repo.objects.filter(
+                    name__icontains=repo_parts[1]).first()
             else:
                 repo = Repo.objects.filter(name__icontains=repo_name).first()
 
@@ -1470,8 +1509,10 @@ def stats_dashboard(request):
         )
         total_hunts = Hunt.objects.count()
 
-        points = Points.objects.filter(created__gte=start_date).aggregate(total=Sum("score"))["total"] or 0
-        total_points = Points.objects.aggregate(total=Sum("score"))["total"] or 0
+        points = Points.objects.filter(created__gte=start_date).aggregate(
+            total=Sum("score"))["total"] or 0
+        total_points = Points.objects.aggregate(
+            total=Sum("score"))["total"] or 0
 
         projects = Project.objects.filter(created__gte=start_date).count()
         total_projects = Project.objects.count()
@@ -1513,7 +1554,8 @@ def stats_dashboard(request):
                 "active": organizations["active"],
                 "total_all_time": total_organizations,
                 "active_percentage": round(
-                    (organizations["active"] / organizations["total"] * 100) if organizations["total"] > 0 else 0
+                    (organizations["active"] / organizations["total"]
+                     * 100) if organizations["total"] > 0 else 0
                 ),
             },
             "hunts": {
@@ -1556,8 +1598,10 @@ def stats_dashboard(request):
             month_end = end_date - timedelta(days=i * 30)
             month_start = month_end - timedelta(days=30)
 
-            month_issues = Issue.objects.filter(created__gte=month_start, created__lte=month_end).count()
-            month_users = User.objects.filter(date_joined__gte=month_start, date_joined__lte=month_end).count()
+            month_issues = Issue.objects.filter(
+                created__gte=month_start, created__lte=month_end).count()
+            month_users = User.objects.filter(
+                date_joined__gte=month_start, date_joined__lte=month_end).count()
 
             issues_time_series.insert(0, month_issues)
             users_time_series.insert(0, month_users)
@@ -1597,9 +1641,11 @@ def sync_github_projects(request):
     if request.method == "POST":
         try:
             call_command("check_owasp_projects")
-            messages.success(request, "Successfully synced OWASP GitHub projects.")
+            messages.success(
+                request, "Successfully synced OWASP GitHub projects.")
         except Exception as e:
-            messages.error(request, f"Error syncing OWASP GitHub projects: {str(e)}")
+            messages.error(
+                request, f"Error syncing OWASP GitHub projects: {str(e)}")
     return redirect("stats_dashboard")
 
 
@@ -1634,9 +1680,11 @@ def check_owasp_compliance(request):
             date_patterns = [
                 r"\b\d{4}-\d{2}-\d{2}\b",  # YYYY-MM-DD
                 r"\b\d{2}/\d{2}/\d{4}\b",  # DD/MM/YYYY
-                r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2},? \d{4}\b",  # Month DD, YYYY
+                # Month DD, YYYY
+                r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2},? \d{4}\b",
             ]
-            has_dates = any(re.search(pattern, content, re.IGNORECASE) for pattern in date_patterns)
+            has_dates = any(re.search(pattern, content, re.IGNORECASE)
+                            for pattern in date_patterns)
 
             # Check for potential paywall indicators
             paywall_indicators = [
@@ -1647,18 +1695,23 @@ def check_owasp_compliance(request):
                 "enterprise plan",
                 "pro version",
             ]
-            has_paywall_indicators = any(indicator in content for indicator in paywall_indicators)
+            has_paywall_indicators = any(
+                indicator in content for indicator in paywall_indicators)
 
             # Compile recommendations
             recommendations = []
             if not is_owasp_org:
-                recommendations.append("Project should be hosted under the OWASP GitHub organization")
+                recommendations.append(
+                    "Project should be hosted under the OWASP GitHub organization")
             if not has_owasp_mention:
-                recommendations.append("Website should clearly state it is an OWASP project")
+                recommendations.append(
+                    "Website should clearly state it is an OWASP project")
             if not has_project_link:
-                recommendations.append("Website should link to the OWASP project page")
+                recommendations.append(
+                    "Website should link to the OWASP project page")
             if has_paywall_indicators:
-                recommendations.append("Check if the project has features behind a paywall")
+                recommendations.append(
+                    "Check if the project has features behind a paywall")
 
             context = {
                 "url": url,
@@ -1681,9 +1734,11 @@ def check_owasp_compliance(request):
             return render(request, "check_owasp_compliance.html", context)
 
         except requests.RequestException as e:
-            messages.error(request, f"Error accessing the URL: {str(e)}. Please check if the URL is accessible.")
+            messages.error(
+                request, f"Error accessing the URL: {str(e)}. Please check if the URL is accessible.")
         except Exception as e:
-            messages.error(request, f"Error checking compliance: {str(e)}. Please try again.")
+            messages.error(
+                request, f"Error checking compliance: {str(e)}. Please try again.")
 
     return render(request, "check_owasp_compliance.html")
 
@@ -1753,7 +1808,8 @@ def management_commands(request):
             command_info["arguments"] = command_args
 
             # Get command logs if they exist
-            log = ManagementCommandLog.objects.filter(command_name=name).first()
+            log = ManagementCommandLog.objects.filter(
+                command_name=name).first()
             if log:
                 command_info.update(
                     {
@@ -1777,7 +1833,8 @@ def management_commands(request):
                 date_values[date.isoformat()] = 0
 
             # Get actual stats data
-            daily_stats = DailyStats.objects.filter(name=name, created__gte=thirty_days_ago).order_by("created")
+            daily_stats = DailyStats.objects.filter(
+                name=name, created__gte=thirty_days_ago).order_by("created")
 
             # Fill in the values we have
             max_value = 1  # Minimum value to avoid division by zero
@@ -1836,7 +1893,8 @@ def run_management_command(request):
         if not request.user.is_superuser:
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return JsonResponse({"success": False, "error": "Only superusers can run management commands."})
-            messages.error(request, "Only superusers can run management commands.")
+            messages.error(
+                request, "Only superusers can run management commands.")
             return redirect("management_commands")
 
         command = request.POST.get("command")
@@ -1854,7 +1912,8 @@ def run_management_command(request):
 
             # Get or create the command log
             log_entry, created = ManagementCommandLog.objects.get_or_create(
-                command_name=command, defaults={"run_count": 0, "success": False, "last_run": timezone.now()}
+                command_name=command, defaults={
+                    "run_count": 0, "success": False, "last_run": timezone.now()}
             )
 
             # Update the log entry
@@ -1887,12 +1946,14 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if isinstance(action.type, int):
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+
+                                    elif isinstance(action.type, float):
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif isinstance(action.type, bool):
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
+
                                 except (ValueError, TypeError):
                                     warning_msg = (
                                         f"Could not convert argument '{arg_name}' to type "
@@ -1934,7 +1995,8 @@ def run_management_command(request):
                     daily_stat, created = DailyStats.objects.get_or_create(
                         name=command,
                         created__date=today,
-                        defaults={"value": "1", "created": timezone.now(), "modified": timezone.now()},
+                        defaults={"value": "1", "created": timezone.now(
+                        ), "modified": timezone.now()},
                     )
 
                     if not created:
@@ -1950,12 +2012,14 @@ def run_management_command(request):
                             daily_stat.modified = timezone.now()
                             daily_stat.save()
                 except Exception as stats_error:
-                    logging.error(f"Error updating DailyStats: {str(stats_error)}")
+                    logging.error(
+                        f"Error updating DailyStats: {str(stats_error)}")
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return JsonResponse({"success": True, "output": output})
 
-                messages.success(request, f"Command '{command}' executed successfully.")
+                messages.success(
+                    request, f"Command '{command}' executed successfully.")
             except Exception as e:
                 log_entry.success = False
                 log_entry.save()
@@ -2007,7 +2071,8 @@ def template_list(request):
                     continue
 
                 template_path = os.path.join(directory, template_name)
-                modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
+                modified_time = datetime.fromtimestamp(
+                    os.path.getmtime(template_path))
 
                 # Get view count from IP table with caching
                 view_count_key = f"template_views_{template_name}"
@@ -2015,11 +2080,13 @@ def template_list(request):
                 if view_count is None:
                     view_count = (
                         IP.objects.filter(
-                            Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
+                            Q(path__endswith=f"/{template_name}") | Q(
+                                path__endswith=f"/templates/{template_name}")
                         ).aggregate(total_views=Sum("count"))["total_views"]
                         or 0
                     )
-                    cache.set(view_count_key, view_count, 3600)  # Cache for 1 hour
+                    cache.set(view_count_key, view_count,
+                              3600)  # Cache for 1 hour
 
                 github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
 
@@ -2035,7 +2102,8 @@ def template_list(request):
                             "extends_base": '{% extends "base.html" %}' in content,
                             "has_style_tags": "<style" in content,
                         }
-                    cache.set(template_info_key, template_info, 3600)  # Cache for 1 hour
+                    cache.set(template_info_key, template_info,
+                              3600)  # Cache for 1 hour
 
                 # Filter based on user selection
                 if filter_by != "all":
@@ -2077,7 +2145,8 @@ def template_list(request):
 
         for pattern in resolver.url_patterns:
             if isinstance(pattern, URLResolver):
-                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                url = check_template_url_in_patterns(
+                    pattern.url_patterns, template_name)
                 if url:
                     return url
             elif isinstance(pattern, URLPattern):
@@ -2098,9 +2167,11 @@ def template_list(request):
         if any(
             [
                 pattern_path == template_base_name,
-                pattern_path and pattern_path.replace("-", "_") == template_base_name,
+                pattern_path and pattern_path.replace(
+                    "-", "_") == template_base_name,
                 pattern_name == template_base_name,
-                pattern_name and pattern_name.replace("-", "_") == template_base_name,
+                pattern_name and pattern_name.replace(
+                    "-", "_") == template_base_name,
             ]
         ):
             return "/" + str(pattern.pattern).lstrip("^").rstrip("$")
@@ -2111,7 +2182,8 @@ def template_list(request):
         template_base_name = template_name.replace(".html", "")
         for pattern in urlpatterns:
             if isinstance(pattern, URLResolver):
-                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                url = check_template_url_in_patterns(
+                    pattern.url_patterns, template_name)
                 if url:
                     return url
             elif isinstance(pattern, URLPattern):
@@ -2124,13 +2196,15 @@ def template_list(request):
     main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
 
     if os.path.exists(main_template_dir):
-        template_dirs.append({"name": "Main Templates", "templates": get_templates_from_dir(main_template_dir)})
+        template_dirs.append(
+            {"name": "Main Templates", "templates": get_templates_from_dir(main_template_dir)})
 
     for subdir in os.listdir(main_template_dir):
         subdir_path = os.path.join(main_template_dir, subdir)
         if os.path.isdir(subdir_path) and not subdir.startswith("__"):
             template_dirs.append(
-                {"name": f"{subdir.title()} Templates", "templates": get_templates_from_dir(subdir_path)}
+                {"name": f"{subdir.title()} Templates",
+                 "templates": get_templates_from_dir(subdir_path)}
             )
 
     # Calculate total templates
@@ -2138,12 +2212,14 @@ def template_list(request):
 
     # Sort templates in each directory
     for dir in template_dirs:
-        dir["templates"].sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
+        dir["templates"].sort(key=lambda x: (
+            x.get(sort, ""), x["name"]), reverse=direction == "desc")
 
     # Flatten templates for pagination
     all_templates = []
     for dir in template_dirs:
-        all_templates.extend([(dir["name"], template) for template in dir["templates"]])
+        all_templates.extend([(dir["name"], template)
+                             for template in dir["templates"]])
 
     # Paginate results
     paginator = Paginator(all_templates, 20)  # Show 20 templates per page
@@ -2234,7 +2310,8 @@ def website_stats(request):
         views.append(day["daily_count"])
 
     # Get unique visitors (unique IPs), excluding admin URLs
-    unique_visitors = IP.objects.exclude(path__startswith=admin_url).values("address").distinct().count()
+    unique_visitors = IP.objects.exclude(
+        path__startswith=admin_url).values("address").distinct().count()
 
     total_views = sum(view_stats.values())
 
@@ -2276,7 +2353,8 @@ def website_stats(request):
         for pattern in patterns:
             if hasattr(pattern, "url_patterns"):
                 # This is a URL resolver (includes), process its patterns
-                process_patterns(pattern.url_patterns, parent_path + str(pattern.pattern))
+                process_patterns(pattern.url_patterns,
+                                 parent_path + str(pattern.pattern))
             else:
                 # This is a URL pattern
                 full_path = parent_path + str(pattern.pattern)
@@ -2286,7 +2364,8 @@ def website_stats(request):
                     continue
 
                 view_name = (
-                    pattern.callback.__name__ if hasattr(pattern.callback, "__name__") else str(pattern.callback)
+                    pattern.callback.__name__ if hasattr(
+                        pattern.callback, "__name__") else str(pattern.callback)
                 )
                 if hasattr(pattern.callback, "view_class"):
                     view_name = pattern.callback.view_class.__name__
@@ -2300,7 +2379,8 @@ def website_stats(request):
                         ):
                             view_count += count
 
-                url_info.append({"path": full_path, "view_name": view_name, "view_count": view_count})
+                url_info.append(
+                    {"path": full_path, "view_name": view_name, "view_count": view_count})
 
     process_patterns(url_patterns)
 
@@ -2828,4 +2908,3 @@ class RoadmapView(TemplateView):
         context["milestones"] = milestones
         context["milestone_count"] = len(milestones)
         return context
-
