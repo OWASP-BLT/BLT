@@ -16,6 +16,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=255)),
                 ('description', models.TextField()),
                 ('is_educational', models.BooleanField(default=False)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
         ),
     ]
