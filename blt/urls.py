@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -139,12 +140,22 @@ from website.views.education import (
     view_lecture,
     add_video,
 )
+from website.views.hackathon import (
+    HackathonCreateView,
+    HackathonDetailView,
+    HackathonListView,
+    HackathonPrizeCreateView,
+    HackathonSponsorCreateView,
+    HackathonUpdateView,
+    refresh_repository_data,
+)
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
     GitHubIssueDetailView,
     GitHubIssuesView,
     GithubIssueView,
+    GsocView,
     IssueCreate,
     IssueEdit,
     IssueView,
@@ -166,6 +177,7 @@ from website.views.issue import (
     like_issue,
     newhome,
     page_vote,
+    refresh_gsoc_project,
     remove_user_from_issue,
     resolve,
     save_issue,
@@ -178,6 +190,7 @@ from website.views.issue import (
     vote_count,
 )
 from website.views.organization import (
+    BountyPayoutsView,
     CreateHunt,
     DomainDetailView,
     DomainList,
@@ -224,6 +237,8 @@ from website.views.organization import (
     organization_dashboard_hunt_detail,
     organization_dashboard_hunt_edit,
     organization_hunt_results,
+    room_messages_api,
+    send_message_api,
     sizzle,
     sizzle_daily_log,
     sizzle_docs,
@@ -256,8 +271,8 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
-from website.views.queue import queue_list
-from website.views.repo import RepoListView, add_repo
+from website.views.queue import queue_list, update_txid
+from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.teams import (
     TeamChallenges,
@@ -287,18 +302,27 @@ from website.views.user import (
     contributors,
     contributors_view,
     create_wallet,
+    delete_notification,
     deletions,
+    fetch_notifications,
     follow_user,
+    get_public_key,
     get_score,
     github_webhook,
     invite_friend,
+    mark_as_read,
+    messaging_home,
     profile,
     profile_edit,
     referral_signup,
+    set_public_key,
+    start_thread,
     update_bch_address,
     user_dashboard,
     users_view,
+    view_thread,
 )
+from website.views.video_call import video_call
 
 admin.autodiscover()
 
@@ -325,18 +349,16 @@ router.register(r"profile", UserProfileViewSet, basename="profile")
 router.register(r"domain", DomainViewSet, basename="domain")
 router.register(r"timelogs", TimeLogViewSet, basename="timelogs")
 router.register(r"activitylogs", ActivityLogViewSet, basename="activitylogs")
+router.register(r"organizations", OrganizationViewSet, basename="organizations")
 
 handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
 urlpatterns = [
+    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
+    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
-    path(
-        "api/v1/organizations/",
-        OrganizationViewSet.as_view({"get": "list", "post": "create"}),
-        name="organization",
-    ),
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),
@@ -613,11 +635,15 @@ urlpatterns = [
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
+    path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
+    path("notifications/fetch/", fetch_notifications, name="fetch_notifications"),
+    path("notifications/mark_all_read", mark_as_read, name="mark_all_read"),
+    path("notifications/delete_notification/<int:notification_id>", delete_notification, name="delete_notification"),
     re_path(
         r"^googleplayapp/$",
         TemplateView.as_view(template_name="coming_soon.html"),
@@ -672,8 +698,11 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
+
     path("education/add-video/", add_video, name="add_video"),
-    re_path(r"^gsoc/$", TemplateView.as_view(template_name="gsoc.html"), name="gsoc"),
+    path("gsoc/", GsocView.as_view(), name="gsoc"),
+    path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
+
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),
@@ -720,6 +749,7 @@ urlpatterns = [
     path("projects/<slug:slug>/badge/", ProjectBadgeView.as_view(), name="project-badge"),
     path("repos/<slug:slug>/badge/", RepoBadgeView.as_view(), name="repo-badge"),
     path("repository/<slug:slug>/", RepoDetailView.as_view(), name="repo_detail"),
+    path("repository/<int:repo_id>/refresh/", refresh_repo_data, name="refresh_repo_data"),
     re_path(r"^report-ip/$", ReportIpView.as_view(), name="report_ip"),
     re_path(r"^reported-ips/$", ReportedIpListView.as_view(), name="reported_ips_list"),
     re_path(r"^feed/$", feed, name="feed"),
@@ -984,6 +1014,7 @@ urlpatterns = [
     path("discussion-rooms/create/", RoomCreateView.as_view(), name="room_create"),
     path("discussion-rooms/join-room/<int:room_id>/", join_room, name="join_room"),
     path("discussion-rooms/delete-room/<int:room_id>/", delete_room, name="delete_room"),
+    path("video_call/", video_call, name="video_call"),
     path(
         "batch-send-bacon-tokens/",
         batch_send_bacon_tokens_view,
@@ -1029,6 +1060,26 @@ urlpatterns = [
     path("api/get-wallet-balance/", get_wallet_balance, name="get_wallet_balance"),
     path("extension/", TemplateView.as_view(template_name="extension.html"), name="extension"),
     path("roadmap/", RoadmapView.as_view(), name="roadmap"),
+    # Hackathon URLs
+    path(
+        "hackathons/",
+        include(
+            [
+                path("", HackathonListView.as_view(), name="hackathons"),
+                path("create/", HackathonCreateView.as_view(), name="hackathon_create"),
+                path("<slug:slug>/", HackathonDetailView.as_view(), name="hackathon_detail"),
+                path("<slug:slug>/edit/", HackathonUpdateView.as_view(), name="hackathon_update"),
+                path("<slug:slug>/add-sponsor/", HackathonSponsorCreateView.as_view(), name="hackathon_sponsor_create"),
+                path("<slug:slug>/add-prize/", HackathonPrizeCreateView.as_view(), name="hackathon_prize_create"),
+                # Add the new URL pattern for refreshing repository data
+                path(
+                    "<slug:hackathon_slug>/refresh-repo/<int:repo_id>/",
+                    refresh_repository_data,
+                    name="refresh_repository_data",
+                ),
+            ]
+        ),
+    ),
     path("page-vote/", page_vote, name="page_vote"),
     # Queue Management URLs
     path("queue/", queue_list, name="queue_list"),
@@ -1036,7 +1087,17 @@ urlpatterns = [
     path("queue/<int:queue_id>/edit/", queue_list, name="queue_edit"),
     path("queue/<int:queue_id>/delete/", queue_list, name="queue_delete"),
     path("queue/<int:queue_id>/launch/", queue_list, name="queue_launch"),
+    path("queue/<int:queue_id>/update-txid/", update_txid, name="queue_update_txid"),
     path("queue/launch-control/", queue_list, name="queue_launch_page"),
+    # Chat room API endpoints
+    path("api/send-message/", send_message_api, name="send_message_api"),
+    path("api/room-messages/<int:room_id>/", room_messages_api, name="room_messages_api"),
+    # direct messaging
+    path("messaging/", messaging_home, name="messaging"),
+    path("messaging/start-thread/<int:user_id>/", start_thread, name="start_thread"),
+    path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
+    path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
+    path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
 ]
 
 if settings.DEBUG:

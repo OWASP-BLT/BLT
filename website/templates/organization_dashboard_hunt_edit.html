@@ -19,63 +19,6 @@
 {% block og_description %}
     Update the hunt "{{ hunt.name }}" details including name, description, start and end times in the {% env 'PROJECT_NAME' %} dashboard.
 {% endblock og_description %}
-{% block style %}
-    <style>
-  .row .col-md-6:nth-child(1) .panel {
-    background-color: #F76B78;
-  }
-
-  .row .col-md-6:nth-child(2) .panel {
-    background-color: #DC4353;
-  }
-
-  .row .col-md-6:nth-child(3) .panel {
-    background-color: #C41E2E;
-  }
-
-  .row .col-md-6:nth-child(4) .panel {
-    background-color: #9B0C1A;
-  }
-
-  .row .col-md-6:nth-child(1) .panel button {
-    background-color: #F76B78;
-    border-color: #F76B78;
-  }
-
-  .row .col-md-6:nth-child(2) .panel button {
-    background-color: #DC4353;
-    border-color: #DC4353;
-  }
-
-  .row .col-md-6:nth-child(3) .panel button {
-    background-color: #C41E2E;
-    border-color: #C41E2E;
-  }
-
-  .row .col-md-6:nth-child(4) .panel button {
-    background-color: #9B0C1A;
-    border-color: #9B0C1A;
-  }
-
-  .text-danger {
-    margin-left: 0px;
-  }
-
-  input[type='file'] {
-    height: auto;
-    width: auto;
-    opacity: 1;
-  }
-
-  .slider {
-    width: 100% !important;
-  }
-
-  .hunt-form .form-group {
-    margin-top: 30px;
-  }
-    </style>
-{% endblock style %}
 {% block content %}
     {% localtime on %}
     <section>
@@ -87,91 +30,103 @@
     <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
     <form id="update-hunt">
         {% csrf_token %}
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal">×</button>
-                <h4 class="modal-title">Edit Hunt</h4>
+        <div class="bg-white rounded-lg shadow-lg">
+            <div class="p-4 border-b">
+                <button type="button" class="float-right text-gray-600 hover:text-gray-900">×</button>
+                <h4 class="text-xl font-bold">Edit Hunt</h4>
             </div>
-            <div class="modal-body">
+            <div class="p-4">
                 <input type="hidden" name="id" value="{{ hunt.pk }}" />
-                <div class="form-group">
-                    <label for="name">Name:</label>
+                <div class="mb-6">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Name:</label>
                     <input type="text"
                            name="name"
                            required
-                           class="form-control"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                            id="name"
                            value="{{ hunt.name }}">
                 </div>
                 {{ hunt_form.media }}
                 {{ date_form.media }}
                 {{ hunt_form.as_p }}
-                <div class="form-group col-sm-6">
-                    <label for="name">
-                        Start Date/Time :
-                        <div id="datepicker-1-res" class="hidden"></div>
-                    </label>
-                    <div id="datepicker-1"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="datepicker-1" class="block text-sm font-medium text-gray-700">
+                            Start Date/Time :
+                            <div id="datepicker-1-res" class="hidden"></div>
+                        </label>
+                        <div id="datepicker-1" class="mt-1"></div>
+                    </div>
+                    <div>
+                        <label for="datepicker-2" class="block text-sm font-medium text-gray-700">
+                            End Date/Time :
+                            <div id="datepicker-2-res" class="hidden"></div>
+                        </label>
+                        <div id="datepicker-2" class="mt-1"></div>
+                    </div>
                 </div>
-                <div class="form-group col-sm-6">
-                    <label for="name">
-                        End Date/Time :
-                        <div id="datepicker-2-res" class="hidden"></div>
-                    </label>
-                    <div id="datepicker-2"></div>
-                </div>
-                <div class="form-group">
-                    <select name="domain" class="form-control" id="domain">
+                <div class="mb-6">
+                    <label for="domain" class="block text-sm font-medium text-gray-700">Domain:</label>
+                    <select name="domain"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                            id="domain">
                         {% for domain in domains %}<option>{{ domain.id }} - {{ domain.name }}</option>{% endfor %}
                     </select>
                 </div>
-                Prizes
-                <div class="form-group col-sm-12 winner_prize">
-                    <label class="label_prize col-sm-4 col-md-4" for="prize_winner">
-                        <input name="prize_winner"
-                               type="Number"
-                               placeholder="Winner"
-                               class="form-control"
-                               disabled />
-                        <div>$</div>
-                    </label>
-                    <label class="label_prize col-sm-4 col-md-4" for="prize_runner">
-                        <input placeholder="Runner's Up"
-                               name="prize_runner"
-                               type="Number"
-                               class="form-control"
-                               disabled />
-                        <div>$</div>
-                    </label>
-                    <label class="label_prize col-sm-4 col-md-4" for="prize_second_runner">
-                        <input placeholder="2nd Runner's Up"
-                               name="prize_second_runner"
-                               type="Number"
-                               class="form-control"
-                               disabled />
-                        <div>$</div>
-                    </label>
+                <div class="mb-6">
+                    <span class="block text-sm font-medium text-gray-700">Prizes</span>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="prize_winner" class="block text-sm font-medium text-gray-700">Winner:</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input name="prize_winner"
+                                       type="number"
+                                       placeholder="Winner"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                       disabled />
+                                <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">$</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="prize_runner" class="block text-sm font-medium text-gray-700">Runner's Up:</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input placeholder="Runner's Up"
+                                       name="prize_runner"
+                                       type="number"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                       disabled />
+                                <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">$</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="prize_second_runner"
+                                   class="block text-sm font-medium text-gray-700">2nd Runner's Up:</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input placeholder="2nd Runner's Up"
+                                       name="prize_second_runner"
+                                       type="number"
+                                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                       disabled />
+                                <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">$</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <label class="checkbox-inline">
-                    {% if hunt.is_published %}
-                        <input name="publish" type="checkbox" checked="" value="true">
-                        Publish (If Not Published, the Hunt Will be saved
-                        as a draft)
-                    {% endif %}
-                    {% if not hunt.is_published %}
-                        <input name="publish" type="checkbox" value="true">
-                        Publish (If Not Published, the Hunt Will be saved as a draft)
-                    {% endif %}
-                    }
+                <label class="inline-flex items-center mt-4">
+                    <input name="publish"
+                           type="checkbox"
+                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                           {% if hunt.is_published %}checked{% endif %}
+                           value="true">
+                    <span class="ml-2 text-sm text-gray-700">Publish (If Not Published, the Hunt Will be saved as a draft)</span>
                 </label>
             </div>
-            <div class="modal-footer">
+            <div class="p-4 border-t flex justify-end space-x-4">
                 <input type="submit"
-                       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                       class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                        value="Change" />
                 <input type="reset"
-                       data-dismiss="modal"
-                       class="btn btn-primary btn_5 btn-lg btn-danger role-submit-button"
+                       class="inline-flex justify-center rounded-md border border-transparent bg-gray-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                        value="Reset {{ hunt.starts_on.isoformat }}" />
             </div>
         </div>
@@ -200,7 +155,6 @@
   }, {
     exportFormats: 'datepicker-2-res',
   });
-  // }
     </script>
     <!-- {% tz_detect %} -->
 {% endlocaltime %}

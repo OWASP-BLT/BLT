@@ -1,578 +1,393 @@
 {% extends "base.html" %}
 {% load static %}
 {% block content %}
-    <style>
-        /* Styling for the Team Overview Page */
-        .team-overview-container {
-            text-align: center;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            max-width: 900px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .team-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .team-avatar {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-
-        .team-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Slider / Members */
-        .slider-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            margin-top: 20px;
-        }
-
-        .member-card {
-            width: 150px;
-            height: auto;
-            margin: 0 10px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            transform: scale(0.8);
-            opacity: 0.6;
-            transition: all 0.3s ease-in-out;
-        }
-
-        .member-card.active {
-            transform: scale(1.2);
-            opacity: 1;
-        }
-
-        .slider-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #ddd;
-            border: none;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background 0.3s;
-        }
-
-        .slider-nav:hover {
-            background: #bbb;
-        }
-
-        .slider-nav.left {
-            left: 10px;
-        }
-
-        .slider-nav.right {
-            right: 10px;
-        }
-
-        .achievements {
-            margin-top: 30px;
-            text-align: left;
-        }
-
-        .achievements ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .achievements li {
-            margin-bottom: 10px;
-            font-size: 16px;
-            color: #555;
-        }
-
-        /* Modal Styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0, 0, 0);
-            background-color: rgba(0, 0, 0, 0.4);
-            padding-top: 60px;
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 500px;
-            border-radius: 8px;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px;
-            box-sizing: border-box;
-        }
-
-        .form-group input[type="file"] {
-            padding: 3px;
-        }
-
-        .form-group button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .form-group button:hover {
-            background-color: #45a049;
-        }
-
-        .dropdown-content {
-            position: absolute;
-            background-color: #f9f9f9;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-        }
-
-        .dropdown-item {
-            padding: 8px 16px;
-            cursor: pointer;
-        }
-
-        .dropdown-item:hover {
-            background-color: #ddd;
-        }
-
-        .selected-users {
-            margin-top: 10px;
-            display: flex;
-            flex-wrap: wrap;
-        }
-
-        .selected-user {
-            background-color: #e0e0e0;
-            border-radius: 4px;
-            padding: 5px 10px;
-            margin: 5px;
-            display: flex;
-            align-items: center;
-        }
-
-        .selected-user span {
-            margin-right: 10px;
-        }
-
-        .remove-user {
-            cursor: pointer;
-            color: red;
-        }
-
-        .join-requests-button {
-            text-align: right;
-            margin-top: 20px;
-        }
-
-        .join-requests-button .btn {
-            padding: 10px 20px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .join-requests-button .btn:hover {
-            background-color: #0056b3;
-        }
-
-        .add-member-button {
-            text-align: right;
-            margin-top: 10px;
-        }
-
-        .add-member-button .btn {
-            padding: 10px 20px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .add-member-button .btn:hover {
-            background-color: #218838;
-        }
-        .team-overview-container {
-            text-align: center;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border-radius: 8px;
-            max-width: 900px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .team-name {
-            font-size: 28px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .team-avatar {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-
-        .team-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .slider-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            margin-top: 20px;
-        }
-
-        .member-card {
-            width: 150px;
-            height: auto;
-            margin: 0 10px;
-            padding: 10px;
-            border-radius: 8px;
-            background-color: #fff;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            transform: scale(0.8);
-            opacity: 0.6;
-            transition: all 0.3s ease-in-out;
-            text-align: center;
-        }
-
-        .member-card.active {
-            transform: scale(1.2);
-            opacity: 1;
-        }
-
-        .slider-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #ddd;
-            border: none;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-radius: 50%;
-            transition: background 0.3s;
-        }
-
-        .slider-nav:hover {
-            background: #bbb;
-        }
-
-        .slider-nav.left {
-            left: 10px;
-        }
-
-        .slider-nav.right {
-            right: 10px;
-        }
-
-        .kick-button {
-            display: none;
-            margin-top: 10px;
-            background-color: #f44336;
-            color: white;
-            padding: 5px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .kick-button:hover {
-            background-color: #e53935;
-        }
-        .kudos-count-badge {
-            display: inline-block;
-            background-color: #17a2b8;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
-            margin-left: 8px;
-        }
-        .kudos-submit-btn {
-            background-color: #28a745;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        
-        .kudos-submit-btn:hover {
-            background-color: #218838;
-        }
-        .toast-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-    }
-    
-    .toast {
-        padding: 15px 25px;
-        margin-bottom: 10px;
-        border-radius: 4px;
-        color: white;
-        opacity: 1;
-        transition: opacity 1.0s ease-in;
-    }
-    
-    .toast-success {
-        background-color: #28a745;
-    }
-    
-    .toast-error {
-        background-color: #dc3545;
-    }
-    
-    </style>
     {% include "includes/sidenav.html" %}
-    <aside id="toast-container">
+    <aside id="toast-container" class="fixed top-5 right-5 z-50">
     </aside>
-    <div class="team-overview-container">
+    <div class="container mx-auto px-4 py-8">
         {% if user.is_authenticated %}
             {% if user.userprofile.team %}
-                <!-- Team Avatar -->
-                <div class="team-avatar">
-                    <img src="{{ user.userprofile.team.avatar.url }}"
-                         alt="{{ user.userprofile.team.name }}"
-                         width="100"
-                         height="100">
-                </div>
-                <!-- Team Name -->
-                <div class="team-name">{{ user.userprofile.team.name }}</div>
-                <!-- Team Leader -->
-                <div class="team-leader">
-                    <strong>Team Leader:</strong> {{ user.userprofile.team.admin.username }}
-                    {% if user.userprofile.team.admin.kudos_count %}
-                        <span class="kudos-count-badge">{{ user.userprofile.team.admin.kudos_count }} kudos</span>
-                    {% endif %}
-                </div>
-                <!-- Team Members Slider -->
-                <div class="slider-container">
-                    <button class="slider-nav left" onclick="prevMember()">‹</button>
-                    <!-- Always display the team leader -->
-                    {#                    <div class="member-card active" id="admin-card">#}
-                    {#                        <span>{{ user.userprofile.team.admin.username }}</span>#}
-                    {#                    </div>#}
-                    {% for member in team_members %}
-                        <div class="member-card {% if member.username == user.userprofile.team.admin.username %}active{% endif %}"
-                             id="member-{{ member.username }}">
-                            <span>{{ member.username }}</span>
-                            <!-- Show "Kick" button for all members except the admin -->
-                            {% if user.userprofile.team.admin == user and user.userprofile.team.admin != member %}
-                                <button class="kick-button"
-                                        id="kick-{{ member.username }}"
-                                        onclick="kickMember('{{ member.username }}')">Kick</button>
+                <!-- Team Header Section -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                    <div class="flex items-center gap-6">
+                        <div class="relative">
+                            {% if user.userprofile.team.logo %}
+                                <img src="{{ user.userprofile.team.logo.url }}"
+                                     alt="{{ user.userprofile.team.name }}"
+                                     width="96"
+                                     height="96"
+                                     class="w-24 h-24 rounded-full border-4 border-[#e74c3c] object-cover shadow-lg">
+                            {% else %}
+                                <div class="w-24 h-24 rounded-full border-4 border-[#e74c3c] bg-gray-100 flex items-center justify-center shadow-lg">
+                                    <i class="fas fa-users text-2xl text-gray-400"></i>
+                                </div>
                             {% endif %}
-                            <!-- Kudos Button -->
-                            {% if member != user %}
-                                <button class="kudos-button"
-                                        type="button"
-                                        onclick="openKudosModal('{{ member.username }}')">
-                                    <img src="{% static 'img/kudos_icon.png' %}"
-                                         alt="Kudos"
-                                         width="24"
-                                         height="24">
-                                </button>
-                            {% endif %}
+                            <div class="absolute -bottom-2 -right-2 bg-[#e74c3c] text-white p-2 rounded-full">
+                                <i class="fas fa-users text-xl"></i>
+                            </div>
                         </div>
-                    {% endfor %}
-                    <button class="slider-nav right" onclick="nextMember()">›</button>
+                        <div class="flex-1">
+                            <h1 class="text-4xl font-bold text-gray-800 mb-2">{{ user.userprofile.team.name }}</h1>
+                            <div class="flex items-center gap-3 text-gray-600">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-crown text-[#e74c3c]"></i>
+                                    <span class="font-medium">Team Leader:</span>
+                                    <span>{{ user.userprofile.team.admin.username }}</span>
+                                    {% if user.userprofile.team.admin.kudos_count %}
+                                        <span class="bg-[#e74c3c] text-white px-3 py-1 rounded-full text-sm">
+                                            {{ user.userprofile.team.admin.kudos_count }} kudos
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <!-- Team Achievements -->
-                <div class="achievements"></div>
-                <!-- Team Action Buttons (Delete Team, Leave Team, Kick Member) -->
-                <div class="team-actions">
-                    {% if user.userprofile.team.admin == user %}
-                        <div class="delete-team-button">
-                            <form method="post" action="{% url 'delete_team' %}">
+                <!-- Team Members Section -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Team Members</h2>
+                        {% if user.userprofile.team.admin == user %}
+                            <button onclick="openAddMemberModal()"
+                                    class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                <i class="fas fa-plus"></i>
+                                Add Member
+                            </button>
+                        {% endif %}
+                    </div>
+                    <!-- Members Slider -->
+                    <div class="relative h-[280px]">
+                        <button class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
+                                onclick="prevMember()">
+                            <i class="fas fa-chevron-left text-[#e74c3c]"></i>
+                        </button>
+                        <div class="overflow-hidden px-12 h-full">
+                            <div class="flex gap-4 transition-transform duration-300 ease-in-out h-full items-center">
+                                {% for member in team_members %}
+                                    <div class="member-card flex-shrink-0 w-48 bg-gray-50 rounded-xl p-4 text-center transform transition-all duration-300 hover:shadow-lg {% if member.username == user.userprofile.team.admin.username %}border-2 border-[#e74c3c]{% endif %}"
+                                         id="member-{{ member.username }}">
+                                        <div class="relative inline-block">
+                                            <div class="w-16 h-16 mx-auto mb-3 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-user text-xl text-gray-400"></i>
+                                            </div>
+                                            {% if member.username == user.userprofile.team.admin.username %}
+                                                <div class="absolute -top-1 -right-1 bg-[#e74c3c] text-white p-1 rounded-full">
+                                                    <i class="fas fa-crown text-xs"></i>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <h3 class="text-base font-semibold text-gray-800 mb-2 truncate">{{ member.username }}</h3>
+                                        <div class="flex flex-col gap-2">
+                                            {% if member != user %}
+                                                <button onclick="openKudosModal('{{ member.username }}')"
+                                                        class="px-2 py-1 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300 w-full">
+                                                    <i class="fas fa-star mr-1"></i> Give Kudos
+                                                </button>
+                                            {% endif %}
+                                            {% if user.userprofile.team.admin == user and user.userprofile.team.admin != member %}
+                                                <button onclick="kickMember('{{ member.username }}')"
+                                                        class="px-2 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300 w-full">
+                                                    <i class="fas fa-times mr-1"></i> Remove
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <button class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full p-3 shadow-lg hover:bg-gray-50 transition-colors duration-300"
+                                onclick="nextMember()">
+                            <i class="fas fa-chevron-right text-[#e74c3c]"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Team Actions Section -->
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Team Actions</h2>
+                    <div class="flex gap-4">
+                        <a href="{% url 'join_requests' %}"
+                           class="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300">
+                            <i class="fas fa-bell"></i>
+                            View Join Requests
+                        </a>
+                        {% if user.userprofile.team.admin == user %}
+                            <form method="post" action="{% url 'delete_team' %}" class="inline">
                                 {% csrf_token %}
-                                <button type="submit" class="btn btn-danger">Delete Team</button>
+                                <button type="submit"
+                                        class="flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-300">
+                                    <i class="fas fa-trash"></i>
+                                    Delete Team
+                                </button>
                             </form>
-                        </div>
-                    {% endif %}
-                    <div class="leave-team-button">
-                        <form method="post" action="{% url 'leave_team' %}">
+                        {% endif %}
+                        <form method="post" action="{% url 'leave_team' %}" class="inline">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-warning">Leave Team</button>
+                            <button type="submit"
+                                    class="flex items-center gap-2 px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-300">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Leave Team
+                            </button>
                         </form>
                     </div>
                 </div>
             {% else %}
-                <button onclick="openModal()">Create a Team</button>
+                {% if join_requests %}
+                    <!-- Join Requests Section -->
+                    <div class="max-w-2xl mx-auto mb-8">
+                        <div class="bg-white rounded-2xl shadow-lg p-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center gap-6">
+                                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                                        <i class="fas fa-bell text-2xl text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-3xl font-bold text-gray-800">Team Invitations</h2>
+                                        <p class="text-gray-600 mt-2">You have pending team invitations</p>
+                                    </div>
+                                </div>
+                                <a href="{% url 'join_requests' %}"
+                                   class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    View All Invitations
+                                </a>
+                            </div>
+                            <div class="space-y-4">
+                                {% for request in join_requests|slice:":2" %}
+                                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-300">
+                                        <div class="flex items-center gap-4">
+                                            {% if request.team.logo %}
+                                                <img src="{{ request.team.logo.url }}"
+                                                     alt="{{ request.team.name }}"
+                                                     width="48"
+                                                     height="48"
+                                                     class="w-12 h-12 rounded-full object-cover border-2 border-[#e74c3c]">
+                                            {% else %}
+                                                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center border-2 border-[#e74c3c]">
+                                                    <i class="fas fa-users text-gray-400"></i>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <h3 class="font-semibold text-gray-800">{{ request.team.name }}</h3>
+                                                <p class="text-sm text-gray-600">Invited by {{ request.team.admin.username }}</p>
+                                            </div>
+                                        </div>
+                                        <form method="post" action="{% url 'join_requests' %}" class="flex gap-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="team_id" value="{{ request.team.id }}">
+                                            <button type="submit"
+                                                    class="px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                                Accept Invitation
+                                            </button>
+                                        </form>
+                                    </div>
+                                {% endfor %}
+                                {% if join_requests|length > 2 %}
+                                    <div class="text-center mt-4">
+                                        <a href="{% url 'join_requests' %}"
+                                           class="text-[#e74c3c] hover:underline">
+                                            View {{ join_requests|length|add:"-2" }} more invitation{{ join_requests|length|add:"-2"|pluralize }}
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="max-w-2xl mx-auto mb-8">
+                        <div class="bg-white rounded-2xl shadow-lg p-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="flex items-center gap-6">
+                                    <div class="w-16 h-16 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                                        <i class="fas fa-bell text-2xl text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-3xl font-bold text-gray-800">Team Invitations</h2>
+                                        <p class="text-gray-600 mt-2">Check your pending team invitations</p>
+                                    </div>
+                                </div>
+                                <a href="{% url 'join_requests' %}"
+                                   class="flex items-center gap-2 px-4 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    View All Invitations
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Create Team Section -->
+                <div class="max-w-2xl mx-auto text-center">
+                    <div class="bg-white rounded-2xl shadow-lg p-12">
+                        <div class="w-20 h-20 mx-auto mb-6 bg-[#e74c3c] rounded-full flex items-center justify-center">
+                            <i class="fas fa-users text-3xl text-white"></i>
+                        </div>
+                        <h1 class="text-3xl font-bold text-gray-800 mb-4">Create Your Team</h1>
+                        <p class="text-gray-600 mb-8">
+                            Join forces with other security enthusiasts! Create a team to collaborate, share knowledge, and tackle security challenges together.
+                        </p>
+                        <button onclick="openModal()"
+                                class="inline-flex items-center gap-2 px-8 py-4 bg-[#e74c3c] text-white text-lg font-semibold rounded-lg hover:bg-[#c0392b] transition-colors duration-300">
+                            <i class="fas fa-plus"></i>
+                            Create a New Team
+                        </button>
+                    </div>
+                </div>
             {% endif %}
         {% else %}
-            <p>Please Login to create a team.</p>
+            <!-- Login Required Section -->
+            <div class="max-w-2xl mx-auto text-center">
+                <div class="bg-white rounded-2xl shadow-lg p-12">
+                    <div class="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
+                        <i class="fas fa-lock text-3xl text-gray-400"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-800 mb-4">Login Required</h1>
+                    <p class="text-gray-600 mb-8">Please login to create or join a team. Join our community of security enthusiasts!</p>
+                </div>
+            </div>
         {% endif %}
     </div>
-    <div class="join-requests-button">
-        <a href="{% url 'join_requests' %}" class="btn">View Join Requests</a>
-    </div>
-    {% if user.userprofile.team and user.userprofile.team.admin == user %}
-        <div class="add-member-button">
-            <button class="btn" onclick="openAddMemberModal()">Add New Member</button>
-        </div>
-    {% endif %}
-    <!-- Modal for Creating a Team -->
-    <div id="teamModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">×</span>
-            <h2>Create a Team</h2>
+    <!-- Create Team Modal -->
+    <div id="teamModal"
+         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Create New Team</h2>
+                <button onclick="closeModal()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
             <form id="createTeamForm"
                   method="post"
-                  enctype="multipart/form-data"
-                  action="{% url 'create_team' %}">
+                  action="{% url 'create_team' %}"
+                  enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="form-group">
-                    <label for="teamName">Team Name</label>
-                    <input type="text" id="teamName" name="teamName" required>
-                </div>
-                <div class="form-group">
-                    <label for="teamAvatar">Avatar</label>
-                    <input type="file"
-                           id="teamAvatar"
-                           name="teamAvatar"
-                           accept="image/*"
-                           required>
-                </div>
-                <div class="form-group">
-                    <label for="teamMembers">Add Members</label>
-                    <input type="text"
-                           id="teamMembers"
-                           name="teamMembers"
-                           placeholder="Enter usernames"
-                           onkeyup="searchUsers(this.value)">
-                    <!-- Hidden input field that will store the selected members -->
-                    <input type="hidden" id="selectedMembers" name="selectedMembers">
-                    <div id="userDropdown" class="dropdown-content"></div>
-                    <div id="selectedUsers" class="selected-users"></div>
-                </div>
-                <div class="form-group">
-                    <button type="submit">Create Team</button>
+                <div class="space-y-4">
+                    <div>
+                        <label for="teamName" class="block text-sm font-medium text-gray-700">Team Name</label>
+                        <input type="text"
+                               id="teamName"
+                               name="teamName"
+                               required
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                    </div>
+                    <div>
+                        <label for="teamAvatar" class="block text-sm font-medium text-gray-700">Team Avatar</label>
+                        <input type="file"
+                               id="teamAvatar"
+                               name="teamAvatar"
+                               accept="image/*"
+                               required
+                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-[#e74c3c] file:text-white hover:file:bg-[#c0392b]">
+                    </div>
+                    <div>
+                        <label for="teamMembers" class="block text-sm font-medium text-gray-700">Add Members (Optional)</label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="teamMembers"
+                                   name="teamMembers"
+                                   placeholder="Search usernames..."
+                                   onkeyup="searchUsers(this.value)"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                            <input type="hidden" id="selectedMembers" name="selectedMembers">
+                            <div id="userDropdown"
+                                 class="absolute left-0 right-0 bg-white mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+                            </div>
+                            <div id="selectedUsers" class="flex flex-wrap gap-2 mt-2"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-4">
+                        <button type="button"
+                                onclick="closeModal()"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            Create Team
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
-    <!-- Modal for Adding a New Member -->
-    <div id="addMemberModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeAddMemberModal()">×</span>
-            <h2>Add New Member</h2>
+    <!-- Add Member Modal -->
+    <div id="addMemberModal"
+         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Add New Member</h2>
+                <button onclick="closeAddMemberModal()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
             <form id="addMemberForm" method="post" action="{% url 'add_member' %}">
                 {% csrf_token %}
-                <div class="form-group">
-                    <label for="newMember">Username</label>
-                    <input type="text"
-                           id="newMember"
-                           name="newMember"
-                           placeholder="Enter username"
-                           onkeyup="searchNewMember(this.value)"
-                           required>
-                    <div id="newMemberDropdown" class="dropdown-content"></div>
-                </div>
-                <div class="form-group">
-                    <button type="submit">Send Join Request</button>
-                    <button type="button" class="btn btn-warning" onclick="closeAddMemberModal()">Cancel</button>
+                <div class="space-y-4">
+                    <div>
+                        <label for="newMember" class="block text-sm font-medium text-gray-700">Username</label>
+                        <div class="relative">
+                            <input type="text"
+                                   id="newMember"
+                                   name="newMember"
+                                   placeholder="Enter username"
+                                   onkeyup="searchNewMember(this.value)"
+                                   required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]">
+                            <div id="newMemberDropdown"
+                                 class="absolute left-0 right-0 bg-white mt-1 max-h-48 overflow-y-auto shadow-lg rounded-md z-50">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-4">
+                        <button type="button"
+                                onclick="closeAddMemberModal()"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="px-4 py-2 text-sm font-medium text-white bg-[#e74c3c] rounded-md hover:bg-[#c0392b]">
+                            Send Join Request
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
     <!-- Kudos Modal -->
-    <div id="kudosModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeKudosModal()">×</span>
-            <h2>Send Kudos</h2>
-            <form method="post" onsubmit="sendKudos(event)" class="kudos-form">
+    <div id="kudosModal"
+         class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 p-4">
+        <div class="bg-white rounded-2xl max-w-2xl mx-auto mt-20 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Send Kudos</h2>
+                <button onclick="closeKudosModal()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+            <form method="post" onsubmit="sendKudos(event)" class="space-y-4">
                 {% csrf_token %}
                 <input type="hidden" id="kudosReceiver" name="kudosReceiver">
-                <div class="form-group">
-                    <label for="kudosLink">Link (optional)</label>
+                <div>
+                    <label for="kudosLink" class="block text-sm font-medium text-gray-700">Link (optional)</label>
                     <input type="url"
                            id="kudosLink"
                            name="kudosLink"
-                           placeholder="Enter an optional link" />
+                           placeholder="Enter an optional link"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]" />
                 </div>
-                <div class="form-group">
-                    <label for="kudosComment">Comment (optional)</label>
+                <div>
+                    <label for="kudosComment" class="block text-sm font-medium text-gray-700">Comment (optional)</label>
                     <textarea id="kudosComment"
                               name="kudosComment"
                               rows="3"
-                              placeholder="Add an optional note"></textarea>
+                              placeholder="Add an optional note"
+                              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c]"></textarea>
                 </div>
-                <div class="form-actions">
-                    <button type="submit" class="kudos-submit-btn">Send Kudos</button>
-                    <button type="button" class="btn-secondary" onclick="closeKudosModal()">Cancel</button>
+                <div class="flex justify-end gap-4">
+                    <button type="button"
+                            onclick="closeKudosModal()"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600">
+                        Send Kudos
+                    </button>
                 </div>
             </form>
         </div>
@@ -661,25 +476,44 @@
             }
         }
 
-        // Modal functions
+        // Update the modal functions
         function openModal() {
-            document.getElementById('teamModal').style.display = "block";
+            const modal = document.getElementById('teamModal');
+            if (modal) {
+                modal.style.display = "block";
+            } else {
+                console.error("Team modal element not found");
+            }
         }
 
         function closeModal() {
-            document.getElementById('teamModal').style.display = "none";
-        }
-
-        // Close the modal when clicking outside of it
-        window.onclick = function(event) {
             const modal = document.getElementById('teamModal');
-            if (event.target == modal) {
+            if (modal) {
                 modal.style.display = "none";
             }
         }
 
-        // Handle form submission
-        document.getElementById('createTeamForm').onsubmit = function(event) {
+        // Update the window click handler to handle multiple modals
+        window.onclick = function(event) {
+            const teamModal = document.getElementById('teamModal');
+            const addMemberModal = document.getElementById('addMemberModal');
+            const kudosModal = document.getElementById('kudosModal');
+
+            if (event.target === teamModal) {
+                teamModal.style.display = "none";
+            }
+            if (event.target === addMemberModal) {
+                addMemberModal.style.display = "none";
+            }
+            if (event.target === kudosModal) {
+                kudosModal.style.display = "none";
+            }
+        }
+
+        // Make sure the createTeamForm event listener only runs if the form exists
+        const createTeamForm = document.getElementById('createTeamForm');
+        if (createTeamForm) {
+            createTeamForm.onsubmit = function(event) {
             event.preventDefault();
             const formData = new FormData(this);
             fetch(this.action, {
@@ -699,6 +533,7 @@
                 console.error('Error:', error);
                 alert('Failed to create team. Please try again.');
             });
+            }
         }
 
         // Search users and display in dropdown
@@ -713,7 +548,10 @@
                 .then(data => {
                     let dropdownContent = "";
                     data.forEach(user => {
-                        dropdownContent += `<div class="dropdown-item" onclick="selectUser('${user.username}')">${user.username} ${user.team ? ' - ' + user.team : ''}</div>`;
+                        dropdownContent += `
+                            <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0" onclick="selectUser('${user.username}')">
+                                ${user.username} ${user.team ? ' - ' + user.team : ''}
+                            </div>`;
                     });
                     document.getElementById('userDropdown').innerHTML = dropdownContent;
                 });
@@ -723,23 +561,22 @@
             const selectedUsersContainer = document.getElementById('selectedUsers');
             const currentMembers = Array.from(selectedUsersContainer.children).map(child => child.dataset.username);
 
-            // Only add the user if they are not already selected
             if (!currentMembers.includes(username)) {
                 const userDiv = document.createElement('div');
-                userDiv.className = 'selected-user';
+                userDiv.className = 'inline-flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-sm';
                 userDiv.dataset.username = username;
-                userDiv.innerHTML = `<span>${username}</span><span class="remove-user" onclick="removeUser(this)">x</span>`;
+                userDiv.innerHTML = `
+                    <span class="text-gray-700">${username}</span>
+                    <button type="button" onclick="removeUser(this)" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>`;
                 selectedUsersContainer.appendChild(userDiv);
             }
 
-            // Update the selectedMembers input field with the selected users (comma-separated)
-            const selectedUsernames = Array.from(selectedUsersContainer.children).map(child => child.dataset.username);
             document.getElementById('teamMembers').value = "";
-
-            // Set the selected users into the hidden input field to be sent in the POST request
-            document.getElementById('selectedMembers').value = selectedUsernames.join(',');
-
-            // Clear the dropdown after selection
+            document.getElementById('selectedMembers').value = Array.from(selectedUsersContainer.children)
+                .map(child => child.dataset.username)
+                .join(',');
             document.getElementById('userDropdown').innerHTML = "";
         }
 
@@ -766,7 +603,7 @@
             }
         }
 
-        // Handle add member form submission
+        // Update the addMemberForm submission handler
         document.getElementById('addMemberForm').onsubmit = function(event) {
             event.preventDefault();
             const formData = new FormData(this);
@@ -776,16 +613,19 @@
                 headers: {
                     'X-CSRFToken': formData.get('csrfmiddlewaretoken')
                 }
-            }).then(response => {
-                if (response.ok) {
+            })
+            .then(response => response.json())
+            .then(data => {
                     closeAddMemberModal();
-                    window.location.reload();
+                if (data.success) {
+                    showMessage("Join request sent successfully!", false);
                 } else {
-                    alert('Failed to send join request. Please try again.');
+                    showMessage(data.error || "Failed to send join request.", true);
                 }
-            }).catch(error => {
+            })
+            .catch(error => {
                 console.error('Error:', error);
-                alert('Failed to send join request. Please try again.');
+                showMessage("Failed to send join request. Please try again.", true);
             });
         }
 
@@ -801,7 +641,10 @@
                 .then(data => {
                     let dropdownContent = "";
                     data.forEach(user => {
-                        dropdownContent += `<div class="dropdown-item" onclick="selectNewMember('${user.username}')">${user.username} ${user.team ? ' - ' + user.team : ''}</div>`;
+                        dropdownContent += `
+                            <div class="px-4 py-2 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 border-b border-gray-100 last:border-b-0" onclick="selectNewMember('${user.username}')">
+                                ${user.username} ${user.team ? ' - ' + user.team : ''}
+                            </div>`;
                     });
                     document.getElementById('newMemberDropdown').innerHTML = dropdownContent;
                 });
@@ -887,21 +730,33 @@
             }
         }
 
+        // Update the showMessage function to make toasts more visible
         function showMessage(message, isError = false) {
             const container = document.getElementById('toast-container');
             container.innerHTML = '';
 
             const toast = document.createElement('div');
-            toast.className = `toast ${isError ? 'toast-error' : 'toast-success'}`;
-            toast.textContent = message;
+            toast.className = `flex items-center gap-3 p-4 rounded-lg shadow-lg ${isError ? 'bg-red-500' : 'bg-green-500'} text-white transform transition-all duration-300`;
+            
+            // Add icon based on message type
+            const icon = document.createElement('i');
+            icon.className = `fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'} text-xl`;
+            toast.appendChild(icon);
+            
+            // Add message text
+            const text = document.createElement('span');
+            text.className = 'font-medium';
+            text.textContent = message;
+            toast.appendChild(text);
+            
             container.appendChild(toast);
 
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
+            // Animate the toast
+            setTimeout(() => {
                      toast.style.opacity = '0';
-                     setTimeout(() => toast.remove(), 3000);
-                });
-            });
+                toast.style.transform = 'translateY(-100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
     </script>
 {% endblock content %}

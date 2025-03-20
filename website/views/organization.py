@@ -46,10 +46,12 @@ from website.models import (
     Activity,
     DailyStatusReport,
     Domain,
+    GitHubIssue,
     Hunt,
     IpReport,
     Issue,
     IssueScreenshot,
+    Message,
     Organization,
     OrganizationAdmin,
     Repo,
@@ -488,8 +490,41 @@ class Listbounties(TemplateView):
             hunts = hunts.filter(domain=domain)
 
         # Fetch GitHub issues with $5 label for first page
+        issue_state = request.GET.get("issue_state", "open")
+
         try:
-            github_issues = self.github_issues_with_bounties("$5")
+            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
+
+            # For closed issues, fetch related PRs from database
+            if issue_state == "closed":
+                for issue in github_issues:
+                    issue_number = issue.get("number")
+
+                    try:
+                        related_prs = []
+                        prs = GitHubIssue.objects.filter(
+                            type="pull_request",
+                            is_merged=True,
+                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                            + str(issue_number),
+                        ).order_by("-merged_at")[:3]
+
+                        for pr in prs:
+                            related_prs.append(
+                                {
+                                    "number": pr.issue_id,
+                                    "title": pr.title,
+                                    "url": pr.url,
+                                    "user": pr.user_profile.user.username
+                                    if pr.user_profile and pr.user_profile.user
+                                    else None,
+                                }
+                            )
+
+                        issue["related_prs"] = related_prs
+                    except Exception as e:
+                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                        issue["related_prs"] = []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
@@ -499,18 +534,19 @@ class Listbounties(TemplateView):
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
+            "selected_issue_state": issue_state,
         }
 
         return render(request, self.template_name, context)
 
-    def github_issues_with_bounties(self, label, page=1, per_page=10):
-        cache_key = f"github_issues_{label}_page_{page}"
+    def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
         cached_issues = cache.get(cache_key)
 
         if cached_issues is not None:
             return cached_issues
 
-        params = {"labels": label, "state": "open", "per_page": per_page, "page": page}
+        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
 
         headers = {}
         github_token = getattr(settings, "GITHUB_API_TOKEN", None)
@@ -525,20 +561,29 @@ class Listbounties(TemplateView):
             response.raise_for_status()
 
             issues = response.json()
-            formatted_issues = [
-                {
-                    "id": issue.get("id"),
-                    "number": issue.get("number"),
-                    "title": issue.get("title"),
-                    "url": issue.get("html_url"),
-                    "repository": "OWASP-BLT/BLT",  # Hardcoded since we know the repo
-                    "created_at": issue.get("created_at"),
-                    "updated_at": issue.get("updated_at"),
-                    "labels": [label.get("name") for label in issue.get("labels", [])],
-                    "user": issue.get("user", {}).get("login") if issue.get("user") else None,
-                }
-                for issue in issues
-            ]
+            formatted_issues = []
+
+            for issue in issues:
+                related_prs = []
+
+                # Only include issues, not PRs in the response
+                if issue.get("pull_request") is None:
+                    formatted_issue = {
+                        "id": issue.get("id"),
+                        "number": issue.get("number"),
+                        "title": issue.get("title"),
+                        "url": issue.get("html_url"),
+                        "repository": "OWASP-BLT/BLT",
+                        "created_at": issue.get("created_at"),
+                        "updated_at": issue.get("updated_at"),
+                        "labels": [label.get("name") for label in issue.get("labels", [])],
+                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                        "state": issue.get("state"),
+                        "related_prs": related_prs,
+                        "closed_at": issue.get("closed_at"),
+                    }
+
+                    formatted_issues.append(formatted_issue)
 
             # Cache for 5 minutes
             cache.set(cache_key, formatted_issues, timeout=300)
@@ -550,28 +595,48 @@ class Listbounties(TemplateView):
 
 
 def load_more_issues(request):
+    page = int(request.GET.get("page", 1))
+    state = request.GET.get("state", "open")
+
     try:
-        page = int(request.GET.get("page", 1))
-        label = "$5"
+        view = Listbounties()
+        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
 
-        if page < 1:
-            page = 1
+        # For closed issues, fetch related PRs from database for other than first batch of issues
+        if issues and state == "closed":
+            for issue in issues:
+                issue_number = issue.get("number")
 
-        issues = Listbounties().github_issues_with_bounties(label, page=page)
+                try:
+                    related_prs = []
+                    prs = GitHubIssue.objects.filter(
+                        type="pull_request",
+                        is_merged=True,
+                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
+                        + str(issue_number),
+                    ).order_by("-merged_at")[:3]
 
-        return JsonResponse(
-            {
-                "success": True,
-                "issues": issues,
-                "next_page": page + 1 if issues else None,  # Only provide next page if we have results
-            }
-        )
-    except Exception:  # Removed 'as e' since it's not used
-        logger.exception("Error loading more issues")
+                    for pr in prs:
+                        related_prs.append(
+                            {
+                                "number": pr.issue_id,
+                                "title": pr.title,
+                                "url": pr.url,
+                                "user": pr.user_profile.user.username
+                                if pr.user_profile and pr.user_profile.user
+                                else None,
+                            }
+                        )
 
-        return JsonResponse(
-            {"success": False, "error": "An error occurred while loading issues. Please try again later."}, status=500
-        )
+                    issue["related_prs"] = related_prs
+                except Exception as e:
+                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
+                    issue["related_prs"] = []
+
+        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
+    except Exception as e:
+        logger.error(f"Error loading more issues: {str(e)}")
+        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
 
 
 class DraftHunts(TemplateView):
@@ -2004,8 +2069,10 @@ class RoomsListView(ListView):
         context = super().get_context_data(**kwargs)
         context["form"] = RoomForm()
 
-        # Add last 3 messages for each room
+        # Add message count and last 3 messages for each room (newest first)
         for room in context["rooms"]:
+            room.message_count = room.messages.count()
+            # Get messages in reverse chronological order (newest first)
             room.recent_messages = room.messages.all().order_by("-timestamp")[:3]
 
         # Add breadcrumbs
@@ -2042,8 +2109,8 @@ def join_room(request, room_id):
     # Ensure session key exists for anonymous users
     if request.user.is_anonymous and not request.session.session_key:
         request.session.create()
-    # Get messages ordered by timestamp
-    room_messages = room.messages.all().order_by("timestamp")
+    # Get messages ordered by timestamp in descending order (most recent first)
+    room_messages = room.messages.all().order_by("-timestamp")
 
     # Add breadcrumbs context
     breadcrumbs = [{"title": "Discussion Rooms", "url": reverse("rooms_list")}, {"title": room.name, "url": None}]
@@ -2157,6 +2224,7 @@ class OrganizationListView(ListView):
                 "domain_set",
                 "projects",
                 "projects__repos",
+                "repos",
                 "tags",
                 Prefetch(
                     "domain_set__issue_set", queryset=Issue.objects.filter(status="open"), to_attr="open_issues_list"
@@ -2173,7 +2241,6 @@ class OrganizationListView(ListView):
                 open_issues=Count("domain__issue", filter=Q(domain__issue__status="open"), distinct=True),
                 closed_issues=Count("domain__issue", filter=Q(domain__issue__status="closed"), distinct=True),
                 project_count=Count("projects", distinct=True),
-                repo_count=Count("projects__repos", distinct=True),
             )
             .select_related("admin")
             .order_by("-created")
@@ -2531,3 +2598,1186 @@ def update_organization_repos(request, slug):
     except Exception as e:
         messages.error(request, f"An unexpected error occurred: {str(e)[:100]}")
         return redirect("organization_detail", slug=slug)
+
+
+@require_POST
+def send_message_api(request):
+    """API endpoint for sending messages from the rooms list page"""
+    if not request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+        room_id = data.get("room_id")
+        message_content = data.get("message")
+
+        if not room_id or not message_content:
+            return JsonResponse({"success": False, "error": "Missing required fields"}, status=400)
+
+        room = get_object_or_404(Room, id=room_id)
+
+        # Create the message
+        if request.user.is_authenticated:
+            username = request.user.username
+            user = request.user
+            session_key = None
+        else:
+            # Ensure session key exists for anonymous users
+            if not request.session.session_key:
+                request.session.create()
+            session_key = request.session.session_key
+            username = f"anon_{session_key[-4:]}"
+            user = None
+
+        message = Message.objects.create(
+            room=room, user=user, username=username, content=message_content, session_key=session_key
+        )
+
+        return JsonResponse({"success": True, "message_id": message.id, "timestamp": message.timestamp.isoformat()})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+
+def room_messages_api(request, room_id):
+    """API endpoint for getting room messages"""
+    room = get_object_or_404(Room, id=room_id)
+    messages = room.messages.all().order_by("-timestamp")[:10]  # Get the 10 most recent messages
+
+    message_data = []
+    for message in messages:
+        message_data.append(
+            {
+                "id": message.id,
+                "username": message.username,
+                "content": message.content,
+                "timestamp": message.timestamp.isoformat(),
+                "timestamp_display": naturaltime(message.timestamp),
+            }
+        )
+
+    return JsonResponse({"success": True, "count": room.messages.count(), "messages": message_data})
+
+
+class BountyPayoutsView(ListView):
+    model = GitHubIssue
+    template_name = "bounty_payouts.html"
+    context_object_name = "issues"
+    paginate_by = 20
+
+    def get_queryset(self):
+        """
+        Filter the queryset to only show dollar-tagged closed issues,
+        with optional payment status filtering.
+        """
+        # Start with the base queryset of dollar-tagged closed issues
+        queryset = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
+
+        # Apply payment status filter if specified
+        payment_status = self.request.GET.get("payment_status", "all")
+
+        if payment_status == "paid":
+            queryset = queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+        elif payment_status == "unpaid":
+            queryset = queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
+
+        # Prefetch linked pull requests for better performance
+        queryset = queryset.prefetch_related("linked_pull_requests")
+
+        # Return ordered queryset - order by closed_at date (most recent first)
+        # This will show issues that were closed most recently at the top
+        return queryset.order_by("-closed_at")
+
+    def get_context_data(self, **kwargs):
+        """
+        Add additional context data for the template:
+        - Count of issues by state and payment status
+        - Current filters
+        """
+        context = super().get_context_data(**kwargs)
+
+        # Base queryset for dollar-tagged issues (GitHub issues with bounties)
+        base_queryset = GitHubIssue.objects.filter(has_dollar_tag=True, state="closed")
+
+        # Get payment status filter from request or default to "all"
+        payment_status = self.request.GET.get("payment_status", "all")
+
+        # Apply payment status filters to the queryset
+        if payment_status == "paid":
+            filtered_queryset = base_queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False))
+        elif payment_status == "unpaid":
+            filtered_queryset = base_queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True)
+        else:  # 'all'
+            filtered_queryset = base_queryset
+
+        # Calculate counts for the stats
+        total_count = filtered_queryset.count()
+        paid_count = base_queryset.filter(Q(sponsors_tx_id__isnull=False) | Q(bch_tx_id__isnull=False)).count()
+        unpaid_count = base_queryset.filter(sponsors_tx_id__isnull=True, bch_tx_id__isnull=True).count()
+
+        # Add all context data
+        context.update(
+            {
+                "total_count": total_count,
+                "paid_count": paid_count,
+                "unpaid_count": unpaid_count,
+                "current_payment_status": payment_status,
+            }
+        )
+
+        return context
+
+    def github_issues_with_bounties(self, label="$5", issue_state="closed", page=1, per_page=100):
+        """
+        Fetch GitHub issues with a specific bounty label directly from GitHub API
+        Default to closed issues instead of open, and fetch 100 per page without date limitations
+        """
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
+        cached_issues = cache.get(cache_key)
+
+        if cached_issues:
+            return cached_issues
+
+        # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
+        encoded_label = label.replace("$", "%24")
+        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
+        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+
+        headers = {}
+        if settings.GITHUB_TOKEN:
+            headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                issues = data.get("items", [])
+
+                # Cache the results for 30 minutes
+                cache.set(cache_key, issues, 60 * 30)
+
+                return issues
+            else:
+                # Log the error response from GitHub
+                logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
+                return []
+        except Exception as e:
+            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            return []
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST requests for refreshing issues or processing payments"""
+        # Import timezone here to make it available to all actions in the method
+        from django.utils import timezone
+
+        action = request.POST.get("action")
+
+        if action == "refresh_issues":
+            # Staff permission check for refreshing issues
+            if not request.user.is_authenticated or not request.user.is_staff:
+                messages.error(request, "You don't have permission to perform this action.")
+                return redirect("bounty_payouts")
+
+            # Fetch closed issues with $5 tag from GitHub by default
+            try:
+                # Import required models
+                from website.models import GitHubIssue, Repo
+
+                issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
+                count = 0
+
+                for issue_data in issues:
+                    github_url = issue_data["html_url"]
+
+                    # Extract owner, repo, and issue number from URL
+                    parts = github_url.split("/")
+                    owner = parts[3]
+                    repo_name = parts[4]
+                    issue_number = parts[6]
+
+                    # Find or create the repo
+                    repo_url = f"https://github.com/{owner}/{repo_name}"
+                    repo, created = Repo.objects.get_or_create(
+                        repo_url=repo_url,
+                        defaults={
+                            "name": repo_name,
+                            "slug": f"{owner}-{repo_name}",
+                        },
+                    )
+
+                    # Set bounty amount to exactly $5
+                    p2p_amount_usd = 5
+
+                    # Check for payment-related labels
+                    sponsors_tx_id = None
+                    bch_tx_id = None
+                    is_paid = False
+
+                    for label in issue_data.get("labels", []):
+                        label_name = label.get("name", "").lower()
+                        if "paid" in label_name:
+                            is_paid = True
+                        if "sponsors" in label_name:
+                            sponsors_tx_id = ""
+                        if "bch" in label_name:
+                            bch_tx_id = ""
+
+                    # Get GitHub username from the issue (if available)
+                    github_username = None
+                    if issue_data.get("user") and issue_data["user"].get("login"):
+                        github_username = issue_data["user"]["login"]
+
+                    # Extract assignee information from GitHub data
+                    # GitHub provides both an 'assignee' field and an 'assignees' array
+                    assignee_username = None
+                    assignee_contributor = None
+
+                    # Clear logging for debugging
+                    logger.info(f"Processing GitHub issue #{issue_data.get('number')} - {issue_data.get('title')}")
+
+                    # First check the single assignee field (this is the primary field to check)
+                    if issue_data.get("assignee") and issue_data["assignee"].get("login"):
+                        assignee_username = issue_data["assignee"]["login"]
+                        logger.info(f"Found assignee from single field: {assignee_username}")
+                    # If no single assignee, check the assignees array (backup check)
+                    elif (
+                        issue_data.get("assignees")
+                        and isinstance(issue_data["assignees"], list)
+                        and len(issue_data["assignees"]) > 0
+                    ):
+                        if issue_data["assignees"][0].get("login"):
+                            assignee_username = issue_data["assignees"][0]["login"]
+                            logger.info(f"Found assignee from array: {assignee_username}")
+
+                    logger.info(f"Final assignee determination: {assignee_username if assignee_username else 'None'}")
+
+                    # Create or get the contributor for the assignee if we have one
+                    if assignee_username:
+                        from website.models import Contributor
+
+                        try:
+                            assignee_contributor, created = Contributor.objects.get_or_create(
+                                name=assignee_username, defaults={"name": assignee_username}
+                            )
+                            logger.info(
+                                f"Assignee contributor {'created' if created else 'retrieved'}: {assignee_username}"
+                            )
+
+                            # If we just created this contributor, try to get their GitHub data
+                            if created:
+                                try:
+                                    import requests
+
+                                    headers = {}
+                                    if settings.GITHUB_TOKEN:
+                                        headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                                    response = requests.get(
+                                        f"https://api.github.com/users/{assignee_username}", headers=headers, timeout=5
+                                    )
+                                    if response.status_code == 200:
+                                        user_data = response.json()
+                                        if user_data.get("name"):
+                                            assignee_contributor.full_name = user_data["name"]
+                                        if user_data.get("email"):
+                                            assignee_contributor.email = user_data["email"]
+                                        assignee_contributor.save()
+                                    else:
+                                        logger.warning(
+                                            f"GitHub API returned {response.status_code} for user {assignee_username}"
+                                        )
+                                except Exception as e:
+                                    error_msg = "Error fetching GitHub user data"
+                                    logger.error(f"{error_msg} for {assignee_username}: {str(e)}")
+                        except Exception as e:
+                            logger.error(f"Error creating contributor for assignee {assignee_username}: {str(e)}")
+                            assignee_contributor = None
+
+                    # Try to find a matching user profile for the GitHub username
+                    user_profile = None
+                    if github_username:
+                        from website.models import UserProfile
+
+                        # First try to match by the github_url field
+                        github_url_to_match = f"https://github.com/{github_username}"
+                        user_profile = UserProfile.objects.filter(github_url=github_url_to_match).first()
+
+                        # If not found, try to match by username directly
+                        if not user_profile:
+                            from django.contrib.auth.models import User
+
+                            user = User.objects.filter(username__iexact=github_username).first()
+                            if user:
+                                user_profile = UserProfile.objects.filter(user=user).first()
+
+                    # Skip if issue already exists - update payment status instead
+                    existing_issue = GitHubIssue.objects.filter(url=github_url).first()
+                    if existing_issue:
+                        # Update user profile if we found a match and it's not already set
+                        if user_profile and not existing_issue.user_profile:
+                            existing_issue.user_profile = user_profile
+
+                        # Always update the assignee based on what we got from GitHub
+                        previous_assignee = existing_issue.assignee.name if existing_issue.assignee else "None"
+                        if assignee_username and assignee_contributor:
+                            existing_issue.assignee = assignee_contributor
+                            logger.info(f"Updated assignee from {previous_assignee} to {assignee_username}")
+
+                            # Extract payment info when refreshing assignee if no payment info exists
+                            if not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
+                                self.extract_payment_info_from_comments(existing_issue, owner, repo_name, issue_number)
+                        else:
+                            # Explicitly clear the assignee if none was found
+                            existing_issue.assignee = None
+                            logger.info(f"Cleared assignee (was {previous_assignee})")
+
+                        # Only update payment info if not already set and GitHub shows it's paid
+                        if is_paid and not (existing_issue.sponsors_tx_id or existing_issue.bch_tx_id):
+                            if sponsors_tx_id:
+                                existing_issue.sponsors_tx_id = sponsors_tx_id
+                                existing_issue.p2p_payment_created_at = timezone.now()
+                            elif bch_tx_id:
+                                existing_issue.bch_tx_id = bch_tx_id
+                                existing_issue.p2p_payment_created_at = timezone.now()
+                            else:
+                                # Try to extract payment info from GitHub issue comments
+                                self.extract_payment_info_from_comments(existing_issue, owner, repo_name, issue_number)
+
+                        # Fetch linked pull requests for this issue
+                        self.fetch_linked_pull_requests(existing_issue, owner, repo_name, issue_number)
+
+                        existing_issue.save()
+                        continue
+
+                    # Determine if it's a PR or an issue
+                    is_pr = "pull_request" in issue_data
+                    issue_type = "pull_request" if is_pr else "issue"
+
+                    # Create the contributor if GitHub username exists but no matching user profile
+                    contributor = None
+                    if github_username and not user_profile:
+                        from website.models import Contributor
+
+                        contributor, _ = Contributor.objects.get_or_create(
+                            name=github_username, defaults={"name": github_username}
+                        )
+
+                    # Create the GitHub issue
+                    new_issue = GitHubIssue(
+                        issue_id=issue_data["id"],
+                        title=issue_data["title"],
+                        body=issue_data.get("body", ""),
+                        state=issue_data["state"],
+                        type=issue_type,
+                        created_at=issue_data["created_at"],
+                        updated_at=issue_data["updated_at"],
+                        closed_at=issue_data.get("closed_at"),
+                        merged_at=None,
+                        is_merged=False,
+                        url=github_url,
+                        repo=repo,
+                        has_dollar_tag=True,
+                        p2p_amount_usd=p2p_amount_usd,
+                        user_profile=user_profile,
+                        contributor=contributor,
+                        # Only set assignee if we have a valid assignee_username
+                        assignee=assignee_contributor if assignee_username else None,
+                    )
+
+                    # Set payment information if available from labels
+                    if is_paid:
+                        if sponsors_tx_id:
+                            new_issue.sponsors_tx_id = sponsors_tx_id
+                            new_issue.p2p_payment_created_at = timezone.now()
+                        elif bch_tx_id:
+                            new_issue.bch_tx_id = bch_tx_id
+                            new_issue.p2p_payment_created_at = timezone.now()
+
+                    new_issue.save()
+
+                    # Try to extract payment info from comments when first creating the issue
+                    # regardless of whether it's marked as paid or not
+                    if not (new_issue.sponsors_tx_id or new_issue.bch_tx_id):
+                        self.extract_payment_info_from_comments(new_issue, owner, repo_name, issue_number)
+                    # If the issue is marked as paid but no transaction ID from labels,
+                    # try to extract payment info from comments
+                    elif is_paid and not (new_issue.sponsors_tx_id or new_issue.bch_tx_id):
+                        self.extract_payment_info_from_comments(new_issue, owner, repo_name, issue_number)
+
+                    # Fetch linked pull requests for this issue
+                    self.fetch_linked_pull_requests(new_issue, owner, repo_name, issue_number)
+
+                    count += 1
+
+                msg = f"Successfully added {count} new closed issues with bounty."
+                messages.success(request, msg)
+            except Exception as e:
+                error_message = "Error fetching issues from GitHub"
+                messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "pay_bounty":
+            # Record bounty payment (superusers only)
+            if not request.user.is_superuser:
+                messages.error(request, "You don't have permission to record bounty payments")
+            else:
+                issue_id = request.POST.get("issue_id")
+                tx_id = request.POST.get("tx_id", "").strip()
+                payment_method = request.POST.get("payment_method", "").strip()
+
+                if not issue_id or not tx_id:
+                    messages.error(request, "Missing issue ID or transaction ID")
+                elif payment_method not in ["sponsors", "bch"]:
+                    messages.error(request, "Invalid payment method")
+                else:
+                    try:
+                        # Import necessary models at the function level
+                        from django.utils import timezone
+
+                        from website.models import GitHubIssue
+
+                        issue = GitHubIssue.objects.get(id=issue_id)
+
+                        if payment_method == "sponsors":
+                            issue.sponsors_tx_id = tx_id
+                            issue.sent_by_user = request.user
+                            issue.p2p_payment_created_at = timezone.now()
+
+                            # Add GitHub Sponsors label and payment comment
+                            labels_to_add = ["paid", "sponsors"]
+                            comment_text = f"This issue has been paid via GitHub Sponsors. Transaction ID: {tx_id}"
+                        elif payment_method == "bch":
+                            issue.bch_tx_id = tx_id
+                            issue.sent_by_user = request.user
+                            issue.p2p_payment_created_at = timezone.now()
+
+                            # Add BCH label and payment comment
+                            labels_to_add = ["paid", "bch"]
+                            # Add link to BCH transaction explorer
+                            comment_text = (
+                                f"This issue has been paid via Bitcoin Cash. Transaction ID: {tx_id}\n"
+                                f"View transaction: https://blockchair.com/bitcoin-cash/transaction/{tx_id}"
+                            )
+
+                        # Save the issue first
+                        issue.save()
+
+                        # Add labels and comment to GitHub
+                        labels_success = issue.add_labels(labels_to_add)
+                        comment_success = issue.add_comment(comment_text)
+
+                        # Create success message
+                        success_message = f"Payment recorded for issue #{issue.issue_id}"
+                        if labels_success:
+                            success_message += ". Labels added on GitHub"
+                        if comment_success:
+                            success_message += ". Comment added on GitHub"
+
+                        messages.success(request, success_message)
+
+                        # If we couldn't update GitHub, log it but don't error to the user
+                        if not (labels_success and comment_success):
+                            logger.warning(
+                                f"Could not fully update GitHub for issue {issue.issue_id}. "
+                                f"Labels success: {labels_success}, Comment success: {comment_success}"
+                            )
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error recording payment"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "delete_issue":
+            # Delete an issue (superusers only)
+            if not request.user.is_superuser:
+                messages.error(request, "You don't have permission to delete issues")
+            else:
+                issue_id = request.POST.get("issue_id")
+                if not issue_id:
+                    messages.error(request, "No issue ID provided")
+                else:
+                    try:
+                        # Import necessary models at the function level
+                        from website.models import GitHubIssue
+
+                        issue = GitHubIssue.objects.get(id=issue_id)
+                        issue_title = issue.title
+                        issue.delete()
+                        messages.success(request, f"Successfully deleted issue: {issue_title}")
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error deleting issue"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "refresh_assignee":
+            # Refresh assignee for an issue (staff only)
+            if not request.user.is_staff:
+                messages.error(request, "You don't have permission to refresh issue assignees")
+            else:
+                issue_id = request.POST.get("issue_id")
+                if not issue_id:
+                    messages.error(request, "No issue ID provided")
+                else:
+                    try:
+                        # Import necessary modules at the function level
+                        import requests
+                        from django.conf import settings
+
+                        # Ensure all required models are imported
+                        from website.models import Contributor, GitHubIssue
+
+                        # Get the issue from the database
+                        issue = GitHubIssue.objects.get(id=issue_id)
+
+                        # Extract the issue number and repo from the URL
+                        url_parts = issue.url.split("/")
+                        if len(url_parts) >= 7:
+                            repo_owner = url_parts[3]
+                            repo_name = url_parts[4]
+                            issue_number = url_parts[6]
+
+                            # Construct GitHub API URL for the issue
+                            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues/{issue_number}"
+
+                            # Set up headers with GitHub token if available
+                            headers = {}
+                            if settings.GITHUB_TOKEN:
+                                headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
+
+                            # Make the API request
+                            response = requests.get(api_url, headers=headers, timeout=10)
+
+                            if response.status_code == 200:
+                                issue_data = response.json()
+
+                                # Extract assignee information
+                                assignee_username = None
+                                if issue_data.get("assignee") and issue_data["assignee"].get("login"):
+                                    assignee_username = issue_data["assignee"]["login"]
+                                elif (
+                                    issue_data.get("assignees")
+                                    and len(issue_data["assignees"]) > 0
+                                    and issue_data["assignees"][0].get("login")
+                                ):
+                                    assignee_username = issue_data["assignees"][0]["login"]
+
+                                # Update the assignee
+                                if assignee_username:
+                                    # Try to find or create the contributor
+                                    from website.models import Contributor
+
+                                    # First try to find by username
+                                    assignee_contributor = Contributor.objects.filter(name=assignee_username).first()
+
+                                    if not assignee_contributor:
+                                        # If not found, fetch complete user data from GitHub API
+                                        github_id = None
+                                        if issue_data.get("assignee") and issue_data["assignee"].get("id"):
+                                            # Get detailed user info from GitHub API
+                                            user_api_url = f"https://api.github.com/users/{assignee_username}"
+                                            user_response = requests.get(user_api_url, headers=headers, timeout=10)
+
+                                            if user_response.status_code == 200:
+                                                user_data = user_response.json()
+                                                # Create contributor with complete data
+                                                assignee_contributor = Contributor.objects.create(
+                                                    name=assignee_username,
+                                                    github_id=user_data["id"],
+                                                    github_url=user_data["html_url"],
+                                                    avatar_url=user_data["avatar_url"],
+                                                    contributor_type=user_data.get("type", "User"),
+                                                    contributions=0,
+                                                )
+                                            else:
+                                                # Fallback to basic data if API call fails
+                                                github_id = issue_data["assignee"]["id"]
+                                                avatar_url = issue_data["assignee"].get("avatar_url", "")
+                                                # Create contributor with minimal data
+                                                assignee_contributor = Contributor.objects.create(
+                                                    name=assignee_username,
+                                                    github_id=github_id,
+                                                    github_url=f"https://github.com/{assignee_username}",
+                                                    avatar_url=avatar_url,
+                                                    contributor_type="User",
+                                                    contributions=0,
+                                                )
+
+                                    # Update the issue with the assignee
+                                    issue.assignee = assignee_contributor
+                                else:
+                                    # Clear the assignee if none found
+                                    issue.assignee = None
+
+                                # Also fetch linked pull requests for this issue
+                                self.fetch_linked_pull_requests(issue, repo_owner, repo_name, issue_number)
+
+                                # Save the issue after all updates
+                                issue.save()
+
+                                msg = f"Updated issue #{issue_number} with assignee "
+                                msg += f"{assignee_username}" if assignee_username else "(none)"
+                                msg += " and refreshed linked pull requests"
+                                messages.success(request, msg)
+                            else:
+                                msg = f"Failed to fetch issue from GitHub API: {response.status_code}"
+                                messages.error(request, msg)
+                        else:
+                            msg = "Invalid issue URL format"
+                            messages.error(request, msg)
+
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error refreshing issue data"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        elif action == "refresh_pull_requests":
+            # Refresh pull requests for an issue (staff only)
+            if not request.user.is_staff:
+                messages.error(request, "You don't have permission to refresh linked pull requests")
+            else:
+                issue_id = request.POST.get("issue_id")
+                if not issue_id:
+                    messages.error(request, "No issue ID provided")
+                else:
+                    try:
+                        # Import necessary modules at the function level
+                        import requests
+                        from django.conf import settings
+
+                        from website.models import GitHubIssue
+
+                        # Get the issue from the database
+                        issue = GitHubIssue.objects.get(id=issue_id)
+
+                        # Only proceed if it's an issue, not a PR
+                        if issue.type != "issue":
+                            messages.error(request, "Can only fetch linked PRs for issues, not for PRs")
+                        else:
+                            # Extract the issue number and repo from the URL
+                            url_parts = issue.url.split("/")
+                            if len(url_parts) >= 7:
+                                repo_owner = url_parts[3]
+                                repo_name = url_parts[4]
+                                issue_number = url_parts[6]
+
+                                # First, clear existing linked pull requests
+                                initial_count = issue.linked_pull_requests.count()
+                                issue.linked_pull_requests.clear()
+
+                                # Fetch linked pull requests for this issue
+                                self.fetch_linked_pull_requests(issue, repo_owner, repo_name, issue_number)
+
+                                # Save the issue and return a success message
+                                new_count = issue.linked_pull_requests.count()
+
+                                # If the issue is marked as paid but has no transaction ID,
+                                # check the comments for payment information
+                                payment_msg = ""
+                                if issue.state == "closed" and not (issue.sponsors_tx_id or issue.bch_tx_id):
+                                    # Check for "paid" label in GitHub - we need to fetch issue details again
+                                    api_url = (
+                                        f"https://api.github.com/repos/{repo_owner}/{repo_name}/issues/{issue_number}"
+                                    )
+                                    headers = {
+                                        "Accept": "application/vnd.github.v3+json",
+                                        "Authorization": f"token {settings.GITHUB_TOKEN}",
+                                    }
+                                    issue_response = requests.get(api_url, headers=headers, timeout=10)
+
+                                    if issue_response.status_code == 200:
+                                        issue_data = issue_response.json()
+                                        is_paid = False
+                                        for label in issue_data.get("labels", []):
+                                            if "paid" in label.get("name", "").lower():
+                                                is_paid = True
+                                                break
+
+                                        if is_paid:
+                                            if self.extract_payment_info_from_comments(
+                                                issue, repo_owner, repo_name, issue_number
+                                            ):
+                                                # Add payment info to success message if found
+                                                if issue.sponsors_tx_id:
+                                                    payment_msg = " Also found Sponsors transaction ID in comments."
+                                                elif issue.bch_tx_id:
+                                                    payment_msg = " Also found BCH transaction ID in comments."
+
+                                messages.success(
+                                    request,
+                                    f"Refreshed linked pull requests for issue #{issue_number}. "
+                                    f"Found {new_count} PRs (was {initial_count} before).{payment_msg}",
+                                )
+                            else:
+                                messages.error(request, "Invalid issue URL format")
+
+                    except GitHubIssue.DoesNotExist:
+                        messages.error(request, "Issue not found")
+                    except Exception as e:
+                        error_message = "Error refreshing linked pull requests"
+                        messages.error(request, f"{error_message}: {str(e)}")
+
+        return redirect("bounty_payouts")
+
+    def fetch_linked_pull_requests(self, issue, owner, repo_name, issue_number):
+        """
+        Fetch pull requests linked to the given issue using GitHub's API Timeline Events
+        that contain the "connected" and "cross-referenced" events in the Development section.
+        """
+        if issue.type != "issue":
+            return  # Only fetch linked PRs for actual issues, not for PRs
+
+        # Import necessary modules
+        import logging
+        import time  # Import time just once
+
+        import requests
+        from django.conf import settings
+        from django.contrib.auth.models import User
+
+        from website.models import Contributor, GitHubIssue, Repo, UserProfile
+
+        logger = logging.getLogger(__name__)
+
+        # First try the timeline API to get connected PRs (official Development section links)
+        timeline_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}/timeline"
+
+        headers = {
+            "Accept": "application/vnd.github.mockingbird-preview+json",  # Preview header for timeline events
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)",  # Good practice to use a proper user agent
+        }
+
+        try:
+            response = requests.get(timeline_url, headers=headers, timeout=10)
+
+            # Handle rate limiting
+            if (
+                response.status_code == 403
+                and "X-RateLimit-Remaining" in response.headers
+                and int(response.headers["X-RateLimit-Remaining"]) == 0
+            ):
+                reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                current_time = int(time.time())
+                minutes_to_reset = max(1, int((reset_time - current_time) / 60))
+
+                logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
+                return
+
+            response.raise_for_status()
+            timeline_events = response.json()
+
+            # Track the PR URLs we've already processed to avoid duplicates
+            processed_pr_urls = set()
+
+            for event in timeline_events:
+                # Look for "connected" and "cross-referenced" events which link PRs to issues
+                if event.get("event") in ["connected", "cross-referenced"]:
+                    # Extract the PR information
+                    if event.get("source") and event["source"].get("type") == "pull_request":
+                        pr_url = event["source"].get("issue", {}).get("html_url")
+
+                        if not pr_url or pr_url in processed_pr_urls:
+                            continue
+
+                        processed_pr_urls.add(pr_url)
+
+                        # Extract PR details
+                        pr_parts = pr_url.split("/")
+                        if len(pr_parts) < 7:
+                            logger.warning(f"Invalid PR URL format: {pr_url}")
+                            continue
+
+                        pr_owner = pr_parts[3]
+                        pr_repo_name = pr_parts[4]
+                        pr_number = pr_parts[6]
+
+                        # Find or create the repo for this PR
+                        pr_repo_url = f"https://github.com/{pr_owner}/{pr_repo_name}"
+                        try:
+                            pr_repo, _ = Repo.objects.get_or_create(
+                                repo_url=pr_repo_url,
+                                defaults={
+                                    "name": pr_repo_name,
+                                    "slug": f"{pr_owner}-{pr_repo_name}",
+                                },
+                            )
+                        except Exception as e:
+                            logger.error(f"Error creating repository for {pr_repo_url}: {str(e)}")
+                            continue
+
+                        # Check if we already have this PR in our database
+                        existing_pr = GitHubIssue.objects.filter(url=pr_url, type="pull_request").first()
+
+                        if existing_pr:
+                            # Link the existing PR to this issue
+                            issue.linked_pull_requests.add(existing_pr)
+
+                            # Update the PR state if needed
+                            try:
+                                pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
+                                pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
+
+                                if pr_response.status_code == 200:
+                                    pr_data = pr_response.json()
+                                    # Update state, merged status, and timestamps
+                                    existing_pr.state = pr_data["state"]
+                                    existing_pr.is_merged = pr_data.get("merged", False)
+                                    if pr_data.get("closed_at"):
+                                        existing_pr.closed_at = pr_data["closed_at"]
+                                    if pr_data.get("merged_at"):
+                                        existing_pr.merged_at = pr_data["merged_at"]
+                                    existing_pr.updated_at = pr_data["updated_at"]
+                                    existing_pr.save()
+                                    logger.info(
+                                        f"Updated PR #{pr_number} state to {pr_data['state']}, merged: {existing_pr.is_merged}"
+                                    )
+                            except Exception as e:
+                                logger.error(f"Error updating PR state for {pr_url}: {str(e)}")
+
+                            logger.info(f"Linked existing PR #{pr_number} to issue #{issue_number}")
+                        else:
+                            # Fetch PR details from GitHub API
+                            pr_api_url = f"https://api.github.com/repos/{pr_owner}/{pr_repo_name}/pulls/{pr_number}"
+                            try:
+                                pr_response = requests.get(pr_api_url, headers=headers, timeout=10)
+
+                                # Handle rate limiting for the PR request
+                                if (
+                                    pr_response.status_code == 403
+                                    and "X-RateLimit-Remaining" in pr_response.headers
+                                    and int(pr_response.headers["X-RateLimit-Remaining"]) == 0
+                                ):
+                                    logger.warning("GitHub API rate limit exceeded while fetching PR details.")
+                                    # Still continue with other PRs
+                                    continue
+
+                                pr_response.raise_for_status()
+                                pr_data = pr_response.json()
+
+                                # Determine PR author
+                                github_username = None
+                                if pr_data.get("user") and pr_data["user"].get("login"):
+                                    github_username = pr_data["user"]["login"]
+
+                                # Try to find user profile matching the PR author
+                                user_profile = None
+                                contributor = None
+
+                                if github_username:
+                                    # First try to match by github_url
+                                    github_url_to_match = f"https://github.com/{github_username}"
+                                    user_profile = UserProfile.objects.filter(github_url=github_url_to_match).first()
+
+                                    # If not found, try to match by username
+                                    if not user_profile:
+                                        user = User.objects.filter(username__iexact=github_username).first()
+                                        if user:
+                                            user_profile = UserProfile.objects.filter(user=user).first()
+
+                                    # If still not found, create/get a contributor
+                                    if not user_profile:
+                                        try:
+                                            contributor, _ = Contributor.objects.get_or_create(
+                                                name=github_username, defaults={"name": github_username}
+                                            )
+                                        except Exception as e:
+                                            logger.error(f"Error creating contributor for {github_username}: {str(e)}")
+                                            contributor = None
+
+                                # Check if PR is merged
+                                is_merged = pr_data.get("merged", False)
+                                merged_at = pr_data.get("merged_at")
+
+                                try:
+                                    # Create the PR object
+                                    new_pr = GitHubIssue(
+                                        issue_id=pr_data["id"],
+                                        title=pr_data["title"],
+                                        body=pr_data.get("body", ""),
+                                        state=pr_data["state"],
+                                        type="pull_request",
+                                        created_at=pr_data["created_at"],
+                                        updated_at=pr_data["updated_at"],
+                                        closed_at=pr_data.get("closed_at"),
+                                        merged_at=merged_at,
+                                        is_merged=is_merged,
+                                        url=pr_url,
+                                        repo=pr_repo,
+                                        user_profile=user_profile,
+                                        contributor=contributor,
+                                    )
+                                    new_pr.save()
+
+                                    # Link the new PR to this issue
+                                    issue.linked_pull_requests.add(new_pr)
+                                    logger.info(f"Created and linked new PR #{pr_number} to issue #{issue_number}")
+                                except Exception as e:
+                                    logger.error(f"Error saving PR {pr_url}: {str(e)}")
+                                    continue
+
+                            except requests.exceptions.RequestException as e:
+                                logger.error(f"Error fetching PR details for {pr_url}: {str(e)}")
+                                continue
+
+            # As a fallback, also check for PRs that mention this issue in their body with closing keywords
+            self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching timeline for issue #{issue_number}: {str(e)}")
+            # Fall back to regex-based search for PRs mentioning this issue
+            self.find_prs_mentioning_issue(issue, owner, repo_name, issue_number)
+
+    def find_prs_mentioning_issue(self, issue, owner, repo_name, issue_number):
+        """
+        Find pull requests that mention this issue using closing keywords
+        like "Closes #123" or "Fixes #123" in their body.
+        """
+        import logging
+
+        logger = logging.getLogger(__name__)
+
+        try:
+            # Look for PRs in our database that mention this issue with closing keywords
+            closing_pattern = (
+                r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|"
+                r"[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#" + str(issue_number)
+            )
+
+            prs = GitHubIssue.objects.filter(
+                type="pull_request",
+                body__iregex=closing_pattern,
+                repo__name=repo_name,
+            )
+
+            # Track which PRs have already been linked to avoid duplicates
+            already_linked_pr_ids = set(issue.linked_pull_requests.values_list("id", flat=True))
+
+            # Only add PRs that aren't already linked
+            for pr in prs:
+                if pr.id not in already_linked_pr_ids:
+                    issue.linked_pull_requests.add(pr)
+                    already_linked_pr_ids.add(pr.id)
+                    logger.info(f"Linked PR #{pr.issue_id} to issue #{issue_number} via mention in PR body")
+
+        except Exception as e:
+            logger.error(f"Error finding PRs mentioning issue #{issue_number}: {str(e)}")
+
+    def extract_payment_info_from_comments(self, issue, owner, repo_name, issue_number):
+        """
+        Search for transaction IDs in GitHub issue comments when an issue has a "paid" tag.
+        Update the GitHubIssue record with the transaction ID and payment date.
+
+        Transaction IDs are typically mentioned in comments with patterns like:
+        - "Transaction ID: abc123"
+        - "txid: abc123"
+        - "Payment sent: abc123"
+        - BCH tx: 2b0a7c0f443ecc950425db4162492363736634c989d8e9152146e6e36049be38
+        - Sponsors tx: ch_3R0guXEQsq43iHhX1vaps2xm
+        """
+        import logging
+        import re
+        from datetime import datetime
+
+        import requests
+        from django.conf import settings
+        from django.utils import timezone
+
+        logger = logging.getLogger(__name__)
+
+        # Check if issue already has payment info
+        if issue.sponsors_tx_id or issue.bch_tx_id or issue.p2p_payment_created_at:
+            # Only skip if we have real transaction IDs (not placeholders)
+            has_sponsors_placeholder = issue.sponsors_tx_id == "from_github_label"
+            has_bch_placeholder = issue.bch_tx_id == "from_github_label"
+
+            # If all payment info is just placeholders, continue processing
+            if has_sponsors_placeholder or has_bch_placeholder:
+                logger.info(f"Issue #{issue_number}: Has placeholder payment info")
+            # If we have real payment info, skip processing
+            elif issue.sponsors_tx_id or issue.bch_tx_id:
+                sponsors_id = issue.sponsors_tx_id or "None"
+                bch_id = issue.bch_tx_id or "None"
+                logger.info(f"Issue #{issue_number}: Already has payment info - sponsors:{sponsors_id}, BCH:{bch_id}")
+                return False
+
+        # Get comments for this issue from GitHub API
+        comments_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}/comments"
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "Authorization": f"token {settings.GITHUB_TOKEN}",
+            "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)",
+        }
+
+        try:
+            logger.info(f"Fetching comments for issue #{issue_number} from {comments_url}")
+            response = requests.get(comments_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            comments = response.json()
+            logger.info(f"Found {len(comments)} comments for issue #{issue_number}")
+
+            # Get issue labels to determine if we should look for BCH or Sponsors transaction IDs
+            search_for_bch = False
+            search_for_sponsors = False
+
+            # Check issue labels
+            issue_url = f"https://api.github.com/repos/{owner}/{repo_name}/issues/{issue_number}"
+            issue_response = requests.get(issue_url, headers=headers, timeout=10)
+            if issue_response.status_code == 200:
+                issue_data = issue_response.json()
+                for label in issue_data.get("labels", []):
+                    label_name = label.get("name", "").lower()
+                    if "bch" in label_name:
+                        search_for_bch = True
+                        logger.info(f"Issue #{issue_number}: Found BCH label")
+                    if "sponsor" in label_name:
+                        search_for_sponsors = True
+                        logger.info(f"Issue #{issue_number}: Found Sponsor label")
+
+            # If no specific labels found, search for both types
+            if not search_for_bch and not search_for_sponsors:
+                search_for_bch = True
+                search_for_sponsors = True
+                logger.info(f"Issue #{issue_number}: No payment labels, searching for both types")
+
+            # Specific patterns for BCH addresses (64-character hex strings)
+            bch_patterns = [
+                r"[Bb][Cc][Hh]\s*(?:[Tt][Xx]|[Tt]ransaction|[Aa]ddress|[Pp]ayment)[:=\s]\s*([a-fA-F0-9]{64})",
+                r"[Bb]itcoin\s*[Cc]ash\s*(?:[Tt][Xx]|[Tt]ransaction|[Aa]ddress|[Pp]ayment)[:=\s]\s*([a-fA-F0-9]{64})",
+                r"[Tt]ransaction\s*(?:[Ii][Dd]|ID|id|hash)[:=\s]\s*([a-fA-F0-9]{64})",
+                r"[Tt][Xx][Ii][Dd][:=\s]\s*([a-fA-F0-9]{64})",
+                # Generic BCH address pattern (64 hex chars)
+                r"(?<![a-zA-Z0-9])([a-fA-F0-9]{64})(?![a-zA-Z0-9])",
+            ]
+
+            # Specific patterns for GitHub Sponsors transactions (format: ch_XXXXXXXXXXXXXXXXXXXX)
+            sponsors_patterns = [
+                r"[Ss]ponsors\s*(?:[Tt][Xx]|[Tt]ransaction|[Pp]ayment)[:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                r"[Gg]itHub\s*[Ss]ponsors\s*(?:[Tt][Xx]|[Tt]ransaction|[Pp]ayment)[:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                r"[Tt]ransaction\s*(?:[Ii][Dd]|ID|id|hash)[:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                r"[Tt][Xx][Ii][Dd][:=\s]\s*(ch_[a-zA-Z0-9]{20,})",
+                # Generic GitHub Sponsors pattern
+                r"(?<![a-zA-Z0-9])(ch_[a-zA-Z0-9]{20,})(?![a-zA-Z0-9])",
+            ]
+
+            # General patterns that could match either type
+            general_patterns = [
+                r"[Pp]ayment\s*(?:[Ss]ent|[Ii][Dd]|ID|id)[:=\s]\s*([a-zA-Z0-9_-]{6,64})",
+                r"[Tt]ransfer\s*[Ii][Dd][:=\s]\s*([a-zA-Z0-9_-]{6,64})",
+                r"[Pp]ayment\s*[Cc]onfirmation[:=\s]\s*([a-zA-Z0-9_-]{6,64})",
+            ]
+
+            # Look for transaction IDs in comments
+            for index, comment in enumerate(comments):
+                comment_body = comment.get("body", "")
+                comment_date = comment.get("created_at")
+
+                # Skip if comment body is empty
+                if not comment_body:
+                    continue
+
+                logger.info(f"Analyzing comment #{index+1} for issue #{issue_number}: {comment_body[:100]}...")
+
+                # Process BCH patterns first if BCH label exists
+                if search_for_bch:
+                    for pattern in bch_patterns:
+                        match = re.search(pattern, comment_body)
+                        if match:
+                            tx_id = match.group(1).strip()
+                            logger.info(f"Found potential BCH transaction ID: {tx_id} using pattern {pattern}")
+
+                            # Validate BCH transaction ID (should be 64 hex chars)
+                            if len(tx_id) == 64 and all(c in "0123456789abcdefABCDEF" for c in tx_id):
+                                issue.bch_tx_id = tx_id
+
+                                # Set payment date
+                                if comment_date:
+                                    try:
+                                        payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                        issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                    except ValueError:
+                                        issue.p2p_payment_created_at = timezone.now()
+
+                                issue.save()
+                                logger.info(f"Set BCH transaction ID: {tx_id}")
+                                return True
+
+                # Process Sponsors patterns if Sponsors label exists
+                if search_for_sponsors:
+                    for pattern in sponsors_patterns:
+                        match = re.search(pattern, comment_body)
+                        if match:
+                            tx_id = match.group(1).strip()
+                            logger.info(f"Found potential Sponsors transaction ID: {tx_id} using pattern {pattern}")
+
+                            # Validate Sponsors transaction ID (should start with ch_)
+                            if tx_id.startswith("ch_") and len(tx_id) >= 10:
+                                issue.sponsors_tx_id = tx_id
+
+                                # Set payment date
+                                if comment_date:
+                                    try:
+                                        payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                        issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                    except ValueError:
+                                        issue.p2p_payment_created_at = timezone.now()
+
+                                issue.save()
+                                logger.info(f"Set Sponsors transaction ID: {tx_id}")
+                                return True
+
+                # Try general patterns as a fallback
+                for pattern in general_patterns:
+                    match = re.search(pattern, comment_body)
+                    if match:
+                        tx_id = match.group(1).strip()
+                        logger.info(f"Found potential transaction ID: {tx_id} using general pattern {pattern}")
+
+                        # Determine tx type based on format and context
+                        if tx_id.startswith("ch_") and search_for_sponsors:
+                            issue.sponsors_tx_id = tx_id
+                            tx_type = "Sponsors"
+                        elif len(tx_id) == 64 and all(c in "0123456789abcdefABCDEF" for c in tx_id) and search_for_bch:
+                            issue.bch_tx_id = tx_id
+                            tx_type = "BCH"
+                        elif "bch" in comment_body.lower() or "bitcoin cash" in comment_body.lower():
+                            issue.bch_tx_id = tx_id
+                            tx_type = "BCH"
+                        elif "sponsor" in comment_body.lower() or "github sponsor" in comment_body.lower():
+                            issue.sponsors_tx_id = tx_id
+                            tx_type = "Sponsors"
+                        else:
+                            # Default based on prioritized label
+                            if search_for_bch and not search_for_sponsors:
+                                issue.bch_tx_id = tx_id
+                                tx_type = "BCH"
+                            else:
+                                issue.sponsors_tx_id = tx_id
+                                tx_type = "Sponsors"
+
+                        # Set payment date
+                        if comment_date:
+                            try:
+                                payment_date = datetime.strptime(comment_date, "%Y-%m-%dT%H:%M:%SZ")
+                                issue.p2p_payment_created_at = timezone.make_aware(payment_date)
+                                logger.info(f"Setting payment date to comment date: {payment_date}")
+                            except ValueError:
+                                issue.p2p_payment_created_at = timezone.now()
+                                logger.info("Failed to parse comment date, using current time")
+
+                        issue.save()
+                        logger.info(f"Set {tx_type} transaction ID: {tx_id}")
+                        return True
+
+            # If no transaction ID found but we have a "paid" tag, just set the payment date
+            logger.info(f"No transaction ID found in comments for issue #{issue_number}")
+            if not issue.p2p_payment_created_at:
+                issue.p2p_payment_created_at = timezone.now()
+                issue.save()
+                logger.info(f"Set payment date for issue #{issue_number} without finding a transaction ID")
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Error extracting payment info from comments for issue #{issue_number}: {str(e)}")
+            return False

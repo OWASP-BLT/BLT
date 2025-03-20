@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load static %}
+{% load custom_filters %}
 {% block title %}
     {{ repo.name }} - Repo Details
 {% endblock title %}
+{% block extra_head %}
+    {{ block.super }}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock extra_head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <!-- Loading Overlay -->
@@ -132,11 +137,13 @@
                     </svg>
                     <h3 class="text-xl font-bold text-gray-900">AI Summary</h3>
                     <div class="refresh-container relative inline-flex ml-2">
-                        <button class="refresh-btn"
+                        <button class="refresh-btn relative"
                                 data-section="ai_summary"
-                                onclick="refreshSection(this, 'ai_summary')"
                                 title="Regenerate AI Summary">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-5 h-5 transition-opacity duration-300"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                         </button>
@@ -186,17 +193,22 @@
                             Archived
                         </span>
                     {% endif %}
-                    <div class="flex items-center gap-2 relative">
+                    <div class="flex flex-wrap items-center gap-2 relative">
                         <span class="text-gray-500">Tags:</span>
-                        {% for tag in repo.tags.all %}
-                            <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
-                        {% endfor %}
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in repo.tags.all %}
+                                <span class="px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
                         <div class="refresh-container relative inline-flex">
-                            <button class="refresh-btn ml-2"
+                            <button class="refresh-btn relative ml-2"
                                     data-section="basic"
                                     onclick="refreshSection(this, 'basic')"
                                     title="Refresh basic information">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-5 h-5 transition-opacity duration-300"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
                             </button>
@@ -283,11 +295,14 @@
                                 Activity Metrics
                             </h2>
                             <div class="refresh-container relative inline-flex">
-                                <button class="refresh-btn ml-2"
+                                <button class="refresh-btn relative ml-2"
                                         data-section="metrics"
                                         onclick="refreshSection(this, 'metrics')"
                                         title="Refresh metrics">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 transition-opacity duration-300"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
                                 </button>
@@ -391,6 +406,125 @@
                         </div>
                     </div>
                 </section>
+                <!-- Statistics Charts -->
+                {% if show_repo_stats %}
+                    <section class="bg-white py-6 px-4 rounded-lg shadow-lg">
+                        <h2 class="text-pink-500 font-bold text-lg">
+                            {{ repo.contributor_count|intcomma }} Contributions in the Last 30 Days
+                        </h2>
+                        <div class="grid grid-cols-3 gap-2 mt-4">
+                            <div class="p-4 border rounded-lg">
+                                <span class="text-blue-500 text-sm flex w-full items-center justify-start">
+                                    <p class="mr-2" id="open-closed-issue-ratio"></p>
+                                    <p>Opened/Closed Issue Ratio</p>
+                                </span>
+                                <span class="text-xs flex justify-between items-center mt-3">
+                                    <p class="text-gray-400">
+                                        {{ issue_ratio_change|floatformat:2 }} ({{ issue_ratio_percentage_change|floatformat:2 }}%)
+                                    </p>
+                                    <p class="{% if issue_ratio_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
+                                        {% if issue_ratio_change >= 0 %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                        past month
+                                    </p>
+                                </span>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <span class="text-purple-500 text-sm flex w-full items-center justify-start">
+                                    <p class="mr-2">{{ repo.open_pull_requests|intcomma }}</p>
+                                    <p>Pull Requests Opened</p>
+                                </span>
+                                <span class="text-xs flex justify-between items-center mt-3">
+                                    <p class="text-gray-400">{{ pr_change|intcomma }} ({{ pr_percentage_change|floatformat:2 }}%)</p>
+                                    <p class="{% if pr_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
+                                        {% if pr_change >= 0 %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                        past month
+                                    </p>
+                                </span>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <span class="text-blue-500 text-sm flex w-full items-center justify-start">
+                                    <p class="mr-2">{{ repo.commit_count|intcomma }}</p>
+                                    <p>Commits</p>
+                                </span>
+                                <span class="text-xs flex justify-between items-center mt-3">
+                                    <p class="text-gray-400">{{ commit_change|intcomma }} ({{ commit_percentage_change|floatformat:2 }}%)</p>
+                                    <p class="{% if commit_change >= 0 %}text-green-500{% else %}text-red-500{% endif %} flex items-center">
+                                        {% if commit_change >= 0 %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% else %}
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        {% endif %}
+                                        past month
+                                    </p>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 mt-6">
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex items-center justify-start">
+                                    <span class="p-2 rounded-full mr-2">
+                                        <svg class="w-5 h-5 text-blue-500"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </span>
+                                    <p class="text-blue-500">Issues</p>
+                                </div>
+                                <canvas id="issuesChart"></canvas>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex items-center justify-start">
+                                    <span class="p-2 rounded-full">
+                                        <svg class="w-5 h-5 text-purple-500"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                        </svg>
+                                    </span>
+                                    <p class="text-purple-500">Pull Requests</p>
+                                </div>
+                                <canvas id="prChart"></canvas>
+                            </div>
+                            <div class="p-4 border rounded-lg">
+                                <div class="flex items-center justify-start">
+                                    <span class="p-2 rounded-full">
+                                        <svg class="w-5 h-5 text-orange-500"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </span>
+                                    <p class="text-orange-500">Pushes & Commits</p>
+                                </div>
+                                <canvas id="commitsChart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
                 <!-- Community Section -->
                 <section class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
                     <div class="p-6">
@@ -404,11 +538,14 @@
                                 Community
                             </h2>
                             <div class="refresh-container relative inline-flex">
-                                <button class="refresh-btn"
+                                <button class="refresh-btn relative ml-2"
                                         data-section="community"
                                         onclick="refreshSection(this, 'community')"
                                         title="Refresh community data">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 transition-opacity duration-300"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
                                 </button>
@@ -497,11 +634,14 @@
                             <div class="flex items-center gap-4">
                                 <!-- Add refresh button container -->
                                 <div class="refresh-container relative inline-flex">
-                                    <button class="refresh-btn"
+                                    <button class="refresh-btn relative ml-2"
                                             data-section="contributor_stats"
                                             onclick="refreshSection(this, 'contributor_stats')"
                                             title="Refresh contributor statistics">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 transition-opacity duration-300"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                     </button>
@@ -634,11 +774,14 @@
                                 Technical Overview
                             </h2>
                             <div class="refresh-container relative inline-flex">
-                                <button class="refresh-btn"
+                                <button class="refresh-btn relative ml-2"
                                         data-section="technical"
                                         onclick="refreshSection(this, 'technical')"
-                                        title="Refresh technical data">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        title="Refresh technical information">
+                                    <svg class="w-5 h-5 transition-opacity duration-300"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
                                 </button>
@@ -760,7 +903,7 @@
                                                         {% widthratio milestone.closed_issues total_issues 100 as percentage %}
                                                         <div class="flex items-center">
                                                             <div class="w-full bg-gray-200 rounded-full h-3 mr-2 relative">
-                                                                <div class="bg-blue-600 h-3 rounded-full absolute top-0 left-0 progress-bar"
+                                                                <div class="bg-[#e74c3c] h-3 rounded-full absolute top-0 left-0 progress-bar"
                                                                      data-percentage="{{ percentage }}"></div>
                                                             </div>
                                                             <span class="text-sm font-medium text-gray-700">{{ percentage }}%</span>
@@ -980,361 +1123,355 @@
             </div>
         </div>
     </div>
-    <style>
-.refresh_spinner {
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    width: 1.5rem;
-    height: 1.5rem;
-    animation: spin 1s linear infinite;
-}
-.refresh-container {
-    position: relative;
-}
-.refresh-message {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-    white-space: nowrap;
-    z-index: 10;
-}
-    </style>
-{% endblock content %}
-{% block after_js %}
-    <script>
-    function copyToClipboard(elementId) {
-        const element = document.getElementById(elementId);
-        
-        // Select the text
-        element.select();
-        element.setSelectionRange(0, 99999); // For mobile devices
-
-        // Copy the text
-        try {
-            navigator.clipboard.writeText(element.value).then(() => {
-                // Get the button
-                const button = element.nextElementSibling;
-                const originalText = button.textContent;
-                
-                // Change button style to show success
-                button.textContent = 'Copied!';
-                button.classList.remove('bg-red-500', 'hover:bg-red-600');
-                button.classList.add('bg-green-500', 'hover:bg-green-600');
-                
-                // Reset button after 2 seconds
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.classList.remove('bg-green-500', 'hover:bg-green-600');
-                    button.classList.add('bg-red-500', 'hover:bg-red-600');
-                }, 2000);
-            });
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-        }
-    }
-
-    const refreshSection = async (button, section) => {
-    if (button.classList.contains('refresh_spinner')) {
-        return;
-    }
-
-    // Show loading state
-    button.classList.add('refresh_spinner');
-    
-    // Create message container if it doesn't exist
-    const container = button.closest('.refresh-container');
-    let messageContainer = container.querySelector('.refresh-message');
-    if (!messageContainer) {
-        messageContainer = document.createElement('div');
-        messageContainer.className = 'refresh-message';
-        container.appendChild(messageContainer);
-    }
-
-    try {
-        const response = await fetch('', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: `section=${section}`
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || 'Failed to refresh data');
-        }
-
-        if (section === 'ai_summary') {
-            // Update AI summary content
-            const summaryContainer = document.getElementById('ai-summary-content');
-            if (summaryContainer) {
-                summaryContainer.innerHTML = data.data.ai_summary || '<p class="text-gray-600 italic">AI summary unavailable for this repo.</p>';
-            }
-
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
-        } else if (section === 'basic') {
-            // Update stats with new data
-            const updates = {
-                'stars': data.data.stars,
-                'forks': data.data.forks,
-                'watchers': data.data.watchers,
-                'network': data.data.network_count,
-                'subscribers': data.data.subscribers_count,
-                'last-updated': `Updated ${data.data.last_updated.replace('\u00a0', ' ')}`
-            };
-
-            // Update each stat if the element exists
-            for (const [key, value] of Object.entries(updates)) {
-                const element = document.querySelector(`[data-stat="${key}"]`);
-                if (element) {
-                    element.textContent = value;
-                }
-            }
-
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
-        } else if (section === 'metrics') {
-            // Update metrics with new data
-            const updates = {
-                'open_issues': data.data.open_issues,
-                'closed_issues': data.data.closed_issues,
-                'total_issues': data.data.total_issues,
-                'open_pull_requests': data.data.open_pull_requests,
-                'commit_count': data.data.commit_count,
-                'last_commit_date': data.data.last_commit_date
-            };
-
-            // Update each stat if the element exists
-            for (const [key, value] of Object.entries(updates)) {
-                const element = document.querySelector(`[data-stat="${key}"]`);
-                if (element) {
-                    element.textContent = value.toLocaleString();
-                }
-            }
-
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
-        } else if (section === 'technical') {
-            // Update technical details with new data
-            const technicalElements = {
-                'primary_language': data.data.primary_language,
-                'size': `${(data.data.size / 1024).toFixed(2)} MB`,
-                'license': data.data.license,
-                'release_name': data.data.release_name,
-                'release_date': data.data.release_date,
-                'last_commit_date': data.data.last_commit_date
-            };
-
-            // Update each technical element
-            for (const [key, value] of Object.entries(technicalElements)) {
-                const element = document.querySelector(`[data-tech="${key}"]`);
-                if (element) {
-                    element.textContent = value;
-                }
-            }
-
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
-        } else if (section === 'community') {
-            const contributorsContainer = document.querySelector('.contributors-grid');
-            if (!contributorsContainer) return;
-
-            const communityData = data.data; 
-
-            // Update total count
-            const totalCountEl = document.querySelector('[data-community="total-count"]');
-            if (totalCountEl) {
-                totalCountEl.textContent = `${communityData.total_contributors.toLocaleString()} total contributors`;
-            }
-
-            // Update contributors grid
-            let contributorsHtml = '';
-            communityData.contributors.forEach(contributor => {
-                contributorsHtml += `
-                    <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors group">
-                        <img src="${contributor.avatar_url}" width="30" height="30" alt="${contributor.name}" class="w-12 h-12 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform">
-                        <div class="flex-grow">
-                            <div class="font-medium text-gray-900">
-                                ${contributor.name}
-                                ${contributor.verified ? '<span class="ml-1 text-green-500" title="Verified Contributor">✓</span>' : ''}
-                            </div>
-                            <div class="text-sm text-gray-500">${contributor.contributions.toLocaleString()} commits</div>
-                        </div>
-                        <a href="${contributor.github_url}" target="_blank" class="p-2 text-gray-400 hover:text-gray-600">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.237 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                            </svg>
-                        </a>
+    <!-- GitHub Issues and PRs Section -->
+    <div class="mt-10 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center">
+                <svg class="w-6 h-6 text-[#e74c3c] mr-2"
+                     fill="currentColor"
+                     viewBox="0 0 24 24">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+                <h2 class="text-2xl font-bold text-gray-900">GitHub Issues & Pull Requests</h2>
+            </div>
+            <button id="refresh-github-data"
+                    data-repo-id="{{ repo.id }}"
+                    class="inline-flex items-center px-4 py-2 bg-[#e74c3c] hover:bg-[#c0392b] text-white rounded-lg transition-colors">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh Data
+            </button>
+        </div>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Open Issues</span>
+                    <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold mt-2" id="issues-count">{{ github_issues_count }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Pull Requests</span>
+                    <svg class="w-5 h-5 text-purple-500"
+                         fill="currentColor"
+                         viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold mt-2" id="prs-count">{{ github_prs_count }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Bounty Issues</span>
+                    <svg class="w-5 h-5 text-green-500"
+                         fill="currentColor"
+                         viewBox="0 0 20 20">
+                        <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <p class="text-2xl font-bold mt-2" id="dollar-tag-count">{{ dollar_tag_issues_count }}</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Issues Section -->
+            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Issues</h3>
+                        <a href="{{ repo.repo_url }}/issues"
+                           target="_blank"
+                           class="text-sm text-[#e74c3c] hover:underline">View All</a>
                     </div>
-                `;
-            });
-            
-            contributorsContainer.innerHTML = contributorsHtml;
-
-            // Show success message
-            messageContainer.className = 'refresh-message text-sm text-green-600';
-            messageContainer.textContent = data.message;
-        } else if (section === 'contributor_stats') {
-                const statsTableBody = document.querySelector('.contributor-stats-table tbody');
-                if (!statsTableBody) return;
-
-                // Clear existing table content
-                statsTableBody.innerHTML = '';
-
-                // Populate new data
-                if (data.data.stats && data.data.stats.length > 0) {
-                    data.data.stats.forEach(stat => {
-                        const row = document.createElement('tr');
-                        row.className = 'hover:bg-gray-50 transition-colors';
-                        row.innerHTML = `
-                            <td class="px-4 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <img class="h-8 w-8 rounded-full" width="20" height="20" src="${stat.contributor.avatar_url}" alt="${stat.contributor.name}">
-                                    <div class="ml-3">
-                                        <div class="text-sm font-medium text-gray-900">${stat.contributor.name}</div>
-                                        <div class="text-sm text-gray-500">@${stat.contributor.github_id}</div>
+                </div>
+                {% if github_issues %}
+                    <div class="divide-y divide-gray-200">
+                        {% for issue in github_issues %}
+                            <div class="p-4 hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <span class="inline-block w-3 h-3 rounded-full {% if issue.state == 'open' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <a href="{{ issue.url }}"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline font-medium">{{ issue.title }}</a>
+                                        <div class="mt-1 text-sm text-gray-600">#{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}</div>
+                                        {% if issue.has_dollar_tag %}
+                                            <span class="mt-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">$ Bounty</span>
+                                        {% endif %}
                                     </div>
                                 </div>
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center text-emerald-600 font-medium">
-                                ${stat.commits ? stat.commits.toLocaleString() : '0'}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center text-blue-600 font-medium">
-                                ${stat.issues_opened ? stat.issues_opened.toLocaleString() : '0'}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center text-purple-600 font-medium">
-                                ${stat.issues_closed ? stat.issues_closed.toLocaleString() : '0'}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center text-orange-600 font-medium">
-                                ${stat.pull_requests ? stat.pull_requests.toLocaleString() : '0'}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center text-cyan-600 font-medium">
-                                ${stat.comments ? stat.comments.toLocaleString() : '0'}
-                            </td>
-                            <td class="px-4 py-4 whitespace-nowrap text-center">
-                                <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stat.impact_level.class}">
-                                    ${stat.impact_level.text}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-6 text-center">
+                        <p class="text-gray-600">No issues found for this repository.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Pull Requests Section -->
+            <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Pull Requests</h3>
+                        <a href="{{ repo.repo_url }}/pulls"
+                           target="_blank"
+                           class="text-sm text-[#e74c3c] hover:underline">View All</a>
+                    </div>
+                </div>
+                {% if github_prs %}
+                    <div class="divide-y divide-gray-200">
+                        {% for pr in github_prs %}
+                            <div class="p-4 hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 mt-1">
+                                        <span class="inline-block w-3 h-3 rounded-full {% if pr.state == 'open' %}bg-green-500{% elif pr.is_merged %}bg-purple-500{% else %}bg-red-500{% endif %}"></span>
+                                    </div>
+                                    <div class="ml-3 flex-1">
+                                        <a href="{{ pr.url }}"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline font-medium">{{ pr.title }}</a>
+                                        <div class="mt-1 text-sm text-gray-600">
+                                            #{{ pr.issue_id }} opened {{ pr.created_at|date:"M d, Y" }}
+                                            {% if pr.is_merged %}
+                                                <span class="text-purple-600 ml-2">Merged</span>
+                                            {% elif pr.state == 'closed' %}
+                                                <span class="text-red-600 ml-2">Closed</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </div>
-                            </td>
-                        `;
-                        statsTableBody.appendChild(row);
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-6 text-center">
+                        <p class="text-gray-600">No pull requests found for this repository.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Bounties Section -->
+        {% if dollar_tag_issues %}
+            <div class="mt-8 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Issues with Bounties</h3>
+                        <a href="{{ repo.repo_url }}/issues?q=is%3Aissue+label%3A%24"
+                           target="_blank"
+                           class="text-sm text-[#e74c3c] hover:underline">View All</a>
+                    </div>
+                </div>
+                <div class="divide-y divide-gray-200">
+                    {% for issue in dollar_tag_issues %}
+                        <div class="p-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 mt-1">
+                                    <span class="inline-block w-3 h-3 rounded-full {% if issue.state == 'open' %}bg-green-500{% else %}bg-red-500{% endif %}"></span>
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <a href="{{ issue.url }}"
+                                       target="_blank"
+                                       class="text-[#e74c3c] hover:underline font-medium">{{ issue.title }}</a>
+                                    <div class="mt-1 text-sm text-gray-600">#{{ issue.issue_id }} opened {{ issue.created_at|date:"M d, Y" }}</div>
+                                    <span class="mt-2 inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">$ Bounty</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <div class="mt-6 text-sm text-gray-500 text-right" id="last-updated-text">
+            Last updated: {{ repo.last_updated|date:"M d, Y H:i" }}
+        </div>
+    </div>
+{% endblock content %}
+{% block after_js %}
+    {{ block.super }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshButton = document.getElementById('refresh-github-data');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            if (refreshButton) {
+                refreshButton.addEventListener('click', function() {
+                    const repoId = this.getAttribute('data-repo-id');
+                    
+                    // Show loading overlay
+                    if (loadingOverlay) {
+                        loadingOverlay.classList.remove('hidden');
+                    }
+                    
+                    // Disable the button to prevent multiple clicks
+                    refreshButton.disabled = true;
+                    refreshButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    // Get CSRF token
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    
+                    // Make the AJAX request to refresh the data
+                    fetch(`/repository/${repoId}/refresh/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': csrfToken,
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Network response was not ok: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Success:', data);
+                        
+                        // Update the counts
+                        const issuesCount = document.getElementById('issues-count');
+                        const prsCount = document.getElementById('prs-count');
+                        const dollarTagCount = document.getElementById('dollar-tag-count');
+                        
+                        if (issuesCount) issuesCount.textContent = data.data.issues_count;
+                        if (prsCount) prsCount.textContent = data.data.prs_count;
+                        if (dollarTagCount) dollarTagCount.textContent = data.data.dollar_tag_count;
+                        
+                        // Update the last updated text
+                        const lastUpdatedText = document.getElementById('last-updated-text');
+                        if (lastUpdatedText && data.data.last_updated) {
+                            const lastUpdated = new Date(data.data.last_updated);
+                            lastUpdatedText.textContent = `Last updated: ${lastUpdated.toLocaleString()}`;
+                        }
+                        
+                        // Show success message
+                        alert('Repository data refreshed successfully! Reload the page to see the updated issues and PRs.');
+                        
+                        // Optional: Reload the page to show updated data
+                        // window.location.reload();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while refreshing the repository data. Please try again later.');
+                    })
+                    .finally(() => {
+                        // Hide loading overlay
+                        if (loadingOverlay) {
+                            loadingOverlay.classList.add('hidden');
+                        }
+                        
+                        // Re-enable the button
+                        refreshButton.disabled = false;
+                        refreshButton.classList.remove('opacity-50', 'cursor-not-allowed');
                     });
-                } else {
-                    statsTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
-                                No contributor statistics available for this period
-                            </td>
-                        </tr>
-                    `;
-                }
-
-                // Show success message
-                messageContainer.className = 'refresh-message text-sm text-green-600';
-                messageContainer.textContent = data.message || 'Contributor statistics refreshed successfully';
+                });
             }
-        
-    } catch (error) {
-        console.error('Error:', error);
-        messageContainer.className = 'refresh-message text-sm text-red-600';
-        messageContainer.textContent = error.message;
-    } finally {
-        // Remove loading state
-        button.classList.remove('refresh_spinner');
-        
-        // Remove message after 5 seconds
-        setTimeout(() => {
-            if (messageContainer && messageContainer.parentElement) {
-                messageContainer.remove();
-            }
-        }, 5000);
-    }
-};
-
-function updateContributorStats(timePeriod, page = 1) {
-    // Show loading state
-    const tableContainer = document.querySelector('.contributor-stats-table');
-    if (!tableContainer) return;  // Guard clause
-    
-    tableContainer.classList.add('opacity-50');
-    
-    // Prepare form data
-    const formData = new FormData();
-    formData.append('time_period', timePeriod);
-    formData.append('page', page);
-    
-    // Get the current URL
-    const currentUrl = new URL(window.location.href);
-    
-    // Update query parameters
-    currentUrl.searchParams.set('time_period', timePeriod);
-    currentUrl.searchParams.set('page', page);
-    
-    // Make AJAX request
-    fetch(window.location.pathname, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.text();
-    })
-    .then(html => {
-        tableContainer.innerHTML = html;
-        // Update URL without page reload
-        window.history.pushState({}, '', currentUrl.toString());
-        
-        // Re-attach event listeners to new pagination buttons
-        attachPaginationListeners();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        tableContainer.classList.remove('opacity-50');
-    })
-    .finally(() => {
-        tableContainer.classList.remove('opacity-50');
-    });
-}
-
-// Function to attach pagination event listeners
-function attachPaginationListeners() {
-    document.querySelectorAll('.pagination-link').forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            const page = e.target.dataset.page;
-            const timePeriod = document.getElementById('time-period-select').value;
-            updateContributorStats(timePeriod, page);
         });
-    });
-}
-
-// Initial attachment of listeners
-document.addEventListener('DOMContentLoaded', attachPaginationListeners);
-
-// Initialize progress bars
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.progress-bar').forEach(function(bar) {
-        const percentage = bar.getAttribute('data-percentage') + '%';
-        bar.style.width = percentage;
-    });
-    
-    // Initial attachment of listeners (existing code)
-    attachPaginationListeners();
-});
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const open_issues = {{repo.open_issues}};
+        const closed_issues = {{repo.closed_issues}};
+
+        const open_closed_issue_ratio = (open_issues / closed_issues).toFixed(2);
+        const open_closed_issue_ratio_elem = document.getElementById("open-closed-issue-ratio");
+        open_closed_issue_ratio_elem.innerHTML = open_closed_issue_ratio;
+    </script>
+    <script>
+        const issuesCtx = document.getElementById('issuesChart').getContext('2d');
+
+        new Chart(issuesCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ issues_labels|to_json }},
+                datasets: [{
+                    label: 'Opened',
+                    data: {{ issues_opened|to_json }},
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Closed',
+                    data: {{ issues_closed|to_json }},
+                    backgroundColor: 'rgba(29, 78, 216, 0.5)',
+                    borderColor: 'rgba(29, 78, 216, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        display: false
+                    }
+                }
+            },
+        });
+
+        const prCtx = document.getElementById('prChart').getContext('2d');
+        new Chart(prCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ pr_labels|to_json }},
+                datasets: [{
+                    label: 'Opened',
+                    data: {{ pr_opened_data|to_json }},
+                    backgroundColor: 'rgba(192, 38, 211, 0.5)',
+                    borderColor: 'rgba(192, 38, 211, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Closed',
+                    data: {{ pr_closed_data|to_json }},
+                    backgroundColor: 'rgba(109, 40, 217, 0.5)',
+                    borderColor: 'rgba(109, 40, 217, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        display: false
+                    }
+                }
+            },
+        });
+
+        const commitsCtx = document.getElementById('commitsChart').getContext('2d');
+        new Chart(commitsCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ commits_labels|to_json }},
+                datasets: [{
+                    label: 'Pushes',
+                    data: {{ pushes_data }},
+                    backgroundColor: 'rgba(234, 88, 12, 0.5)',
+                    borderColor: 'rgba(234, 88, 12, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Commits',
+                    data: {{ commits_data|to_json }},
+                    backgroundColor: 'rgba(194, 65, 12, 0.5)',
+                    borderColor: 'rgba(194, 65, 12, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        display: false
+                    }
+                }
+            },
+        });
+    </script>
+    <script src="{% static 'js/repo_detail.js' %}"></script>
 {% endblock after_js %}

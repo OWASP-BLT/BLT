@@ -1,34 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="X-UA-Compatible" content="ie=edge">
-        <meta name="description"
-              content="View domain details, including domain name, URL, organization information, and social media links. Keep track of all your domains easily.">
-        <meta name="keywords"
-              content="view domain, domain details, domain information, domain URL, organization information, social media links">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
-                integrity="sha384-zVyRZ9eQ45iRS7ZRZQSFKGJpypyxssU6clBCysSqzjmdGWNn8//uC8dh9DabpAbK"
-                crossorigin="anonymous"></script>
-        <link rel="stylesheet"
-              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-              integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
-              crossorigin="anonymous"
-              referrerpolicy="no-referrer" />
-        <title>Domain Info</title>
-    </head>
-    <body>
-        <style>
-            .bottom-right {
-                position: absolute;
-                bottom: 10px;
-                right: 15px;
-            }
-        </style>
-        <div class="bottom-right">
+{% extends "base.html" %}
+{% block head %}
+    Domain Info
+{% endblock head %}
+{% block description %}
+    View domain details, including domain name, URL, organization information, and social media links. Keep track of all your domains easily.
+{% endblock description %}
+{% block keywords %}
+    view domain, domain details, domain information, domain URL, organization information, social media links
+{% endblock keywords %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div>
+        <div class="fixed bottom-2.5 right-3.75">
             <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/view_domains.html">
                 <i class="fab fa-github"></i>
             </a>
@@ -110,10 +93,9 @@
                                          data-name="Layer 1"
                                          xmlns="http://www.w3.org/2000/svg"
                                          viewBox="0 0 506.86 506.86">
-                                        <defs><style>.cls-1{fill:#1877f2;}.cls-2{fill:#fff;}</style></defs>
-                                        <path class="cls-1" d="M506.86,253.43C506.86,113.46,393.39,0,253.43,0S0,113.46,0,253.43C0,379.92,92.68,484.77,213.83,503.78V326.69H149.48V253.43h64.35V197.6c0-63.52,37.84-98.6,95.72-98.6,27.73,0,56.73,5,56.73,5v62.36H334.33c-31.49,0-41.3,19.54-41.3,39.58v47.54h70.28l-11.23,73.26H293V503.78C414.18,484.77,506.86,379.92,506.86,253.43Z">
+                                        <path class="fill-[#1877f2]" d="M506.86,253.43C506.86,113.46,393.39,0,253.43,0S0,113.46,0,253.43C0,379.92,92.68,484.77,213.83,503.78V326.69H149.48V253.43h64.35V197.6c0-63.52,37.84-98.6,95.72-98.6,27.73,0,56.73,5,56.73,5v62.36H334.33c-31.49,0-41.3,19.54-41.3,39.58v47.54h70.28l-11.23,73.26H293V503.78C414.18,484.77,506.86,379.92,506.86,253.43Z">
                                         </path>
-                                        <path class="cls-2" d="M352.08,326.69l11.23-73.26H293V205.89c0-20,9.81-39.58,41.3-39.58h31.95V104s-29-5-56.73-5c-57.88,0-95.72,35.08-95.72,98.6v55.83H149.48v73.26h64.35V503.78a256.11,256.11,0,0,0,79.2,0V326.69Z">
+                                        <path class="fill-white" d="M352.08,326.69l11.23-73.26H293V205.89c0-20,9.81-39.58,41.3-39.58h31.95V104s-29-5-56.73-5c-57.88,0-95.72,35.08-95.72,98.6v55.83H149.48v73.26h64.35V503.78a256.11,256.11,0,0,0,79.2,0V326.69Z">
                                         </path>
                                     </svg>
                                 </a>
@@ -399,7 +381,10 @@
                 </div>
             </div>
         </div>
-        <script>
+    </div>
+{% endblock content %}
+{% block scripts %}
+    <script>
             document.addEventListener('DOMContentLoaded', function() {
             const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart|escapejs | safe }}');
 
@@ -438,6 +423,5 @@
                 configVerticalBarChart
             );
         });
-        </script>
-    </body>
-</html>
+    </script>
+{% endblock scripts %}

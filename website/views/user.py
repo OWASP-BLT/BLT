@@ -22,6 +22,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView, View
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -41,8 +42,10 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Points,
     Tag,
+    Thread,
     User,
     UserBadge,
     UserProfile,
@@ -507,7 +510,8 @@ class LeaderboardBase:
 
 class GlobalLeaderboardView(LeaderboardBase, ListView):
     """
-    Returns: All users:score data in descending order
+    Returns: All users:score data in descending order,
+    including pull requests, code reviews, top visitors, and top streakers
     """
 
     model = User
@@ -521,9 +525,10 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["leaderboard"] = self.get_leaderboard()[:25]  # Limit to 25 entries
 
-        # Get pull request leaderboard
+        context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
+
+        # Pull Request Leaderboard
         pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request", is_merged=True)
             .values(
@@ -536,7 +541,7 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
         )
         context["pr_leaderboard"] = pr_leaderboard
 
-        # Get Reviewed Pull Request Leaderboard
+        # Reviewed PR Leaderboard
         reviewed_pr_leaderboard = (
             GitHubIssue.objects.filter(type="pull_request")
             .values(
@@ -548,6 +553,15 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
             .order_by("-total_reviews")[:10]
         )
         context["code_review_leaderboard"] = reviewed_pr_leaderboard
+
+        # Top visitors leaderboard
+        top_visitors = (
+            UserProfile.objects.select_related("user")
+            .filter(daily_visit_count__gt=0)
+            .order_by("-daily_visit_count")[:10]
+        )
+
+        context["top_visitors"] = top_visitors
 
         return context
 
@@ -644,7 +658,7 @@ class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
         response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
         token = Token.objects.get(key=response.data["token"])
-        return Response({"token": token.key, "id": token.user_id})
+        return Response({"key": token.key, "id": token.user_id})
 
 
 def invite_friend(request):
@@ -1028,3 +1042,166 @@ class UserChallengeListView(View):
             "user_challenges.html",
             {"challenges": challenges, "user_challenges": user_challenges},
         )
+
+
+@login_required
+def messaging_home(request):
+    threads = Thread.objects.filter(participants=request.user).order_by("-updated_at")
+    return render(request, "messaging.html", {"threads": threads})
+
+
+def start_thread(request, user_id):
+    if request.method == "POST":
+        other_user = get_object_or_404(User, id=user_id)
+
+        # Check if a thread already exists between the two users
+        thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
+
+        # Flag if this is a new thread (for sending email)
+        is_new_thread = not thread
+
+        if not thread:
+            # Create a new thread
+            thread = Thread.objects.create()
+            thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+
+            # Send email notification to the recipient for new thread
+            if other_user.email:
+                subject = f"New encrypted chat from {request.user.username} on OWASP BLT"
+                chat_url = request.build_absolute_uri(reverse("messaging"))
+
+                # Create context for the email template
+                context = {
+                    "sender_username": request.user.username,
+                    "recipient_username": other_user.username,
+                    "chat_url": chat_url,
+                }
+
+                # Render the email content
+                msg_plain = render_to_string("email/new_chat.html", context)
+                msg_html = render_to_string("email/new_chat.html", context)
+
+                # Send the email
+                send_mail(
+                    subject,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [other_user.email],
+                    html_message=msg_html,
+                )
+
+        return JsonResponse({"success": True, "thread_id": thread.id})
+
+    return JsonResponse({"success": False, "error": "Invalid request"}, status=400)
+
+
+@login_required
+def view_thread(request, thread_id):
+    thread = get_object_or_404(Thread, id=thread_id)
+    messages = thread.messages.all().order_by("timestamp")
+    # Convert the QuerySet to a list of dictionaries using values()
+    data = list(messages.values("username", "content", "timestamp"))
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_public_key(request, thread_id):
+    # Get the thread
+    thread = get_object_or_404(Thread, id=thread_id)
+
+    # Get the other participant in the thread (exclude the logged-in user)
+    other_participants = thread.participants.exclude(id=request.user.id)
+    if not other_participants.exists():
+        return JsonResponse({"error": "No other participant found"}, status=404)
+
+    other_user = other_participants.first()
+    # Access the public_key from the UserProfile
+    try:
+        public_key = other_user.userprofile.public_key
+    except Exception:
+        return JsonResponse({"error": "User profile not found"}, status=404)
+
+    if not public_key:
+        return JsonResponse({"error": "User has not provided a public key"}, status=404)
+
+    return JsonResponse({"public_key": public_key})
+
+
+@login_required
+@require_http_methods(["POST"])
+def set_public_key(request):
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    public_key = data.get("public_key")
+    if not public_key:
+        return JsonResponse({"error": "Public key is required"}, status=400)
+
+    # Update the public_key on the user's profile
+    profile = request.user.userprofile
+    profile.public_key = public_key
+    profile.save()
+
+    return JsonResponse({"success": True, "public_key": profile.public_key})
+
+
+@login_required
+def fetch_notifications(request):
+    notifications = Notification.objects.filter(user=request.user, is_deleted=False).order_by("is_read", "-created_at")
+
+    notifications_data = [
+        {
+            "id": notification.id,
+            "message": notification.message,
+            "created_at": notification.created_at,
+            "is_read": notification.is_read,
+            "notification_type": notification.notification_type,
+            "link": notification.link,
+        }
+        for notification in notifications
+    ]
+
+    return JsonResponse({"notifications": notifications_data}, safe=False)
+
+
+@login_required
+def mark_as_read(request):
+    if request.method == "PATCH":
+        try:
+            if request.body and request.content_type == "application/json":
+                try:
+                    json.loads(request.body)
+                except json.JSONDecodeError:
+                    return JsonResponse({"status": "error", "message": "Invalid JSON in request body"}, status=400)
+
+            notifications = Notification.objects.filter(user=request.user, is_read=False)
+            notifications.update(is_read=True)
+            return JsonResponse({"status": "success"})
+        except Exception as e:
+            logger.error(f"Error marking notifications as read: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+            )
+
+
+@login_required
+def delete_notification(request, notification_id):
+    if request.method == "DELETE":
+        try:
+            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+
+            notification.is_deleted = True
+            notification.save()
+
+            return JsonResponse({"status": "success", "message": "Notification deleted successfully"})
+        except Exception as e:
+            logger.error(f"Error deleting notification: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                status=400,
+            )
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)

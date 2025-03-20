@@ -13,6 +13,9 @@ from django.views.decorators.http import require_GET, require_POST
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile, EducationalVideo
 from website.forms import VideoSubmissionForm
+from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
+from website.utils import validate_file_type
+
 
 def education_home(request):
     template = "education/education.html"
@@ -241,6 +244,7 @@ def edit_section(request, section_id):
 
 
 @instructor_required
+@require_POST
 def delete_section(request, section_id):
     """Delete a section and all its lectures"""
     section = get_object_or_404(Section, id=section_id)
@@ -496,7 +500,16 @@ def create_or_update_course(request):
                 return JsonResponse(
                     {"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400
                 )
-
+            if thumbnail:
+                is_valid, error_message = validate_file_type(
+                    request,
+                    "thumbnail",
+                    allowed_extensions=["jpg", "jpeg", "png"],
+                    allowed_mime_types=["image/jpeg", "image/png"],
+                    max_size=5 * 1024 * 1024,  # 5MB
+                )
+                if not is_valid:
+                    return JsonResponse({"success": False, "message": error_message}, status=400)
             user = request.user
             user_profile = UserProfile.objects.get(user=user)
 

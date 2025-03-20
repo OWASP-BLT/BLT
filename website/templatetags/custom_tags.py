@@ -1,3 +1,4 @@
+import json
 import random
 from datetime import timedelta
 
@@ -67,19 +68,32 @@ def multiply(value, arg):
 
 
 @register.simple_tag(takes_context=True)
+def get_current_url_path(context):
+    """
+    Returns the current URL path from the request
+    """
+    request = context.get("request")
+    if request:
+        return request.path
+    return None
+
+
+@register.simple_tag(takes_context=True)
 def get_current_template(context):
     """
     Returns the current template name from the template context
     """
+
     if hasattr(context, "template") and hasattr(context.template, "name"):
         return context.template.name
     return None
 
 
 @register.simple_tag
-def get_page_views(template_name, days=30):
+def get_page_views(url_path, days=30):
     """
-    Returns the page view data for the last N days for a specific template
+    Returns page view data for the last N days for a specific URL path,
+    as a JSON dictionary with dates as keys and view counts as values.
     """
     # Get the date range
     end_date = timezone.now()
@@ -87,22 +101,34 @@ def get_page_views(template_name, days=30):
 
     # Query the IP table for views of this page
     daily_views = (
-        IP.objects.filter(path__contains=template_name, created__gte=start_date, created__lte=end_date)
+        IP.objects.filter(path__contains=url_path, created__gte=start_date, created__lte=end_date)
         .values("created__date")
-        .annotate(count=models.Count("id"))
+        .annotate(total_views=models.Sum("count"))
         .order_by("created__date")
     )
 
-    # Convert to a list of counts
-    view_counts = [0] * days
-    date_map = {(start_date + timedelta(days=i)).date(): i for i in range(days)}
+    # Create a dictionary with dates as keys and view counts as values
+    view_counts_dict = {}
 
+    # First, initialize the dictionary with zeros for all dates in the range
+    for i in range(days):
+        current_date = (start_date + timedelta(days=i)).date()
+        formatted_date = current_date.strftime("%Y-%m-%d")
+        view_counts_dict[formatted_date] = 0
+
+    # Then populate with actual view data where available
     for entry in daily_views:
-        day_index = date_map.get(entry["created__date"])
-        if day_index is not None:
-            view_counts[day_index] = entry["count"]
+        try:
+            date_str = entry["created__date"].strftime("%Y-%m-%d")
+            # Ensure view count is an integer
+            count = int(entry["total_views"])
+            view_counts_dict[date_str] = count
+        except (AttributeError, ValueError, TypeError) as e:
+            # In case of any error, just skip this entry but don't crash
+            continue
 
-    return view_counts
+    # Return as JSON string
+    return json.dumps(view_counts_dict)
 
 
 @register.simple_tag
@@ -122,3 +148,58 @@ def get_page_votes(template_name, vote_type="upvote"):
         return int(stat.value)
     except (DailyStats.DoesNotExist, ValueError):
         return 0
+
+
+@register.filter
+def timestamp_to_datetime(timestamp):
+    """
+    Convert a Unix timestamp to a datetime object.
+
+    Args:
+        timestamp (int): Unix timestamp in seconds
+
+    Returns:
+        datetime: Datetime object
+    """
+    try:
+        # Convert to integer first to handle string inputs
+        timestamp_int = int(float(timestamp))
+        return timezone.datetime.fromtimestamp(timestamp_int)
+    except (ValueError, TypeError):
+        return None
+
+
+@register.filter
+def div(value, arg):
+    """
+    Divide the value by the argument.
+
+    Args:
+        value (float): The numerator
+        arg (float): The denominator
+
+    Returns:
+        float: The result of the division
+    """
+    try:
+        return float(value) / float(arg)
+    except (ValueError, ZeroDivisionError):
+        return 0
+
+
+@register.filter
+def cut(value, arg):
+    """
+    Removes all instances of arg from the given string.
+
+    Args:
+        value (str): The string to modify
+        arg (str): The substring to remove
+
+    Returns:
+        str: The modified string with all instances of arg removed
+    """
+    try:
+        return str(value).replace(arg, "")
+    except (ValueError, TypeError):
+        return value
