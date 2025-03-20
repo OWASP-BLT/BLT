@@ -608,7 +608,10 @@ def fetch_video_data(video_url):
 
 
 def fetch_youtube_video_data(video_url):
-    api_key = "YOUR_YOUTUBE_API_KEY"
+import os
+from django.conf import settings
+
+    api_key = os.environ.get("YOUTUBE_API_KEY") or settings.YOUTUBE_API_KEY
     video_id = extract_youtube_video_id(video_url)
     if not video_id:
         return None
