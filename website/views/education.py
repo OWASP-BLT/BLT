@@ -548,36 +548,53 @@ def create_or_update_course(request):
         return JsonResponse({"success": False, "message": "An error occurred. Please try again later."}, status=500)
 
 
+@login_required(login_url="/accounts/login")
 @require_POST
 def add_video(request):
-    form = VideoSubmissionForm(request.POST)
-    if form.is_valid():
-        video_url = form.cleaned_data["video_url"]
+    try:
+        form = VideoSubmissionForm(request.POST)
+        if form.is_valid():
+            video_url = form.cleaned_data["video_url"]
 
-        # Validate the video URL to ensure it is from YouTube or Vimeo
-        if not re.match(r"(https?://)?(www\.)?(youtube|vimeo)\.com/", video_url):
-            return JsonResponse({"success": False, "message": "Only YouTube or Vimeo URLs are allowed."}, status=400)
+            # Parse and validate the URL
+            try:
+                parsed_url = urlparse(video_url)
+                hostname = parsed_url.hostname or ""
+                if not (hostname == "youtube.com" or hostname == "www.youtube.com" or 
+                        hostname == "youtu.be" or hostname == "vimeo.com" or 
+                        hostname == "www.vimeo.com"):
+                    return JsonResponse({"success": False, "message": "Only YouTube or Vimeo URLs are allowed."}, status=400)
+            except Exception:
+                return JsonResponse({"success": False, "message": "Invalid URL format."}, status=400)
 
-        # Fetch the video title and description using the YouTube or Vimeo API
-        video_data = fetch_video_data(video_url)
-        if not video_data:
-            return JsonResponse({"success": False, "message": "Failed to fetch video data."}, status=400)
+            # Fetch the video title and description
+            video_data = fetch_video_data(video_url)
+            if not video_data:
+                return JsonResponse({"success": False, "message": "Failed to fetch video data. Please check the URL and try again."}, status=400)
 
-        # Check with OpenAI if the video is educational
-        if not is_educational_video(video_data["title"], video_data["description"]):
-            return JsonResponse({"success": False, "message": "The video is not educational."}, status=400)
+            # Check if the video is educational
+            if not is_educational_video(video_data["title"], video_data["description"]):
+                return JsonResponse({"success": False, "message": "The video does not appear to be educational content."}, status=400)
 
-        # Save the video details to the database
-        EducationalVideo.objects.create(
-            url=video_url,
-            title=video_data["title"],
-            description=video_data["description"],
-            is_educational=True,
-        )
+            # Save the video details to the database
+            user = request.user
+            EducationalVideo.objects.create(
+                url=video_url,
+                title=video_data["title"],
+                description=video_data["description"],
+                is_educational=True,
+                submitted_by=user,
+            )
 
-        return JsonResponse({"success": True, "message": "Video added successfully."}, status=201)
+            return JsonResponse({"success": True, "message": "Video added successfully."}, status=201)
 
-    return JsonResponse({"success": False, "message": "Invalid form data."}, status=400)
+        # Form validation errors
+        errors = dict(form.errors.items())
+        error_message = next(iter(errors.values()))[0] if errors else "Invalid form data."
+        return JsonResponse({"success": False, "message": error_message}, status=400)
+    except Exception as e:
+        logger.error(f"Error in add_video: {str(e)}")
+        return JsonResponse({"success": False, "message": "An unexpected error occurred."}, status=500)
 
 
 def fetch_video_data(video_url):
