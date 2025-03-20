@@ -117,6 +117,7 @@ from website.views.core import (
 from website.views.education import (
     add_lecture,
     add_section,
+    add_video,
     course_content_management,
     create_or_update_course,
     create_standalone_lecture,
@@ -138,7 +139,6 @@ from website.views.education import (
     update_sections_order,
     view_course,
     view_lecture,
-    add_video,
 )
 from website.views.hackathon import (
     HackathonCreateView,

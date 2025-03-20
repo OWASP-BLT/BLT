@@ -1,7 +1,7 @@
 import json
 import re
-import requests
 
+import requests
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
@@ -11,9 +11,8 @@ from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile, EducationalVideo
 from website.forms import VideoSubmissionForm
-from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
+from website.models import Course, EducationalVideo, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
 
 
