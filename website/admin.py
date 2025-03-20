@@ -601,6 +601,26 @@ class GitHubIssueAdmin(admin.ModelAdmin):
     ]
     date_hierarchy = "created_at"
 
+    # Using raw_id_fields for the linked_pull_requests field is the most efficient
+    # way to handle this self-referential relationship in admin
+    raw_id_fields = ["linked_pull_requests"]
+
+    def get_queryset(self, request):
+        """
+        Optimize the queryset for admin list view by using select_related for ForeignKey relationships.
+        This reduces the number of database queries and improves performance.
+        """
+        queryset = super().get_queryset(request)
+        queryset = queryset.select_related(
+            "user_profile",
+            "user_profile__user",
+            "contributor",
+            "sent_by_user",
+            "repo",
+            "assignee",
+        )
+        return queryset
+
 
 class GitHubReviewAdmin(admin.ModelAdmin):
     list_display = (
