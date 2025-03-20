@@ -26,8 +26,12 @@
     </section>
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
-    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static "css/mtr-datepicker.min.css" %}" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
     <form id="update-hunt">
         {% csrf_token %}
         <div class="bg-white rounded-lg shadow-lg">
@@ -131,7 +135,8 @@
             </div>
         </div>
     </form>
-    <script type="text/javascript" src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
+    <script type="text/javascript"
+            src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
     <script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
     <script type="text/javascript" src="{% static "js/dt.js" %}"></script>
     <script type="text/javascript">
@@ -180,4 +185,3 @@
   });
     </script>
 {% endblock after_js %}
-

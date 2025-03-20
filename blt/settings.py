@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+
 import environ
 import sentry_sdk
 from django.utils.translation import gettext_lazy as _
@@ -30,8 +31,7 @@ DOMAIN_NAME_PREVIOUS = os.environ.get("DOMAIN_NAME_PREVIOUS", "BLT")
 # Staging to production redirect settings
 STAGING_DOMAIN = os.environ.get("STAGING_DOMAIN", "blt-staging.herokuapp.com")
 PRODUCTION_DOMAIN = os.environ.get("PRODUCTION_DOMAIN", "blt.owasp.org")
-ENABLE_STAGING_REDIRECT = os.environ.get(
-    "ENABLE_STAGING_REDIRECT", "False").lower() == "true"
+ENABLE_STAGING_REDIRECT = os.environ.get("ENABLE_STAGING_REDIRECT", "False").lower() == "true"
 
 PROJECT_NAME_LOWER = PROJECT_NAME.lower()
 PROJECT_NAME_UPPER = PROJECT_NAME.upper()
@@ -44,12 +44,10 @@ SERVER_EMAIL = os.environ.get("FROM_EMAIL", "blt-support@owasp.org")
 
 EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
 BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
-FACEBOOK_URL = os.environ.get(
-    "FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
+FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
 TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
 GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
-EXTENSION_URL = os.environ.get(
-    "EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
+EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 
@@ -287,8 +285,7 @@ if "DYNO" in os.environ:  # for Heroku
     if not GOOGLE_CREDENTIALS:
         raise Exception("GOOGLE_CREDENTIALS environment variable is not set.")
 
-    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(
-        json.loads(GOOGLE_CREDENTIALS))
+    GS_CREDENTIALS = service_account.Credentials.from_service_account_info(json.loads(GOOGLE_CREDENTIALS))
 
     STORAGES = {
         "default": {
@@ -340,8 +337,7 @@ DATABASES = {
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(
-        conn_max_age=0, ssl_require=False)
+    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
@@ -421,16 +417,12 @@ if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
 if DEBUG or TESTING:
-    CACHES = {"default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 else:
     if os.environ.get("MEMCACHIER_SERVERS", ""):
-        os.environ["MEMCACHE_SERVERS"] = os.environ.get(
-            "MEMCACHIER_SERVERS", "").replace(",", ";")
-        os.environ["MEMCACHE_USERNAME"] = os.environ.get(
-            "MEMCACHIER_USERNAME", "")
-        os.environ["MEMCACHE_PASSWORD"] = os.environ.get(
-            "MEMCACHIER_PASSWORD", "")
+        os.environ["MEMCACHE_SERVERS"] = os.environ.get("MEMCACHIER_SERVERS", "").replace(",", ";")
+        os.environ["MEMCACHE_USERNAME"] = os.environ.get("MEMCACHIER_USERNAME", "")
+        os.environ["MEMCACHE_PASSWORD"] = os.environ.get("MEMCACHIER_PASSWORD", "")
 
         CACHES = {
             "default": {
@@ -452,8 +444,7 @@ else:
             }
         }
     else:
-        CACHES = {"default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+        CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
 if DEBUG or TESTING:
     CACHES = {

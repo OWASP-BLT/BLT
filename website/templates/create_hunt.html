@@ -8,7 +8,9 @@
 {% block description %}
     Create a new Bug Bounty by entering the URL, app name, or GPS location of the issue. Define start and end dates, domain, and prizes for the winners.
 {% endblock %}
-{% block keywords %}Bug Bounty, OWASP, start a Bug Bounty, security, rewards, prizes, bug tracking, competition{% endblock %}
+{% block keywords %}
+    Bug Bounty, OWASP, start a Bug Bounty, security, rewards, prizes, bug tracking, competition
+{% endblock %}
 {% block og_title %}
     Start a Bug Bounty - OWASP {% env 'PROJECT_NAME' %}
 {% endblock %}
@@ -21,8 +23,12 @@
     </section>
     <script src="{% static "js/jquery.validate.js" %}"></script>
     <link href="{% static "css/bootstrap-slider.css" %}" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.min.css" %}" />
-    <link rel="stylesheet" type="text/css" href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static "css/mtr-datepicker.min.css" %}" />
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static "css/mtr-datepicker.default-theme.min.css" %}" />
     <form id="create-hunt"
           class="fixed top-0 left-1/2 transform -translate-x-1/2 w-1/2">
         {% csrf_token %}
@@ -112,7 +118,8 @@
             </div>
         </div>
     </form>
-    <script type="text/javascript" src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
+    <script type="text/javascript"
+            src="{% static "js/mtr-datepicker-timezones.js" %}"></script>
     <script type="text/javascript" src="{% static "js/mtr-datepicker.js" %}"></script>
     <script type="text/javascript" src="{% static "js/dt.js" %}"></script>
     <script type="text/javascript">
@@ -154,4 +161,3 @@
   });
     </script>
 {% endblock after_js %}
-

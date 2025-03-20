@@ -492,8 +492,7 @@
                             </span>
                         </div>
                         <ul class="flex flex-col">
-                            <a href="{% url 'organization_manage_bughunts' 1 %}"
-                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <li class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
                                 <a href="{% url 'organization_manage_Bug_Bounties' 1 %}"
                                    class="text-decoration-none hover:text-red-500">Manage Bug Bounties</a>
@@ -892,6 +891,4 @@
                 </div>
             </div>
         </div>
-    </div>
-{% endblock content %}
-
+    {% endblock content %}

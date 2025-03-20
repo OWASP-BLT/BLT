@@ -277,7 +277,12 @@
                         {% for hunt in ongoing_Bug_Bounties %}
                             <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
                                 <div class="flex justify-center items-center w-[40%]">
-                                    <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="Bug Bounty logo" width="128px" height="128px">
+                                    <img class="w-32 h-32 rounded-lg"
+                                         {{ hunt.logo }}
+                                         src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}"
+                                         alt="Bug Bounty logo"
+                                         width="128px"
+                                         height="128px">
                                 </div>
                                 <div class="flex flex-col ml-5 w-[60%]">
                                     <p class="text-lg font-extrabold mt-6">{{ hunt.name }}</p>
