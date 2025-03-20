@@ -40,19 +40,6 @@ from website.utils import is_valid_https_url, rebuild_safe_url
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
 
-restricted_domain = [
-    "gmail.com",
-    "hotmail.com",
-    "outlook.com",
-    "yahoo.com",
-    "proton.com",
-]
-
-
-def get_email_domain(email):
-    domain = email.split("@")[-1]
-    return domain
-
 
 def validate_organization_user(func):
     def wrapper(self, request, id, *args, **kwargs):
@@ -95,14 +82,8 @@ def Organization_view(request, *args, **kwargs):
         return redirect("/")
 
     if isinstance(user, AnonymousUser):
-        messages.error(request, "Login with organization or domain-provided email.")
+        messages.error(request, "Please login to access your organization.")
         return redirect("/accounts/login/")
-
-    domain = get_email_domain(user.email)
-
-    if domain in restricted_domain:
-        messages.error(request, "Login with organization or domain provided email.")
-        return redirect("/")
 
     user_organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user))
     if not user_organizations.exists():
@@ -137,16 +118,8 @@ class RegisterOrganizationView(View):
             messages.error(request, "Login to create organization")
             return redirect("/accounts/login/")
 
-        user_domain = get_email_domain(user.email)
         organization_name = data.get("organization_name", "")
         organization_url = data.get("organization_url", "")
-
-        if user_domain in restricted_domain:
-            messages.error(
-                request,
-                "Login with organization email in order to create the organization.",
-            )
-            return redirect("/")
 
         if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
             messages.error(request, "organization name is invalid or already exists.")

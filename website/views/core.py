@@ -1491,23 +1491,89 @@ def stats_dashboard(request):
 
         # Combine all stats
         stats = {
-            "users": {"total": users["total"], "active": users["active"], "total_all_time": total_users},
-            "issues": {"total": issues["total"], "open": issues["open"], "total_all_time": total_issues},
-            "domains": {"total": domains["total"], "active": domains["active"], "total_all_time": total_domains},
+            "users": {
+                "total": users["total"],
+                "active": users["active"],
+                "total_all_time": total_users,
+                "active_percentage": round((users["active"] / users["total"] * 100) if users["total"] > 0 else 0),
+            },
+            "issues": {
+                "total": issues["total"],
+                "open": issues["open"],
+                "total_all_time": total_issues,
+                "open_percentage": round((issues["open"] / issues["total"] * 100) if issues["total"] > 0 else 0),
+                "fixed": Issue.objects.filter(created__gte=start_date, status="fixed").count(),
+                "in_review": Issue.objects.filter(created__gte=start_date, status="in_review").count(),
+                "invalid": Issue.objects.filter(created__gte=start_date, status="invalid").count(),
+            },
+            "domains": {
+                "total": domains["total"],
+                "active": domains["active"],
+                "total_all_time": total_domains,
+                "active_percentage": round((domains["active"] / domains["total"] * 100) if domains["total"] > 0 else 0),
+            },
             "organizations": {
                 "total": organizations["total"],
                 "active": organizations["active"],
                 "total_all_time": total_organizations,
+                "active_percentage": round(
+                    (organizations["active"] / organizations["total"] * 100) if organizations["total"] > 0 else 0
+                ),
             },
-            "hunts": {"total": hunts["total"], "active": hunts["active"], "total_all_time": total_hunts},
-            "points": {"total": points, "total_all_time": total_points},
-            "projects": {"total": projects, "total_all_time": total_projects},
+            "hunts": {
+                "total": hunts["total"],
+                "active": hunts["active"],
+                "total_all_time": total_hunts,
+                "active_percentage": round((hunts["active"] / hunts["total"] * 100) if hunts["total"] > 0 else 0),
+            },
+            "points": {
+                "total": points,
+                "total_all_time": total_points,
+                "percentage": round((points / total_points * 100) if total_points > 0 else 0),
+            },
+            "projects": {
+                "total": projects,
+                "total_all_time": total_projects,
+                "percentage": round((projects / total_projects * 100) if total_projects > 0 else 0),
+            },
             "activities": {
                 "total": activities,
                 "total_all_time": total_activities,
                 "recent": list(recent_activities),
             },
         }
+
+        # Get time series data for charts (last 12 months or the selected period)
+        months_data = []
+        if days == "ytd":
+            months_to_fetch = end_date.month
+        elif days > 365:
+            months_to_fetch = min(12, days // 30)
+        else:
+            months_to_fetch = min(12, max(1, days // 30))
+
+        # Generate time series data
+        issues_time_series = []
+        users_time_series = []
+
+        for i in range(months_to_fetch):
+            month_end = end_date - timedelta(days=i * 30)
+            month_start = month_end - timedelta(days=30)
+
+            month_issues = Issue.objects.filter(created__gte=month_start, created__lte=month_end).count()
+            month_users = User.objects.filter(date_joined__gte=month_start, date_joined__lte=month_end).count()
+
+            issues_time_series.insert(0, month_issues)
+            users_time_series.insert(0, month_users)
+
+        # Fill remaining months with zeros if we have less than 12 months
+        while len(issues_time_series) < 12:
+            issues_time_series.insert(0, 0)
+            users_time_series.insert(0, 0)
+
+        # Add time series data to the stats dictionary
+        stats["issues_time_series"] = issues_time_series
+        stats["users_time_series"] = users_time_series
 
         # Cache the results for 5 minutes
         cache.set(cache_key, stats, timeout=300)
@@ -1524,6 +1590,8 @@ def stats_dashboard(request):
             {"value": "365", "label": "1 Year"},
             {"value": "1825", "label": "5 Years"},
         ],
+        "issues_time_series": json.dumps(stats.get("issues_time_series", [])),
+        "users_time_series": json.dumps(stats.get("users_time_series", [])),
     }
 
     return render(request, "stats_dashboard.html", context)
