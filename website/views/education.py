@@ -650,16 +650,43 @@ def extract_vimeo_video_id(video_url):
     return match.group(1) if match else None
 
 
-def is_educational_video(title, description):
-    openai_api_key = "YOUR_OPENAI_API_KEY"
-    prompt = f"Is the following video educational?\n\nTitle: {title}\n\nDescription: {description}\n\nAnswer with 'yes' or 'no'."
-    response = requests.post(
-        "https://api.openai.com/v1/engines/davinci-codex/completions",
-        headers={"Authorization": f"Bearer {openai_api_key}"},
-        json={"prompt": prompt, "max_tokens": 5},
-    )
-    if response.status_code != 200:
-        return False
+import logging
+logger = logging.getLogger(__name__)
 
-    answer = response.json()["choices"][0]["text"].strip().lower()
-    return answer == "yes"
+def is_educational_video(title, description):
+    openai_api_key = os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+    
+    if not openai_api_key:
+        # Fallback to basic keyword checking if API key is not available
+        educational_keywords = ["learn", "education", "tutorial", "how to", "course",
+                               "lesson", "training", "skills", "knowledge", "academic"]
+        content = (title + " " + description).lower()
+        for keyword in educational_keywords:
+            if keyword in content:
+                return True
+        return False
+    
+    prompt = f"Is the following video educational?\n\nTitle: {title}\n\nDescription: {description}\n\nAnswer with 'yes' or 'no'."
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {openai_api_key}"},
+            json={
+                "model": "gpt-3.5-turbo",
+                "messages": [
+                    {"role": "system", "content": "You determine if content is educational. Respond with only 'yes' or 'no'."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 5
+            },
+            timeout=10
+        )
+        if response.status_code != 200:
+            logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+            return False
+        
+        answer = response.json()["choices"][0]["message"]["content"].strip().lower()
+        return answer == "yes"
+    except Exception as e:
+        logger.error(f"Error calling OpenAI API: {str(e)}")
+        return False
