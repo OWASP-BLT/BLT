@@ -774,7 +774,6 @@ class RepoDetailView(DetailView):
             page = 1
             while True:
                 response = requests.get(f"{url}&page={page}", headers=headers)
-                print("response: ", response.json())
                 if response.status_code != 200 or not response.json():
                     break
                 results.extend(response.json())
