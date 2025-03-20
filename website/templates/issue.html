@@ -42,66 +42,69 @@
     <div class="flex flex-col gap-5 lg:w-[95%] lg:mx-auto mx-2">
         <div class=" flex lg:flex-row flex-col gap-4 mt-10">
             <div class="lg:w-[75%] flex flex-col gap-6 w-full border border-gray-300 shadow-md rounded-xl p-4">
-                <nav class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
-                    <div class="flex items-center space-x-3 truncate">
-                        <a href="{% url 'issues' %}"
-                           class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center">
-                            <i class="fas fa-bug mr-2"></i>
-                            <span class="font-medium">Issues</span>
-                        </a>
-                        <i class="fas fa-chevron-right text-gray-400 text-sm"></i>
-                        <div class="flex items-center space-x-2">
+                <nav class="flex flex-col sm:flex-row items-center justify-between p-3 sm:p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+                    <div class="flex items-center w-full sm:w-auto mb-3 sm:mb-0">
+                        <div class="flex flex-wrap items-center space-x-2 sm:space-x-3 w-full min-w-0">
+                            <a href="{% url 'issues' %}"
+                               class="text-gray-600 hover:text-[#e74c3c] transition-colors duration-200 flex items-center shrink-0">
+                                <i class="fas fa-bug mr-1.5"></i>
+                                <span class="font-medium text-sm">Issues</span>
+                            </a>
+                            <i class="fas fa-chevron-right text-gray-400 text-xs shrink-0"></i>
                             <a href="{% url 'domain' object.domain.name %}"
-                               class="flex items-center hover:text-[#e74c3c] transition-colors duration-200">
+                               class="flex items-center hover:text-[#e74c3c] transition-colors duration-200 min-w-0">
                                 <img src="{{ object.domain.get_logo }}"
                                      alt="Organization Logo"
-                                     class="w-5 h-5 rounded-md shadow-sm"
+                                     class="w-4 h-4 rounded-md shadow-sm flex-shrink-0"
                                      width="20"
                                      height="20">
-                                <span class="ml-2 font-medium">{{ object.domain.name }}</span>
+                                <span class="ml-1.5 font-medium text-sm truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{{ object.domain.name }}</span>
                             </a>
-                            <span class="text-gray-400">/</span>
-                            <span class="font-mono text-gray-600">#{{ object.id }}</span>
-                        </div>
-                        <div class="ml-4">
-                            {% if status == "open" %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
-                                    <span class="w-2 h-2 bg-[#e74c3c] rounded-full mr-2 animate-pulse"></span>
-                                    Ongoing
-                                </span>
-                            {% else %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">
-                                    <i class="fas fa-check-circle mr-2"></i>
-                                    Resolved
-                                </span>
-                            {% endif %}
+                            <span class="text-gray-400 shrink-0">/</span>
+                            <span class="font-mono text-gray-600 text-xs shrink-0">
+                                {% if object.id < 100 %}#{% endif %}
+                            {{ object.id }}</span>
+                            <div class="ml-2 sm:ml-3 shrink-0">
+                                {% if status == "open" %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#e74c3c]/10 text-[#e74c3c]">
+                                        <span class="w-1.5 h-1.5 bg-[#e74c3c] rounded-full mr-1 animate-pulse"></span>
+                                        Ongoing
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
+                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                                        Resolved
+                                    </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                     <span id="likes"
-                          class="flex flex-row gap-2 items-center px-5 rounded-lg py-1 bg-blue-100">
+                          class="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-100 text-xs whitespace-nowrap shrink-0">
                         {{ object.views }}
                         <span>Views</span>
-                        <i class="fa-solid fa-eye size-6 pt-1"></i>
+                        <i class="fa-solid fa-eye"></i>
                     </span>
                 </nav>
                 <div class="flex flex-col gap-5 px-2">
                     <div class="flex flex-col gap-2">
-                        <h2 class="text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full"
+                        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full break-words"
                             title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
                         {% if object.markdown_description %}
-                            <p class="text-lg text-gray-700 font-medium" id="bug_report">{{ object.markdown_description }}</p>
+                            <p class="text-base sm:text-lg text-gray-700 font-medium break-words"
+                               id="bug_report">{{ object.markdown_description }}</p>
                         {% endif %}
                     </div>
                     <a href="{{ object.url }}"
                        title="{{ object.url }}"
                        target="_blank"
-                       class="flex items-center gap-3 border px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-fit">
+                       class="flex items-center gap-3 border px-3 sm:px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-100 w-full overflow-hidden">
                         <img src="{{ object.domain.get_logo }}"
                              alt="Organization Logo"
-                             class="w-5 h-5 rounded-md shadow-sm"
+                             class="w-5 h-5 rounded-md shadow-sm flex-shrink-0"
                              width="20"
                              height="20">
-                        <p class="text-[#e74c3c] hover:text-[#e74c3c] font-medium truncate transition-colors duration-200"
+                        <p class="text-[#e74c3c] font-medium min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap transition-colors duration-200"
                            rel="noopener noreferrer">{{ object.url }}</p>
                     </a>
                     <div class="flex items-center">
