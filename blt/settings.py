@@ -1,10 +1,7 @@
 import json
 import os
 import sys
-
 import environ
-
-# Initialize Sentry
 import sentry_sdk
 from django.utils.translation import gettext_lazy as _
 from google.oauth2 import service_account
