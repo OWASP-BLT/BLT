@@ -128,13 +128,6 @@ prizeContainer.appendChild(descDiv);
 // Append the complete prize container to the list
 list_prize_container.appendChild(prizeContainer);
 
-
-    list_prize_container.appendChild(prize_container_child_html);
-    function escapeHTML(unsafeText) {
-        const div = document.createElement('div');
-        div.innerText = unsafeText;
-        return div.innerHTML;
-    }
 }
 
 function remove_prize(prize_id) {
