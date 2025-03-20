@@ -636,7 +636,8 @@ def fetch_vimeo_video_data(video_url):
         return None
 
     api_url = f"https://api.vimeo.com/videos/{video_id}"
-    headers = {"Authorization": "Bearer YOUR_VIMEO_ACCESS_TOKEN"}
+    access_token = os.environ.get("VIMEO_ACCESS_TOKEN") or settings.VIMEO_ACCESS_TOKEN
+    headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(api_url, headers=headers)
     if response.status_code != 200:
         return None
