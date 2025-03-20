@@ -270,6 +270,7 @@ from website.views.project import (
     distribute_bacon,
     select_contribution,
 )
+from website.views.project_leaderboard import ProjectLeaderboardView, project_leaderboard_data, refresh_project_stats
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
@@ -1094,6 +1095,10 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+    # project stats
+    path("project_leaderboard/", ProjectLeaderboardView.as_view(), name="project_leaderboard"),
+    path("project_leaderboard/refresh/<int:project_id>/", refresh_project_stats, name="refresh_project_stats"),
+    path("project_leaderboard/data/", project_leaderboard_data, name="project_leaderboard_data"),
 ]
 
 if settings.DEBUG:
