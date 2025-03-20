@@ -341,68 +341,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch issue suggestions with pagination
     async function fetchIssueSuggestions(query, page = 1, append = false) {
-        // If the query changed while we were waiting, abort
-        if (query !== currentSearch) return;
-
-        // Check cache first
-        const cacheKey = `${query}-${page}`;
-        if (cache.has(cacheKey)) {
-            const cachedData = cache.get(cacheKey);
-            displaySuggestions(cachedData.issues, append);
-            hasMorePages = cachedData.hasMorePages;
-            return;
-        }
-
-        const perPage = 30; // GitHub API default
-        
-        try {
-            if (!append) {
-                // Show loading indicator if this is the first page
-                displayLoadingIndicator();
-            } else {
-                // Show loading indicator at the bottom if loading more
-                appendLoadingIndicator();
-            }
-            
-            // Get issues for the current page
-            const url = `https://api.github.com/repos/OWASP-BLT/BLT/issues?state=all&per_page=${perPage}&page=${page}`;
-            const response = await fetch(url);
-            
-            if (!response.ok) throw new Error('GitHub API request failed');
-            
-            const issues = await response.json();
-            
-            // Check if there are more pages
-            const linkHeader = response.headers.get('Link');
-            hasMorePages = linkHeader && linkHeader.includes('rel="next"');
-            
-            // Filter issues by number containing the query
-            const filteredIssues = issues
-                .filter(issue => issue.number.toString().includes(query))
-                .slice(0, 5); // Limit to 5 results per page
-            
-            // Cache the results with pagination info
-            cache.set(cacheKey, {
-                issues: filteredIssues,
-                hasMorePages: hasMorePages
-            });
-            
-            // Only display if this is still the current search
-            if (query === currentSearch) {
-                displaySuggestions(filteredIssues, append);
-            }
-        } catch (error) {
-            console.error('Error fetching issues:', error);
-            if (!append) {
-                hideSuggestionBox();
-            } else {
-                // Remove loading indicator if there was an error
-                removeLoadingIndicator();
-            }
-        } finally {
-            isLoadingMore = false;
-        }
+    if (query !== currentSearch) return;
+    // Check cache first
+    const cacheKey = `${query}-${page}`;
+    if (cache.has(cacheKey)) {
+        const cachedData = cache.get(cacheKey);
+        displaySuggestions(cachedData.issues, append);
+        hasMorePages = cachedData.hasMorePages;
+        return;
     }
+    
+    try {
+        if (!append) {
+            displayLoadingIndicator();
+        } else {
+            appendLoadingIndicator();
+        }
+        
+        // Get issues from backend API
+        const url = `/api/v1/issues?page=${page}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) throw new Error('API request failed');
+        
+        const data = await response.json(); 
+
+        // Check for pagination headers (if provided)
+        const linkHeader = response.headers.get('Link');
+        hasMorePages = linkHeader && linkHeader.includes('rel="next"');
+
+        // Filter issues by number containing the query
+        const filteredIssues = data.results
+            .filter(issue => issue.id.toString().includes(query))
+            .slice(0, 5); // Limit to 5 results per page
+
+        // Cache the results
+        cache.set(cacheKey, {
+            issues: filteredIssues,
+            hasMorePages: hasMorePages
+        });
+
+        if (query === currentSearch) {
+            displaySuggestions(filteredIssues, append);
+        }
+    } catch (error) {
+        console.error('Error fetching issues:', error);
+        if (!append) {
+            hideSuggestionBox();
+        } else {
+            removeLoadingIndicator();
+        }
+    } finally {
+        isLoadingMore = false;
+    }
+}
 
     // Display loading indicator
     function displayLoadingIndicator() {
@@ -474,8 +466,8 @@ document.addEventListener('DOMContentLoaded', () => {
         issues.forEach(issue => {
             const div = document.createElement('div');
             div.className = 'suggestion-item';
-            div.dataset.issueNumber = issue.number;
-            div.innerHTML = `<strong>#${issue.number}</strong>: ${escapeHTML(issue.title)}`;
+            div.dataset.issueNumber = issue.id;
+            div.innerHTML = `<strong>#${issue.id}</strong>: ${escapeHTML(issue.description)}`;
             div.style.cssText = `
                 padding: 8px 10px;
                 cursor: pointer;
@@ -484,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             div.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent document click from firing
-                insertIssueReference(issue.number);
+                insertIssueReference(issue.id);
                 hideSuggestionBox();
             });
             
