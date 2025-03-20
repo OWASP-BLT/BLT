@@ -3,6 +3,8 @@ name: OWASP BLT Action
 on:
   issue_comment:
     types: [created]
+  pull_request_review_comment:
+    types: [created]
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
