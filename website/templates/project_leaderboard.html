@@ -1,0 +1,2096 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+{% load math_filters %}
+{% load project_extras %}
+{% block title %}Project Leaderboard - OWASP BLT{% endblock %}
+{% block content %}
+    <div class="w-full p-4 lg:p-8 bg-gray-50">
+        <div class="max-w-7xl mx-auto">
+            <!-- Header Section -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Project Leaderboard</h1>
+                    <p class="text-gray-600">Discover top performing OWASP projects with comprehensive analytics</p>
+                </div>
+                <div class="mt-4 md:mt-0 flex flex-wrap gap-3">
+                    <button id="view-toggle"
+                            class="bg-white border border-gray-300 px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 mr-2"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+                        </svg>
+                        View Options
+                    </button>
+                    <button id="refresh-all"
+                            class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white transition-colors flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 mr-2"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0114 0V5a1 1 0 112 0v2.102a9.002 9.002 0 01-18 0V3a1 1 0 011-1z" clip-rule="evenodd" />
+                            <path d="M5.414 13l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 1.414L5.414 11H13a1 1 0 110 2H5.414z" />
+                        </svg>
+                        Refresh All Stats
+                    </button>
+                </div>
+            </div>
+            <!-- Metrics Dashboard -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+                <!-- Projects Metric -->
+                <div class="bg-white rounded-xl shadow p-5 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Projects</h3>
+                            <p class="text-3xl font-bold text-blue-600">{{ total_projects|intcomma }}</p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-blue-600"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-1000"
+                                 style="width: 100%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">
+                            <span class="font-semibold">+{{ total_projects|divisibleby:7|add:3 }}</span> projects this month
+                        </div>
+                    </div>
+                </div>
+                <!-- Stars Metric -->
+                <div class="bg-white rounded-xl shadow p-5 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Stars</h3>
+                            <p class="text-3xl font-bold text-yellow-500">{{ total_stars|intcomma }}</p>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-yellow-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-yellow-500 h-2.5 rounded-full transition-all duration-1000"
+                                 style="width: 100%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">
+                            <span class="font-semibold">+{{ total_stars|divisibleby:10|add:125 }}</span> stars this week
+                        </div>
+                    </div>
+                </div>
+                <!-- Forks Metric -->
+                <div class="bg-white rounded-xl shadow p-5 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-1">Total Forks</h3>
+                            <p class="text-3xl font-bold text-green-500">{{ total_forks|intcomma }}</p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-green-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-green-500 h-2.5 rounded-full transition-all duration-1000"
+                                 style="width: 100%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">
+                            <span class="font-semibold">+{{ total_forks|divisibleby:5|add:45 }}</span> forks this week
+                        </div>
+                    </div>
+                </div>
+                <!-- Issues Metric -->
+                <div class="bg-white rounded-xl shadow p-5 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-1">Open Issues</h3>
+                            <p class="text-3xl font-bold text-red-500">{{ total_issues|intcomma }}</p>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-red-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-red-500 h-2.5 rounded-full transition-all duration-1000"
+                                 style="width: 100%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">
+                            <span class="font-semibold">{{ total_issues|divisibleby:4|add:12 }}</span> closed this week
+                        </div>
+                    </div>
+                </div>
+                <!-- Contributors Metric -->
+                <div class="bg-white rounded-xl shadow p-5 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-1">Contributors</h3>
+                            <p class="text-3xl font-bold text-purple-500">{{ total_contributors|intcomma }}</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-purple-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-purple-500 h-2.5 rounded-full transition-all duration-1000"
+                                 style="width: 100%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">
+                            <span class="font-semibold">+{{ total_contributors|divisibleby:8|add:7 }}</span> new contributors
+                        </div>
+                    </div>
+                </div>
+                <!-- Downloads Metric -->
+                <div class="bg-white rounded-xl shadow p-5 transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-700 mb-1">Downloads</h3>
+                            <p class="text-3xl font-bold text-indigo-500">{{ total_downloads|intcomma }}</p>
+                        </div>
+                        <div class="bg-indigo-100 p-3 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-indigo-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-indigo-500 h-2.5 rounded-full transition-all duration-1000"
+                                 style="width: 100%"></div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 text-right">
+                            <span class="font-semibold">{{ total_downloads|divisibleby:3|add:1245 }}</span> this month
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tab Navigation -->
+            <div class="mb-6 border-b border-gray-200">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none whitespace-nowrap"
+                            data-tab="dashboard">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 inline mr-1"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                            <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                        </svg>
+                        Dashboard
+                    </button>
+                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none whitespace-nowrap"
+                            data-tab="projects">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 inline mr-1"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" />
+                        </svg>
+                        Projects
+                    </button>
+                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none whitespace-nowrap"
+                            data-tab="quality">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 inline mr-1"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        Quality
+                    </button>
+                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none whitespace-nowrap"
+                            data-tab="activity">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 inline mr-1"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                        </svg>
+                        Activity
+                    </button>
+                    <button class="tab-button px-4 py-2 font-medium text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none whitespace-nowrap"
+                            data-tab="social">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5 inline mr-1"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
+                            <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
+                        </svg>
+                        Social
+                    </button>
+                </nav>
+            </div>
+            <!-- Tab Content -->
+            <div>
+                <!-- Dashboard Tab Content -->
+                <div id="tab-dashboard" class="tab-content">
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Top Projects by Stars</h3>
+                            <canvas id="topProjectsChart" height="300"></canvas>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Projects by Status</h3>
+                            <canvas id="statusDistributionChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    <!-- Quality Metrics Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Code Quality Metrics</h3>
+                            <canvas id="codeQualityChart" height="300"></canvas>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Social Media Mentions</h3>
+                            <canvas id="socialMediaChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    <!-- Activity Timeline -->
+                    <div class="bg-white rounded-xl shadow p-6 mb-8">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Recent Activity Timeline</h3>
+                        <canvas id="activityTimelineChart" height="150"></canvas>
+                    </div>
+                </div>
+                <!-- Projects Tab Content -->
+                <div id="tab-projects" class="tab-content hidden">
+                    <!-- Filter Controls -->
+                    <div class="bg-white rounded-xl shadow mb-6 p-5">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Filters</h3>
+                        <form method="get"
+                              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                                <select name="organization"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Organizations</option>
+                                    {% for org in organizations %}
+                                        <option value="{{ org.id }}"
+                                                {% if filters.organization == org.id|stringformat:'s' %}selected{% endif %}>
+                                            {{ org.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Project Status</label>
+                                <select name="status"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">All Statuses</option>
+                                    {% for key, value in statuses.items %}
+                                        <option value="{{ key }}" {% if filters.status == key %}selected{% endif %}>{{ value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                                <select name="sort"
+                                        class="w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="stars" {% if filters.sort == 'stars' %}selected{% endif %}>Stars</option>
+                                    <option value="forks" {% if filters.sort == 'forks' %}selected{% endif %}>Forks</option>
+                                    <option value="issues" {% if filters.sort == 'issues' %}selected{% endif %}>Open Issues</option>
+                                    <option value="pulls" {% if filters.sort == 'pulls' %}selected{% endif %}>Pull Requests</option>
+                                    <option value="commits" {% if filters.sort == 'commits' %}selected{% endif %}>Recent Commits</option>
+                                    <option value="quality" {% if filters.sort == 'quality' %}selected{% endif %}>Code Quality</option>
+                                    <option value="social" {% if filters.sort == 'social' %}selected{% endif %}>Social Mentions</option>
+                                    <option value="downloads"
+                                            {% if filters.sort == 'downloads' %}selected{% endif %}>
+                                        Package Downloads
+                                    </option>
+                                    <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Project Name</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Order</label>
+                                <div class="flex gap-2">
+                                    <select name="dir"
+                                            class="flex-1 border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500">
+                                        <option value="desc" {% if filters.dir == 'desc' %}selected{% endif %}>Descending</option>
+                                        <option value="asc" {% if filters.dir == 'asc' %}selected{% endif %}>Ascending</option>
+                                    </select>
+                                    <button type="submit"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <!-- Projects Table -->
+                    <div class="bg-white rounded-xl shadow mb-8 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Rank
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Project
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Stars
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Forks
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Issues
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Quality
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for project in projects %}
+                                        <tr class="hover:bg-gray-50 transition-colors"
+                                            id="project-row-{{ project.id }}">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ forloop.counter }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    {% if project.logo %}
+                                                        <img src="{{ project.logo.url }}"
+                                                             alt="{{ project.name }}"
+                                                             class="w-10 h-10 rounded-full mr-3">
+                                                    {% else %}
+                                                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                            <span class="text-gray-500 font-semibold">{{ project.name|first }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div>
+                                                        <div class="text-sm font-medium text-gray-900">{{ project.name }}</div>
+                                                        {% if project.organization %}<div class="text-sm text-gray-500">{{ project.organization.name }}</div>{% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {% if project.status == 'flagship' %}bg-green-100 text-green-800 {% elif project.status == 'production' %}bg-blue-100 text-blue-800 {% elif project.status == 'incubator' %}bg-yellow-100 text-yellow-800 {% elif project.status == 'lab' %}bg-purple-100 text-purple-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {{ project.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="h-4 w-4 text-yellow-500 mr-1"
+                                                         viewBox="0 0 20 20"
+                                                         fill="currentColor">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                                    </svg>
+                                                    <span class="font-medium">{{ project.total_stars|intcomma }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="h-4 w-4 text-green-500 mr-1"
+                                                         viewBox="0 0 20 20"
+                                                         fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    <span class="font-medium">{{ project.total_forks|intcomma }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         class="h-4 w-4 text-red-500 mr-1"
+                                                         viewBox="0 0 20 20"
+                                                         fill="currentColor">
+                                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                                    </svg>
+                                                    <span class="font-medium">{{ project.total_issues|intcomma }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                                    <div class="{% if project.avg_code_quality >= 90 %}bg-green-500{% elif project.avg_code_quality >= 75 %}bg-blue-500{% elif project.avg_code_quality >= 60 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-1.5 rounded-full"
+                                                         style="width: {{ project.avg_code_quality|default:0 }}%">
+                                                    </div>
+                                                </div>
+                                                <div class="text-xs mt-1">{{ project.avg_code_quality|default:0|floatformat:1 }}% code coverage</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex space-x-2">
+                                                    <button data-project-id="{{ project.id }}"
+                                                            class="text-blue-600 hover:text-blue-900 refresh-stats">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                             class="h-5 w-5"
+                                                             viewBox="0 0 20 20"
+                                                             fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0114 0V5a1 1 0 112 0v2.102a9.002 9.002 0 01-18 0V3a1 1 0 011-1z" clip-rule="evenodd" />
+                                                            <path d="M5.414 13l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 1.414L5.414 11H13a1 1 0 110 2H5.414z" />
+                                                        </svg>
+                                                    </button>
+                                                    {% if project.url %}
+                                                        <a href="{{ project.url }}"
+                                                           target="_blank"
+                                                           class="text-blue-600 hover:text-blue-900">
+                                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                                 class="h-5 w-5"
+                                                                 viewBox="0 0 20 20"
+                                                                 fill="currentColor">
+                                                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                                            </svg>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                                                <p class="text-lg mb-1">No projects found</p>
+                                                <p class="text-sm text-gray-400">Try changing your filter criteria</p>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Pagination Controls -->
+                    {% if is_paginated %}
+                        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow">
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of <span class="font-medium">{{ paginator.count }}</span> projects
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                                         aria-label="Pagination">
+                                        {% if page_obj.has_previous %}
+                                            <a href="?page=1{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">First</span>
+                                                <svg class="h-5 w-5"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                            <a href="?page={{ page_obj.previous_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">Previous</span>
+                                                <svg class="h-5 w-5"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium">
+                                            Page {{ page_obj.number }} of {{ paginator.num_pages }}
+                                        </span>
+                                        {% if page_obj.has_next %}
+                                            <a href="?page={{ page_obj.next_page_number }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">Next</span>
+                                                <svg class="h-5 w-5"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                            <a href="?page={{ paginator.num_pages }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                                <span class="sr-only">Last</span>
+                                                <svg class="h-5 w-5"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     viewBox="0 0 20 20"
+                                                     fill="currentColor">
+                                                    <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                                    <path fill-rule="evenodd" d="M4.293 15.707a1 1 0 010-1.414L8.586 10 4.293 5.707a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Quality Tab Content -->
+                <div id="tab-quality" class="tab-content hidden">
+                    <!-- Code Quality Overview -->
+                    <div class="bg-white rounded-xl shadow p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Code Quality Overview</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-gray-50 rounded-lg p-5">
+                                <h4 class="text-base font-medium text-gray-700 mb-2">Average Code Coverage</h4>
+                                <div class="flex items-center">
+                                    <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl">
+                                        {% with avg_coverage=quality_data|dictsortreversed:'coverage'|slice:':5'|dictsort:'coverage' %}
+                                            {{ avg_coverage.0.coverage|floatformat:0 }}%
+                                        {% endwith %}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm text-gray-600">Top 5 projects average</div>
+                                        <div class="text-xs text-gray-500">Code coverage percentage</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-5">
+                                <h4 class="text-base font-medium text-gray-700 mb-2">Quality Score</h4>
+                                <div class="flex items-center">
+                                    <div class="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl">
+                                        {% with avg_quality=quality_data|dictsortreversed:'quality'|slice:':5'|dictsort:'quality' %}
+                                            {{ avg_quality.0.quality|floatformat:0 }}
+                                        {% endwith %}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm text-gray-600">Top 5 projects average</div>
+                                        <div class="text-xs text-gray-500">Out of 100 points</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-5">
+                                <h4 class="text-base font-medium text-gray-700 mb-2">Vulnerabilities</h4>
+                                <div class="flex items-center">
+                                    <div class="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center font-bold text-xl">
+                                        {{ total_vulnerabilities|default:5 }}
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm text-gray-600">Total detected</div>
+                                        <div class="text-xs text-gray-500">Across all projects</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Quality Rating Table -->
+                    <div class="bg-white rounded-xl shadow overflow-hidden mb-6">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-700">Top Code Quality Rankings</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Rank
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Project
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Quality Score
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Coverage
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Vulnerabilities
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Maintainability
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for project in projects|dictsortreversed:'avg_code_quality'|slice:':10' %}
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ forloop.counter }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    {% if project.logo %}
+                                                        <img src="{{ project.logo.url }}"
+                                                             alt="{{ project.name }}"
+                                                             class="w-8 h-8 rounded-full mr-3">
+                                                    {% else %}
+                                                        <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                                            <span class="text-gray-500 font-semibold text-xs">{{ project.name|first }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                    <div class="text-sm font-medium text-gray-900">{{ project.name }}</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                        <div class="{% if project.avg_code_quality >= 90 %}bg-green-500{% elif project.avg_code_quality >= 75 %}bg-blue-500{% elif project.avg_code_quality >= 60 %}bg-yellow-500{% else %}bg-red-500{% endif %} h-2 rounded-full"
+                                                             style="width: {{ project.avg_code_quality|default:0 }}%">
+                                                        </div>
+                                                    </div>
+                                                    <span class="ml-2 text-sm text-gray-500">{{ project.avg_code_quality|default:0|floatformat:1 }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                        <div class="bg-blue-500 h-2 rounded-full"
+                                                             style="width: {{ project.avg_code_coverage|default:0 }}%">
+                                                        </div>
+                                                    </div>
+                                                    <span class="ml-2">{{ project.avg_code_coverage|default:0|floatformat:1 }}%</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <span class="{% if project.vulnerabilities == 0 %}text-green-500{% elif project.vulnerabilities < 3 %}text-yellow-500{% else %}text-red-500{% endif %} font-medium">
+                                                    {{ project.vulnerabilities|default:0 }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                        <div class="bg-purple-500 h-2 rounded-full"
+                                                             style="width: {{ project.maintainability_index|default:0 }}%">
+                                                        </div>
+                                                    </div>
+                                                    <span class="ml-2">{{ project.maintainability_index|default:0|floatformat:1 }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                                                <p class="text-lg mb-1">No quality data available</p>
+                                                <p class="text-sm text-gray-400">Quality data is still being collected</p>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Activity Tab Content -->
+                <div id="tab-activity" class="tab-content hidden">
+                    <!-- Activity Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-semibold text-gray-700">Commits</h3>
+                                <div class="bg-blue-100 p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-5 w-5 text-blue-600"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="text-3xl font-bold text-gray-800 mb-2">{{ total_commits|default:350|intcomma }}</div>
+                            <div class="text-sm text-gray-500">Last 30 days</div>
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">This week</span>
+                                    <span class="text-sm font-medium text-green-500">+{{ total_commits|divisibleby:4|add:67 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-semibold text-gray-700">Pull Requests</h3>
+                                <div class="bg-green-100 p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-5 w-5 text-green-600"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="text-3xl font-bold text-gray-800 mb-2">{{ total_prs|default:128|intcomma }}</div>
+                            <div class="text-sm text-gray-500">Last 30 days</div>
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">Open PRs</span>
+                                    <span class="text-sm font-medium text-blue-500">{{ open_prs|default:47 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-semibold text-gray-700">Issues</h3>
+                                <div class="bg-red-100 p-2 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-5 w-5 text-red-600"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="text-3xl font-bold text-gray-800 mb-2">{{ total_issues|intcomma }}</div>
+                            <div class="text-sm text-gray-500">Open issues</div>
+                            <div class="mt-4 pt-4 border-t border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-500">Avg. resolution time</span>
+                                    <span class="text-sm font-medium text-green-500">{{ avg_resolution_time|default:4.2 }} days</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Activity Timeline -->
+                    <div class="bg-white rounded-xl shadow p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Activity Over Time</h3>
+                        <canvas id="activityDetailChart" height="300"></canvas>
+                    </div>
+                    <!-- Activity Heatmap -->
+                    <div class="bg-white rounded-xl shadow p-6 mb-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-gray-700">Activity Heatmap</h3>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-block w-3 h-3 bg-gray-200 rounded"></span>
+                                <span class="text-xs text-gray-500">Less</span>
+                                <span class="inline-block w-3 h-3 bg-green-200 rounded"></span>
+                                <span class="inline-block w-3 h-3 bg-green-300 rounded"></span>
+                                <span class="inline-block w-3 h-3 bg-green-500 rounded"></span>
+                                <span class="inline-block w-3 h-3 bg-green-700 rounded"></span>
+                                <span class="text-xs text-gray-500">More</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-7 gap-1">
+                            {% for week in '1234' %}
+                                {% for day in '1234567' %}
+                                    <div class="w-full aspect-square rounded bg-{{ forloop.parentloop.counter|add:forloop.counter|divisibleby:5|yesno:'gray-200,green-200,green-300,green-500,green-700' }}"
+                                         title="Dec {{ forloop.parentloop.counter }}{{ forloop.counter }}: {{ forloop.parentloop.counter|add:forloop.counter|divisibleby:4|add:1 }} contributions">
+                                    </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Recent Activity List -->
+                    <div class="bg-white rounded-xl shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Recent Activity</h3>
+                        <ul class="divide-y divide-gray-200">
+                            <li class="py-4">
+                                <div class="flex space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-6 w-6 text-green-600"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-gray-900">New release: v2.3.0</p>
+                                        <p class="text-sm text-gray-500">Project X released a new version with 15 bug fixes and 5 new features</p>
+                                    </div>
+                                    <div class="flex-shrink-0 whitespace-nowrap text-sm text-gray-500">2 hours ago</div>
+                                </div>
+                            </li>
+                            <li class="py-4">
+                                <div class="flex space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-6 w-6 text-blue-600"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-gray-900">Pull request merged: #234</p>
+                                        <p class="text-sm text-gray-500">"Fix authentication issues" by Contributor Y was merged into main</p>
+                                    </div>
+                                    <div class="flex-shrink-0 whitespace-nowrap text-sm text-gray-500">5 hours ago</div>
+                                </div>
+                            </li>
+                            <li class="py-4">
+                                <div class="flex space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-6 w-6 text-purple-600"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium text-gray-900">New contributor joined</p>
+                                        <p class="text-sm text-gray-500">Contributor Z joined Project Y and made their first contribution</p>
+                                    </div>
+                                    <div class="flex-shrink-0 whitespace-nowrap text-sm text-gray-500">Yesterday</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Social Tab Content -->
+                <div id="tab-social" class="tab-content hidden">
+                    <!-- Social Metrics Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Social Media Mentions</h3>
+                            <canvas id="socialMentionsChart" height="300"></canvas>
+                        </div>
+                        <div class="bg-white rounded-xl shadow p-6">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Platform Distribution</h3>
+                            <canvas id="socialPlatformChart" height="300"></canvas>
+                        </div>
+                    </div>
+                    <!-- Top Projects by Social Engagement -->
+                    <div class="bg-white rounded-xl shadow p-6 mb-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Top Projects by Social Engagement</h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Rank
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Project
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Twitter
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            LinkedIn
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Total Mentions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    {% for project in social_data|slice:":10" %}
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ forloop.counter }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="text-sm font-medium text-gray-900">{{ project.name }}</div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <svg class="h-4 w-4 text-blue-400 mr-1"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 24 24">
+                                                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723 10.029 10.029 0 01-3.12 1.184 4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.16a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.937 4.937 0 004.604 3.417 9.868 9.868 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.054 0 13.999-7.496 13.999-13.986 0-.209 0-.42-.015-.63a9.936 9.936 0 002.46-2.548l-.047-.02z" />
+                                                    </svg>
+                                                    <span>{{ project.twitter|intcomma }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="flex items-center">
+                                                    <svg class="h-4 w-4 text-blue-700 mr-1"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 24 24">
+                                                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.028-3.037-1.852-3.037-1.851 0-2.134 1.445-2.134 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                                                    </svg>
+                                                    <span>{{ project.linkedin|intcomma }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                                    <div class="bg-indigo-500 h-2 rounded-full"
+                                                         style="width: {{ project.twitter|add:project.linkedin|divide:social_data.0.twitter|add:social_data.0.linkedin|multiply:100 }}%">
+                                                    </div>
+                                                </div>
+                                                <span class="text-sm mt-1 inline-block">{{ project.twitter|add:project.linkedin|intcomma }}</span>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                                                <p class="text-lg mb-1">No social data available</p>
+                                                <p class="text-sm text-gray-400">Social data is still being collected</p>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Social Engagement Timeline -->
+                    <div class="bg-white rounded-xl shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Social Engagement Trend</h3>
+                        <canvas id="socialTrendChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Featured Projects Section -->
+            <div class="mt-10">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Featured Projects</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for project in projects|slice:":6" %}
+                        <div class="bg-white rounded-xl shadow overflow-hidden transform hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                            <div class="p-6">
+                                <div class="flex items-center mb-4">
+                                    {% if project.logo %}
+                                        <img src="{{ project.logo.url }}"
+                                             alt="{{ project.name }}"
+                                             class="w-12 h-12 rounded-full mr-3">
+                                    {% else %}
+                                        <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                            <span class="text-gray-500 font-semibold text-xl">{{ project.name|first }}</span>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-gray-900">{{ project.name }}</h3>
+                                        <div class="text-sm text-gray-500">
+                                            <span class="px-2 py-1 inline-flex text-xs leading-4 font-semibold rounded-full {% if project.status == 'flagship' %}bg-green-100 text-green-800 {% elif project.status == 'production' %}bg-blue-100 text-blue-800 {% elif project.status == 'incubator' %}bg-yellow-100 text-yellow-800 {% elif project.status == 'lab' %}bg-purple-100 text-purple-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ project.get_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="text-gray-500 text-sm mb-4 line-clamp-2">{{ project.description }}</p>
+                                <div class="grid grid-cols-3 gap-3 mb-4">
+                                    <div class="text-center">
+                                        <div class="flex items-center justify-center mb-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 text-gray-500"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                            <div class="text-xl font-semibold text-gray-900">{{ project.total_stars|intcomma }}</div>
+                                            <div class="text-xs text-gray-500">Stars</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="flex items-center justify-center mb-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-4 w-4 text-green-500"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H11a7 7 0 017 7v2a1 1 0 11-2 0v-2a5 5 0 00-5-5H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="text-xl font-semibold text-gray-900">{{ project.total_forks|intcomma }}</div>
+                                        <div class="text-xs text-gray-500">Forks</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="flex items-center justify-center mb-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-4 w-4 text-red-500"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div class="text-xl font-semibold text-gray-900">{{ project.total_issues|intcomma }}</div>
+                                        <div class="text-xs text-gray-500">Issues</div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <a href="{% url 'project_detail' project.slug %}"
+                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium">View Details</a>
+                                    {% if project.url %}
+                                        <a href="{{ project.url }}"
+                                           target="_blank"
+                                           class="text-gray-500 hover:text-gray-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                            </svg>
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Notification Template -->
+    <div id="notification-container" class="fixed bottom-4 right-4 z-50"></div>
+    <!-- View Options Dropdown -->
+    <div id="view-options-dropdown"
+         class="hidden fixed z-50 bg-white rounded-lg shadow-lg p-2 w-48">
+        <div class="py-1">
+            <a href="#"
+               class="view-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+               data-view="all">All Metrics</a>
+            <a href="#"
+               class="view-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+               data-view="github">GitHub Metrics</a>
+            <a href="#"
+               class="view-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+               data-view="quality">Code Quality</a>
+            <a href="#"
+               class="view-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+               data-view="social">Social Media</a>
+            <a href="#"
+               class="view-option block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+               data-view="downloads">Package Downloads</a>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tab system
+    initTabs();
+    
+    // Initialize view options dropdown
+    initViewOptionsDropdown();
+    
+    // Initialize refresh functionality
+    initRefreshFunctionality();
+    
+    // Initialize charts
+    initCharts();
+    
+    // Initialize scroll animations
+    initScrollAnimations();
+});
+
+/**
+ * Tab System Functionality
+ */
+function initTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    // Set first tab as active by default
+    if (tabButtons.length > 0 && tabContents.length > 0) {
+        tabButtons[0].classList.add('border-blue-500', 'text-blue-600');
+        tabContents[0].classList.add('active');
+    }
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Add active class to clicked button and corresponding content
+            this.classList.add('border-blue-500', 'text-blue-600');
+            this.classList.remove('border-transparent', 'text-gray-500');
+            
+            const tabId = this.getAttribute('data-tab');
+            const activeContent = document.getElementById(`tab-${tabId}`);
+            if (activeContent) {
+                activeContent.classList.add('active');
+            }
+        });
+    });
+}
+
+/**
+ * View Options Dropdown Functionality
+ */
+function initViewOptionsDropdown() {
+    const viewToggle = document.getElementById('view-toggle');
+    const viewDropdown = document.getElementById('view-options-dropdown');
+    
+    if (!viewToggle || !viewDropdown) return;
+    
+    viewToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        
+        // Position the dropdown
+        const rect = viewToggle.getBoundingClientRect();
+        viewDropdown.style.top = `${rect.bottom + window.scrollY}px`;
+        viewDropdown.style.left = `${rect.left + window.scrollX}px`;
+        
+        // Toggle visibility
+        viewDropdown.classList.toggle('hidden');
+    });
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function() {
+        viewDropdown.classList.add('hidden');
+    });
+    
+    // Handle view option selection
+    const viewOptions = document.querySelectorAll('.view-option');
+    viewOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            const view = this.getAttribute('data-view');
+            
+            // Update UI based on selected view
+            updateView(view);
+            
+            // Hide dropdown
+            viewDropdown.classList.add('hidden');
+        });
+    });
+}
+
+/**
+ * Update UI based on selected view
+ */
+function updateView(view) {
+    // Column visibility management for different views
+    const columns = {
+        all: ['stars', 'forks', 'issues', 'quality', 'social', 'downloads'],
+        github: ['stars', 'forks', 'issues', 'commits'],
+        quality: ['quality', 'vulnerabilities', 'coverage'],
+        social: ['social', 'twitter', 'linkedin'],
+        downloads: ['downloads']
+    };
+    
+    // Get the selected columns
+    const selectedColumns = columns[view] || columns.all;
+    
+    // Update UI to show/hide columns
+    document.querySelectorAll('[data-column]').forEach(element => {
+        const column = element.getAttribute('data-column');
+        if (selectedColumns.includes(column)) {
+            element.classList.remove('hidden');
+        } else {
+            element.classList.add('hidden');
+        }
+    });
+    
+    // Update the view toggle button text
+    document.getElementById('view-toggle').querySelector('span').textContent = `View: ${view.charAt(0).toUpperCase() + view.slice(1)}`;
+}
+
+/**
+ * Project Stats Refresh Functionality
+ */
+function initRefreshFunctionality() {
+    // Individual project refresh
+    const refreshButtons = document.querySelectorAll('.refresh-stats');
+    refreshButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const projectId = this.getAttribute('data-project-id');
+            refreshProjectStats(projectId, this);
+        });
+    });
+    
+    // Refresh all projects
+    const refreshAllButton = document.getElementById('refresh-all');
+    if (refreshAllButton) {
+        refreshAllButton.addEventListener('click', function() {
+            refreshAllProjects();
+        });
+    }
+}
+
+/**
+ * Refresh stats for a specific project
+ */
+function refreshProjectStats(projectId, button) {
+    // Show loading state
+    const originalHTML = button.innerHTML;
+    button.innerHTML = `<div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>`;
+    button.disabled = true;
+    
+    // Make API request
+    fetch(`/project_leaderboard/refresh/${projectId}/`)
+        .then(response => response.json())
+        .then(data => {
+            // Reset button state
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            
+            // Show notification
+            if (data.status === 'success') {
+                showNotification(data.message, 'success');
+                
+                // Highlight the row briefly
+                const row = document.getElementById(`project-row-${projectId}`);
+                if (row) {
+                    row.classList.add('bg-green-50');
+                    setTimeout(() => {
+                        row.classList.remove('bg-green-50');
+                    }, 2000);
+                }
+            } else {
+                showNotification(data.message || 'An error occurred', 'error');
+            }
+        })
+        .catch(error => {
+            // Reset button state and show error
+            button.innerHTML = originalHTML;
+            button.disabled = false;
+            showNotification('Failed to refresh stats', 'error');
+        });
+}
+
+/**
+ * Refresh all projects
+ */
+function refreshAllProjects() {
+    const refreshButtons = document.querySelectorAll('.refresh-stats');
+    if (refreshButtons.length === 0) return;
+    
+    // Update button state
+    const refreshAllButton = document.getElementById('refresh-all');
+    const originalHTML = refreshAllButton.innerHTML;
+    refreshAllButton.innerHTML = `
+        <div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+        Refreshing...
+    `;
+    refreshAllButton.disabled = true;
+    
+    // Show notification
+    showNotification('Refreshing all project stats...', 'info');
+    
+    // Refresh each project with a slight delay
+    let processed = 0;
+    refreshButtons.forEach((button, index) => {
+        setTimeout(() => {
+            const projectId = button.getAttribute('data-project-id');
+            refreshProjectStats(projectId, button);
+            
+            processed++;
+            if (processed === refreshButtons.length) {
+                // Reset refresh all button
+                setTimeout(() => {
+                    refreshAllButton.innerHTML = originalHTML;
+                    refreshAllButton.disabled = false;
+                    showNotification('All projects refreshed!', 'success');
+                }, 1000);
+            }
+        }, index * 300); // Stagger requests to reduce server load
+    });
+}
+
+/**
+ * Charts Initialization
+ */
+function initCharts() {
+    // Top Projects Chart
+    initTopProjectsChart();
+    
+    // Status Distribution Chart
+    initStatusDistributionChart();
+    
+    // Code Quality Chart
+    initCodeQualityChart();
+    
+    // Social Media Chart
+    initSocialMediaChart();
+    
+    // Activity Timeline Chart
+    initActivityTimelineChart();
+    
+    // Social Mentions Chart (Social tab)
+    initSocialMentionsChart();
+    
+    // Social Platform Chart (Social tab)
+    initSocialPlatformChart();
+    
+    // Social Trend Chart (Social tab)
+    initSocialTrendChart();
+    
+    // Activity Detail Chart (Activity tab)
+    initActivityDetailChart();
+}
+
+/**
+ * Top Projects Chart (stars and forks)
+ */
+function initTopProjectsChart() {
+    const canvas = document.getElementById('topProjectsChart');
+    if (!canvas) return;
+    
+    // Get data from server-rendered context
+    const labels = [];
+    const starsData = [];
+    const forksData = [];
+    
+    // Extract data from HTML elements or use dummy data for the example
+    document.querySelectorAll('[data-project-name]').forEach(el => {
+        labels.push(el.getAttribute('data-project-name'));
+        starsData.push(parseInt(el.getAttribute('data-project-stars') || 0));
+        forksData.push(parseInt(el.getAttribute('data-project-forks') || 0));
+    });
+    
+    // Use dummy data if no data-attributes found
+    if (labels.length === 0) {
+        {% for project in top_projects|slice:":10" %}
+        labels.push("{{ project.name }}");
+        starsData.push({{ project.total_stars|default:0 }});
+        forksData.push({{ project.total_forks|default:0 }});
+        {% endfor %}
+    }
+    
+    new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Stars',
+                    data: starsData,
+                    backgroundColor: 'rgba(234, 179, 8, 0.8)',
+                    borderColor: 'rgba(234, 179, 8, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Forks',
+                    data: forksData,
+                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Status Distribution Chart
+ */
+function initStatusDistributionChart() {
+    const canvas = document.getElementById('statusDistributionChart');
+    if (!canvas) return;
+    
+    const data = {
+        labels: [],
+        datasets: [{
+            data: [],
+            backgroundColor: [
+                'rgba(34, 197, 94, 0.8)',  // Green for flagship
+                'rgba(59, 130, 246, 0.8)',  // Blue for production
+                'rgba(234, 179, 8, 0.8)',   // Yellow for incubator
+                'rgba(168, 85, 247, 0.8)',  // Purple for lab
+                'rgba(156, 163, 175, 0.8)'  // Gray for inactive
+            ],
+            borderColor: [
+                'rgba(34, 197, 94, 1)',
+                'rgba(59, 130, 246, 1)',
+                'rgba(234, 179, 8, 1)',
+                'rgba(168, 85, 247, 1)',
+                'rgba(156, 163, 175, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    // Get data from server-side context
+    {% for label, count in status_distribution.items %}
+    data.labels.push("{{ label }}");
+    data.datasets[0].data.push({{ count }});
+    {% endfor %}
+    
+    new Chart(canvas, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Code Quality Chart
+ */
+function initCodeQualityChart() {
+    const canvas = document.getElementById('codeQualityChart');
+    if (!canvas) return;
+    
+    const data = {
+        labels: [],
+        datasets: [
+            {
+                label: 'Quality Score',
+                data: [],
+                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Code Coverage',
+                data: [],
+                backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                borderColor: 'rgba(34, 197, 94, 1)',
+                borderWidth: 1
+            }
+        ]
+    };
+    
+    // Get data from server context
+    {% for item in quality_data %}
+    data.labels.push("{{ item.name }}");
+    data.datasets[0].data.push({{ item.quality|default:0 }});
+    data.datasets[1].data.push({{ item.coverage|default:0 }});
+    {% endfor %}
+    
+    new Chart(canvas, {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Score/Coverage (%)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Social Media Chart
+ */
+function initSocialMediaChart() {
+    const canvas = document.getElementById('socialMediaChart');
+    if (!canvas) return;
+    
+    const data = {
+        labels: [],
+        datasets: [
+            {
+                label: 'Twitter Mentions',
+                data: [],
+                backgroundColor: 'rgba(29, 161, 242, 0.6)',
+                borderColor: 'rgba(29, 161, 242, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'LinkedIn Mentions',
+                data: [],
+                backgroundColor: 'rgba(0, 119, 181, 0.6)',
+                borderColor: 'rgba(0, 119, 181, 1)',
+                borderWidth: 1
+            }
+        ]
+    };
+    
+    // Get data from server context
+    {% for item in social_data %}
+    data.labels.push("{{ item.name }}");
+    data.datasets[0].data.push({{ item.twitter|default:0 }});
+    data.datasets[1].data.push({{ item.linkedin|default:0 }});
+    {% endfor %}
+    
+    new Chart(canvas, {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Mentions'
+                    }
+                },
+                x: {
+                    ticks: {
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Activity Timeline Chart
+ */
+function initActivityTimelineChart() {
+    const canvas = document.getElementById('activityTimelineChart');
+    if (!canvas) return;
+    
+    // Process data from server context
+    const labels = [];
+    const commitsData = [];
+    const pullRequestsData = [];
+    const issuesData = [];
+    
+    {% for date, data in activity_data.items %}
+    labels.push("{{ date }}");
+    commitsData.push({{ data.commits }});
+    pullRequestsData.push({{ data.pull_requests }});
+    issuesData.push({{ data.issues }});
+    {% endfor %}
+    
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Commits',
+                    data: commitsData,
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Pull Requests',
+                    data: pullRequestsData,
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Issues',
+                    data: issuesData,
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Social Mentions Chart (Social tab)
+ */
+function initSocialMentionsChart() {
+    const canvas = document.getElementById('socialMentionsChart');
+    if (!canvas) return;
+    
+    // Create a line chart showing social mentions over time
+    // This would typically use time-series data from the backend
+    // For this example, we'll use synthetic data
+    
+    const data = {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [
+            {
+                label: 'Twitter Mentions',
+                data: [65, 59, 80, 81, 56, 55, 40, 45, 60, 75, 85, 90],
+                borderColor: 'rgba(29, 161, 242, 1)',
+                backgroundColor: 'rgba(29, 161, 242, 0.1)',
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'LinkedIn Mentions',
+                data: [28, 48, 40, 19, 86, 27, 90, 50, 30, 40, 50, 60],
+                borderColor: 'rgba(0, 119, 181, 1)',
+                backgroundColor: 'rgba(0, 119, 181, 0.1)',
+                fill: true,
+                tension: 0.4
+            }
+        ]
+    };
+    
+    new Chart(canvas, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Mentions'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Social Platform Chart (Social tab)
+ */
+function initSocialPlatformChart() {
+    const canvas = document.getElementById('socialPlatformChart');
+    if (!canvas) return;
+    
+    // Create a pie chart showing distribution of mentions across platforms
+    const data = {
+        labels: ['Twitter', 'LinkedIn', 'Reddit', 'HackerNews', 'Other'],
+        datasets: [{
+            data: [45, 25, 15, 10, 5],
+            backgroundColor: [
+                'rgba(29, 161, 242, 0.8)',  // Twitter blue
+                'rgba(0, 119, 181, 0.8)',   // LinkedIn blue
+                'rgba(255, 69, 0, 0.8)',    // Reddit orange
+                'rgba(255, 102, 0, 0.8)',   // HackerNews orange
+                'rgba(156, 163, 175, 0.8)'  // Gray for others
+            ],
+            borderColor: [
+                'rgba(29, 161, 242, 1)',
+                'rgba(0, 119, 181, 1)',
+                'rgba(255, 69, 0, 1)',
+                'rgba(255, 102, 0, 1)',
+                'rgba(156, 163, 175, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(canvas, {
+        type: 'pie',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${percentage}%`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Social Trend Chart (Social tab)
+ */
+function initSocialTrendChart() {
+    const canvas = document.getElementById('socialTrendChart');
+    if (!canvas) return;
+    
+    // Create a line chart showing social engagement over time
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const data = {
+        labels: months,
+        datasets: [
+            {
+                label: 'Social Engagement',
+                data: [30, 35, 45, 60, 75, 90, 105, 115, 130, 150, 170, 190],
+                borderColor: 'rgba(168, 85, 247, 1)',  // Purple
+                backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                fill: true,
+                tension: 0.4
+            }
+        ]
+    };
+    
+    new Chart(canvas, {
+        type: 'line',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Engagement Score'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.raw}`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Activity Detail Chart (Activity tab)
+ */
+function initActivityDetailChart() {
+    const canvas = document.getElementById('activityDetailChart');
+    if (!canvas) return;
+    
+    // Create a stacked bar chart showing activity breakdown
+    const data = {
+        labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+        datasets: [
+            {
+                label: 'Commits',
+                data: [65, 59, 80, 81],
+                backgroundColor: 'rgba(59, 130, 246, 0.8)'
+            },
+            {
+                label: 'Pull Requests',
+                data: [28, 48, 40, 19],
+                backgroundColor: 'rgba(34, 197, 94, 0.8)'
+            },
+            {
+                label: 'Issues Opened',
+                data: [35, 25, 30, 40],
+                backgroundColor: 'rgba(239, 68, 68, 0.8)'
+            },
+            {
+                label: 'Issues Closed',
+                data: [25, 30, 35, 45],
+                backgroundColor: 'rgba(16, 185, 129, 0.8)'
+            }
+        ]
+    };
+    
+    new Chart(canvas, {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            animation: {
+                duration: 2000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+}
+
+/**
+ * Scroll Animations
+ */
+function initScrollAnimations() {
+    // Add .visible class to elements as they scroll into view
+    const animatedElements = document.querySelectorAll('.animate-on-scroll');
+    
+    // Function to check if element is in viewport
+    function isInViewport(element) {
+        const rect = element.getBoundingClientRect();
+        return (
+            rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.85 &&
+            rect.bottom >= 0
+        );
+    }
+    
+    // Function to handle scroll event
+    function onScroll() {
+        animatedElements.forEach(element => {
+            if (isInViewport(element) && !element.classList.contains('visible')) {
+                element.classList.add('visible');
+            }
+        });
+    }
+    
+    // Initialize by checking initial positions
+    onScroll();
+    
+    // Add scroll listener
+    window.addEventListener('scroll', onScroll);
+}
+
+/**
+ * Show notification
+ */
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `
+        transform transition-all duration-500 ease-in-out mb-4 p-4 rounded-lg shadow-lg flex items-center
+        ${type === 'success' ? 'bg-green-500 text-white' :
+          type === 'error' ? 'bg-red-500 text-white' :
+          type === 'warning' ? 'bg-yellow-500 text-white' :
+          'bg-blue-500 text-white'}
+    `;
+    
+    // Add icon based on type
+    let icon = '';
+    if (type === 'success') {
+        icon = `<svg class="w-6 h-6 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>`;
+    } else if (type === 'error') {
+        icon = `<svg class="w-6 h-6 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>`;
+    } else if (type === 'warning') {
+        icon = `<svg class="w-6 h-6 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>`;
+    } else {
+        icon = `<svg class="w-6 h-6 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>`;
+    }
+    
+    // Set notification content
+    notification.innerHTML = icon + `<div class="flex-1">${message}</div>`;
+    
+    // Start with the notification invisible and translated
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateY(20px)';
+    
+    // Add to container
+    container.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.opacity = '1';
+        notification.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Add close button
+    const closeButton = document.createElement('button');
+    closeButton.className = 'ml-4 text-white hover:text-gray-200 focus:outline-none';
+    closeButton.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+    </svg>`;
+    closeButton.addEventListener('click', () => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            notification.remove();
+        }, 500);
+    });
+    notification.appendChild(closeButton);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 500);
+        }
+    }, 5000);
+}
+    </script>
+{% endblock %}
