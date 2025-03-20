@@ -1,9 +1,11 @@
 import os
 import time
+from unittest.mock import patch
 
 import chromedriver_autoinstaller
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.mail import send_mail
 from django.test import Client, LiveServerTestCase, TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
@@ -418,3 +420,42 @@ class OrganizationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, org_name)
         self.assertContains(response, org_url)
+
+
+class SlackEmailBackendTest(TestCase):
+    """Test the SlackNotificationEmailBackend to ensure it sends Slack notifications."""
+
+    @patch("requests.post")
+    @override_settings(EMAIL_BACKEND="blt.mail.SlackNotificationEmailBackend")
+    def test_email_sends_slack_notification(self, mock_post):
+        """Test that sending an email triggers a Slack notification."""
+        # Mock the response from Slack API
+        mock_post.return_value.json.return_value = {"ok": True}
+        mock_post.return_value.status_code = 200
+
+        # Send a test email
+        subject = "Test Subject"
+        message = "This is a test message."
+        from_email = "test@example.com"
+        recipient_list = ["recipient@example.com"]
+
+        # Set the SLACK_WEBHOOK_URL environment variable for the test
+        with patch.dict("os.environ", {"SLACK_WEBHOOK_URL": "https://hooks.slack.com/test"}):
+            send_mail(subject, message, from_email, recipient_list)
+
+        # Verify that requests.post was called with appropriate arguments
+        mock_post.assert_called_once()
+
+        # Check that the Slack webhook URL was used
+        args, kwargs = mock_post.call_args
+        self.assertEqual(args[0], "https://hooks.slack.com/test")
+
+        # Check that the payload contains the email details
+        payload = kwargs["json"]
+        self.assertIn("blocks", payload)
+
+        # Check that the message blocks contain our email information
+        block_text = payload["blocks"][0]["text"]["text"]
+        self.assertIn("Test Subject", block_text)
+        self.assertIn("test@example.com", block_text)
+        self.assertIn("recipient@example.com", block_text)
