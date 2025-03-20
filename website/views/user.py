@@ -1050,7 +1050,6 @@ def messaging_home(request):
     return render(request, "messaging.html", {"threads": threads})
 
 
-@login_required
 def start_thread(request, user_id):
     if request.method == "POST":
         other_user = get_object_or_404(User, id=user_id)
@@ -1058,10 +1057,38 @@ def start_thread(request, user_id):
         # Check if a thread already exists between the two users
         thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
 
+        # Flag if this is a new thread (for sending email)
+        is_new_thread = not thread
+
         if not thread:
             # Create a new thread
             thread = Thread.objects.create()
             thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+
+            # Send email notification to the recipient for new thread
+            if other_user.email:
+                subject = f"New encrypted chat from {request.user.username} on OWASP BLT"
+                chat_url = request.build_absolute_uri(reverse("messaging"))
+
+                # Create context for the email template
+                context = {
+                    "sender_username": request.user.username,
+                    "recipient_username": other_user.username,
+                    "chat_url": chat_url,
+                }
+
+                # Render the email content
+                msg_plain = render_to_string("email/new_chat.html", context)
+                msg_html = render_to_string("email/new_chat.html", context)
+
+                # Send the email
+                send_mail(
+                    subject,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [other_user.email],
+                    html_message=msg_html,
+                )
 
         return JsonResponse({"success": True, "thread_id": thread.id})
 

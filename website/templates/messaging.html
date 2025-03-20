@@ -333,15 +333,11 @@
                 .then(async data => {
                     const messageList = document.getElementById("message-list");
                     messageList.innerHTML = "";
-                    // For decryption of historical messages, derive shared key as above.
-                    let recipientPublicKeyBase64 = cachedRecipientPublicKey;
-                    if (!recipientPublicKeyBase64) {
-                        const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
-                        const respData = await resp.json();
-                        recipientPublicKeyBase64 = respData.public_key;
-                        cachedRecipientPublicKey = recipientPublicKeyBase64;
-                    }
-                    const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
+                    // Fetch and update the recipient's public key
+                    const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
+                    const respData = await resp.json();
+                    cachedRecipientPublicKey = respData.public_key;
+                    const recipientPublicKey = await importECDHPublicKey(cachedRecipientPublicKey);
                     const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
                     const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                     for (const message of data) {
