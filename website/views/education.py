@@ -610,8 +610,24 @@ def fetch_youtube_video_data(video_url):
 
 
 def extract_youtube_video_id(video_url):
-    match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", video_url)
-    return match.group(1) if match else None
+def extract_youtube_video_id(video_url):
+    # Handle youtu.be/VIDEO_ID format
+    if "youtu.be" in video_url:
+        match = re.search(r"youtu\.be\/([0-9A-Za-z_-]{11})", video_url)
+        if match:
+            return match.group(1)
+    
+    # Handle youtube.com/watch?v=VIDEO_ID format
+    match = re.search(r"(?:v=)([0-9A-Za-z_-]{11})", video_url)
+    if match:
+        return match.group(1)
+        
+    # Handle youtube.com/embed/VIDEO_ID format
+    match = re.search(r"(?:embed\/)([0-9A-Za-z_-]{11})", video_url)
+    if match:
+        return match.group(1)
+        
+    return None
 
 
 def fetch_vimeo_video_data(video_url):
