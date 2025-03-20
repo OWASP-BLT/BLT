@@ -1,26 +1,26 @@
 {% extends "organization/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}
-    Manage Bug Bountys
+    Manage Bug Bounties
 {% endblock title %}
 {% block description %}
-    Easily manage your Bug Bountys. Filter, view, edit, or delete hunts as needed. Access all your Bug Bountys in one place.
+    Easily manage your Bug Bounties. Filter, view, edit, or delete hunts as needed. Access all your Bug Bounties in one place.
 {% endblock description %}
 {% block keywords %}
-    Manage Bug Bountys, Bug Bounty Management, Online Contest, Filter Bug Bountys, Edit Bug Bounty, View Bug Bounty, Delete Bug Bounty
+    Manage Bug Bounties, Bug Bounty Management, Online Contest, Filter Bug Bounties, Edit Bug Bounty, View Bug Bounty, Delete Bug Bounty
 {% endblock keywords %}
 {% block og_title %}
-    Manage Bug Bountys - Easily Handle Your Online Contests
+    Manage Bug Bounties - Easily Handle Your Online Contests
 {% endblock og_title %}
 {% block og_description %}
-    Access and manage all your Bug Bountys effortlessly. Filter by status, view details, and edit or delete hunts with ease.
+    Access and manage all your Bug Bounties effortlessly. Filter by status, view details, and edit or delete hunts with ease.
 {% endblock og_description %}
 {% block body %}
     <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bug Bountys</p>
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bug Bounties</p>
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
-                <a href="{% url 'add_Bug Bounty' organization %}"
+                <a href="{% url 'add_BugBounty' organization %}"
                    class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
                     <i class="fa-sharp fa-solid fa-plus fa-xl text-white"></i>
                 </a>
@@ -31,12 +31,12 @@
                 <table class="w-full text-sm text-left text-gray-500">
                     <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
                         <div class="flex w-full justify-between">
-                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bug Bountys</h2>
+                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bug Bounties</h2>
                             <button id="dropdownDefaultButton"
                                     data-dropdown-toggle="dropdown"
                                     class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
                                     type="button">
-                                Filter Bug Bountys
+                                Filter Bug Bounties
                                 <svg class="w-2.5 h-2.5 ml-2.5"
                                      aria-hidden="true"
                                      xmlns="http://www.w3.org/2000/svg"
@@ -51,25 +51,25 @@
                                 <ul class="py-2 text-sm text-gray-700 dark:text-gray-200"
                                     aria-labelledby="dropdownDefaultButton">
                                     <li>
-                                        <a href="{% url 'organization_manage_Bug Bountys' organization %}"
+                                        <a href="{% url 'organization_manage_BugBounties' organization %}"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">All</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_Bug Bountys' organization %}?filter=ongoing"
+                                        <a href="{% url 'organization_manage_BugBounties' organization %}?filter=ongoing"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ongoing</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_Bug Bountys' organization %}?filter=draft"
+                                        <a href="{% url 'organization_manage_BugBounties' organization %}?filter=draft"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Draft</a>
                                     </li>
                                     <li>
-                                        <a href="{% url 'organization_manage_Bug Bountys' organization %}?filter=ended"
+                                        <a href="{% url 'organization_manage_BugBounties' organization %}?filter=ended"
                                            class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Ended</a>
                                     </li>
                                 </ul>
                             </div>
                         </div>
-                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your Bug Bountys easily</p>
+                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your Bug Bounties easily</p>
                     </caption>
                     <thead class="text-gray-700 uppercase bg-gray-50">
                         <tr>
@@ -86,8 +86,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% if Bug Bountys %}
-                            {% for hunt in Bug Bountys %}
+                        {% if Bug Bounties %}
+                            {% for hunt in Bug Bounties %}
                                 <tr class="bg-white border-b">
                                     <th scope="row"
                                         class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
@@ -105,7 +105,7 @@
                                         {% endif %}
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <a href="{% url 'show_Bug Bounty' hunt.id %}"
+                                        <a href="{% url 'show_BugBounty' hunt.id %}"
                                            class="font-medium text-blue-600 hover:underline">View</a>
                                     </td>
                                     {% if hunt.result_published %}
@@ -114,7 +114,7 @@
                                         </td>
                                     {% else %}
                                         <td class="px-6 py-4 text-right">
-                                            <a href="{% url 'add_Bug Bounty' organization %}?hunt={{ hunt.id }}"
+                                            <a href="{% url 'add_BugBounty' organization %}?hunt={{ hunt.id }}"
                                                class="font-medium text-blue-600 hover:underline">Edit</a>
                                         </td>
                                     {% endif %}
@@ -123,7 +123,7 @@
                         {% else %}
                             <tr class="bg-white border-b">
                                 <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Bug Bountys found</th>
+                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Bug Bounties found</th>
                             </tr>
                         {% endif %}
                     </tbody>

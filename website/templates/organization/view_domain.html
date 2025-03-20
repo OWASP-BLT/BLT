@@ -269,12 +269,12 @@
             </div>
             <div class="bg-white w-full p-10 my-5">
                 <div class="w-full flex justify-between">
-                    <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bug Bountys</h4>
+                    <h4 class="text-xl text-gray-900 font-bold mb-5">Ongoing Bug Bounties</h4>
                     <a href="{% url 'hunts' %}" class="text-md text-blue-600">View all</a>
                 </div>
                 <div class="flex justify-between w-full flex-wrap">
-                    {% if ongoing_Bug Bountys %}
-                        {% for hunt in ongoing_Bug Bountys %}
+                    {% if ongoing_Bug_Bounties %}
+                        {% for hunt in ongoing_Bug_Bounties %}
                             <div class="flex w-full md:w-[48%] lg:w-[30%] h-[180px] border-2 border-gray-300 p-2 cursor-pointer shadow-sm hover:scale-105 hover:shadow-lg transition-all m-2 sm:mt-5 rounded-lg">
                                 <div class="flex justify-center items-center w-[40%]">
                                     <img class="w-32 h-32 rounded-lg" {{ hunt.logo }} src="{% if hunt.logo %} {{ MEDIA_URL }}{{ hunt.logo }} {% else %} https://via.placeholder.com/128?text=No+Logo {% endif %}" alt="Bug Bounty logo" width="128px" height="128px">
@@ -291,7 +291,7 @@
                                                 0
                                             {% endif %}
                                         </p>
-                                        <a href="{% url 'show_Bug Bounty' hunt.id %}"
+                                        <a href="{% url 'show_BugBounty' hunt.id %}"
                                            class="bg-red-600 text-white px-3 py-1 font-bold rounded-md">More info</a>
                                     </div>
                                 </div>
@@ -299,7 +299,7 @@
                         {% endfor %}
                     {% else %}
                         <div class="w-full h-full flex items-center justify-center">
-                            <p class="text-xl text-red-500">No ongoing Bug Bountys available</p>
+                            <p class="text-xl text-red-500">No ongoing Bug Bounties available</p>
                         </div>
                     {% endif %}
                 </div>

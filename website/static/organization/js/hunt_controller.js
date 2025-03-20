@@ -3,8 +3,8 @@
 let prize_array = [];
 let list_prize_container = document.getElementById("list-prize-container");
 
-function add_prize(){
-                
+function add_prize() {
+
     let prize_name = document.getElementById("prize_name");
     let cash_value = document.getElementById("cash_value");
     let number_of_winning_projects = document.getElementById("number_of_winning_projects");
@@ -12,7 +12,7 @@ function add_prize(){
     let prize_description = document.getElementById("prize_description");
     let paid_in_cryptocurrency = document.getElementById("paid_in_cryptocurrency");
 
-    if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0){
+    if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0) {
         alert("Please fill in all fields correctly");
         return;
     }
@@ -26,15 +26,15 @@ function add_prize(){
         prize_description: prize_description.value,
         paid_in_cryptocurrency: paid_in_cryptocurrency.checked
     }
-    
+
 
     prize_array.push(prize_data)
     alert("Prize added successfully");
-    
+
     prize_name.value = "";
     cash_value.value = 0;
     number_of_winning_projects.value = 1;
-    if(number_of_winning_projects.disabled){
+    if (number_of_winning_projects.disabled) {
         number_of_winning_projects.disabled = false;
         number_of_winning_projects.style.display = "block";
     }
@@ -48,11 +48,11 @@ function add_prize(){
     let sanitizedNumberOfWinningProjects = Number(prize_data.number_of_winning_projects); // Sanitize number_of_winning_projects
 
     // if every_valid_submissions is checked, the number_of_winning_projects will be "all valid submissions"
-    if (prize_data.every_valid_submissions){
+    if (prize_data.every_valid_submissions) {
         sanitizedNumberOfWinningProjects = "All Valid Submissions";
     }
     // if the description is empty, the prize_description will be "No Description"
-    if (prize_description_sanitized === "..."){
+    if (prize_description_sanitized === "...") {
         prize_description_sanitized = "No Description";
     }
     prize_container_child_html.innerHTML = `
@@ -101,23 +101,23 @@ function remove_prize(prize_id) {
     }
 }
 
-function cancelForm(){
+function cancelForm() {
     let confirmDelete = confirm("Are you sure you want to cancel, your progress would be lost.");
-    if (confirmDelete === true){
+    if (confirmDelete === true) {
         window.history.back();
     }
 }
 
 function PublishBug Bounty(is_published){
-    
-    const Bug BountyForm = document.getElementById("add_Bug Bounty_form");
 
-    if (Bug BountyForm.checkValidity()){
+    const Bug BountyForm = document.getElementById("add_BugBounty_form");
+
+    if (Bug BountyForm.checkValidity()) {
         const prizeArrayInput = document.createElement('input');
         prizeArrayInput.type = 'text';
         prizeArrayInput.name = 'prizes';
         prizeArrayInput.value = JSON.stringify(prize_array);
-        
+
         const publishHunt = document.createElement('input');
         publishHunt.type = "text";
         publishHunt.name = "publish_Bug Bounty";
@@ -129,11 +129,11 @@ function PublishBug Bounty(is_published){
         Bug BountyForm.submit();
     }
 
-    else{
+    else {
         Bug BountyForm.reportValidity();
     }
 
-    
+
 
 }
 
@@ -145,11 +145,11 @@ function displayLogoPreview() {
         var file = fileInput.files[0];
         var reader = new FileReader();
 
-        reader.onload = function(event) {
-        var preview = document.createElement("img");
-        preview.src = event.target.result;
-        previewDiv.innerHTML = "";
-        previewDiv.appendChild(preview);
+        reader.onload = function (event) {
+            var preview = document.createElement("img");
+            preview.src = event.target.result;
+            previewDiv.innerHTML = "";
+            previewDiv.appendChild(preview);
         };
 
         reader.readAsDataURL(file);
@@ -160,7 +160,7 @@ function displayLogoPreview() {
 
 let valid_s = document.getElementById("every_valid_submissions");
 let winning_projects = document.getElementById("number_of_winning_projects");
-valid_s.addEventListener('click',()=>{
+valid_s.addEventListener('click', () => {
     winning_projects.value = 1;
     if (valid_s.checked) {
         winning_projects.disabled = true;
@@ -179,11 +179,11 @@ function displayBannerPreview() {
         var file = fileInput.files[0];
         var reader = new FileReader();
 
-        reader.onload = function(event) {
+        reader.onload = function (event) {
             var img = new Image();
             img.src = event.target.result;
 
-            img.onload = function() {
+            img.onload = function () {
                 var canvas = document.createElement("canvas");
                 var ctx = canvas.getContext("2d");
 
@@ -227,20 +227,20 @@ function removePrize(event, prizeId, organizationId) {
             'X-CSRFToken': getCookie('csrftoken')
         },
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Remove the prize from the DOM
-            prizeContainer.parentNode.removeChild(prizeContainer);
-            alert("Prize deleted successfully!");
-        } else {
-            alert("Failed to delete prize. Please try again.");
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert("An error occurred. Please try again.");
-    });
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the prize from the DOM
+                prizeContainer.parentNode.removeChild(prizeContainer);
+                alert("Prize deleted successfully!");
+            } else {
+                alert("Failed to delete prize. Please try again.");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("An error occurred. Please try again.");
+        });
 }
 
 function editPrize(event, prizeId, prizeName, cashValue, noOfProjects, validSubmissions, description, organizationId) {
@@ -269,7 +269,7 @@ function updatePrize(prizeId, organizationId) {
     let every_valid_submissions = document.getElementById("every_valid_submissions");
     let prize_description = document.getElementById("prize_description");
 
-    if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0){
+    if (prize_name.value.trim() === "" || cash_value.value <= 0 || number_of_winning_projects.value <= 0) {
         alert("Please fill in all fields correctly");
         return;
     }
@@ -292,47 +292,47 @@ function updatePrize(prizeId, organizationId) {
         },
         body: JSON.stringify(prize_data)
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the prize in the DOM
-            let prizeContainer = document.getElementById(`prize-container-${prizeId}`);
-            const paragraph = prizeContainer.querySelectorAll('p');
-            prize_data.prize_name = prize_data.prize_name.trim().substring(0, 8) + '...';
-            prizeContainer.querySelector('h2').innerText = prize_data.prize_name;
-            paragraph[1].innerText = `$${prize_data.cash_value}`;
-            if (prize_data.every_valid_submissions){
-                prize_data.number_of_winning_projects = "All Valid Submissions";
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the prize in the DOM
+                let prizeContainer = document.getElementById(`prize-container-${prizeId}`);
+                const paragraph = prizeContainer.querySelectorAll('p');
+                prize_data.prize_name = prize_data.prize_name.trim().substring(0, 8) + '...';
+                prizeContainer.querySelector('h2').innerText = prize_data.prize_name;
+                paragraph[1].innerText = `$${prize_data.cash_value}`;
+                if (prize_data.every_valid_submissions) {
+                    prize_data.number_of_winning_projects = "All Valid Submissions";
+                }
+                paragraph[3].innerText = prize_data.number_of_winning_projects;
+                paragraph[5].innerText = prize_data.every_valid_submissions;
+                // description slice to 55 characters
+                prize_data.prize_description = prize_data.prize_description.trim().substring(0, 55) + '...';
+                paragraph[7].innerText = prize_data.prize_description;
+                // we should have to update the edit button to update the editPrize function attributes
+                prizeContainer.querySelector('#EditPrizeButton').setAttribute('onclick', `editPrize(event, ${prizeId}, '${prize_data.prize_name}', ${prize_data.cash_value}, ${prize_data.number_of_winning_projects}, ${prize_data.every_valid_submissions}, '${prize_data.prize_description}', ${organizationId})`);
+                // and then reset the form
+                prize_name.value = "";
+                cash_value.value = 0;
+                number_of_winning_projects.value = 1;
+                if (number_of_winning_projects.disabled) {
+                    number_of_winning_projects.disabled = false;
+                    number_of_winning_projects.style.display = "block";
+                }
+                every_valid_submissions.checked = false;
+                prize_description.value = "";
+                document.getElementById('add_prize_button').innerText = 'Add Prize';
+                document.getElementById('add_prize_button').setAttribute('onclick', 'add_prize()');
+                document.getElementById('cryptocurrencyDiv').style.display = "block";
+                alert('Prize updated successfully');
+            } else {
+                alert("Failed to update prize. Please try again.");
             }
-            paragraph[3].innerText = prize_data.number_of_winning_projects;
-            paragraph[5].innerText = prize_data.every_valid_submissions;
-            // description slice to 55 characters
-            prize_data.prize_description = prize_data.prize_description.trim().substring(0, 55) + '...';
-            paragraph[7].innerText = prize_data.prize_description;
-            // we should have to update the edit button to update the editPrize function attributes
-            prizeContainer.querySelector('#EditPrizeButton').setAttribute('onclick', `editPrize(event, ${prizeId}, '${prize_data.prize_name}', ${prize_data.cash_value}, ${prize_data.number_of_winning_projects}, ${prize_data.every_valid_submissions}, '${prize_data.prize_description}', ${organizationId})`);
-            // and then reset the form
-            prize_name.value = "";
-            cash_value.value = 0;
-            number_of_winning_projects.value = 1;
-            if(number_of_winning_projects.disabled){
-                number_of_winning_projects.disabled = false;
-                number_of_winning_projects.style.display = "block";
-            }
-            every_valid_submissions.checked = false;
-            prize_description.value = "";
-            document.getElementById('add_prize_button').innerText = 'Add Prize';
-            document.getElementById('add_prize_button').setAttribute('onclick', 'add_prize()');
-            document.getElementById('cryptocurrencyDiv').style.display = "block";
-            alert('Prize updated successfully');
-        } else {
-            alert("Failed to update prize. Please try again.");
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert("An error occurred. Please try again.");
-    });
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("An error occurred. Please try again.");
+        });
 }
 
 function getCookie(name) {

@@ -399,8 +399,8 @@ msgid "Report a Bug"
 msgstr "バグを報告する"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bug Bountys"
-msgstr "バグハント"
+msgid "Bug Bounties"
+msgstr "バグ報奨金プログラム"
 
 #: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
@@ -946,7 +946,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "チームメンバーを追加"
 
 #: website/templates/report.html:291
-msgid "Team members should be Bug Bountys users"
+msgid "Team members should be Bug Bounties users"
 msgstr "チームメンバーはバグハントのユーザーである必要があります"
 
 #: website/templates/report.html:313

@@ -69,9 +69,12 @@ class HackathonListView(ListView):
         now = timezone.now()
 
         # Add counts for quick stats
-        context["upcoming_count"] = Hackathon.objects.filter(start_time__gt=now).count()
-        context["ongoing_count"] = Hackathon.objects.filter(start_time__lte=now, end_time__gte=now).count()
-        context["past_count"] = Hackathon.objects.filter(end_time__lt=now).count()
+        context["upcoming_count"] = Hackathon.objects.filter(
+            start_time__gt=now).count()
+        context["ongoing_count"] = Hackathon.objects.filter(
+            start_time__lte=now, end_time__gte=now).count()
+        context["past_count"] = Hackathon.objects.filter(
+            end_time__lt=now).count()
 
         # Add organizations for filter
         context["organizations"] = Organization.objects.all()
@@ -133,7 +136,8 @@ class HackathonDetailView(DetailView):
     def _get_participant_count(self, prs):
         """Helper method to count unique participants from PRs."""
         # Count unique user profiles (users registered on the platform)
-        user_profile_count = prs.exclude(user_profile=None).values("user_profile").distinct().count()
+        user_profile_count = prs.exclude(user_profile=None).values(
+            "user_profile").distinct().count()
 
         # Count unique contributors (GitHub users not registered on the platform)
         # Exclude bot accounts
@@ -177,7 +181,8 @@ class HackathonDetailView(DetailView):
                 merged_at__lte=hackathon.end_time,
             ).count()
 
-            repos_with_pr_counts.append({"repo": repo, "merged_pr_count": merged_pr_count})
+            repos_with_pr_counts.append(
+                {"repo": repo, "merged_pr_count": merged_pr_count})
 
         context["repositories"] = repos_with_pr_counts
 
@@ -202,7 +207,8 @@ class HackathonDetailView(DetailView):
 
         # Create dictionaries for lookup
         date_pr_counts = {item["date"]: item["count"] for item in pr_data}
-        date_merged_pr_counts = {item["date"]: item["count"] for item in merged_pr_data}
+        date_merged_pr_counts = {
+            item["date"]: item["count"] for item in merged_pr_data}
 
         # Fill in all dates in the range
         pr_dates, pr_counts = self._get_date_range_data(
@@ -219,7 +225,8 @@ class HackathonDetailView(DetailView):
 
         # Get sponsors by level
         sponsors = hackathon.sponsors.all()
-        sponsors_by_level = {"platinum": [], "gold": [], "silver": [], "bronze": [], "partner": []}
+        sponsors_by_level = {"platinum": [], "gold": [],
+                             "silver": [], "bronze": [], "partner": []}
         for sponsor in sponsors:
             sponsors_by_level[sponsor.sponsor_level].append(sponsor)
         context["sponsors_by_level"] = sponsors_by_level
@@ -240,14 +247,17 @@ class HackathonDetailView(DetailView):
         context["can_manage"] = can_manage
 
         # Get all merged pull requests during the hackathon period for participant count
-        merged_prs = self._get_base_pr_query(hackathon, repo_ids, is_merged=True)
+        merged_prs = self._get_base_pr_query(
+            hackathon, repo_ids, is_merged=True)
         context["participant_count"] = self._get_participant_count(merged_prs)
 
         # Count pull requests
-        context["pr_count"] = self._get_base_pr_query(hackathon, repo_ids).count()
+        context["pr_count"] = self._get_base_pr_query(
+            hackathon, repo_ids).count()
 
         # Count merged pull requests
-        context["merged_pr_count"] = self._get_base_pr_query(hackathon, repo_ids, is_merged=True).count()
+        context["merged_pr_count"] = self._get_base_pr_query(
+            hackathon, repo_ids, is_merged=True).count()
 
         # Get view data for sparkline chart
         # Get the path for this hackathon
@@ -259,7 +269,8 @@ class HackathonDetailView(DetailView):
 
         # Query IP table for view counts by date
         view_data = (
-            IP.objects.filter(path=hackathon_path, created__date__gte=fourteen_days_ago)
+            IP.objects.filter(path=hackathon_path,
+                              created__date__gte=fourteen_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
             .annotate(count=Sum("count"))
@@ -268,7 +279,8 @@ class HackathonDetailView(DetailView):
 
         # Prepare data for the sparkline chart
         date_counts = {item["date"]: item["count"] for item in view_data}
-        dates, counts = self._get_date_range_data(fourteen_days_ago, today, date_counts)
+        dates, counts = self._get_date_range_data(
+            fourteen_days_ago, today, date_counts)
 
         context["view_dates"] = json.dumps(dates)
         context["view_counts"] = json.dumps(counts)
@@ -352,8 +364,10 @@ class HackathonItemCreateMixin(LoginRequiredMixin, UserPassesTestMixin):
         return context
 
     def form_valid(self, form):
-        form.instance.hackathon = get_object_or_404(Hackathon, slug=self.kwargs["slug"])
-        messages.success(self.request, f"{self.item_type_name} added successfully!")
+        form.instance.hackathon = get_object_or_404(
+            Hackathon, slug=self.kwargs["slug"])
+        messages.success(
+            self.request, f"{self.item_type_name} added successfully!")
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -379,7 +393,8 @@ class HackathonPrizeCreateView(HackathonItemCreateMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["hackathon"] = get_object_or_404(Hackathon, slug=self.kwargs["slug"])
+        kwargs["hackathon"] = get_object_or_404(
+            Hackathon, slug=self.kwargs["slug"])
         return kwargs
 
 
@@ -392,19 +407,19 @@ def refresh_repository_data(request, hackathon_slug, repo_id):
     # Check if user has permission to refresh data
     user = request.user
     if not (user.is_superuser or hackathon.organization.is_admin(user) or hackathon.organization.is_manager(user)):
-        messages.error(request, "You don't have permission to refresh repository data.")
+        messages.error(
+            request, "You don't have permission to refresh repository data.")
         return redirect("hackathon_detail", slug=hackathon_slug)
 
     try:
         pr_count = _refresh_repository_pull_requests(hackathon, repo)
-        messages.success(request, f"Successfully refreshed data for {repo.name}. Found {pr_count} new pull requests.")
+        messages.success(
+            request, f"Successfully refreshed data for {repo.name}. Found {pr_count} new pull requests.")
     except Exception as e:
         messages.error(request, f"Error refreshing repository data: {str(e)}")
 
     return redirect("hackathon_detail", slug=hackathon_slug)
 
-<<<<<<< HEAD
-=======
 
 def _refresh_repository_pull_requests(hackathon, repo):
     """Helper function to refresh pull request data from GitHub API."""
@@ -476,13 +491,15 @@ def _refresh_repository_pull_requests(hackathon, repo):
 def _process_pull_request(pr_data, hackathon, repo):
     """Process a single pull request from GitHub API data."""
     # Parse dates
-    created_at = timezone.datetime.strptime(pr_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
+    created_at = timezone.datetime.strptime(
+        pr_data["created_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
 
     # Determine if PR is merged
     is_merged = pr_data["merged_at"] is not None
     merged_at = None
     if is_merged:
-        merged_at = timezone.datetime.strptime(pr_data["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
+        merged_at = timezone.datetime.strptime(
+            pr_data["merged_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC)
 
     # Check if PR is relevant to the hackathon
     is_relevant = False
@@ -527,7 +544,8 @@ def _process_pull_request(pr_data, hackathon, repo):
     repo.contributor.add(contributor)
 
     # Check if PR already exists in database
-    existing_pr = GitHubIssue.objects.filter(issue_id=pr_data["number"], repo=repo).first()
+    existing_pr = GitHubIssue.objects.filter(
+        issue_id=pr_data["number"], repo=repo).first()
 
     # Update or create PR
     if existing_pr:
@@ -554,7 +572,8 @@ def _process_pull_request(pr_data, hackathon, repo):
             state=pr_data["state"],
             type="pull_request",
             created_at=created_at,
-            updated_at=timezone.datetime.strptime(pr_data["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC),
+            updated_at=timezone.datetime.strptime(
+                pr_data["updated_at"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=pytz.UTC),
             merged_at=merged_at,
             is_merged=is_merged,
             url=pr_data["html_url"],
@@ -563,10 +582,10 @@ def _process_pull_request(pr_data, hackathon, repo):
         )
 
         # Try to find a user profile for the PR author
-        matching_profiles = UserProfile.objects.filter(github_url__icontains=github_username)
+        matching_profiles = UserProfile.objects.filter(
+            github_url__icontains=github_username)
         if matching_profiles.exists():
             new_pr.user_profile = matching_profiles.first()
 
         new_pr.save()
         return True  # New PR added
->>>>>>> upstream/main

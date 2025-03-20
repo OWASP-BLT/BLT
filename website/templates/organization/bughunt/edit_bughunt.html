@@ -22,7 +22,7 @@
         </div>
         <form method='post'
               action="#"
-              id="add_Bug Bounty_form"
+              id="add_BugBounty_form"
               enctype="multipart/form-data"
               class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
@@ -31,13 +31,13 @@
                 <h2 class="text-base font-semibold leading-7 text-gray-900">Create new online Bug Bounty</h2>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-3">
-                        <label for="Bug Bounty_name"
+                        <label for="BugBounty_name"
                                class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Name</label>
                         <div class="mt-2">
                             <input type="text"
-                                   name="Bug Bounty_name"
-                                   id="Bug Bounty_name"
-                                   autocomplete="Bug Bounty_name"
+                                   name="BugBounty_name"
+                                   id="BugBounty_name"
+                                   autocomplete="BugBounty_name"
                                    placeholder="Hunt 1.0"
                                    value="{{ hunt.name }}"
                                    required

@@ -84,14 +84,18 @@ def update_bch_address(request):
                 elif selected_crypto == "BitcoinCash":
                     user_profile.bch_address = new_address
                 else:
-                    messages.error(request, f"Invalid crypto selected: {selected_crypto}")
+                    messages.error(
+                        request, f"Invalid crypto selected: {selected_crypto}")
                     return redirect(reverse("profile", args=[request.user.username]))
                 user_profile.save()
-                messages.success(request, f"{selected_crypto} Address updated successfully.")
+                messages.success(
+                    request, f"{selected_crypto} Address updated successfully.")
             except Exception as e:
-                messages.error(request, f"Failed to update {selected_crypto} Address.")
+                messages.error(
+                    request, f"Failed to update {selected_crypto} Address.")
         else:
-            messages.error(request, f"Please provide a valid {selected_crypto} Address.")
+            messages.error(
+                request, f"Please provide a valid {selected_crypto} Address.")
     else:
         messages.error(request, "Invalid request method.")
 
@@ -102,10 +106,12 @@ def update_bch_address(request):
 @login_required
 def profile_edit(request):
     Tag.objects.get_or_create(name="GSOC")
-    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    user_profile, created = UserProfile.objects.get_or_create(
+        user=request.user)
 
     if request.method == "POST":
-        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        form = UserProfileForm(
+            request.POST, request.FILES, instance=user_profile)
         if form.is_valid():
             # Check if email is unique
             new_email = form.cleaned_data["email"]
@@ -126,7 +132,8 @@ def profile_edit(request):
             messages.error(request, "Please correct the errors below.")
     else:
         # Initialize the form with the user's current email
-        form = UserProfileForm(instance=user_profile, initial={"email": request.user.email})
+        form = UserProfileForm(instance=user_profile, initial={
+                               "email": request.user.email})
 
     return render(request, "profile_edit.html", {"form": form})
 
@@ -211,7 +218,8 @@ def get_github_stats(user_profile):
     open_count = user_prs.filter(state="open").count()
     closed_count = user_prs.filter(state="closed", is_merged=False).count()
 
-    users_with_github = UserProfile.objects.exclude(github_url="").exclude(github_url=None)
+    users_with_github = UserProfile.objects.exclude(
+        github_url="").exclude(github_url=None)
     contributor_count = users_with_github.count()
 
     # Group PRs by repo
@@ -285,7 +293,8 @@ class UserProfileDetailView(DetailView):
             return redirect("/")
 
         # Update the view count and save the model
-        self.object.userprofile.visit_count = len(IP.objects.filter(path=request.path))
+        self.object.userprofile.visit_count = len(
+            IP.objects.filter(path=request.path))
         self.object.userprofile.save()
 
         return super(UserProfileDetailView, self).get(request, *args, **kwargs)
@@ -309,26 +318,33 @@ class UserProfileDetailView(DetailView):
         context["base_milestone"] = base_milestone
         context["next_milestone"] = next_milestone
         # Fetch badges
-        user_badges = UserBadge.objects.filter(user=user).select_related("badge")
+        user_badges = UserBadge.objects.filter(
+            user=user).select_related("badge")
         context["user_badges"] = user_badges  # Add badges to context
-        context["is_mentor"] = UserBadge.objects.filter(user=user, badge__title="Mentor").exists()
+        context["is_mentor"] = UserBadge.objects.filter(
+            user=user, badge__title="Mentor").exists()
         context["available_badges"] = Badge.objects.all()
 
         user_points = Points.objects.filter(user=self.object).order_by("id")
         context["user_points"] = user_points
-        context["my_score"] = list(user_points.aggregate(total_score=Sum("score")).values())[0]
+        context["my_score"] = list(user_points.aggregate(
+            total_score=Sum("score")).values())[0]
         context["websites"] = (
-            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
+            Domain.objects.filter(issue__user=self.object).annotate(
+                total=Count("issue")).order_by("-total")
         )
         context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:3]
         context["activity_screenshots"] = {}
         for activity in context["activities"]:
-            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(issue=activity.pk).first()
+            context["activity_screenshots"][activity] = IssueScreenshot.objects.filter(
+                issue=activity.pk).first()
         context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
-        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
+        context["total_open"] = Issue.objects.filter(
+            user=self.object, status="open").count()
+        context["total_closed"] = Issue.objects.filter(
+            user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -343,9 +359,11 @@ class UserProfileDetailView(DetailView):
             .annotate(c=Count("id"))
             .order_by()
         )
-        context["total_bugs"] = Issue.objects.filter(user=self.object, hunt=None).count()
+        context["total_bugs"] = Issue.objects.filter(
+            user=self.object, hunt=None).count()
         for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i))
+            context["bug_type_" + str(i)] = Issue.objects.filter(
+                user=self.object, hunt=None, label=str(i))
 
         arr = []
         allFollowers = user.userprofile.follower.all()
@@ -359,10 +377,12 @@ class UserProfileDetailView(DetailView):
             arr.append(User.objects.get(username=str(userprofile.user)))
         context["following"] = arr
 
-        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
+        context["followers_list"] = [
+            str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         # tags
-        context["user_related_tags"] = UserProfile.objects.filter(user=self.object).first().tags.all()
+        context["user_related_tags"] = UserProfile.objects.filter(
+            user=self.object).first().tags.all()
         context["issues_hidden"] = "checked" if user.userprofile.issues_hidden else "!checked"
         # pull request info
         stats = get_github_stats(user.userprofile)
@@ -377,7 +397,8 @@ class UserProfileDetailView(DetailView):
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        form = UserProfileForm(request.POST, request.FILES,
+                               instance=request.user.userprofile)
         if request.FILES.get("user_avatar") and form.is_valid():
             form.save()
         else:
@@ -407,12 +428,15 @@ class UserProfileDetailsView(DetailView):
 
     def get_context_data(self, **kwargs):
         user = self.object
-        context = super(UserProfileDetailsView, self).get_context_data(**kwargs)
+        context = super(UserProfileDetailsView,
+                        self).get_context_data(**kwargs)
         context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
+            Points.objects.filter(user=self.object).aggregate(
+                total_score=Sum("score")).values()
         )[0]
         context["websites"] = (
-            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
+            Domain.objects.filter(issue__user=self.object).annotate(
+                total=Count("issue")).order_by("-total")
         )
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -420,9 +444,11 @@ class UserProfileDetailsView(DetailView):
             Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
         )[0:10]
         context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
+        context["total_open"] = Issue.objects.filter(
+            user=self.object, status="open").count()
         context["user_details"] = UserProfile.objects.get(user=self.object)
-        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
+        context["total_closed"] = Issue.objects.filter(
+            user=self.object, status="closed").count()
         context["current_month"] = datetime.now().month
         context["graph"] = (
             Issue.objects.filter(user=self.object, hunt=None)
@@ -453,13 +479,15 @@ class UserProfileDetailsView(DetailView):
             arr.append(User.objects.get(username=str(userprofile.user)))
         context["following"] = arr
 
-        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
+        context["followers_list"] = [
+            str(prof.user.email) for prof in user.userprofile.follower.all()]
         context["bookmarks"] = user.userprofile.issue_saved.all()
         return context
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
+        form = UserProfileForm(request.POST, request.FILES,
+                               instance=request.user.userprofile)
         if form.is_valid():
             form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
@@ -473,7 +501,8 @@ class LeaderboardBase:
             data = data.filter(points__created__year=year)
 
         if year and month:
-            data = data.filter(Q(points__created__year=year) & Q(points__created__month=month))
+            data = data.filter(Q(points__created__year=year)
+                               & Q(points__created__month=month))
 
         data = (
             data.annotate(total_score=Sum("points__score"))
@@ -518,15 +547,18 @@ class GlobalLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_global.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(GlobalLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super(GlobalLeaderboardView,
+                        self).get_context_data(*args, **kwargs)
 
-        user_related_tags = Tag.objects.filter(userprofile__isnull=False).distinct()
+        user_related_tags = Tag.objects.filter(
+            userprofile__isnull=False).distinct()
         context["user_related_tags"] = user_related_tags
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
 
-        context["leaderboard"] = self.get_leaderboard()[:10]  # Limit to 10 entries
+        context["leaderboard"] = self.get_leaderboard()[
+            :10]  # Limit to 10 entries
 
         # Pull Request Leaderboard
         pr_leaderboard = (
@@ -575,7 +607,8 @@ class EachmonthLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_eachmonth.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(EachmonthLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super(EachmonthLeaderboardView,
+                        self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -626,7 +659,8 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
     template_name = "leaderboard_specific_month.html"
 
     def get_context_data(self, *args, **kwargs):
-        context = super(SpecificMonthLeaderboardView, self).get_context_data(*args, **kwargs)
+        context = super(SpecificMonthLeaderboardView,
+                        self).get_context_data(*args, **kwargs)
 
         if self.request.user.is_authenticated:
             context["wallet"] = Wallet.objects.get(user=self.request.user)
@@ -656,7 +690,8 @@ class SpecificMonthLeaderboardView(LeaderboardBase, ListView):
 
 class CustomObtainAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        response = super(CustomObtainAuthToken, self).post(request, *args, **kwargs)
+        response = super(CustomObtainAuthToken, self).post(
+            request, *args, **kwargs)
         token = Token.objects.get(key=response.data["token"])
         return Response({"key": token.key, "id": token.user_id})
 
@@ -665,7 +700,8 @@ def invite_friend(request):
     if not request.user.is_authenticated:
         return redirect("account_login")
     current_site = get_current_site(request)
-    referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+    referral_code, created = InviteFriend.objects.get_or_create(
+        sender=request.user)
     referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
     context = {
         "referral_link": referral_link,
@@ -686,7 +722,8 @@ def referral_signup(request):
 
 
 def contributors_view(request, *args, **kwargs):
-    contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
+    contributors_file_path = os.path.join(
+        settings.BASE_DIR, "contributors.json")
 
     with open(contributors_file_path, "r", encoding="utf-8") as file:
         content = file.read()
@@ -716,15 +753,18 @@ def users_view(request, *args, **kwargs):
 
     # Get total count of users with GitHub profiles
     context["users_with_github_count"] = (
-        UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True).count()
+        UserProfile.objects.exclude(github_url="").exclude(
+            github_url__isnull=True).count()
     )
 
     # Get contributors from database
-    context["contributors"] = Contributor.objects.all().order_by("-contributions")
+    context["contributors"] = Contributor.objects.all().order_by(
+        "-contributions")
     context["contributors_count"] = context["contributors"].count()
 
     context["tags_with_counts"] = (
-        Tag.objects.filter(userprofile__isnull=False).annotate(user_count=Count("userprofile")).order_by("-user_count")
+        Tag.objects.filter(userprofile__isnull=False).annotate(
+            user_count=Count("userprofile")).order_by("-user_count")
     )
 
     tag_name = request.GET.get("tag")
@@ -736,7 +776,8 @@ def users_view(request, *args, **kwargs):
         context["users"] = []
     elif show_githubbers:
         context["githubbers"] = True
-        context["users"] = UserProfile.objects.exclude(github_url="").exclude(github_url__isnull=True)
+        context["users"] = UserProfile.objects.exclude(
+            github_url="").exclude(github_url__isnull=True)
         context["user_count"] = context["users"].count()
     elif tag_name:
         if context["tags_with_counts"].filter(name=tag_name).exists():
@@ -748,14 +789,16 @@ def users_view(request, *args, **kwargs):
             context["user_count"] = 0
     else:
         context["tag"] = "BLT Contributors"
-        context["users"] = UserProfile.objects.filter(tags__name="BLT Contributors")
+        context["users"] = UserProfile.objects.filter(
+            tags__name="BLT Contributors")
         context["user_count"] = context["users"].count()
 
     return render(request, "users.html", context=context)
 
 
 def contributors(request):
-    contributors_file_path = os.path.join(settings.BASE_DIR, "contributors.json")
+    contributors_file_path = os.path.join(
+        settings.BASE_DIR, "contributors.json")
 
     with open(contributors_file_path, "r", encoding="utf-8", errors="replace") as file:
         content = file.read()
@@ -779,7 +822,8 @@ def create_tokens(request):
 def get_score(request):
     users = []
     temp_users = (
-        User.objects.annotate(total_score=Sum("points__score")).order_by("-total_score").filter(total_score__gt=0)
+        User.objects.annotate(total_score=Sum("points__score")).order_by(
+            "-total_score").filter(total_score__gt=0)
     )
     rank_user = 1
     for each in temp_users.all():
@@ -787,11 +831,16 @@ def get_score(request):
         temp["rank"] = rank_user
         temp["id"] = each.id
         temp["User"] = each.username
-        temp["score"] = Points.objects.filter(user=each.id).aggregate(total_score=Sum("score"))
-        temp["image"] = list(UserProfile.objects.filter(user=each.id).values("user_avatar"))[0]
-        temp["title_type"] = list(UserProfile.objects.filter(user=each.id).values("title"))[0]
-        temp["follows"] = list(UserProfile.objects.filter(user=each.id).values("follows"))[0]
-        temp["savedissue"] = list(UserProfile.objects.filter(user=each.id).values("issue_saved"))[0]
+        temp["score"] = Points.objects.filter(
+            user=each.id).aggregate(total_score=Sum("score"))
+        temp["image"] = list(UserProfile.objects.filter(
+            user=each.id).values("user_avatar"))[0]
+        temp["title_type"] = list(UserProfile.objects.filter(
+            user=each.id).values("title"))[0]
+        temp["follows"] = list(UserProfile.objects.filter(
+            user=each.id).values("follows"))[0]
+        temp["savedissue"] = list(UserProfile.objects.filter(
+            user=each.id).values("issue_saved"))[0]
         rank_user = rank_user + 1
         users.append(temp)
     return JsonResponse(users, safe=False)
@@ -810,8 +859,10 @@ def follow_user(request, user):
                     flag = 1
             if flag != 1:
                 request.user.userprofile.follows.add(userx.userprofile)
-                msg_plain = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
-                msg_html = render_to_string("email/follow_user.html", {"follower": request.user, "followed": userx})
+                msg_plain = render_to_string(
+                    "email/follow_user.html", {"follower": request.user, "followed": userx})
+                msg_html = render_to_string(
+                    "email/follow_user.html", {"follower": request.user, "followed": userx})
 
                 send_mail(
                     "You got a new follower!!",
@@ -839,7 +890,8 @@ def monitor_create_view(request):
 
 
 def reward_sender_with_points(sender):
-    points, created = Points.objects.get_or_create(user=sender, defaults={"score": 0})
+    points, created = Points.objects.get_or_create(
+        user=sender, defaults={"score": 0})
     points.score += 2
     points.save()
 
@@ -854,7 +906,8 @@ def deletions(request):
             monitor.save()
             messages.success(request, "Form submitted successfully!")
         else:
-            messages.error(request, "Form submission failed. Please correct the errors.")
+            messages.error(
+                request, "Form submission failed. Please correct the errors.")
     else:
         form = MonitorForm()
 
@@ -889,8 +942,10 @@ def assign_badge(request, username):
         return redirect("profile", slug=username)
 
     # Assign the badge to user
-    UserBadge.objects.create(user=user, badge=badge, awarded_by=request.user, reason=reason)
-    messages.success(request, f"{badge.title} badge assigned to {user.username}.")
+    UserBadge.objects.create(user=user, badge=badge,
+                             awarded_by=request.user, reason=reason)
+    messages.success(
+        request, f"{badge.title} badge assigned to {user.username}.")
     return redirect("profile", slug=username)
 
 
@@ -948,7 +1003,8 @@ def github_webhook(request):
 
 def handle_pull_request_event(payload):
     if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
+        pr_user_profile = UserProfile.objects.filter(
+            github_url=payload["pull_request"]["user"]["html_url"]).first()
         if pr_user_profile:
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
@@ -956,7 +1012,8 @@ def handle_pull_request_event(payload):
 
 
 def handle_push_event(payload):
-    pusher_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    pusher_profile = UserProfile.objects.filter(
+        github_url=payload["sender"]["html_url"]).first()
     if pusher_profile:
         pusher_user = pusher_profile.user
         if payload.get("commits"):
@@ -965,7 +1022,8 @@ def handle_push_event(payload):
 
 
 def handle_review_event(payload):
-    reviewer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    reviewer_profile = UserProfile.objects.filter(
+        github_url=payload["sender"]["html_url"]).first()
     if reviewer_profile:
         reviewer_user = reviewer_profile.user
         assign_github_badge(reviewer_user, "First Code Review")
@@ -975,7 +1033,8 @@ def handle_review_event(payload):
 def handle_issue_event(payload):
     print("issue closed")
     if payload["action"] == "closed":
-        closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+        closer_profile = UserProfile.objects.filter(
+            github_url=payload["sender"]["html_url"]).first()
         if closer_profile:
             closer_user = closer_profile.user
             assign_github_badge(closer_user, "First Issue Closed")
@@ -983,7 +1042,8 @@ def handle_issue_event(payload):
 
 
 def handle_status_event(payload):
-    user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    user_profile = UserProfile.objects.filter(
+        github_url=payload["sender"]["html_url"]).first()
     if user_profile:
         user = user_profile.user
         build_status = payload["state"]
@@ -995,7 +1055,8 @@ def handle_status_event(payload):
 
 
 def handle_fork_event(payload):
-    user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+    user_profile = UserProfile.objects.filter(
+        github_url=payload["sender"]["html_url"]).first()
     if user_profile:
         user = user_profile.user
         assign_github_badge(user, "First Fork Created")
@@ -1004,7 +1065,8 @@ def handle_fork_event(payload):
 
 def handle_create_event(payload):
     if payload["ref_type"] == "branch":
-        user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+        user_profile = UserProfile.objects.filter(
+            github_url=payload["sender"]["html_url"]).first()
         if user_profile:
             user = user_profile.user
             assign_github_badge(user, "First Branch Created")
@@ -1013,7 +1075,8 @@ def handle_create_event(payload):
 
 def assign_github_badge(user, action_title):
     try:
-        badge, created = Badge.objects.get_or_create(title=action_title, type="automatic")
+        badge, created = Badge.objects.get_or_create(
+            title=action_title, type="automatic")
         if not UserBadge.objects.filter(user=user, badge=badge).exists():
             UserBadge.objects.create(user=user, badge=badge)
 
@@ -1026,8 +1089,10 @@ class UserChallengeListView(View):
     """View to display all challenges and handle updates inline."""
 
     def get(self, request):
-        challenges = Challenge.objects.filter(challenge_type="single")  # All single-user challenges
-        user_challenges = challenges.filter(participants=request.user)  # Challenges the user is participating in
+        challenges = Challenge.objects.filter(
+            challenge_type="single")  # All single-user challenges
+        # Challenges the user is participating in
+        user_challenges = challenges.filter(participants=request.user)
 
         for challenge in challenges:
             if challenge in user_challenges:
@@ -1046,7 +1111,8 @@ class UserChallengeListView(View):
 
 @login_required
 def messaging_home(request):
-    threads = Thread.objects.filter(participants=request.user).order_by("-updated_at")
+    threads = Thread.objects.filter(
+        participants=request.user).order_by("-updated_at")
     return render(request, "messaging.html", {"threads": threads})
 
 
@@ -1055,7 +1121,8 @@ def start_thread(request, user_id):
         other_user = get_object_or_404(User, id=user_id)
 
         # Check if a thread already exists between the two users
-        thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
+        thread = Thread.objects.filter(participants=request.user).filter(
+            participants=other_user).first()
 
         # Flag if this is a new thread (for sending email)
         is_new_thread = not thread
@@ -1063,7 +1130,8 @@ def start_thread(request, user_id):
         if not thread:
             # Create a new thread
             thread = Thread.objects.create()
-            thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+            # Use set() for ManyToManyField
+            thread.participants.set([request.user, other_user])
 
             # Send email notification to the recipient for new thread
             if other_user.email:
@@ -1147,12 +1215,11 @@ def set_public_key(request):
 
     return JsonResponse({"success": True, "public_key": profile.public_key})
 
-<<<<<<< HEAD
-=======
 
 @login_required
 def fetch_notifications(request):
-    notifications = Notification.objects.filter(user=request.user, is_deleted=False).order_by("is_read", "-created_at")
+    notifications = Notification.objects.filter(
+        user=request.user, is_deleted=False).order_by("is_read", "-created_at")
 
     notifications_data = [
         {
@@ -1179,7 +1246,8 @@ def mark_as_read(request):
                 except json.JSONDecodeError:
                     return JsonResponse({"status": "error", "message": "Invalid JSON in request body"}, status=400)
 
-            notifications = Notification.objects.filter(user=request.user, is_read=False)
+            notifications = Notification.objects.filter(
+                user=request.user, is_read=False)
             notifications.update(is_read=True)
             return JsonResponse({"status": "success"})
         except Exception as e:
@@ -1193,7 +1261,8 @@ def mark_as_read(request):
 def delete_notification(request, notification_id):
     if request.method == "DELETE":
         try:
-            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+            notification = get_object_or_404(
+                Notification, id=notification_id, user=request.user)
 
             notification.is_deleted = True
             notification.save()
@@ -1207,4 +1276,3 @@ def delete_notification(request, notification_id):
             )
     else:
         return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)
->>>>>>> upstream/main

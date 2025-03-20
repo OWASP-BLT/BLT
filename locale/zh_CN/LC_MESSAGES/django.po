@@ -397,8 +397,8 @@ msgid "Report a Bug"
 msgstr "报告错误"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bug Bountys"
-msgstr "寻找漏洞"
+msgid "Bug Bounties"
+msgstr "漏洞赏金"
 
 #: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
@@ -930,7 +930,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "添加团队成员"
 
 #: website/templates/report.html:291
-msgid "Team members should be Bug Bountys users"
+msgid "Team members should be Bug Bounties users"
 msgstr "团队成员应该是漏洞猎用户"
 
 #: website/templates/report.html:313

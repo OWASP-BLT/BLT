@@ -45,8 +45,8 @@ from website.models import (
 )
 from website.serializers import (
     ActivityLogSerializer,
-    Bug BountyPrizeSerializer,
-    Bug BountySerializer,
+    BugBountyPrizeSerializer,
+    BugBountySerializer,
     ContributorSerializer,
     DomainSerializer,
     IssueSerializer,
@@ -111,7 +111,8 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Not found."}, status=404)
 
         instance = user_profile
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
@@ -147,7 +148,8 @@ class IssueViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = (
-            Issue.objects.exclude(Q(is_hidden=True) & ~Q(user_id=self.request.user.id))
+            Issue.objects.exclude(Q(is_hidden=True) & ~
+                                  Q(user_id=self.request.user.id))
             if self.request.user.is_authenticated
             else Issue.objects.exclude(Q(is_hidden=True))
         )
@@ -174,13 +176,16 @@ class IssueViewSet(viewsets.ModelViewSet):
             ]
         else:
             # If no image exists in the Issue table, return only the images from IssueScreenshot
-            screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
+            screenshots = [request.build_absolute_uri(
+                screenshot.image.url) for screenshot in issue.screenshots.all()]
 
         is_upvoted = False
         is_flagged = False
         if request.user.is_authenticated:
-            is_upvoted = request.user.userprofile.issue_upvoted.filter(id=issue.id).exists()
-            is_flagged = request.user.userprofile.issue_flaged.filter(id=issue.id).exists()
+            is_upvoted = request.user.userprofile.issue_upvoted.filter(
+                id=issue.id).exists()
+            is_flagged = request.user.userprofile.issue_flaged.filter(
+                id=issue.id).exists()
 
         tag_serializer = TagSerializer(issue.tags.all(), many=True)
         tags = tag_serializer.data
@@ -246,7 +251,8 @@ class IssueViewSet(viewsets.ModelViewSet):
             if image_validator(screenshot):
                 filename = screenshot.name
                 screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
-                file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
+                file_path = default_storage.save(
+                    f"screenshots/{screenshot.name}", screenshot)
 
                 # Create the IssueScreenshot object and associate it with the issue
                 IssueScreenshot.objects.create(image=file_path, issue=issue)
@@ -344,7 +350,8 @@ class UserScoreApiView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, id, format=None, *args, **kwargs):
-        total_score = Points.objects.filter(user__id=id).annotate(total_score=Sum("score"))
+        total_score = Points.objects.filter(
+            user__id=id).annotate(total_score=Sum("score"))
 
         return Response({"total_score": total_score})
 
@@ -383,11 +390,16 @@ class LeaderboardApiViewSet(APIView):
             temp["rank"] = rank_user
             temp["id"] = each["id"]
             temp["User"] = each["username"]
-            temp["score"] = Points.objects.filter(user=each["id"]).aggregate(total_score=Sum("score"))
-            temp["image"] = list(UserProfile.objects.filter(user=each["id"]).values("user_avatar"))[0]
-            temp["title_type"] = list(UserProfile.objects.filter(user=each["id"]).values("title"))[0]
-            temp["follows"] = list(UserProfile.objects.filter(user=each["id"]).values("follows"))[0]
-            temp["savedissue"] = list(UserProfile.objects.filter(user=each["id"]).values("issue_saved"))[0]
+            temp["score"] = Points.objects.filter(
+                user=each["id"]).aggregate(total_score=Sum("score"))
+            temp["image"] = list(UserProfile.objects.filter(
+                user=each["id"]).values("user_avatar"))[0]
+            temp["title_type"] = list(UserProfile.objects.filter(
+                user=each["id"]).values("title"))[0]
+            temp["follows"] = list(UserProfile.objects.filter(
+                user=each["id"]).values("follows"))[0]
+            temp["savedissue"] = list(UserProfile.objects.filter(
+                user=each["id"]).values("issue_saved"))[0]
             rank_user = rank_user + 1
             users.append(temp)
 
@@ -407,7 +419,8 @@ class LeaderboardApiViewSet(APIView):
 
         year = int(year)
 
-        leaderboard = global_leaderboard.monthly_year_leaderboard(year, api=True)
+        leaderboard = global_leaderboard.monthly_year_leaderboard(
+            year, api=True)
         month_winners = []
 
         months = [
@@ -458,7 +471,8 @@ class LeaderboardApiViewSet(APIView):
     def organization_leaderboard(self, request, *args, **kwargs):
         paginator = PageNumberPagination()
         organizations = (
-            Organization.objects.values().annotate(issue_count=Count("domain__issue")).order_by("-issue_count")
+            Organization.objects.values().annotate(
+                issue_count=Count("domain__issue")).order_by("-issue_count")
         )
         page = paginator.paginate_queryset(organizations, request)
 
@@ -484,10 +498,12 @@ class UrlCheckApiViewset(APIView):
         if domain_url is None or domain_url.strip() == "":
             return Response([])
 
-        domain = domain_url.replace("https://", "").replace("http://", "").replace("www.", "")
+        domain = domain_url.replace(
+            "https://", "").replace("http://", "").replace("www.", "")
 
         issues = (
-            Issue.objects.filter(Q(Q(domain__name=domain) | Q(domain__url__icontains=domain)) & Q(is_hidden=False))
+            Issue.objects.filter(Q(Q(domain__name=domain) | Q(
+                domain__url__icontains=domain)) & Q(is_hidden=False))
             .values(
                 "id",
                 "description",
@@ -503,7 +519,7 @@ class UrlCheckApiViewset(APIView):
         return Response(issues[:10])
 
 
-class Bug BountyApiViewset(APIView):
+class BugBountyApiViewset(APIView):
     permission_classes = [AllowAny]
 
     def get_active_hunts(self, request, fields, *args, **kwargs):
@@ -515,17 +531,20 @@ class Bug BountyApiViewset(APIView):
         return Response(hunts)
 
     def get_previous_hunts(self, request, fields, *args, **kwargs):
-        hunts = Hunt.objects.values(*fields).filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
+        hunts = Hunt.objects.values(
+            *fields).filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(hunts)
 
     def get_upcoming_hunts(self, request, fields, *args, **kwargs):
         hunts = (
-            Hunt.objects.values(*fields).filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
+            Hunt.objects.values(*fields).filter(is_published=True,
+                                                starts_on__gte=datetime.now()).order_by("starts_on")
         )
         return Response(hunts)
 
     def get_search_by_name(self, request, search_query, fields, *args, **kwargs):
-        hunts = Hunt.objects.values(*fields).filter(is_published=True, name__icontains=search_query).order_by("end_on")
+        hunts = Hunt.objects.values(
+            *fields).filter(is_published=True, name__icontains=search_query).order_by("end_on")
         return Response(hunts)
 
     def get(self, request, *args, **kwargs):
@@ -553,21 +572,22 @@ class Bug BountyApiViewset(APIView):
             return self.get_previous_hunts(request, fields, *args, **kwargs)
         elif upcomingHunt:
             return self.get_upcoming_hunts(request, fields, *args, **kwargs)
-        hunts = Hunt.objects.values(*fields).filter(is_published=True).order_by("-end_on")
+        hunts = Hunt.objects.values(
+            *fields).filter(is_published=True).order_by("-end_on")
         return Response(hunts)
 
 
-class Bug BountyApiViewsetV2(APIView):
+class BugBountyApiViewsetV2(APIView):
     permission_classes = [AllowAny]
 
     def serialize_hunts(self, hunts):
-        hunts = Bug BountySerializer(hunts, many=True)
+        hunts = BugBountySerializer(hunts, many=True)
 
         serialize_hunts_list = []
 
         for hunt in hunts.data:
             hunt_prizes = HuntPrize.objects.filter(hunt__id=hunt["id"])
-            hunt_prizes = Bug BountyPrizeSerializer(hunt_prizes, many=True)
+            hunt_prizes = BugBountyPrizeSerializer(hunt_prizes, many=True)
 
             serialize_hunts_list.append({**hunt, "prizes": hunt_prizes.data})
 
@@ -580,11 +600,13 @@ class Bug BountyApiViewsetV2(APIView):
         return Response(self.serialize_hunts(hunts))
 
     def get_previous_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
+        hunts = Hunt.objects.filter(
+            is_published=True, end_on__lte=datetime.now()).order_by("-end_on")
         return Response(self.serialize_hunts(hunts))
 
     def get_upcoming_hunts(self, request, *args, **kwargs):
-        hunts = Hunt.objects.filter(is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
+        hunts = Hunt.objects.filter(
+            is_published=True, starts_on__gte=datetime.now()).order_by("starts_on")
         return Response(self.serialize_hunts(hunts))
 
     def get(self, request, *args, **kwargs):
@@ -594,21 +616,25 @@ class Bug BountyApiViewsetV2(APIView):
         previousHunt = request.query_params.get("previousHunt")
         upcomingHunt = request.query_params.get("upcomingHunt")
         if activeHunt:
-            page = paginator.paginate_queryset(self.get_active_hunts(request, *args, **kwargs), request)
+            page = paginator.paginate_queryset(
+                self.get_active_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
         elif previousHunt:
-            page = paginator.paginate_queryset(self.get_previous_hunts(request, *args, **kwargs), request)
+            page = paginator.paginate_queryset(
+                self.get_previous_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
         elif upcomingHunt:
-            page = paginator.paginate_queryset(self.get_upcoming_hunts(request, *args, **kwargs), request)
+            page = paginator.paginate_queryset(
+                self.get_upcoming_hunts(request, *args, **kwargs), request)
 
             return paginator.get_paginated_response(page)
 
-        hunts = self.serialize_hunts(Hunt.objects.filter(is_published=True).order_by("-end_on"))
+        hunts = self.serialize_hunts(Hunt.objects.filter(
+            is_published=True).order_by("-end_on"))
         page = paginator.paginate_queryset(hunts, request)
 
         return paginator.get_paginated_response(page)
@@ -629,7 +655,8 @@ class InviteFriendApiViewset(APIView):
 
         try:
             current_site = get_current_site(request)
-            referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
+            referral_code, created = InviteFriend.objects.get_or_create(
+                sender=request.user)
             referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
 
             # Prepare email content
@@ -691,7 +718,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         try:
             organization = self.get_object()
             repos = Repo.objects.filter(organization=organization)
-            serializer = RepoSerializer(repos, many=True, context={"request": request})
+            serializer = RepoSerializer(
+                repos, many=True, context={"request": request})
             return Response(serializer.data)
         except Organization.DoesNotExist:
             return Response({"detail": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -715,7 +743,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         name = data.get("name", "")
         slug = slugify(name)
 
-        contributors = Project.get_contributors(self, data["github_url"])  # get contributors
+        contributors = Project.get_contributors(
+            self, data["github_url"])  # get contributors
 
         serializer = ProjectSerializer(data=data)
 
@@ -742,7 +771,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            contributors_data.sort(
+                key=lambda x: x["contributions"], reverse=True)
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -769,7 +799,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            contributors_data.sort(
+                key=lambda x: x["contributions"], reverse=True)
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -795,7 +826,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if forks:
             projects = projects.filter(forks__gte=forks)
         if tags:
-            projects = projects.filter(tags__name__in=tags.split(",")).distinct()
+            projects = projects.filter(
+                tags__name__in=tags.split(",")).distinct()
 
         project_data = []
         for project in projects:
@@ -803,7 +835,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             for contributor in project.contributors.all():
                 contributor_info = ContributorSerializer(contributor)
                 contributors_data.append(contributor_info.data)
-            contributors_data.sort(key=lambda x: x["contributions"], reverse=True)
+            contributors_data.sort(
+                key=lambda x: x["contributions"], reverse=True)
             project_info = ProjectSerializer(project).data
             project_info["contributors"] = contributors_data
             project_data.append(project_info)
@@ -857,7 +890,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                         | Q(url__iexact=f"https://{normalized_url}")
                     )
                 except Organization.DoesNotExist:
-                    raise ParseError(detail="Organization not found for the given URL.")
+                    raise ParseError(
+                        detail="Organization not found for the given URL.")
 
             else:
                 organization = None
@@ -868,7 +902,8 @@ class TimeLogViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             raise ParseError(detail=str(e))
         except Exception as e:
-            raise ParseError(detail="An unexpected error occurred while creating the time log.")
+            raise ParseError(
+                detail="An unexpected error occurred while creating the time log.")
 
     @action(detail=False, methods=["post"])
     def start(self, request):
@@ -924,7 +959,8 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             raise ParseError(detail=str(e))
         except Exception as e:
-            raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+            raise ParseError(
+                detail="An unexpected error occurred while creating the activity log.")
 
 
 class OwaspComplianceChecker(APIView):
@@ -964,7 +1000,8 @@ class OwaspComplianceChecker(APIView):
             has_owasp_mention = "owasp" in content
 
             # Check for project page link
-            owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
+            owasp_links = [a for a in soup.find_all(
+                "a") if "owasp.org" in a.get("href", "")]
             has_project_link = len(owasp_links) > 0
 
             # Check for up-to-date info
@@ -991,9 +1028,11 @@ class OwaspComplianceChecker(APIView):
             soup = BeautifulSoup(response.text, "html.parser")
 
             # Look for common paywall terms
-            paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
+            paywall_terms = ["premium", "subscribe",
+                             "subscription", "pay", "pricing"]
             content = soup.get_text().lower()
-            has_paywall_indicators = any(term in content for term in paywall_terms)
+            has_paywall_indicators = any(
+                term in content for term in paywall_terms)
 
             return {"possible_paywall": has_paywall_indicators, "details": {"url_checked": url, "recommendations": []}}
         except Exception:
@@ -1015,13 +1054,17 @@ class OwaspComplianceChecker(APIView):
         # Compile recommendations
         recommendations = []
         if not github_check["under_owasp_org"]:
-            recommendations.append("Project should be hosted under the OWASP GitHub organization")
+            recommendations.append(
+                "Project should be hosted under the OWASP GitHub organization")
         if not website_check["has_owasp_mention"]:
-            recommendations.append("Website should clearly state it is an OWASP project")
+            recommendations.append(
+                "Website should clearly state it is an OWASP project")
         if not website_check["has_project_link"]:
-            recommendations.append("Website should link to the OWASP project page")
+            recommendations.append(
+                "Website should link to the OWASP project page")
         if vendor_check["possible_paywall"]:
-            recommendations.append("Check if the project has features behind a paywall")
+            recommendations.append(
+                "Check if the project has features behind a paywall")
 
         report = {
             "url": url,
@@ -1031,4 +1074,3 @@ class OwaspComplianceChecker(APIView):
         }
 
         return Response(report, status=status.HTTP_200_OK)
-

@@ -62,7 +62,7 @@ Report Issue
 How it Works
 
 OWASP BLT is a bug logging tool that allows users to report issues and get points, and companies are
-held accountable. Testers can win money through company-sponsored Bug Bountys, tips, or the Grand
+held accountable. Testers can win money through company-sponsored Bug Bounties, tips, or the Grand
 Prize/Jackpot. Organizations can keep their customers happy by giving them a consistent bug-free user
 experience.
 
@@ -181,8 +181,8 @@ application that allows anyone to report software or hardware bugs found on any 
 N
 
 . How does OWASP BLT work? Users can submit a bug report through the BLT platform, and they can
-earn points for each bug they find. Companies can launch their own Bug Bountys and reward users for
-finding issues on their websites. Bug Bountyers can win money through company-sponsored Bug Bountys,
+earn points for each bug they find. Companies can launch their own Bug Bounties and reward users for
+finding issues on their websites. Bug Bountyers can win money through company-sponsored Bug Bounties,
 tips, or the Grand Prize/Jackpot.
 
 w
@@ -201,7 +201,7 @@ e Submit the information.
 a
 
 . How can | win rewards for reporting bugs on OWASP BLT? You can win rewards by participating in
-company-sponsored Bug Bountys, where you can earn prize money known as tips. The prize pool can
+company-sponsored Bug Bounties, where you can earn prize money known as tips. The prize pool can
 include a Grand Prize/Jackpot, and in some cases, there may be “heists" where each bug is worth a
 specific amount based on what the company sets.
 
@@ -220,7 +220,7 @@ display of content, and more.
 co
 
 . Can organizations launch Bug Bounty programs with prize pools using OWASP BLT? Yes, organizations
-can launch their own Bug Bountys and reward users for finding issues on their websites.
+can launch their own Bug Bounties and reward users for finding issues on their websites.
 
 ©
 

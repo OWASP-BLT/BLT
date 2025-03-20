@@ -10,7 +10,7 @@ Users interact with the Bug Report Form through a series of steps designed to ca
 2. **Check for Duplicates**: Users can click the "Check for Duplicates" button to ensure the bug hasn't already been reported, reducing redundancy and improving efficiency.
 3. **Fill in the Bug Title**: A concise and descriptive title is entered in the "Bug Title" field, summarizing the nature of the bug.
 4. **Select Bug Type**: The user selects the appropriate category for the bug from the "Bug Type" dropdown menu, which helps in classifying and prioritizing the issue.
-5. **Choose Bug Bounty Option**: Users can select "Report Independently" or choose from a list of active Bug Bountys they are participating in, using the "Bug Bounty" dropdown.
+5. **Choose Bug Bounty Option**: Users can select "Report Independently" or choose from a list of active Bug Bounties they are participating in, using the "Bug Bounty" dropdown.
 6. **Upload Screenshots**: Users can upload screenshots to illustrate the bug. This is done by dragging and dropping images into the "Upload screenshots" area or by pasting images directly. The form supports PNG, JPG, and GIF formats, with a limit of up to five images.
 7. **Enter CVE ID**: If the bug is a known vulnerability, users can enter the Common Vulnerabilities and Exposures (CVE) ID in the "CVE ID" field. This helps in referencing standardized information.
 8. **Describe the Bug**: In the "Bug Description" section, users provide a detailed description of the bug. The markdown editor allows for text formatting, adding images, and embedding links. Users can preview their input to ensure clarity and completeness.

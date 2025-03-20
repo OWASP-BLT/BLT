@@ -401,8 +401,8 @@ msgid "Report a Bug"
 msgstr "Einen Fehler melden"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bug Bountys"
-msgstr "Fehlerjagden"
+msgid "Bug Bounties"
+msgstr "Fehlerprämien"
 
 #: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
@@ -953,8 +953,8 @@ msgid "ADD TEAM MEMBERS"
 msgstr "Teammitglieder hinzufügen"
 
 #: website/templates/report.html:291
-msgid "Team members should be Bug Bountys users"
-msgstr "Teammitglieder sollten Bug Bountys-Benutzer sein"
+msgid "Team members should be Bug Bounties users"
+msgstr "Teammitglieder sollten Bug Bounties-Benutzer sein"
 
 #: website/templates/report.html:313
 msgid "Report Privately"

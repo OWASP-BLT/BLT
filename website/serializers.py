@@ -36,18 +36,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """
 
     def get_total_score(self, instance):
-        score = Points.objects.filter(user=instance.user).aggregate(total_score=Sum("score")).get("total_score")
+        score = Points.objects.filter(user=instance.user).aggregate(
+            total_score=Sum("score")).get("total_score")
         if score is None:
             return 0
         return score
 
     def get_activities(self, instance):
-        issues = Points.objects.filter(user=instance.user, score__gt=0).values("issue__id")
+        issues = Points.objects.filter(
+            user=instance.user, score__gt=0).values("issue__id")
         return [issue["issue__id"] for issue in issues]
 
     user = UserSerializer(read_only=True)
-    total_score = serializers.SerializerMethodField(method_name="get_total_score")
-    activities = serializers.SerializerMethodField(method_name="get_activities")
+    total_score = serializers.SerializerMethodField(
+        method_name="get_total_score")
+    activities = serializers.SerializerMethodField(
+        method_name="get_activities")
 
     class Meta:
         model = UserProfile
@@ -103,13 +107,13 @@ class DomainSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class Bug BountyPrizeSerializer(serializers.ModelSerializer):
+class BugBountyPrizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = HuntPrize
         fields = "__all__"
 
 
-class Bug BountySerializer(serializers.ModelSerializer):
+class BugBountySerializer(serializers.ModelSerializer):
     class Meta:
         model = Hunt
         fields = "__all__"
@@ -168,7 +172,8 @@ class TimeLogSerializer(serializers.ModelSerializer):
 class ActivityLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActivityLog
-        fields = ["id", "user", "window_title", "url", "recorded_at", "created"]
+        fields = ["id", "user", "window_title",
+                  "url", "recorded_at", "created"]
         read_only_fields = [
             "id",
             "user",
@@ -190,4 +195,3 @@ class RepoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Repo
         fields = ("id", "name", "url", "organization")
-

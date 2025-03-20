@@ -396,8 +396,8 @@ msgid "Report a Bug"
 msgstr "रिपोर्ट"
 
 #: website/templates/includes/navbar.html:72
-msgid "Bug Bountys"
-msgstr "बग हंट्स"
+msgid "Bug Bounties"
+msgstr "बग बाउंटीज़"
 
 #: website/templates/includes/navbar.html:109
 msgid "Add to chrome"
@@ -938,7 +938,7 @@ msgid "ADD TEAM MEMBERS"
 msgstr "टीम के सदस्यों को जोड़ें"
 
 #: website/templates/report.html:291
-msgid "Team members should be Bug Bountys users"
+msgid "Team members should be Bug Bounties users"
 msgstr "टीम के सदस्य बगहंट्स उपयोगकर्ता होने चाहिए"
 
 #: website/templates/report.html:313
