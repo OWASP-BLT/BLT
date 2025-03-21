@@ -584,10 +584,45 @@ i.fa-5x {
     height: 50px;
 }
 
+   /* Suggestion box styling */
+   .suggestion-box {
+    z-index: 1000;
+    background: #fff; 
+    border: 1px solid #ccc;
+    border-radius: 4px; 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+    max-height: 150px; 
+    overflow-y: auto; 
+}
+
+.suggestion-box:focus{
+    border: none;
+    outline: none;
+}
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer; 
+    color: #333; 
+    font-size: 14px; 
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0; 
+}
+
+.suggestion-item.selected {
+    background-color: #e0e0e0; 
+}
+
 @media (max-width: 500px) {
     .tag {
         display: inline-block;
         margin: 5px 0;
         padding: 5px 10px;
+    }
+
+    .suggestion-box{
+        max-width: 250px;
     }
 }

@@ -1430,7 +1430,11 @@ def stats_dashboard(request):
         "1825": 1825,  # 5 years
     }
 
-    days = period_map.get(period, 30)
+    # Validate the period parameter
+    if period not in period_map:
+        period = "30"
+
+    days = period_map[period]
 
     # Calculate the date range
     end_date = timezone.now()
