@@ -2361,6 +2361,16 @@ class Queue(models.Model):
             self.save()
 
 
+class EducationalVideo(models.Model):
+    url = models.URLField()
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    is_educational = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
 class Thread(models.Model):
     participants = models.ManyToManyField(User, related_name="threads")
     updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
@@ -2444,3 +2454,4 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["is_read", "-created_at"]
+

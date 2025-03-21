@@ -117,6 +117,7 @@ from website.views.core import (
 from website.views.education import (
     add_lecture,
     add_section,
+    add_video,
     course_content_management,
     create_or_update_course,
     create_standalone_lecture,
@@ -698,8 +699,11 @@ urlpatterns = [
         update_lectures_order,
         name="update_lectures_order",
     ),
+
+    path("education/add-video/", add_video, name="add_video"),
     path("gsoc/", GsocView.as_view(), name="gsoc"),
     path("gsoc/refresh/", refresh_gsoc_project, name="refresh_gsoc_project"),
+
     re_path(
         r"^privacypolicy/$",
         TemplateView.as_view(template_name="privacy.html"),
