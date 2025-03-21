@@ -204,6 +204,7 @@ def cut(value, arg):
     except (ValueError, TypeError):
         return value
 
+
 @register.filter
 def format_security_timedelta(td):
     """Convert a timedelta object into a human-readable string."""
