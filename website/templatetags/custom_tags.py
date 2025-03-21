@@ -203,3 +203,14 @@ def cut(value, arg):
         return str(value).replace(arg, "")
     except (ValueError, TypeError):
         return value
+
+
+@register.filter
+def timedelta(td):
+    """Convert a timedelta object into a human-readable string."""
+    if not td:
+        return "N/A"
+    total_seconds = int(td.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    return f"{hours}h {minutes}m"
