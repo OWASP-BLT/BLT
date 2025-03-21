@@ -294,7 +294,7 @@
                     <h3 class="text-lg font-semibold text-gray-800 mb-2">Avg Resolution Time</h3>
                     <p class="text-3xl font-bold text-gray-700">
                         {% if security_incidents_summary.avg_resolution_time %}
-                            {{ security_incidents_summary.avg_resolution_time|format_security_timedelta }}
+                            {{ security_incidents_summary.avg_resolution_time|timesince }}
                         {% else %}
                             N/A
                         {% endif %}
