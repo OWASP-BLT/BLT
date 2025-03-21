@@ -11,7 +11,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
+from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum, FieldError
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
