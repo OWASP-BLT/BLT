@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from blt import settings
 from website.models import BaconEarning, BaconSubmission, Badge, UserBadge
+from website.utils import send_slack_message
 
 
 # @login_required
@@ -117,6 +118,14 @@ class BaconSubmissionView(View):
                 bacon_amount=bacon_amount,
                 status=status,
             )
+
+            try:
+                send_slack_message(
+                    "#project-blt-bacon",
+                    f"🥓 New bacon claim submitted by {request.user.username}\n🔗 {github_url}\n💸 Bacon Requested: {bacon_amount}",
+                )
+            except Exception as e:
+                print("Slack error:", e)
 
             return JsonResponse({"message": "Submission created", "submission_id": submission.id}, status=201)
 

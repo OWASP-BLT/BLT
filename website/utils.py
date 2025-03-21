@@ -23,6 +23,8 @@ from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
 from openai import OpenAI
 from PIL import Image
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 from website.models import DailyStats
 
@@ -986,3 +988,15 @@ class twitter:
         except Exception as e:
             logging.error(f"Error sending to Slack: {str(e)}")
             return False
+
+
+def send_slack_message(channel, text):
+    token = os.getenv("SLACK_BOT_TOKEN")
+    if not token:
+        print("⚠️ SLACK_BOT_TOKEN not set.")
+        return
+    client = WebClient(token=token)
+    try:
+        client.chat_postMessage(channel=channel, text=text)
+    except SlackApiError as e:
+        print(f"Slack API Error: {e.response['error']}")
