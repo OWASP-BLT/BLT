@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import requests
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser, User
-from django.core.exceptions import ValidationError, FieldError
+from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
