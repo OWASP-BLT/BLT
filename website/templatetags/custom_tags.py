@@ -210,7 +210,7 @@ def format_security_timedelta(td):
     if not td:
         return "N/A"
     total_seconds = int(td.total_seconds())
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    days = hours // 24
+    days = total_seconds // (24 * 3600)  # Calculate days first
+    hours = (total_seconds % (24 * 3600)) // 3600  # Get remaining hours after days
+    minutes = (total_seconds % 3600) // 60  # Get remaining minutes
     return f"{days} days, {hours} hours, {minutes} minutes"
