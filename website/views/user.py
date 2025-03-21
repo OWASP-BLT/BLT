@@ -1105,6 +1105,21 @@ def view_thread(request, thread_id):
 
 
 @login_required
+def delete_thread(request, thread_id):
+    if request.method == "POST":
+        try:
+            thread = Thread.objects.get(id=thread_id)
+            # Check if user is a participant
+            if request.user in thread.participants.all():
+                thread.delete()
+                return JsonResponse({"status": "success"})
+            return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+        except Thread.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Thread not found"}, status=404)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
+
+
+@login_required
 @require_http_methods(["GET"])
 def get_public_key(request, thread_id):
     # Get the thread

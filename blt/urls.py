@@ -303,6 +303,7 @@ from website.views.user import (
     contributors_view,
     create_wallet,
     delete_notification,
+    delete_thread,
     deletions,
     fetch_notifications,
     follow_user,
@@ -1096,6 +1097,7 @@ urlpatterns = [
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
+    path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
 ]
 
 if settings.DEBUG:
