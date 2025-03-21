@@ -319,6 +319,7 @@
     </div>
 {% endblock content %}
 {% block after_js %}
+    <script src="{% static 'js/issue.js' %}" type="text/javascript"></script>
     <script type="text/javascript">
     function isCVEValid(cveNumber) {
         const cveRegex = /^CVE-\d{4}-\d{4,7}$/;
