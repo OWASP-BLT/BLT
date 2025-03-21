@@ -49,6 +49,18 @@ def parse_date(date_str):
     return parse_datetime(date_str) if date_str else None
 
 
+def repo_activity_data(request, slug):
+    """API endpoint for repository activity data"""
+    repo = get_object_or_404(Repo, slug=slug)
+    owner_repo = repo.repo_url.rstrip("/").split("github.com/")[-1]
+    owner, repo_name = owner_repo.split("/")
+
+    # Get activity data
+    activity_data = RepoDetailView().fetch_activity_data(owner, repo_name)
+
+    return JsonResponse(activity_data)
+
+
 def blt_tomato(request):
     current_dir = Path(__file__).parent.parent
     json_file_path = current_dir / "fixtures" / "blt_tomato_project_link.json"
