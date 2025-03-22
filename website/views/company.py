@@ -8,10 +8,10 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import requests
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser, User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -191,6 +191,39 @@ class OrganizationDashboardAnalyticsView(View):
         "Nov",
         "Dec",
     ]
+
+    def get_security_incidents_summary(self, organization):
+        # Get all security-related issues (label=4)
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        # Calculate severity distribution
+        # Note: Check if the severity field exists - currently not defined in the Issue model
+        try:
+            severity_counts = security_issues.values("severity").annotate(count=Count("id"))
+        except FieldError:
+            # Severity field doesn't exist, provide empty list
+            severity_counts = []
+
+        # Get recent security incidents (last 30 days)
+        recent_incidents = security_issues.filter(created__gte=timezone.now() - timedelta(days=30))
+
+        # Calculate average resolution time
+        resolved_issues = security_issues.filter(status="resolved")
+        resolved_issues = resolved_issues.filter(closed_date__isnull=False)
+        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+
+        return {
+            "total_security_issues": security_issues.count(),
+            "recent_incidents": recent_incidents.count(),
+            "severity_distribution": list(severity_counts),
+            "avg_resolution_time": avg_resolution_time,
+            "top_affected_domains": security_issues.values("domain__name")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5],
+        }
 
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
@@ -378,6 +411,7 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
+            "security_incidents_summary": self.get_security_incidents_summary(id),
         }
         return render(request, "organization/organization_analytics.html", context=context)
 
