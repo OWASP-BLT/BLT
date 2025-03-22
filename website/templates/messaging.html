@@ -240,11 +240,9 @@
             isConnecting = true;
             updateConnectionStatus(false);
             try {
-                console.log("Attempting WebSocket connection..."); // to remove
                 const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
                 socket = new WebSocket(protocol + window.location.host + `/ws/messaging/${threadId}/`);
                 socket.onopen = function() {
-                    console.log("WebSocket connection established"); // to remove
                     isConnecting = false;
                     reconnectAttempts = 0;
                     updateConnectionStatus(true);
@@ -264,7 +262,6 @@
                 };
                 socket.onmessage = handleWebSocketMessage;
             } catch (error) {
-                console.error("Error creating WebSocket:", error); // to remove
                 isConnecting = false;
                 updateConnectionStatus(false);
             }
