@@ -45,24 +45,24 @@ repos:
         pass_filenames: false  # <-- ADD THIS LINE
         verbose: true
 
-  # - repo: local
-  #   hooks:
-      # - id: django-collectstatic
-      #   name: Django Collect Static
-      #   entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py collectstatic --noinput; fi'
-      #   language: system
-      #   types: [python]
-      #   pass_filenames: false
-      #   always_run: true
-      #   verbose: true
-      # - id: django-test
-      #   name: Django Tests
-      #   entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
-      #   language: system
-      #   types: [python]
-      #   pass_filenames: false
-      #   always_run: true
-      #   verbose: true
+  - repo: local
+    hooks:
+      - id: django-collectstatic
+        name: Django Collect Static
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py collectstatic --noinput; fi'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        verbose: true
+      - id: django-test
+        name: Django Tests
+        entry: bash -c 'if [ -z "$GITHUB_ACTIONS" ]; then poetry run python manage.py test --failfast; fi'
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        verbose: true
 
 
 fail_fast: true
