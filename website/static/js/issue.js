@@ -682,23 +682,53 @@ function processIssueReferences() {
         const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
         
         let renderedHtml = md.render(markdownContent);
-        renderedHtml = renderedHtml.replace(
-            /#(\d+)/g, 
-            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-        );
-        
+        // First set the rendered HTML (already sanitized by markdownit)
         bugReportElement.innerHTML = renderedHtml;
+       
+        // Then find and replace issue references safely using DOM methods
+        replaceIssueReferences(bugReportElement);
     }
     
     // Process plain text descriptions
     const issueDescriptionElement = document.querySelector('.issue-description');
-    if (issueDescriptionElement) {
-        const originalText = issueDescriptionElement.textContent;
-        const transformedText = originalText.replace(
-            /#(\d+)/g, 
-            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
-        );
-        
-        issueDescriptionElement.innerHTML = transformedText;
+    
+        if (issueDescriptionElement) {
+            // Safely replace issue references using DOM methods
+            replaceIssueReferences(issueDescriptionElement);
+        }
+}
+
+
+function replaceIssueReferences(element) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const nodesToReplace = [];
+    let currentNode;
+    
+    // First, collect all text nodes that need replacement
+    while (currentNode = walker.nextNode()) {
+        if (/#\d+/.test(currentNode.nodeValue)) {
+            nodesToReplace.push(currentNode);
+        }
     }
+    
+    // Then, replace each collected node
+    nodesToReplace.forEach(textNode => {
+        const fragment = document.createDocumentFragment();
+        const parts = textNode.nodeValue.split(/(#\d+)/g);
+        
+        parts.forEach(part => {
+            const match = part.match(/^#(\d+)$/);
+            if (match) {
+                const link = document.createElement('a');
+                link.href = `/issue/${match[1]}`;
+                link.className = 'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                link.textContent = part;
+                fragment.appendChild(link);
+            } else if (part) {
+                fragment.appendChild(document.createTextNode(part));
+            }
+        });
+        
+        textNode.parentNode.replaceChild(fragment, textNode);
+    });
 }
