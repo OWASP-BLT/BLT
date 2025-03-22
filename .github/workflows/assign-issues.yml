@@ -28,7 +28,9 @@ jobs:
           SPONSORS: ${{ secrets.SPONSORS }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
         run: |
-          if [[ ",${SPONSORS}," =~ ",${ISSUE_AUTHOR}," ]]; then
+          # Sanitize SPONSORS variable by removing any unexpected characters (keeping only commas and alphanumeric)
+          SANITIZED_SPONSORS=$(echo "${SPONSORS}" | tr -cd '[:alnum:],')
+          if [[ ",${SANITIZED_SPONSORS}," =~ ",${ISSUE_AUTHOR}," ]]; then
             echo "is_sponsor=true" >> $GITHUB_OUTPUT
           else
             echo "is_sponsor=false" >> $GITHUB_OUTPUT
@@ -38,15 +40,21 @@ jobs:
         if: steps.check-sponsor.outputs.is_sponsor == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           REPO: ${{ github.repository }}
         run: |
           echo "Adding $5 bounty label for sponsor ${ISSUE_AUTHOR}"
-          curl -X POST \
-            -H "Authorization: token ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/labels \
-            -d '{"labels":["bounty: $5"]}' || echo "Failed to add label, but continuing..."
+          for attempt in {1..3}; do
+            curl -X POST \
+              -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${REPO}/issues/${ISSUE_NUMBER}/labels \
+              -d '{"labels":["bounty: $5"]}' && break
+            echo "Attempt $attempt failed to add label. Retrying..."
+            sleep 2
+          done || echo "Failed to add label after 3 attempts. Please check the token permissions or API status."
+        shell: bash
 
       - name: OWASP BLT Action
         uses: OWASP-BLT/BLT-Action@main
