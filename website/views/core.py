@@ -315,7 +315,8 @@ def status_page(request):
                                 github_api_history = github_api_history[-50:]
 
                             # Update cache
-                            cache.set("github_api_history", github_api_history, 86400)  # Cache for 24 hours
+                            # Cache for 24 hours
+                            cache.set("github_api_history", github_api_history, 86400)
                     else:
                         status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
@@ -1638,7 +1639,8 @@ def check_owasp_compliance(request):
             date_patterns = [
                 r"\b\d{4}-\d{2}-\d{2}\b",  # YYYY-MM-DD
                 r"\b\d{2}/\d{2}/\d{4}\b",  # DD/MM/YYYY
-                r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2},? \d{4}\b",  # Month DD, YYYY
+                # Month DD, YYYY
+                r"\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]* \d{1,2},? \d{4}\b",
             ]
             has_dates = any(re.search(pattern, content, re.IGNORECASE) for pattern in date_patterns)
 
@@ -1891,11 +1893,11 @@ def run_management_command(request):
                             # Convert to appropriate type if needed
                             if action.type:
                                 try:
-                                    if action.type == int:
+                                    if action.type is int:
                                         arg_value = int(arg_value)
-                                    elif action.type == float:
+                                    elif action.type is float:
                                         arg_value = float(arg_value)
-                                    elif action.type == bool:
+                                    elif action.type is bool:
                                         arg_value = arg_value.lower() in ("true", "yes", "1")
                                 except (ValueError, TypeError):
                                     warning_msg = (

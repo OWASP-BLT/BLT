@@ -1,7 +1,7 @@
 venv
 *.pyc
 staticfiles
-.env
+!.env
 /env
 /pvenv
 db.sqlite3
