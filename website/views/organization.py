@@ -2736,7 +2736,7 @@ class BountyPayoutsView(ListView):
         cached_issues = cache.get(cache_key)
 
         if cached_issues:
-            return cached_issues
+            return cached_issues, None
 
         # GitHub API endpoint - use q parameter to construct a search query for all closed issues with $5 label
         encoded_label = label.replace("$", "%24")
@@ -2752,18 +2752,18 @@ class BountyPayoutsView(ListView):
             if response.status_code == 200:
                 data = response.json()
                 issues = data.get("items", [])
+                total_count = data.get("total_count", 0)
 
                 # Cache the results for 30 minutes
                 cache.set(cache_key, issues, 60 * 30)
-
-                return issues
+                return issues, total_count
             else:
                 # Log the error response from GitHub
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
-                return []
+                return [], 0
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
-            return []
+            return [], 0
 
     def post(self, request, *args, **kwargs):
         """Handle POST requests for refreshing issues or processing payments"""
@@ -2783,10 +2783,31 @@ class BountyPayoutsView(ListView):
                 # Import required models
                 from website.models import GitHubIssue, Repo
 
-                issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
+                page = 1
+                per_page = 100
+                all_issues = []
+                total_count = None
                 count = 0
+                
+                # Fetch all pages of issues
+                while True:
+                    issues, api_total_count = self.github_issues_with_bounties("$5", "closed", page=page, per_page=per_page)
+                    
+                    if total_count is None and api_total_count is not None:
+                        total_count = api_total_count
+                        
+                    if not issues:
+                        break
+                        
+                    all_issues.extend(issues)
+                    
+                    # Check if we've fetched all issues
+                    if len(all_issues) >= total_count or len(issues) < per_page:
+                        break
+                        
+                    page += 1
 
-                for issue_data in issues:
+                for issue_data in all_issues:
                     github_url = issue_data["html_url"]
 
                     # Extract owner, repo, and issue number from URL
