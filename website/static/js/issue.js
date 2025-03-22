@@ -670,4 +670,35 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
+
+    processIssueReferences();
 });
+
+function processIssueReferences() {
+    // Process markdown content
+    const bugReportElement = document.getElementById('bug_report');
+    if (bugReportElement && window.markdownit) {
+        const md = new window.markdownit();
+        const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+        
+        let renderedHtml = md.render(markdownContent);
+        renderedHtml = renderedHtml.replace(
+            /#(\d+)/g, 
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        bugReportElement.innerHTML = renderedHtml;
+    }
+    
+    // Process plain text descriptions
+    const issueDescriptionElement = document.querySelector('.issue-description');
+    if (issueDescriptionElement) {
+        const originalText = issueDescriptionElement.textContent;
+        const transformedText = originalText.replace(
+            /#(\d+)/g, 
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        issueDescriptionElement.innerHTML = transformedText;
+    }
+}
