@@ -262,14 +262,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_label_name(self, label_id):
         """Convert label ID to human-readable name."""
-        label_names = {
-            1: "Design",
-            2: "Functional",
-            3: "Performance",
-            4: "Security",
-            # Add more labels as needed
-        }
-        return label_names.get(label_id, "Other")
+        return self.labels.get(label_id, "Other")
 
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
@@ -1280,9 +1273,8 @@ class OrganizationDashboardManageRolesView(View):
                 .distinct()
             )
         else:
-            # For unauthenticated users, show empty lists
-            organization_users_list = []
-            domains_data = []
+            # For unauthenticated users, don't show organization list
+            organizations = []
 
         # Get the organization object
         organization_obj = Organization.objects.filter(id=id).first()
