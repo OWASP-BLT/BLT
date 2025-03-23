@@ -1,55 +1,182 @@
-name: Auto Close PR if Issue Not Assigned
+name: Close PR if Issue Not Assigned
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions:
+  pull-requests: write
+  contents: read
+  issues: read
 
 jobs:
-  close_pr:
+  check_issue_assignment:
     runs-on: ubuntu-latest
+    if: >
+      github.actor != 'dependabot[bot]'
+      && github.actor != 'dependabot-preview[bot]'
+      && github.actor != 'dependabot'
+      && github.actor != github.repository_owner
+      && github.actor != 'sentry-autofix'
+      && github.actor != 'DonnieBLT'
+      && github.actor != 'github-actions[bot]'
     steps:
-      - name: Check PR linked issue assignment
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const pr = context.payload.pull_request;
-            const prAuthor = pr.user.login;
-            const prBody = pr.body || "";
-            // Regex to match linking keywords "closes/fixes/resolves #123"
-            const regex = /(?:Closes|Fixes|Resolves)\s+#(\d+)/i;
-            const match = prBody.match(regex);
-            if (!match) {
-              console.log("No linked issue found. Exiting…");
-              return;
+      - name: Check issue assignment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          echo "Checking issue assignment for PR #${PR_NUMBER} by ${PR_AUTHOR}"
+          
+          # Construct the GraphQL query to get closing issues
+          QUERY=$(jq -n \
+          --arg repoOwner "$REPO_OWNER" \
+          --arg repoName "$REPO_NAME" \
+          --argjson prNumber "$PR_NUMBER" \
+          '{
+            query: "query($REPO_NAME: String!, $REPO_OWNER: String!, $PR_NUMBER: Int!) {
+              repository(owner: $REPO_OWNER, name: $REPO_NAME) {
+                pullRequest(number: $PR_NUMBER) {
+                  id
+                  author {
+                    login
+                  }
+                  closingIssuesReferences(first: 50) {
+                    edges {
+                      node {
+                        id
+                        number
+                        assignees(first: 10) {
+                          edges {
+                            node {
+                              login
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }",
+            variables: {
+              REPO_OWNER: $repoOwner,
+              REPO_NAME: $repoName,
+              PR_NUMBER: $prNumber
             }
-            const issueNumber = parseInt(match[1], 10);
-            console.log(`Found linked issue: ${issueNumber}`);
+          }')
 
-            // Get the issue details
-            const { data: issue } = await github.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issueNumber,
-            });
-            const assignee = issue.assignee ? issue.assignee.login : null;
-            console.log(`Issue assignee: ${assignee}`);
+          # Make the GraphQL API request
+          RESPONSE=$(curl -s -X POST \
+            --location 'https://api.github.com/graphql' \
+            -H "Authorization: bearer $GITHUB_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "$QUERY")
 
-            if (assignee !== prAuthor) {
-              // Comment on the PR
-              await github.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: pr.number,
-                body: `This PR has been automatically closed because the linked issue (#${issueNumber}) is not assigned to you.`,
-              });
-              // Close the PR
-              await github.pulls.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: pr.number,
-                state: 'closed',
-              });
-              console.log("PR closed because of unmet assignment.");
-            } else {
-              console.log("Issue is assigned to PR author. No action taken.");
-            }
+          # Check for errors in the response
+          ERRORS=$(echo "$RESPONSE" | jq -r '.errors')
+          if [[ "$ERRORS" != "null" ]]; then
+            echo "GraphQL query failed with errors: $ERRORS"
+            exit 1
+          fi
+
+          # Extract closing issues
+          CLOSING_ISSUES=$(echo "$RESPONSE" | jq -r '.data.repository.pullRequest.closingIssuesReferences.edges')
+
+          if [[ "$CLOSING_ISSUES" == "[]" || -z "$CLOSING_ISSUES" ]]; then
+            echo "Error: No closing issues are referenced in the PR description."
+            
+            # Get PR ID for closing
+            PR_ID=$(echo "$RESPONSE" | jq -r '.data.repository.pullRequest.id')
+            
+            # Close the PR with a comment
+            CLOSE_MUTATION=$(jq -n \
+            --arg prId "$PR_ID" \
+            '{
+              query: "mutation($PR_ID: ID!) {
+                addComment(input: {subjectId: $PR_ID, body: \"ℹ️ This PR is being closed because it does not reference any issues that will be closed when merged. Please add a closing issue reference in the format: `Fixes #issue-number` or `Closes #issue-number`\"}) {
+                  clientMutationId
+                }
+                closePullRequest(input: {pullRequestId: $PR_ID}) {
+                  clientMutationId
+                }
+              }",
+              variables: {
+                PR_ID: $prId
+              }
+            }')
+            
+            curl -s -X POST \
+              --location 'https://api.github.com/graphql' \
+              -H "Authorization: bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$CLOSE_MUTATION"
+              
+            echo "PR closed because no issues were linked."
+            exit 1
+          fi
+
+          # Check if any of the linked issues are assigned to the PR author
+          ISSUE_ASSIGNED=false
+          
+          for issue in $(echo "$CLOSING_ISSUES" | jq -c '.[]'); do
+            ISSUE_NUMBER=$(echo "$issue" | jq -r '.node.number')
+            ASSIGNEES=$(echo "$issue" | jq -r '.node.assignees.edges')
+            
+            if [[ "$ASSIGNEES" == "[]" ]]; then
+              echo "Issue #$ISSUE_NUMBER has no assignees."
+              continue
+            fi
+            
+            for assignee in $(echo "$ASSIGNEES" | jq -c '.[]'); do
+              ASSIGNEE_LOGIN=$(echo "$assignee" | jq -r '.node.login')
+              
+              if [[ "$ASSIGNEE_LOGIN" == "$PR_AUTHOR" ]]; then
+                echo "Issue #$ISSUE_NUMBER is assigned to PR author $PR_AUTHOR."
+                ISSUE_ASSIGNED=true
+                break 2
+              fi
+            done
+          done
+
+          if [[ "$ISSUE_ASSIGNED" == "false" ]]; then
+            echo "None of the linked issues are assigned to the PR author $PR_AUTHOR."
+            
+            # Get PR ID for closing
+            PR_ID=$(echo "$RESPONSE" | jq -r '.data.repository.pullRequest.id')
+            
+            # Close the PR with a comment
+            CLOSE_MUTATION=$(jq -n \
+            --arg prId "$PR_ID" \
+            '{
+              query: "mutation($PR_ID: ID!) {
+                addComment(input: {subjectId: $PR_ID, body: \"ℹ️ This PR is being closed because none of the linked issues are assigned to you. Please get assigned to at least one of the issues this PR is addressing before submitting a pull request.\"}) {
+                  clientMutationId
+                }
+                closePullRequest(input: {pullRequestId: $PR_ID}) {
+                  clientMutationId
+                }
+              }",
+              variables: {
+                PR_ID: $prId
+              }
+            }')
+            
+            curl -s -X POST \
+              --location 'https://api.github.com/graphql' \
+              -H "Authorization: bearer $GITHUB_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$CLOSE_MUTATION"
+              
+            echo "PR closed because linked issues are not assigned to the PR author."
+            exit 1
+          fi
+          
+          echo "PR check passed: At least one linked issue is assigned to the PR author."
