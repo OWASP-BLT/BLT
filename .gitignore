@@ -19,3 +19,4 @@ requirements.txt
 *.log
 *.exe
 .vs
+.qodo
