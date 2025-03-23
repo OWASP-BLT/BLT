@@ -7,6 +7,11 @@
 {% block keywords %}
     style guide, design system, UI components, BLT website, design standards, responsive design
 {% endblock %}
+{% block extra_css %}
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="relative">
@@ -193,6 +198,332 @@
                         <li>Section spacing: my-10 py-8</li>
                         <li>Component spacing: space-y-4</li>
                     </ul>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Icons</h2>
+            <div class="space-y-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-2">Icon System</h3>
+                    <p class="text-gray-600 mb-4">
+                        BLT uses a consistent icon system based on Heroicons for a cohesive visual language across the platform. Icons should be semantic and used to enhance user experience, not just for decoration.
+                    </p>
+                    <div class="bg-gray-50 p-6 rounded-lg mt-4">
+                        <h3 class="text-lg font-bold mb-3">Icon Guidelines</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Maintain consistent sizing within context groups</li>
+                            <li>Use the primary color (#e74c3c) for interactive icon elements</li>
+                            <li>Ensure sufficient touch target size (44x44px) for interactive icons</li>
+                            <li>Include appropriate labels or tooltips for accessibility</li>
+                            <li>Consider using outlined icons for UI elements, solid for active states</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-4">Icon Sizes</h3>
+                    <div class="flex items-center gap-8 flex-wrap">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-4 h-4 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-4 h-4</span>
+                            <span class="text-xs text-gray-500">Extra Small</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <svg class="w-5 h-5 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-5 h-5</span>
+                            <span class="text-xs text-gray-500">Small</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-6 h-6</span>
+                            <span class="text-xs text-gray-500">Medium (Default)</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <svg class="w-8 h-8 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-8 h-8</span>
+                            <span class="text-xs text-gray-500">Large</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-4">Common Icons</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Home</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Search</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">User</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Calendar</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Copy</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm mt-2">Check</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <span class="text-sm mt-2">Close</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Info</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-4">Icon Usage Examples</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Button with Icon</h4>
+                            <button class="flex items-center space-x-2 bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                <span>Add Item</span>
+                            </button>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Input with Icon</h4>
+                            <div class="relative">
+                                <input type="text"
+                                       class="pl-10 border border-gray-400 rounded-md px-4 py-2 w-full focus:border-[#e74c3c] focus:ring-1 focus:ring-[#e74c3c] outline-none"
+                                       placeholder="Search...">
+                                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">List with Icons</h4>
+                            <ul class="space-y-2">
+                                <li class="flex items-center space-x-2 text-gray-600">
+                                    <svg class="w-5 h-5 text-[#e74c3c]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span>Secure payment processing</span>
+                                </li>
+                                <li class="flex items-center space-x-2 text-gray-600">
+                                    <svg class="w-5 h-5 text-[#e74c3c]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span>24/7 customer support</span>
+                                </li>
+                                <li class="flex items-center space-x-2 text-gray-600">
+                                    <svg class="w-5 h-5 text-[#e74c3c]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span>Free shipping on all orders</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Card with Icon Header</h4>
+                            <div class="bg-white p-6 rounded-lg border border-gray-200">
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-[#e74c3c]/10 p-2 rounded-lg mr-3">
+                                        <svg class="w-6 h-6 text-[#e74c3c]"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="font-bold">Quick Actions</h3>
+                                </div>
+                                <p class="text-gray-600">Icons with color backgrounds create visual hierarchy and improve scannability.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6 col-span-1 md:col-span-2">
+                            <h4 class="font-bold mb-4">BLT Sidebar Navigation</h4>
+                            <div class="flex">
+                                <div class="w-72 bg-white border-r border-gray-300 shadow-lg rounded-lg overflow-hidden">
+                                    <!-- Organizations Section -->
+                                    <div class="mb-3 px-2">
+                                        <div class="px-2 py-2">
+                                            <span class="text-sm text-[#e74c3c] font-semibold text-gray-500 uppercase tracking-wider">Organizations</span>
+                                        </div>
+                                        <a href="#"
+                                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md bg-[#feeae9] text-[#e74c3c] transition-all duration-200">
+                                            <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md bg-[#fde0dd] text-[#e74c3c] transition-all duration-200">
+                                                <i class="fas fa-building"></i>
+                                            </div>
+                                            <span class="truncate">Organizations</span>
+                                        </a>
+                                        <!-- Submenu -->
+                                        <div class="ml-8 mt-1 space-y-1">
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-plus"></i>
+                                                </div>
+                                                <span class="truncate">Register Organization</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-globe"></i>
+                                                </div>
+                                                <span class="truncate">Domains</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-bug"></i>
+                                                </div>
+                                                <span class="truncate">Bugs</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-trophy"></i>
+                                                </div>
+                                                <span class="truncate">Scoreboard</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <!-- Communication Section -->
+                                    <div>
+                                        <div class="px-2 py-2">
+                                            <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">Communication</span>
+                                        </div>
+                                        <div class="ml-2 mt-1 space-y-1">
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-clone"></i>
+                                                </div>
+                                                <span class="truncate">SimilarityScan</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-door-open"></i>
+                                                </div>
+                                                <span class="truncate">Rooms</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-video"></i>
+                                                </div>
+                                                <span class="truncate">Video Call</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <h5 class="font-semibold mb-2">BLT Sidebar Features:</h5>
+                                    <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                                        <li>Uses Font Awesome icons for consistent icon library</li>
+                                        <li>Active state indicated with background color and icon highlight</li>
+                                        <li>Logical grouping of features under headers</li>
+                                        <li>Nested navigation with visual hierarchy (main items and sub-items)</li>
+                                        <li>Color coding with brand red (#e74c3c) for active/hover states</li>
+                                        <li>Transitions on hover for improved user feedback</li>
+                                        <li>Consistent spacing and sizing patterns throughout</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -552,7 +883,7 @@
                                      fill="none"
                                      stroke="currentColor"
                                      viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                                     </path>
                                 </svg>
                             </div>
