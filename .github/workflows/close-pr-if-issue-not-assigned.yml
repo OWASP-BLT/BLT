@@ -1,0 +1,55 @@
+name: Auto Close PR if Issue Not Assigned
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  close_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR linked issue assignment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const prAuthor = pr.user.login;
+            const prBody = pr.body || "";
+            // Regex to match linking keywords "closes/fixes/resolves #123"
+            const regex = /(?:Closes|Fixes|Resolves)\s+#(\d+)/i;
+            const match = prBody.match(regex);
+            if (!match) {
+              console.log("No linked issue found. Exiting…");
+              return;
+            }
+            const issueNumber = parseInt(match[1], 10);
+            console.log(`Found linked issue: ${issueNumber}`);
+
+            // Get the issue details
+            const { data: issue } = await github.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+            const assignee = issue.assignee ? issue.assignee.login : null;
+            console.log(`Issue assignee: ${assignee}`);
+
+            if (assignee !== prAuthor) {
+              // Comment on the PR
+              await github.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `This PR has been automatically closed because the linked issue (#${issueNumber}) is not assigned to you.`,
+              });
+              // Close the PR
+              await github.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                state: 'closed',
+              });
+              console.log("PR closed because of unmet assignment.");
+            } else {
+              console.log("Issue is assigned to PR author. No action taken.");
+            }
