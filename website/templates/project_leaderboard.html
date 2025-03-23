@@ -1135,30 +1135,30 @@ function initTabs() {
     // Set first tab as active by default
     if (tabButtons.length > 0 && tabContents.length > 0) {
         tabButtons[0].classList.add('border-blue-500', 'text-blue-600');
-        tabContents[0].classList.add('active');
+        tabContents[0].classList.add('hidden');
     }
     
     tabButtons.forEach(button => {
         button.addEventListener('click', function() {
             // Remove active class from all buttons and contents
             tabButtons.forEach(btn => {
-                btn.classList.remove('border-blue-500', 'text-blue-600');
+                btn.classList.remove('border-e74c3c', 'text-e74c3c');
                 btn.classList.add('border-transparent', 'text-gray-500');
             });
             
             tabContents.forEach(content => {
-                content.classList.remove('active');
+                content.classList.add('hidden');
             });
             
-            // Add active class to clicked button and corresponding content
-            this.classList.add('border-blue-500', 'text-blue-600');
-            this.classList.remove('border-transparent', 'text-gray-500');
-            
-            const tabId = this.getAttribute('data-tab');
-            const activeContent = document.getElementById(`tab-${tabId}`);
-            if (activeContent) {
-                activeContent.classList.add('active');
-            }
+             // Add active class to clicked button and corresponding content
+             this.classList.add('border-e74c3c', 'text-e74c3c');
+             this.classList.remove('border-transparent', 'text-gray-500');
+             
+             const tabId = this.getAttribute('data-tab');
+             const activeContent = document.getElementById(`tab-${tabId}`);
+             if (activeContent) {
+                 activeContent.classList.remove('hidden');
+             }
         });
     });
 }
