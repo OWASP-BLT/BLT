@@ -84,6 +84,7 @@ from website.views.core import (
     MapView,
     RoadmapView,
     StatsDetailView,
+    StyleGuideView,
     UploadCreate,
     add_forum_comment,
     add_forum_post,
@@ -1098,6 +1099,7 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
+    path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
 ]
 
 if settings.DEBUG:
