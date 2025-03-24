@@ -262,7 +262,7 @@ class OrganizationDashboardAnalyticsView(View):
 
     def get_label_name(self, label_id):
         """Convert label ID to human-readable name."""
-        return self.labels.get(label_id, "Other")
+        return self.labels.get(label_id, "Other"
 
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
