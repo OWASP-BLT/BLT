@@ -1,0 +1,926 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Style Guide - BLT{% endblock %}
+{% block description %}
+    Comprehensive style guide for the BLT website, defining our design system, components, and visual standards.
+{% endblock %}
+{% block keywords %}
+    style guide, design system, UI components, BLT website, design standards, responsive design
+{% endblock %}
+{% block extra_css %}
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+{% endblock %}
+{% block content %}
+    {% include "includes/sidenav.html" %}
+    <div class="relative">
+        <img src="{% static 'img/style-guide.webp' %}"
+             alt="BLT Style Guide Header"
+             class="w-full h-72 object-cover"
+             height="288"
+             width="1024">
+    </div>
+    <div class="max-w-screen-lg mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-gray-900 mb-8">BLT Style Guide</h1>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Design System Overview</h2>
+            <p class="text-gray-600 mb-6">
+                Our design system ensures consistency across the BLT platform, creating a cohesive and professional user experience. This guide serves as the single source of truth for all design decisions and component implementations.
+            </p>
+            <div class="bg-gray-50 p-6 rounded-lg">
+                <h3 class="text-xl font-bold mb-3">Key Principles</h3>
+                <ul class="list-disc list-inside text-gray-600 space-y-2">
+                    <li>Consistency: Maintain visual and functional consistency across all pages</li>
+                    <li>Accessibility: Ensure all components are accessible to all users</li>
+                    <li>Responsiveness: Design for all screen sizes and devices</li>
+                    <li>Performance: Optimize for fast loading and smooth interactions</li>
+                </ul>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Colors</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-[#E10101] p-6 rounded-lg text-white">
+                    <h3 class="font-bold mb-2">Primary Color</h3>
+                    <p class="text-2xl">#E10101</p>
+                    <p class="text-sm mt-2">Used for primary actions, CTAs, and important UI elements</p>
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold">Usage Examples:</p>
+                        <ul class="text-sm mt-2 space-y-1">
+                            <li>• Primary buttons</li>
+                            <li>• Important links</li>
+                            <li>• Error states</li>
+                            <li>• Call-to-action elements</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="bg-gray-100 p-6 rounded-lg">
+                    <h3 class="font-bold mb-2">Neutral Colors</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-black rounded mr-2"></div>
+                            <div>
+                                <span class="font-semibold">Black (#000000)</span>
+                                <p class="text-sm text-gray-600">Used for primary text and headings</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-white border border-gray-300 rounded mr-2"></div>
+                            <div>
+                                <span class="font-semibold">White (#FFFFFF)</span>
+                                <p class="text-sm text-gray-600">Used for backgrounds and cards</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-gray-200 rounded mr-2"></div>
+                            <div>
+                                <span class="font-semibold">Gray (#E5E5E5)</span>
+                                <p class="text-sm text-gray-600">Used for borders and subtle backgrounds</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Typography</h2>
+            <div class="space-y-8">
+                <div>
+                    <h3 class="text-4xl font-bold mb-2">Heading 1</h3>
+                    <p class="text-gray-600">text-4xl font-bold</p>
+                    <p class="text-sm text-gray-500 mt-1">Used for main page titles and hero sections</p>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-bold mb-2">Heading 2</h3>
+                    <p class="text-gray-600">text-3xl font-bold</p>
+                    <p class="text-sm text-gray-500 mt-1">Used for section headers and important subsections</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold mb-2">Heading 3</h3>
+                    <p class="text-gray-600">text-2xl font-bold</p>
+                    <p class="text-sm text-gray-500 mt-1">Used for component headers and card titles</p>
+                </div>
+                <div>
+                    <p class="text-base mb-2">Body Text</p>
+                    <p class="text-gray-600">text-base</p>
+                    <p class="text-sm text-gray-500 mt-1">Used for general content and descriptions</p>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Components</h2>
+            <div class="space-y-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Buttons</h3>
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap gap-4">
+                            <button class="bg-[#E10101] text-white px-6 py-2 rounded-md hover:bg-red-700 transition-colors">Primary Button</button>
+                            <button class="border border-[#E10101] text-[#E10101] px-6 py-2 rounded-md hover:bg-[#E10101] hover:text-white transition-colors">
+                                Outline Button
+                            </button>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm font-semibold mb-2">Usage Guidelines:</p>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• Primary buttons for main actions</li>
+                                <li>• Outline buttons for secondary actions</li>
+                                <li>• Maintain consistent padding and border radius</li>
+                                <li>• Include hover states for better interactivity</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Cards</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border border-gray-300 p-6 rounded-lg shadow-md">
+                            <h4 class="font-bold mb-2">Card Title</h4>
+                            <p class="text-gray-600">This is an example card component with consistent padding and border styling.</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm font-semibold mb-2">Card Guidelines:</p>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• Use consistent padding (p-6)</li>
+                                <li>• Include subtle shadow for depth</li>
+                                <li>• Maintain rounded corners</li>
+                                <li>• Use white background for content cards</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Input Fields</h3>
+                    <div class="space-y-4">
+                        <input type="text"
+                               class="border border-gray-400 rounded-md px-4 py-2 focus:border-[#E10101] focus:ring-1 focus:ring-[#E10101] outline-none"
+                               placeholder="Example input">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm font-semibold mb-2">Input Guidelines:</p>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• Clear focus states with primary color</li>
+                                <li>• Consistent padding and border radius</li>
+                                <li>• Include placeholder text when needed</li>
+                                <li>• Maintain accessibility with proper labels</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Links</h3>
+                    <div class="space-y-4">
+                        <a href="#" class="text-[#E10101] hover:underline">Example Link</a>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="text-sm font-semibold mb-2">Link Guidelines:</p>
+                            <ul class="text-sm text-gray-600 space-y-1">
+                                <li>• Use primary color for links</li>
+                                <li>• Include hover underline effect</li>
+                                <li>• Maintain sufficient contrast</li>
+                                <li>• Use descriptive link text</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Layout & Spacing</h2>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-bold mb-2">Container Width</h3>
+                    <p class="text-gray-600">max-w-screen-lg (1024px)</p>
+                    <p class="text-sm text-gray-500 mt-1">This ensures content remains readable and well-organized on larger screens</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-2">Spacing</h3>
+                    <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>Page padding: px-4 py-8</li>
+                        <li>Card padding: p-6</li>
+                        <li>Section spacing: my-10 py-8</li>
+                        <li>Component spacing: space-y-4</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Icons</h2>
+            <div class="space-y-6">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-2">Icon System</h3>
+                    <p class="text-gray-600 mb-4">
+                        BLT uses a consistent icon system based on Heroicons for a cohesive visual language across the platform. Icons should be semantic and used to enhance user experience, not just for decoration.
+                    </p>
+                    <div class="bg-gray-50 p-6 rounded-lg mt-4">
+                        <h3 class="text-lg font-bold mb-3">Icon Guidelines</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Maintain consistent sizing within context groups</li>
+                            <li>Use the primary color (#e74c3c) for interactive icon elements</li>
+                            <li>Ensure sufficient touch target size (44x44px) for interactive icons</li>
+                            <li>Include appropriate labels or tooltips for accessibility</li>
+                            <li>Consider using outlined icons for UI elements, solid for active states</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-4">Icon Sizes</h3>
+                    <div class="flex items-center gap-8 flex-wrap">
+                        <div class="flex flex-col items-center">
+                            <svg class="w-4 h-4 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-4 h-4</span>
+                            <span class="text-xs text-gray-500">Extra Small</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <svg class="w-5 h-5 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-5 h-5</span>
+                            <span class="text-xs text-gray-500">Small</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-6 h-6</span>
+                            <span class="text-xs text-gray-500">Medium (Default)</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <svg class="w-8 h-8 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span class="text-xs mt-2">w-8 h-8</span>
+                            <span class="text-xs text-gray-500">Large</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-4">Common Icons</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Home</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Search</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">User</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Calendar</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Copy</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span class="text-sm mt-2">Check</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <span class="text-sm mt-2">Close</span>
+                        </div>
+                        <div class="flex flex-col items-center p-4 bg-white border border-gray-200 rounded-lg">
+                            <svg class="w-6 h-6 text-[#e74c3c]"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <span class="text-sm mt-2">Info</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold mb-4">Icon Usage Examples</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Button with Icon</h4>
+                            <button class="flex items-center space-x-2 bg-[#e74c3c] text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                <span>Add Item</span>
+                            </button>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Input with Icon</h4>
+                            <div class="relative">
+                                <input type="text"
+                                       class="pl-10 border border-gray-400 rounded-md px-4 py-2 w-full focus:border-[#e74c3c] focus:ring-1 focus:ring-[#e74c3c] outline-none"
+                                       placeholder="Search...">
+                                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">List with Icons</h4>
+                            <ul class="space-y-2">
+                                <li class="flex items-center space-x-2 text-gray-600">
+                                    <svg class="w-5 h-5 text-[#e74c3c]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span>Secure payment processing</span>
+                                </li>
+                                <li class="flex items-center space-x-2 text-gray-600">
+                                    <svg class="w-5 h-5 text-[#e74c3c]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span>24/7 customer support</span>
+                                </li>
+                                <li class="flex items-center space-x-2 text-gray-600">
+                                    <svg class="w-5 h-5 text-[#e74c3c]"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                        </path>
+                                    </svg>
+                                    <span>Free shipping on all orders</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6">
+                            <h4 class="font-bold mb-4">Card with Icon Header</h4>
+                            <div class="bg-white p-6 rounded-lg border border-gray-200">
+                                <div class="flex items-center mb-4">
+                                    <div class="bg-[#e74c3c]/10 p-2 rounded-lg mr-3">
+                                        <svg class="w-6 h-6 text-[#e74c3c]"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="font-bold">Quick Actions</h3>
+                                </div>
+                                <p class="text-gray-600">Icons with color backgrounds create visual hierarchy and improve scannability.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-gray-200 rounded-lg p-6 col-span-1 md:col-span-2">
+                            <h4 class="font-bold mb-4">BLT Sidebar Navigation</h4>
+                            <div class="flex">
+                                <div class="w-72 bg-white border-r border-gray-300 shadow-lg rounded-lg overflow-hidden">
+                                    <!-- Organizations Section -->
+                                    <div class="mb-3 px-2">
+                                        <div class="px-2 py-2">
+                                            <span class="text-sm text-[#e74c3c] font-semibold text-gray-500 uppercase tracking-wider">Organizations</span>
+                                        </div>
+                                        <a href="#"
+                                           class="group flex items-center px-2 py-2 text-lg font-medium rounded-md bg-[#feeae9] text-[#e74c3c] transition-all duration-200">
+                                            <div class="mr-3 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md bg-[#fde0dd] text-[#e74c3c] transition-all duration-200">
+                                                <i class="fas fa-building"></i>
+                                            </div>
+                                            <span class="truncate">Organizations</span>
+                                        </a>
+                                        <!-- Submenu -->
+                                        <div class="ml-8 mt-1 space-y-1">
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-plus"></i>
+                                                </div>
+                                                <span class="truncate">Register Organization</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-globe"></i>
+                                                </div>
+                                                <span class="truncate">Domains</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-bug"></i>
+                                                </div>
+                                                <span class="truncate">Bugs</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-trophy"></i>
+                                                </div>
+                                                <span class="truncate">Scoreboard</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <!-- Communication Section -->
+                                    <div>
+                                        <div class="px-2 py-2">
+                                            <span class="text-sm text-[#e74c3c] font-semibold uppercase tracking-wider">Communication</span>
+                                        </div>
+                                        <div class="ml-2 mt-1 space-y-1">
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-clone"></i>
+                                                </div>
+                                                <span class="truncate">SimilarityScan</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-door-open"></i>
+                                                </div>
+                                                <span class="truncate">Rooms</span>
+                                            </a>
+                                            <a href="#"
+                                               class="group flex items-center px-2 py-2 text-lg font-medium rounded-md text-gray-700 hover:bg-gray-100 hover:text-[#e74c3c] transition-all duration-200">
+                                                <div class="mr-3 flex-shrink-0 w-5 h-5 flex items-center justify-center text-gray-500 group-hover:text-[#e74c3c] transition-all duration-200">
+                                                    <i class="fas fa-video"></i>
+                                                </div>
+                                                <span class="truncate">Video Call</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-6">
+                                    <h5 class="font-semibold mb-2">BLT Sidebar Features:</h5>
+                                    <ul class="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                                        <li>Uses Font Awesome icons for consistent icon library</li>
+                                        <li>Active state indicated with background color and icon highlight</li>
+                                        <li>Logical grouping of features under headers</li>
+                                        <li>Nested navigation with visual hierarchy (main items and sub-items)</li>
+                                        <li>Color coding with brand red (#e74c3c) for active/hover states</li>
+                                        <li>Transitions on hover for improved user feedback</li>
+                                        <li>Consistent spacing and sizing patterns throughout</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Responsive Design</h2>
+            <div class="bg-gray-50 p-6 rounded-lg">
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Breakpoints</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>sm: 640px - Mobile landscape</li>
+                            <li>md: 768px - Tablets</li>
+                            <li>lg: 1024px - Laptops</li>
+                            <li>xl: 1280px - Desktop</li>
+                            <li>2xl: 1536px - Large screens</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Responsive Guidelines</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Use mobile-first approach in all designs</li>
+                            <li>Implement responsive grids using grid-cols-1 md:grid-cols-2</li>
+                            <li>Adjust font sizes for different screen sizes</li>
+                            <li>Ensure touch targets are at least 44x44px on mobile</li>
+                            <li>Test layouts across all breakpoints</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Example Responsive Components</h3>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="bg-white p-4 rounded-lg shadow">Responsive Card 1</div>
+                                <div class="bg-white p-4 rounded-lg shadow">Responsive Card 2</div>
+                                <div class="bg-white p-4 rounded-lg shadow">Responsive Card 3</div>
+                            </div>
+                            <div class="text-sm md:text-base lg:text-lg">Responsive text that scales with screen size</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Accessibility</h2>
+            <div class="bg-gray-50 p-6 rounded-lg">
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Color Contrast</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>All interactive elements must have sufficient color contrast</li>
+                            <li>Text should be readable at all sizes</li>
+                            <li>Use WCAG 2.1 AA standards for contrast ratios</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Interactive Elements</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Interactive elements should have clear focus states</li>
+                            <li>Include hover and active states</li>
+                            <li>Ensure keyboard navigation works</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Content Structure</h3>
+                        <ul class="list-disc list-inside text-gray-600 space-y-2">
+                            <li>Use semantic HTML elements</li>
+                            <li>Include proper heading hierarchy</li>
+                            <li>Images should have appropriate alt text</li>
+                            <li>Forms should have associated labels</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Figma Design Links</h2>
+            <div class="bg-gradient-to-br from-gray-50 to-white p-8 rounded-xl border border-gray-200 shadow-lg">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-[#E10101]/10 p-3 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E10101]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 ml-4">Main Design Files</h3>
+                        </div>
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Main Design System</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/2lfEZKvqcb4WxRPYEwJqeE/OWASP-BLT"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">OWASP BLT Design</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">BLT Website Design</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-[#E10101]/10 p-3 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E10101]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 ml-4">Core Pages</h3>
+                        </div>
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Homepage & Base Layout</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=487%3A2791"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">About Page</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=513%3A768"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Search Page</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-[#E10101]/10 p-3 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E10101]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 ml-4">User Features</h3>
+                        </div>
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1350"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">User Dashboard</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=487%3A3001"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">User Profile</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=421%3A26"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Invite Friends</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-[#E10101]/10 p-3 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E10101]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 ml-4">Organization Features</h3>
+                        </div>
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Organization Dashboard</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=488%3A1342"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Domain Management</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1309%3A656"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Analytics</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-[#E10101]/10 p-3 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E10101]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 ml-4">Issue Management</h3>
+                        </div>
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=421%3A5"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Issue Reporting</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=4%3A1109"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Comments System</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=340%3A209"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Issue Activity</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                        <div class="flex items-center mb-6">
+                            <div class="bg-[#E10101]/10 p-3 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E10101]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 ml-4">Legal & Documentation</h3>
+                        </div>
+                        <ul class="space-y-4">
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=513%3A772"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Privacy Policy</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=1309%3A650"
+                                   target="_blank"
+                                   class="group flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition-all duration-200">
+                                    <span class="text-[#E10101] font-medium">Terms of Service</span>
+                                    <svg class="w-5 h-5 text-gray-400 group-hover:text-[#E10101] transform group-hover:translate-x-1 transition-all duration-200"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+{% endblock %}

@@ -2870,3 +2870,7 @@ class RoadmapView(TemplateView):
         context["milestones"] = milestones
         context["milestone_count"] = len(milestones)
         return context
+
+
+class StyleGuideView(TemplateView):
+    template_name = "style_guide.html"
