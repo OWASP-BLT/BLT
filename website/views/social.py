@@ -16,8 +16,6 @@ def queue_social_view(request):
     except (PageNotAnInteger, EmptyPage):
         page_obj = paginator.page(1)
 
-        page_obj = paginator.page(1)
-
     return render(
         request,
         "social.html",
