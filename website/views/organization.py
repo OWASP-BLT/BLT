@@ -67,6 +67,8 @@ from website.models import (
 from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
+from ..models import Hunt
+
 logger = logging.getLogger(__name__)
 
 
@@ -1137,6 +1139,13 @@ class CreateHunt(TemplateView):
                 return HttpResponse("failed")
         except (OrganizationAdmin.DoesNotExist, Domain.DoesNotExist, ValueError, KeyError) as e:
             return HttpResponse(f"Error: {str(e)}")
+
+    def get_success_url(self):
+        if self.object.domain.organization:
+            organization_slug = self.object.domain.organization.slug  # Assuming organization has a slug field
+            return reverse("organization_detail", kwargs={"slug": organization_slug})
+        else:
+            return reverse("organization_list")  # Redirect to a list of organizations
 
 
 @login_required
