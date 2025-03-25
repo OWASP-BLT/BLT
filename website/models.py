@@ -426,7 +426,7 @@ class Hunt(models.Model):
         return self.name
 
     def get_absolute_url(self):
-        return reverse("organization_detail", kwargs={"pk": self.pk})
+        return reverse("organization_detail", kwargs={"slug": self.domain.organization.slug})
 
 
 class HuntPrize(models.Model):
