@@ -20,8 +20,7 @@ jobs:
       && github.actor != 'dependabot'
       && github.actor != github.repository_owner
       && github.actor != 'sentry-autofix'
-      # Excluding DonnieBLT users from the check
-      && github.actor != 'DonnieBLT' 
+      && github.actor != 'DonnieBLT'
     steps:
       - name: Validate PR closing issues with GraphQL
         env:
