@@ -137,4 +137,35 @@
             </div>
         </div>
     </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="flex justify-center mt-8">
+            <nav class="inline-flex rounded-md shadow-sm -space-x-px"
+                 aria-label="Pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
+                            {{ num }}
+                        </span>
+                    {% else %}
+                        <a href="?page={{ num }}"
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"
+                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    {% endif %}
 {% endblock content %}
