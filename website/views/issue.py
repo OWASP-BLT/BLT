@@ -926,7 +926,6 @@ class IssueCreate(IssueBaseCreate, CreateView):
             messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
 
-        # Pr
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
