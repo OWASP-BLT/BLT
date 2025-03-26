@@ -65,7 +65,7 @@
                                     {% if lecture.description %}<div class="mb-6 text-gray-700">{{ lecture.description|linebreaks }}</div>{% endif %}
                                     {% if lecture.content_type == "VIDEO" and lecture.embed_url %}
                                         <div class="mb-6 w-full">
-                                            <iframe src="{{ lecture.embed_url }}"
+                                            <iframe src="{{ lecture.embed_url|escape }}"
                                                     frameborder="0"
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                     allowfullscreen
@@ -73,14 +73,14 @@
                                             </iframe>
                                         </div>
                                         <p class="mt-2 text-blue-600 underline">
-                                            <a href="{{ lecture.video_url }}" target="_blank">Watch Separately</a>
+                                            <a href="{{ lecture.video_url|escape }}" target="_blank">Watch Separately</a>
                                         </p>
                                     {% elif lecture.content_type == "LIVE" %}
                                         <div class="mb-6 p-4 bg-blue-50 rounded-md">
                                             {% if lecture.scheduled_time and lecture.scheduled_time > now %}
                                                 <p class="font-medium">This live session is scheduled for {{ lecture.scheduled_time|date:"F j, Y, g:i a" }}</p>
                                                 {% if lecture.live_url %}
-                                                    <a href="{{ lecture.live_url }}"
+                                                    <a href="{{ lecture.live_url|escape }}"
                                                        target="_blank"
                                                        class="mt-3 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                                                         Join Live Session
@@ -89,21 +89,21 @@
                                             {% elif lecture.recording_url %}
                                                 <p class="font-medium mb-3">This session has ended. You can watch the recording below:</p>
                                                 <div class="aspect-w-16 aspect-h-9">
-                                                    <iframe src="{{ lecture.recording_url }}"
+                                                    <iframe src="{{ lecture.recording_url|escape }}"
                                                             frameborder="0"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                             allowfullscreen
                                                             class="w-full h-full"></iframe>
                                                 </div>
                                                 <p class="font-medium mb-3">
-                                                    Or use this link: <a href="{{ lecture.recording_url }}">Recording</a>
+                                                    Or use this link: <a href="{{ lecture.recording_url|escape }}">Recording</a>
                                                 </p>
                                             {% else %}
                                                 <p class="font-medium">This live session has ended. Recording will be available soon.</p>
                                             {% endif %}
                                         </div>
                                     {% elif lecture.content_type == "DOCUMENT" %}
-                                        <div class="prose max-w-none">{{ lecture.content|safe }}</div>
+                                        <div class="prose max-w-none">{{ lecture.content }}</div>
                                     {% elif lecture.content_type == "QUIZ" %}
                                         <div class="bg-yellow-50 p-4 rounded-md">
                                             <p class="font-medium mb-3">This is a quiz section. Complete all questions to mark this lecture as completed.</p>
