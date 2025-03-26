@@ -11,8 +11,20 @@ from django.views.decorators.http import require_GET, require_POST
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
 from website.utils import validate_file_type
+from urllib.parse import urlparse  
 
 
+def is_valid_url(url, url_type):
+    """Helper function to validate URLs based on their type."""
+    if url_type == "youtube":
+        allowed_domains = {'www.youtube.com', 'youtube.com', 'youtu.be'}
+    elif url_type == "live":
+        allowed_domains = {'zoom.us', 'meet.google.com'}  # Add allowed live domains here
+    else:
+        return False
+
+    parsed_url = urlparse(url)
+    return parsed_url.netloc in allowed_domains
 def education_home(request):
     template = "education/education.html"
     user = request.user
@@ -288,6 +300,10 @@ def add_lecture(request, section_id):
 
     if content_type == "VIDEO":
         lecture.video_url = request.POST.get("video_url")
+        if not is_valid_url(video_url, "youtube"):
+            messages.error(request, "Only YouTube URLs are allowed for video lectures.")
+            return redirect("course_content_management", course_id=course_id)
+        lecture.video_url = video_url
         lecture.content = request.POST.get("content")
     elif content_type == "LIVE":
         lecture.live_url = request.POST.get("live_url")
