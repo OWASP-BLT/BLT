@@ -75,6 +75,13 @@ def add_domain_to_organization(request):
         try:
             domain = Domain.objects.get(id=request.POST.get("domain"))
             organization_name = request.POST.get("organization")
+            # Validate organization name: only alphanumerics, dashes, underscores, 3-30 characters
+            if not re.match(r"^[a-zA-Z0-9_-]{3,30}$", organization_name):
+                messages.error(
+                    request,
+                    "Invalid organization name. Only alphanumeric characters, dashes, and underscores are allowed (3-30 characters).",
+                )
+                return redirect("domain", slug=domain.url)
             organization = Organization.objects.filter(name=organization_name).first()
 
             if not organization:
@@ -113,7 +120,6 @@ def add_domain_to_organization(request):
             return redirect("home")
     else:
         return redirect("home")
-
 
 
 @login_required(login_url="/accounts/login")
@@ -1569,8 +1575,8 @@ def add_or_update_organization(request):
                     "logo",
                     allowed_extensions=["jpg", "jpeg", "png", "gif"],
                     allowed_mime_types=["image/jpeg", "image/png", "image/gif"],
-                    max_size=1048576  # 1 MB (adjust as needed)
-    )
+                    max_size=1048576,  # 1 MB (adjust as needed)
+                )
 
             try:
                 organization.logo = request.FILES["logo"]
