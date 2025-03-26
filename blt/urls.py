@@ -84,6 +84,7 @@ from website.views.core import (
     MapView,
     RoadmapView,
     StatsDetailView,
+    StyleGuideView,
     UploadCreate,
     add_forum_comment,
     add_forum_post,
@@ -268,6 +269,7 @@ from website.views.project import (
     blt_tomato,
     create_project,
     distribute_bacon,
+    repo_activity_data,
     select_contribution,
 )
 from website.views.queue import queue_list, update_txid
@@ -1094,6 +1096,8 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+    path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
+    path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
 ]
 
 if settings.DEBUG:
