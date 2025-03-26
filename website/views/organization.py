@@ -1578,11 +1578,6 @@ def add_or_update_organization(request):
                     max_size=1048576,  # 1 MB (adjust as needed)
                 )
 
-            try:
-                organization.logo = request.FILES["logo"]
-            except KeyError:
-                pass
-
             organization.save()
             return HttpResponse("Organization updated successfully")
 
