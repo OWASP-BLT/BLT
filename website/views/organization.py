@@ -67,8 +67,6 @@ from website.models import (
 from website.services.blue_sky_service import BlueSkyService
 from website.utils import format_timedelta, get_client_ip, get_github_issue_title
 
-from ..models import Hunt
-
 logger = logging.getLogger(__name__)
 
 
