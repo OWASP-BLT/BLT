@@ -923,7 +923,7 @@ class IssueCreate(IssueBaseCreate, CreateView):
             )
 
             # Prevent the form submission
-            messages.error(self.request, "Your report was blocked due to inappropriate language.")
+            messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
 
         # Pr
