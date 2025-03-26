@@ -6,7 +6,7 @@ from website.models import Queue
 
 def queue_social_view(request):
     # Get all queue items ordered by creation date
-    queue_items = Queue.objects.all().order_by("-created")
+    queue_items = Queue.objects.filter(launched=True).order_by("-created")
 
     # Add pagination - 10 items per page
     paginator = Paginator(queue_items, 10)
