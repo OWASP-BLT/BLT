@@ -1987,27 +1987,40 @@ class Section(models.Model):
         return f"{self.order}. {self.title} - {self.course.title} "
 
 
-class Lecture(models.Model):
-    CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE", "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
+import re
+from urllib.parse import parse_qs, urlparse
 
-    instructor = models.ForeignKey(UserProfile, on_delete=models.Case, null=True, blank=True)
+from django.core.exceptions import ValidationError
+from django.db import models
+
+
+class Lecture(models.Model):
+    CONTENT_TYPES = [
+        ("VIDEO", "Video Lecture"),
+        ("LIVE", "Live Session"),
+        ("DOCUMENT", "Document"),
+        ("QUIZ", "Quiz"),
+    ]
+
+    instructor = models.ForeignKey("UserProfile", on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=200)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
+    section = models.ForeignKey("Section", on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
     video_url = models.URLField(null=True, blank=True)
     live_url = models.URLField(null=True, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
     recording_url = models.URLField(null=True, blank=True)
-    content = models.TextField()  # For reading content
-    # Quiz support can be added later
+    content = models.TextField(null=True, blank=True)  # For reading content (e.g., documents)
     duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
-    tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
+    tags = models.ManyToManyField("Tag", related_name="lectures", blank=True)
     order = models.PositiveIntegerField()
 
     @property
     def embed_url(self):
-        """Generates an embeddable URL if the video is from YouTube or Vimeo."""
+        """
+        Generates an embeddable URL if the video is from YouTube or Vimeo.
+        """
         if not self.video_url:
             return None
 
@@ -2060,6 +2073,16 @@ class Lecture(models.Model):
 
         # Return the original URL if it's not a recognized video provider or parsing fails
         return self.video_url
+
+    @staticmethod
+    def validate_url(url):
+        """
+        Validates that the URL is properly formatted and uses a safe protocol.
+        """
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in ["http", "https"]:
+            return False
+        return True
 
     class Meta:
         ordering = ["order"]

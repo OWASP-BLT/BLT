@@ -19,24 +19,154 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="flex flex-col h-screen">
-        <!-- Twitter Timeline -->
-        <div class="flex-grow overflow-hidden">
-            <a class="twitter-timeline w-full h-[800px]"
-               href="{% env 'TWITTER_URL' %}"
-               rel="noopener noreferrer"></a>
-            <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-        </div>
-        <!-- Bottom Right Icons -->
-        <div class="absolute bottom-4 right-6 flex gap-4">
-            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/social.html"
-               class="text-gray-700 hover:text-gray-900 transition-colors duration-300">
-                <i class="fab fa-github text-2xl"></i>
-            </a>
-            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=472%3A147&t=pqxWpF3hcYxjEDrs-1"
-               class="text-gray-700 hover:text-gray-900 transition-colors duration-300">
-                <i class="fab fa-figma text-2xl"></i>
-            </a>
+    <div class="min-h-screen bg-gray-50">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Header Section -->
+            <div class="bg-white rounded-lg shadow-sm border-l-4 border-[#e74c3c] p-6 mb-8">
+                <div class="sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Social Feed</h1>
+                        <p class="mt-2 text-sm text-gray-500">Stay connected with our latest updates and announcements</p>
+                    </div>
+                    <nav class="mt-4 sm:mt-0">
+                        <ol class="flex items-center space-x-2 text-sm text-gray-500">
+                            <li>
+                                <a href="{% url 'home' %}" class="hover:text-blue-600">Home</a>
+                            </li>
+                            <li>
+                                <span class="px-2">/</span>
+                            </li>
+                            <li class="text-gray-700 font-medium">Social Feed</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+            <!-- Feed List -->
+            <div class="bg-white shadow-sm rounded-lg divide-y divide-gray-200">
+                {% for item in queue_items %}
+                    <div class="p-6 hover:bg-gray-50 transition-colors duration-150">
+                        <div class="flex items-start space-x-4">
+                            {% if item.image %}
+                                <div class="flex-shrink-0">
+                                    <img src="{{ item.image }}"
+                                         alt="Queue item image"
+                                         class="h-24 w-24 rounded-lg object-cover"
+                                         height="64"
+                                         width="64">
+                                </div>
+                            {% endif %}
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-lg font-medium text-gray-900 truncate">{{ item.message }}</p>
+                                    {% if item.launched %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <svg class="mr-1.5 h-2 w-2 text-green-400"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 8 8">
+                                                <circle cx="4" cy="4" r="3" />
+                                            </svg>
+                                            Launched
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <svg class="mr-1.5 h-2 w-2 text-yellow-400"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 8 8">
+                                                <circle cx="4" cy="4" r="3" />
+                                            </svg>
+                                            Pending
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                                    <div class="flex items-center">
+                                        <svg class="mr-1.5 h-4 w-4"
+                                             xmlns="http://www.w3.org/2000/svg"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        {{ item.created|date:"M j, Y" }}
+                                    </div>
+                                    {% if item.launched_at %}
+                                        <div class="flex items-center">
+                                            <svg class="mr-1.5 h-4 w-4"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                            </svg>
+                                            {{ item.launched_at|date:"M j, Y" }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if item.url %}
+                                    <div class="mt-3">
+                                        <a href="{{ item.url }}"
+                                           class="inline-flex items-center text-sm text-blue-600 hover:text-blue-700"
+                                           target="_blank"
+                                           rel="noopener noreferrer">
+                                            <svg class="mr-2 h-4 w-4"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 24 24"
+                                                 stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Visit Link
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="p-6">
+                        <div class="flex items-center text-sm text-blue-700">
+                            <svg class="h-5 w-5 text-blue-400 mr-3"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            No queue items found.
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+        <div class="flex justify-center mt-8">
+            <nav class="inline-flex rounded-md shadow-sm -space-x-px"
+                 aria-label="Pagination">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}"
+                       class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+                {% for num in page_obj.paginator.page_range %}
+                    {% if num == page_obj.number %}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-[#e74c3c] bg-[#e74c3c] text-sm font-medium text-white">
+                            {{ num }}
+                        </span>
+                    {% else %}
+                        <a href="?page={{ num }}"
+                           class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"
+                       class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </nav>
+        </div>
+    {% endif %}
 {% endblock content %}
