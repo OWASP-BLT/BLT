@@ -269,6 +269,18 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
+name = "better-profanity"
+version = "0.6.1"
+description = "Blazingly fast cleaning swear words (and their leetspeak) in strings"
+optional = false
+python-versions = "==3.*"
+groups = ["main"]
+files = [
+    {file = "better_profanity-0.6.1-py3-none-any.whl", hash = "sha256:a20902b17f846aff9f9030e61ca75e2142824c2af287c078808e76a6e3292ecc"},
+    {file = "better_profanity-0.6.1.tar.gz", hash = "sha256:c8f1a05dfabc5e8bbe3c6f51e25cea9d1df3e2a38e433b7b88e6579d46df296b"},
+]
+
+[[package]]
 name = "bitcash"
 version = "1.0.2"
 description = "Bitcoin Cash made easier."
@@ -4021,4 +4033,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "53c0a82fd9a996155012e4ea97aa69e9f385ab0adf5f08331b029ee3c8eeab94"
+content-hash = "999078f5724b3af6a2ec90ea3992d671ccdaac0942af46af951643053ffec138"
