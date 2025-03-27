@@ -174,6 +174,26 @@
                 </form>
             </div>
         </div>
+        <!-- Popup HTML Structure -->
+        <div id="emailConfirmationPopup"
+             class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center">
+            <div class="bg-white rounded-lg p-6 shadow-lg">
+                <p>
+                    Confirmation mail will be sent to <strong id="userEmail" class="font-bold"></strong>
+                </p>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button id="confirmEmailButton"
+                            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">Confirm</button>
+                    <button id="editEmailButton"
+                            class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">Edit Email</button>
+                </div>
+            </div>
+        </div>
+        <style>
+            .hidden {
+                display: none;
+            }
+        </style>
     </div>
     <!-- Captcha Refresh Script -->
     <script>
@@ -200,6 +220,33 @@
             if (!captchaImg || !captchaImg.getAttribute('src').trim()) {
                 refreshCaptcha();
             }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const signUpButton = document.querySelector('button[name="signup_button"]');
+            const emailPopup = document.querySelector('#emailConfirmationPopup');
+            const userEmailElement = document.querySelector('#userEmail');
+            const confirmEmailButton = document.querySelector('#confirmEmailButton');
+            const editEmailButton = document.querySelector('#editEmailButton');
+            const emailInput = document.querySelector('#id_email');
+            const signupForm = document.querySelector(`form[action="{% url 'account_signup' %}"]`);
+
+            signUpButton.addEventListener('click', function(event) {
+                event.preventDefault();
+
+                const userEmail = emailInput.value;
+                userEmailElement.textContent = userEmail;
+
+                emailPopup.classList.remove('hidden');
+            });
+
+            confirmEmailButton.addEventListener('click', function() {
+                signupForm.submit();
+            });
+
+            editEmailButton.addEventListener('click', function() {
+                emailPopup.classList.add('hidden');
+            });
         });
     </script>
 {% endblock natural_content %}
