@@ -922,10 +922,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
                 count=1,
             )
 
-            # Prevent the form submission
+            # Prevent  form submission
             messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
-
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
