@@ -270,14 +270,14 @@ lxml = ["lxml"]
 
 [[package]]
 name = "better-profanity"
-version = "0.7.0"
+version = "0.6.1"
 description = "Blazingly fast cleaning swear words (and their leetspeak) in strings"
 optional = false
 python-versions = "==3.*"
 groups = ["main"]
 files = [
-    {file = "better_profanity-0.7.0-py3-none-any.whl", hash = "sha256:bd4c529ea6aa2db1aaa50524be1ed14d0fe5c664f1fd88c8bc388c7e9f9f00e8"},
-    {file = "better_profanity-0.7.0.tar.gz", hash = "sha256:8a6fdc8606d7471e7b5f6801917eca98ec211098262e82f62da4f5de3a73145b"},
+    {file = "better_profanity-0.6.1-py3-none-any.whl", hash = "sha256:a20902b17f846aff9f9030e61ca75e2142824c2af287c078808e76a6e3292ecc"},
+    {file = "better_profanity-0.6.1.tar.gz", hash = "sha256:c8f1a05dfabc5e8bbe3c6f51e25cea9d1df3e2a38e433b7b88e6579d46df296b"},
 ]
 
 [[package]]
@@ -4033,4 +4033,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "c577add455d3359199c8ebe992459175ca983026e7808704792b92773eaf91bc"
+content-hash = "999078f5724b3af6a2ec90ea3992d671ccdaac0942af46af951643053ffec138"
