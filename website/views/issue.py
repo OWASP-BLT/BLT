@@ -13,6 +13,7 @@ import six
 from allauth.account.models import EmailAddress
 from allauth.account.signals import user_logged_in
 from allauth.socialaccount.models import SocialToken
+from better_profanity import profanity
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -59,6 +60,7 @@ from website.models import (
     IP,
     Activity,
     Bid,
+    Blocked,
     DailyStats,
     Domain,
     GitHubIssue,
@@ -904,6 +906,25 @@ class IssueCreate(IssueBaseCreate, CreateView):
     def form_valid(self, form):
         reporter_ip = get_client_ip(self.request)
         form.instance.reporter_ip_address = reporter_ip
+
+        description = form.cleaned_data.get("description", "")
+        markdown_description = form.cleaned_data.get("markdown_description", "")
+
+        # Combine fields to check
+        text_to_check = f"{description} {markdown_description}"
+
+        # Check for profanity
+        if profanity.contains_profanity(text_to_check):
+            Blocked.objects.create(
+                address=reporter_ip,
+                reason_for_block="Inappropriate language in bug report",
+                user_agent_string=self.request.META.get("HTTP_USER_AGENT", ""),
+                count=1,
+            )
+
+            # Prevent  form submission
+            messages.error(self.request, "Have a nice day.")
+            return HttpResponseRedirect("/")
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
