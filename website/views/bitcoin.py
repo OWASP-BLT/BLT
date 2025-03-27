@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from blt import settings
 from website.models import BaconEarning, BaconSubmission, Badge, UserBadge
-from website.utils import send_slack_message
+from website.utils import send_slack_message, get_org_slack_channel
 
 
 # @login_required
@@ -33,7 +33,8 @@ def batch_send_bacon_tokens_view(request):
         tokens_to_send = token_earning.tokens_earned
 
         if btc_address and tokens_to_send > 0:
-            yaml_outputs.append(f"- address: {btc_address}\n  runes:\n    BLT•BACON•TOKENS: {tokens_to_send}")
+            yaml_outputs.append(
+                f"- address: {btc_address}\n  runes:\n    BLT•BACON•TOKENS: {tokens_to_send}")
 
     # Form the YAML string payload
     yaml_content = "outputs:\n" + "\n".join(yaml_outputs)
@@ -74,7 +75,8 @@ def pending_transactions_view(request):
     for transaction in pending_transactions:
         user = transaction.user
         btc_address = getattr(user.userprofile, "btc_address", None)
-        transactions_data = [{"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned}]
+        transactions_data = [
+            {"user": user.username, "address": btc_address, "tokens": transaction.tokens_earned}]
 
     # If you want to return it as a JSON response:
     return JsonResponse({"pending_transactions": transactions_data})
@@ -93,6 +95,7 @@ class BaconSubmissionView(View):
             description = data.get("description")
             status = data.get("status", "in_review")  # Default to "in_review"
             bacon_amount = data.get("bacon_amount", 0)  # Default to 0
+            organization = data.get("organization", "")
 
             # Validations
             if not github_url or not contribution_type or not description:
@@ -115,15 +118,18 @@ class BaconSubmissionView(View):
                 github_url=github_url,
                 contribution_type=contribution_type,
                 description=description,
+                organization=organization,
                 bacon_amount=bacon_amount,
                 status=status,
             )
 
             try:
+                channel = get_org_slack_channel(organization)
                 send_slack_message(
-                    "#project-blt-bacon",
+                    channel,
                     f"🥓 New bacon claim submitted by {request.user.username}\n🔗 {github_url}\n💸 Bacon Requested: {bacon_amount}",
                 )
+
             except Exception as e:
                 print("Slack error:", e)
 
@@ -150,7 +156,8 @@ def bacon_requests_view(request):
 
     # Check if the logged-in user is a mentor
     mentor_badge = Badge.objects.filter(title="mentor").first()
-    is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+    is_mentor = UserBadge.objects.filter(
+        user=request.user, badge=mentor_badge).exists()
 
     return render(
         request,
@@ -178,7 +185,8 @@ def update_submission_status(request, submission_id):
 
             # Check if the user is a mentor
             mentor_badge = Badge.objects.filter(title="mentor").first()
-            is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+            is_mentor = UserBadge.objects.filter(
+                user=request.user, badge=mentor_badge).exists()
 
             if not is_mentor:
                 return JsonResponse({"error": "Unauthorized"}, status=403)
@@ -191,7 +199,8 @@ def update_submission_status(request, submission_id):
 
             submission.save()
             return JsonResponse(
-                {"success": True, "new_status": submission.status, "new_bacon_amount": submission.bacon_amount}
+                {"success": True, "new_status": submission.status,
+                    "new_bacon_amount": submission.bacon_amount}
             )
 
         except json.JSONDecodeError:
@@ -225,11 +234,13 @@ def initiate_transaction(request):
             # MAINNET LOGIC: Send YAML payload along with JSON fields
             if network == "mainnet":
                 outputs = [
-                    {"address": user["bch_address"], "runes": {"BLT•BACON•TOKENS": user["bacon_amount"]}}
+                    {"address": user["bch_address"], "runes": {
+                        "BLT•BACON•TOKENS": user["bacon_amount"]}}
                     for user in selected_users
                 ]
 
-                yaml_payload = yaml.dump({"outputs": outputs}, default_flow_style=False)
+                yaml_payload = yaml.dump(
+                    {"outputs": outputs}, default_flow_style=False)
 
                 final_payload = {
                     "yaml_content": yaml_payload,  # Send YAML as a string
@@ -244,7 +255,8 @@ def initiate_transaction(request):
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
-                response = requests.post(f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload)
+                response = requests.post(
+                    f"{ord_server_url}/mainnet/send-bacon-tokens", json=final_payload)
                 response_data = response.json()
                 if response.status_code == 200 and "txid" in response_data:
                     txid = response_data["txid"]
@@ -262,14 +274,16 @@ def initiate_transaction(request):
 
             # REGTEST LOGIC: Send only required fields in JSON
             elif network == "regtest":
-                final_payload = {"num_users": len(selected_users), "fee_rate": fee_rate, "dry_run": dry_run}
+                final_payload = {"num_users": len(
+                    selected_users), "fee_rate": fee_rate, "dry_run": dry_run}
 
                 ord_server_url = settings.ORD_SERVER_URL
 
                 if not ord_server_url:
                     return JsonResponse({"error": "ORD_SERVER_URL is not configured"}, status=500)
 
-                response = requests.post(f"{ord_server_url}/regtest/send-bacon-tokens", json=final_payload)
+                response = requests.post(
+                    f"{ord_server_url}/regtest/send-bacon-tokens", json=final_payload)
                 response_data = response.json()
                 if response.status_code == 200:
                     return JsonResponse(response_data)
@@ -286,14 +300,17 @@ def initiate_transaction(request):
 
     # Check if the user is a mentor
     mentor_badge = Badge.objects.filter(title="mentor").first()
-    is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+    is_mentor = UserBadge.objects.filter(
+        user=request.user, badge=mentor_badge).exists()
     if not is_mentor:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
     # Fetch submissions where status is 'accepted' and transaction is still pending
-    submissions_by_user = defaultdict(lambda: {"submissions": [], "total_bacon": 0})
+    submissions_by_user = defaultdict(
+        lambda: {"submissions": [], "total_bacon": 0})
 
-    submissions = BaconSubmission.objects.filter(status="accepted", transaction_status="pending").select_related("user")
+    submissions = BaconSubmission.objects.filter(
+        status="accepted", transaction_status="pending").select_related("user")
 
     for submission in submissions:
         submissions_by_user[submission.user]["submissions"].append(submission)
@@ -309,7 +326,8 @@ def get_wallet_balance(request):
 
     # Check if the user is a mentor
     mentor_badge = Badge.objects.filter(title="mentor").first()
-    is_mentor = UserBadge.objects.filter(user=user, badge=mentor_badge).exists()
+    is_mentor = UserBadge.objects.filter(
+        user=user, badge=mentor_badge).exists()
     if not is_mentor:
         return JsonResponse({"error": "Unauthorized"}, status=403)
 
@@ -346,7 +364,8 @@ def bacon_view(request):
     # Check if the logged-in user is a mentor
     mentor_badge = Badge.objects.filter(title="mentor").first()
     if request.user.is_authenticated:
-        is_mentor = UserBadge.objects.filter(user=request.user, badge=mentor_badge).exists()
+        is_mentor = UserBadge.objects.filter(
+            user=request.user, badge=mentor_badge).exists()
     else:
         is_mentor = False
 
