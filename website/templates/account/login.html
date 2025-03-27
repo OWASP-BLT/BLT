@@ -45,9 +45,22 @@
                     {% trans "Read our" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "terms" %}</a> {% trans "and" %} <a href="{% url 'terms' %}" class="underline text-white">{% trans "conditions" %}</a>
                 </p>
             </div>
-            <!-- Right Side (Login Form) d -->
+            
+            <!-- Right Side (Login Form) -->
             <div class="p-5 bg-white dark:bg-gray-800 md:flex-1">
-                <h3 class="text-2xl font-semibold text-gray-700 dark:text-gray-300">{% trans "Account Login" %}</h3>
+                <h3 class="text-2xl font-semibold text-gray-700">{% trans "Account Login" %}</h3>
+                {% if form.errors %}
+                    <div class="mt-4 p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
+                         role="alert">
+                        <p>{% trans "Invalid username or password." %}</p>
+                    </div>
+                {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mt-4 p-4 mb-4 text-sm {% if message.tags == 'error' %}text-red-700 bg-red-100{% elif message.tags == 'success' %}text-green-700 bg-green-100{% endif %} rounded-lg"
+                             role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
                 <form class="flex flex-col space-y-4 login"
                       method="post"
                       action="{% url 'account_login' %}?next={{ request.path }}">

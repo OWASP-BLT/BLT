@@ -1,71 +1,61 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 {% load custom_tags %}
-{% load i18n %}
-{% block title %}
-    Verify Your Email Address | {% env 'PROJECT_NAME' %}
-{% endblock title %}
-{% block description %}
-    Please check your email for a verification link to complete your account registration.
-{% endblock description %}
-{% block keywords %}
-    Email Verification, Account Verification, Complete Registration
-{% endblock keywords %}
-{% block og_title %}
-    Email Verification Required
-{% endblock og_title %}
-{% block og_description %}
-    Please check your email for a verification link to complete your account registration.
-{% endblock og_description %}
+{% block header %}{% endblock %}
+{% block include_header %}{% endblock %}
 {% block natural_content %}
-    {% include "includes/sidenav.html" %}
-    <div class="flex items-center justify-center w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-800">
-        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
-            <div class="text-center">
-                <!-- Success Icon -->
-                <div class="mx-auto mb-6 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                    <svg class="w-8 h-8 text-green-600"
-                         fill="none"
-                         stroke="currentColor"
-                         viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                </div>
-                <!-- Heading -->
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">{% trans "Verify Your Email Address" %}</h1>
-                <!-- Message -->
-                <div class="text-gray-600 dark:text-gray-400 mb-6 space-y-3">
-                    <p>
-                        {% blocktrans %}We have sent an email to you for verification. Follow the link provided to finalize the signup process.{% endblocktrans %}
-                    </p>
-                    <p>
-                        {% blocktrans %}If you do not see the verification email in your main inbox, check your spam folder.{% endblocktrans %}
-                    </p>
-                    <p class="text-sm text-gray-500 dark:text-gray-500">
-                        {% blocktrans %}Please contact us if you do not receive the verification email within a few minutes.{% endblocktrans %}
-                    </p>
-                </div>
-                <!-- Action Buttons -->
-                <div class="space-y-3">
+    <div class="flex items-center min-h-screen py-6 px-4 bg-gray-100 lg:justify-center">
+        <div class="flex flex-col overflow-hidden bg-white rounded-md shadow-lg max md:flex-row md:flex-1 lg:max-w-screen-sm">
+            <!-- Left Side (Branding and Info) -->
+            <div class="p-4 py-6 text-white bg-red-500 md:w-80 md:flex-shrink-0 md:flex md:flex-col md:items-center md:justify-evenly">
+                <div class="my-2 text-4xl font-bold tracking-wider text-center">
                     <a href="{% url 'home' %}"
-                       class="w-full inline-block px-4 py-2 text-lg font-semibold text-white bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4 transition-colors duration-300 text-center">
-                        {% trans "Return to Home" %}
-                    </a>
-                    <a href="{% url 'account_login' %}"
-                       class="w-full inline-block px-4 py-2 text-lg font-semibold text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-md shadow hover:bg-gray-300 focus:outline-none focus:ring-gray-200 focus:ring-4 transition-colors duration-300 text-center">
-                        {% trans "Sign In" %}
-                    </a>
+                       class="hover:no-underline text-white hover:text-white">{% env 'PROJECT_NAME' %}</a>
                 </div>
-                <!-- Resend Email Link -->
-                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">{% trans "Didn't receive the email?" %}</p>
-                    <a href="{% url 'account_email' %}"
-                       class="text-red-500 hover:text-red-600 font-medium text-sm underline">
-                        {% trans "Resend verification email" %}
-                    </a>
+                <p class="mt-4 font-normal text-center text-white text-xl md:mt-0">
+                    {% env 'PROJECT_NAME' %} {% trans "is a bug logging tool to report issues and get points, Organizations are held accountable" %}.
+                </p>
+                <p class="mt-6 font-normal text-center text-white text-lg md:mt-0">
+                    {% trans "Thank you for joining our community!" %}
+                </p>
+            </div>
+            <!-- Right Side (Verification Content) -->
+            <div class="p-5 bg-white md:flex-1">
+                <h3 class="text-2xl text-center font-semibold text-gray-700 mb-6">{% trans "Check Your Email" %}</h3>
+                <div class="flex justify-center mb-8">
+                    <div class="relative">
+                        <div class="absolute -inset-2">
+                            <div class="w-full h-full mx-auto opacity-30 blur-lg filter bg-gradient-to-r from-red-400 to-red-600"></div>
+                        </div>
+                        <svg class="relative h-16 w-16 text-red-500"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76">
+                            </path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="text-center">
+                        <p class="text-gray-600 mb-2">{% trans "We've sent a verification email to your inbox." %}</p>
+                        <p class="text-sm text-gray-500">{% trans "Please click the link in the email to confirm your email address." %}</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <a href="{% url 'account_login' %}"
+                               class="flex items-center justify-center px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                                {% trans "Login" %}
+                            </a>
+                            <a href="{% url 'account_signup' %}"
+                               class="flex items-center justify-center px-4 py-2 text-lg font-semibold text-white transition-colors duration-300 bg-red-500 rounded-md shadow hover:bg-red-600 focus:outline-none focus:ring-red-200 focus:ring-4">
+                                {% trans "Sign Up" %}
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-{% endblock natural_content %}
+{% endblock %}
