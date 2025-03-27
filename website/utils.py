@@ -32,8 +32,7 @@ from .models import PRAnalysisReport
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY", "sk-proj-1234567890"))
 
-logging.basicConfig(level=logging.INFO,
-                    format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 GITHUB_API_TOKEN = settings.GITHUB_TOKEN
@@ -51,8 +50,7 @@ def validate_file_type(request, file_field_name, allowed_extensions, allowed_mim
     if not file:
         return True, None  # File is optional; skip validation if not provided
 
-    extension_validator = FileExtensionValidator(
-        allowed_extensions=allowed_extensions)
+    extension_validator = FileExtensionValidator(allowed_extensions=allowed_extensions)
     try:
         extension_validator(file)
     except ValidationError:
@@ -94,8 +92,7 @@ def get_email_from_domain(domain_name):
             response = requests.get(url)
         except Exception:
             continue
-        new_emails = set(re.findall(
-            r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
+        new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))
         if new_emails:
             emails.update(new_emails)
             break
@@ -205,8 +202,7 @@ def rebuild_safe_url(url):
         path = "/" + path
     encoded_path = quote(path, safe="/")
 
-    safe_url = urlunparse(
-        (parsed_url.scheme, netloc, encoded_path, "", "", ""))
+    safe_url = urlunparse((parsed_url.scheme, netloc, encoded_path, "", "", ""))
 
     return safe_url
 
@@ -239,8 +235,7 @@ def safe_redirect_request(request: HttpRequest):
     if http_referer:
         referer_url = urlparse(http_referer)
         if referer_url.netloc == request.get_host():
-            safe_url = urlunparse(
-                (referer_url.scheme, referer_url.netloc, referer_url.path, "", "", ""))
+            safe_url = urlunparse((referer_url.scheme, referer_url.netloc, referer_url.path, "", "", ""))
             return redirect(safe_url)
     fallback_url = f"{request.scheme}://{request.get_host()}/"
     return redirect(fallback_url)
@@ -322,16 +317,14 @@ def generate_embedding(text, retries=2, backoff_factor=2):
     """
     for attempt in range(retries):
         try:
-            response = client.embeddings.create(
-                model="text-embedding-ada-002", input=text, encoding_format="float")
+            response = client.embeddings.create(model="text-embedding-ada-002", input=text, encoding_format="float")
             # Extract the embedding from the response
             embedding = response.data[0].embedding
             return np.array(embedding)
 
         except Exception as e:
             # If rate-limiting error occurs, wait and retry
-            print(
-                f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
+            print(f"Error encountered: {e}. Retrying in {2 ** attempt} seconds.")
             time.sleep(2**attempt)  # Exponential backoff
 
     print(f"Failed to complete request after {retries} attempts.")
@@ -345,8 +338,7 @@ def cosine_similarity(embedding1, embedding2):
     :param embedding2: The second embedding vector.
     :return: The cosine similarity score between the two embeddings.
     """
-    similarity = np.dot(embedding1, embedding2) / \
-        (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
+    similarity = np.dot(embedding1, embedding2) / (np.linalg.norm(embedding1) * np.linalg.norm(embedding2))
 
     similarity_score = similarity * 100  # Scale similarity to 0-100
     return round(similarity_score, 2)
@@ -375,8 +367,7 @@ def extract_function_signatures_and_content(repo_path):
                                     "defaults": [ast.dump(default) for default in node.args.defaults],
                                 }
                                 # Extract function body as full text
-                                function_text = ast.get_source_segment(
-                                    file_content, node)
+                                function_text = ast.get_source_segment(file_content, node)
                                 function_data = {
                                     "signature": signature,
                                     "full_text": function_text,  # Full text of the function
@@ -412,21 +403,17 @@ def extract_django_models(repo_path):
                         # Look for class definition that inherits from models.Model
                         if line.startswith("class ") and "models.Model" in line:
                             if model_name:  # Save the previous model if exists
-                                models.append(
-                                    {"name": model_name, "fields": fields})
-                            model_name = line.split(
-                                "(")[0].replace("class ", "").strip()
+                                models.append({"name": model_name, "fields": fields})
+                            model_name = line.split("(")[0].replace("class ", "").strip()
                             fields = []  # Reset fields when a new model starts
 
                         else:
                             # Match field definitions like: name = models.CharField(max_length=...)
-                            match = re.match(
-                                r"^\s*(\w+)\s*=\s*models\.(\w+)", line)
+                            match = re.match(r"^\s*(\w+)\s*=\s*models\.(\w+)", line)
                             if match:
                                 field_name = match.group(1)
                                 field_type = match.group(2)
-                                fields.append(
-                                    {"field_name": field_name, "field_type": field_type})
+                                fields.append({"field_name": field_name, "field_type": field_type})
 
                             # Match other field types like ForeignKey, ManyToManyField, etc.
                             match_complex = re.match(
@@ -462,8 +449,7 @@ def compare_model_fields(model1, model2):
     :return: Dictionary containing name and field similarity details
     """
     # Compare model names
-    model_name_similarity = difflib.SequenceMatcher(
-        None, model1["name"], model2["name"]).ratio() * 100
+    model_name_similarity = difflib.SequenceMatcher(None, model1["name"], model2["name"]).ratio() * 100
 
     # Initialize field comparison details
     field_comparison_details = []
@@ -476,19 +462,16 @@ def compare_model_fields(model1, model2):
         for field2 in fields2:
             # Compare field names
             field_name_similarity = (
-                difflib.SequenceMatcher(
-                    None, field1["field_name"], field2["field_name"]).ratio() * 100
+                difflib.SequenceMatcher(None, field1["field_name"], field2["field_name"]).ratio() * 100
             )
 
             # Compare field types
             field_type_similarity = (
-                difflib.SequenceMatcher(
-                    None, field1["field_type"], field2["field_type"]).ratio() * 100
+                difflib.SequenceMatcher(None, field1["field_type"], field2["field_type"]).ratio() * 100
             )
 
             # Average similarity between the field name and type
-            overall_similarity = (field_name_similarity +
-                                  field_type_similarity) / 2
+            overall_similarity = (field_name_similarity + field_type_similarity) / 2
 
             # Append details for each field comparison
             if overall_similarity > 50:
@@ -506,10 +489,8 @@ def compare_model_fields(model1, model2):
 
     # Calculate overall similarity across all fields
     if field_comparison_details:
-        total_similarity = sum([entry["overall_similarity"]
-                               for entry in field_comparison_details])
-        overall_field_similarity = total_similarity / \
-            len(field_comparison_details)
+        total_similarity = sum([entry["overall_similarity"] for entry in field_comparison_details])
+        overall_field_similarity = total_similarity / len(field_comparison_details)
     else:
         overall_field_similarity = 0.0
 
@@ -562,8 +543,7 @@ def fetch_github_user_data(username):
                 "public_repos": user_info.get("public_repos"),
             }
         else:
-            logging.error(
-                f"Failed to fetch user profile: {user_response.status_code} {user_response.text}")
+            logging.error(f"Failed to fetch user profile: {user_response.status_code} {user_response.text}")
 
         # Fetch repositories
         logging.info(f"Fetching repositories for {username}")
@@ -581,24 +561,20 @@ def fetch_github_user_data(username):
                     if not parent_repo_url:
                         # Fetch detailed repo information to get parent URL
                         repo_details_url = f"https://api.github.com/repos/{username}/{repo['name']}"
-                        repo_details_response = requests.get(
-                            repo_details_url, headers=headers)
+                        repo_details_response = requests.get(repo_details_url, headers=headers)
                         if repo_details_response.status_code == 200:
                             repo_details = repo_details_response.json()
-                            parent_repo_url = repo_details.get(
-                                "parent", {}).get("url")
+                            parent_repo_url = repo_details.get("parent", {}).get("url")
                         else:
                             logging.error(
                                 f"Failed to fetch repo details for {repo['name']}: {repo_details_response.status_code}"
                             )
 
                     if parent_repo_url:
-                        parent_response = requests.get(
-                            parent_repo_url, headers=headers)
+                        parent_response = requests.get(parent_repo_url, headers=headers)
                         if parent_response.status_code == 200:
                             parent_repo = parent_response.json()
-                            logging.info(
-                                f"Fetched parent repo details for forked repo {repo['name']}")
+                            logging.info(f"Fetched parent repo details for forked repo {repo['name']}")
                             repo_data = {
                                 "name": parent_repo["name"],
                                 "url": parent_repo["html_url"],
@@ -623,8 +599,7 @@ def fetch_github_user_data(username):
                                 "topics": repo.get("topics", []),
                             }
                     else:
-                        logging.warning(
-                            f"No parent repo found for forked repo {repo['name']}")
+                        logging.warning(f"No parent repo found for forked repo {repo['name']}")
                         repo_data = {
                             "name": repo["name"],
                             "url": repo["html_url"],
@@ -650,8 +625,7 @@ def fetch_github_user_data(username):
 
             user_data["repositories"] = user_repos
         else:
-            logging.error(
-                f"Failed to fetch repositories: {repos_response.status_code} {repos_response.text}")
+            logging.error(f"Failed to fetch repositories: {repos_response.status_code} {repos_response.text}")
 
         # Fetch starred repositories
         logging.info(f"Fetching starred repositories for {username}")
@@ -687,8 +661,7 @@ def fetch_github_user_data(username):
                 if event["type"] in ["PushEvent", "PullRequestEvent", "IssuesEvent"]
             ]
         else:
-            logging.error(
-                f"Failed to fetch recent activity: {events_response.status_code} {events_response.text}")
+            logging.error(f"Failed to fetch recent activity: {events_response.status_code} {events_response.text}")
 
         # Fetch language usage
         logging.info(f"Fetching language usage for {username}")
@@ -705,18 +678,14 @@ def fetch_github_user_data(username):
             if lang_response.status_code == 200:
                 lang_data = lang_response.json()
                 for lang, bytes_used in lang_data.items():
-                    language_usage[lang] = language_usage.get(
-                        lang, 0) + bytes_used
+                    language_usage[lang] = language_usage.get(lang, 0) + bytes_used
             else:
-                logging.warning(
-                    f"Failed to fetch languages for {repo['name']}: {lang_response.status_code}")
+                logging.warning(f"Failed to fetch languages for {repo['name']}: {lang_response.status_code}")
 
-        user_data["top_languages"] = sorted(
-            language_usage.items(), key=lambda x: x[1], reverse=True)
+        user_data["top_languages"] = sorted(language_usage.items(), key=lambda x: x[1], reverse=True)
 
         # Collect topics
-        topics = [topic for repo in user_data.get(
-            "repositories", []) for topic in repo.get("topics", [])]
+        topics = [topic for repo in user_data.get("repositories", []) for topic in repo.get("topics", [])]
         user_data["top_topics"] = list(set(topics))
 
     except Exception as e:
@@ -837,8 +806,7 @@ class twitter:
 
             # Send tweet with or without media
             if image_path:
-                status = api.update_status_with_media(
-                    status=message, filename=image_path)
+                status = api.update_status_with_media(status=message, filename=image_path)
             else:
                 status = api.update_status(status=message)
 
@@ -857,12 +825,10 @@ class twitter:
 
             # Still try to send to Discord and Slack even if Twitter fails
             try:
-                twitter.send_to_discord(
-                    message, None, image_path, error=str(e))
+                twitter.send_to_discord(message, None, image_path, error=str(e))
                 twitter.send_to_slack(message, None, image_path, error=str(e))
             except Exception as comm_error:
-                logging.error(
-                    f"Error sending to communication channels: {str(comm_error)}")
+                logging.error(f"Error sending to communication channels: {str(comm_error)}")
 
             return {"success": False, "url": None, "txid": None, "error": str(e)}
 
@@ -906,8 +872,7 @@ class twitter:
             if image_path:
                 with open(image_path, "rb") as img:
                     files = {"file": (os.path.basename(image_path), img)}
-                    response = requests.post(
-                        webhook_url, data={"payload_json": str(payload)}, files=files)
+                    response = requests.post(webhook_url, data={"payload_json": str(payload)}, files=files)
             else:
                 response = requests.post(webhook_url, json=payload)
 
@@ -933,15 +898,13 @@ class twitter:
             from website.models import Organization, SlackIntegration
 
             # Find the OWASP BLT organization
-            owasp_org = Organization.objects.filter(
-                name__icontains="OWASP BLT").first()
+            owasp_org = Organization.objects.filter(name__icontains="OWASP BLT").first()
             if not owasp_org:
                 logging.warning("OWASP BLT organization not found")
                 return False
 
             # Find the Slack integration for the organization
-            slack_integration = SlackIntegration.objects.filter(
-                integration__organization=owasp_org).first()
+            slack_integration = SlackIntegration.objects.filter(integration__organization=owasp_org).first()
 
             if not slack_integration or not slack_integration.bot_access_token:
                 logging.warning("Slack integration not found or token missing")
@@ -955,10 +918,8 @@ class twitter:
             if not channel_id:
                 try:
                     # Use Slack API to find the channel
-                    headers = {"Authorization": f"Bearer {bot_token}",
-                               "Content-Type": "application/json"}
-                    response = requests.get(
-                        "https://slack.com/api/conversations.list", headers=headers)
+                    headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
+                    response = requests.get("https://slack.com/api/conversations.list", headers=headers)
                     response.raise_for_status()
 
                     data = response.json()
@@ -968,8 +929,7 @@ class twitter:
                                 channel_id = channel.get("id")
                                 break
                 except Exception as e:
-                    logging.error(
-                        f"Error finding #project-blt channel: {str(e)}")
+                    logging.error(f"Error finding #project-blt channel: {str(e)}")
                     return False
 
             if not channel_id:
@@ -977,19 +937,16 @@ class twitter:
                 return False
 
             # Prepare the message blocks
-            blocks = [{"type": "section", "text": {
-                "type": "mrkdwn", "text": f"*New Tweet*\n{message}"}}]
+            blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": f"*New Tweet*\n{message}"}}]
 
             # Add tweet URL if available
             if tweet_url:
-                blocks.append({"type": "section", "text": {
-                              "type": "mrkdwn", "text": f"<{tweet_url}|View Tweet>"}})
+                blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"<{tweet_url}|View Tweet>"}})
 
             # Add error information if available
             if error:
                 blocks.append(
-                    {"type": "section", "text": {"type": "mrkdwn",
-                                                 "text": f"*Error sending tweet:*\n{error}"}}
+                    {"type": "section", "text": {"type": "mrkdwn", "text": f"*Error sending tweet:*\n{error}"}}
                 )
 
             # Prepare the payload
@@ -1000,8 +957,7 @@ class twitter:
             }
 
             # Send the message
-            headers = {"Authorization": f"Bearer {bot_token}",
-                       "Content-Type": "application/json"}
+            headers = {"Authorization": f"Bearer {bot_token}", "Content-Type": "application/json"}
 
             # If there's an image, upload it first
             if image_path:
@@ -1011,25 +967,21 @@ class twitter:
                         "https://slack.com/api/files.upload",
                         headers={"Authorization": f"Bearer {bot_token}"},
                         files={"file": open(image_path, "rb")},
-                        data={"channels": channel_id,
-                              "initial_comment": f"New Tweet: {message}"},
+                        data={"channels": channel_id, "initial_comment": f"New Tweet: {message}"},
                     )
 
                     if not upload_response.json().get("ok"):
-                        logging.warning(
-                            f"Error uploading image to Slack: {upload_response.json().get('error')}")
+                        logging.warning(f"Error uploading image to Slack: {upload_response.json().get('error')}")
                 except Exception as e:
                     logging.error(f"Error uploading image to Slack: {str(e)}")
 
             # Send the message
-            response = requests.post(
-                "https://slack.com/api/chat.postMessage", headers=headers, json=payload)
+            response = requests.post("https://slack.com/api/chat.postMessage", headers=headers, json=payload)
 
             response.raise_for_status()
 
             if not response.json().get("ok"):
-                logging.warning(
-                    f"Error sending message to Slack: {response.json().get('error')}")
+                logging.warning(f"Error sending message to Slack: {response.json().get('error')}")
                 return False
 
             return True
@@ -1060,7 +1012,4 @@ def get_org_slack_channel(organization):
     if not organization:
         return settings.ORG_SLACK_CHANNELS.get("default")
 
-    return settings.ORG_SLACK_CHANNELS.get(
-        organization.lower(),
-        settings.ORG_SLACK_CHANNELS.get("default")
-    )
+    return settings.ORG_SLACK_CHANNELS.get(organization.lower(), settings.ORG_SLACK_CHANNELS.get("default"))

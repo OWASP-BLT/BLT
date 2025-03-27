@@ -39,16 +39,14 @@ logger = logging.getLogger(__name__)
 def validate_bch_address(value):
     """Validates that a BCH address is in the new CashAddr format."""
     if not value.startswith("bitcoincash:"):
-        raise ValidationError(
-            'BCH address must be in the new CashAddr format starting with "bitcoincash:"')
+        raise ValidationError('BCH address must be in the new CashAddr format starting with "bitcoincash:"')
     # Additional validation for the rest of the address could be added here
 
 
 def validate_btc_address(value):
     """Validates that a BTC address is in the new SegWit format."""
     if not (value.startswith("bc1") or value.startswith("3") or value.startswith("1")):
-        raise ValidationError(
-            'BTC address must be in a valid format (SegWit addresses start with "bc1")')
+        raise ValidationError('BTC address must be in a valid format (SegWit addresses start with "bc1")')
     # Additional validation for the rest of the address could be added here
 
 
@@ -105,15 +103,12 @@ class Integration(models.Model):
 
 
 class SlackIntegration(models.Model):
-    integration = models.OneToOneField(
-        Integration, on_delete=models.CASCADE, related_name="slack_integration")
+    integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
     # will be different for each workspace
     bot_access_token = models.CharField(max_length=255, null=True, blank=True)
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
-    default_channel_name = models.CharField(
-        max_length=255, null=True, blank=True)  # Default channel ID
-    default_channel_id = models.CharField(
-        max_length=255, null=True, blank=True)
+    default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
+    default_channel_id = models.CharField(max_length=255, null=True, blank=True)
     daily_updates = models.BooleanField(default=False)
     daily_update_time = models.IntegerField(
         null=True,
@@ -140,15 +135,12 @@ class OrganisationType(Enum):
 
 
 class Organization(models.Model):
-    admin = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(
-        User, related_name="user_organizations", blank=True)
+    admin = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    managers = models.ManyToManyField(User, related_name="user_organizations", blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.CharField(max_length=500, null=True, blank=True)
-    logo = models.ImageField(
-        upload_to="organization_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="organization_logos", null=True, blank=True)
     url = models.URLField(unique=True)
     email = models.EmailField(null=True, blank=True)
     twitter = models.URLField(null=True, blank=True)
@@ -161,12 +153,10 @@ class Organization(models.Model):
     facebook = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    subscription = models.ForeignKey(
-        Subscription, null=True, blank=True, on_delete=models.CASCADE)
+    subscription = models.ForeignKey(Subscription, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=False)
     tags = models.ManyToManyField(Tag, blank=True)
-    integrations = models.ManyToManyField(
-        Integration, related_name="organizations", blank=True)
+    integrations = models.ManyToManyField(Integration, related_name="organizations", blank=True)
     trademark_count = models.IntegerField(default=0)
     trademark_check_date = models.DateTimeField(null=True, blank=True)
     team_points = models.IntegerField(default=0)
@@ -178,8 +168,7 @@ class Organization(models.Model):
     topic_tags = models.JSONField(default=list)
     source_code = models.URLField(blank=True, null=True)
     ideas_link = models.URLField(blank=True, null=True)
-    repos_updated_at = models.DateTimeField(
-        null=True, blank=True, help_text="When repositories were last updated")
+    repos_updated_at = models.DateTimeField(null=True, blank=True, help_text="When repositories were last updated")
     type = models.CharField(
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
@@ -199,12 +188,9 @@ class Organization(models.Model):
     city = models.CharField(
         max_length=100, blank=True, null=True, help_text="The city where the organization is located"
     )
-    state = models.CharField(max_length=100, blank=True, null=True,
-                             help_text="The state or region of the organization")
-    country = models.CharField(
-        max_length=100, blank=True, null=True, help_text="The country of the organization")
-    postal_code = models.CharField(
-        max_length=20, blank=True, null=True, help_text="ZIP code or postal code")
+    state = models.CharField(max_length=100, blank=True, null=True, help_text="The state or region of the organization")
+    country = models.CharField(max_length=100, blank=True, null=True, help_text="The country of the organization")
+    postal_code = models.CharField(max_length=20, blank=True, null=True, help_text="ZIP code or postal code")
 
     # Geographical coordinates
     latitude = models.DecimalField(
@@ -227,8 +213,7 @@ class Organization(models.Model):
         indexes = [
             models.Index(fields=["created"], name="org_created_idx"),
         ]
-        constraints = [models.UniqueConstraint(
-            fields=["slug"], name="unique_organization_slug")]
+        constraints = [models.UniqueConstraint(fields=["slug"], name="unique_organization_slug")]
 
     def __str__(self):
         return self.name
@@ -249,25 +234,21 @@ class Organization(models.Model):
 
 
 class JoinRequest(models.Model):
-    team = models.ForeignKey(Organization, null=True,
-                             blank=True, on_delete=models.CASCADE)
+    team = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_accepted = models.BooleanField(default=False)
 
 
 class Domain(models.Model):
-    organization = models.ForeignKey(
-        Organization, null=True, blank=True, on_delete=models.CASCADE)
-    managers = models.ManyToManyField(
-        User, related_name="user_domains", blank=True)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
+    managers = models.ManyToManyField(User, related_name="user_domains", blank=True)
     name = models.CharField(max_length=255, unique=True)
     url = models.URLField()
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
     webshot = models.ImageField(upload_to="webshots", null=True, blank=True)
     clicks = models.IntegerField(null=True, blank=True)
-    email_event = models.CharField(
-        max_length=255, default="", null=True, blank=True)
+    email_event = models.CharField(max_length=255, default="", null=True, blank=True)
     color = models.CharField(max_length=10, null=True, blank=True)
     github = models.CharField(max_length=255, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
@@ -372,8 +353,7 @@ class TrademarkOwner(models.Model):
     owner_type = models.CharField(max_length=20, blank=True, null=True)
     owner_label = models.CharField(max_length=100, blank=True, null=True)
     legal_entity_type = models.CharField(max_length=20, blank=True, null=True)
-    legal_entity_type_label = models.CharField(
-        max_length=100, blank=True, null=True)
+    legal_entity_type_label = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -381,8 +361,7 @@ class TrademarkOwner(models.Model):
 
 class Trademark(models.Model):
     keyword = models.CharField(max_length=255)
-    registration_number = models.CharField(
-        max_length=50, blank=True, null=True)
+    registration_number = models.CharField(max_length=50, blank=True, null=True)
     serial_number = models.CharField(max_length=50, blank=True, null=True)
     status_label = models.CharField(max_length=50, blank=True, null=True)
     status_code = models.CharField(max_length=20, blank=True, null=True)
@@ -425,12 +404,9 @@ class Hunt(models.Model):
     description = MDTextField(null=True, blank=True)
     url = models.URLField()
     prize = models.IntegerField(null=True, blank=True)
-    prize_winner = models.DecimalField(
-        max_digits=6, decimal_places=2, default=0)
-    prize_runner = models.DecimalField(
-        max_digits=6, decimal_places=2, default=0)
-    prize_second_runner = models.DecimalField(
-        max_digits=6, decimal_places=2, default=0)
+    prize_winner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    prize_runner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    prize_second_runner = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     logo = models.ImageField(upload_to="logos", null=True, blank=True)
     banner = models.ImageField(upload_to="banners", null=True, blank=True)
     plan = models.CharField(max_length=10)
@@ -456,8 +432,7 @@ class HuntPrize(models.Model):
     hunt = models.ForeignKey(Hunt, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
     value = models.PositiveIntegerField(default=0)
-    no_of_eligible_projects = models.PositiveIntegerField(
-        default=1)  # no of winner in this prize
+    no_of_eligible_projects = models.PositiveIntegerField(default=1)  # no of winner in this prize
     # all valid submissions are winners in this prize
     valid_submissions_eligible = models.BooleanField(default=False)
     prize_in_crypto = models.BooleanField(default=False)
@@ -480,14 +455,10 @@ class Issue(models.Model):
         (7, "Server Down"),
         (8, "Trademark Squatting"),
     )
-    user = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.CASCADE)
-    team_members = models.ManyToManyField(
-        User, related_name="reportmembers", blank=True)
-    hunt = models.ForeignKey(
-        Hunt, null=True, blank=True, on_delete=models.CASCADE)
-    domain = models.ForeignKey(
-        Domain, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    team_members = models.ManyToManyField(User, related_name="reportmembers", blank=True)
+    hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     url = models.URLField()
     description = models.TextField()
     markdown_description = models.TextField(null=True, blank=True)
@@ -496,15 +467,11 @@ class Issue(models.Model):
     views = models.IntegerField(null=True, blank=True)
     verified = models.BooleanField(default=False)
     score = models.IntegerField(null=True, blank=True)
-    status = models.CharField(
-        max_length=10, default="open", null=True, blank=True)
-    user_agent = models.CharField(
-        max_length=255, default="", null=True, blank=True)
+    status = models.CharField(max_length=10, default="open", null=True, blank=True)
+    user_agent = models.CharField(max_length=255, default="", null=True, blank=True)
     ocr = models.TextField(default="", null=True, blank=True)
-    screenshot = models.ImageField(
-        upload_to="screenshots", null=True, blank=True, validators=[validate_image])
-    closed_by = models.ForeignKey(
-        User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
+    screenshot = models.ImageField(upload_to="screenshots", null=True, blank=True, validators=[validate_image])
+    closed_by = models.ForeignKey(User, null=True, blank=True, related_name="closed_by", on_delete=models.CASCADE)
     closed_date = models.DateTimeField(default=None, null=True, blank=True)
     github_url = models.URLField(default="", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -514,8 +481,7 @@ class Issue(models.Model):
     rewarded = models.PositiveIntegerField(default=0)
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
-    cve_score = models.DecimalField(
-        max_digits=2, decimal_places=1, null=True, blank=True)
+    cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
     tags = models.ManyToManyField(Tag, blank=True)
     comments = GenericRelation("comments.Comment")
 
@@ -549,8 +515,7 @@ class Issue(models.Model):
             prefix
             + self.domain_title
             + spacer
-            + self.description[: 140 - (len(prefix) +
-                                        len(self.domain_title) + len(spacer) + len(issue_link))]
+            + self.description[: 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))]
             + issue_link
         )
         return msg
@@ -566,8 +531,7 @@ class Issue(models.Model):
         if self.cve_id is None:
             return None
         try:
-            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (
-                self.cve_id)
+            url = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=%s" % (self.cve_id)
             response = requests.get(url).json()
             results = response["resultsPerPage"]
             if results != 0:
@@ -582,8 +546,7 @@ class Issue(models.Model):
     class Meta:
         ordering = ["-created"]
         indexes = [
-            models.Index(fields=["domain", "status"],
-                         name="issue_domain_status_idx"),
+            models.Index(fields=["domain", "status"], name="issue_domain_status_idx"),
         ]
 
 
@@ -609,17 +572,13 @@ if is_using_gcs():
             blob_name = instance.screenshot.name
             blob = bucket.blob(blob_name)
             try:
-                logger.info(
-                    f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+                logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
                 blob.delete()
-                logger.info(
-                    f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+                logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
             except NotFound:
-                logger.warning(
-                    f"File not found in Google Cloud Storage: {blob_name}")
+                logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
             except Exception as e:
-                logger.error(
-                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+                logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
 
 else:
 
@@ -630,10 +589,8 @@ else:
 
 
 class IssueScreenshot(models.Model):
-    image = models.ImageField(upload_to="screenshots",
-                              validators=[validate_image])
-    issue = models.ForeignKey(
-        Issue, on_delete=models.CASCADE, related_name="screenshots")
+    image = models.ImageField(upload_to="screenshots", validators=[validate_image])
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="screenshots")
     created = models.DateTimeField(auto_now_add=True)
 
 
@@ -647,17 +604,13 @@ if is_using_gcs():
             blob_name = instance.image.name
             blob = bucket.blob(blob_name)
             try:
-                logger.info(
-                    f"Attempting to delete image from Google Cloud Storage: {blob_name}")
+                logger.info(f"Attempting to delete image from Google Cloud Storage: {blob_name}")
                 blob.delete()
-                logger.info(
-                    f"Successfully deleted image from Google Cloud Storage: {blob_name}")
+                logger.info(f"Successfully deleted image from Google Cloud Storage: {blob_name}")
             except NotFound:
-                logger.warning(
-                    f"File not found in Google Cloud Storage: {blob_name}")
+                logger.warning(f"File not found in Google Cloud Storage: {blob_name}")
             except Exception as e:
-                logger.error(
-                    f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
+                logger.error(f"Error deleting image from Google Cloud Storage: {blob_name} - {str(e)}")
 
 else:
 
@@ -670,15 +623,13 @@ else:
 @receiver(post_save, sender=Issue)
 def update_issue_image_access(sender, instance, **kwargs):
     if instance.is_hidden:
-        issue_screenshot_list = IssueScreenshot.objects.filter(
-            issue=instance.id)
+        issue_screenshot_list = IssueScreenshot.objects.filter(issue=instance.id)
         for screenshot in issue_screenshot_list:
             old_name = screenshot.image.name
             if "hidden" not in old_name:
                 filename = screenshot.image.name
                 extension = filename.split(".")[-1]
-                name = filename[:20] + "hidden" + \
-                    str(uuid.uuid4())[:40] + "." + extension
+                name = filename[:20] + "hidden" + str(uuid.uuid4())[:40] + "." + extension
                 default_storage.save(f"screenshots/{name}", screenshot.image)
                 default_storage.delete(old_name)
                 screenshot.image = f"screenshots/{name}"
@@ -690,12 +641,9 @@ TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
 
 
 class Winner(models.Model):
-    hunt = models.ForeignKey(
-        Hunt, null=True, blank=True, on_delete=models.CASCADE)
-    winner = models.ForeignKey(
-        User, related_name="winner", null=True, blank=True, on_delete=models.CASCADE)
-    runner = models.ForeignKey(
-        User, related_name="runner", null=True, blank=True, on_delete=models.CASCADE)
+    hunt = models.ForeignKey(Hunt, null=True, blank=True, on_delete=models.CASCADE)
+    winner = models.ForeignKey(User, related_name="winner", null=True, blank=True, on_delete=models.CASCADE)
+    runner = models.ForeignKey(User, related_name="runner", null=True, blank=True, on_delete=models.CASCADE)
     second_runner = models.ForeignKey(
         User,
         related_name="second_runner",
@@ -704,19 +652,15 @@ class Winner(models.Model):
         on_delete=models.CASCADE,
     )
     prize_distributed = models.BooleanField(default=False)
-    prize = models.ForeignKey(HuntPrize, null=True,
-                              blank=True, on_delete=models.CASCADE)
-    prize_amount = models.DecimalField(
-        max_digits=6, decimal_places=2, default=0)
+    prize = models.ForeignKey(HuntPrize, null=True, blank=True, on_delete=models.CASCADE)
+    prize_amount = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
 
 
 class Points(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    issue = models.ForeignKey(
-        Issue, null=True, blank=True, on_delete=models.CASCADE)
-    domain = models.ForeignKey(
-        Domain, null=True, blank=True, on_delete=models.CASCADE)
+    issue = models.ForeignKey(Issue, null=True, blank=True, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     score = models.IntegerField()
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(auto_now=True)
@@ -727,12 +671,9 @@ class Points(models.Model):
 
 
 class InviteFriend(models.Model):
-    sender = models.ForeignKey(
-        User, related_name="sent_invites", on_delete=models.CASCADE)
-    recipients = models.ManyToManyField(
-        User, related_name="received_invites", blank=True)
-    referral_code = models.CharField(
-        max_length=100, default=uuid.uuid4, editable=False)
+    sender = models.ForeignKey(User, related_name="sent_invites", on_delete=models.CASCADE)
+    recipients = models.ManyToManyField(User, related_name="received_invites", blank=True)
+    referral_code = models.CharField(max_length=100, default=uuid.uuid4, editable=False)
     point_by_referral = models.IntegerField(default=0)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -755,32 +696,22 @@ class UserProfile(models.Model):
         (3, "Gold"),
         (4, "Platinum"),
     )
-    follows = models.ManyToManyField(
-        "self", related_name="follower", symmetrical=False, blank=True)
-    user = AutoOneToOneField(
-        "auth.user", related_name="userprofile", on_delete=models.CASCADE)
-    user_avatar = models.ImageField(
-        upload_to=user_images_path, blank=True, null=True)
+    follows = models.ManyToManyField("self", related_name="follower", symmetrical=False, blank=True)
+    user = AutoOneToOneField("auth.user", related_name="userprofile", on_delete=models.CASCADE)
+    user_avatar = models.ImageField(upload_to=user_images_path, blank=True, null=True)
     title = models.IntegerField(choices=title, default=0)
     role = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    winnings = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True)
-    issue_upvoted = models.ManyToManyField(
-        Issue, blank=True, related_name="upvoted")
-    issue_downvoted = models.ManyToManyField(
-        Issue, blank=True, related_name="downvoted")
-    issue_saved = models.ManyToManyField(
-        Issue, blank=True, related_name="saved")
-    issue_flaged = models.ManyToManyField(
-        Issue, blank=True, related_name="flaged")
+    winnings = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    issue_upvoted = models.ManyToManyField(Issue, blank=True, related_name="upvoted")
+    issue_downvoted = models.ManyToManyField(Issue, blank=True, related_name="downvoted")
+    issue_saved = models.ManyToManyField(Issue, blank=True, related_name="saved")
+    issue_flaged = models.ManyToManyField(Issue, blank=True, related_name="flaged")
     issues_hidden = models.BooleanField(default=False)
 
     #  fields for visit tracking
-    daily_visit_count = models.PositiveIntegerField(
-        default=0, help_text="Count of days visited")
-    last_visit_day = models.DateField(
-        null=True, blank=True, help_text="Last day the user visited")
+    daily_visit_count = models.PositiveIntegerField(default=0, help_text="Count of days visited")
+    last_visit_day = models.DateField(null=True, blank=True, help_text="Last day the user visited")
 
     # SendGrid webhook fields
     email_status = models.CharField(
@@ -789,27 +720,17 @@ class UserProfile(models.Model):
     email_last_event = models.CharField(
         max_length=50, blank=True, null=True, help_text="Last email event from SendGrid"
     )
-    email_last_event_time = models.DateTimeField(
-        blank=True, null=True, help_text="Timestamp of last email event")
-    email_bounce_reason = models.TextField(
-        blank=True, null=True, help_text="Reason for email bounce if applicable")
-    email_spam_report = models.BooleanField(
-        default=False, help_text="Whether the email was marked as spam")
-    email_unsubscribed = models.BooleanField(
-        default=False, help_text="Whether the user has unsubscribed")
-    email_click_count = models.PositiveIntegerField(
-        default=0, help_text="Number of email link clicks")
-    email_open_count = models.PositiveIntegerField(
-        default=0, help_text="Number of email opens")
+    email_last_event_time = models.DateTimeField(blank=True, null=True, help_text="Timestamp of last email event")
+    email_bounce_reason = models.TextField(blank=True, null=True, help_text="Reason for email bounce if applicable")
+    email_spam_report = models.BooleanField(default=False, help_text="Whether the email was marked as spam")
+    email_unsubscribed = models.BooleanField(default=False, help_text="Whether the user has unsubscribed")
+    email_click_count = models.PositiveIntegerField(default=0, help_text="Number of email link clicks")
+    email_open_count = models.PositiveIntegerField(default=0, help_text="Number of email opens")
 
-    subscribed_domains = models.ManyToManyField(
-        Domain, related_name="user_subscribed_domains", blank=True)
-    subscribed_users = models.ManyToManyField(
-        User, related_name="user_subscribed_users", blank=True)
-    btc_address = models.CharField(
-        max_length=100, blank=True, null=True, validators=[validate_btc_address])
-    bch_address = models.CharField(
-        max_length=100, blank=True, null=True, validators=[validate_bch_address])
+    subscribed_domains = models.ManyToManyField(Domain, related_name="user_subscribed_domains", blank=True)
+    subscribed_users = models.ManyToManyField(User, related_name="user_subscribed_users", blank=True)
+    btc_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_btc_address])
+    bch_address = models.CharField(max_length=100, blank=True, null=True, validators=[validate_bch_address])
     eth_address = models.CharField(max_length=100, blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     tags = models.ManyToManyField(Tag, blank=True)
@@ -817,8 +738,7 @@ class UserProfile(models.Model):
     linkedin_url = models.URLField(blank=True, null=True)
     github_url = models.URLField(blank=True, null=True)
     website_url = models.URLField(blank=True, null=True)
-    discounted_hourly_rate = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0)
+    discounted_hourly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     modified = models.DateTimeField(auto_now=True)
     visit_count = models.PositiveIntegerField(default=0)
     team = models.ForeignKey(
@@ -883,8 +803,7 @@ class UserProfile(models.Model):
                 # Streak logic
                 if not self.last_check_in or check_in_date == self.last_check_in + timedelta(days=1):
                     self.current_streak += 1
-                    self.longest_streak = max(
-                        self.current_streak, self.longest_streak)
+                    self.longest_streak = max(self.current_streak, self.longest_streak)
                 # If check-in is not consecutive, reset streak
                 elif check_in_date > self.last_check_in + timedelta(days=1):
                     self.current_streak = 1
@@ -917,8 +836,7 @@ class UserProfile(models.Model):
                     reason = "365-day streak milestone achieved!"
 
                 if points_awarded != 0:
-                    Points.objects.create(
-                        user=self.user, score=points_awarded, reason=reason)
+                    Points.objects.create(user=self.user, score=points_awarded, reason=reason)
 
                 # Update last check-in and save
                 self.last_check_in = check_in_date
@@ -983,8 +901,7 @@ class IP(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=["path", "created"],
-                         name="ip_path_created_idx"),
+            models.Index(fields=["path", "created"], name="ip_path_created_idx"),
         ]
 
 
@@ -994,12 +911,9 @@ class OrganizationAdmin(models.Model):
         (1, "Moderator"),
     )
     role = models.IntegerField(choices=role, default=0)
-    user = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.CASCADE)
-    organization = models.ForeignKey(
-        Organization, null=True, blank=True, on_delete=models.CASCADE)
-    domain = models.ForeignKey(
-        Domain, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, null=True, blank=True, on_delete=models.CASCADE)
+    domain = models.ForeignKey(Domain, null=True, blank=True, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -1007,13 +921,11 @@ class OrganizationAdmin(models.Model):
 class Wallet(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     account_id = models.TextField(null=True, blank=True)
-    current_balance = models.DecimalField(
-        max_digits=6, decimal_places=2, default=0)
+    current_balance = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created = models.DateTimeField(auto_now_add=True)
 
     def deposit(self, value):
-        self.transaction_set.create(
-            value=value, running_balance=self.current_balance + Decimal(value))
+        self.transaction_set.create(value=value, running_balance=self.current_balance + Decimal(value))
         self.current_balance += Decimal(value)
         self.save()
 
@@ -1021,8 +933,7 @@ class Wallet(models.Model):
         if value > self.current_balance:
             raise Exception("This wallet has insufficient balance.")
 
-        self.transaction_set.create(
-            value=-value, running_balance=self.current_balance - Decimal(value))
+        self.transaction_set.create(value=-value, running_balance=self.current_balance - Decimal(value))
         self.current_balance -= Decimal(value)
         self.save()
 
@@ -1065,19 +976,16 @@ class Monitor(models.Model):
 
 
 class Bid(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     github_username = models.CharField(max_length=100, blank=True, null=True)
     # link this to our issue model
     issue_url = models.URLField()
     created = models.DateTimeField(default=timezone.now)
     modified = models.DateTimeField(default=timezone.now)
-    amount_bch = models.DecimalField(
-        max_digits=16, decimal_places=8, default=0)
+    amount_bch = models.DecimalField(max_digits=16, decimal_places=8, default=0)
     status = models.CharField(default="Open", max_length=10)
     pr_link = models.URLField(blank=True, null=True)
-    bch_address = models.CharField(
-        blank=True, null=True, max_length=100, validators=[validate_bch_address])
+    bch_address = models.CharField(blank=True, null=True, max_length=100, validators=[validate_bch_address])
 
     # def save(self, *args, **kwargs):
     #     if (
@@ -1127,14 +1035,11 @@ class ForumPost(models.Model):
         ("declined", "Declined"),
     )
 
-    user = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     description = models.TextField(max_length=1000, null=True, blank=True)
-    category = models.ForeignKey(
-        ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="open")
+    category = models.ForeignKey(ForumCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="open")
     up_votes = models.IntegerField(null=True, blank=True, default=0)
     down_votes = models.IntegerField(null=True, blank=True, default=0)
     created = models.DateTimeField(auto_now_add=True)
@@ -1150,8 +1055,7 @@ class ForumPost(models.Model):
 
 class ForumVote(models.Model):
     post = models.ForeignKey(ForumPost, on_delete=models.CASCADE)
-    user = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     up_vote = models.BooleanField(default=False)
     down_vote = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
@@ -1161,14 +1065,12 @@ class ForumVote(models.Model):
 
 
 class ForumComment(models.Model):
-    post = models.ForeignKey(
-        ForumPost, on_delete=models.CASCADE, related_name="comments")
+    post = models.ForeignKey(ForumPost, on_delete=models.CASCADE, related_name="comments")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content = models.TextField()
     created = models.DateTimeField(auto_now_add=True)
     last_modified = models.DateTimeField(auto_now=True)
-    parent = models.ForeignKey(
-        "self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="replies")
 
     def __str__(self):
         return f"Comment by {self.user} on {self.post.title}"
@@ -1182,8 +1084,7 @@ class Contributor(models.Model):
     github_id = models.IntegerField(unique=True)
     github_url = models.URLField()
     avatar_url = models.URLField()
-    contributor_type = models.CharField(
-        max_length=255)  # type = User, Bot ,... etc
+    contributor_type = models.CharField(max_length=255)  # type = User, Bot ,... etc
     contributions = models.PositiveIntegerField()
     created = models.DateTimeField(auto_now_add=True)
     # Note: The repos relationship is defined in the Repo model as:
@@ -1212,16 +1113,14 @@ class Project(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="new")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     # Made url nullable in case of no website
     url = models.URLField(unique=True, null=True, blank=True)
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
     logo = models.ImageField(upload_to="project_logos", null=True, blank=True)
-    created = models.DateTimeField(
-        auto_now_add=True)  # Standardized field name
+    created = models.DateTimeField(auto_now_add=True)  # Standardized field name
     modified = models.DateTimeField(auto_now=True)  # Standardized field name
 
     def save(self, *args, **kwargs):
@@ -1272,20 +1171,16 @@ class Contribution(models.Model):
         ("comment", "Comment"),
     ]
 
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    repository = models.ForeignKey(
-        Project, on_delete=models.CASCADE, null=True)
-    contribution_type = models.CharField(
-        max_length=20, choices=CONTRIBUTION_TYPES, default="commit")
+    repository = models.ForeignKey(Project, on_delete=models.CASCADE, null=True)
+    contribution_type = models.CharField(max_length=20, choices=CONTRIBUTION_TYPES, default="commit")
     github_username = models.CharField(max_length=255, default="")
     github_id = models.CharField(max_length=100, null=True, blank=True)
     github_url = models.URLField(null=True, blank=True)
     created = models.DateTimeField()
-    status = models.CharField(max_length=50, choices=[
-                              ("open", "Open"), ("closed", "Closed")])
+    status = models.CharField(max_length=50, choices=[("open", "Open"), ("closed", "Closed")])
     txid = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
@@ -1312,8 +1207,7 @@ class Blocked(models.Model):
     address = models.GenericIPAddressField(null=True, blank=True)
     reason_for_block = models.TextField(blank=True, null=True, max_length=255)
     ip_network = models.GenericIPAddressField(null=True, blank=True)
-    user_agent_string = models.CharField(
-        max_length=255, default="", null=True, blank=True)
+    user_agent_string = models.CharField(max_length=255, default="", null=True, blank=True)
     count = models.IntegerField(default=1)
     created = models.DateField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -1336,13 +1230,11 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
     # Retrieve valid blocked IPs, IP networks, and user agents
     blocked_ips = Blocked.objects.values_list("address", flat=True)
     blocked_ip_network = Blocked.objects.values_list("ip_network", flat=True)
-    blocked_agents = Blocked.objects.values_list(
-        "user_agent_string", flat=True)
+    blocked_agents = Blocked.objects.values_list("user_agent_string", flat=True)
 
     # Filter out None or invalid values
     blocked_ips = [ip for ip in blocked_ips if ip is not None]
-    blocked_ip_network = [
-        network for network in blocked_ip_network if network is not None]
+    blocked_ip_network = [network for network in blocked_ip_network if network is not None]
     blocked_agents = [agent for agent in blocked_agents if agent is not None]
 
     # Set the cache with valid values
@@ -1352,8 +1244,7 @@ def clear_blocked_cache(sender, instance=None, **kwargs):
 
 
 class TimeLog(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,
-                             on_delete=models.CASCADE, related_name="timelogs")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="timelogs")
     # associate organization with sizzle
     organization = models.ForeignKey(
         Organization,
@@ -1365,8 +1256,7 @@ class TimeLog(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
-    github_issue_url = models.URLField(
-        null=True, blank=True)  # URL field for GitHub issue
+    github_issue_url = models.URLField(null=True, blank=True)  # URL field for GitHub issue
     created = models.DateTimeField(default=timezone.now, editable=False)
 
     def save(self, *args, **kwargs):
@@ -1379,8 +1269,7 @@ class TimeLog(models.Model):
 
 
 class ActivityLog(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
     window_title = models.CharField(max_length=255)
     # URL field for activity-related URL
     url = models.URLField(null=True, blank=True)
@@ -1415,11 +1304,9 @@ class IpReport(models.Model):
         ("friendly", "Friendly"),
     ]
 
-    user = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE)
     activity_title = models.CharField(max_length=255)
-    activity_type = models.CharField(
-        max_length=50, choices=ACTIVITY_TYPE_CHOICES)
+    activity_type = models.CharField(max_length=50, choices=ACTIVITY_TYPE_CHOICES)
     ip_address = models.GenericIPAddressField()
     ip_type = models.CharField(max_length=10, choices=IP_TYPE_CHOICES)
     description = models.TextField()
@@ -1442,18 +1329,15 @@ class Activity(models.Model):
     action_type = models.CharField(max_length=10, choices=ACTION_TYPES)
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
-    image = models.ImageField(null=True, blank=True,
-                              upload_to="activity_images/")
+    image = models.ImageField(null=True, blank=True, upload_to="activity_images/")
     url = models.URLField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     # Approval and Posting
     like_count = models.PositiveIntegerField(default=0)
     dislike_count = models.PositiveIntegerField(default=0)
-    is_approved = models.BooleanField(
-        default=False)  # Whether activity is approved
-    is_posted_to_bluesky = models.BooleanField(
-        default=False)  # Whether posted to BlueSky
+    is_approved = models.BooleanField(default=False)  # Whether activity is approved
+    is_posted_to_bluesky = models.BooleanField(default=False)  # Whether posted to BlueSky
 
     # Generic foreign key fields
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
@@ -1461,10 +1345,8 @@ class Activity(models.Model):
     related_object = GenericForeignKey("content_type", "object_id")
 
     # New fields for likes and dislikes
-    likes = models.ManyToManyField(
-        User, related_name="liked_activities", blank=True)
-    dislikes = models.ManyToManyField(
-        User, related_name="disliked_activities", blank=True)
+    likes = models.ManyToManyField(User, related_name="liked_activities", blank=True)
+    dislikes = models.ManyToManyField(User, related_name="disliked_activities", blank=True)
 
     def __str__(self):
         return f"{self.title} by {self.user.username} at {self.timestamp}"
@@ -1482,15 +1364,13 @@ class Activity(models.Model):
     # Post to BlueSky
     def post_to_bluesky(self, bluesky_service):
         if not self.is_approved:
-            raise ValueError(
-                "Activity must be approved before posting to BlueSky.")
+            raise ValueError("Activity must be approved before posting to BlueSky.")
 
         try:
             post_data = f"{self.title}\n\n{self.description}"
             # If image exists, include it
             if self.image:
-                bluesky_service.post_with_image(
-                    text=post_data, image_path=self.image.path)
+                bluesky_service.post_with_image(text=post_data, image_path=self.image.path)
             else:
                 bluesky_service.post_text(text=post_data)
 
@@ -1511,8 +1391,7 @@ class Badge(models.Model):
     title = models.CharField(max_length=100)
     description = models.TextField()
     icon = models.ImageField(upload_to="badges/", blank=True, null=True)
-    type = models.CharField(
-        max_length=10, choices=BADGE_TYPES, default="automatic")
+    type = models.CharField(max_length=10, choices=BADGE_TYPES, default="automatic")
     criteria = models.JSONField(blank=True, null=True)  # For automatic badges
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1575,16 +1454,14 @@ def verify_file_upload(sender, instance, **kwargs):
 
     if instance.image:
         if not default_storage.exists(instance.image.name):
-            raise ValidationError(
-                f"Image '{instance.image.name}' was not uploaded to the storage backend.")
+            raise ValidationError(f"Image '{instance.image.name}' was not uploaded to the storage backend.")
 
 
 class Repo(models.Model):
     organization = models.ForeignKey(
         Organization, related_name="repos", on_delete=models.CASCADE, null=True, blank=True
     )
-    project = models.ForeignKey(
-        Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
+    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     # Made nullable for optional descriptions
@@ -1620,17 +1497,14 @@ class Repo(models.Model):
     release_datetime = models.DateTimeField(null=True, blank=True)
     logo_url = models.URLField(null=True, blank=True)
     contributor_count = models.IntegerField(default=0)
-    contributor = models.ManyToManyField(
-        Contributor, related_name="repos", blank=True)
+    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
     is_owasp_repo = models.BooleanField(default=False)
     readme_content = models.TextField(null=True, blank=True)
     ai_summary = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    last_pr_page_processed = models.IntegerField(
-        default=0, help_text="Last page of PRs processed from GitHub API")
-    last_pr_fetch_date = models.DateTimeField(
-        null=True, blank=True, help_text="When PRs were last fetched")
+    last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
+    last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
 
     def save(self, *args, **kwargs):
         if not self.slug:
@@ -1666,10 +1540,8 @@ class Repo(models.Model):
 
 
 class ContributorStats(models.Model):
-    contributor = models.ForeignKey(
-        Contributor, on_delete=models.CASCADE, related_name="stats")
-    repo = models.ForeignKey(
-        Repo, on_delete=models.CASCADE, related_name="stats")
+    contributor = models.ForeignKey(Contributor, on_delete=models.CASCADE, related_name="stats")
+    repo = models.ForeignKey(Repo, on_delete=models.CASCADE, related_name="stats")
 
     # This will represent either a specific day or the first day of a month.
     date = models.DateField()
@@ -1682,8 +1554,7 @@ class ContributorStats(models.Model):
     comments = models.PositiveIntegerField(default=0)
 
     # "day" for daily entries, "month" for monthly entries
-    granularity = models.CharField(max_length=10, choices=[(
-        "day", "Day"), ("month", "Month")], default="day")
+    granularity = models.CharField(max_length=10, choices=[("day", "Day"), ("month", "Month")], default="day")
 
     class Meta:
         # You can't have two different stats for the same date+granularity
@@ -1730,12 +1601,10 @@ class Challenge(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField()
-    challenge_type = models.CharField(
-        max_length=10, choices=CHALLENGE_TYPE_CHOICES, default="single")
+    challenge_type = models.CharField(max_length=10, choices=CHALLENGE_TYPE_CHOICES, default="single")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    participants = models.ManyToManyField(
-        User, related_name="user_challenges", blank=True)  # For single users
+    participants = models.ManyToManyField(User, related_name="user_challenges", blank=True)  # For single users
     team_participants = models.ManyToManyField(
         Organization, related_name="team_challenges", blank=True
     )  # For team challenges
@@ -1768,8 +1637,7 @@ class Room(models.Model):
         null=True,
         blank=True,
     )
-    session_key = models.CharField(
-        max_length=40, blank=True, null=True)  # For anonymous users
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
     users = models.ManyToManyField(User, related_name="rooms", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -1787,8 +1655,7 @@ class GitHubIssue(models.Model):
     title = models.CharField(max_length=255)
     body = models.TextField(null=True, blank=True)
     state = models.CharField(max_length=50)
-    type = models.CharField(
-        max_length=50, choices=ISSUE_TYPE_CHOICES, default="issue")
+    type = models.CharField(max_length=50, choices=ISSUE_TYPE_CHOICES, default="issue")
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
     closed_at = models.DateTimeField(null=True, blank=True)
@@ -1827,10 +1694,8 @@ class GitHubIssue(models.Model):
     )
     # Peer-to-Peer Payment Fields
     p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
-    p2p_amount_usd = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True)
-    p2p_amount_bch = models.DecimalField(
-        max_digits=18, decimal_places=8, null=True, blank=True)
+    p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    p2p_amount_bch = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
     sent_by_user = models.ForeignKey(
         User,
         null=True,
@@ -1880,8 +1745,7 @@ class GitHubIssue(models.Model):
         # GitHub API endpoint for comments
         api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
 
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}",
-                   "Accept": "application/vnd.github.v3+json"}
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
 
         try:
             response = requests.get(api_url, headers=headers)
@@ -1907,8 +1771,7 @@ class GitHubIssue(models.Model):
         except (requests.exceptions.RequestException, KeyError) as e:
             # Log the error but don't raise it to avoid breaking the site
             logger = logging.getLogger(__name__)
-            logger.error(
-                f"Error fetching comments for issue {self.issue_id}: {str(e)}")
+            logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
             return []
 
     def add_comment(self, comment_text):
@@ -1931,8 +1794,7 @@ class GitHubIssue(models.Model):
         # GitHub API endpoint for adding comments
         api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
 
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}",
-                   "Accept": "application/vnd.github.v3+json"}
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
 
         data = {"body": comment_text}
 
@@ -1943,8 +1805,7 @@ class GitHubIssue(models.Model):
         except requests.exceptions.RequestException as e:
             # Log the error but don't raise it
             logger = logging.getLogger(__name__)
-            logger.error(
-                f"Error adding comment to issue {self.issue_id}: {str(e)}")
+            logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
             return False
 
     def add_labels(self, labels):
@@ -1968,8 +1829,7 @@ class GitHubIssue(models.Model):
         # GitHub API endpoint for adding labels
         api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
 
-        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}",
-                   "Accept": "application/vnd.github.v3+json"}
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
 
         data = {"labels": labels}
 
@@ -1980,17 +1840,14 @@ class GitHubIssue(models.Model):
         except requests.exceptions.RequestException as e:
             # Log the error but don't raise it
             logger = logging.getLogger(__name__)
-            logger.error(
-                f"Error adding labels to issue {self.issue_id}: {str(e)}")
+            logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
             return False
 
 
 class BaconEarning(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    tokens_earned = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)  # Tokens earned by user
-    timestamp = models.DateTimeField(
-        auto_now_add=True)  # When the record was created
+    tokens_earned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Tokens earned by user
+    timestamp = models.DateTimeField(auto_now_add=True)  # When the record was created
 
     def __str__(self):
         return f"{self.user.username} - {self.tokens_earned} Tokens"
@@ -2027,10 +1884,8 @@ class Kudos(models.Model):
     Model to send kudos to team members.
     """
 
-    sender = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="kudos_sent")
-    receiver = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="kudos_received")
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_sent")
+    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="kudos_received")
     timestamp = models.DateTimeField(auto_now_add=True)
     link = models.URLField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
@@ -2052,20 +1907,15 @@ class OsshCommunity(models.Model):
 
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
-    website = models.URLField(
-        unique=True, help_text="Direct link to the community")
-    source = models.CharField(
-        max_length=100, help_text="Source API (GitHub, Dev.to, etc.)")
-    category = models.CharField(
-        max_length=20, choices=CATEGORY_CHOICES, default="community")
+    website = models.URLField(unique=True, help_text="Direct link to the community")
+    source = models.CharField(max_length=100, help_text="Source API (GitHub, Dev.to, etc.)")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default="community")
     external_id = models.CharField(
         max_length=255, blank=True, null=True, unique=True, help_text="ID from external source"
     )
     tags = models.ManyToManyField(Tag, related_name="communities", blank=True)
-    metadata = models.JSONField(
-        default=dict, help_text="Additional API-specific metadata")
-    contributors_count = models.IntegerField(
-        default=0, help_text="Approximate number of contributors")
+    metadata = models.JSONField(default=dict, help_text="Additional API-specific metadata")
+    contributors_count = models.IntegerField(default=0, help_text="Approximate number of contributors")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -2073,10 +1923,8 @@ class OsshCommunity(models.Model):
 class OsshDiscussionChannel(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    source = models.CharField(
-        max_length=100, help_text="Source API (Discord, Slack etc)")
-    external_id = models.CharField(
-        max_length=100, unique=True, help_text="Server ID from the platform")
+    source = models.CharField(max_length=100, help_text="Source API (Discord, Slack etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
     member_count = models.PositiveIntegerField(default=0)
     invite_url = models.URLField(blank=True, null=True)
     logo_url = models.URLField(blank=True, null=True)
@@ -2091,14 +1939,11 @@ class OsshDiscussionChannel(models.Model):
 class OsshArticle(models.Model):
     title = models.CharField(max_length=255)
     author = models.CharField(max_length=255)
-    author_profile_image = models.URLField(
-        max_length=500, blank=True, null=True)
+    author_profile_image = models.URLField(max_length=500, blank=True, null=True)
     description = models.TextField()
     publication_date = models.DateTimeField()
-    source = models.CharField(
-        max_length=255, help_text="Source API (DEV Community, LinkedIn etc)")
-    external_id = models.CharField(
-        max_length=100, unique=True, help_text="Server ID from the platform")
+    source = models.CharField(max_length=255, help_text="Source API (DEV Community, LinkedIn etc)")
+    external_id = models.CharField(max_length=100, unique=True, help_text="Server ID from the platform")
     url = models.URLField(
         max_length=1000, blank=True, null=True
     )  # DEV.to urls often cross the default 200 character limit
@@ -2127,16 +1972,12 @@ class ManagementCommandLog(models.Model):
 
 
 class Course(models.Model):
-    LEVEL_CHOICES = [("BEG", "Beginner"),
-                     ("INT", "Intermediate"), ("ADV", "Advanced")]
+    LEVEL_CHOICES = [("BEG", "Beginner"), ("INT", "Intermediate"), ("ADV", "Advanced")]
     title = models.CharField(max_length=200)
     description = models.TextField()
-    instructor = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="courses_teaching")
-    thumbnail = models.ImageField(
-        upload_to="course_thumbnails/", null=True, blank=True)
-    level = models.CharField(
-        max_length=3, choices=LEVEL_CHOICES, default="BEG")
+    instructor = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="courses_teaching")
+    thumbnail = models.ImageField(upload_to="course_thumbnails/", null=True, blank=True)
+    level = models.CharField(max_length=3, choices=LEVEL_CHOICES, default="BEG")
     tags = models.ManyToManyField(Tag, related_name="courses", blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -2148,8 +1989,7 @@ class Course(models.Model):
 class Section(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
-    course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="sections")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="sections")
     order = models.PositiveIntegerField()
 
     class Meta:
@@ -2160,14 +2000,11 @@ class Section(models.Model):
 
 
 class Lecture(models.Model):
-    CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE",
-                                                  "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
+    CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE", "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
 
-    instructor = models.ForeignKey(
-        UserProfile, on_delete=models.Case, null=True, blank=True)
+    instructor = models.ForeignKey(UserProfile, on_delete=models.Case, null=True, blank=True)
     title = models.CharField(max_length=200)
-    section = models.ForeignKey(
-        Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
     video_url = models.URLField(null=True, blank=True)
@@ -2176,8 +2013,7 @@ class Lecture(models.Model):
     recording_url = models.URLField(null=True, blank=True)
     content = models.TextField()  # For reading content
     # Quiz support can be added later
-    duration = models.PositiveIntegerField(
-        help_text="Duration in minutes", null=True, blank=True)
+    duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
     tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
     order = models.PositiveIntegerField()
 
@@ -2191,14 +2027,11 @@ class Lecture(models.Model):
         domain = parsed_url.netloc.lower()
 
         # Properly validate domains by checking exact matches or subdomains
-        youtube_domains = ["youtube.com",
-                           "www.youtube.com", "youtu.be", "www.youtu.be"]
+        youtube_domains = ["youtube.com", "www.youtube.com", "youtu.be", "www.youtu.be"]
         vimeo_domains = ["vimeo.com", "www.vimeo.com", "player.vimeo.com"]
 
-        is_youtube = any(domain == yd or domain.endswith("." + yd)
-                         for yd in youtube_domains)
-        is_vimeo = any(domain == vd or domain.endswith("." + vd)
-                       for vd in vimeo_domains)
+        is_youtube = any(domain == yd or domain.endswith("." + yd) for yd in youtube_domains)
+        is_vimeo = any(domain == vd or domain.endswith("." + vd) for vd in vimeo_domains)
 
         if is_youtube:
             if "youtu.be" in domain:
@@ -2252,10 +2085,8 @@ class LectureStatus(models.Model):
         ("PROGRESS", "In Progress"),
         ("COMPLETED", "Completed"),
     ]
-    student = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="student")
-    lecture = models.ForeignKey(
-        Lecture, on_delete=models.CASCADE, related_name="lecture_statuses")
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="student")
+    lecture = models.ForeignKey(Lecture, on_delete=models.CASCADE, related_name="lecture_statuses")
     status = models.CharField(max_length=15, choices=STATUS_TYPES)
 
     def __str__(self):
@@ -2263,10 +2094,8 @@ class LectureStatus(models.Model):
 
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(
-        UserProfile, on_delete=models.CASCADE, related_name="enrollments")
-    course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="enrollments")
+    student = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="enrollments")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed = models.BooleanField(default=False)
     last_accessed = models.DateTimeField(auto_now=True)
@@ -2294,8 +2123,7 @@ class Enrollment(models.Model):
 
 
 class Rating(models.Model):
-    course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="ratings")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="ratings")
     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
     score = models.DecimalField(
         max_digits=3, decimal_places=2, validators=[MinValueValidator(0.0), MaxValueValidator(5.0)]
@@ -2320,11 +2148,9 @@ class BaconSubmission(models.Model):
         max_length=20, choices=[("security", "Security Related"), ("non-security", "Non-Security Related")]
     )
     description = models.TextField()
-    organization = models.CharField(
-        max_length=100, blank=True, null=True)  # 👈 NEW FIELD
+    organization = models.CharField(max_length=100, blank=True, null=True)  # 👈 NEW FIELD
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default="new")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     transaction_status = models.CharField(
         max_length=20, choices=[("pending", "Pending"), ("completed", "Completed")], default="pending"
     )
@@ -2355,12 +2181,10 @@ class Hackathon(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True, max_length=255)
     description = models.TextField()
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="hackathons")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="hackathons")
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    banner_image = models.ImageField(
-        upload_to="hackathon_banners", null=True, blank=True)
+    banner_image = models.ImageField(upload_to="hackathon_banners", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
@@ -2368,14 +2192,12 @@ class Hackathon(models.Model):
     registration_open = models.BooleanField(default=True)
     max_participants = models.PositiveIntegerField(null=True, blank=True)
     # Link to repositories that are part of this hackathon
-    repositories = models.ManyToManyField(
-        Repo, related_name="hackathons", blank=True)
+    repositories = models.ManyToManyField(Repo, related_name="hackathons", blank=True)
     # Sponsor information
     sponsor_note = models.TextField(
         blank=True, null=True, help_text="Additional information about sponsorship opportunities"
     )
-    sponsor_link = models.URLField(
-        blank=True, null=True, help_text="Link to sponsorship information or application")
+    sponsor_link = models.URLField(blank=True, null=True, help_text="Link to sponsorship information or application")
 
     class Meta:
         ordering = ["-start_time"]
@@ -2383,8 +2205,7 @@ class Hackathon(models.Model):
             models.Index(fields=["start_time"], name="hackathon_start_idx"),
             models.Index(fields=["organization"], name="hackathon_org_idx"),
         ]
-        constraints = [models.UniqueConstraint(
-            fields=["slug"], name="unique_hackathon_slug")]
+        constraints = [models.UniqueConstraint(fields=["slug"], name="unique_hackathon_slug")]
 
     def __str__(self):
         return self.name
@@ -2442,8 +2263,7 @@ class Hackathon(models.Model):
                     leaderboard[user_id]["count"] += 1
                     leaderboard[user_id]["prs"].append(pr)
                 else:
-                    leaderboard[user_id] = {
-                        "user": pr.user_profile.user, "count": 1, "prs": [pr]}
+                    leaderboard[user_id] = {"user": pr.user_profile.user, "count": 1, "prs": [pr]}
             elif pr.contributor and pr.contributor.github_id:
                 # Skip bot accounts
                 github_username = pr.contributor.name
@@ -2476,10 +2296,8 @@ class Hackathon(models.Model):
 
 
 class HackathonSponsor(models.Model):
-    hackathon = models.ForeignKey(
-        Hackathon, on_delete=models.CASCADE, related_name="sponsors")
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="sponsored_hackathons")
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name="sponsors")
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="sponsored_hackathons")
     sponsor_level = models.CharField(
         max_length=20,
         choices=[
@@ -2491,8 +2309,7 @@ class HackathonSponsor(models.Model):
         ],
         default="partner",
     )
-    logo = models.ImageField(
-        upload_to="hackathon_sponsor_logos", null=True, blank=True)
+    logo = models.ImageField(upload_to="hackathon_sponsor_logos", null=True, blank=True)
     website = models.URLField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
 
@@ -2505,8 +2322,7 @@ class HackathonSponsor(models.Model):
 
 
 class HackathonPrize(models.Model):
-    hackathon = models.ForeignKey(
-        Hackathon, on_delete=models.CASCADE, related_name="prizes")
+    hackathon = models.ForeignKey(Hackathon, on_delete=models.CASCADE, related_name="prizes")
     position = models.PositiveIntegerField(
         choices=[
             (1, "First Place"),
@@ -2517,8 +2333,7 @@ class HackathonPrize(models.Model):
     )
     title = models.CharField(max_length=255)
     description = models.TextField()
-    value = models.DecimalField(
-        max_digits=10, decimal_places=2, null=True, blank=True)
+    value = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     sponsor = models.ForeignKey(
         HackathonSponsor, on_delete=models.SET_NULL, null=True, blank=True, related_name="prizes"
     )
@@ -2536,8 +2351,7 @@ class Queue(models.Model):
     Model to store queue items with a message, image, and launch status.
     """
 
-    message = models.CharField(
-        max_length=140, help_text="Message limited to 140 characters")
+    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
     image = models.ImageField(upload_to="queue_images", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -2575,18 +2389,14 @@ class Thread(models.Model):
 
 
 class Message(models.Model):
-    room = models.ForeignKey(
-        Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
-    thread = models.ForeignKey(
-        Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
-    user = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     # Store username separately in case user is deleted
     username = models.CharField(max_length=255)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    session_key = models.CharField(
-        max_length=40, blank=True, null=True)  # For anonymous users
+    session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
 
     class Meta:
         ordering = ["timestamp"]
@@ -2629,8 +2439,7 @@ class BannedApp(models.Model):
 
 
 class Notification(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="notifications")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
@@ -2642,8 +2451,7 @@ class Notification(models.Model):
         ("promo", "Promotional"),
         ("reward", "Rewards"),
     ]
-    notification_type = models.CharField(
-        max_length=50, choices=NOTIFICATION_TYPES, default="general")
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default="general")
 
     link = models.CharField(max_length=200, blank=True, null=True)
 
