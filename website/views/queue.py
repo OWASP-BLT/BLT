@@ -85,7 +85,13 @@ def queue_list(request):
             queue_id = request.POST.get("queue_id")
             queue_item = get_object_or_404(Queue, id=queue_id)
 
-            if not queue_item.launched:
+            # Get current time
+            current_time = timezone.now()
+
+            # Check if this is the first launch
+            was_unlaunched = not queue_item.launched
+
+            if was_unlaunched:
                 # Send tweet
                 image_path = None
                 if queue_item.image:
@@ -94,9 +100,8 @@ def queue_list(request):
                 tweet_result = twitter.send_tweet(queue_item.message, image_path)
 
                 if tweet_result["success"]:
-                    # Update queue item with tweet information
-                    queue_item.launched = True
-                    queue_item.launched_at = timezone.now()
+                    # Launch the queue item with Twitter info
+                    queue_item.launch(current_time)
                     queue_item.txid = tweet_result["txid"]
                     queue_item.url = tweet_result["url"]
                     queue_item.save()
@@ -109,9 +114,7 @@ def queue_list(request):
                     messages.success(request, success_msg)
                 else:
                     # Still mark as launched but log the error
-                    queue_item.launched = True
-                    queue_item.launched_at = timezone.now()
-                    queue_item.save()
+                    queue_item.launch(current_time)
 
                     logger.error(f"Error sending tweet: {tweet_result['error']}")
                     warning_msg = (
@@ -120,7 +123,12 @@ def queue_list(request):
                     )
                     messages.warning(request, warning_msg)
             else:
-                messages.info(request, "Queue item was already launched")
+                # Just update the timestamp if already launched
+                queue_item.launch(current_time)
+                messages.info(
+                    request,
+                    f"Queue item was already launched. Launch timestamp updated to {current_time.strftime('%Y-%m-%d %H:%M:%S')}.",
+                )
 
             return redirect("queue_list")
 
