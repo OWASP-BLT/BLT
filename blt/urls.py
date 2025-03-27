@@ -275,6 +275,7 @@ from website.views.project import (
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
+from website.views.social import queue_social_view
 from website.views.teams import (
     TeamChallenges,
     TeamLeaderboard,
@@ -730,7 +731,7 @@ urlpatterns = [
         comments.views.reply_comment,
         name="reply_comment",
     ),
-    re_path(r"^social/$", TemplateView.as_view(template_name="social.html"), name="social"),
+    re_path(r"^social/$", queue_social_view, name="social"),
     re_path(r"^search/$", search, name="search"),
     re_path(r"^report/$", IssueCreate.as_view(), name="report"),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
