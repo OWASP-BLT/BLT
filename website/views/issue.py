@@ -923,10 +923,9 @@ class IssueCreate(IssueBaseCreate, CreateView):
             )
 
             # Prevent the form submission
-            messages.error(self.request, "Your report was blocked due to inappropriate language.")
+            messages.error(self.request, "Have a nice day.")
             return HttpResponseRedirect("/")
 
-        # Pr
 
         limit = 50 if self.request.user.is_authenticated else 30
         today = timezone.now().date()
