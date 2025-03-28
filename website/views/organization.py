@@ -1127,7 +1127,7 @@ class CreateHunt(TemplateView):
             organization_slug = self.object.domain.organization.slug  # Assuming organization has a slug field
             return reverse("organization_detail", kwargs={"slug": organization_slug})
         else:
-            return reverse("organization_list")  # Redirect to a list of organizations
+            return reverse("organization_list")
 
 
 @login_required
