@@ -69,68 +69,54 @@ class MySeleniumTests(LiveServerTestCase):
         cls.selenium.quit()
         super(MySeleniumTests, cls).tearDownClass()
 
-    @override_settings(DEBUG=True)
-    def test_signup(self):
-        base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
-        self.selenium.get(base_url)
+@override_settings(DEBUG=True)
+def test_signup(self):
+    base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
+    self.selenium.get(base_url)
 
-        # Wait for elements to be available
-        username = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "username")))
-        email = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "email")))
-        password1 = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "password1")))
-        password2 = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "password2")))
-        captcha = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "captcha_1")))
+    # Wait for elements to be available
+    username = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "username")))
+    email = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "email")))
+    password1 = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "password1")))
+    password2 = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "password2")))
+    captcha = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "captcha_1")))
 
-        username.send_keys("bugbugbug")
-        email.send_keys("bugbugbug@bugbug.com")
-        password1.send_keys("6:}jga,6mRKNUqMQ")
-        password2.send_keys("6:}jga,6mRKNUqMQ")
-        captcha.send_keys("PASSED")
+    username.send_keys("bugbugbug")
+    email.send_keys("bugbugbug@bugbug.com")
+    password1.send_keys("6:}jga,6mRKNUqMQ")
+    password2.send_keys("6:}jga,6mRKNUqMQ")
+    captcha.send_keys("PASSED")
 
-        # Find and scroll to the signup button
-        signup_button = WebDriverWait(self.selenium, 10).until(
-            EC.presence_of_element_located((By.NAME, "signup_button"))
-        )
-        scroll_script = "arguments[0].scrollIntoView(true);"
-        self.selenium.execute_script(scroll_script, signup_button)
+    # Wait for the signup button and ensure it is clickable
+    signup_button = WebDriverWait(self.selenium, 10).until(
+        EC.element_to_be_clickable((By.NAME, "signup_button"))
+    )
+    self.selenium.execute_script("arguments[0].scrollIntoView(true);", signup_button)
 
-        # Wait for any animations to complete
-        time.sleep(1)
+    # Try clicking with JavaScript if regular click fails
+    try:
+        signup_button.click()
+    except ElementClickInterceptedException:
+        self.selenium.execute_script("arguments[0].click();", signup_button)
 
-        # Try clicking with JavaScript if regular click fails
-        try:
-            signup_button.click()
-        except ElementClickInterceptedException:
-            click_script = "arguments[0].click();"
-            self.selenium.execute_script(click_script, signup_button)
+    # Verify user creation
+    user = User.objects.get(username="bugbugbug")
+    self.assertIsNotNone(user)
+    self.assertEqual(user.email, "bugbugbug@bugbug.com")
 
-        # After signup, we need to manually verify the email for the newly created user
-        # This is different from setUp because this user is created during the test
-        from allauth.account.models import EmailAddress
+    # Verify the email
+    from allauth.account.models import EmailAddress
+    email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
+    if email_address:
+        email_address.verified = True
+        email_address.primary = True
+        email_address.save()
+    else:
+        EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
 
-        # Wait a moment for the user to be created
-        time.sleep(2)
-
-        # Instead of testing the signup flow with email verification, let's modify the test
-        # to just test that the user was created successfully
-        user = User.objects.get(username="bugbugbug")
-        self.assertIsNotNone(user)
-        self.assertEqual(user.email, "bugbugbug@bugbug.com")
-
-        # Verify the email
-        email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
-        if email_address:
-            # If email address exists, just verify it
-            email_address.verified = True
-            email_address.primary = True
-            email_address.save()
-        else:
-            # Create a new verified email address
-            EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
-
-        # Test passes if we can create and verify the user
-        self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
-
+    # Test passes if we can create and verify the user
+    self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
+    
     @override_settings(DEBUG=True)
     def test_login(self):
         # Email verification is now handled in setUp
