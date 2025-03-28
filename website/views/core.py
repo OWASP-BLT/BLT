@@ -2019,7 +2019,8 @@ def template_list(request):
                         "extends_base": '{% extends "base.html" %}' in content,
                         "has_style_tags": "<style" in content,
                     }
-                cache.set(cache_key, template_info, 24 * 3600)  # Cache for 24 hours
+                # Cache for 24 hours
+                cache.set(cache_key, template_info, 24 * 3600)
             except IOError:
                 template_info = {"has_sidenav": False, "extends_base": False, "has_style_tags": False}
 

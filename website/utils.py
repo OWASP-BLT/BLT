@@ -993,13 +993,13 @@ class twitter:
 def send_slack_message(channel, text):
     token = os.getenv("SLACK_BOT_TOKEN")
     if not token:
-        print("⚠️ SLACK_BOT_TOKEN not set.")
+        logging.warning("⚠️ SLACK_BOT_TOKEN not set.")
         return
     client = WebClient(token=token)
     try:
         client.chat_postMessage(channel=channel, text=text)
     except SlackApiError as e:
-        print(f"Slack API Error: {e.response['error']}")
+        logging.error(f"Slack API Error: {e.response['error']}")
 
 
 def get_org_slack_channel(organization):
