@@ -1,8 +1,6 @@
 <div id="launch-transaction-details-{{ item.id }}" hx-swap="outerHTML">
     {% if message %}
-        <div class="mb-2 px-2 py-1 text-xs rounded bg-green-100 text-green-800 border border-green-300">
-            {{ message }}
-        </div>
+        <div class="mb-2 px-2 py-1 text-xs rounded bg-green-100 text-green-800 border border-green-300">{{ message }}</div>
     {% endif %}
     {% if item.url %}
         <div class="mb-2">
@@ -42,4 +40,4 @@
             </button>
         </div>
     </form>
-</div> 
+</div>
