@@ -1,5 +1,4 @@
 import os
-import time
 from unittest.mock import patch
 
 import chromedriver_autoinstaller
@@ -69,6 +68,7 @@ class MySeleniumTests(LiveServerTestCase):
         cls.selenium.quit()
         super(MySeleniumTests, cls).tearDownClass()
 
+
 @override_settings(DEBUG=True)
 def test_signup(self):
     base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
@@ -88,9 +88,7 @@ def test_signup(self):
     captcha.send_keys("PASSED")
 
     # Wait for the signup button and ensure it is clickable
-    signup_button = WebDriverWait(self.selenium, 10).until(
-        EC.element_to_be_clickable((By.NAME, "signup_button"))
-    )
+    signup_button = WebDriverWait(self.selenium, 10).until(EC.element_to_be_clickable((By.NAME, "signup_button")))
     self.selenium.execute_script("arguments[0].scrollIntoView(true);", signup_button)
 
     # Try clicking with JavaScript if regular click fails
@@ -106,6 +104,7 @@ def test_signup(self):
 
     # Verify the email
     from allauth.account.models import EmailAddress
+
     email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
     if email_address:
         email_address.verified = True
@@ -116,7 +115,7 @@ def test_signup(self):
 
     # Test passes if we can create and verify the user
     self.assertTrue(EmailAddress.objects.filter(user=user, verified=True).exists())
-    
+
     @override_settings(DEBUG=True)
     def test_login(self):
         # Email verification is now handled in setUp
