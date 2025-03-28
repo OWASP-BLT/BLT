@@ -67,7 +67,7 @@ async-timeout = "^4.0.3"
 python-dateutil = "^2.9.0.post0"
 pyzipper = "^0.3.6"
 tweepy = "^4.15.0"
-better-profanity = "^0.6.1"
+better-profanity = "^0.7.0"
 
 
 [tool.poetry.group.dev.dependencies]
