@@ -74,12 +74,12 @@ class MySeleniumTests(LiveServerTestCase):
         base_url = "%s%s" % (self.live_server_url, "/accounts/signup/")
         self.selenium.get(base_url)
 
-        # Fill in the form fields
-        username = self.selenium.find_element("name", "username")
-        email = self.selenium.find_element("name", "email")
-        password1 = self.selenium.find_element("name", "password1")
-        password2 = self.selenium.find_element("name", "password2")
-        captcha = self.selenium.find_element("name", "captcha_1")
+        # Wait for elements to be available
+        username = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "username")))
+        email = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "email")))
+        password1 = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "password1")))
+        password2 = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "password2")))
+        captcha = WebDriverWait(self.selenium, 10).until(EC.presence_of_element_located((By.NAME, "captcha_1")))
 
         username.send_keys("bugbugbug")
         email.send_keys("bugbugbug@bugbug.com")
@@ -88,7 +88,9 @@ class MySeleniumTests(LiveServerTestCase):
         captcha.send_keys("PASSED")
 
         # Find and scroll to the signup button
-        signup_button = self.selenium.find_element("name", "signup_button")
+        signup_button = WebDriverWait(self.selenium, 10).until(
+            EC.presence_of_element_located((By.NAME, "signup_button"))
+        )
         scroll_script = "arguments[0].scrollIntoView(true);"
         self.selenium.execute_script(scroll_script, signup_button)
 
