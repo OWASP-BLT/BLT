@@ -108,8 +108,7 @@ def queue_list(request):
 
                     success_msg = (
                         f"Queue item launched successfully! "
-                        f"Tweet posted at: <a href='{tweet_result['url']}' target='_blank'>{tweet_result['url']}</a> "
-                        f"and sent to Discord and Slack #project-blt channels."
+                        f"Tweet posted at: <a href='{tweet_result['url']}' target='_blank'>{tweet_result['url']}</a>"
                     )
                     messages.success(request, success_msg)
                 else:
@@ -117,10 +116,7 @@ def queue_list(request):
                     queue_item.launch(current_time)
 
                     logger.error(f"Error sending tweet: {tweet_result['error']}")
-                    warning_msg = (
-                        "Queue item marked as launched, but there was an error posting to Twitter. "
-                        "The message was still sent to Discord and Slack #project-blt channels."
-                    )
+                    warning_msg = "Queue item marked as launched, but there was an error posting to Twitter."
                     messages.warning(request, warning_msg)
             else:
                 # Just update the timestamp if already launched
