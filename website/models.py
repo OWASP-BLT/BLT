@@ -2016,8 +2016,8 @@ class Lecture(models.Model):
     live_url = models.URLField(null=True, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
     recording_url = models.URLField(null=True, blank=True)
-    # For reading content (e.g., documents)
-    content = models.TextField(null=True, blank=True)
+
+    content = models.TextField(null=True, blank=True)  # For reading content (e.g., documents)
     duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
     tags = models.ManyToManyField("Tag", related_name="lectures", blank=True)
     order = models.PositiveIntegerField()

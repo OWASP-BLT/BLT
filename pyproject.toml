@@ -20,7 +20,7 @@ dj-rest-auth = "^5.0.2"
 user-agents = "^2.2.0"
 whitenoise = "^6.9.0"
 
-pylibmc = "^1.6.1"
+pylibmc = { version = "^1.6.1", markers = "sys_platform != 'win32'" }
 psycopg2-binary = "^2.9.10"
 protobuf = "^4.25.3"
 django-storages = { extras = ["google"], version = "^1.14.3" }
@@ -62,7 +62,7 @@ drf-yasg = "^1.21.10"
 slack-bolt = "^1.23.0"
 slack-sdk = "^3.35.0"
 tld = "0.13"
-openai = "^1.69.2"
+openai = "^1.69.0"
 async-timeout = "^4.0.3"
 python-dateutil = "^2.9.0.post0"
 pyzipper = "^0.3.6"
