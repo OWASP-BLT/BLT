@@ -189,23 +189,23 @@ def update_txid(request, queue_id):
         if txid and txid != queue_item.txid:
             queue_item.txid = txid
             txid_updated = True
-        
+
         # Only update url if provided, otherwise keep existing value
         if url and url != queue_item.url:
             queue_item.url = url
             url_updated = True
-        
+
         # Clear values if explicitly submitted as empty
         if "txid" in request.POST and not txid and queue_item.txid:
             queue_item.txid = None
             txid_removed = True
-            
+
         if "url" in request.POST and not url and queue_item.url:
             queue_item.url = None
             url_removed = True
 
         queue_item.save()
-        
+
         # Build the response message
         message_parts = []
         if txid_updated:
@@ -216,7 +216,7 @@ def update_txid(request, queue_id):
             message_parts.append("Transaction ID removed")
         if url_removed:
             message_parts.append("URL removed")
-            
+
         # Create the appropriate message
         if message_parts:
             message = f"Success: {' and '.join(message_parts)}"
@@ -224,15 +224,12 @@ def update_txid(request, queue_id):
             message = "No changes were made"
 
         # Check which target is being updated based on the HTTP_HX_TARGET header
-        hx_target = request.META.get('HTTP_HX_TARGET', '')
-        
-        context = {
-            "item": queue_item,
-            "message": message
-        }
-        
+        hx_target = request.META.get("HTTP_HX_TARGET", "")
+
+        context = {"item": queue_item, "message": message}
+
         # Determine which template to use based on the target ID
-        if 'launch-transaction-details' in hx_target:
+        if "launch-transaction-details" in hx_target:
             # This is for the launch control section
             return render(request, "queue/partials/launch_transaction_details.html", context)
         else:

@@ -5,7 +5,7 @@
 {% endblock title %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="container mx-auto px-4 py-8">
+    <div class="max-w-[95%] mx-auto px-4 py-8">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-gray-800">Queue Management</h1>
             <div class="flex space-x-4">
@@ -241,6 +241,10 @@
                                         </th>
                                         <th scope="col"
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Paid
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
@@ -249,7 +253,7 @@
                                     {% for item in pending_items %}
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.id }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:50 }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:10 }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {% if item.image %}
                                                     <img src="{{ item.image.url }}"
@@ -262,7 +266,20 @@
                                                 {% endif %}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.created|date:"M d, Y H:i" }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.launched_at|date:"M d, Y H:i" |default:"Not launched" }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {% if item.launched_at %}
+                                                    {{ item.launched_at|date:"M d, Y H:i" }}
+                                                {% else %}
+                                                    Not launched
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                {% if item.txid %}
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
+                                                {% else %}
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Unpaid</span>
+                                                {% endif %}
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <form method="post" class="inline">
                                                     {% csrf_token %}
@@ -309,6 +326,10 @@
                                         </th>
                                         <th scope="col"
                                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Paid
+                                        </th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Tweet
                                         </th>
                                     </tr>
@@ -317,7 +338,7 @@
                                     {% for item in launched_items %}
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.id }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:50 }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:10 }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {% if item.image %}
                                                     <img src="{{ item.image.url }}"
@@ -330,6 +351,13 @@
                                                 {% endif %}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.launched_at|date:"M d, Y H:i" | default:"Not launched" }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                {% if item.txid %}
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
+                                                {% else %}
+                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Unpaid</span>
+                                                {% endif %}
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <div id="launch-transaction-details-{{ item.id }}" hx-swap="outerHTML">
                                                     {% if item.url %}
@@ -418,6 +446,10 @@
                         </th>
                         <th scope="col"
                             class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Paid
+                        </th>
+                        <th scope="col"
+                            class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Transaction Details
                         </th>
                         <th scope="col"
@@ -430,7 +462,7 @@
                     {% for item in queue_items %}
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.id }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:50 }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.message|truncatechars:10 }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {% if item.image %}
                                     <img src="{{ item.image.url }}"
@@ -457,6 +489,13 @@
                                     {{ item.launched_at|date:"M d, Y H:i" }}
                                 {% else %}
                                     Not launched
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if item.txid %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
+                                {% else %}
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Unpaid</span>
                                 {% endif %}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
