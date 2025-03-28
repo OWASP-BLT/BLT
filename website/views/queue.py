@@ -176,19 +176,67 @@ def update_txid(request, queue_id):
 
     if request.method == "POST":
         queue_item = get_object_or_404(Queue, id=queue_id)
-        txid = request.POST.get("txid", "")
-        url = request.POST.get("url", "")
+        txid = request.POST.get("txid", "").strip()
+        url = request.POST.get("url", "").strip()
 
-        if txid:
+        # Track what was updated for the message
+        txid_updated = False
+        url_updated = False
+        txid_removed = False
+        url_removed = False
+
+        # Only update txid if provided, otherwise keep existing value
+        if txid and txid != queue_item.txid:
             queue_item.txid = txid
-
-        if url:
+            txid_updated = True
+        
+        # Only update url if provided, otherwise keep existing value
+        if url and url != queue_item.url:
             queue_item.url = url
+            url_updated = True
+        
+        # Clear values if explicitly submitted as empty
+        if "txid" in request.POST and not txid and queue_item.txid:
+            queue_item.txid = None
+            txid_removed = True
+            
+        if "url" in request.POST and not url and queue_item.url:
+            queue_item.url = None
+            url_removed = True
 
         queue_item.save()
+        
+        # Build the response message
+        message_parts = []
+        if txid_updated:
+            message_parts.append("Transaction ID updated")
+        if url_updated:
+            message_parts.append("URL updated")
+        if txid_removed:
+            message_parts.append("Transaction ID removed")
+        if url_removed:
+            message_parts.append("URL removed")
+            
+        # Create the appropriate message
+        if message_parts:
+            message = f"Success: {' and '.join(message_parts)}"
+        else:
+            message = "No changes were made"
 
-        # Return the updated transaction details HTML
-        context = {"item": queue_item}
-        return render(request, "queue/partials/transaction_details.html", context)
+        # Check which target is being updated based on the HTTP_HX_TARGET header
+        hx_target = request.META.get('HTTP_HX_TARGET', '')
+        
+        context = {
+            "item": queue_item,
+            "message": message
+        }
+        
+        # Determine which template to use based on the target ID
+        if 'launch-transaction-details' in hx_target:
+            # This is for the launch control section
+            return render(request, "queue/partials/launch_transaction_details.html", context)
+        else:
+            # This is for the main list section
+            return render(request, "queue/partials/transaction_details.html", context)
 
     return HttpResponse("Method not allowed", status=405)
