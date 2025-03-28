@@ -32,6 +32,54 @@
                 {% endfor %}
             </div>
         {% endif %}
+        <!-- View Modal (Hidden by default) -->
+        <div id="viewModalContainer"
+             class="mb-8 bg-white p-6 rounded-lg shadow-md hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">View Queue Item</h2>
+                <button id="closeViewModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-6 w-6"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Message</label>
+                <div class="relative">
+                    <textarea id="viewMessage"
+                              rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#e74c3c]"
+                              readonly></textarea>
+                    <button id="copyMessageBtn"
+                            class="absolute top-2 right-2 text-[#e74c3c] hover:text-red-700 bg-white p-2 rounded-full shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Image</label>
+                <div class="relative">
+                    <div id="viewImageContainer" class="hidden">
+                        <img id="viewImage" src="" alt="Queue image" class="size-40 rounded-lg">
+                    </div>
+                    <div id="noImageText" class="text-gray-500">No image</div>
+                </div>
+            </div>
+            <div id="copySuccessMessage"
+                 class="hidden fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                <span class="block sm:inline">Copied to clipboard!</span>
+            </div>
+        </div>
         <!-- Create Form (Hidden by default) -->
         <div id="createFormContainer"
              class="mb-8 bg-white p-6 rounded-lg shadow-md hidden">
@@ -350,7 +398,9 @@
                                                     No image
                                                 {% endif %}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ item.launched_at|date:"M d, Y H:i" | default:"Not launched" }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {{ item.launched_at|date:"M d, Y H:i" | default:"Not launched" }}
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 {% if item.txid %}
                                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
@@ -542,9 +592,14 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            {% if not item.launched %}
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
+                                    <button class="view-btn text-blue-600 hover:text-blue-900"
+                                            data-id="{{ item.id }}"
+                                            data-message="{{ item.message }}"
+                                            {% if item.image %}data-image="{{ item.image.url }}"{% endif %}>
+                                        View
+                                    </button>
                                     <button class="edit-btn text-indigo-600 hover:text-indigo-900"
                                             data-id="{{ item.id }}"
                                             data-message="{{ item.message }}"
@@ -562,9 +617,8 @@
                                     <button class="delete-btn text-[#e74c3c] hover:text-red-900"
                                             data-id="{{ item.id }}"
                                             data-message="{{ item.message }}">Delete</button>
-                                    </div>
-                                </td>
-                            {% endif %}
+                                </div>
+                            </td>
                         </tr>
                     {% empty %}
                         <tr>
@@ -730,6 +784,76 @@ document.addEventListener('DOMContentLoaded', function() {
     if (closeLaunchControlBtn) {
         closeLaunchControlBtn.addEventListener('click', function() {
             launchControlContainer.classList.add('hidden');
+        });
+    }
+
+    // View modal functionality
+    const viewBtns = document.querySelectorAll('.view-btn');
+    const closeViewModalBtn = document.getElementById('closeViewModalBtn');
+    const viewModalContainer = document.getElementById('viewModalContainer');
+    const viewMessage = document.getElementById('viewMessage');
+    const viewImageContainer = document.getElementById('viewImageContainer');
+    const viewImage = document.getElementById('viewImage');
+    const noImageText = document.getElementById('noImageText');
+    const copyMessageBtn = document.getElementById('copyMessageBtn');
+    const copyImageBtn = document.getElementById('copyImageBtn');
+    const copySuccessMessage = document.getElementById('copySuccessMessage');
+
+    function showCopySuccess() {
+        copySuccessMessage.classList.remove('hidden');
+        setTimeout(() => {
+            copySuccessMessage.classList.add('hidden');
+        }, 2000);
+    }
+
+    viewBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const message = this.getAttribute('data-message');
+            const imageUrl = this.getAttribute('data-image');
+            
+            viewMessage.value = message;
+            
+            if (imageUrl) {
+                viewImage.src = imageUrl;
+                viewImageContainer.classList.remove('hidden');
+                noImageText.classList.add('hidden');
+            } else {
+                viewImageContainer.classList.add('hidden');
+                noImageText.classList.remove('hidden');
+            }
+            
+            viewModalContainer.classList.remove('hidden');
+        });
+    });
+
+    if (closeViewModalBtn) {
+        closeViewModalBtn.addEventListener('click', function() {
+            viewModalContainer.classList.add('hidden');
+        });
+    }
+
+    if (copyMessageBtn) {
+        copyMessageBtn.addEventListener('click', function() {
+            viewMessage.select();
+            document.execCommand('copy');
+            showCopySuccess();
+        });
+    }
+
+    if (copyImageBtn) {
+        copyImageBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch(viewImage.src);
+                const blob = await response.blob();
+                const data = new ClipboardItem({
+                    [blob.type]: blob
+                });
+                await navigator.clipboard.write([data]);
+                showCopySuccess();
+            } catch (err) {
+                console.error('Failed to copy image:', err);
+                alert('Failed to copy image. Please try again.');
+            }
         });
     }
 });
