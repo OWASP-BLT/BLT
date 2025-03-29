@@ -6,6 +6,7 @@ import re
 import subprocess
 import tracemalloc
 import urllib
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -22,7 +23,6 @@ from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 from bs4 import BeautifulSoup
 from dj_rest_auth.registration.views import SocialAccountDisconnectView as BaseSocialAccountDisconnectView
 from dj_rest_auth.registration.views import SocialConnectView, SocialLoginView
-from concurrent.futures import ThreadPoolExecutor
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -317,7 +317,7 @@ def status_page(request):
                             # Update cache
                             # Cache for 24 hours
                             TWENTY_FOUR_HOURS = 86400
-                            cache.set("github_api_history", github_api_history,TWENTY_FOUR_HOURS)
+                            cache.set("github_api_history", github_api_history, TWENTY_FOUR_HOURS)
                     else:
                         status_data["github_rate_limit"] = None
                 except requests.exceptions.RequestException as e:
@@ -2000,7 +2000,7 @@ def template_list(request):
     filter_by = request.GET.get("filter", "all")
     sort = request.GET.get("sort", "name")
     direction = request.GET.get("dir", "asc")
-    
+
     try:
         page = int(request.GET.get("page", 1))
         if page < 1:
@@ -2122,12 +2122,9 @@ def template_list(request):
 
                 if filter_by != "all":
                     if (
-                        (filter_by == "with_sidenav"
-                        and not template_info["has_sidenav"])
-                        or (filter_by == "with_base"
-                        and not template_info["extends_base"])
-                        or (filter_by == "with_styles"
-                        and not template_info["has_style_tags"])
+                        (filter_by == "with_sidenav" and not template_info["has_sidenav"])
+                        or (filter_by == "with_base" and not template_info["extends_base"])
+                        or (filter_by == "with_styles" and not template_info["has_style_tags"])
                     ):
                         continue
 
