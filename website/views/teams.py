@@ -13,7 +13,7 @@ from django.shortcuts import redirect, render
 from django.views.generic import TemplateView
 
 from website.models import Challenge, JoinRequest, Kudos, Organization
-
+from feed_signals import giveBacon
 
 class TeamOverview(TemplateView):
     template_name = "team_overview.html"
@@ -235,14 +235,21 @@ def give_kudos(request):
         if receiver_username:
             try:
                 receiver = User.objects.get(username=receiver_username)
+                
+                # Create Kudos record
                 Kudos.objects.create(sender=request.user, receiver=receiver, link=link_url, comment=comment_text)
-                return JsonResponse({"success": True, "message": "Kudos sent successfully!"})
+                
+                # Reward 1 BACON token to the receiver
+                giveBacon(receiver, amt=1)
+
+                return JsonResponse({"success": True, "message": "Kudos sent successfully! 1 BACON rewarded."})
             except User.DoesNotExist:
                 return JsonResponse({"success": False, "error": "User does not exist"})
 
         return JsonResponse({"success": False, "error": "Missing receiver or message"})
 
     return JsonResponse({"success": False, "error": "Invalid request method"})
+
 
 
 class TeamChallenges(TemplateView):
