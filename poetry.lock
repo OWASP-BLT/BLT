@@ -2883,6 +2883,7 @@ description = "Quick and small memcached client for Python"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
+markers = "sys_platform != \"win32\""
 files = [
     {file = "pylibmc-1.6.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a7baf4b78720f8b72839b3642b374754cb77cf57dab465a70ed1764d943e19d5"},
     {file = "pylibmc-1.6.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:dd98054a571bd450200a61a12b9ada3424678d17a25456bbf9a6100470401e52"},
@@ -4033,4 +4034,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "b8f809351cadde38d5eb8d25d9cac5cd689678f39ba0576cdaa07e243ffd32f8"
+content-hash = "ead8febe1e583011083e04bd7ff4b9f5c8fdf4dee64ca98e6eb226a8d72c9287"

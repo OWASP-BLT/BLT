@@ -104,7 +104,8 @@ class Integration(models.Model):
 
 class SlackIntegration(models.Model):
     integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
-    bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
+    # will be different for each workspace
+    bot_access_token = models.CharField(max_length=255, null=True, blank=True)
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
     default_channel_name = models.CharField(max_length=255, null=True, blank=True)  # Default channel ID
     default_channel_id = models.CharField(max_length=255, null=True, blank=True)
@@ -112,7 +113,8 @@ class SlackIntegration(models.Model):
     daily_update_time = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(23)],  # Valid hours: 0–23
+        # Valid hours: 0–23
+        validators=[MinValueValidator(0), MaxValueValidator(23)],
         help_text="The hour of the day (0-23) to send daily updates",
     )
     # Add welcome message field
@@ -431,7 +433,8 @@ class HuntPrize(models.Model):
     name = models.CharField(max_length=50)
     value = models.PositiveIntegerField(default=0)
     no_of_eligible_projects = models.PositiveIntegerField(default=1)  # no of winner in this prize
-    valid_submissions_eligible = models.BooleanField(default=False)  # all valid submissions are winners in this prize
+    # all valid submissions are winners in this prize
+    valid_submissions_eligible = models.BooleanField(default=False)
     prize_in_crypto = models.BooleanField(default=False)
     description = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -474,7 +477,8 @@ class Issue(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
     is_hidden = models.BooleanField(default=False)
-    rewarded = models.PositiveIntegerField(default=0)  # money rewarded by the organization
+    # money rewarded by the organization
+    rewarded = models.PositiveIntegerField(default=0)
     reporter_ip_address = models.GenericIPAddressField(null=True, blank=True)
     cve_id = models.CharField(max_length=16, null=True, blank=True)
     cve_score = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
@@ -1110,7 +1114,8 @@ class Project(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
-    url = models.URLField(unique=True, null=True, blank=True)  # Made url nullable in case of no website
+    # Made url nullable in case of no website
+    url = models.URLField(unique=True, null=True, blank=True)
     project_visit_count = models.IntegerField(default=0)
     twitter = models.CharField(max_length=30, null=True, blank=True)
     facebook = models.URLField(null=True, blank=True)
@@ -1191,7 +1196,8 @@ class BaconToken(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
     contribution = models.OneToOneField(Contribution, on_delete=models.CASCADE)
-    token_id = models.CharField(max_length=64, blank=True, null=True)  # Token ID from the Runes protocol
+    # Token ID from the Runes protocol
+    token_id = models.CharField(max_length=64, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.amount} BACON"
@@ -1265,7 +1271,8 @@ class TimeLog(models.Model):
 class ActivityLog(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="activity_logs")
     window_title = models.CharField(max_length=255)
-    url = models.URLField(null=True, blank=True)  # URL field for activity-related URL
+    # URL field for activity-related URL
+    url = models.URLField(null=True, blank=True)
     recorded_at = models.DateTimeField(auto_now_add=True)
     created = models.DateTimeField(default=timezone.now, editable=False)
 
@@ -1457,12 +1464,14 @@ class Repo(models.Model):
     project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
-    description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
+    # Made nullable for optional descriptions
+    description = models.TextField(null=True, blank=True)
     repo_url = models.URLField(unique=True)
     homepage_url = models.URLField(null=True, blank=True)
     is_main = models.BooleanField(default=False)
     is_wiki = models.BooleanField(default=False)
-    is_archived = models.BooleanField(default=False)  # New field for archived status
+    # New field for archived status
+    is_archived = models.BooleanField(default=False)
     stars = models.IntegerField(default=0)
     forks = models.IntegerField(default=0)
     open_issues = models.IntegerField(default=0)
@@ -1567,7 +1576,8 @@ class SlackBotActivity(models.Model):
     workspace_name = models.CharField(max_length=255, null=True, blank=True)
     activity_type = models.CharField(max_length=20, choices=ACTIVITY_TYPES)
     user_id = models.CharField(max_length=20, null=True, blank=True)
-    details = models.JSONField(default=dict)  # Stores flexible activity-specific data
+    # Stores flexible activity-specific data
+    details = models.JSONField(default=dict)
     success = models.BooleanField(default=True)
     error_message = models.TextField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
@@ -1598,7 +1608,8 @@ class Challenge(models.Model):
     team_participants = models.ManyToManyField(
         Organization, related_name="team_challenges", blank=True
     )  # For team challenges
-    points = models.IntegerField(default=0)  # Points for completing the challenge
+    # Points for completing the challenge
+    points = models.IntegerField(default=0)
     progress = models.IntegerField(default=0)  # Progress in percentage
     completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -1859,7 +1870,8 @@ class GitHubReview(models.Model):
         related_name="reviews_made",
     )
     body = models.TextField(null=True, blank=True)
-    state = models.CharField(max_length=50)  # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
+    # e.g., "APPROVED", "CHANGES_REQUESTED", "COMMENTED"
+    state = models.CharField(max_length=50)
     submitted_at = models.DateTimeField()
     url = models.URLField()
 
@@ -2147,13 +2159,19 @@ class Rating(models.Model):
 
 
 class BaconSubmission(models.Model):
-    STATUS_CHOICES = (("in_review", "In Review"), ("accepted", "Accepted"), ("declined", "Declined"))
+    STATUS_CHOICES = (
+        ("in_review", "In Review"),
+        ("accepted", "Accepted"),
+        ("declined", "Declined"),
+    )
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     github_url = models.URLField()
     contribution_type = models.CharField(
         max_length=20, choices=[("security", "Security Related"), ("non-security", "Non-Security Related")]
     )
     description = models.TextField()
+    organization = models.CharField(max_length=100, blank=True, null=True)  # 👈 NEW FIELD
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="new")
     transaction_status = models.CharField(
@@ -2164,7 +2182,7 @@ class BaconSubmission(models.Model):
     modified_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.status}"
+        return f"BaconSubmission by {self.user.username} on {self.created_at.strftime('%Y-%m-%d')}"
 
 
 class DailyStats(models.Model):
@@ -2386,7 +2404,8 @@ class Queue(models.Model):
 
 class Thread(models.Model):
     participants = models.ManyToManyField(User, related_name="threads")
-    updated_at = models.DateTimeField(auto_now=True)  # For sorting by recent activity
+    # For sorting by recent activity
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Thread {self.id}"
@@ -2396,7 +2415,8 @@ class Message(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
     thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="messages", null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    username = models.CharField(max_length=255)  # Store username separately in case user is deleted
+    # Store username separately in case user is deleted
+    username = models.CharField(max_length=255)
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users

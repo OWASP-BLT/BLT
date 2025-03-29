@@ -6,8 +6,18 @@ WORKDIR /blt
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y postgresql-client libpq-dev \
-    libmemcached11 libmemcachedutil2 libmemcached-dev libz-dev \
+    apt-get install -y \
+    build-essential \
+    libmemcached11 \
+    libmemcachedutil2 \
+    libmemcached-dev \
+    libz-dev \
+    postgresql-client \
+    libpq-dev \
+    python3-dev \
+    libssl-dev \
+    curl \
+    git \
     dos2unix && \
     rm -rf /var/lib/apt/lists/*
 

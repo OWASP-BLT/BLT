@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from blt import settings
 from website.models import BaconEarning, BaconSubmission, Badge, UserBadge
+from website.utils import get_org_slack_channel, send_slack_message
 
 
 # @login_required
@@ -92,6 +93,7 @@ class BaconSubmissionView(View):
             description = data.get("description")
             status = data.get("status", "in_review")  # Default to "in_review"
             bacon_amount = data.get("bacon_amount", 0)  # Default to 0
+            organization = data.get("organization", "")
 
             # Validations
             if not github_url or not contribution_type or not description:
@@ -114,9 +116,20 @@ class BaconSubmissionView(View):
                 github_url=github_url,
                 contribution_type=contribution_type,
                 description=description,
+                organization=organization,
                 bacon_amount=bacon_amount,
                 status=status,
             )
+
+            try:
+                channel = get_org_slack_channel(organization)
+                send_slack_message(
+                    channel,
+                    f"🥓 New bacon claim submitted by {request.user.username}\n🔗 {github_url}\n💸 Bacon Requested: {bacon_amount}",
+                )
+
+            except Exception as e:
+                print("Slack error:", e)
 
             return JsonResponse({"message": "Submission created", "submission_id": submission.id}, status=201)
 

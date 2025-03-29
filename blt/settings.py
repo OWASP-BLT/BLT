@@ -364,6 +364,13 @@ STATIC_ROOT = os.path.join(PROJECT_ROOT, "staticfiles")
 STATIC_URL = "/static/"
 
 STATICFILES_DIRS = (os.path.join(BASE_DIR, "website", "static"),)
+# Organization to Slack channel mapping
+ORG_SLACK_CHANNELS = {
+    "default": "#project-blt-bacon",  # Fallback channel
+    # Add real org-to-channel mappings below
+    # "owasp": "#owasp-bacon-claims",
+    # "openai": "#openai-bacon-claims",
+}
 
 ABSOLUTE_URL_OVERRIDES = {
     "auth.user": lambda u: "/profile/%s/" % u.username,
@@ -617,5 +624,6 @@ if DEBUG:
         },
     }
 
-ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
+# Default to local for development
+ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")
 SOCIALACCOUNT_STORE_TOKENS = True
