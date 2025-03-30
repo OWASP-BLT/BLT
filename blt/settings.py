@@ -275,7 +275,7 @@ if "DYNO" in os.environ:  # for Heroku
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
-        SECURE_SSL_REDIRECT = True
+        SECURE_SSL_REDIRECT = False
 
     # import logging
 
@@ -347,7 +347,7 @@ ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_FORMS = {"signup": "website.forms.SignupFormWithCaptcha"}
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_PROXY_SSL_HEADER = None
 
 
 ALLOWED_HOSTS = [
