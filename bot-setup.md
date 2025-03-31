@@ -1,5 +1,5 @@
 # BLT Slack Bot Setup Guide
-
+# make sure to run this on your own server 
 ## Environment Variables
 
 Required environment variables for the bot to function:
