@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from website.models import Queue
-from website.utils import twitter
 
 logger = logging.getLogger(__name__)
 
@@ -92,32 +91,22 @@ def queue_list(request):
             was_unlaunched = not queue_item.launched
 
             if was_unlaunched:
-                # Send tweet
-                image_path = None
-                if queue_item.image:
-                    image_path = queue_item.image.path
-
-                tweet_result = twitter.send_tweet(queue_item.message, image_path)
-
-                if tweet_result["success"]:
-                    # Launch the queue item with Twitter info
-                    queue_item.launch(current_time)
-                    queue_item.txid = tweet_result["txid"]
-                    queue_item.url = tweet_result["url"]
-                    queue_item.save()
-
-                    success_msg = (
-                        f"Queue item launched successfully! "
-                        f"Tweet posted at: <a href='{tweet_result['url']}' target='_blank'>{tweet_result['url']}</a>"
-                    )
-                    messages.success(request, success_msg)
-                else:
-                    # Still mark as launched but log the error
-                    queue_item.launch(current_time)
-
-                    logger.error(f"Error sending tweet: {tweet_result['error']}")
-                    warning_msg = "Queue item marked as launched, but there was an error posting to Twitter."
-                    messages.warning(request, warning_msg)
+                # Mark as launched
+                queue_item.launch(current_time)
+                
+                # Create Twitter intent URL
+                base_url = "https://twitter.com/intent/tweet"
+                params = {
+                    "text": queue_item.message,
+                }
+                
+                # Build the final URL
+                tweet_url = f"{base_url}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
+                
+                # Redirect directly to Twitter in a new tab
+                response = redirect(tweet_url)
+                response['X-Frame-Options'] = 'ALLOW-FROM https://twitter.com'
+                return response
             else:
                 # Just update the timestamp if already launched
                 queue_item.launch(current_time)
@@ -125,8 +114,7 @@ def queue_list(request):
                     request,
                     f"Queue item was already launched. Launch timestamp updated to {current_time.strftime('%Y-%m-%d %H:%M:%S')}.",
                 )
-
-            return redirect("queue_list")
+                return redirect("queue_list")
 
     # Check if user is authorized for launch control
     authorized_user_id = os.environ.get("Q_ID")

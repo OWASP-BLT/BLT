@@ -747,7 +747,7 @@
                                                 <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">View Details</span>
                                             </button>
                                             {% if not item.launched %}
-                                                <button class="edit-btn text-indigo-600 hover:text-indigo-900 transition-colors duration-200 group relative"
+                                                <button class="edit-btn text-blue-600 hover:text-blue-900 transition-colors duration-200 group relative"
                                                         data-id="{{ item.id }}"
                                                         data-message="{{ item.message }}"
                                                         {% if item.image %}data-image="{{ item.image.url }}"{% endif %}
@@ -757,11 +757,12 @@
                                                     </svg>
                                                     <span class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">Edit Item</span>
                                                 </button>
-                                                <form method="post" class="inline">
+                                                <form method="post" class="inline" target="_blank">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="action" value="launch">
                                                     <input type="hidden" name="queue_id" value="{{ item.id }}">
-                                                    <button type="submit"
+                                                    <button 
+                                                    type="submit"
                                                             class="text-green-600 hover:text-green-900 transition-colors duration-200 group relative"
                                                             title="Launch Item">
                                                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
