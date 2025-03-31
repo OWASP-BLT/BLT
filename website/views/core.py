@@ -1607,7 +1607,7 @@ def sync_github_projects(request):
 
 
 # GitHub Compliance Checks
-import requests
+
 
 GITHUB_API_BASE = "https://api.github.com/repos"
 
@@ -1624,37 +1624,50 @@ def extract_github_repo_info(url):
 
 def check_license(owner, repo):
     url = f"{GITHUB_API_BASE}/{owner}/{repo}/license"
-    resp = requests.get(url)
-    return resp.status_code == 200
+    try:
+        resp = requests.get(url, timeout=5)
+        return resp.status_code == 200
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch license for {owner}/{repo}: {e}")
+        return False
 
 
 def check_file_exists(owner, repo, filename):
     url = f"{GITHUB_API_BASE}/{owner}/{repo}/contents/{filename}"
-    resp = requests.get(url)
-    return resp.status_code == 200
+    try:
+        resp = requests.get(url, timeout=5)
+        return resp.status_code == 200
+    except requests.RequestException as e:
+        logging.error(f"Failed to check {filename} for {owner}/{repo}: {e}")
+        return False
 
 
 def fetch_readme(owner, repo):
     url = f"{GITHUB_API_BASE}/{owner}/{repo}/readme"
     headers = {"Accept": "application/vnd.github.v3.raw"}
-    resp = requests.get(url, headers=headers)
-    if resp.status_code == 200:
-        return resp.text.lower()
-    return ""
+    try:
+        resp = requests.get(url, headers=headers, timeout=5)
+        if resp.status_code == 200:
+            return resp.text.lower()
+        return ""
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch README for {owner}/{repo}: {e}")
+        return ""
 
 
 def run_basic_compliance_checks(github_url):
-    """Main checker to validate OWASP GitHub repo compliance."""
     owner, repo = extract_github_repo_info(github_url)
     if not owner or not repo:
         return {"error": "Invalid GitHub URL"}
 
+    contents = fetch_repo_contents(owner, repo)
+
     results = {
-        "license": check_license(owner, repo),
-        "contributing": check_file_exists(owner, repo, "CONTRIBUTING.md"),
-        "code_of_conduct": check_file_exists(owner, repo, "CODE_OF_CONDUCT.md"),
-        "changelog": check_file_exists(owner, repo, "CHANGELOG.md"),
-        "security_policy": check_file_exists(owner, repo, "SECURITY.md"),
+        "license": "license" in contents or "license.md" in contents,
+        "contributing": "contributing.md" in contents,
+        "code_of_conduct": "code_of_conduct.md" in contents,
+        "changelog": "changelog.md" in contents,
+        "security_policy": "security.md" in contents,
     }
 
     readme = fetch_readme(owner, repo)
@@ -1679,6 +1692,10 @@ def check_owasp_compliance(request):
         try:
             # 🔍 Run GitHub API-based compliance checks (e.g., license, README, CONTRIBUTING.md)
             github_results = run_basic_compliance_checks(url)
+            if github_results.get("error"):
+                messages.error(request, github_results["error"])
+                return redirect("check_owasp_compliance")
+
             github_check_items = [
                 ("License File Present", github_results["license"]),
                 ("CONTRIBUTING.md Present", github_results["contributing"]),
