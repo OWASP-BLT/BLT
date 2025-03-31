@@ -12,7 +12,14 @@ from website.models import ReminderSettings
 
 @login_required
 def reminder_settings(request):
-    settings, created = ReminderSettings.objects.get_or_create(user=request.user)
+    settings, created = ReminderSettings.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "reminder_time": timezone.now().time(),  # Set default time to current time
+            "timezone": "UTC",  # Set default timezone
+            "is_active": False,  # Set default active state
+        },
+    )
 
     if request.method == "POST":
         form = ReminderSettingsForm(request.POST, instance=settings)
