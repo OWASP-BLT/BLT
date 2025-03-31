@@ -93,19 +93,19 @@ def queue_list(request):
             if was_unlaunched:
                 # Mark as launched
                 queue_item.launch(current_time)
-                
+
                 # Create Twitter intent URL
                 base_url = "https://twitter.com/intent/tweet"
                 params = {
                     "text": queue_item.message,
                 }
-                
+
                 # Build the final URL
                 tweet_url = f"{base_url}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
-                
+
                 # Redirect directly to Twitter in a new tab
                 response = redirect(tweet_url)
-                response['X-Frame-Options'] = 'ALLOW-FROM https://twitter.com'
+                response["Content-Security-Policy"] = "frame-ancestors https://twitter.com"
                 return response
             else:
                 # Just update the timestamp if already launched
