@@ -615,6 +615,27 @@
                         {% endif %}
                     </div>
                 </div>
+                <!-- GSOC Leaderboard Section -->
+                {% if organization.slug == 'owasp-foundation' %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
+                        <a href="https://github.com/OWASP-BLT/BLT/issues/2916"
+                           target="_blank"
+                           class="flex items-center p-6 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors group">
+                            <span class="text-xl font-semibold text-gray-800 flex items-center gap-3">
+                                GSOC 2025 Leaderboard
+                                <i class="fa-solid fa-trophy text-red-500 group-hover:text-red-600 text-2xl"></i>
+                            </span>
+                        </a>
+                        <a href="https://github.com/OWASP-BLT/BLT/issues/2384"
+                           target="_blank"
+                           class="flex items-center p-6 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors group">
+                            <span class="text-xl font-semibold text-gray-800 flex items-center gap-3">
+                                GSOC 2024 Leaderboard
+                                <i class="fa-solid fa-trophy text-red-500 group-hover:text-red-600 text-2xl"></i>
+                            </span>
+                        </a>
+                    </div>
+                {% endif %}
             </div>
         </div>
     </div>
