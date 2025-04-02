@@ -277,10 +277,10 @@ from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
 from website.views.teams import (
+    GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
     TeamOverview,
-    GiveKudosView,
     add_member,
     create_team,
     delete_team,
