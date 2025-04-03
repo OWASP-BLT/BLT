@@ -69,7 +69,13 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, rebuild_safe_url, safe_redirect_allowed, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    rebuild_safe_url,
+    safe_redirect_allowed,
+    save_analysis_report,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
