@@ -225,11 +225,11 @@ def kick_member(request):
 
 class GiveKudosView(APIView):
     authentication_classes = []  # No authentication required
-    permission_classes = []      # No permissions required
+    permission_classes = []  # No permissions required
 
     def post(self, request):
         try:
-            data = request.data  
+            data = request.data
             receiver_username = data.get("kudosReceiver")
             sender_github = data.get("kudosSender")  # GitHub username as sender
             link_url = data.get("link")
