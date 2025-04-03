@@ -14,7 +14,7 @@ from django.views.generic import TemplateView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from website.models import Challenge, JoinRequest, Kudos, Organization
+from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile
 
 
 class TeamOverview(TemplateView):
@@ -225,25 +225,29 @@ def kick_member(request):
 
 class GiveKudosView(APIView):
     authentication_classes = []  # No authentication required
-    permission_classes = []  # No permissions required
+    permission_classes = []      # No permissions required
 
     def post(self, request):
         try:
-            data = request.data  # DRF automatically parses JSON request data
+            data = request.data  
             receiver_username = data.get("kudosReceiver")
-            sender_username = data.get("kudosSender")  # Sender comes from request data
+            sender_github = data.get("kudosSender")  # GitHub username as sender
             link_url = data.get("link")
             comment_text = data.get("comment", "")
-
             if not receiver_username:
                 return Response({"success": False, "error": "Missing receiver"}, status=400)
-            if not sender_username:
+            if not sender_github:
                 return Response({"success": False, "error": "Missing sender"}, status=400)
 
-            # Fetch sender and receiver
+            # Fetch receiver
             receiver = User.objects.filter(username=receiver_username).first()
-            sender = User.objects.filter(username=sender_username).first()
+            if not receiver:
+                return Response({"success": False, "error": "Receiver username not found"}, status=404)
 
+            # Fetch sender using GitHub username from UserProfile
+            sender_profile = UserProfile.objects.filter(github_url__icontains=sender_github).first()
+            sender = sender_profile.user if sender_profile else None
+            print(sender_profile)
             if not receiver or not sender:
                 return Response({"success": False, "error": "Invalid sender or receiver username"}, status=404)
 
