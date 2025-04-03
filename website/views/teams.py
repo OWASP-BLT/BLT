@@ -224,41 +224,36 @@ def kick_member(request):
 
 
 class GiveKudosView(APIView):
+    authentication_classes = []  # No authentication required
+    permission_classes = []  # No permissions required
+
     def post(self, request):
         try:
             data = request.data  # DRF automatically parses JSON request data
             receiver_username = data.get("kudosReceiver")
+            sender_username = data.get("kudosSender")  # Sender comes from request data
             link_url = data.get("link")
             comment_text = data.get("comment", "")
-            sender_username = None
-            sender = None
-            # Check if the user is authenticated
-            if request.user.is_authenticated:
-                sender = request.user  # Use logged-in user as sender
-            else:
-                sender_username = data.get("kudosSender")  # Get sender from request data
 
             if not receiver_username:
                 return Response({"success": False, "error": "Missing receiver"}, status=400)
-            if not sender and not sender_username:
+            if not sender_username:
                 return Response({"success": False, "error": "Missing sender"}, status=400)
 
-            # Fetch the receiver
-            receiver = User.objects.get(username=receiver_username)
+            # Fetch sender and receiver
+            receiver = User.objects.filter(username=receiver_username).first()
+            sender = User.objects.filter(username=sender_username).first()
 
-            # Fetch sender if it's coming from the request body
-            if sender_username:
-                sender = User.objects.get(username=sender_username)  # Get sender from DB
+            if not receiver or not sender:
+                return Response({"success": False, "error": "Invalid sender or receiver username"}, status=404)
 
             # Create and store the Kudos
             Kudos.objects.create(sender=sender, receiver=receiver, link=link_url, comment=comment_text)
 
             return Response({"success": True, "message": "Kudos sent successfully!"}, status=201)
 
-        except User.DoesNotExist:
-            return Response({"success": False, "error": "User does not exist"}, status=404)
         except Exception as e:
-            return Response({"success": False, "error": "Check the BLT usernames"}, status=400)
+            return Response({"success": False, "error": "Unexpected error,Check The BLT usernames "}, status=400)
 
 
 class TeamChallenges(TemplateView):
