@@ -2,12 +2,12 @@ name: OWASP BLT Action
 
 on:
   issues:
-    types: [opened]  # Trigger on issue creation
+    types: [opened]
   pull_request_review_comment:
-    types: [created]  # Trigger on PR review comments
+    types: [created]
   schedule:
     - cron: '0 0 * * *'  # Daily at midnight UTC
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
 
 jobs:
   process-issues:
@@ -19,18 +19,18 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Setup Python
-        uses: actions/setup-python@v5  # Use latest Python setup action
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'  # Specify a modern Python version
-          cache: 'pip'  # Cache pip dependencies for faster runs
+          python-version: '3.11'
+          cache: 'pip'
       
       - name: Install Dependencies
         run: |
-          pip install requests  # Required by add_badge.py
-      
+          pip install requests
+          
       - name: Run OWASP BLT Action with Badge
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BLT_API_KEY: ${{ secrets.BLT_API_KEY }}  # Matches add_badge.py
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # Updated to OpenAI
         run: |
           python .github/scripts/add_badge.py
