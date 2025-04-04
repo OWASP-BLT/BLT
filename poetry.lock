@@ -894,13 +894,14 @@ saml = ["python3-saml (>=1.15.0,<2.0.0)"]
 
 [[package]]
 name = "django-annoying"
-version = "0.10.7"
+version = "0.10.8"
 description = "This is a django application that tries to eliminate annoying things in the Django framework."
 optional = false
 python-versions = ">=3.0"
 groups = ["main"]
 files = [
-    {file = "django-annoying-0.10.7.tar.gz", hash = "sha256:d42a9f4757701903edcb3398c542e6d39e67856295059589296c277350d02fc0"},
+    {file = "django_annoying-0.10.8-py2.py3-none-any.whl", hash = "sha256:ed258ba8a100138515f6cdb8e9d1620a6e93e441ec1e10f0d02b7242b3b4efff"},
+    {file = "django_annoying-0.10.8.tar.gz", hash = "sha256:4166b55eff3f1296a64c12ee0e5cfe71a5aa4b81c2788c72529478c370ad8550"},
 ]
 
 [package.dependencies]
@@ -4033,4 +4034,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "5df5aef270f6be986b70891e42d83107073ca4ba9119f4cea7ae98f6dda3a362"
+content-hash = "6179de3e9c98c8d449693c387fa79647b246e0eb16120c4605536b50299c36d7"
