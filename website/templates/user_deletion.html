@@ -52,10 +52,15 @@
                 <div class="space-y-4">
                     {% for field in form %}
                         <div class="space-y-2">
-                            <label for="{{ field.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}<p class="text-sm text-gray-500">{{ field.help_text }}</p>{% endif %}
+                            <div class="flex items-center">
+                                <div class="relative flex items-start">
+                                    <div class="flex items-center h-5">{{ field }}</div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="{{ field.id_for_label }}" class="font-medium text-gray-700">Yes, please delete my account</label>
+                                        {% if field.help_text %}<p class="text-gray-500">{{ field.help_text }}</p>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
                             {% if field.errors %}<p class="text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}
                         </div>
                     {% endfor %}
