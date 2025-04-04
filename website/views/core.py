@@ -1624,9 +1624,13 @@ def check_owasp_compliance(request):
             return redirect("check_owasp_compliance")
 
         # SSRF Fix: Validate and sanitize URL first
-        safe_url = rebuild_safe_url(url)
-        if not safe_url:
-            messages.error(request, "Invalid or unsafe URL provided")
+        try:
+            safe_url = rebuild_safe_url(url)
+            if not safe_url:
+                messages.error(request, "Invalid or unsafe URL provided")
+                return redirect("check_owasp_compliance")
+        except ValueError as e:
+            messages.error(request, f"Error processing URL: {str(e)}")
             return redirect("check_owasp_compliance")
         try:
             # Parse URL to determine if it's a GitHub repository
