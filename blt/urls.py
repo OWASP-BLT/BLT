@@ -277,13 +277,13 @@ from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
 from website.views.teams import (
+    GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
     TeamOverview,
     add_member,
     create_team,
     delete_team,
-    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -996,7 +996,7 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
-    path("teams/give-kudos/", give_kudos, name="give_kudos"),
+    path("teams/give-kudos/", GiveKudosView.as_view(), name="give_kudos"),
     path(
         "similarity_scan/",
         TemplateView.as_view(template_name="similarity_scan.html"),
