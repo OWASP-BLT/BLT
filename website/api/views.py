@@ -1,7 +1,7 @@
 import json
 import smtplib
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import requests
@@ -17,12 +17,14 @@ from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 from website.models import (
     ActivityLog,
@@ -42,6 +44,8 @@ from website.models import (
     Token,
     User,
     UserProfile,
+    IP,  # Assuming IP model exists
+    GitHubIssue,  # Assuming GitHubIssue model exists
 )
 from website.serializers import (
     ActivityLogSerializer,
@@ -116,8 +120,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
 
         if getattr(instance, "_prefetched_objects_cache", None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
@@ -166,14 +168,11 @@ class IssueViewSet(viewsets.ModelViewSet):
         if issue is None:
             return {}
 
-        # Check if there is an image in the `screenshot` field of the Issue table
         if issue.screenshot:
-            # If an image exists in the Issue table, return it along with additional images from IssueScreenshot
             screenshots = [request.build_absolute_uri(issue.screenshot.url)] + [
                 request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()
             ]
         else:
-            # If no image exists in the Issue table, return only the images from IssueScreenshot
             screenshots = [request.build_absolute_uri(screenshot.image.url) for screenshot in issue.screenshots.all()]
 
         is_upvoted = False
@@ -212,7 +211,6 @@ class IssueViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         request.data._mutable = True
 
-        # Since the tags field is json encoded we need to decode it
         tags = None
         try:
             if "tags" in request.data:
@@ -247,8 +245,6 @@ class IssueViewSet(viewsets.ModelViewSet):
                 filename = screenshot.name
                 screenshot.name = f"{filename[:10]}{str(uuid.uuid4())[:40]}.{filename.split('.')[-1]}"
                 file_path = default_storage.save(f"screenshots/{screenshot.name}", screenshot)
-
-                # Create the IssueScreenshot object and associate it with the issue
                 IssueScreenshot.objects.create(image=file_path, issue=issue)
             else:
                 return Response({"error": "Invalid image"}, status=status.HTTP_400_BAD_REQUEST)
@@ -623,7 +619,6 @@ class InviteFriendApiViewset(APIView):
         if not email:
             return Response({"error": "Email is required"}, status=400)
 
-        # Check if user already exists
         if User.objects.filter(email=email).exists():
             return Response({"error": "User already exists"}, status=400)
 
@@ -632,7 +627,6 @@ class InviteFriendApiViewset(APIView):
             referral_code, created = InviteFriend.objects.get_or_create(sender=request.user)
             referral_link = f"https://{current_site.domain}/referral/?ref={referral_code.referral_code}"
 
-            # Prepare email content
             subject = f"Join me on {current_site.name}!"
             message = render_to_string(
                 "email/invite_friend.html",
@@ -644,7 +638,6 @@ class InviteFriendApiViewset(APIView):
                 },
             )
 
-            # Send the invitation email
             email_result = send_mail(
                 subject,
                 message,
@@ -706,7 +699,6 @@ class ContributorViewSet(viewsets.ModelViewSet):
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
-    # permission_classes = (IsAuthenticatedOrReadOnly,)
     http_method_names = ("get", "post")
 
     def create(self, request, *args, **kwargs):
@@ -723,7 +715,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             project_instance = serializer.save()
             project_instance.__setattr__("slug", slug)
 
-            # Set contributors
             if contributors:
                 project_instance.contributors.set(contributors)
 
@@ -849,7 +840,6 @@ class TimeLogViewSet(viewsets.ModelViewSet):
                 parsed_url = urlparse(organization_url)
                 normalized_url = parsed_url.netloc + parsed_url.path
 
-                # Normalize the URL in the Company model (remove the protocol if present)
                 try:
                     organization = Organization.objects.get(
                         Q(url__iexact=normalized_url)
@@ -862,7 +852,6 @@ class TimeLogViewSet(viewsets.ModelViewSet):
             else:
                 organization = None
 
-            # Save the TimeLog with the user and organization (if found, or None)
             serializer.save(user=self.request.user, organization=organization)
 
         except ValidationError as e:
@@ -874,7 +863,7 @@ class TimeLogViewSet(viewsets.ModelViewSet):
     def start(self, request):
         """Starts a new time log"""
         data = request.data
-        data["start_time"] = timezone.now()  # Set start time to current tim
+        data["start_time"] = timezone.now()
 
         serializer = self.get_serializer(data=data)
         try:
@@ -959,15 +948,12 @@ class OwaspComplianceChecker(APIView):
             response = requests.get(url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Check for OWASP mention
             content = soup.get_text().lower()
             has_owasp_mention = "owasp" in content
 
-            # Check for project page link
             owasp_links = [a for a in soup.find_all("a") if "owasp.org" in a.get("href", "")]
             has_project_link = len(owasp_links) > 0
 
-            # Check for up-to-date info
             has_dates = bool(soup.find_all(["time", "date"]))
 
             return {
@@ -990,7 +976,6 @@ class OwaspComplianceChecker(APIView):
             response = requests.get(url, timeout=10)
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Look for common paywall terms
             paywall_terms = ["premium", "subscribe", "subscription", "pay", "pricing"]
             content = soup.get_text().lower()
             has_paywall_indicators = any(term in content for term in paywall_terms)
@@ -1007,12 +992,10 @@ class OwaspComplianceChecker(APIView):
         if not url:
             return Response({"error": "URL is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Run all compliance checks
         github_check = self.check_github_compliance(url)
         website_check = self.check_website_compliance(url)
         vendor_check = self.check_vendor_neutrality(url)
 
-        # Compile recommendations
         recommendations = []
         if not github_check["under_owasp_org"]:
             recommendations.append("Project should be hosted under the OWASP GitHub organization")
@@ -1031,3 +1014,80 @@ class OwaspComplianceChecker(APIView):
         }
 
         return Response(report, status=status.HTTP_200_OK)
+
+
+# New BLT Badge Endpoints
+
+
+@api_view(["GET"])
+def view_stats(request):
+    """API endpoint to fetch view count from IP logs for the last 30 days."""
+    path = request.GET.get("path")
+    start = request.GET.get("start")
+    end = request.GET.get("end")
+    if not path or not start or not end:
+        return Response({"error": "Missing parameters (path, start, end)"}, status=400)
+
+    try:
+        start_date = timezone.datetime.fromisoformat(start)
+        end_date = timezone.datetime.fromisoformat(end)
+        view_count = IP.objects.filter(
+            path=path,
+            created__gte=start_date,
+            created__lte=end_date
+        ).count()
+        return Response({"view_count": view_count})
+    except ValueError:
+        return Response({"error": "Invalid date format"}, status=400)
+
+
+@api_view(["GET"])
+def github_issue(request, issue_number):
+    """API endpoint to fetch GitHubIssue data."""
+    repo_name = request.GET.get("repo")
+    if not repo_name:
+        return Response({"error": "Repo parameter is required"}, status=400)
+
+    try:
+        issue = GitHubIssue.objects.get(issue_id=issue_number, repo__repo_url__contains=repo_name)
+        return Response({"p2p_amount_usd": float(issue.p2p_amount_usd or 0)})
+    except GitHubIssue.DoesNotExist:
+        return Response({"p2p_amount_usd": 0})
+
+
+@api_view(["GET"])
+def issue_badge(request, issue_number):
+    """Generate PNG badge for an issue showing views and bounty."""
+    views = request.GET.get("views", "0")
+    bounty = request.GET.get("bounty", "0")
+
+    # Create a simple PNG badge
+    img = Image.new("RGB", (180, 20), color="#555555")  # Gray background
+    draw = ImageDraw.Draw(img)
+    try:
+        font = ImageFont.truetype("arial.ttf", 12)  # Use a common font, ensure it's available
+    except:
+        font = ImageFont.load_default()  # Fallback to default if Arial isn't available
+
+    # Draw sections
+    draw.rectangle([(90, 0), (180, 20)], fill="#007ec6")  # Blue right half for bounty
+    draw.text((45, 10), f"Views: {views}", fill="white", font=font, anchor="mm")
+    draw.text((135, 10), f"${bounty}", fill="white", font=font, anchor="mm")
+
+    # Save to buffer
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+
+    # Log the visit
+    IP.objects.create(
+        address=request.META.get("REMOTE_ADDR", "0.0.0.0"),
+        path=request.path,
+        issuenumber=issue_number
+    )
+
+    return HttpResponse(buf.getvalue(), content_type="image/png")
+
+
+# Ensure HttpResponse is imported at the top if not already present in your Django setup
+from django.http import HttpResponse
