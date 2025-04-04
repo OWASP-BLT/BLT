@@ -2,12 +2,12 @@ name: OWASP BLT Action
 
 on:
   issues:
-    types: [opened]  # Changed from issue_comment to catch issue creation
+    types: [opened]  # Trigger on issue creation
   pull_request_review_comment:
-    types: [created]
+    types: [created]  # Trigger on PR review comments
   schedule:
     - cron: '0 0 * * *'  # Daily at midnight UTC
-  workflow_dispatch:
+  workflow_dispatch:  # Allow manual trigger
 
 jobs:
   process-issues:
@@ -18,19 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5  # Use latest Python setup action
         with:
-          node-version: '18'
-          cache: 'npm'  # Added caching for faster runs
+          python-version: '3.11'  # Specify a modern Python version
+          cache: 'pip'  # Cache pip dependencies for faster runs
       
       - name: Install Dependencies
-        run: npm ci  # More efficient than npm install
+        run: |
+          pip install requests  # Required by add_badge.py
       
       - name: Run OWASP BLT Action with Badge
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GIPHY_API_KEY: ${{ secrets.GIPHY_KEY }}
-          BLT_API_KEY: ${{ secrets.BLT_API_KEY }}
+          BLT_API_KEY: ${{ secrets.BLT_API_KEY }}  # Matches add_badge.py
         run: |
-          node .github/scripts/blt-action.js
+          python .github/scripts/add_badge.py
