@@ -811,23 +811,9 @@ class twitter:
             # Get tweet URL
             tweet_url = f"https://twitter.com/user/status/{status.id}"
 
-            # Send to Discord
-            twitter.send_to_discord(message, tweet_url, image_path)
-
-            # Send to Slack
-            twitter.send_to_slack(message, tweet_url, image_path)
-
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
             logging.error(f"Error sending tweet: {str(e)}")
-
-            # Still try to send to Discord and Slack even if Twitter fails
-            try:
-                twitter.send_to_discord(message, None, image_path, error=str(e))
-                twitter.send_to_slack(message, None, image_path, error=str(e))
-            except Exception as comm_error:
-                logging.error(f"Error sending to communication channels: {str(comm_error)}")
-
             return {"success": False, "url": None, "txid": None, "error": str(e)}
 
     @staticmethod
