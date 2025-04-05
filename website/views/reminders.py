@@ -70,4 +70,4 @@ def check_reminder_status(request):
         return time_diff <= 5
 
     except ReminderSettings.DoesNotExist:
-        return False 
+        return False

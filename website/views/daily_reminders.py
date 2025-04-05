@@ -23,4 +23,4 @@ def reminder_settings(request):
     return render(request, 'website/reminder_settings.html', {
         'form': form,
         'settings': settings
-    }) 
+    })
