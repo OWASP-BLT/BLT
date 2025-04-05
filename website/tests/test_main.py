@@ -134,6 +134,9 @@ class MySeleniumTests(LiveServerTestCase):
     @override_settings(DEBUG=True)
     def test_login(self):
         user = User.objects.create_user(username="bugbugbug", email="bugbugbug@bugbug.com", password="secret")
+        from allauth.account.models import EmailAddress
+
+        EmailAddress.objects.create(user=user, email="bugbugbug@bugbug.com", verified=True, primary=True)
         # Email verification is now handled in setUp
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
         self.selenium.find_element("name", "login").send_keys("bugbugbug@bugbug.com")
