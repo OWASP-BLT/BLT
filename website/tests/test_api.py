@@ -156,7 +156,7 @@ class APITests(APITestCase):
 
         # Now try to login to get the key
         login_payload = {
-            "username": self.USERNAME.lower(),
+            "email": self.EMAIL,
             "password": self.PASS,
         }
         login_response = self.client.post(self.login_url, data=login_payload)
