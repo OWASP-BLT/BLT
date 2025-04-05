@@ -11,19 +11,21 @@ from django.utils import timezone
 
 from website.models import ReminderSettings, UserProfile
 
-logger = logging.getLogger('reminder_emails')
-handler = logging.FileHandler('logs/reminder_emails.log')
-handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger = logging.getLogger("reminder_emails")
+handler = logging.FileHandler("logs/reminder_emails.log")
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
 logger.setLevel(logging.INFO)
+
 
 def batch(iterable, size):
     """Helper function to create batches from an iterable"""
     iterator = iter(iterable)
     return iter(lambda: list(islice(iterator, size)), [])
 
+
 class Command(BaseCommand):
-    help = 'Sends daily check-in reminders to users who haven\'t checked in today'
+    help = "Sends daily check-in reminders to users who haven't checked in today"
 
     def handle(self, *args, **options):
         now = timezone.now()
@@ -31,11 +33,7 @@ class Command(BaseCommand):
 
         # Get all active reminder settings
         # Exclude users who already received a reminder today
-        active_settings = ReminderSettings.objects.filter(
-            is_active=True
-        ).exclude(
-            last_reminder_sent__date=now.date()
-        )
+        active_settings = ReminderSettings.objects.filter(is_active=True).exclude(last_reminder_sent__date=now.date())
         users_needing_reminders = []
 
         for reminder_settings in active_settings:
@@ -46,9 +44,10 @@ class Command(BaseCommand):
                 reminder_time = reminder_settings.reminder_time
 
                 # Check if current time matches reminder time (within 5 minutes)
-                time_diff = abs((user_now.hour * 60 + user_now.minute) - 
-                              (reminder_time.hour * 60 + reminder_time.minute))
-                
+                time_diff = abs(
+                    (user_now.hour * 60 + user_now.minute) - (reminder_time.hour * 60 + reminder_time.minute)
+                )
+
                 if time_diff <= 5:  # 5-minute window
                     # Check if user has checked in today
                     try:
@@ -85,20 +84,20 @@ class Command(BaseCommand):
 
                 # Create email message
                 email = EmailMessage(
-                    subject='Daily Check-in Reminder',
-                    body='It\'s time for your daily check-in! Please log in to update your status.',
+                    subject="Daily Check-in Reminder",
+                    body="It's time for your daily check-in! Please log in to update your status.",
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     to=[settings.DEFAULT_FROM_EMAIL],  # Send to a single recipient
                     bcc=[user.email for user in user_batch],  # BCC all users in batch
                 )
-                
+
                 # Send email
                 email.send()
-                
+
                 # Update last_reminder_sent for successful batch
-                ReminderSettings.objects.filter(
-                    user_id__in=[user.id for user in user_batch]
-                ).update(last_reminder_sent=now)
+                ReminderSettings.objects.filter(user_id__in=[user.id for user in user_batch]).update(
+                    last_reminder_sent=now
+                )
 
                 successful_batches += 1
                 logger.info(f"Successfully sent batch {i} to {len(user_batch)} users")
@@ -108,10 +107,12 @@ class Command(BaseCommand):
                 logger.error(f"Error sending batch {i}: {str(e)}")
 
         # Log summary
-        logger.info(f"""
+        logger.info(
+            f"""
         Reminder Summary:
         - Total users processed: {total_users}
         - Successful batches: {successful_batches}
         - Failed batches: {failed_batches}
         - Batch size: {batch_size}
-        """) 
+        """
+        )

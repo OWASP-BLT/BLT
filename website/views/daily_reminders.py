@@ -13,16 +13,13 @@ def reminder_settings(request):
     except ReminderSettings.DoesNotExist:
         settings = ReminderSettings(user=request.user)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ReminderSettingsForm(request.POST, instance=settings)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Your reminder settings have been updated successfully.')
-            return redirect('reminder_settings')
+            messages.success(request, "Your reminder settings have been updated successfully.")
+            return redirect("reminder_settings")
     else:
         form = ReminderSettingsForm(instance=settings)
 
-    return render(request, 'website/reminder_settings.html', {
-        'form': form,
-        'settings': settings
-    })
+    return render(request, "website/reminder_settings.html", {"form": form, "settings": settings})

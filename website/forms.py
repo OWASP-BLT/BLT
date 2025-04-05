@@ -316,32 +316,30 @@ class ReminderSettingsForm(forms.ModelForm):
     reminder_time = forms.TimeField(
         widget=forms.TimeInput(
             attrs={
-                'type': 'time',
-                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm',
-                'step': '300'  # 5-minute intervals
+                "type": "time",
+                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm",
+                "step": "300",  # 5-minute intervals
             },
-            format='%H:%M'
+            format="%H:%M",
         ),
-        input_formats=['%H:%M', '%I:%M %p', '%H:%M:%S'],
-        help_text='Select your preferred daily reminder time'
+        input_formats=["%H:%M", "%I:%M %p", "%H:%M:%S"],
+        help_text="Select your preferred daily reminder time",
     )
     timezone = forms.ChoiceField(
         choices=[(tz, tz) for tz in pytz.common_timezones],
         widget=forms.Select(
             attrs={
-                'class': 'mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm'
+                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm"
             }
         ),
-        help_text='Select your timezone'
+        help_text="Select your timezone",
     )
 
     class Meta:
         model = ReminderSettings
-        fields = ['reminder_time', 'timezone', 'is_active']
+        fields = ["reminder_time", "timezone", "is_active"]
         widgets = {
-            'is_active': forms.CheckboxInput(
-                attrs={
-                    'class': 'h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded'
-                }
+            "is_active": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
             )
         }

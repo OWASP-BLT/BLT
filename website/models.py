@@ -2479,9 +2479,9 @@ class Notification(models.Model):
 
 
 class ReminderSettings(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='reminder_settings')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="reminder_settings")
     reminder_time = models.TimeField(help_text="Time of day to send reminder")
-    timezone = models.CharField(max_length=50, default='UTC', help_text="User's timezone")
+    timezone = models.CharField(max_length=50, default="UTC", help_text="User's timezone")
     is_active = models.BooleanField(default=True, help_text="Whether reminders are enabled")
     last_reminder_sent = models.DateTimeField(null=True, blank=True, help_text="When the last reminder was sent")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -2491,8 +2491,8 @@ class ReminderSettings(models.Model):
         verbose_name = "Reminder Settings"
         verbose_name_plural = "Reminder Settings"
         indexes = [
-            models.Index(fields=['is_active', 'reminder_time']),
-            models.Index(fields=['reminder_time']),
+            models.Index(fields=["is_active", "reminder_time"]),
+            models.Index(fields=["reminder_time"]),
         ]
 
     def __str__(self):

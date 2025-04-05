@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("website", "0234_githubissue_linked_pull_requests"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
