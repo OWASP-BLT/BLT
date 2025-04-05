@@ -275,7 +275,7 @@ if "DYNO" in os.environ:  # for Heroku
     EMAIL_PORT = 587
     EMAIL_USE_TLS = True
     if not TESTING:
-        SECURE_SSL_REDIRECT = True
+        SECURE_SSL_REDIRECT = False
 
     # import logging
 
