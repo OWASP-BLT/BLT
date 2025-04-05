@@ -1,8 +1,10 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
+
 from website.forms import ReminderSettingsForm
 from website.models import ReminderSettings
+
 
 @login_required
 def reminder_settings(request):

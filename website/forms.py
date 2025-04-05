@@ -1,10 +1,9 @@
+import pytz
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
 from django.db.models import Q
 from mdeditor.fields import MDTextFormField
-from website.models import ReminderSettings
-import pytz
 
 from website.models import (
     Bid,
@@ -14,6 +13,7 @@ from website.models import (
     IpReport,
     Monitor,
     Organization,
+    ReminderSettings,
     Repo,
     Room,
     UserProfile,

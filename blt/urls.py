@@ -115,6 +115,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
+from website.views.daily_reminders import reminder_settings
 from website.views.education import (
     add_lecture,
     add_section,
@@ -149,7 +150,6 @@ from website.views.hackathon import (
     HackathonUpdateView,
     refresh_repository_data,
 )
-from website.views.daily_reminders import reminder_settings
 from website.views.issue import (
     AllIssuesView,
     ContributeView,

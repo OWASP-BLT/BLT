@@ -1,13 +1,15 @@
-from django.core.management.base import BaseCommand
-from django.core.mail import EmailMessage
-from django.utils import timezone
-from django.conf import settings
-from website.models import ReminderSettings, UserProfile
 import logging
 import random
 import time
-import pytz
 from itertools import islice
+
+import pytz
+from django.conf import settings
+from django.core.mail import EmailMessage
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+
+from website.models import ReminderSettings, UserProfile
 
 logger = logging.getLogger('reminder_emails')
 handler = logging.FileHandler('logs/reminder_emails.log')
