@@ -115,7 +115,7 @@ class APITests(APITestCase):
 
     def test_login_by_email(self):
         payload = {
-            "username": self.USERNAME.lower(),
+            "email": self.EMAIL,
             "password": self.PASS,
         }
 
