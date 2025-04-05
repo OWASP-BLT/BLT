@@ -129,7 +129,7 @@ class APITests(APITestCase):
         self.token = response.json()["key"]
 
         payload = {
-            "username": self.USERNAME.lower(),
+            "username": self.EMAIL,
             "password": self.PASS,
         }
         response = self.client.post(self.login_url, data=payload)
