@@ -225,6 +225,45 @@ class OrganizationDashboardAnalyticsView(View):
             .order_by("-count")[:5],
         }
 
+    def get_threat_intelligence(self, organization):
+        """Gets threat intelligence data for the organization."""
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        # Get trending attack types based on issue labels/tags instead
+        attack_vectors = (
+            security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
+            .values("label")  # Use label instead of vulnerability_type
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+
+        # Calculate risk score (0-100)
+        total_issues = security_issues.count()
+        critical_issues = security_issues.filter(cve_score__gte=8).count()  # Use cve_score instead of severity
+        risk_score = min(100, (critical_issues / total_issues * 100) if total_issues > 0 else 0)
+
+        return {
+            "attack_vectors": [
+                {
+                    "vulnerability_type": self.get_label_name(vector["label"]),  # Convert label to readable name
+                    "count": vector["count"],
+                }
+                for vector in attack_vectors
+            ],
+            "risk_score": int(risk_score),
+            "recent_alerts": security_issues.filter(
+                created__gte=timezone.now() - timedelta(days=7),
+                cve_score__gte=7,  # Use cve_score for severity
+            ).order_by("-created")[:5],
+        }
+
+    def get_label_name(self, label_id):
+        """Convert label ID to human-readable name."""
+        return self.labels.get(label_id, "Other")
+
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
         total_bug_hunts = Hunt.objects.filter(domain__organization__id=organization).count()
@@ -413,6 +452,7 @@ class OrganizationDashboardAnalyticsView(View):
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
             "security_incidents_summary": self.get_security_incidents_summary(id),
         }
+        context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/organization_analytics.html", context=context)
 
 
