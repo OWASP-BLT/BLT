@@ -1,8 +1,22 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}
-    {{ hackathon.name }} - Hackathon
+    {{ hackathon.name }} - Hackathon | OWASP BLT
 {% endblock title %}
+{% block description %}
+    {{ hackathon.name }} - {{ hackathon.description|truncatechars:150 }}
+{% endblock description %}
+{% block og_title %}
+    {{ hackathon.name }} - OWASP BLT
+{% endblock og_title %}
+{% block og_description %}
+    {{ hackathon.name }} - {{ hackathon.description|truncatechars:200 }}
+{% endblock og_description %}
+{% block og_image %}
+    {% if hackathon.banner_image %}
+        {{ request.scheme }}://{{ request.get_host }}{{ hackathon.banner_image.url }}
+    {% endif %}
+{% endblock og_image %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">

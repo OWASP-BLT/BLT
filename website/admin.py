@@ -717,9 +717,7 @@ class QueueAdmin(admin.ModelAdmin):
         count = 0
         for queue_item in queryset:
             if not queue_item.launched:
-                queue_item.launched = True
-                queue_item.launched_at = now
-                queue_item.save()
+                queue_item.launch(now)
                 count += 1
         self.message_user(request, f"{count} queue items marked as launched.")
 

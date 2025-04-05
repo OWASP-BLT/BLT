@@ -671,6 +671,9 @@
             const receiver = document.getElementById('kudosReceiver').value;
             const linkUrl = document.getElementById('kudosLink').value.trim();
             const commentText = document.getElementById('kudosComment').value.trim();
+            const userUsername = "{{ request.user.username|default:'' }}";
+            const sender = userUsername || "{{ user.username }}";
+            console.log(sender)
             fetch("/teams/give-kudos/", { 
                 method: "POST",
                 headers: {
@@ -679,6 +682,7 @@
                 },
                 body: JSON.stringify({
                     kudosReceiver: receiver,
+                    kudosSender: sender,
                     link: linkUrl,
                     comment: commentText
                 })

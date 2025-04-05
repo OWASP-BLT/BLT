@@ -216,7 +216,6 @@ from website.views.organization import (
     add_domain_to_organization,
     add_or_update_domain,
     add_or_update_organization,
-    add_role,
     add_sizzle_checkIN,
     admin_organization_dashboard,
     admin_organization_dashboard_detail,
@@ -277,13 +276,13 @@ from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
 from website.views.social import queue_social_view
 from website.views.teams import (
+    GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
     TeamOverview,
     add_member,
     create_team,
     delete_team,
-    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -297,7 +296,6 @@ from website.views.user import (
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
-    UserProfileDetailsView,
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
@@ -305,6 +303,7 @@ from website.views.user import (
     contributors_view,
     create_wallet,
     delete_notification,
+    delete_thread,
     deletions,
     fetch_notifications,
     follow_user,
@@ -511,15 +510,9 @@ urlpatterns = [
         name="update-role",
     ),
     re_path(
-        r"^dashboard/organization/settings/role/add$",
-        add_role,
-        name="add-role",
-    ),
-    re_path(r"^dashboard/user/$", user_dashboard, name="user"),
-    re_path(
-        r"^dashboard/user/profile/(?P<slug>[^/]+)/$",
-        UserProfileDetailsView.as_view(),
-        name="user_profile",
+        r"^dashboard/user/$",
+        user_dashboard,
+        name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
@@ -996,7 +989,7 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
-    path("teams/give-kudos/", give_kudos, name="give_kudos"),
+    path("teams/give-kudos/", GiveKudosView.as_view(), name="give_kudos"),
     path(
         "similarity_scan/",
         TemplateView.as_view(template_name="similarity_scan.html"),
@@ -1098,6 +1091,7 @@ urlpatterns = [
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
+    path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
 ]
 

@@ -67,7 +67,14 @@ class UserProfileForm(forms.ModelForm):
 
 
 class UserDeleteForm(forms.Form):
-    delete = forms.BooleanField(required=True)
+    delete = forms.BooleanField(
+        required=True,
+        widget=forms.CheckboxInput(
+            attrs={
+                "class": "h-5 w-5 text-[#e74c3c] border-gray-300 rounded focus:ring-[#e74c3c]",
+            }
+        ),
+    )
 
 
 class HuntForm(forms.Form):

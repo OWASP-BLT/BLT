@@ -1,40 +1,45 @@
-{% if item.url %}
-    <div class="mb-2">
-        <a href="{{ item.url }}"
-           target="_blank"
-           class="text-[#e74c3c] hover:underline">View Tweet</a>
-    </div>
-{% endif %}
-{% if item.txid %}
-    <div class="text-xs text-gray-400 mb-2">ID: {{ item.txid }}</div>
-{% else %}
-    <div class="text-xs text-gray-400 mb-2">Transaction ID: Not available</div>
-{% endif %}
-{% if item.launched %}
-    <form hx-post="{% url 'queue_update_txid' item.id %}"
-          hx-target="#transaction-details-{{ item.id }}"
-          hx-swap="outerHTML"
-          class="mt-2">
-        {% csrf_token %}
-        <div class="flex flex-col space-y-2">
-            <input type="text"
-                   name="txid"
-                   placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
-                   class="text-xs border rounded px-2 py-1 w-full"
-                   value="{{ item.txid|default:'' }}">
-            <input type="url"
-                   name="url"
-                   placeholder="{% if item.url %}Update URL{% else %}Add URL (optional){% endif %}"
-                   class="text-xs border rounded px-2 py-1 w-full"
-                   value="{{ item.url|default:'' }}">
-            <button type="submit"
-                    class="text-xs bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-2 rounded">
-                {% if item.txid or item.url %}
-                    Update
-                {% else %}
-                    Save
-                {% endif %}
-            </button>
+<div id="transaction-details-{{ item.id }}" hx-swap="outerHTML">
+    {% if message %}
+        <div class="mb-2 px-2 py-1 text-xs rounded bg-green-100 text-green-800 border border-green-300">{{ message }}</div>
+    {% endif %}
+    {% if item.url %}
+        <div class="mb-2">
+            <a href="{{ item.url }}"
+               target="_blank"
+               class="text-[#e74c3c] hover:underline">View Tweet</a>
         </div>
-    </form>
-{% endif %}
+    {% endif %}
+    {% if item.txid %}
+        <div class="text-xs text-gray-400 mb-2">ID: {{ item.txid }}</div>
+    {% else %}
+        <div class="text-xs text-gray-400 mb-2">Transaction ID: Not available</div>
+    {% endif %}
+    {% if item.launched %}
+        <form hx-post="{% url 'queue_update_txid' item.id %}"
+              hx-target="#transaction-details-{{ item.id }}"
+              hx-swap="outerHTML"
+              class="mt-2">
+            {% csrf_token %}
+            <div class="flex flex-col space-y-2">
+                <input type="text"
+                       name="txid"
+                       placeholder="{% if item.txid %}Update Transaction ID{% else %}Add Transaction ID{% endif %}"
+                       class="text-xs border rounded px-2 py-1 w-full"
+                       value="{{ item.txid|default:'' }}">
+                <input type="url"
+                       name="url"
+                       placeholder="{% if item.url %}Update post URL{% else %}Add post URL (optional){% endif %}"
+                       class="text-xs border rounded px-2 py-1 w-full"
+                       value="{{ item.url|default:'' }}">
+                <button type="submit"
+                        class="text-xs bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-2 rounded">
+                    {% if item.txid or item.url %}
+                        Update
+                    {% else %}
+                        Save
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    {% endif %}
+</div>

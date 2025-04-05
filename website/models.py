@@ -2374,14 +2374,23 @@ class Queue(models.Model):
     def __str__(self):
         return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
 
-    def launch(self):
+    def launch(self, timestamp=None):
         """
         Mark the queue item as launched and set the launched_at timestamp.
+
+        Args:
+            timestamp (datetime, optional): Custom timestamp to use. Defaults to current time.
+
+        Returns:
+            bool: True if the item was launched, False if it was already launched
         """
-        if not self.launched:
-            self.launched = True
-            self.launched_at = timezone.now()
-            self.save()
+        # Always update the timestamp, even if already launched
+        self.launched = True
+        self.launched_at = timestamp or timezone.now()
+        self.save()
+
+        # Return whether this was a new launch or not
+        return True
 
 
 class Thread(models.Model):
