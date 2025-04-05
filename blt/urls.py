@@ -149,6 +149,7 @@ from website.views.hackathon import (
     HackathonUpdateView,
     refresh_repository_data,
 )
+from website.views.daily_reminders import reminder_settings
 from website.views.issue import (
     AllIssuesView,
     ContributeView,
@@ -1099,6 +1100,8 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
+    path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
+    path('reminder-settings/', reminder_settings, name='reminder_settings')
 ]
 
 if settings.DEBUG:
