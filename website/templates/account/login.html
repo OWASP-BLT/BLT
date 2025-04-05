@@ -51,7 +51,7 @@
                 {% if form.errors %}
                     <div class="mt-4 p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
                          role="alert">
-                        <p>{% trans "Invalid username/email or password." %}</p>
+                        <p>{% trans "Invalid email or password." %}</p>
                     </div>
                 {% endif %}
                 {% if messages %}
@@ -69,9 +69,9 @@
                                name="{{ redirect_field_name }}"
                                value="{{ redirect_field_value }}" />
                     {% endif %}
-                    <!-- Username/Email Field -->
+                    <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="id_login" class="text-sm font-semibold text-gray-500">{% trans "Username or Email" %}</label>
+                        <label for="id_login" class="text-sm font-semibold text-gray-500">{% trans "Email" %}</label>
                         <input autofocus
                                id="id_login"
                                name="login"
