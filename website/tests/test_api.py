@@ -115,7 +115,7 @@ class APITests(APITestCase):
 
     def test_login_by_email(self):
         payload = {
-            "login": self.EMAIL,
+            "email": self.EMAIL,
             "password": self.PASS,
         }
 
@@ -129,7 +129,7 @@ class APITests(APITestCase):
         self.token = response.json()["key"]
 
         payload = {
-            "login": self.EMAIL,
+            "email": self.EMAIL,
             "password": self.PASS,
         }
         response = self.client.post(self.login_url, data=payload)
@@ -156,7 +156,7 @@ class APITests(APITestCase):
 
         # Now try to login to get the key
         login_payload = {
-            "login": self.EMAIL,
+            "email": self.EMAIL,
             "password": self.PASS,
         }
         login_response = self.client.post(self.login_url, data=login_payload)
