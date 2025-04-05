@@ -1094,7 +1094,6 @@ urlpatterns = [
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
-    path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
     path('reminder-settings/', reminder_settings, name='reminder_settings')
 ]
 

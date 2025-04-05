@@ -28,7 +28,12 @@ class Command(BaseCommand):
         logger.info(f"Starting reminder process at {now}")
 
         # Get all active reminder settings
-        active_settings = ReminderSettings.objects.filter(is_active=True)
+        # Exclude users who already received a reminder today
+        active_settings = ReminderSettings.objects.filter(
+            is_active=True
+        ).exclude(
+            last_reminder_sent__date=now.date()
+        )
         users_needing_reminders = []
 
         for reminder_settings in active_settings:
@@ -48,8 +53,8 @@ class Command(BaseCommand):
                         profile = UserProfile.objects.get(user=reminder_settings.user)
                         last_checkin = profile.last_check_in
                         if last_checkin:
-                            last_checkin = last_checkin.astimezone(user_tz)
-                            if last_checkin.date() == user_now.date():
+                            # Check if user has checked in today
+                            if last_checkin == user_now.date():
                                 continue
                     except UserProfile.DoesNotExist:
                         pass
