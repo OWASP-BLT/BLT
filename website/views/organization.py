@@ -991,6 +991,15 @@ class HuntCreate(CreateView):
         self.object.save()
         return super(HuntCreate, self).form_valid(form)
 
+    def get_success_url(self):
+        try:
+            if self.object.domain and self.object.domain.organization and self.object.domain.organization.slug:
+                return reverse("organization_detail", kwargs={"slug": self.object.domain.organization.slug})
+        except AttributeError:
+            # Log the error for debugging
+            pass
+        return reverse("organization_list")
+
 
 class InboundParseWebhookView(View):
     def post(self, request, *args, **kwargs):
