@@ -77,7 +77,6 @@ class Command(BaseCommand):
                     time.sleep(random.uniform(1, 5))
 
                 # Create email message
-                logger.info([user.email for user in user_batch])
                 email = EmailMessage(
                     subject='Daily Check-in Reminder',
                     body='It\'s time for your daily check-in! Please log in to update your status.',
