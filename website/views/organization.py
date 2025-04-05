@@ -65,7 +65,7 @@ from website.models import (
     Winner,
 )
 from website.services.blue_sky_service import BlueSkyService
-from website.utils import format_timedelta, get_client_ip, get_github_issue_title
+from website.utils import format_timedelta, get_client_ip, get_github_issue_title, rebuild_safe_url, validate_file_type
 
 logger = logging.getLogger(__name__)
 
@@ -75,37 +75,21 @@ def add_domain_to_organization(request):
         try:
             domain = Domain.objects.get(id=request.POST.get("domain"))
             organization_name = request.POST.get("organization")
+            # Validate organization name: only alphanumerics, dashes, underscores, 3-30 characters
+            if not re.match(r"^[a-zA-Z0-9_-]{3,30}$", organization_name):
+                messages.error(
+                    request,
+                    "Invalid organization name. Only alphanumeric characters, dashes, and underscores are allowed (3-30 characters).",
+                )
+                return redirect("domain", slug=domain.url)
             organization = Organization.objects.filter(name=organization_name).first()
 
             if not organization:
-                url = domain.url
-                if not url.startswith(("http://", "https://")):
-                    url = "http://" + url
+                # Sanitize URL using rebuild_safe_url
+                url = rebuild_safe_url(domain.url)
 
-                # SSRF Protection: Validate the URL before making the request
-                parsed_url = urlparse(url)
-                hostname = parsed_url.netloc.split(":")[0]
-
-                # Check if hostname is a private/internal address
-                is_private = False
-
-                # Check for localhost and special domains
-                private_domains = [".local", ".internal", ".localhost"]
-                if hostname == "localhost" or any(hostname.endswith(domain) for domain in private_domains):
-                    is_private = True
-
-                # Try to parse as IP address
-                if not is_private:
-                    try:
-                        ip = ipaddress.ip_address(hostname)
-                        # Check if IP is private
-                        is_private = ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local
-                    except ValueError:
-                        # Not a valid IP address, continue with hostname checks
-                        pass
-
-                if is_private:
-                    messages.error(request, "Invalid domain: Cannot use internal or private addresses")
+                if not url:
+                    messages.error(request, "Invalid domain: Unsafe URL detected")
                     return redirect("domain", slug=domain.url)
 
                 try:
@@ -395,7 +379,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = url
+                organization.url = rebuild_safe_url(request.POST["url"])
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -415,7 +399,7 @@ class Joinorganization(TemplateView):
                 organization = Organization()
                 organization.admin = request.user
                 organization.name = name
-                organization.url = url
+                organization.url = rebuild_safe_url(request.POST["url"])
                 organization.email = email
                 organization.subscription = sub
                 organization.save()
@@ -1576,7 +1560,7 @@ def add_or_update_organization(request):
 
             organization.name = request.POST["name"]
             organization.email = request.POST["email"]
-            organization.url = request.POST["url"]
+            organization.url = rebuild_safe_url(request.POST["url"])
             organization.admin = new_admin
             organization.github = request.POST["github"]
             organization.is_active = request.POST.get("verify") == "on"
@@ -1585,11 +1569,14 @@ def add_or_update_organization(request):
                 organization.subscription = Subscription.objects.get(name=request.POST["subscription"])
             except (Subscription.DoesNotExist, KeyError):
                 pass
-
-            try:
-                organization.logo = request.FILES["logo"]
-            except KeyError:
-                pass
+            if "logo" in request.FILES:
+                organization.logo = validate_file_type(
+                    request,
+                    "logo",
+                    allowed_extensions=["jpg", "jpeg", "png", "gif"],
+                    allowed_mime_types=["image/jpeg", "image/png", "image/gif"],
+                    max_size=1048576,  # 1 MB (adjust as needed)
+                )
 
             organization.save()
             return HttpResponse("Organization updated successfully")

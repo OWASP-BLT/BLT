@@ -216,7 +216,6 @@ from website.views.organization import (
     add_domain_to_organization,
     add_or_update_domain,
     add_or_update_organization,
-    add_role,
     add_sizzle_checkIN,
     admin_organization_dashboard,
     admin_organization_dashboard_detail,
@@ -275,14 +274,15 @@ from website.views.project import (
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
+from website.views.social import queue_social_view
 from website.views.teams import (
+    GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
     TeamOverview,
     add_member,
     create_team,
     delete_team,
-    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -296,7 +296,6 @@ from website.views.user import (
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
-    UserProfileDetailsView,
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
@@ -510,15 +509,9 @@ urlpatterns = [
         name="update-role",
     ),
     re_path(
-        r"^dashboard/organization/settings/role/add$",
-        add_role,
-        name="add-role",
-    ),
-    re_path(r"^dashboard/user/$", user_dashboard, name="user"),
-    re_path(
-        r"^dashboard/user/profile/(?P<slug>[^/]+)/$",
-        UserProfileDetailsView.as_view(),
-        name="user_profile",
+        r"^dashboard/user/$",
+        user_dashboard,
+        name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
@@ -730,7 +723,7 @@ urlpatterns = [
         comments.views.reply_comment,
         name="reply_comment",
     ),
-    re_path(r"^social/$", TemplateView.as_view(template_name="social.html"), name="social"),
+    re_path(r"^social/$", queue_social_view, name="social"),
     re_path(r"^search/$", search, name="search"),
     re_path(r"^report/$", IssueCreate.as_view(), name="report"),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
@@ -995,7 +988,7 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
-    path("teams/give-kudos/", give_kudos, name="give_kudos"),
+    path("teams/give-kudos/", GiveKudosView.as_view(), name="give_kudos"),
     path(
         "similarity_scan/",
         TemplateView.as_view(template_name="similarity_scan.html"),
