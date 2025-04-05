@@ -36,8 +36,8 @@ def queue_list(request):
                 messages.error(request, "Message is required")
                 return redirect("queue_list")
 
-            if len(message) > 140:
-                messages.error(request, "Message must be 140 characters or less")
+            if len(message) > 280:
+                messages.error(request, "Message must be 280 characters or less")
                 return redirect("queue_list")
 
             queue_item = Queue(message=message, image=image)
@@ -58,8 +58,8 @@ def queue_list(request):
                 messages.error(request, "Message is required")
                 return redirect("queue_list")
 
-            if len(message) > 140:
-                messages.error(request, "Message must be 140 characters or less")
+            if len(message) > 280:
+                messages.error(request, "Message must be 280 characters or less")
                 return redirect("queue_list")
 
             queue_item.message = message

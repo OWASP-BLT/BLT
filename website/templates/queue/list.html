@@ -180,16 +180,16 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="create">
                             <div>
-                                <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message (140 characters max)</label>
+                                <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message (280 characters max)</label>
                                 <div class="relative">
                                     <textarea id="createMessage"
                                               name="message"
                                               rows="3"
                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
-                                              maxlength="140"
+                                              maxlength="280"
                                               required></textarea>
                                     <div class="absolute bottom-3 right-3 text-sm text-gray-500">
-                                        <span id="createCharCount">0</span>/140
+                                        <span id="createCharCount">0</span>/280
                                     </div>
                                 </div>
                             </div>
@@ -261,16 +261,16 @@
                             <input type="hidden" name="action" value="edit">
                             <input type="hidden" id="editQueueId" name="queue_id" value="">
                             <div>
-                                <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message (140 characters max)</label>
+                                <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message (280 characters max)</label>
                                 <div class="relative">
                                     <textarea id="editMessage"
                                               name="message"
                                               rows="3"
                                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent"
-                                              maxlength="140"
+                                              maxlength="280"
                                               required></textarea>
                                     <div class="absolute bottom-3 right-3 text-sm text-gray-500">
-                                        <span id="editCharCount">0</span>/140
+                                        <span id="editCharCount">0</span>/280
                                     </div>
                                 </div>
                             </div>
