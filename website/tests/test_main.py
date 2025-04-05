@@ -135,7 +135,7 @@ class MySeleniumTests(LiveServerTestCase):
     def test_login(self):
         # Email verification is now handled in setUp
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbug")
+        self.selenium.find_element("name", "login").send_keys("bugbugbug@bugbug.com")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
