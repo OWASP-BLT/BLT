@@ -419,23 +419,23 @@ class OrganizationDashboardAnalyticsView(View):
             "data": json.dumps(data),
             "zipped_data": zip(labels, data),
         }
-        
+
     def get_network_traffic_data(self, organization):
         """Collects and analyzes network traffic data for the organization."""
         # Get current date for time-based analysis
         current_date = timezone.now().date()
-        
+
         # Define time periods for analysis
         last_day = current_date - timedelta(days=1)
         last_week = current_date - timedelta(days=7)
         last_month = current_date - timedelta(days=30)
-        
+
         # Get server-related issues (focusing on performance and server down issues)
         server_issues = Issue.objects.filter(
             domain__organization__id=organization,
             label__in=[3, 7],  # Performance (3) and Server Down (7) labels
         )
-        
+
         # Calculate daily traffic patterns (last 30 days)
         daily_traffic = (
             server_issues.filter(created__gte=last_month)
@@ -444,70 +444,60 @@ class OrganizationDashboardAnalyticsView(View):
             .annotate(count=Count("id"))
             .order_by("day")
         )
-        
+
         # Format data for Chart.js
         traffic_dates = []
         traffic_counts = []
         for entry in daily_traffic:
             traffic_dates.append(entry["day"].strftime("%Y-%m-%d"))
             traffic_counts.append(entry["count"])
-            
+
         # Calculate response time metrics (using closed_date - created as proxy for response time)
-        resolved_issues = server_issues.filter(
-            status="closed",
-            closed_date__isnull=False
-        )
-        
-        avg_response_time = resolved_issues.aggregate(
-            avg_time=Avg(F("closed_date") - F("created"))
-        )["avg_time"]
-        
+        resolved_issues = server_issues.filter(status="closed", closed_date__isnull=False)
+
+        avg_response_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+
         # Calculate error rates by domain
         domain_error_rates = (
-            server_issues
-            .values("domain__name")
-            .annotate(error_count=Count("id"))
-            .order_by("-error_count")
+            server_issues.values("domain__name").annotate(error_count=Count("id")).order_by("-error_count")
         )
-        
+
         # Get hourly distribution of issues
         hourly_distribution = (
-            server_issues
-            .annotate(hour=ExtractHour("created"))
+            server_issues.annotate(hour=ExtractHour("created"))
             .values("hour")
             .annotate(count=Count("id"))
             .order_by("hour")
         )
-        
+
         hours = []
         hourly_counts = []
         for entry in hourly_distribution:
             hours.append(entry["hour"])
             hourly_counts.append(entry["count"])
-        
+
         # Calculate peak traffic times
         peak_hour = 0
         peak_count = 0
         if hourly_counts:
             peak_hour = hours[hourly_counts.index(max(hourly_counts))]
             peak_count = max(hourly_counts)
-        
+
         # Calculate recent traffic metrics
         day_count = server_issues.filter(created__gte=last_day).count()
         week_count = server_issues.filter(created__gte=last_week).count()
         month_count = server_issues.filter(created__gte=last_month).count()
-        
+
         # Calculate week-over-week change
         prev_week_count = server_issues.filter(
-            created__gte=last_week - timedelta(days=7),
-            created__lt=last_week
+            created__gte=last_week - timedelta(days=7), created__lt=last_week
         ).count()
-        
+
         if prev_week_count == 0:
             week_over_week_change = 100 if week_count > 0 else 0
         else:
             week_over_week_change = ((week_count - prev_week_count) / prev_week_count) * 100
-        
+
         return {
             "traffic_dates": json.dumps(traffic_dates),
             "traffic_counts": json.dumps(traffic_counts),
