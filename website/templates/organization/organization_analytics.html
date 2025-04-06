@@ -1,413 +1,432 @@
 {% extends "organization/organization_dashboard_base.html" %}
 {% load static %}
 {% load custom_tags %}
-
 {% block title %}
-  Organization Analytics | {% env 'PROJECT_NAME' %}
+    Organization Analytics | {% env 'PROJECT_NAME' %}
 {% endblock title %}
-
 {% block body %}
-  {% block edit_link %}
-    <div class="bottom-right">
-      <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
-        <i class="fab fa-github"></i>
-      </a>
-      <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
-        <i class="fab fa-figma"></i>
-      </a>
-    </div>
-  {% endblock edit_link %}
-
-  <div class="bg-[#F3F5F7] pb-10">
-    <div class="w-full mt-5">
-      <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Dashboard</p>
-    </div>
-    <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
-      <div class="flex justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
-        <div class="flex justify-evenly items-center w-[100%] h-[70%]">
-          <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-            <i class="fa-solid fa-bug fa-2x text-black"></i>
-          </div>
-          <div>
-            <a href="{% url 'organization_manage_bugs' organization %}">
-              <p class="text-black text-3xl font-bold">{{ total_info.total_organization_bugs }}</p>
-              <p class="text-black text-md font-extralight">Total Bugs</p>
+    {% block edit_link %}
+        <div class="bottom-right">
+            <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/organization/organization_analytics.html">
+                <i class="fab fa-github"></i>
             </a>
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
-        <div class="flex justify-evenly items-center w-[100%] h-[70%]">
-          <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-            <i class="fa-sharp fa-solid fa-flag fa-2x text-black"></i>
-          </div>
-          <div>
-            <a href="{% url 'organization_manage_bughunts' organization %}">
-              <p class="text-black text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
-              <p class="text-black text-md font-extralight">Bug Bounties</p>
+            <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design?node-id=3%3A76&t=pqxWpF3hcYxjEDrs-1">
+                <i class="fab fa-figma"></i>
             </a>
-          </div>
         </div>
-      </div>
-      <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
-        <div class="flex justify-evenly items-center w-[100%] h-[70%]">
-          <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-            <i class="fa-sharp fa-solid fa-globe fa-2x text-black"></i>
-          </div>
-          <div>
-            <a href="{% url 'organization_manage_domains' organization %}">
-              <p class="text-black text-3xl font-bold">{{ total_info.total_domains }}</p>
-              <p class="text-black text-md font-extralight">Domains</p>
-            </a>
-          </div>
+    {% endblock edit_link %}
+    <div class="bg-[#F3F5F7] pb-10">
+        <div class="w-full mt-5">
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Dashboard</p>
         </div>
-      </div>
-      <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
-        <div class="flex justify-evenly items-center w-[100%] h-[70%]">
-          <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-            <i class="fa-sharp fa-solid fa-dollar-sign fa-2x text-black"></i>
-          </div>
-          <div>
-            <p class="text-black text-3xl font-bold">$ {{ total_info.total_money_distributed }}</p>
-            <p class="text-black text-md font-extralight">Money Distributed</p>
-          </div>
+        <div class="flex flex-col lg:flex-row gap-5 justify-center lg:justify-between w-full gap-y-4 px-8 mt-4 items-center">
+            <div class="flex justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
+                        <i class="fa-solid fa-bug fa-2x text-black"></i>
+                    </div>
+                    <div>
+                        <a href="{% url 'organization_manage_bugs' organization %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_organization_bugs }}</p>
+                            <p class="text-black text-md font-extralight">Total Bugs</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
+                        <i class="fa-sharp fa-solid fa-flag fa-2x text-black"></i>
+                    </div>
+                    <div>
+                        <a href="{% url 'organization_manage_bughunts' organization %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_bug_hunts }}</p>
+                            <p class="text-black text-md font-extralight">Bug Bounties</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
+                        <i class="fa-sharp fa-solid fa-globe fa-2x text-black"></i>
+                    </div>
+                    <div>
+                        <a href="{% url 'organization_manage_domains' organization %}">
+                            <p class="text-black text-3xl font-bold">{{ total_info.total_domains }}</p>
+                            <p class="text-black text-md font-extralight">Domains</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
+                        <i class="fa-sharp fa-solid fa-dollar-sign fa-2x text-black"></i>
+                    </div>
+                    <div>
+                        <p class="text-black text-3xl font-bold">$ {{ total_info.total_money_distributed }}</p>
+                        <p class="text-black text-md font-extralight">Money Distributed</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
+                <div class="flex justify-evenly items-center w-[100%] h-[70%]">
+                    <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
+                        <i class="fa-solid fa-shield-halved fa-2x text-black"></i>
+                    </div>
+                    <div>
+                        <a href="#security-incidents">
+                            <p class="text-black text-3xl font-bold">{{ security_incidents_summary.total_security_issues }}</p>
+                            <p class="text-black text-md font-extralight">Security Issues</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="flex flex-wrap justify-center items-center bg-white w-[340px] h-[172px] rounded-xl hover:scale-110 transition-all">
-        <div class="flex justify-evenly items-center w-[100%] h-[70%]">
-          <div class="flex justify-center items-center w-[90px] h-[90px] bg-red-200 rounded-[50px]">
-            <i class="fa-solid fa-shield-halved fa-2x text-black"></i>
-          </div>
-          <div>
-            <a href="#security-incidents">
-              <p class="text-black text-3xl font-bold">{{ security_incidents_summary.total_security_issues }}</p>
-              <p class="text-black text-md font-extralight">Security Issues</p>
-            </a>
-          </div>
+        <div class="flex flex-col lg:flex-row gap-y-5 mt-4">
+            <div class="flex flex-col ps-8 gap-5">
+                <div class="flex flex-col lg:flex-row gap-5 bg-[#F3F5F7]">
+                    <div class="bg-white p-5 rounded-xl lg:w-[56vh]">
+                        <div class="header-container">
+                            <h3 class="section-header">Bug Reported Type</h3>
+                        </div>
+                        <div class="pie-chart w-full h-[90%]">
+                            <canvas id="bugTypePie" height="220px" width="660px"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl lg:w-[56vh]">
+                        <div class="header-container">
+                            <h3 class="section-header">Reported on Domains</h3>
+                        </div>
+                        <div class="pie-chart w-full h-[90%]">
+                            <canvas id="domainPie" height="220px" width="660px"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-5 rounded-xl w-full lg:w-[115vh]">
+                    <h3 class="section-header">Monthly Reports of {{ get_current_year_monthly_reported_bar_data.current_year }}</h3>
+                    <div class="bar-chart">
+                        <canvas id="myChart" height="220px" width="660px"></canvas>
+                    </div>
+                </div>
+                <div class="p-5 bg-white rounded-xl flex lg:flex-row lg:w-[115vh]">
+                    <div class="w-full">
+                        <div class="header-container">
+                            <h3 class="section-header">Total Reported</h3>
+                            {% if bug_rate_increase_descrease_weekly.is_increasing %}
+                                <svg class="up-arrow"
+                                     width="42"
+                                     height="42"
+                                     viewBox="0 0 42 42"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="42" height="42" rx="8" fill="#F6F7F9" />
+                                    <path d="M27.0702 18.57L21.0002 12.5L14.9302 18.57" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M21 29.5V12.67" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            {% else %}
+                                <svg width="42"
+                                     height="42"
+                                     viewBox="0 0 42 42"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="42" height="42" rx="8" fill="#F6F7F9" />
+                                    <path d="M27.0702 23.43L21.0002 29.5L14.9302 23.43" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M21 12.5V29.33" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <h1 class="price">
+                            {{ bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Bugs</span>
+                        </h1>
+                        <p>
+                            <span class="{% if bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
+                                {{ bug_rate_increase_descrease_weekly.percent_increase }}%
+                            </span>
+                            {% if bug_rate_increase_descrease_weekly.is_increasing %}
+                                Increasing
+                            {% else %}
+                                Decreasing
+                            {% endif %}
+                            compared to last week
+                        </p>
+                    </div>
+                    <div class="w-full">
+                        <div class="header-container">
+                            <h3 class="section-header">Accepted Bugs</h3>
+                            {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
+                                <svg class="up-arrow"
+                                     width="42"
+                                     height="42"
+                                     viewBox="0 0 42 42"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="42" height="42" rx="8" fill="#F6F7F9" />
+                                    <path d="M27.0702 18.57L21.0002 12.5L14.9302 18.57" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M21 29.5V12.67" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            {% else %}
+                                <svg width="42"
+                                     height="42"
+                                     viewBox="0 0 42 42"
+                                     fill="none"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <rect width="42" height="42" rx="8" fill="#F6F7F9" />
+                                    <path d="M27.0702 23.43L21.0002 29.5L14.9302 23.43" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M21 12.5V29.33" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            {% endif %}
+                        </div>
+                        <h1 class="price">
+                            {{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Accepted Bugs</span>
+                        </h1>
+                        <p>
+                            <span class="{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
+                                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}
+                            </span>
+                            {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
+                                Increasing
+                            {% else %}
+                                Decreasing
+                            {% endif %}
+                            compared to last week
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="mx-5 flex flex-col gap-5 lg:w-[60vh]">
+                <div class="rounded-xl bg-white p-5">
+                    <div class="header-container">
+                        <h3 class="section-header">Your balance</h3>
+                        <svg width="24"
+                             height="25"
+                             viewBox="0 0 24 25"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 10.4166C3.9 10.4166 3 11.3541 3 12.5C3 13.6458 3.9 14.5833 5 14.5833C6.1 14.5833 7 13.6458 7 12.5C7 11.3541 6.1 10.4166 5 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
+                            <path d="M19 10.4166C17.9 10.4166 17 11.3541 17 12.5C17 13.6458 17.9 14.5833 19 14.5833C20.1 14.5833 21 13.6458 21 12.5C21 11.3541 20.1 10.4166 19 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
+                            <path d="M12 10.4166C10.9 10.4166 10 11.3541 10 12.5C10 13.6458 10.9 14.5833 12 14.5833C13.1 14.5833 14 13.6458 14 12.5C14 11.3541 13.1 10.4166 12 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
+                        </svg>
+                    </div>
+                    <h1 class="price">
+                        ${{ total_info.total_money_distributed }}<span class="price-currency">(USD)</span>
+                    </h1>
+                    <p>Total money distributed to date</p>
+                </div>
+                <div class="box spending-box">
+                    <div class="header-container">
+                        <h3 class="section-header">Spent On Bug Types</h3>
+                        <svg width="24"
+                             height="25"
+                             viewBox="0 0 24 25"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 10.4166C3.9 10.4166 3 11.3541 3 12.5C3 13.6458 3.9 14.5833 5 14.5833C6.1 14.5833 7 13.6458 7 12.5C7 11.3541 6.1 10.4166 5 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
+                            <path d="M19 10.4166C17.9 10.4166 17 11.3541 17 12.5C17 13.6458 17.9 14.5833 19 14.5833C20.1 14.5833 21 13.6458 21 12.5C21 11.3541 20.1 10.4166 19 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
+                            <path d="M12 10.4166C10.9 10.4166 10 11.3541 10 12.5C10 13.6458 10.9 14.5833 12 14.5833C13.1 14.5833 14 13.6458 14 12.5C14 11.3541 13.1 10.4166 12 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
+                        </svg>
+                    </div>
+                    <div class="pie-chart">
+                        <canvas id="spentOnBugTypes" height="220px" width="220px"></canvas>
+                    </div>
+                    <div class="overall-spending">
+                        <h4>Total Spent</h4>
+                        <span>${{ total_info.total_money_distributed }}</span>
+                    </div>
+                    <div class="pie-chart__labels">
+                        {% for bugtype, money_spent in spent_on_bugtypes.zipped_data %}
+                            <div class="pie-chart__labels-item">
+                                <div class="label">
+                                    <div class="label__color first"></div>
+                                    {{ bugtype }}
+                                </div>
+                                ${{ money_spent }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+        <!-- Security Incidents Summary Section -->
+        <div id="security-incidents" class="w-full px-8 mt-8">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Security Incidents Summary</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Recent Incidents -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Incidents (30 days)</h3>
+                        <p class="text-3xl font-bold text-red-600">{{ security_incidents_summary.recent_incidents }}</p>
+                    </div>
+                    <!-- Average Resolution Time -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Avg Resolution Time</h3>
+                        <p class="text-3xl font-bold text-gray-700">
+                            {% if security_incidents_summary.avg_resolution_time %}
+                                {{ security_incidents_summary.avg_resolution_time|timesince }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </p>
+                    </div>
+                    <!-- Severity Distribution -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Severity Distribution</h3>
+                        <div class="space-y-2">
+                            {% for severity in security_incidents_summary.severity_distribution %}
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Level {{ severity.severity }}</span>
+                                    <span class="font-semibold">{{ severity.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Top Affected Domains -->
+                    <div class="bg-gray-50 p-4 rounded-lg md:col-span-2 lg:col-span-3">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Affected Domains</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% for domain in security_incidents_summary.top_affected_domains %}
+                                <div class="bg-white p-3 rounded-md shadow-sm">
+                                    <p class="font-medium text-gray-800">{{ domain.domain__name }}</p>
+                                    <p class="text-sm text-gray-600">{{ domain.count }} incidents</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Threat Intelligence Section -->
+        <div id="threat-intelligence" class="w-full px-8 mt-8">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Threat Intelligence</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Risk Score -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Security Risk Score</h3>
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <div>
+                                    <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}text-red-600 {% elif threat_intelligence.risk_score >= 50 %}text-yellow-600 {% else %}text-green-600{% endif %}">
+                                        {{ threat_intelligence.risk_score }}/100
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Top Attack Vectors -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Issue Categories</h3>
+                        <div class="space-y-2">
+                            {% for vector in threat_intelligence.attack_vectors %}
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">{{ vector.vulnerability_type }}</span>
+                                    <span class="font-semibold">{{ vector.count }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <!-- Recent Security Alerts -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Security Alerts</h3>
+                        <div class="space-y-3">
+                            {% for alert in threat_intelligence.recent_alerts %}
+                                <div class="flex items-center space-x-2">
+                                    <span class="w-2 h-2 rounded-full {% if alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %}"></span>
+                                    <span class="text-sm text-gray-600 truncate">{{ alert.description }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Network Traffic Analysis Section -->
+        <div id="network-traffic" class="w-full px-8 mt-8">
+            <div class="bg-white rounded-xl p-6 shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Network Traffic Analysis</h2>
+                <!-- Traffic Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Daily Traffic</h3>
+                        <div class="flex justify-center items-center w-[90px] h-[90px] bg-blue-200 rounded-[50px] mb-2">
+                            <i class="fa-solid fa-chart-line fa-2x text-black"></i>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.day_count }}</p>
+                        <p class="text-sm text-gray-500">Last 24 hours</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Weekly Traffic</h3>
+                        <div class="flex justify-center items-center w-[90px] h-[90px] bg-purple-200 rounded-[50px] mb-2">
+                            <i class="fa-solid fa-calendar-week fa-2x text-black"></i>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.week_count }}</p>
+                        <p class="text-sm text-gray-500">Last 7 days</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Peak Hour</h3>
+                        <div class="flex justify-center items-center w-[90px] h-[90px] bg-yellow-200 rounded-[50px] mb-2">
+                            <i class="fa-solid fa-bolt fa-2x text-black"></i>
+                        </div>
+                        <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.peak_hour }}:00</p>
+                        <p class="text-sm text-gray-500">{{ network_traffic_data.peak_count }} requests</p>
+                    </div>
+                </div>
+                <!-- Traffic Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-gray-200">
+                        <div class="header-container mb-4">
+                            <h3 class="section-header text-lg font-semibold">Daily Traffic Volume (30 Days)</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:300px;">
+                            <canvas id="trafficVolumeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-xl border border-gray-200">
+                        <div class="header-container mb-4">
+                            <h3 class="section-header text-lg font-semibold">Hourly Distribution</h3>
+                        </div>
+                        <div class="chart-container" style="position: relative; height:300px;">
+                            <canvas id="hourlyDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Domain Error Rates -->
+                <div class="mt-8">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Domains with Errors</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="py-3 px-4 text-left">Domain</th>
+                                    <th class="py-3 px-4 text-left">Error Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for domain in network_traffic_data.domain_error_rates %}
+                                    <tr class="border-t border-gray-200">
+                                        <td class="py-3 px-4">{{ domain.domain__name }}</td>
+                                        <td class="py-3 px-4">{{ domain.error_count }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr class="border-t border-gray-200">
+                                        <td class="py-3 px-4 text-center" colspan="2">No domain error data available</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="flex flex-col lg:flex-row gap-y-5 mt-4">
-      <div class="flex flex-col ps-8 gap-5">
-        <div class="flex flex-col lg:flex-row gap-5 bg-[#F3F5F7]">
-          <div class="bg-white p-5 rounded-xl lg:w-[56vh]">
-            <div class="header-container">
-              <h3 class="section-header">Bug Reported Type</h3>
-            </div>
-            <div class="pie-chart w-full h-[90%]">
-              <canvas id="bugTypePie" height="220px" width="660px"></canvas>
-            </div>
-          </div>
-          <div class="bg-white p-5 rounded-xl lg:w-[56vh]">
-            <div class="header-container">
-              <h3 class="section-header">Reported on Domains</h3>
-            </div>
-            <div class="pie-chart w-full h-[90%]">
-              <canvas id="domainPie" height="220px" width="660px"></canvas>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white p-5 rounded-xl w-full lg:w-[115vh]">
-          <h3 class="section-header">Monthly Reports of {{ get_current_year_monthly_reported_bar_data.current_year }}</h3>
-          <div class="bar-chart">
-            <canvas id="myChart" height="220px" width="660px"></canvas>
-          </div>
-        </div>
-        <div class="p-5 bg-white rounded-xl flex lg:flex-row lg:w-[115vh]">
-          <div class="w-full">
-            <div class="header-container">
-              <h3 class="section-header">Total Reported</h3>
-              {% if bug_rate_increase_descrease_weekly.is_increasing %}
-                <svg class="up-arrow" width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="42" height="42" rx="8" fill="#F6F7F9" />
-                  <path d="M27.0702 18.57L21.0002 12.5L14.9302 18.57" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M21 29.5V12.67" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              {% else %}
-                <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="42" height="42" rx="8" fill="#F6F7F9" />
-                  <path d="M27.0702 23.43L21.0002 29.5L14.9302 23.43" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M21 12.5V29.33" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              {% endif %}
-            </div>
-            <h1 class="price">
-              {{ bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Bugs</span>
-            </h1>
-            <p>
-              <span class="{% if bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
-                {{ bug_rate_increase_descrease_weekly.percent_increase }}%
-              </span>
-              {% if bug_rate_increase_descrease_weekly.is_increasing %}
-                Increasing
-              {% else %}
-                Decreasing
-              {% endif %}
-              compared to last week
-            </p>
-          </div>
-          <div class="w-full">
-            <div class="header-container">
-              <h3 class="section-header">Accepted Bugs</h3>
-              {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
-                <svg class="up-arrow" width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="42" height="42" rx="8" fill="#F6F7F9" />
-                  <path d="M27.0702 18.57L21.0002 12.5L14.9302 18.57" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M21 29.5V12.67" stroke="#7FB519" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              {% else %}
-                <svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="42" height="42" rx="8" fill="#F6F7F9" />
-                  <path d="M27.0702 23.43L21.0002 29.5L14.9302 23.43" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                  <path d="M21 12.5V29.33" stroke="#FF4423" stroke-width="2" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-              {% endif %}
-            </div>
-            <h1 class="price">
-              {{ accepted_bug_rate_increase_descrease_weekly.this_week_issue_count }}<span class="price-currency">Accepted Bugs</span>
-            </h1>
-            <p>
-              <span class="{% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}percentage-increase{% else %}percentage-decrease{% endif %}">
-                {{ accepted_bug_rate_increase_descrease_weekly.percent_increase }}
-              </span>
-              {% if accepted_bug_rate_increase_descrease_weekly.is_increasing %}
-                Increasing
-              {% else %}
-                Decreasing
-              {% endif %}
-              compared to last week
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="mx-5 flex flex-col gap-5 lg:w-[60vh]">
-        <div class="rounded-xl bg-white p-5">
-          <div class="header-container">
-            <h3 class="section-header">Your balance</h3>
-            <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 10.4166C3.9 10.4166 3 11.3541 3 12.5C3 13.6458 3.9 14.5833 5 14.5833C6.1 14.5833 7 13.6458 7 12.5C7 11.3541 6.1 10.4166 5 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
-              <path d="M19 10.4166C17.9 10.4166 17 11.3541 17 12.5C17 13.6458 17.9 14.5833 19 14.5833C20.1 14.5833 21 13.6458 21 12.5C21 11.3541 20.1 10.4166 19 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
-              <path d="M12 10.4166C10.9 10.4166 10 11.3541 10 12.5C10 13.6458 10.9 14.5833 12 14.5833C13.1 14.5833 14 13.6458 14 12.5C14 11.3541 13.1 10.4166 12 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
-            </svg>
-          </div>
-          <h1 class="price">
-            ${{ total_info.total_money_distributed }}<span class="price-currency">(USD)</span>
-          </h1>
-          <p>Total money distributed to date</p>
-        </div>
-        <div class="box spending-box">
-          <div class="header-container">
-            <h3 class="section-header">Spent On Bug Types</h3>
-            <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 10.4166C3.9 10.4166 3 11.3541 3 12.5C3 13.6458 3.9 14.5833 5 14.5833C6.1 14.5833 7 13.6458 7 12.5C7 11.3541 6.1 10.4166 5 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
-              <path d="M19 10.4166C17.9 10.4166 17 11.3541 17 12.5C17 13.6458 17.9 14.5833 19 14.5833C20.1 14.5833 21 13.6458 21 12.5C21 11.3541 20.1 10.4166 19 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
-              <path d="M12 10.4166C10.9 10.4166 10 11.3541 10 12.5C10 13.6458 10.9 14.5833 12 14.5833C13.1 14.5833 14 13.6458 14 12.5C14 11.3541 13.1 10.4166 12 10.4166Z" stroke="#1A202C" stroke-width="1.5" />
-            </svg>
-          </div>
-          <div class="pie-chart">
-            <canvas id="spentOnBugTypes" height="220px" width="220px"></canvas>
-          </div>
-          <div class="overall-spending">
-            <h4>Total Spent</h4>
-            <span>${{ total_info.total_money_distributed }}</span>
-          </div>
-          <div class="pie-chart__labels">
-            {% for bugtype, money_spent in spent_on_bugtypes.zipped_data %}
-              <div class="pie-chart__labels-item">
-                <div class="label">
-                  <div class="label__color first"></div>
-                  {{ bugtype }}
-                </div>
-                ${{ money_spent }}
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Security Incidents Summary Section -->
-    <div id="security-incidents" class="w-full px-8 mt-8">
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Security Incidents Summary</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Recent Incidents -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Incidents (30 days)</h3>
-            <p class="text-3xl font-bold text-red-600">{{ security_incidents_summary.recent_incidents }}</p>
-          </div>
-          <!-- Average Resolution Time -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Avg Resolution Time</h3>
-            <p class="text-3xl font-bold text-gray-700">
-              {% if security_incidents_summary.avg_resolution_time %}
-                {{ security_incidents_summary.avg_resolution_time|timesince }}
-              {% else %}
-                N/A
-              {% endif %}
-            </p>
-          </div>
-          <!-- Severity Distribution -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Severity Distribution</h3>
-            <div class="space-y-2">
-              {% for severity in security_incidents_summary.severity_distribution %}
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">Level {{ severity.severity }}</span>
-                  <span class="font-semibold">{{ severity.count }}</span>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-          <!-- Top Affected Domains -->
-          <div class="bg-gray-50 p-4 rounded-lg md:col-span-2 lg:col-span-3">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Affected Domains</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {% for domain in security_incidents_summary.top_affected_domains %}
-                <div class="bg-white p-3 rounded-md shadow-sm">
-                  <p class="font-medium text-gray-800">{{ domain.domain__name }}</p>
-                  <p class="text-sm text-gray-600">{{ domain.count }} incidents</p>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Threat Intelligence Section -->
-    <div id="threat-intelligence" class="w-full px-8 mt-8">
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Threat Intelligence</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Risk Score -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Security Risk Score</h3>
-            <div class="relative pt-1">
-              <div class="flex mb-2 items-center justify-between">
-                <div>
-                  <span class="text-3xl font-bold inline-block py-1 px-2 rounded-full {% if threat_intelligence.risk_score >= 75 %}text-red-600 {% elif threat_intelligence.risk_score >= 50 %}text-yellow-600 {% else %}text-green-600{% endif %}">
-                    {{ threat_intelligence.risk_score }}/100
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Top Attack Vectors -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Top Issue Categories</h3>
-            <div class="space-y-2">
-              {% for vector in threat_intelligence.attack_vectors %}
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-600">{{ vector.vulnerability_type }}</span>
-                  <span class="font-semibold">{{ vector.count }}</span>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-          <!-- Recent Security Alerts -->
-          <div class="bg-gray-50 p-4 rounded-lg">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Recent Security Alerts</h3>
-            <div class="space-y-3">
-              {% for alert in threat_intelligence.recent_alerts %}
-                <div class="flex items-center space-x-2">
-                  <span class="w-2 h-2 rounded-full {% if alert.cve_score >= 8 %}bg-red-500{% elif alert.cve_score >= 5 %}bg-yellow-500{% else %}bg-orange-500{% endif %}"></span>
-                  <span class="text-sm text-gray-600 truncate">{{ alert.description }}</span>
-                </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Network Traffic Analysis Section -->
-    <div id="network-traffic" class="w-full px-8 mt-8">
-      <div class="bg-white rounded-xl p-6 shadow-sm">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Network Traffic Analysis</h2>
-        <!-- Traffic Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Daily Traffic</h3>
-            <div class="flex justify-center items-center w-[90px] h-[90px] bg-blue-200 rounded-[50px] mb-2">
-              <i class="fa-solid fa-chart-line fa-2x text-black"></i>
-            </div>
-            <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.day_count }}</p>
-            <p class="text-sm text-gray-500">Last 24 hours</p>
-          </div>
-          <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Weekly Traffic</h3>
-            <div class="flex justify-center items-center w-[90px] h-[90px] bg-purple-200 rounded-[50px] mb-2">
-              <i class="fa-solid fa-calendar-week fa-2x text-black"></i>
-            </div>
-            <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.week_count }}</p>
-            <p class="text-sm text-gray-500">Last 7 days</p>
-          </div>
-          <div class="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-            <h3 class="text-lg font-semibold text-gray-800 mb-2">Peak Hour</h3>
-            <div class="flex justify-center items-center w-[90px] h-[90px] bg-yellow-200 rounded-[50px] mb-2">
-              <i class="fa-solid fa-bolt fa-2x text-black"></i>
-            </div>
-            <p class="text-3xl font-bold text-gray-700">{{ network_traffic_data.peak_hour }}:00</p>
-            <p class="text-sm text-gray-500">{{ network_traffic_data.peak_count }} requests</p>
-          </div>
-        </div>
-        <!-- Traffic Charts -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="bg-white p-5 rounded-xl border border-gray-200">
-            <div class="header-container mb-4">
-              <h3 class="section-header text-lg font-semibold">Daily Traffic Volume (30 Days)</h3>
-            </div>
-            <div class="chart-container" style="position: relative; height:300px;">
-              <canvas id="trafficVolumeChart"></canvas>
-            </div>
-          </div>
-          <div class="bg-white p-5 rounded-xl border border-gray-200">
-            <div class="header-container mb-4">
-              <h3 class="section-header text-lg font-semibold">Hourly Distribution</h3>
-            </div>
-            <div class="chart-container" style="position: relative; height:300px;">
-              <canvas id="hourlyDistributionChart"></canvas>
-            </div>
-          </div>
-        </div>
-        <!-- Domain Error Rates -->
-        <div class="mt-8">
-          <h3 class="text-lg font-semibold text-gray-800 mb-4">Top Domains with Errors</h3>
-          <div class="overflow-x-auto">
-            <table class="min-w-full bg-white rounded-lg overflow-hidden">
-              <thead class="bg-gray-100">
-                <tr>
-                  <th class="py-3 px-4 text-left">Domain</th>
-                  <th class="py-3 px-4 text-left">Error Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for domain in network_traffic_data.domain_error_rates %}
-                  <tr class="border-t border-gray-200">
-                    <td class="py-3 px-4">{{ domain.domain__name }}</td>
-                    <td class="py-3 px-4">{{ domain.error_count }}</td>
-                  </tr>
-                {% empty %}
-                  <tr class="border-t border-gray-200">
-                    <td class="py-3 px-4 text-center" colspan="2">No domain error data available</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 {% endblock body %}
-
 {% block js %}
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.min.js"
-    integrity="sha384-+94tm/qgImqyuSRr1vU2PjQIoot8h3qdaFB/xTawzWLRkcCWPricrBj5Xr45hCP1"
-    crossorigin="anonymous">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="{% static 'organization/js/index.js' %}"></script>
-  <script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.1/chart.min.js" integrity="sha384-+94tm/qgImqyuSRr1vU2PjQIoot8h3qdaFB/xTawzWLRkcCWPricrBj5Xr45hCP1" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'organization/js/index.js' %}"></script>
+    <script>
     // populate Chart (PIE): Bug Report  Type
     function populateBugTypePie() {
       var bugTypePie = document.getElementById("bugTypePie").getContext("2d");
@@ -680,5 +699,5 @@
     // Initialize network traffic charts
     populateTrafficVolumeChart();
     populateHourlyDistributionChart();
-  </script>
+    </script>
 {% endblock js %}
