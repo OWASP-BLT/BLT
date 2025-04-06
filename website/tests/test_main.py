@@ -40,8 +40,7 @@ class MySeleniumTests(LiveServerTestCase):
 
     @classmethod
     def setUpClass(cls):
-        super(MySeleniumTests, cls).setUpClass()
-
+        super().setUpClass()
         options = webdriver.ChromeOptions()
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
@@ -49,25 +48,49 @@ class MySeleniumTests(LiveServerTestCase):
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--disable-extensions")
-        options.add_argument("--disable-dev-tools")
-        options.add_argument("--remote-debugging-pipe")
-        options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        options.add_experimental_option("useAutomationExtension", False)
-        options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+        options.add_argument("--disable-browser-side-navigation")
+        options.add_argument("--disable-infobars")
+        options.page_load_strategy = "eager"
+        options.add_argument("--remote-debugging-port=9222")
 
         try:
             service = Service(chromedriver_autoinstaller.install())
             cls.selenium = webdriver.Chrome(service=service, options=options)
-            cls.selenium.set_page_load_timeout(30)
-            cls.selenium.implicitly_wait(30)
+            cls.selenium.set_page_load_timeout(60)
+            cls.selenium.implicitly_wait(60)
         except Exception as e:
             print(f"Error setting up Chrome: {e}")
             raise
 
+    def setUp(self):
+        """Single setUp method combining all setup logic"""
+        super().setUp()
+
+        # Clean up existing test users first
+        User.objects.filter(username__startswith="testuser_").delete()
+
+        # Create test user with unique username using timestamp
+        timestamp = int(time.time())
+        self.user = User.objects.create_user(
+            username=f"testuser_{timestamp}", email=f"testuser_{timestamp}@example.com", password="secret"
+        )
+
+        # Verify email
+        from allauth.account.models import EmailAddress
+
+        EmailAddress.objects.create(user=self.user, email=self.user.email, verified=True, primary=True)
+
+    def tearDown(self):
+        """Clean up after each test"""
+        # Clean up test users
+        User.objects.filter(username__startswith="testuser_").delete()
+        super().tearDown()
+
     @classmethod
     def tearDownClass(cls):
-        cls.selenium.quit()
-        super(MySeleniumTests, cls).tearDownClass()
+        if hasattr(cls, "selenium"):
+            cls.selenium.quit()
+        super().tearDownClass()
 
     @override_settings(DEBUG=True)
     def test_signup(self):
@@ -151,7 +174,7 @@ class MySeleniumTests(LiveServerTestCase):
         # Email verification is now handled in setUp
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbugbug@bugbug.com")
+        self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
@@ -174,13 +197,9 @@ class MySeleniumTests(LiveServerTestCase):
     @override_settings(DEBUG=True)
     def test_post_bug_domain_url(self):
         # Email verification is now handled in setUp
-        user = User.objects.create_user(username="bugbugbug", email="bugbugbug@bugbug.com", password="secret")
-        from allauth.account.models import EmailAddress
-
-        EmailAddress.objects.create(user=user, email="bugbugbug@bugbug.com", verified=True, primary=True)
         self.selenium.set_page_load_timeout(70)
         self.selenium.get("%s%s" % (self.live_server_url, "/accounts/login/"))
-        self.selenium.find_element("name", "login").send_keys("bugbugbug@bugbug.com")
+        self.selenium.find_element("name", "login").send_keys("bugbug")
         self.selenium.find_element("name", "password").send_keys("secret")
         self.selenium.find_element("name", "login_button").click()
         WebDriverWait(self.selenium, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
@@ -198,26 +217,18 @@ class MySeleniumTests(LiveServerTestCase):
         body = self.selenium.find_element("tag name", "body")
         self.assertIn("XSS Attack on Google", body.text)
 
-    def setUp(self):
-        super().setUp()
-        # Verify emails for all test users
-        self.verify_user_emails()
-
     def verify_user_emails(self):
         """Helper method to verify emails for all test users"""
         from allauth.account.models import EmailAddress
 
-        # Get all users from the fixture
         for user in User.objects.all():
-            if user.email:  # Only process users with emails
+            if user.email:
                 email_address = EmailAddress.objects.filter(user=user, email=user.email).first()
                 if email_address:
-                    # If email address exists, just verify it
                     email_address.verified = True
                     email_address.primary = True
                     email_address.save()
                 else:
-                    # Create a new verified email address
                     EmailAddress.objects.create(user=user, email=user.email, verified=True, primary=True)
 
 
