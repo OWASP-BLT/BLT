@@ -378,7 +378,7 @@
                         <div class="header-container mb-4">
                             <h3 class="section-header text-lg font-semibold">Daily Traffic Volume (30 Days)</h3>
                         </div>
-                        <div class="chart-container" style="position: relative; height:300px;">
+                        <div class="chart-container">
                             <canvas id="trafficVolumeChart"></canvas>
                         </div>
                     </div>
@@ -386,7 +386,7 @@
                         <div class="header-container mb-4">
                             <h3 class="section-header text-lg font-semibold">Hourly Distribution</h3>
                         </div>
-                        <div class="chart-container" style="position: relative; height:300px;">
+                        <div class="chart-container">
                             <canvas id="hourlyDistributionChart"></canvas>
                         </div>
                     </div>
@@ -701,3 +701,9 @@
     populateHourlyDistributionChart();
     </script>
 {% endblock js %}
+<style>
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+</style>
