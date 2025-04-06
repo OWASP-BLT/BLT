@@ -12,7 +12,7 @@ from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
 from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
-from django.db.models.functions import ExtractMonth, TruncDay, ExtractHour
+from django.db.models.functions import ExtractHour, ExtractMonth, TruncDay
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
