@@ -996,9 +996,10 @@ class HuntCreate(CreateView):
             if self.object.domain and self.object.domain.organization and self.object.domain.organization.slug:
                 return reverse("organization_detail", kwargs={"slug": self.object.domain.organization.slug})
         except AttributeError:
-            # Log the error for debugging
-            pass
-        return reverse("organization_list")
+            logger.error(
+                "AttributeError in HuntCreate.get_success_url: Unable to access organization details", exc_info=e
+            )
+        return reverse("organizations")
 
 
 class InboundParseWebhookView(View):
