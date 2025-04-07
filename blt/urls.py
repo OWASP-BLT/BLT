@@ -14,6 +14,7 @@ from django.urls import path, re_path
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.generic import TemplateView
 from django.views.generic.base import RedirectView
+from website.views import user
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
@@ -1093,6 +1094,7 @@ urlpatterns = [
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
+    path('github_webhook/', user.github_webhook, name='github_webhook'),
 ]
 
 if settings.DEBUG:

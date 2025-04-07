@@ -24,6 +24,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView, View
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from website.models import HackathonPR, Repo, UserProfile
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -840,42 +843,77 @@ def badge_user_list(request, badge_id):
 
 
 @csrf_exempt
+@require_POST
 def github_webhook(request):
-    if request.method == "POST":
-        # Validate GitHub signature
-        # this doesn't seem to work?
-        # signature = request.headers.get("X-Hub-Signature-256")
-        # if not validate_signature(request.body, signature):
-        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
-
+    try:
         payload = json.loads(request.body)
-        event_type = request.headers.get("X-GitHub-Event", "")
+        event_type = request.headers.get('X-GitHub-Event')
 
-        event_handlers = {
-            "pull_request": handle_pull_request_event,
-            "push": handle_push_event,
-            "pull_request_review": handle_review_event,
-            "issues": handle_issue_event,
-            "status": handle_status_event,
-            "fork": handle_fork_event,
-            "create": handle_create_event,
-        }
+        if event_type == 'pull_request':
+            return handle_pull_request_event(payload)
 
-        handler = event_handlers.get(event_type)
-        if handler:
-            return handler(payload)
-        else:
-            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
+        return JsonResponse({'status': 'event not handled'}, status=200)
 
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON payload received")
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
 
 def handle_pull_request_event(payload):
-    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
+    pr_data = payload["pull_request"]
+    repo_url = pr_data["base"]["repo"]["html_url"]
+    pr_number = pr_data["number"]
+    pr_title = pr_data["title"]
+    pr_url = pr_data["html_url"]
+    author_url = pr_data["user"]["html_url"]
+    author_name = pr_data["user"]["login"]
+    author_avatar = pr_data["user"]["avatar_url"]
+    created_at = datetime.fromisoformat(pr_data["created_at"].replace("Z", "+00:00"))
+    updated_at = datetime.fromisoformat(pr_data["updated_at"].replace("Z", "+00:00"))
+
+    # Determine PR state
+    state = "open"
+    if pr_data["state"] == "closed":
+        state = "merged" if pr_data["merged"] else "closed"
+
+    # Find the repository and associated active hackathons
+    try:
+        repo = Repo.objects.get(repo_url=repo_url)
+        hackathons = repo.hackathons.filter(is_active=True)
+
+        for hackathon in hackathons:
+            HackathonPR.objects.update_or_create(
+                repo=repo,
+                pr_number=pr_number,
+                hackathon=hackathon,
+                defaults={
+                    'pr_title': pr_title,
+                    'pr_url': pr_url,
+                    'author_url': author_url,
+                    'author_name': author_name,
+                    'author_avatar': author_avatar,
+                    'state': state,
+                    'created_at': created_at,
+                    'updated_at': updated_at
+                }
+            )
+
+        if hackathons.exists():
+            logger.info(f"Updated PR #{pr_number} for {hackathons.count()} hackathons")
+
+    except Repo.DoesNotExist:
+        logger.warning(f"Repository not found for URL: {repo_url}")
+    except Exception as e:
+        logger.error(f"Error processing PR event: {str(e)}")
+
+    if payload["action"] == "closed" and pr_data["merged"]:
+        pr_user_profile = UserProfile.objects.filter(github_url=author_url).first()
         if pr_user_profile:
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
+
     return JsonResponse({"status": "success"}, status=200)
 
 

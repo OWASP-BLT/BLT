@@ -2350,6 +2350,29 @@ class HackathonPrize(models.Model):
     def __str__(self):
         return f"{self.get_position_display()} - {self.title} ({self.hackathon.name})"
 
+class HackathonPR(models.Model):
+    hackathon = models.ForeignKey('Hackathon', on_delete=models.CASCADE, related_name='pull_requests')
+    repo = models.ForeignKey('Repo', on_delete=models.CASCADE, related_name='hackathon_prs')
+    pr_number = models.IntegerField()
+    pr_title = models.CharField(max_length=255)
+    pr_url = models.URLField()
+    author_url = models.URLField()
+    author_name = models.CharField(max_length=100)
+    author_avatar = models.URLField(null=True, blank=True)
+    state = models.CharField(max_length=20, choices=[
+        ('open', 'Open'),
+        ('closed', 'Closed'),
+        ('merged', 'Merged')
+    ])
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+
+    class Meta:
+        unique_together = ('repo', 'pr_number')
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"PR #{self.pr_number}: {self.pr_title} ({self.repo.name})"
 
 class Queue(models.Model):
     """
