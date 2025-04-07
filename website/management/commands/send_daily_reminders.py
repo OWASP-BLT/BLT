@@ -1,9 +1,7 @@
 import logging
 import random
-import time
 from itertools import islice
 
-import pytz
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand
