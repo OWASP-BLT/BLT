@@ -2480,10 +2480,10 @@ class Notification(models.Model):
 
 
 class ReminderSettings(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='reminder_settings')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="reminder_settings")
     reminder_time = models.TimeField(help_text="Time to send daily reminders (in user's timezone)")
     reminder_time_utc = models.TimeField(help_text="Time to send daily reminders (in UTC)", null=True, blank=True)
-    timezone = models.CharField(max_length=50, default='UTC')
+    timezone = models.CharField(max_length=50, default="UTC")
     is_active = models.BooleanField(default=True, help_text="Enable/disable daily reminders")
     last_reminder_sent = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -2493,8 +2493,8 @@ class ReminderSettings(models.Model):
         verbose_name = "Reminder Settings"
         verbose_name_plural = "Reminder Settings"
         indexes = [
-            models.Index(fields=['is_active']),
-            models.Index(fields=['reminder_time_utc']),
+            models.Index(fields=["is_active"]),
+            models.Index(fields=["reminder_time_utc"]),
         ]
 
     def __str__(self):
@@ -2515,6 +2515,6 @@ class ReminderSettings(models.Model):
 
     @classmethod
     def get_timezone_choices(cls):
-        if not hasattr(cls, '_timezone_choices'):
+        if not hasattr(cls, "_timezone_choices"):
             cls._timezone_choices = [(tz, tz) for tz in pytz.common_timezones]
         return cls._timezone_choices
