@@ -29,38 +29,58 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         now = timezone.now()
-        logger.info(f"Starting reminder process at {now}")
+        logger.info(f"Starting reminder process at {now} (UTC)")
 
-        # Get all active reminder settings
+        # Calculate the current 15-minute window in UTC
+        current_hour = now.hour
+        current_minute = now.minute
+        window_start_minute = (current_minute // 15) * 15
+        window_end_minute = window_start_minute + 15
+        
+        # Handle minute overflow
+        window_end_hour = current_hour
+        if window_end_minute >= 60:
+            window_end_minute = window_end_minute - 60
+            window_end_hour = current_hour + 1
+            if window_end_hour >= 24:
+                window_end_hour = 0
+        
+        # Convert to time objects for database filtering
+        from datetime import time
+        window_start_time = time(hour=current_hour, minute=window_start_minute)
+        window_end_time = time(hour=window_end_hour, minute=window_end_minute)
+        
+        logger.info(f"Current UTC time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"Processing reminders for UTC time window: {window_start_time.strftime('%H:%M')} - {window_end_time.strftime('%H:%M')}")
+        logger.info(f"Time window in minutes: {window_start_minute} - {window_end_minute}")
+
+        # Get active reminder settings within the current UTC time window
         # Exclude users who already received a reminder today
-        active_settings = ReminderSettings.objects.filter(is_active=True).exclude(last_reminder_sent__date=now.date())
+        active_settings = ReminderSettings.objects.filter(
+            is_active=True,
+            reminder_time_utc__gte=window_start_time,
+            reminder_time_utc__lt=window_end_time)
+        # ).exclude(
+        #     last_reminder_sent__date=now.date()
+        # )
+        
+        logger.info(f"Found {active_settings.count()} users with reminders in current UTC time window")
+        
         users_needing_reminders = []
 
         for reminder_settings in active_settings:
             try:
-                # Convert reminder time to user's timezone
-                user_tz = pytz.timezone(reminder_settings.timezone)
-                user_now = now.astimezone(user_tz)
-                reminder_time = reminder_settings.reminder_time
+                # Check if user has checked in today
+                try:
+                    profile = UserProfile.objects.get(user=reminder_settings.user)
+                    last_checkin = profile.last_check_in
+                        # if last_checkin and last_checkin == now.date():
+                        #     continue
+                except UserProfile.DoesNotExist:
+                    pass
 
-                # Check if current time matches reminder time (within 5 minutes)
-                time_diff = abs(
-                    (user_now.hour * 60 + user_now.minute) - (reminder_time.hour * 60 + reminder_time.minute)
-                )
-
-                if time_diff <= 5:  # 5-minute window
-                    # Check if user has checked in today
-                    try:
-                        profile = UserProfile.objects.get(user=reminder_settings.user)
-                        last_checkin = profile.last_check_in
-                        if last_checkin:
-                            # Check if user has checked in today
-                            if last_checkin == user_now.date():
-                                continue
-                    except UserProfile.DoesNotExist:
-                        pass
-
-                    users_needing_reminders.append(reminder_settings.user)
+                users_needing_reminders.append(reminder_settings.user)
+                logger.info(f"User {reminder_settings.user.username} added to reminder list for time {reminder_settings.reminder_time} ({reminder_settings.timezone})")
 
             except Exception as e:
                 logger.error(f"Error processing user {reminder_settings.user.username}: {str(e)}")

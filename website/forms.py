@@ -318,13 +318,13 @@ class ReminderSettingsForm(forms.ModelForm):
             attrs={
                 "type": "time",
                 "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm",
-                "step": "300",  # 5-minute intervals
             },
             format="%H:%M",
         ),
         input_formats=["%H:%M", "%I:%M %p", "%H:%M:%S"],
-        help_text="Select your preferred daily reminder time",
+        help_text="Select your preferred daily reminder time. Note: Notifications may be delayed by up to 15 minutes."
     )
+
     timezone = forms.ChoiceField(
         choices=[(tz, tz) for tz in pytz.common_timezones],
         widget=forms.Select(
