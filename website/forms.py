@@ -322,7 +322,7 @@ class ReminderSettingsForm(forms.ModelForm):
             format="%H:%M",
         ),
         input_formats=["%H:%M", "%I:%M %p", "%H:%M:%S"],
-        help_text="Select your preferred daily reminder time. Note: Notifications may be delayed by up to 15 minutes."
+        help_text="Select your preferred daily reminder time. Note: Notifications may be delayed by up to 15 minutes.",
     )
 
     timezone = forms.ChoiceField(
