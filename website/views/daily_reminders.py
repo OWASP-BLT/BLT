@@ -1,9 +1,10 @@
+from datetime import datetime
+
+import pytz
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect, render
 from django.utils import timezone
-import pytz
-from datetime import datetime
 
 from website.forms import ReminderSettingsForm
 from website.models import ReminderSettings
