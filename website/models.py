@@ -511,7 +511,7 @@ class Issue(models.Model):
             prefix
             + self.domain_title
             + spacer
-            + self.description[: 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))]
+            + self.description[: 280 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))]
             + issue_link
         )
         return msg
@@ -633,7 +633,7 @@ def update_issue_image_access(sender, instance, **kwargs):
                 screenshot.save()
 
 
-TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
+TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 280)
 
 
 class Winner(models.Model):
@@ -2356,7 +2356,7 @@ class Queue(models.Model):
     Model to store queue items with a message, image, and launch status.
     """
 
-    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    message = models.CharField(max_length=280, help_text="Message limited to 280 characters")
     image = models.ImageField(upload_to="queue_images", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
