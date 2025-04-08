@@ -25,7 +25,21 @@
                             <div class="flex-1">
                                 <p class="text-sm font-medium">{{ message.username }}</p>
                                 <p class="text-sm text-gray-700">{{ message.content }}</p>
-                                <span class="text-xs text-gray-500">{{ message.timestamp|naturaltime }}</span>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-xs text-gray-500">{{ message.timestamp|naturaltime }}</span>
+                                    <div class="reactions-container flex items-center gap-1">
+                                        {% if message.reactions %}
+                                            <script>
+                                                document.addEventListener('DOMContentLoaded', function() {
+                                                    updateReactions('{{ message.id }}', JSON.parse('{{ message.reactions|escapejs }}'));
+                                                });
+                                            </script>
+                                        {% endif %}
+                                    </div>
+                                    <button class="add-reaction-btn text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200">
+                                        <span class="emoji-button">😀</span>
+                                    </button>
+                                </div>
                             </div>
                             {% if request.user.is_authenticated and message.user == request.user %}
                                 <button class="delete-message-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700">
@@ -43,7 +57,21 @@
                 {% endfor %}
             </div>
         </div>
-        <form id="chat-form" class="mt-4 flex gap-2">
+        <!-- Emoji Picker Modal -->
+        <div id="emoji-picker"
+             class="hidden fixed z-50 p-4 bg-white rounded-lg shadow-xl border border-gray-200">
+            <div class="grid grid-cols-8 gap-2">
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="👍">👍</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="❤️">❤️</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="😊">😊</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="😂">😂</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="🎉">🎉</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="🚀">🚀</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="👏">👏</button>
+                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="🔥">🔥</button>
+            </div>
+        </div>
+        <form id="chat-form" class="mt-4 flex gap-2" onsubmit="return false;">
             <input type="text"
                    id="message-input"
                    class="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
@@ -63,7 +91,8 @@ let chatSocket = null;
 let isConnecting = false;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
-const reconnectDelay = 2000; // 2 seconds
+const reconnectDelay = 2000;
+let activeEmojiButton = null;
 
 const connectionStatus = document.getElementById('connection-status');
 const connectionText = document.getElementById('connection-text');
@@ -71,6 +100,7 @@ const messageInput = document.getElementById('message-input');
 const chatForm = document.getElementById('chat-form');
 const messagesContainer = document.getElementById('messages-container');
 const logHistory = document.getElementById('log-history');
+const emojiPicker = document.getElementById('emoji-picker');
 
 function updateConnectionStatus(connected) {
     if (connected) {
@@ -83,6 +113,144 @@ function updateConnectionStatus(connected) {
         connectionText.textContent = 'Disconnected';
         connectionText.className = 'text-sm text-red-600';
         messageInput.disabled = true;
+    }
+}
+
+function showEmojiPicker(button, messageId) {
+    const buttonRect = button.getBoundingClientRect();
+    emojiPicker.style.position = 'absolute';
+    emojiPicker.style.left = `${buttonRect.left}px`;
+    emojiPicker.style.top = `${buttonRect.bottom + 5}px`;
+    emojiPicker.classList.remove('hidden');
+    activeEmojiButton = { button, messageId };
+
+    // Close emoji picker when clicking outside
+    document.addEventListener('click', closeEmojiPickerOnClickOutside);
+}
+
+function closeEmojiPicker() {
+    emojiPicker.classList.add('hidden');
+    activeEmojiButton = null;
+    document.removeEventListener('click', closeEmojiPickerOnClickOutside);
+}
+
+function closeEmojiPickerOnClickOutside(event) {
+    if (!emojiPicker.contains(event.target) && !event.target.closest('.add-reaction-btn')) {
+        closeEmojiPicker();
+    }
+}
+
+function addReaction(messageId, emoji) {
+    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) return;
+    
+    chatSocket.send(JSON.stringify({
+        'type': 'add_reaction',
+        'message_id': messageId,
+        'emoji': emoji,
+        'room_id': '{{ room.id }}'
+    }));
+    
+    closeEmojiPicker();
+}
+
+function updateReactions(messageId, reactions) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (!messageElement) return;
+
+    const reactionsContainer = messageElement.querySelector('.reactions-container');
+    reactionsContainer.innerHTML = '';
+
+    Object.entries(reactions).forEach(([emoji, users]) => {
+        const reactionButton = document.createElement('button');
+        reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
+        reactionButton.innerHTML = `
+            <span class="mr-1">${emoji}</span>
+            <span class="text-xs text-gray-600">${users.length}</span>
+        `;
+        reactionButton.onclick = () => addReaction(messageId, emoji);
+        reactionsContainer.appendChild(reactionButton);
+    });
+}
+
+function appendMessage(data) {
+    if (!messagesContainer) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
+    messageDiv.dataset.messageId = data.message_id;
+    
+    const isCurrentUser = data.username === '{{ request.user.username }}';
+    
+    messageDiv.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <p class="text-sm font-medium">${escapeHtml(data.username)}</p>
+                <p class="text-sm text-gray-700">${escapeHtml(data.message)}</p>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-xs text-gray-500">just now</span>
+                    <div class="reactions-container flex items-center gap-1"></div>
+                    <button class="add-reaction-btn text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200">
+                        <span class="emoji-button">😀</span>
+                    </button>
+                </div>
+            </div>
+            ${isCurrentUser ? `
+                <button class="delete-message-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    logHistory.scrollTop = logHistory.scrollHeight;
+    
+    // Add event listeners
+    if (isCurrentUser) {
+        const deleteBtn = messageDiv.querySelector('.delete-message-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => deleteMessage(data.message_id));
+        }
+    }
+
+    const addReactionBtn = messageDiv.querySelector('.add-reaction-btn');
+    if (addReactionBtn) {
+        addReactionBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showEmojiPicker(addReactionBtn, data.message_id);
+        });
+    }
+
+    // Update reactions if any exist
+    if (data.reactions) {
+        updateReactions(data.message_id, data.reactions);
+    }
+}
+
+function handleWebSocketMessage(event) {
+    try {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+            case 'chat_message':
+                appendMessage(data);
+                break;
+            case 'delete_message':
+                handleDeleteMessage(data);
+                break;
+            case 'connection_status':
+                updateConnectionStatus(data.status === 'connected');
+                break;
+            case 'reaction_update':
+                updateReactions(data.message_id, data.reactions);
+                break;
+            case 'error':
+                break;
+        }
+    } catch (error) {
+        // Error handling
     }
 }
 
@@ -130,68 +298,6 @@ function connectWebSocket() {
     }
 }
 
-function handleWebSocketMessage(event) {
-    try {
-        const data = JSON.parse(event.data);
-        
-        switch (data.type) {
-            case 'chat_message':
-                appendMessage(data);
-                break;
-            case 'delete_message':
-                handleDeleteMessage(data);
-                break;
-            case 'connection_status':
-                updateConnectionStatus(data.status === 'connected');
-                break;
-            case 'error':
-                break;
-        }
-    } catch (error) {
-        // Error handling
-    }
-}
-
-function appendMessage(data) {
-    if (!messagesContainer) return;
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
-    messageDiv.dataset.messageId = data.message_id;
-    
-    const isCurrentUser = data.username === '{{ request.user.username }}';
-    
-    messageDiv.innerHTML = `
-        <div class="flex items-start justify-between">
-            <div class="flex-1">
-                <p class="text-sm font-medium">${escapeHtml(data.username)}</p>
-                <p class="text-sm text-gray-700">${escapeHtml(data.message)}</p>
-                <span class="text-xs text-gray-500">just now</span>
-            </div>
-            ${isCurrentUser ? `
-                <button class="delete-message-btn opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-red-500 hover:text-red-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                </button>
-            ` : ''}
-        </div>
-    `;
-    
-    messagesContainer.appendChild(messageDiv);
-    
-    // Scroll to the new message
-    logHistory.scrollTop = logHistory.scrollHeight;
-    
-    // Add delete event listener if it's the current user's message
-    if (isCurrentUser) {
-        const deleteBtn = messageDiv.querySelector('.delete-message-btn');
-        if (deleteBtn) {
-            deleteBtn.addEventListener('click', () => deleteMessage(data.message_id));
-        }
-    }
-}
-
 function handleDeleteMessage(data) {
     const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
     if (messageElement) {
@@ -219,7 +325,7 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
-// Initialize WebSocket connection
+// Initialize WebSocket connection and other event listeners
 document.addEventListener('DOMContentLoaded', function() {
     connectWebSocket();
     
@@ -233,7 +339,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const message = messageInput.value.trim();
             if (!message) return;
             
-            // Check WebSocket connection
             if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
                 connectWebSocket();
                 return;
@@ -251,6 +356,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Set up emoji option handlers
+    document.querySelectorAll('.emoji-option').forEach(option => {
+        option.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (activeEmojiButton) {
+                addReaction(activeEmojiButton.messageId, option.dataset.emoji);
+            }
+        });
+    });
+
+    // Set up reaction buttons for existing messages
+    document.querySelectorAll('.add-reaction-btn').forEach(btn => {
+        const messageItem = btn.closest('[data-message-id]');
+        if (messageItem) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showEmojiPicker(btn, messageItem.dataset.messageId);
+            });
+        }
+    });
     
     // Set up delete message handlers
     document.querySelectorAll('.delete-message-btn').forEach(btn => {
