@@ -59,16 +59,24 @@
         </div>
         <!-- Emoji Picker Modal -->
         <div id="emoji-picker"
-             class="hidden fixed z-50 p-4 bg-white rounded-lg shadow-xl border border-gray-200">
-            <div class="grid grid-cols-8 gap-2">
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="👍">👍</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="❤️">❤️</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="😊">😊</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="😂">😂</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="🎉">🎉</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="🚀">🚀</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="👏">👏</button>
-                <button class="emoji-option p-1 hover:bg-gray-100 rounded" data-emoji="🔥">🔥</button>
+             class="hidden fixed z-50 p-4 bg-white rounded-lg shadow-xl border border-gray-200 transform transition-transform duration-200 ease-in-out max-w-[280px] sm:max-w-none">
+            <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="👍">👍</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="❤️">❤️</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="😊">😊</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="😂">😂</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="🎉">🎉</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="🚀">🚀</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="👏">👏</button>
+                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
+                        data-emoji="🔥">🔥</button>
             </div>
         </div>
         <form id="chat-form" class="mt-4 flex gap-2" onsubmit="return false;">
@@ -118,10 +126,50 @@ function updateConnectionStatus(connected) {
 
 function showEmojiPicker(button, messageId) {
     const buttonRect = button.getBoundingClientRect();
-    emojiPicker.style.position = 'absolute';
-    emojiPicker.style.left = `${buttonRect.left}px`;
-    emojiPicker.style.top = `${buttonRect.bottom + 5}px`;
-    emojiPicker.classList.remove('hidden');
+    const picker = document.getElementById('emoji-picker');
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+
+    picker.style.position = 'fixed';
+    
+    // Calculate available space
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+    const pickerHeight = 200; // Approximate height of picker
+    
+    // Position horizontally
+    if (isMobile) {
+        // Center horizontally on mobile
+        picker.style.left = '50%';
+        picker.style.transform = 'translateX(-50%)';
+    } else {
+        // Position near the button on desktop
+        const leftPosition = Math.min(
+            buttonRect.left,
+            window.innerWidth - picker.offsetWidth - 10
+        );
+        picker.style.left = `${leftPosition}px`;
+        picker.style.transform = 'none';
+    }
+    
+    // Position vertically
+    if (spaceBelow >= pickerHeight || spaceBelow >= spaceAbove) {
+        // Position below the button
+        picker.style.top = `${buttonRect.bottom + 5}px`;
+        picker.style.bottom = 'auto';
+    } else {
+        // Position above the button
+        picker.style.bottom = `${window.innerHeight - buttonRect.top + 5}px`;
+        picker.style.top = 'auto';
+    }
+    
+    // Show the picker with animation
+    picker.classList.remove('hidden');
+    picker.classList.add('opacity-0');
+    requestAnimationFrame(() => {
+        picker.classList.add('opacity-100');
+        picker.classList.remove('opacity-0');
+    });
+    
     activeEmojiButton = { button, messageId };
 
     // Close emoji picker when clicking outside
@@ -129,7 +177,15 @@ function showEmojiPicker(button, messageId) {
 }
 
 function closeEmojiPicker() {
-    emojiPicker.classList.add('hidden');
+    const picker = document.getElementById('emoji-picker');
+    picker.classList.add('opacity-0');
+    
+    // Wait for animation to complete before hiding
+    setTimeout(() => {
+        picker.classList.add('hidden');
+        picker.classList.remove('opacity-0');
+    }, 200);
+    
     activeEmojiButton = null;
     document.removeEventListener('click', closeEmojiPickerOnClickOutside);
 }
@@ -393,5 +449,20 @@ window.addEventListener('beforeunload', function() {
         chatSocket.close();
     }
 });
+
+// Add to your existing styles at the top of the file
+const styles = document.createElement('style');
+styles.textContent = `
+    #emoji-picker {
+        transition: opacity 0.2s ease-in-out;
+    }
+    #emoji-picker.opacity-0 {
+        opacity: 0;
+    }
+    #emoji-picker.opacity-100 {
+        opacity: 1;
+    }
+`;
+document.head.appendChild(styles);
     </script>
 {% endblock extra_js %}
