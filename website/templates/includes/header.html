@@ -184,6 +184,10 @@
                                         <a href="{% url 'badges' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-certificate w-5 mr-2"></i>Badges</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'reminder_settings' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bell w-5 mr-2"></i>Reminder Settings</a>
+                                    </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Language</h3>
                                 <form action="{% url 'set_language' %}"
@@ -591,6 +595,12 @@
                                 <a href="{% url 'social' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-share fa-fw"></i> {% trans "Social" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'reminder_settings' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fas fa-bell w-5"></i> {% trans "Reminder Settings" %}
                                 </a>
                             </li>
                             <li>
