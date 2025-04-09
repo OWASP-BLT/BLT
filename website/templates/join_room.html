@@ -3,6 +3,10 @@
 {% block title %}
     {{ room.name }}
 {% endblock title %}
+{% block extra_css %}
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/emoji-mart@latest/css/emoji-mart.css">
+{% endblock extra_css %}
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="max-w-4xl mx-auto py-8 px-4">
@@ -57,26 +61,18 @@
                 {% endfor %}
             </div>
         </div>
-        <!-- Emoji Picker Modal -->
+        <!-- New Emoji Picker Modal -->
         <div id="emoji-picker"
-             class="hidden fixed z-50 p-4 bg-white rounded-lg shadow-xl border border-gray-200 transform transition-transform duration-200 ease-in-out max-w-[280px] sm:max-w-none">
-            <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="👍">👍</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="❤️">❤️</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="😊">😊</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="😂">😂</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="🎉">🎉</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="🚀">🚀</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="👏">👏</button>
-                <button class="emoji-option p-2 hover:bg-gray-100 rounded text-xl"
-                        data-emoji="🔥">🔥</button>
+             class="hidden fixed z-50 transform transition-transform duration-200 ease-in-out">
+            <div class="bg-white rounded-lg shadow-xl border border-gray-200">
+                <!-- Quick Emoji Section -->
+                <div class="p-2 border-b border-gray-200">
+                    <div class="flex flex-wrap gap-2" id="quick-emojis">
+                        <!-- Quick emojis will be inserted here -->
+                    </div>
+                </div>
+                <!-- Full Picker Container -->
+                <div id="emoji-mart-container"></div>
             </div>
         </div>
         <form id="chat-form" class="mt-4 flex gap-2" onsubmit="return false;">
@@ -93,6 +89,7 @@
     </div>
 {% endblock content %}
 {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/emoji-mart@latest/dist/browser.js"></script>
     <script>
 // WebSocket connection management
 let chatSocket = null;
@@ -124,40 +121,103 @@ function updateConnectionStatus(connected) {
     }
 }
 
+const QUICK_EMOJIS = [
+    { id: 'thumbsup', emoji: '👍', name: '+1' },
+    { id: 'heart', emoji: '❤️', name: 'heart' },
+    { id: 'smile', emoji: '��', name: 'smile' },
+    { id: 'joy', emoji: '😂', name: 'joy' },
+    { id: 'tada', emoji: '🎉', name: 'tada' },
+    { id: 'rocket', emoji: '🚀', name: 'rocket' },
+    { id: 'clap', emoji: '👏', name: 'clap' },
+    { id: 'fire', emoji: '🔥', name: 'fire' },
+    { id: 'star', emoji: '⭐', name: 'star' },
+    { id: 'sparkles', emoji: '✨', name: 'sparkles' }
+];
+
+let pickerInstance = null;
+
+// Initialize emoji picker
+async function initEmojiPicker() {
+    const pickerContainer = document.getElementById('emoji-mart-container');
+    
+    // Initialize quick emojis
+    const quickEmojisContainer = document.getElementById('quick-emojis');
+    QUICK_EMOJIS.forEach(({ emoji, name }) => {
+        const button = document.createElement('button');
+        button.className = 'p-2 hover:bg-gray-100 rounded text-xl transition-colors duration-200';
+        button.innerHTML = emoji;
+        button.title = name;
+        button.onclick = () => {
+            if (activeEmojiButton) {
+                addReaction(activeEmojiButton.messageId, emoji);
+            }
+        };
+        quickEmojisContainer.appendChild(button);
+    });
+
+    // Initialize full picker
+    pickerInstance = new EmojiMart.Picker({
+        data: async () => {
+            const response = await fetch('https://cdn.jsdelivr.net/npm/@emoji-mart/data');
+            return response.json();
+        },
+        onEmojiSelect: (emoji) => {
+            if (activeEmojiButton) {
+                addReaction(activeEmojiButton.messageId, emoji.native);
+            }
+        },
+        theme: 'light',
+        set: 'native',
+        autoFocus: true,
+        showPreview: true,
+        showSkinTones: true,
+        emojiSize: 20,
+        perLine: 8,
+        maxFrequentRows: 4,
+    });
+
+    pickerContainer.appendChild(pickerInstance);
+}
+
+// Update showEmojiPicker function
 function showEmojiPicker(button, messageId) {
     const buttonRect = button.getBoundingClientRect();
     const picker = document.getElementById('emoji-picker');
-    const isMobile = window.innerWidth < 640; // sm breakpoint
+    const isMobile = window.innerWidth < 640;
+
+    // Initialize picker if not already done
+    if (!pickerInstance) {
+        initEmojiPicker();
+    }
 
     picker.style.position = 'fixed';
     
     // Calculate available space
     const spaceBelow = window.innerHeight - buttonRect.bottom;
     const spaceAbove = buttonRect.top;
-    const pickerHeight = 200; // Approximate height of picker
+    const pickerHeight = 400; // Approximate height of picker
     
     // Position horizontally
     if (isMobile) {
-        // Center horizontally on mobile
         picker.style.left = '50%';
         picker.style.transform = 'translateX(-50%)';
+        picker.style.width = '90vw';
+        picker.style.maxWidth = '400px';
     } else {
-        // Position near the button on desktop
         const leftPosition = Math.min(
             buttonRect.left,
             window.innerWidth - picker.offsetWidth - 10
         );
         picker.style.left = `${leftPosition}px`;
         picker.style.transform = 'none';
+        picker.style.width = '352px'; // Default emoji-mart width
     }
     
     // Position vertically
     if (spaceBelow >= pickerHeight || spaceBelow >= spaceAbove) {
-        // Position below the button
         picker.style.top = `${buttonRect.bottom + 5}px`;
         picker.style.bottom = 'auto';
     } else {
-        // Position above the button
         picker.style.bottom = `${window.innerHeight - buttonRect.top + 5}px`;
         picker.style.top = 'auto';
     }
@@ -171,16 +231,16 @@ function showEmojiPicker(button, messageId) {
     });
     
     activeEmojiButton = { button, messageId };
-
+    
     // Close emoji picker when clicking outside
     document.addEventListener('click', closeEmojiPickerOnClickOutside);
 }
 
+// Update closeEmojiPicker function
 function closeEmojiPicker() {
     const picker = document.getElementById('emoji-picker');
     picker.classList.add('opacity-0');
     
-    // Wait for animation to complete before hiding
     setTimeout(() => {
         picker.classList.add('hidden');
         picker.classList.remove('opacity-0');
