@@ -1612,6 +1612,78 @@ def sync_github_projects(request):
     return redirect("stats_dashboard")
 
 
+# GitHub Compliance Checks
+
+
+GITHUB_API_BASE = "https://api.github.com/repos"
+
+
+def extract_github_repo_info(url):
+    """Extract owner/repo from GitHub URL."""
+    try:
+        parts = url.strip("/").split("/")
+        owner, repo = parts[-2], parts[-1]
+        return owner, repo
+    except Exception:
+        return None, None
+
+
+def check_license(owner, repo):
+    url = f"{GITHUB_API_BASE}/{owner}/{repo}/license"
+    try:
+        resp = requests.get(url, timeout=5)
+        return resp.status_code == 200
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch license for {owner}/{repo}: {e}")
+        return False
+
+
+def check_file_exists(owner, repo, filename):
+    url = f"{GITHUB_API_BASE}/{owner}/{repo}/contents/{filename}"
+    try:
+        resp = requests.get(url, timeout=5)
+        return resp.status_code == 200
+    except requests.RequestException as e:
+        logging.error(f"Failed to check {filename} for {owner}/{repo}: {e}")
+        return False
+
+
+def fetch_readme(owner, repo):
+    url = f"{GITHUB_API_BASE}/{owner}/{repo}/readme"
+    headers = {"Accept": "application/vnd.github.v3.raw"}
+    try:
+        resp = requests.get(url, headers=headers, timeout=5)
+        if resp.status_code == 200:
+            return resp.text.lower()
+        return ""
+    except requests.RequestException as e:
+        logging.error(f"Failed to fetch README for {owner}/{repo}: {e}")
+        return ""
+
+
+def run_basic_compliance_checks(github_url):
+    owner, repo = extract_github_repo_info(github_url)
+    if not owner or not repo:
+        return {"error": "Invalid GitHub URL"}
+
+    contents = fetch_repo_contents(owner, repo)
+
+    results = {
+        "license": "license" in contents or "license.md" in contents,
+        "contributing": "contributing.md" in contents,
+        "code_of_conduct": "code_of_conduct.md" in contents,
+        "changelog": "changelog.md" in contents,
+        "security_policy": "security.md" in contents,
+    }
+
+    readme = fetch_readme(owner, repo)
+    results["readme_mentions_owasp"] = "owasp" in readme
+    results["readme_has_install"] = "install" in readme
+    results["readme_has_usage"] = "usage" in readme or "example" in readme
+
+    return results
+
+
 def check_owasp_compliance(request):
     """
     View to check OWASP project compliance with guidelines.
@@ -1633,6 +1705,23 @@ def check_owasp_compliance(request):
             messages.error(request, f"Error processing URL: {str(e)}")
             return redirect("check_owasp_compliance")
         try:
+            # 🔍 Run GitHub API-based compliance checks (e.g., license, README, CONTRIBUTING.md)
+            github_results = run_basic_compliance_checks(url)
+            if github_results.get("error"):
+                messages.error(request, github_results["error"])
+                return redirect("check_owasp_compliance")
+
+            github_check_items = [
+                ("License File Present", github_results["license"]),
+                ("CONTRIBUTING.md Present", github_results["contributing"]),
+                ("CODE_OF_CONDUCT.md Present", github_results["code_of_conduct"]),
+                ("CHANGELOG.md Present", github_results["changelog"]),
+                ("SECURITY.md Present", github_results["security_policy"]),
+                ("README Mentions OWASP", github_results["readme_mentions_owasp"]),
+                ("README Has Installation Guide", github_results["readme_has_install"]),
+                ("README Has Usage or Examples", github_results["readme_has_usage"]),
+            ]
+
             # Parse URL to determine if it's a GitHub repository
             parsed_url = urlparse(safe_url)
             is_github = "github.com" == parsed_url.hostname.lower()
@@ -1695,6 +1784,8 @@ def check_owasp_compliance(request):
                 },
                 "recommendations": recommendations,
                 "overall_status": "compliant" if not recommendations else "needs_improvement",
+                "github_checks": github_results,
+                "github_check_items": github_check_items,
             }
 
             return render(request, "check_owasp_compliance.html", context)

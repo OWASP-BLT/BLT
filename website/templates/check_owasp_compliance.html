@@ -98,6 +98,28 @@
                                 </li>
                             </ul>
                         </div>
+                        <!-- GitHub file checks (license, contributing, etc.) -->
+                        {% if github_checks %}
+                            <div class="bg-gray-50 rounded-lg p-4 mt-4">
+                                <h4 class="text-base font-medium text-gray-900 mb-3">GitHub Repository Checklist</h4>
+                                <ul class="space-y-3">
+                                    {% for label, value in github_check_items %}
+                                        <li class="flex items-center justify-between">
+                                            <span class="text-sm text-gray-500">{{ label }}</span>
+                                            {% if value %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    ✅ Yes
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    ❌ No
+                                                </span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                         <!-- Website Compliance -->
                         <div class="bg-gray-50 rounded-lg p-4">
                             <h4 class="text-base font-medium text-gray-900 mb-3">Website Compliance</h4>
