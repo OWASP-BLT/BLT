@@ -11,10 +11,12 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
+from django.shortcuts import render
 from django.db.models import Count, Q, Sum
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
+from website.models import GitHubReview
 from rest_framework import filters, status, viewsets
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import action
@@ -431,14 +433,22 @@ class LeaderboardApiViewSet(APIView):
 
         return Response(month_winners)
 
-    def global_leaderboard(self, request, *args, **kwargs):
-        paginator = PageNumberPagination()
-        global_leaderboard = LeaderboardBase()
-
-        queryset = global_leaderboard.get_leaderboard(api=True)
-        page = paginator.paginate_queryset(queryset, request)
-
-        return paginator.get_paginated_response(page)
+    def global_leaderboard(request):        
+        code_review_leaderboard = (
+            GitHubReview.objects.values(
+                'reviewer__user__username',    
+                'reviewer__user__email',       
+                'reviewer__github_url',        
+            )
+            .annotate(total_reviews=Count('id'))  
+            .order_by('-total_reviews')[:10]      
+        )
+        
+        context = {
+            'code_review_leaderboard': code_review_leaderboard,
+        }
+        
+        return render(request, 'leaderboard.html', context)
 
     def get(self, request, format=None, *args, **kwargs):
         filter = request.query_params.get("filter")
