@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_js %}
+<script type="module">
+  import ChatEncryption from "{% static 'js/encryption.js' %}";
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    const roomId = "{{ room.id|escapejs }}";
+    let roomKey = ChatEncryption.getKey(roomId);
+
+    if (!roomKey) {
+      roomKey = await ChatEncryption.generateKey();
+      ChatEncryption.storeKey(roomId, roomKey);
+      {%if is_room_creator%}
+        const url = new URL(window.location);
+        url.searchParams.set('key', roomKey);
+        window.history.pushState({}, '', url);
+      {% endif %}
+    } else {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlKey = urlParams.get('key');
+      if (urlKey) {
+        roomKey = urlKey;
+        ChatEncryption.storeKey(roomId, roomKey);
+      }
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const chatSocket = new WebSocket(
+      `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`
+    );
+
+    chatSocket.onmessage = async (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'chat_message') {
+          const decryptedMessage = await ChatEncryption.decryptMessage(data.message, roomKey);
+          displayMessage(decryptedMessage, data.username, data.timestamp);
+        }
+      } catch (error) {
+        console.error('Error processing message:', error);
+      }
+    };
+
+    const chatForm = document.querySelector('#chat-form');
+    if (chatForm) {
+      chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const input = document.querySelector('#message-input');
+        const message = input.value.trim();
+        if (message) {
+          try {
+            const encryptedMessage = await ChatEncryption.encryptMessage(message, roomKey);
+            chatSocket.send(JSON.stringify({
+              type: 'message',
+              message: encryptedMessage,
+              username: '{{ user.username|escapejs }}' || 'Anonymous'
+            }));
+            input.value = '';
+          } catch (error) {
+            console.error('Error sending message:', error);
+          }
+        }
+      });
+    }
+
+    function displayMessage(message, username, timestamp) {
+      const messagesList = document.querySelector('#messages');
+      if (messagesList) {
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.innerHTML = `
+          <strong>${username}</strong> <span>(${new Date(timestamp).toLocaleTimeString()})</span>
+          <p>${message}</p>
+        `;
+        messagesList.appendChild(div);
+        messagesList.scrollTop = messagesList.scrollHeight;
+      }
+    }
+  });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="chat-room">
+  <h2>{{ room.name }} <span>🔒 Encrypted</span></h2>
+  <div id="messages" class="messages"></div>
+  <form id="chat-form">
+    <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+</div>
+{% endblock %}

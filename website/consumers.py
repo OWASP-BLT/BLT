@@ -318,212 +318,41 @@ class SimilarityConsumer(AsyncWebsocketConsumer):
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        try:
-            self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
-            self.room_group_name = f"chat_{self.room_id}"
-            self.connected = False
+        self.room_id = self.scope['url_route']['kwargs']['room_id']
+        self.room_group_name = f'chat_{self.room_id}'
 
-            # Verify room exists
-            room_exists = await self.check_room_exists()
-            if not room_exists:
-                await self.close(code=4004)
-                return
-
-            await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-            self.connected = True
-            await self.accept()
-
-            # Send connection status
-            await self.send(text_data=json.dumps({"type": "connection_status", "status": "connected"}))
-
-        except Exception as e:
-            await self.close(code=4000)
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        await self.accept()
 
     async def disconnect(self, close_code):
-        try:
-            self.connected = False
-            await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-            # Send disconnect status if possible
-            try:
-                await self.send(
-                    text_data=json.dumps({"type": "connection_status", "status": "disconnected", "code": close_code})
-                )
-            except:
-                pass
-        except:
-            pass
-
-    @database_sync_to_async
-    def check_room_exists(self):
-        try:
-            return Room.objects.filter(id=self.room_id).exists()
-        except:
-            return False
-
-    @database_sync_to_async
-    def save_message(self, message, username):
-        """Saves a message in the database."""
-        try:
-            room = Room.objects.get(id=self.room_id)
-            user = None
-            session_key = None
-
-            if username.startswith("anon_"):
-                session_key = username.split("_")[1]
-            else:
-                user = User.objects.filter(username=username).first()
-
-            return Message.objects.create(
-                room=room, user=user, username=username, content=message, session_key=session_key
-            )
-        except Exception as e:
-            return None
-
-    @database_sync_to_async
-    def delete_message(self, message_id, username, room_id):
-        """Deletes a message if it exists and belongs to the user in the room."""
-        try:
-            message_object = Message.objects.filter(id=message_id, username=username, room=room_id).first()
-
-            if message_object:
-                rows_deleted, _ = message_object.delete()
-                return rows_deleted > 0  # True if deleted, False otherwise
-            return False
-        except Exception as e:
-            return False  # Handle unexpected errors gracefully
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
 
     async def receive(self, text_data):
-        """Handles incoming WebSocket messages, including sending and deleting chat messages."""
-
-        if not self.connected:
-            await self.send(
-                text_data=json.dumps(
-                    {"type": "error", "code": "not_connected", "message": "Not connected to chat room"}
-                )
-            )
-            return
-
-        try:
-            data = json.loads(text_data)
-            message_type = data.get("type", "message")
-
-            # Handle new messages
-            if message_type == "message" or message_type == "chat_message":
-                message = data.get("message", "").strip()
-                username = data.get("username", "Anonymous")
-
-                if not message:
-                    await self.send(
-                        text_data=json.dumps(
-                            {"type": "error", "code": "invalid_message", "message": "Message cannot be empty"}
-                        )
-                    )
-                    return
-
-                if len(message) > 1000:
-                    await self.send(
-                        text_data=json.dumps(
-                            {
-                                "type": "error",
-                                "code": "message_too_long",
-                                "message": "Message too long (max 1000 chars)",
-                            }
-                        )
-                    )
-                    return
-
-                saved_message = await self.save_message(message, username)
-
-                if saved_message:
-                    # Broadcast message to all clients
-                    message_data = {
-                        "type": "chat_message",
-                        "message": message,
-                        "username": username,
-                        "message_id": saved_message.id,
-                        "timestamp": saved_message.timestamp.isoformat(),
-                    }
-                    await self.channel_layer.group_send(self.room_group_name, message_data)
-                    await self.send(json.dumps({"type": "message_ack", "message_id": saved_message.id}))
-                else:
-                    await self.send(json.dumps({"type": "error", "code": "save_failed", "message": "Failed to save"}))
-
-            # Handle message deletion
-            elif message_type == "deleteMessage":
-                message_id = data.get("messageId")
-                username = data.get("username", "Anonymous")
-
-                if not message_id:
-                    await self.send(
-                        json.dumps({"type": "error", "code": "invalid_message_id", "message": "Message ID required"})
-                    )
-                    return
-
-                # Attempt to delete the message
-                message_deleted = await self.delete_message(message_id, username, self.room_id)
-
-                if message_deleted:
-                    # Notify all clients to remove the message from their UI
-                    delete_notification = {"type": "delete_message_broadcast", "message_id": message_id}
-                    await self.channel_layer.group_send(self.room_group_name, delete_notification)
-                    await self.send(json.dumps(delete_notification))  # Send acknowledgment to the sender
-                else:
-                    await self.send(
-                        json.dumps({"type": "error", "code": "delete_failed", "message": "Failed to delete"})
-                    )
-
-            elif message_type == "ping":
-                await self.send(text_data=json.dumps({"type": "pong", "timestamp": timezone.now().isoformat()}))
-
-        except json.JSONDecodeError:
-            await self.send(
-                text_data=json.dumps({"type": "error", "code": "invalid_format", "message": "Invalid message format"})
-            )
-        except Exception as e:
-            await self.send(
-                text_data=json.dumps({"type": "error", "code": "internal_error", "message": "Internal server error"})
+        data = json.loads(text_data)
+        if data['type'] == 'message':
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message': data['message'],
+                    'username': data['username'],
+                    'timestamp': timezone.now().isoformat()
+                }
             )
 
     async def chat_message(self, event):
-        if not self.connected:
-            return
-
-        try:
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "type": "chat_message",
-                        "message": event["message"],
-                        "username": event["username"],
-                        "timestamp": event.get("timestamp"),
-                        "message_id": event.get("message_id"),
-                    }
-                )
-            )
-        except Exception as error:
-            # Log the error instead of silently passing
-            logger.error(f"Error sending chat message: {str(error)}")
-
-    async def delete_message_broadcast(self, event):
-        """Handles broadcasting delete notifications to all users in the room."""
-
-        if not self.connected:
-            return
-
-        try:
-            await self.send(
-                text_data=json.dumps(
-                    {
-                        "type": "delete_ack",
-                        "message_id": event["message_id"],
-                    }
-                )
-            )
-
-        except Exception as e:
-            print(f"Error in delete_message_broadcast: {e}")
-
+        await self.send(text_data=json.dumps({
+            'type': 'chat_message',
+            'message': event['message'],
+            'username': event['username'],
+            'timestamp': event['timestamp']
+        }))
 
 class DirectChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
