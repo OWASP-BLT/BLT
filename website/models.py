@@ -1452,59 +1452,101 @@ def verify_file_upload(sender, instance, **kwargs):
 
 class Repo(models.Model):
     organization = models.ForeignKey(
-        Organization, related_name="repos", on_delete=models.CASCADE, null=True, blank=True
+        "Organization", related_name="repos", on_delete=models.CASCADE, null=True, blank=True
     )
-    project = models.ForeignKey(Project, related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
+    project = models.ForeignKey("Project", related_name="repos", on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
-    description = models.TextField(null=True, blank=True)  # Made nullable for optional descriptions
+    description = models.TextField(null=True, blank=True)
     repo_url = models.URLField(unique=True)
     homepage_url = models.URLField(null=True, blank=True)
+
+    # GitHub Flags
     is_main = models.BooleanField(default=False)
     is_wiki = models.BooleanField(default=False)
-    is_archived = models.BooleanField(default=False)  # New field for archived status
+    is_archived = models.BooleanField(default=False)
+    is_owasp_repo = models.BooleanField(default=False)
+
+    # GitHub Metrics
     stars = models.IntegerField(default=0)
     forks = models.IntegerField(default=0)
-    open_issues = models.IntegerField(default=0)
-    tags = models.ManyToManyField("Tag", blank=True)
-    last_updated = models.DateTimeField(null=True, blank=True)
-    total_issues = models.IntegerField(default=0)
-    # rename this to repo_visit_count and make sure the github badge works with this
-    repo_visit_count = models.IntegerField(default=0)
     watchers = models.IntegerField(default=0)
+    open_issues = models.IntegerField(default=0)
+    closed_issues = models.IntegerField(default=0)
+    total_issues = models.IntegerField(default=0)
     open_pull_requests = models.IntegerField(default=0)
     closed_pull_requests = models.IntegerField(default=0)
-    primary_language = models.CharField(max_length=50, null=True, blank=True)
-    license = models.CharField(max_length=100, null=True, blank=True)
-    last_commit_date = models.DateTimeField(null=True, blank=True)
-    created = models.DateTimeField(auto_now_add=True)
-    modified = models.DateTimeField(auto_now=True)
-    network_count = models.IntegerField(default=0)
-    subscribers_count = models.IntegerField(default=0)
-    closed_issues = models.IntegerField(default=0)
-    size = models.IntegerField(default=0)
+    merged_pull_requests = models.IntegerField(null=True, blank=True, default=0)
+    pull_requests = models.IntegerField(null=True, blank=True, default=0)
+    contributor_count = models.IntegerField(default=0)
     commit_count = models.IntegerField(default=0)
+    recent_commits = models.IntegerField(null=True, blank=True, default=0)
+
+    # Release Information
     release_name = models.CharField(max_length=255, null=True, blank=True)
     release_datetime = models.DateTimeField(null=True, blank=True)
-    logo_url = models.URLField(null=True, blank=True)
-    contributor_count = models.IntegerField(default=0)
-    contributor = models.ManyToManyField(Contributor, related_name="repos", blank=True)
-    is_owasp_repo = models.BooleanField(default=False)
-    readme_content = models.TextField(null=True, blank=True)
-    ai_summary = models.TextField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    latest_release = models.CharField(max_length=100, null=True, blank=True)
+    latest_release_date = models.DateTimeField(null=True, blank=True)
+    releases_count = models.IntegerField(null=True, blank=True, default=0)
+
+    # Code Quality Metrics
+    code_coverage = models.FloatField(null=True, blank=True)
+    code_quality_score = models.FloatField(null=True, blank=True)
+    vulnerabilities = models.IntegerField(null=True, blank=True, default=0)
+    maintainability_index = models.FloatField(null=True, blank=True)
+
+    # Community Metrics
+    discussions_count = models.IntegerField(null=True, blank=True, default=0)
+    recent_discussions = models.IntegerField(null=True, blank=True, default=0)
+
+    # Social Media Metrics
+    twitter_mentions = models.IntegerField(null=True, blank=True, default=0)
+    linkedin_mentions = models.IntegerField(null=True, blank=True, default=0)
+
+    # External Metrics
+    package_downloads = models.IntegerField(null=True, blank=True, default=0)
+    recent_package_downloads = models.IntegerField(null=True, blank=True, default=0)
+
+    # Caching and Sync Fields
+    last_github_sync = models.DateTimeField(null=True, blank=True)
+    last_quality_sync = models.DateTimeField(null=True, blank=True)
+    last_social_sync = models.DateTimeField(null=True, blank=True)
+    last_downloads_sync = models.DateTimeField(null=True, blank=True)
+    last_commit_date = models.DateTimeField(null=True, blank=True)
+    last_updated = models.DateTimeField(null=True, blank=True)
     last_pr_page_processed = models.IntegerField(default=0, help_text="Last page of PRs processed from GitHub API")
     last_pr_fetch_date = models.DateTimeField(null=True, blank=True, help_text="When PRs were last fetched")
 
+    # Misc Info
+    tags = models.ManyToManyField("Tag", blank=True)
+    logo_url = models.URLField(null=True, blank=True)
+    contributor = models.ManyToManyField("Contributor", related_name="repos", blank=True)
+    repo_visit_count = models.IntegerField(default=0)
+    network_count = models.IntegerField(default=0)
+    subscribers_count = models.IntegerField(default=0)
+    primary_language = models.CharField(max_length=50, null=True, blank=True)
+    license = models.CharField(max_length=100, null=True, blank=True)
+    readme_content = models.TextField(null=True, blank=True)
+    ai_summary = models.TextField(null=True, blank=True)
+
+    # Timestamps
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Repositories"
+        indexes = [
+            models.Index(fields=["project"], name="repo_project_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.project.name}/{self.name}" if self.project else f"{self.name}"
+
     def save(self, *args, **kwargs):
         if not self.slug:
-            base_slug = slugify(self.name)
-            # Replace dots with dashes and limit length
-            base_slug = base_slug.replace(".", "-")
-            if len(base_slug) > 50:
-                base_slug = base_slug[:50]
-            # Ensure we have a valid slug
+            base_slug = slugify(self.name).replace(".", "-")[:50]
             if not base_slug:
                 base_slug = f"repo-{int(time.time())}"
 
@@ -1512,22 +1554,32 @@ class Repo(models.Model):
             counter = 1
             while Repo.objects.filter(slug=unique_slug).exists():
                 suffix = f"-{counter}"
-                # Make sure base_slug + suffix doesn't exceed 50 chars
                 if len(base_slug) + len(suffix) > 50:
                     base_slug = base_slug[: 50 - len(suffix)]
                 unique_slug = f"{base_slug}{suffix}"
                 counter += 1
 
             self.slug = unique_slug
-        super(Repo, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
-    def __str__(self):
-        return f"{self.project.name}/{self.name}" if self.project else f"{self.name}"
+    # SYNC HELPERS
+    def needs_github_sync(self):
+        return not self.last_github_sync or timezone.now() > self.last_github_sync + datetime.timedelta(hours=1)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=["project"], name="repo_project_idx"),
-        ]
+    def needs_quality_sync(self):
+        return not self.last_quality_sync or timezone.now() > self.last_quality_sync + datetime.timedelta(days=1)
+
+    def needs_social_sync(self):
+        return not self.last_social_sync or timezone.now() > self.last_social_sync + datetime.timedelta(hours=12)
+
+    def needs_downloads_sync(self):
+        return not self.last_downloads_sync or timezone.now() > self.last_downloads_sync + datetime.timedelta(days=1)
+
+    @property
+    def avg_issue_resolution_time(self):
+        if not self.closed_issues or not self.total_issues:
+            return None
+        return 7.5  # Placeholder; needs real timestamp-based calculation
 
 
 class ContributorStats(models.Model):
