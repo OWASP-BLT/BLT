@@ -74,16 +74,13 @@ def check_organization_or_manager(func):
     return wrapper
 
 
-def Organization_view(request, *args, **kwargs):
-    user = request.user
-
+def _get_user_organization(user):
+    """Helper function to find and return a user's organization."""
     if not user.is_active:
-        messages.info(request, "Email not verified.")
-        return redirect("/")
+        return None, "Email not verified."
 
     if isinstance(user, AnonymousUser):
-        messages.error(request, "Please login to access your organization.")
-        return redirect("/accounts/login/")
+        return None, "Please login to access your organization."
 
     user_organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user))
     if not user_organizations.exists():
@@ -93,11 +90,25 @@ def Organization_view(request, *args, **kwargs):
         # Check if any of these domains belong to a organization
         organizations_with_user_domains = Organization.objects.filter(domain__in=user_domains)
         if not organizations_with_user_domains.exists():
-            messages.error(request, "You do not have a organization, create one.")
-            return redirect("register_organization")
+            return None, "You do not have a organization, create one."
 
     # Get the organization to redirect to
     organization = user_organizations.first() or organizations_with_user_domains.first()
+    return organization, None
+
+
+def Organization_view(request, *args, **kwargs):
+    user = request.user
+
+    organization, error_message = _get_user_organization(user)
+    if error_message:
+        messages.error(request, error_message)
+        if error_message == "Email not verified.":
+            return redirect("/")
+        elif error_message == "Please login to access your organization.":
+            return redirect("/accounts/login/")
+        else:
+            return redirect("register_organization")
 
     return redirect("organization_detail", slug=organization.slug)
 
@@ -105,27 +116,15 @@ def Organization_view(request, *args, **kwargs):
 def dashboard_view(request, *args, **kwargs):
     user = request.user
 
-    if not user.is_active:
-        messages.info(request, "Email not verified.")
-        return redirect("/")
-
-    if isinstance(user, AnonymousUser):
-        messages.error(request, "Please login to access your organization.")
-        return redirect("/accounts/login/")
-
-    user_organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user))
-    if not user_organizations.exists():
-        # Check if the user is a manager of any domain
-        user_domains = Domain.objects.filter(managers=user)
-
-        # Check if any of these domains belong to a organization
-        organizations_with_user_domains = Organization.objects.filter(domain__in=user_domains)
-        if not organizations_with_user_domains.exists():
-            messages.error(request, "You do not have a organization, create one.")
+    organization, error_message = _get_user_organization(user)
+    if error_message:
+        messages.error(request, error_message)
+        if error_message == "Email not verified.":
+            return redirect("/")
+        elif error_message == "Please login to access your organization.":
+            return redirect("/accounts/login/")
+        else:
             return redirect("register_organization")
-
-    # Get the organization to redirect to
-    organization = user_organizations.first() or organizations_with_user_domains.first()
 
     # Redirect to organization dashboard
     return redirect("organization_analytics", id=organization.id)
