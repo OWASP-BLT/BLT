@@ -83,7 +83,14 @@ class ChatEncryption {
    * @param {string} keyBase64 - Base64-encoded key
    */
   static storeKey(roomId, keyBase64) {
-    localStorage.setItem(`chat_key_${roomId}`, keyBase64);
+    // Use sessionStorage for better security (cleared when tab is closed)
+    sessionStorage.setItem(`_chat_secure_${roomId}`, keyBase64);
+    
+    // Optional: store persistence preference
+    const persistChat = localStorage.getItem('persistChatSessions') === 'true';
+    if (persistChat) {
+      localStorage.setItem(`_chat_secure_${roomId}`, keyBase64);
+    }
   }
 
   /**
