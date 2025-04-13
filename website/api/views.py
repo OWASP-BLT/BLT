@@ -437,6 +437,8 @@ class LeaderboardApiViewSet(APIView):
         """
         Render the global leaderboard page with the top code reviewers.
         """
+def global_leaderboard(self, request, *args, **kwargs):
+    try:
         code_review_leaderboard = (
             GitHubReview.objects.values(
                 'reviewer__user__username',    
@@ -445,6 +447,18 @@ class LeaderboardApiViewSet(APIView):
             )
             .annotate(total_reviews=Count('id'))  
             .order_by('-total_reviews')[:10]      
+        )
+        
+        context = {
+            'code_review_leaderboard': code_review_leaderboard,
+        }
+        
+        return render(request, 'leaderboard.html', context)
+    except Exception as e:
+        # Log the error as needed
+        return Response(
+            {"error": "Unable to retrieve leaderboard data", "details": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
         
         context = {
