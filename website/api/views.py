@@ -433,7 +433,10 @@ class LeaderboardApiViewSet(APIView):
 
         return Response(month_winners)
 
-    def global_leaderboard(request):        
+    def global_leaderboard(self, request, *args, **kwargs):
+        """
+        Render the global leaderboard page with the top code reviewers.
+        """
         code_review_leaderboard = (
             GitHubReview.objects.values(
                 'reviewer__user__username',    
