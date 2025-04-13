@@ -27,21 +27,37 @@
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const chatSocket = new WebSocket(
-      `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`
-    );
-
-    chatSocket.onmessage = async (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.type === 'chat_message') {
-          const decryptedMessage = await ChatEncryption.decryptMessage(data.message, roomKey);
-          displayMessage(decryptedMessage, data.username, data.timestamp);
+    let chatSocket;
+    
+    function connectWebSocket() {
+      chatSocket = new WebSocket(
+        `${protocol}${window.location.host}/ws/discussion-rooms/chat/${roomId}/`
+      );
+      
+      chatSocket.onmessage = async (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'chat_message') {
+            const decryptedMessage = await ChatEncryption.decryptMessage(data.message, roomKey);
+            displayMessage(decryptedMessage, data.username, data.timestamp);
+          }
+        } catch (error) {
+          console.error('Error processing message:', error);
         }
-      } catch (error) {
-        console.error('Error processing message:', error);
-      }
-    };
+      };
+      
+      chatSocket.onclose = (e) => {
+        console.log('WebSocket connection closed, attempting to reconnect...');
+        // Attempt to reconnect after a delay
+        setTimeout(connectWebSocket, 3000);
+      };
+      
+      chatSocket.onerror = (e) => {
+        console.error('WebSocket error:', e);
+      };
+    }
+    
+    connectWebSocket();
 
     const chatForm = document.querySelector('#chat-form');
     if (chatForm) {
