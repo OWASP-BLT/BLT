@@ -13,6 +13,8 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.shortcuts import render
 from django.db.models import Count, Q, Sum
+from django.db.models import Value
+from django.db.models.functions import Coalesce
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.utils.text import slugify
@@ -440,15 +442,15 @@ class LeaderboardApiViewSet(APIView):
     def global_leaderboard(self, request, *args, **kwargs):
         try:
             code_review_leaderboard = (
-                GitHubReview.objects.values(
-                    'reviewer__user__username',    
-                    'reviewer__user__email',       
-                    'reviewer__github_url',        
+                GitHubReview.objects.annotate(
+                    username=Coalesce('reviewer__user__username', 'reviewer__name'),
+                    email=Coalesce('reviewer__user__email', Value('N/A'))
                 )
-                .annotate(total_reviews=Count('id'))  
-                .order_by('-total_reviews')[:10]      
+                .values('username', 'email', 'reviewer__github_url')
+                .annotate(total_reviews=Count('id'))
+                .order_by('-total_reviews')[:10]
             )
-            
+                        
             context = {
                 'code_review_leaderboard': code_review_leaderboard,
             }
