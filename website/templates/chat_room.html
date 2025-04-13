@@ -6,25 +6,46 @@
   import ChatEncryption from "{% static 'js/encryption.js' %}";
 
   document.addEventListener('DOMContentLoaded', async () => {
-    const roomId = "{{ room.id|escapejs }}";
-    let roomKey = ChatEncryption.getKey(roomId);
+    try {
+      const roomId = "{{ room.id|escapejs }}";
+      let roomKey = ChatEncryption.getKey(roomId);
 
-    if (!roomKey) {
-      roomKey = await ChatEncryption.generateKey();
-      ChatEncryption.storeKey(roomId, roomKey);
-      {%if is_room_creator%}
-        const url = new URL(window.location);
-        url.searchParams.set('key', roomKey);
-        window.history.pushState({}, '', url);
-      {% endif %}
-    } else {
-      const urlParams = new URLSearchParams(window.location.search);
-      const urlKey = urlParams.get('key');
-      if (urlKey) {
-        roomKey = urlKey;
+      // Validate key format if it exists
+      if (roomKey && !ChatEncryption.isValidKeyFormat(roomKey)) {
+        console.warn('Invalid key format found in storage, generating new key');
+        roomKey = null;
+      }
+
+      if (!roomKey) {
+        roomKey = await ChatEncryption.generateKey();
         ChatEncryption.storeKey(roomId, roomKey);
+        {%if is_room_creator%}
+          const url = new URL(window.location);
+          url.searchParams.set('key', roomKey);
+          window.history.pushState({}, '', url);
+        {% endif %}
+      } else {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlKey = urlParams.get('key');
+        if (urlKey) {
+          // Validate URL key format before using it
+          if (ChatEncryption.isValidKeyFormat(urlKey)) {
+            roomKey = urlKey;
+            ChatEncryption.storeKey(roomId, roomKey);
+          } else {
+            console.error('Invalid key format in URL');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error in key management:', error);
+      // Display user-friendly error message
+      const messagesEl = document.querySelector('#messages');
+      if (messagesEl) {
+        messagesEl.innerHTML = '<div class="error-message">Failed to set up secure chat. Please try refreshing the page.</div>';
       }
     }
+  });
 
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
     let chatSocket;
