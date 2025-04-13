@@ -39,21 +39,30 @@ class ChatEncryption {
    * @returns {Promise<string>} Base64-encoded encrypted message (IV + ciphertext)
    */
   static async encryptMessage(message, keyBase64) {
-    const key = await this.importKey(keyBase64);
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const encodedMessage = new TextEncoder().encode(message);
+    if (!window.crypto || !window.crypto.subtle) {
+      throw new Error("Web Crypto API is not supported in this browser");
+    }
+    
+    try {
+      const key = await this.importKey(keyBase64);
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encodedMessage = new TextEncoder().encode(message);
 
-    const encrypted = await window.crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      encodedMessage
-    );
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        encodedMessage
+      );
 
-    const combined = new Uint8Array(iv.length + encrypted.byteLength);
-    combined.set(iv);
-    combined.set(new Uint8Array(encrypted), iv.length);
+      const combined = new Uint8Array(iv.length + encrypted.byteLength);
+      combined.set(iv);
+      combined.set(new Uint8Array(encrypted), iv.length);
 
-    return btoa(String.fromCharCode(...combined));
+      return btoa(String.fromCharCode(...combined));
+    } catch (error) {
+      console.error("Encryption failed:", error);
+      throw new Error("Failed to encrypt message");
+    }
   }
 
   /**
