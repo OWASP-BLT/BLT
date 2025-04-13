@@ -455,9 +455,9 @@ def global_leaderboard(self, request, *args, **kwargs):
         
         return render(request, 'leaderboard.html', context)
     except Exception as e:
-        # Log the error as needed
+        # Log the exception details internally, e.g., logger.error(e)
         return Response(
-            {"error": "Unable to retrieve leaderboard data", "details": str(e)},
+            {"error": "Unable to retrieve leaderboard data"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
         
