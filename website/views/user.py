@@ -1,5 +1,7 @@
 import json
 import logging
+import hashlib
+import hmac
 import os
 from datetime import datetime, timezone
 
@@ -57,6 +59,7 @@ from website.models import (
 
 logger = logging.getLogger(__name__)
 
+GITHUB_WEBHOOK_SECRET = os.getenv('GITHUB_WEBHOOK_SECRET', '')
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
@@ -841,18 +844,40 @@ def badge_user_list(request, badge_id):
         },
     )
 
+def validate_signature(payload, signature):
+    """Validate the GitHub webhook signature."""
+    if not signature:
+        return False
+    expected_signature = hmac.new(
+        key=GITHUB_WEBHOOK_SECRET.encode('utf-8'),
+        msg=payload,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(f"sha256={expected_signature}", signature)
 
 @csrf_exempt
 @require_POST
 def github_webhook(request):
+    """Handle GitHub webhook events."""
+    signature = request.headers.get('X-Hub-Signature-256', '')
+    if not validate_signature(request.body, signature):
+        logger.warning("Invalid or missing webhook signature")
+        return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+
     try:
         payload = json.loads(request.body)
-        event_type = request.headers.get('X-GitHub-Event')
+        event_type = request.headers.get('X-GitHub-Event', '')
 
-        if event_type == 'pull_request':
-            return handle_pull_request_event(payload)
+        event_handlers = {
+            'pull_request': handle_pull_request_event,
+        }
 
-        return JsonResponse({'status': 'event not handled'}, status=200)
+        handler = event_handlers.get(event_type)
+        if handler:
+            return handler(payload)
+        else:
+            logger.info(f"Unhandled event type: {event_type}")
+            return JsonResponse({"status": "event not handled"}, status=200)
 
     except json.JSONDecodeError:
         logger.error("Invalid JSON payload received")
@@ -862,6 +887,7 @@ def github_webhook(request):
         return JsonResponse({'error': 'Internal server error'}, status=500)
 
 def handle_pull_request_event(payload):
+    """Process pull request events and update hackathon PRs."""
     pr_data = payload["pull_request"]
     repo_url = pr_data["base"]["repo"]["html_url"]
     pr_number = pr_data["number"]
