@@ -71,9 +71,19 @@
         const div = document.createElement('div');
         div.className = 'message';
         div.innerHTML = `
-          <strong>${username}</strong> <span>(${new Date(timestamp).toLocaleTimeString()})</span>
-          <p>${message}</p>
-        `;
+        const usernameElement = document.createElement('strong');
+        usernameElement.textContent = username;
+        
+        const timestampElement = document.createElement('span');
+        timestampElement.textContent = `(${new Date(timestamp).toLocaleTimeString()})`;
+        
+        const messageElement = document.createElement('p');
+        messageElement.textContent = message;
+        
+        div.appendChild(usernameElement);
+        div.appendChild(document.createTextNode(' '));
+        div.appendChild(timestampElement);
+        div.appendChild(messageElement);
         messagesList.appendChild(div);
         messagesList.scrollTop = messagesList.scrollHeight;
       }
