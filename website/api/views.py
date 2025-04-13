@@ -437,35 +437,29 @@ class LeaderboardApiViewSet(APIView):
         """
         Render the global leaderboard page with the top code reviewers.
         """
-def global_leaderboard(self, request, *args, **kwargs):
-    try:
-        code_review_leaderboard = (
-            GitHubReview.objects.values(
-                'reviewer__user__username',    
-                'reviewer__user__email',       
-                'reviewer__github_url',        
+    def global_leaderboard(self, request, *args, **kwargs):
+        try:
+            code_review_leaderboard = (
+                GitHubReview.objects.values(
+                    'reviewer__user__username',    
+                    'reviewer__user__email',       
+                    'reviewer__github_url',        
+                )
+                .annotate(total_reviews=Count('id'))  
+                .order_by('-total_reviews')[:10]      
             )
-            .annotate(total_reviews=Count('id'))  
-            .order_by('-total_reviews')[:10]      
-        )
-        
-        context = {
-            'code_review_leaderboard': code_review_leaderboard,
-        }
-        
-        return render(request, 'leaderboard.html', context)
-    except Exception as e:
-        # Log the exception details internally, e.g., logger.error(e)
-        return Response(
-            {"error": "Unable to retrieve leaderboard data"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-        
-        context = {
-            'code_review_leaderboard': code_review_leaderboard,
-        }
-        
-        return render(request, 'leaderboard.html', context)
+            
+            context = {
+                'code_review_leaderboard': code_review_leaderboard,
+            }
+            
+            return render(request, 'leaderboard.html', context)
+        except Exception as e:
+            # Log the exception details internally, e.g., logger.error(e)
+            return Response(
+                {"error": "Unable to retrieve leaderboard data"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def get(self, request, format=None, *args, **kwargs):
         filter = request.query_params.get("filter")
