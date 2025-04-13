@@ -59,7 +59,21 @@ from website.models import (
 
 logger = logging.getLogger(__name__)
 
-GITHUB_WEBHOOK_SECRET = os.getenv('GITHUB_WEBHOOK_SECRET', '')
+GITHUB_WEBHOOK_SECRET = os.getenv('GITHUB_WEBHOOK_SECRET')
+
+def validate_signature(payload, signature):
+    """Validate the GitHub webhook signature."""
+    if not GITHUB_WEBHOOK_SECRET:
+        logger.error("GitHub webhook secret not configured")
+        return False
+    if not signature:
+        return False
+    expected_signature = hmac.new(
+        key=GITHUB_WEBHOOK_SECRET.encode('utf-8'),
+        msg=payload,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(f"sha256={expected_signature}", signature)
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
