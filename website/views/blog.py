@@ -20,7 +20,10 @@ class PostDetailView(generic.DetailView):
 
     def get_object(self):
         post = super().get_object()
-        post.content = markdown.markdown(post.content)
+        post.content = markdown.markdown(
+            post.content,
+            extensions=["markdown.extensions.fenced_code", "markdown.extensions.tables", "markdown.extensions.nl2br"],
+        )
         return post
 
     def get_context_data(self, **kwargs):
