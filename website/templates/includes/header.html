@@ -608,7 +608,13 @@
                             <li>
                                 <a href="{% url 'organization_view' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
+                                    <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization_dashboard' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <li class="border my-2 w-full"></li>

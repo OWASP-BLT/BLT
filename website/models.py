@@ -2409,6 +2409,7 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+    reactions = models.JSONField(default=dict, help_text="Stores emoji reactions and their counts")  # New field
 
     class Meta:
         ordering = ["timestamp"]
