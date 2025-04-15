@@ -69,6 +69,7 @@ from website.views.company import (
     ShowBughuntView,
     SlackCallbackView,
     accept_bug,
+    dashboard_view,
     delete_manager,
     delete_prize,
     edit_prize,
@@ -592,7 +593,6 @@ urlpatterns = [
     path("scoreboard/", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     # link to index.html
-    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -813,7 +813,8 @@ urlpatterns = [
         RegisterOrganizationView.as_view(),
         name="register_organization",
     ),
-    path("organization/dashboard/", Organization_view, name="organization_view"),
+    path("organization/view", Organization_view, name="organization_view"),
+    path("organization/dashboard/", dashboard_view, name="organization_dashboard"),
     path(
         "organization/<int:id>/dashboard/analytics/",
         OrganizationDashboardAnalyticsView.as_view(),
