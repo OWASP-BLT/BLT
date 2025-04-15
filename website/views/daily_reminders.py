@@ -12,10 +12,7 @@ from website.models import ReminderSettings
 
 @login_required
 def reminder_settings(request):
-    try:
-        settings = ReminderSettings.objects.get(user=request.user)
-    except ReminderSettings.DoesNotExist:
-        settings = ReminderSettings(user=request.user)
+    settings, created = ReminderSettings.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
         form = ReminderSettingsForm(request.POST, instance=settings)
