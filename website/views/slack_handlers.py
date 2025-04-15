@@ -386,7 +386,73 @@ def slack_commands(request):
                     }
                 )
 
-        if command == "/discover":
+        if command == "/welcome":
+            try:
+                # Get the welcome message for this workspace
+                try:
+                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+                    if slack_integration.welcome_message:
+                        welcome_message = slack_integration.welcome_message
+                    else:
+                        # If no welcome message but it's OWASP workspace
+                        if team_id == "T04T40NHX":
+                            # Use the default OWASP welcome message
+                            welcome_message = (
+                                "👋 *Welcome to the OWASP Slack!* 👋\n\n"
+                                "The Open Worldwide Application Security Project® (OWASP) is a nonprofit foundation that works to improve the security of software.\n\n"
+                                "*Here are some helpful channels to get started:*\n"
+                                "• #general - General discussion about OWASP\n"
+                                "• #introduction - Introduce yourself to the community\n"
+                                "• #events - Information about upcoming OWASP events\n"
+                                "• #random - For random conversations\n\n"
+                                "*Key Resources:*\n"
+                                "• <https://owasp.org/|OWASP Website>\n"
+                                "• <https://owasp.org/projects/|OWASP Projects>\n"
+                                "• <https://owasp.org/www-chapter/|OWASP Chapters>\n"
+                                "• <https://owasp.org/www-community/|OWASP Community>\n\n"
+                                "We're glad you're here!"
+                            )
+                        else:
+                            welcome_message = (
+                                "👋 *Welcome to this workspace!* 👋\n\n"
+                                "Your workspace admin hasn't set up a custom welcome message yet. "
+                                "Please reach out to a workspace admin for more information about this Slack workspace."
+                            )
+                except SlackIntegration.DoesNotExist:
+                    # Use default welcome message
+                    welcome_message = (
+                        "👋 *Welcome to this workspace!* 👋\n\n"
+                        "Please reach out to a workspace admin for more information about this Slack workspace."
+                    )
+
+                # Create welcome message blocks
+                welcome_blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": welcome_message}}]
+
+                # Open DM channel first
+                dm_response = workspace_client.conversations_open(users=[user_id])
+                if not dm_response["ok"]:
+                    return JsonResponse({"response_type": "ephemeral", "text": "Sorry, I couldn't open a DM channel."})
+
+                dm_channel = dm_response["channel"]["id"]
+
+                # Send welcome message
+                workspace_client.chat_postMessage(channel=dm_channel, text=welcome_message, blocks=welcome_blocks)
+
+                activity.success = True
+                activity.save()
+
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "I've sent you the welcome message in a DM! 👋"}
+                )
+            except Exception as e:
+                activity.success = False
+                activity.error_message = f"Error sending welcome message: {str(e)}"
+                activity.save()
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "Sorry, there was an error sending the welcome message."}
+                )
+
+        elif command == "/discover":
             search_term = request.POST.get("text", "").strip()
             return get_project_overview(workspace_client, user_id, search_term, activity)
 
@@ -734,7 +800,7 @@ def slack_commands(request):
                 help_message = [
                     {
                         "type": "section",
-                        "text": {"type": "mrkdwn", "text": "*Available Commands*\nHere’s what I can do for you:"},
+                        "text": {"type": "mrkdwn", "text": "*Available Commands*\nHere's what I can do for you:"},
                     },
                     {"type": "divider"},
                     {
@@ -742,7 +808,7 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/welcome` - Get welcome message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats",
                             },
                             {
                                 "type": "mrkdwn",
@@ -754,10 +820,10 @@ def slack_commands(request):
                 ]
                 dm_response = workspace_client.conversations_open(users=[user_id])
                 if not dm_response["ok"]:
-                    return JsonResponse({"response_type": "ephemeral", "text": "Couldn’t open a DM channel."})
+                    return JsonResponse({"response_type": "ephemeral", "text": "Couldn't open a DM channel."})
                 dm_channel = dm_response["channel"]["id"]
                 workspace_client.chat_postMessage(channel=dm_channel, blocks=help_message, text="Available Commands")
-                return JsonResponse({"response_type": "ephemeral", "text": "I’ve sent you the command list in a DM!"})
+                return JsonResponse({"response_type": "ephemeral", "text": "I've sent you the command list in a DM!"})
             except SlackApiError as e:
                 activity.success = False
                 activity.error_message = f"Slack API error: {str(e)}"
