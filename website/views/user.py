@@ -904,55 +904,65 @@ def handle_pull_request_event(payload):
     """Process pull request events and update hackathon PRs."""
     pr_data = payload["pull_request"]
     repo_url = pr_data["base"]["repo"]["html_url"]
-    pr_number = pr_data["number"]
-    pr_title = pr_data["title"]
-    pr_url = pr_data["html_url"]
+    issue_id = pr_data["number"]
+    title = pr_data["title"]
+    body = pr_data.get("body")
+    url = pr_data["html_url"]
     author_url = pr_data["user"]["html_url"]
     author_name = pr_data["user"]["login"]
-    author_avatar = pr_data["user"]["avatar_url"]
     created_at = datetime.fromisoformat(pr_data["created_at"].replace("Z", "+00:00"))
     updated_at = datetime.fromisoformat(pr_data["updated_at"].replace("Z", "+00:00"))
-
-    # Determine PR state
-    state = "open"
-    if pr_data["state"] == "closed":
-        state = "merged" if pr_data["merged"] else "closed"
+    closed_at = datetime.fromisoformat(pr_data["closed_at"].replace("Z", "+00:00")) if pr_data["closed_at"] else None
+    merged_at = datetime.fromisoformat(pr_data["merged_at"].replace("Z", "+00:00")) if pr_data["merged_at"] else None
+    is_merged = pr_data["merged"]
+    state = "merged" if pr_data["merged"] else pr_data["state"]
 
     # Find the repository and associated active hackathons
     try:
         repo = Repo.objects.get(repo_url=repo_url)
         hackathons = repo.hackathons.filter(is_active=True)
 
-        for hackathon in hackathons:
-            HackathonPR.objects.update_or_create(
-                repo=repo,
-                pr_number=pr_number,
-                hackathon=hackathon,
-                defaults={
-                    'pr_title': pr_title,
-                    'pr_url': pr_url,
-                    'author_url': author_url,
-                    'author_name': author_name,
-                    'author_avatar': author_avatar,
-                    'state': state,
-                    'created_at': created_at,
-                    'updated_at': updated_at
-                }
-            )
+        user_profile = UserProfile.objects.filter(github_url=author_url).first()
+        contributor = Contributor.objects.filter(github_url=author_url).first()
+
+        # Update or create the GitHubIssue record
+        issue, created = GitHubIssue.objects.update_or_create(
+            issue_id=issue_id,
+            repo=repo,
+            defaults={
+                'title': title,
+                'body': body,
+                'state': state,
+                'type': 'pull_request',
+                'created_at': created_at,
+                'updated_at': updated_at,
+                'closed_at': closed_at,
+                'merged_at': merged_at,
+                'is_merged': is_merged,
+                'url': url,
+                'user_profile': user_profile,
+                'contributor': contributor,
+                'has_dollar_tag': False,
+            }
+        )
 
         if hackathons.exists():
-            logger.info(f"Updated PR #{pr_number} for {hackathons.count()} hackathons")
+            issue.hackathons.set(hackathons)
+            logger.info(f"Updated PR #{issue_id} for {hackathons.count()} hackathons")
+        else:
+            issue.hackathons.clear()
+            logger.info(f"PR #{issue_id} not associated with any active hackathons")
 
     except Repo.DoesNotExist:
         logger.warning(f"Repository not found for URL: {repo_url}")
+        return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
     except Exception as e:
         logger.error(f"Error processing PR event: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal server error"}, status=500)
 
-    if payload["action"] == "closed" and pr_data["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=author_url).first()
-        if pr_user_profile:
-            pr_user_instance = pr_user_profile.user
-            assign_github_badge(pr_user_instance, "First PR Merged")
+    # Assign badge for merged PRs
+    if payload["action"] == "closed" and pr_data["merged"] and user_profile:
+        assign_github_badge(user_profile.user, "First PR Merged")
 
     return JsonResponse({"status": "success"}, status=200)
 
