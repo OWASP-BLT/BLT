@@ -7,7 +7,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0235_alter_lecture_content_alter_lecture_instructor"),
+        ("website", "0237_message_reactions"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
