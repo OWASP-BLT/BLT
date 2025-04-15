@@ -1,5 +1,6 @@
 import logging
 import random
+from datetime import time as dt_time
 from itertools import islice
 
 from django.conf import settings
@@ -9,7 +10,7 @@ from django.utils import timezone
 from website.management.base import LoggedBaseCommand
 from website.models import ReminderSettings, UserProfile
 
-logger = logging.getLogger("reminder_emails")
+logger = logging.getLogger(__name__)
 handler = logging.FileHandler("logs/reminder_emails.log")
 handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
@@ -45,10 +46,8 @@ class Command(LoggedBaseCommand):
                     window_end_hour = 0
 
             # Convert to time objects for database filtering
-            from datetime import time
-
-            window_start_time = time(hour=current_hour, minute=window_start_minute)
-            window_end_time = time(hour=window_end_hour, minute=window_end_minute)
+            window_start_time = dt_time(hour=current_hour, minute=window_start_minute)
+            window_end_time = dt_time(hour=window_end_hour, minute=window_end_minute)
 
             logger.info(f"Current UTC time: {now.strftime('%Y-%m-%d %H:%M:%S')}")
             logger.info(
