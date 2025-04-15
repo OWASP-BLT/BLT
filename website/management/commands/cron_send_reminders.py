@@ -1,5 +1,6 @@
 import logging
 import random
+import time
 from datetime import time as dt_time
 from itertools import islice
 
@@ -63,18 +64,18 @@ class Command(LoggedBaseCommand):
 
             logger.info(f"Found {active_settings.count()} users with reminders in current UTC time window")
 
+            # Prefetch all user profiles in a single query
+            user_ids = [rs.user_id for rs in active_settings]
+            profile_map = {profile.user_id: profile for profile in UserProfile.objects.filter(user_id__in=user_ids)}
+
             users_needing_reminders = []
 
             for reminder_settings in active_settings:
                 try:
-                    # Check if user has checked in today
-                    try:
-                        profile = UserProfile.objects.get(user=reminder_settings.user)
-                        last_checkin = profile.last_check_in
-                        if last_checkin and last_checkin == now.date():
-                            continue
-                    except UserProfile.DoesNotExist:
-                        pass
+                    # Check if user has checked in today using prefetched profiles
+                    profile = profile_map.get(reminder_settings.user_id)
+                    if profile and profile.last_check_in and profile.last_check_in == now.date():
+                        continue
 
                     users_needing_reminders.append(reminder_settings.user)
                     logger.info(
@@ -97,9 +98,11 @@ class Command(LoggedBaseCommand):
 
             for i, user_batch in enumerate(batch(users_needing_reminders, batch_size), 1):
                 try:
-                    # Add random delay between batches (1-5 seconds)
+                    # Add random delay between batches (1-5 seconds) if not the first batch
                     if i > 1:
-                        time.sleep(random.uniform(1, 5))
+                        delay = random.uniform(1, 5)
+                        logger.info(f"Waiting {delay:.2f} seconds before processing batch {i}")
+                        time.sleep(delay)
 
                     # Create email message
                     email = EmailMessage(
