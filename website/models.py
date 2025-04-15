@@ -1654,28 +1654,28 @@ class GitHubIssue(models.Model):
     has_dollar_tag = models.BooleanField(default=False)
     sponsors_tx_id = models.CharField(max_length=255, null=True, blank=True)
     repo = models.ForeignKey(
-        Repo,
+        'Repo',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
     user_profile = models.ForeignKey(
-        UserProfile,
+        'UserProfile',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
     contributor = models.ForeignKey(
-        Contributor,
+        'Contributor',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
     assignee = models.ForeignKey(
-        Contributor,
+        'Contributor',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -1686,7 +1686,7 @@ class GitHubIssue(models.Model):
     p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     p2p_amount_bch = models.DecimalField(max_digits=18, decimal_places=8, null=True, blank=True)
     sent_by_user = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -1700,6 +1700,11 @@ class GitHubIssue(models.Model):
         blank=True,
         related_name="linked_issues",
         limit_choices_to={"type": "pull_request"},
+    )
+    hackathons = models.ManyToManyField(
+        'Hackathon',
+        related_name='github_issues',
+        blank=True,
     )
 
     class Meta:
@@ -2349,7 +2354,6 @@ class HackathonPrize(models.Model):
 
     def __str__(self):
         return f"{self.get_position_display()} - {self.title} ({self.hackathon.name})"
-
 
 class Queue(models.Model):
     """

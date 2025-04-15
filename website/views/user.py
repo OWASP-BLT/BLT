@@ -1,5 +1,7 @@
 import json
 import logging
+import hashlib
+import hmac
 import os
 from datetime import datetime, timezone
 
@@ -24,6 +26,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.views.generic import DetailView, ListView, TemplateView, View
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from website.models import HackathonPR, Repo, UserProfile
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -54,6 +59,21 @@ from website.models import (
 
 logger = logging.getLogger(__name__)
 
+GITHUB_WEBHOOK_SECRET = os.getenv('GITHUB_WEBHOOK_SECRET')
+
+def validate_signature(payload, signature):
+    """Validate the GitHub webhook signature."""
+    if not GITHUB_WEBHOOK_SECRET:
+        logger.error("GitHub webhook secret not configured")
+        return False
+    if not signature:
+        return False
+    expected_signature = hmac.new(
+        key=GITHUB_WEBHOOK_SECRET.encode('utf-8'),
+        msg=payload,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(f"sha256={expected_signature}", signature)
 
 @receiver(user_signed_up)
 def handle_user_signup(request, user, **kwargs):
@@ -838,44 +858,112 @@ def badge_user_list(request, badge_id):
         },
     )
 
+def validate_signature(payload, signature):
+    """Validate the GitHub webhook signature."""
+    if not signature:
+        return False
+    expected_signature = hmac.new(
+        key=GITHUB_WEBHOOK_SECRET.encode('utf-8'),
+        msg=payload,
+        digestmod=hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(f"sha256={expected_signature}", signature)
 
 @csrf_exempt
+@require_POST
 def github_webhook(request):
-    if request.method == "POST":
-        # Validate GitHub signature
-        # this doesn't seem to work?
-        # signature = request.headers.get("X-Hub-Signature-256")
-        # if not validate_signature(request.body, signature):
-        #    return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
+    """Handle GitHub webhook events."""
+    signature = request.headers.get('X-Hub-Signature-256', '')
+    if not validate_signature(request.body, signature):
+        logger.warning("Invalid or missing webhook signature")
+        return JsonResponse({"status": "error", "message": "Unauthorized request"}, status=403)
 
+    try:
         payload = json.loads(request.body)
-        event_type = request.headers.get("X-GitHub-Event", "")
+        event_type = request.headers.get('X-GitHub-Event', '')
 
         event_handlers = {
-            "pull_request": handle_pull_request_event,
-            "push": handle_push_event,
-            "pull_request_review": handle_review_event,
-            "issues": handle_issue_event,
-            "status": handle_status_event,
-            "fork": handle_fork_event,
-            "create": handle_create_event,
+            'pull_request': handle_pull_request_event,
         }
 
         handler = event_handlers.get(event_type)
         if handler:
             return handler(payload)
         else:
-            return JsonResponse({"status": "error", "message": "Unhandled event type"}, status=400)
-    else:
-        return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
+            logger.info(f"Unhandled event type: {event_type}")
+            return JsonResponse({"status": "event not handled"}, status=200)
 
+    except json.JSONDecodeError:
+        logger.error("Invalid JSON payload received")
+        return JsonResponse({'error': 'Invalid payload'}, status=400)
+    except Exception as e:
+        logger.error(f"Error processing webhook: {str(e)}")
+        return JsonResponse({'error': 'Internal server error'}, status=500)
 
 def handle_pull_request_event(payload):
-    if payload["action"] == "closed" and payload["pull_request"]["merged"]:
-        pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
-        if pr_user_profile:
-            pr_user_instance = pr_user_profile.user
-            assign_github_badge(pr_user_instance, "First PR Merged")
+    """Process pull request events and update hackathon PRs."""
+    pr_data = payload["pull_request"]
+    repo_url = pr_data["base"]["repo"]["html_url"]
+    issue_id = pr_data["number"]
+    title = pr_data["title"]
+    body = pr_data.get("body")
+    url = pr_data["html_url"]
+    author_url = pr_data["user"]["html_url"]
+    author_name = pr_data["user"]["login"]
+    created_at = datetime.fromisoformat(pr_data["created_at"].replace("Z", "+00:00"))
+    updated_at = datetime.fromisoformat(pr_data["updated_at"].replace("Z", "+00:00"))
+    closed_at = datetime.fromisoformat(pr_data["closed_at"].replace("Z", "+00:00")) if pr_data["closed_at"] else None
+    merged_at = datetime.fromisoformat(pr_data["merged_at"].replace("Z", "+00:00")) if pr_data["merged_at"] else None
+    is_merged = pr_data["merged"]
+    state = "merged" if pr_data["merged"] else pr_data["state"]
+
+    # Find the repository and associated active hackathons
+    try:
+        repo = Repo.objects.get(repo_url=repo_url)
+        hackathons = repo.hackathons.filter(is_active=True)
+
+        user_profile = UserProfile.objects.filter(github_url=author_url).first()
+        contributor = Contributor.objects.filter(github_url=author_url).first()
+
+        # Update or create the GitHubIssue record
+        issue, created = GitHubIssue.objects.update_or_create(
+            issue_id=issue_id,
+            repo=repo,
+            defaults={
+                'title': title,
+                'body': body,
+                'state': state,
+                'type': 'pull_request',
+                'created_at': created_at,
+                'updated_at': updated_at,
+                'closed_at': closed_at,
+                'merged_at': merged_at,
+                'is_merged': is_merged,
+                'url': url,
+                'user_profile': user_profile,
+                'contributor': contributor,
+                'has_dollar_tag': False,
+            }
+        )
+
+        if hackathons.exists():
+            issue.hackathons.set(hackathons)
+            logger.info(f"Updated PR #{issue_id} for {hackathons.count()} hackathons")
+        else:
+            issue.hackathons.clear()
+            logger.info(f"PR #{issue_id} not associated with any active hackathons")
+
+    except Repo.DoesNotExist:
+        logger.warning(f"Repository not found for URL: {repo_url}")
+        return JsonResponse({"status": "error", "message": "Repository not found"}, status=404)
+    except Exception as e:
+        logger.error(f"Error processing PR event: {str(e)}")
+        return JsonResponse({"status": "error", "message": "Internal server error"}, status=500)
+
+    # Assign badge for merged PRs
+    if payload["action"] == "closed" and pr_data["merged"] and user_profile:
+        assign_github_badge(user_profile.user, "First PR Merged")
+
     return JsonResponse({"status": "success"}, status=200)
 
 
