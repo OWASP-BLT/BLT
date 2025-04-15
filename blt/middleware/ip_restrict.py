@@ -11,6 +11,7 @@ MAX_COUNT = 2147483647
 
 logger = logging.getLogger(__name__)
 
+
 class IPRestrictMiddleware:
     """
     Middleware to restrict access based on client IP addresses and user agents.
