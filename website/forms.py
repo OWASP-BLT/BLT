@@ -1,3 +1,4 @@
+import pytz
 from allauth.account.forms import SignupForm
 from captcha.fields import CaptchaField
 from django import forms
@@ -12,6 +13,7 @@ from website.models import (
     IpReport,
     Monitor,
     Organization,
+    ReminderSettings,
     Repo,
     Room,
     UserProfile,
@@ -308,3 +310,36 @@ class HackathonPrizeForm(forms.ModelForm):
             self.fields["sponsor"].queryset = HackathonSponsor.objects.filter(hackathon=hackathon)
         else:
             self.fields["sponsor"].queryset = HackathonSponsor.objects.none()
+
+
+class ReminderSettingsForm(forms.ModelForm):
+    reminder_time = forms.TimeField(
+        widget=forms.TimeInput(
+            attrs={
+                "type": "time",
+                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm",
+            },
+            format="%H:%M",
+        ),
+        input_formats=["%H:%M", "%I:%M %p", "%H:%M:%S"],
+        help_text="Select your preferred daily reminder time. Note: Notifications may be delayed by up to 15 minutes.",
+    )
+
+    timezone = forms.ChoiceField(
+        choices=[(tz, tz) for tz in pytz.common_timezones],
+        widget=forms.Select(
+            attrs={
+                "class": "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring-[#e74c3c] sm:text-sm"
+            }
+        ),
+        help_text="Select your timezone",
+    )
+
+    class Meta:
+        model = ReminderSettings
+        fields = ["reminder_time", "timezone", "is_active"]
+        widgets = {
+            "is_active": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-[#e74c3c] focus:ring-[#e74c3c] border-gray-300 rounded"}
+            )
+        }
