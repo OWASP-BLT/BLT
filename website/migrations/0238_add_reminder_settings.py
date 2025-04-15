@@ -12,18 +12,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name="lecture",
-            name="content",
-            field=models.TextField(blank=True, null=True),
-        ),
-        migrations.AlterField(
-            model_name="lecture",
-            name="instructor",
-            field=models.ForeignKey(
-                blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to="website.userprofile"
-            ),
-        ),
         migrations.CreateModel(
             name="ReminderSettings",
             fields=[
