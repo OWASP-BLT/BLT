@@ -24,24 +24,49 @@
             <div id="messages-container" class="space-y-1.5">
                 {% for message in room_messages reversed %}
                     <div class="py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item"
-                         data-message-id="{{ message.id }}">
+                         data-message-id="{{ message.id }}"
+                         data-reactions="{{ message.reactions|escapejs|default:'{}' }}">
                         <div class="flex items-start justify-between">
                             <div class="flex-1">
                                 <p class="text-sm font-medium">{{ message.username }}</p>
                                 <p class="text-sm text-gray-700">{{ message.content }}</p>
                                 <div class="flex items-center gap-2 mt-1">
                                     <span class="text-xs text-gray-500">{{ message.timestamp|naturaltime }}</span>
-                                    <div class="reactions-container flex items-center gap-1">
+                                    <div class="reactions-container flex items-center gap-1 min-h-[28px]">
+                                        <!-- Directly render existing reactions -->
                                         {% if message.reactions %}
-                                            <script>
-                                                document.addEventListener('DOMContentLoaded', function() {
-                                                    updateReactions('{{ message.id }}', JSON.parse('{{ message.reactions|escapejs }}'));
-                                                });
-                                            </script>
+                                            {% for emoji, users in message.reactions.items %}
+                                                {% if users|length > 0 %}
+                                                    <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 reaction-btn"
+                                                            data-emoji="{{ emoji }}"
+                                                            data-message-id="{{ message.id }}">
+                                                        <span class="mr-1">{{ emoji }}</span>
+                                                        <span class="text-xs text-gray-600">{{ users|length }}</span>
+                                                    </button>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                        <!-- Show some default reactions if none exist -->
+                                        {% if not message.reactions or message.reactions|length == 0 %}
+                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 reaction-btn"
+                                                    data-emoji="👍"
+                                                    data-message-id="{{ message.id }}">
+                                                <span>👍</span>
+                                            </button>
+                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 reaction-btn"
+                                                    data-emoji="❤️"
+                                                    data-message-id="{{ message.id }}">
+                                                <span>❤️</span>
+                                            </button>
+                                            <button class="inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200 reaction-btn"
+                                                    data-emoji="😊"
+                                                    data-message-id="{{ message.id }}">
+                                                <span>😊</span>
+                                            </button>
                                         {% endif %}
                                     </div>
                                     <button class="add-reaction-btn text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200">
-                                        <span class="emoji-button">😀</span>
+                                        <span class="emoji-button">+</span>
                                     </button>
                                 </div>
                             </div>
@@ -380,41 +405,63 @@ async function addReaction(messageId, emoji) {
 
 function updateReactions(messageId, reactions) {
     try {
+        console.log(`[updateReactions] Updating for ${messageId}:`, reactions);
+        
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         if (!messageElement) {
-            console.warn(`Message element not found for ID: ${messageId}`);
+            console.warn(`[updateReactions] Message element ${messageId} not found`);
             return;
         }
 
         const reactionsContainer = messageElement.querySelector('.reactions-container');
         if (!reactionsContainer) {
-            console.warn(`Reactions container not found for message ID: ${messageId}`);
+            console.warn(`[updateReactions] Reactions container for ${messageId} not found`);
             return;
         }
 
+        // Clear existing reactions
         reactionsContainer.innerHTML = '';
 
-        if (!reactions || Object.keys(reactions).length === 0) {
-            return;
+        const commonEmojis = ['👍', '❤️', '😊', '👏', '🔥'];
+        const displayedEmojis = new Set(); // Keep track of emojis already displayed
+
+        // 1. Display existing reactions
+        if (reactions && Object.keys(reactions).length > 0) {
+            Object.entries(reactions).forEach(([emoji, users]) => {
+                if (!Array.isArray(users)) {
+                    console.warn(`[updateReactions] Invalid users data for ${emoji} on ${messageId}`);
+                    return;
+                }
+                if (users.length === 0) return; // Don't show reactions with 0 users
+
+                console.log(`[updateReactions] Adding existing reaction ${emoji} (${users.length}) for ${messageId}`);
+                const reactionButton = document.createElement('button');
+                reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
+                reactionButton.innerHTML = `
+                    <span class="mr-1">${emoji}</span>
+                    <span class="text-xs text-gray-600">${users.length}</span>
+                `;
+                reactionButton.onclick = () => addReaction(messageId, emoji);
+                reactionsContainer.appendChild(reactionButton);
+                displayedEmojis.add(emoji); // Mark as displayed
+            });
         }
 
-        Object.entries(reactions).forEach(([emoji, users]) => {
-            if (!Array.isArray(users)) {
-                console.warn(`Invalid users data for emoji ${emoji}`);
-                return;
+        // 2. Display common quick reaction buttons (if not already displayed)
+        commonEmojis.forEach(emoji => {
+            if (!displayedEmojis.has(emoji)) {
+                 console.log(`[updateReactions] Adding common quick reaction ${emoji} for ${messageId}`);
+                const quickReactionBtn = document.createElement('button');
+                quickReactionBtn.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 transition-colors duration-200 border border-gray-200';
+                quickReactionBtn.innerHTML = `<span>${emoji}</span>`;
+                 quickReactionBtn.title = `React with ${emoji}`; // Add title for accessibility
+                quickReactionBtn.onclick = () => addReaction(messageId, emoji);
+                reactionsContainer.appendChild(quickReactionBtn);
             }
-
-            const reactionButton = document.createElement('button');
-            reactionButton.className = 'inline-flex items-center px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200';
-            reactionButton.innerHTML = `
-                <span class="mr-1">${emoji}</span>
-                <span class="text-xs text-gray-600">${users.length}</span>
-            `;
-            reactionButton.onclick = () => addReaction(messageId, emoji);
-            reactionsContainer.appendChild(reactionButton);
         });
+
     } catch (error) {
-        console.error('Error updating reactions:', error);
+        console.error(`[updateReactions] Error updating reactions for ${messageId}:`, error);
         showNotification('Error displaying reactions. Please refresh the page.');
     }
 }
@@ -425,6 +472,8 @@ function appendMessage(data) {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'py-1 px-2 bg-white rounded-lg shadow-sm relative group message-item';
     messageDiv.dataset.messageId = data.message_id;
+    // Embed reactions data directly for new messages too
+    messageDiv.dataset.reactions = JSON.stringify(data.reactions || {});
     
     const isCurrentUser = data.username === '{{ request.user.username }}';
     
@@ -435,9 +484,9 @@ function appendMessage(data) {
                 <p class="text-sm text-gray-700">${escapeHtml(data.message)}</p>
                 <div class="flex items-center gap-2 mt-1">
                     <span class="text-xs text-gray-500">just now</span>
-                    <div class="reactions-container flex items-center gap-1"></div>
+                    <div class="reactions-container flex items-center gap-1 min-h-[28px]"></div>
                     <button class="add-reaction-btn text-gray-400 hover:text-gray-600 text-sm transition-colors duration-200">
-                        <span class="emoji-button">😀</span>
+                        <span class="emoji-button">+</span>
                     </button>
                 </div>
             </div>
@@ -470,15 +519,14 @@ function appendMessage(data) {
         });
     }
 
-    // Update reactions if any exist
-    if (data.reactions) {
-        updateReactions(data.message_id, data.reactions);
-    }
+    // Initialize reactions for the new message
+    updateReactions(data.message_id, data.reactions || {});
 }
 
 function handleWebSocketMessage(event) {
     try {
         const data = JSON.parse(event.data);
+        console.log('Received websocket message:', data);
         
         switch (data.type) {
             case 'chat_message':
@@ -494,6 +542,12 @@ function handleWebSocketMessage(event) {
                 }
                 break;
             case 'reaction_update':
+                console.log('Reaction update received:', data);
+                // Update the data attribute as well
+                const messageElement = document.querySelector(`[data-message-id="${data.message_id}"]`);
+                if (messageElement) {
+                    messageElement.dataset.reactions = JSON.stringify(data.reactions || {});
+                }
                 updateReactions(data.message_id, data.reactions);
                 break;
             case 'error':
@@ -579,6 +633,7 @@ function escapeHtml(unsafe) {
 
 // Initialize WebSocket connection and other event listeners
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing chat room...');
     connectWebSocket();
     
     // Set up form handler
@@ -609,17 +664,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Set up emoji option handlers
-    document.querySelectorAll('.emoji-option').forEach(option => {
-        option.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (activeEmojiButton) {
-                addReaction(activeEmojiButton.messageId, option.dataset.emoji);
+    // Set up reaction buttons that were directly rendered in the template
+    document.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const messageId = btn.dataset.messageId;
+            const emoji = btn.dataset.emoji;
+            if (messageId && emoji) {
+                addReaction(messageId, emoji);
             }
         });
     });
-
-    // Set up reaction buttons for existing messages
+    
+    // Set up add reaction buttons for existing messages
     document.querySelectorAll('.add-reaction-btn').forEach(btn => {
         const messageItem = btn.closest('[data-message-id]');
         if (messageItem) {
@@ -646,7 +702,7 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-// Add to your existing styles at the top of the file
+// Add to your existing styles
 const styles = document.createElement('style');
 styles.textContent = `
     #emoji-picker {
@@ -657,6 +713,11 @@ styles.textContent = `
     }
     #emoji-picker.opacity-100 {
         opacity: 1;
+    }
+    .reactions-container {
+        min-height: 28px;
+        display: flex;
+        flex-wrap: wrap;
     }
 `;
 document.head.appendChild(styles);
