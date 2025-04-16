@@ -1,0 +1,45 @@
+name: Auto-Close New Issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  close-new-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close the issue with a message
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+
+            const message = `
+                  🚫 **Please do not create new issues**  
+                  We currently have **200+ open issues** to focus on.
+                  
+                  If you believe your issue is important and should be solved,  
+                  please create a new topic in our **Discussion Board** instead.  
+                  Thanks for understanding! 🙏
+                  `;
+
+            // Leave the comment
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              body: message
+            });
+
+            // Close the issue
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: issueNumber,
+              state: "closed"
+            });

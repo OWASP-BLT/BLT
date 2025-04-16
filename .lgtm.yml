@@ -1,0 +1,29 @@
+path_classifiers:
+  generated:
+    - exclude: "**/*.py"
+  test:
+    - "website/tests/**/*.py"
+    - "website/test_*.py"
+    - "**/tests/**/*.py"
+    - "**/test_*.py"
+
+extraction:
+  python:
+    python_setup:
+      version: 3
+    index:
+      include:
+        - "website"
+        - "blt"
+        - "blog"
+        - "company"
+        - "comments"
+        - "BACON"
+        - "manage.py"
+      exclude:
+        - "website/migrations/**/*.py"
+        - "**/migrations/**/*.py"
+        - "**/__pycache__/**"
+        - "**/.venv/**"
+        - "**/tests/**/*.py"
+        - "**/test_*.py" 

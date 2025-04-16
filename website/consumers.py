@@ -393,6 +393,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             return False  # Handle unexpected errors gracefully
 
+    @database_sync_to_async
+    def add_reaction(self, message_id, emoji, username):
+        """Adds or toggles a reaction on a message."""
+        try:
+            message = Message.objects.get(id=message_id)
+            reactions = message.reactions or {}
+
+            if emoji not in reactions:
+                reactions[emoji] = []
+
+            if username in reactions[emoji]:
+                reactions[emoji].remove(username)
+                if not reactions[emoji]:
+                    del reactions[emoji]
+            else:
+                reactions[emoji] = reactions.get(emoji, []) + [username]
+
+            message.reactions = reactions
+            message.save()
+            return reactions
+        except Message.DoesNotExist:
+            return None
+        except Exception as e:
+            return None
+
     async def receive(self, text_data):
         """Handles incoming WebSocket messages, including sending and deleting chat messages."""
 
@@ -408,8 +433,34 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message_type = data.get("type", "message")
 
+            # Handle reactions
+            if message_type == "add_reaction":
+                message_id = data.get("message_id")
+                emoji = data.get("emoji")
+                username = self.scope["user"].username if self.scope["user"].is_authenticated else "Anonymous"
+
+                if not message_id or not emoji:
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "invalid_reaction", "message": "Message ID and emoji required"}
+                        )
+                    )
+                    return
+
+                reactions = await self.add_reaction(message_id, emoji, username)
+                if reactions is not None:
+                    # Broadcast reaction update to all clients
+                    reaction_data = {"type": "reaction_update", "message_id": message_id, "reactions": reactions}
+                    await self.channel_layer.group_send(self.room_group_name, reaction_data)
+                else:
+                    await self.send(
+                        text_data=json.dumps(
+                            {"type": "error", "code": "reaction_failed", "message": "Failed to add reaction"}
+                        )
+                    )
+
             # Handle new messages
-            if message_type == "message" or message_type == "chat_message":
+            elif message_type == "message" or message_type == "chat_message":
                 message = data.get("message", "").strip()
                 username = data.get("username", "Anonymous")
 
@@ -523,6 +574,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         except Exception as e:
             print(f"Error in delete_message_broadcast: {e}")
+
+    async def reaction_update(self, event):
+        """Handles broadcasting reaction updates to all users in the room."""
+        if not self.connected:
+            return
+
+        try:
+            await self.send(
+                text_data=json.dumps(
+                    {"type": "reaction_update", "message_id": event["message_id"], "reactions": event["reactions"]}
+                )
+            )
+        except Exception as error:
+            logger.error(f"Error sending reaction update: {str(error)}")
 
 
 class DirectChatConsumer(AsyncWebsocketConsumer):

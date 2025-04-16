@@ -962,7 +962,7 @@ class FacebookLogin(SocialLoginView):
 
 
 class UploadCreate(View):
-    template_name = "index.html"
+    template_name = "home.html"
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):

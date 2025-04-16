@@ -184,6 +184,10 @@
                                         <a href="{% url 'badges' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-certificate w-5 mr-2"></i>Badges</a>
                                     </li>
+                                    <li>
+                                        <a href="{% url 'reminder_settings' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bell w-5 mr-2"></i>Reminder Settings</a>
+                                    </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Language</h3>
                                 <form action="{% url 'set_language' %}"
@@ -594,6 +598,12 @@
                                 </a>
                             </li>
                             <li>
+                                <a href="{% url 'reminder_settings' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fas fa-bell w-5"></i> {% trans "Reminder Settings" %}
+                                </a>
+                            </li>
+                            <li>
                                 <a href="{% url 'account_change_password' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
@@ -608,7 +618,13 @@
                             <li>
                                 <a href="{% url 'organization_view' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
+                                    <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization_dashboard' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <li class="border my-2 w-full"></li>
