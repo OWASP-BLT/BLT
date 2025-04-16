@@ -7,7 +7,7 @@ paths:
   - company
   - comments
   - BACON
-  - manage.py
+  - "."  # Include the root directory
 
 paths-ignore:
   - '**/node_modules/**'
@@ -20,6 +20,7 @@ paths-ignore:
   - '**/*.test.js'
   - '**/*.spec.js'
   - '**/*.min.js'
+  - '**/static/js/dist/**'
 
 query-filters:
   - exclude:
@@ -29,4 +30,14 @@ query-filters:
 
 queries:
   - uses: security-extended
-  - uses: security-and-quality 
+  - uses: security-and-quality
+
+extraction:
+  python:
+    python_setup:
+      version: 3
+    index:
+      exclude:
+        - venv
+        - .venv
+        - "**/__pycache__/**" 
