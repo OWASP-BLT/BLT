@@ -23,17 +23,17 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-10 px-4 sm:px-6 lg:px-8">
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center py-6 px-4 sm:px-6 lg:px-8">
         <div class="w-full max-w-4xl">
             <!-- Card Header with Visual Element -->
-            <div class="bg-white rounded-t-2xl shadow-lg p-8 border-b border-gray-100 relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-red-50 to-red-100 rounded-bl-full -z-10 opacity-70">
+            <div class="bg-white rounded-t-2xl shadow-lg p-4 border-b border-gray-100 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-red-50 to-red-100 rounded-bl-full -z-10 opacity-70">
                 </div>
                 <div class="relative z-10">
-                    <h1 class="text-4xl font-bold text-gray-900 mb-2 flex items-center">
-                        <span class="bg-red-100 text-red-600 p-3 rounded-full mr-4">
+                    <h1 class="text-2xl font-bold text-gray-900 mb-1 flex items-center">
+                        <span class="bg-red-100 text-red-600 p-2 rounded-full mr-3">
                             <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-8 w-8"
+                                 class="h-6 w-6"
                                  fill="none"
                                  viewBox="0 0 24 24"
                                  stroke="currentColor">
@@ -42,9 +42,7 @@
                         </span>
                         Report an IP
                     </h1>
-                    <p class="text-gray-600 max-w-3xl ml-16">
-                        Provide details about suspicious or noteworthy IP activity. All reports are confidential and help improve security for everyone.
-                    </p>
+                    <p class="text-sm text-gray-600 max-w-3xl ml-12">Provide details about suspicious or noteworthy IP activity.</p>
                 </div>
             </div>
             <!-- Form Card Body -->
@@ -52,26 +50,27 @@
                   method='post'
                   action="#"
                   enctype="multipart/form-data"
-                  class="bg-white rounded-b-2xl shadow-lg p-8 mb-10"
+                  class="bg-white rounded-b-2xl shadow-lg p-4 mb-6"
                   onsubmit="return validateReportIp()">
                 {% csrf_token %}
-                <div class="space-y-8">
-                    <!-- Activity Info Section -->
-                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <span class="text-red-500 mr-2">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     viewBox="0 0 20 20"
-                                     fill="currentColor">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
-                            Activity Details
-                        </h2>
-                        <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Left Column -->
+                    <div>
+                        <!-- Activity Info Section -->
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                            <h2 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <span class="text-red-500 mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         viewBox="0 0 20 20"
+                                         fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
+                                Activity Details
+                            </h2>
                             <!-- Title Field -->
-                            <div class="md:col-span-2">
+                            <div class="mb-3">
                                 <label for="activity_title"
                                        class="block text-sm font-medium text-gray-700 mb-1">Activity Title</label>
                                 <div class="relative rounded-md shadow-sm">
@@ -90,51 +89,47 @@
                                            maxlength="100"
                                            required
                                            placeholder="Brief description of the activity"
-                                           class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
+                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">This will help categorize the report</p>
                             </div>
-                            <!-- Activity Type Field -->
-                            <div>
-                                <label for="activity_type"
-                                       class="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
-                                <div class="relative">
-                                    <select name="activity_type"
-                                            id="activity_type"
-                                            required
-                                            class="appearance-none block w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white transition-all">
-                                        <option value="friendly" selected>Friendly</option>
-                                        <option value="malicious">Malicious</option>
-                                    </select>
-                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                                        <svg class="fill-current h-4 w-4"
-                                             xmlns="http://www.w3.org/2000/svg"
-                                             viewBox="0 0 20 20">
-                                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                                        </svg>
-                                    </div>
+                            <!-- Activity Type Field as Checkbox -->
+                            <div class="mb-1">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
+                                <div class="flex items-center space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio"
+                                               name="activity_type"
+                                               value="friendly"
+                                               checked
+                                               class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-700">Friendly</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio"
+                                               name="activity_type"
+                                               value="malicious"
+                                               class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300">
+                                        <span class="ml-2 text-sm text-gray-700">Malicious</span>
+                                    </label>
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">Classify the nature of activity</p>
                             </div>
                         </div>
-                    </div>
-                    <!-- IP Information Section -->
-                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <span class="text-red-500 mr-2">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                                </svg>
-                            </span>
-                            IP Address Information
-                        </h2>
-                        <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+                        <!-- IP Information Section -->
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h2 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <span class="text-red-500 mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                                    </svg>
+                                </span>
+                                IP Address Information
+                            </h2>
                             <!-- IP Address Field -->
-                            <div class="md:col-span-3">
+                            <div class="mb-3">
                                 <label for="ip_address" class="block text-sm font-medium text-gray-700 mb-1">IP Address</label>
                                 <div class="relative rounded-md shadow-sm">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -150,19 +145,19 @@
                                            type="text"
                                            name="ip_address"
                                            required
-                                           placeholder="e.g. 192.168.1.1 or 2001:0db8:85a3:0000:0000:8a2e:0370:7334"
-                                           class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
+                                           placeholder="e.g. 192.168.1.1"
+                                           class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500" id="ip-validation-message">Enter a valid IPv4 or IPv6 address</p>
+                                <p class="text-xs text-gray-500" id="ip-validation-message">Enter a valid IPv4 or IPv6 address</p>
                             </div>
                             <!-- IP Type Selection -->
-                            <div>
+                            <div class="mb-1">
                                 <label for="ip_type" class="block text-sm font-medium text-gray-700 mb-1">IP Version</label>
                                 <div class="relative">
                                     <select name="ip_type"
                                             id="ip_type"
                                             required
-                                            class="appearance-none block w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white transition-all">
+                                            class="appearance-none block w-full py-2 px-4 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 bg-white transition-all">
                                         <option value="ipv4" selected>IPv4</option>
                                         <option value="ipv6">IPv6</option>
                                     </select>
@@ -174,84 +169,80 @@
                                         </svg>
                                     </div>
                                 </div>
-                                <p class="mt-1 text-xs text-gray-500">Select IP protocol version</p>
                             </div>
                         </div>
                     </div>
-                    <!-- Description Section -->
-                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <span class="text-red-500 mr-2">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </span>
-                            Detailed Description
-                        </h2>
-                        <div>
-                            <div class="relative">
+                    <!-- Right Column -->
+                    <div>
+                        <!-- Description Section -->
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4">
+                            <h2 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <span class="text-red-500 mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </span>
+                                Detailed Description
+                            </h2>
+                            <div>
                                 <textarea id="description"
                                           name="description"
                                           required
-                                          rows="4"
-                                          placeholder="Provide a detailed description of the activity, including any observed behavior, timestamps, and potential impact..."
-                                          class="block w-full py-3 px-4 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all"></textarea>
+                                          rows="3"
+                                          placeholder="Provide a detailed description of the activity..."
+                                          class="block w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all"></textarea>
                             </div>
-                            <p class="mt-1 text-xs text-gray-500">Be as specific as possible to help with investigation</p>
                         </div>
-                    </div>
-                    <!-- Security Verification Section -->
-                    <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                        <h2 class="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-                            <span class="text-red-500 mr-2">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                </svg>
-                            </span>
-                            Verification
-                        </h2>
-                        <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
-                            <div class="captcha-form flex flex-col w-full md:flex-row items-center">
-                                <div class="[&_img]:rounded-md [&_img]:shadow-sm [&_img]:border [&_img]:border-gray-200 [&_img]:mr-4 [&_input]:w-full [&_input]:border [&_input]:border-gray-300 [&_input]:rounded-lg [&_input]:p-3 [&_input]:text-lg [&_input]:focus:ring-red-500 [&_input]:focus:border-red-500 [&_input]:transition-all">
+                        <!-- Security Verification Section -->
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h2 class="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                <span class="text-red-500 mr-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                    </svg>
+                                </span>
+                                Verification
+                            </h2>
+                            <div class="captcha-form mb-3">
+                                <div class="[&_img]:rounded-md [&_img]:shadow-sm [&_img]:border [&_img]:border-gray-200 [&_img]:mr-4 [&_input]:w-full [&_input]:border [&_input]:border-gray-300 [&_input]:rounded-lg [&_input]:p-2 [&_input]:text-md [&_input]:focus:ring-red-500 [&_input]:focus:border-red-500 [&_input]:transition-all">
                                     {{ captcha_form.captcha }}
                                 </div>
                             </div>
+                            <!-- Form Actions -->
+                            <div class="flex justify-end gap-3">
+                                <button type="button"
+                                        onclick="cancelForm()"
+                                        class="inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4 mr-2"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                        class="inline-flex justify-center items-center px-5 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-4 w-4 mr-2"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                    </svg>
+                                    Submit Report
+                                </button>
+                            </div>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500">This helps prevent automated submissions</p>
-                    </div>
-                    <!-- Form Actions -->
-                    <div class="flex flex-col-reverse sm:flex-row justify-end gap-4 pt-4">
-                        <button type="button"
-                                onclick="cancelForm()"
-                                class="w-full sm:w-auto inline-flex justify-center items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-5 w-5 mr-2"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                class="w-full sm:w-auto inline-flex justify-center items-center px-8 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all">
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 class="h-5 w-5 mr-2"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            Submit Report
-                        </button>
                     </div>
                 </div>
             </form>
@@ -291,16 +282,16 @@
         
         if (ipInput === '') {
             validationMessage.textContent = 'Enter a valid IPv4 or IPv6 address';
-            validationMessage.className = 'mt-1 text-xs text-gray-500';
-            this.className = 'block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
+            validationMessage.className = 'text-xs text-gray-500';
+            this.className = 'block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
         } else if (validateIP(ipInput, ipType)) {
             validationMessage.textContent = '✓ Valid IP address format';
-            validationMessage.className = 'mt-1 text-xs text-green-600';
-            this.className = 'block w-full pl-10 pr-3 py-3 border border-green-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all';
+            validationMessage.className = 'text-xs text-green-600';
+            this.className = 'block w-full pl-10 pr-3 py-2 border border-green-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all';
         } else {
             validationMessage.textContent = '✗ Invalid format for ' + (ipType === 'ipv4' ? 'IPv4' : 'IPv6');
-            validationMessage.className = 'mt-1 text-xs text-red-600';
-            this.className = 'block w-full pl-10 pr-3 py-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
+            validationMessage.className = 'text-xs text-red-600';
+            this.className = 'block w-full pl-10 pr-3 py-2 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
         }
     });
 
@@ -324,11 +315,11 @@
             // More subtle error notification with better UX
             const validationMessage = document.getElementById('ip-validation-message');
             validationMessage.textContent = '✗ Please correct the IP address format';
-            validationMessage.className = 'mt-1 text-xs text-red-600 font-medium';
+            validationMessage.className = 'text-xs text-red-600 font-medium';
             
             // Focus on the input field
             document.getElementById('ip_address').focus();
-            document.getElementById('ip_address').className = 'block w-full pl-10 pr-3 py-3 border-2 border-red-500 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
+            document.getElementById('ip_address').className = 'block w-full pl-10 pr-3 py-2 border-2 border-red-500 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
             
             return false;
         }
