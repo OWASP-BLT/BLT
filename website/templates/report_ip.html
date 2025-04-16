@@ -145,6 +145,8 @@
                                            type="text"
                                            name="ip_address"
                                            required
+                                           aria-describedby="ip-validation-message"
+                                           aria-invalid="false"
                                            placeholder="e.g. 192.168.1.1"
                                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all" />
                                 </div>
@@ -284,14 +286,17 @@
             validationMessage.textContent = 'Enter a valid IPv4 or IPv6 address';
             validationMessage.className = 'text-xs text-gray-500';
             this.className = 'block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
+            this.setAttribute('aria-invalid', 'false');
         } else if (validateIP(ipInput, ipType)) {
             validationMessage.textContent = '✓ Valid IP address format';
             validationMessage.className = 'text-xs text-green-600';
             this.className = 'block w-full pl-10 pr-3 py-2 border border-green-300 rounded-lg focus:ring-green-500 focus:border-green-500 transition-all';
+            this.setAttribute('aria-invalid', 'false');
         } else {
             validationMessage.textContent = '✗ Invalid format for ' + (ipType === 'ipv4' ? 'IPv4' : 'IPv6');
             validationMessage.className = 'text-xs text-red-600';
             this.className = 'block w-full pl-10 pr-3 py-2 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
+            this.setAttribute('aria-invalid', 'true');
         }
     });
 
@@ -320,6 +325,7 @@
             // Focus on the input field
             document.getElementById('ip_address').focus();
             document.getElementById('ip_address').className = 'block w-full pl-10 pr-3 py-2 border-2 border-red-500 rounded-lg focus:ring-red-500 focus:border-red-500 transition-all';
+            document.getElementById('ip_address').setAttribute('aria-invalid', 'true');
             
             return false;
         }
@@ -327,7 +333,7 @@
     
     function cancelForm() {
         // Ask for confirmation
-        if (confirm("Are you sure you want to cancel this report? All entered data will be lost.")) {
+        if (confirm("{% trans 'Are you sure you want to cancel this report? All entered data will be lost.' %}")) {
             window.history.back();
         }
     }
