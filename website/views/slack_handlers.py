@@ -386,7 +386,148 @@ def slack_commands(request):
                     }
                 )
 
-        if command == "/discover":
+        if command == "/welcome":
+            try:
+                # Get the welcome message for this workspace
+                try:
+                    slack_integration = SlackIntegration.objects.get(workspace_name=team_id)
+                    if slack_integration.welcome_message:
+                        welcome_message = slack_integration.welcome_message
+                    else:
+                        # If no welcome message but it's OWASP workspace
+                        if team_id == "T04T40NHX":
+                            # Use the full welcome message used for team_join to ensure consistency
+                            welcome_message = (
+                                f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+                                "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+                                "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+                                ":small_blue_diamond: *Get Involved:*\n"
+                                "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+                                "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
+                                "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n"
+                                "• To start contributing, look for 'good first issues' tags or ask in project channels for beginner-friendly tasks.\n"
+                                "• Visit our bounties page at <https://blt.owasp.org/bounties> to find paid bug hunting opportunities! 💰\n\n"
+                                ":small_blue_diamond: *Google Summer of Code 2025:*\n"
+                                "• Join the *#gsoc* channel for GSoC program discussions and announcements.\n"
+                                "• Connect with project mentors in their respective project channels:\n"
+                                "  - *#project-blt*: Mentored by Donnie, Yash Pandey,Bishal Das, Ahmed ElSheikh,Patricia Waiyego,Sudhir\n"
+                                "  - *#project-juice-shop*: Mentored by Bjoern Kimminich, Shubham Palriwala, Jannik Hollenbach\n"
+                                "  - *#dsomm*: Mentored by Timo Pagel, Aryan Prasad (DevSecOps Maturity Model)\n"
+                                "  - *#project-owtf*: Mentored by Viyat Bhalodia, Abraham Aranguran\n"
+                                "  - *#project-nest*: Mentored by Arkadii Yakovets,Kateryna Golovanova ,Tamara Lazerka \n"
+                                "  - *#project-nettacker*: Mentored by Sam Stepanyan, Ali Razmjoo, Arkadii Yakovets\n"
+                                "  - *#project-cre*: Mentored by Spyros Gasteratos, Rob Van Der Veer ,Paola Gardenas\n"
+                                "  - *#project-pygoat*: Mentored by ardiansyah ,Rupak Biswas\n"
+                                "• View all GSoC project ideas at: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas>\n\n"
+                                ":small_blue_diamond: *OWASP Projects Overview:*\n"
+                                "• OWASP has 100+ active security projects across different maturity levels:\n"
+                                "  - Flagship Projects: Industry-leading security tools and resources\n"
+                                "  - Production Projects: Mature, established security projects\n"
+                                "  - Incubator Projects: Promising projects under active development\n"
+                                "  - Lab Projects: Innovative experimental initiatives\n"
+                                "• Use `/stats` command to see up-to-date project statistics\n\n"
+                                ":small_blue_diamond: *Stay Updated:*\n"
+                                "• Visit *#newsroom* for the latest updates and announcements.\n"
+                                "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+                                ":small_blue_diamond: *Connect and Learn:*\n"
+                                "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+                                "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+                                "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+                                "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+                                "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+                                "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+                                "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+                                "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+                                "Welcome aboard! :rocket:"
+                            )
+                        else:
+                            welcome_message = (
+                                f"Welcome <@{user_id}>! 👋\n\n"
+                                "Your workspace admin hasn't set up a custom welcome message yet. "
+                                "They can configure this in the organization's integration settings."
+                            )
+                except SlackIntegration.DoesNotExist:
+                    # If no integration exists but it's OWASP workspace
+                    if team_id == "T04T40NHX":
+                        # Use the full welcome message used for team_join
+                        welcome_message = (
+                            f":tada: *Welcome to the OWASP Slack Community, <@{user_id}>!* :tada:\n\n"
+                            "We're thrilled to have you here! Whether you're new to OWASP or a long-time contributor, "
+                            "this Slack workspace is the perfect place to connect, collaborate, and stay informed about all things OWASP.\n\n"
+                            ":small_blue_diamond: *Get Involved:*\n"
+                            "• Check out the *#contribute* channel to find ways to get involved with OWASP projects and initiatives.\n"
+                            "• Explore individual project channels, which are named *#project-name*, to dive into specific projects that interest you.\n"
+                            "• Join our chapter channels, named *#chapter-name*, to connect with local OWASP members in your area.\n"
+                            "• To start contributing, look for 'good first issues' tags or ask in project channels for beginner-friendly tasks.\n"
+                            "• Visit our bounties page at <https://blt.owasp.org/bounties> to find paid bug hunting opportunities! 💰\n\n"
+                            ":small_blue_diamond: *Google Summer of Code 2025:*\n"
+                            "• Join the *#gsoc* channel for GSoC program discussions and announcements.\n"
+                            "• Connect with project mentors in their respective project channels:\n"
+                            "  - *#project-blt*: Mentored by Donnie, Yash Pandey,Bishal Das, Ahmed ElSheikh,Patricia Waiyego,Sudhir\n"
+                            "  - *#project-juice-shop*: Mentored by Bjoern Kimminich, Shubham Palriwala, Jannik Hollenbach\n"
+                            "  - *#dsomm*: Mentored by Timo Pagel, Aryan Prasad (DevSecOps Maturity Model)\n"
+                            "  - *#project-owtf*: Mentored by Viyat Bhalodia, Abraham Aranguran\n"
+                            "  - *#project-nest*: Mentored by Arkadii Yakovets,Kateryna Golovanova ,Tamara Lazerka \n"
+                            "  - *#project-nettacker*: Mentored by Sam Stepanyan, Ali Razmjoo, Arkadii Yakovets\n"
+                            "  - *#project-cre*: Mentored by Spyros Gasteratos, Rob Van Der Veer ,Paola Gardenas\n"
+                            "  - *#project-pygoat*: Mentored by ardiansyah ,Rupak Biswas\n"
+                            "• View all GSoC project ideas at: <https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas>\n\n"
+                            ":small_blue_diamond: *OWASP Projects Overview:*\n"
+                            "• OWASP has 100+ active security projects across different maturity levels:\n"
+                            "  - Flagship Projects: Industry-leading security tools and resources\n"
+                            "  - Production Projects: Mature, established security projects\n"
+                            "  - Incubator Projects: Promising projects under active development\n"
+                            "  - Lab Projects: Innovative experimental initiatives\n"
+                            "• Use `/stats` command to see up-to-date project statistics\n\n"
+                            ":small_blue_diamond: *Stay Updated:*\n"
+                            "• Visit *#newsroom* for the latest updates and announcements.\n"
+                            "• Follow *#external-activities* for news about OWASP's engagement with the wider security community.\n\n"
+                            ":small_blue_diamond: *Connect and Learn:*\n"
+                            "• *#jobs*: Looking for new opportunities? Check out the latest job postings here.\n"
+                            "• *#leaders*: Connect with OWASP leaders and stay informed about leadership activities.\n"
+                            "• *#project-committee*: Engage with the committee overseeing OWASP projects.\n"
+                            "• *#gsoc*: Stay updated on Google Summer of Code initiatives.\n"
+                            "• *#github-admins*: Get support and discuss issues related to OWASP's GitHub repositories.\n"
+                            "• *#learning*: Share and find resources to expand your knowledge in the field of application security.\n\n"
+                            "We're excited to see the amazing contributions you'll make. If you have any questions or need assistance, don't hesitate to ask. "
+                            "Let's work together to make software security visible and improve the security of the software we all rely on.\n\n"
+                            "Welcome aboard! :rocket:"
+                        )
+                    else:
+                        welcome_message = (
+                            f"Welcome <@{user_id}>! 👋\n\n"
+                            "Your workspace admin hasn't set up a custom welcome message yet. "
+                            "Please reach out to a workspace admin for more information about this Slack workspace."
+                        )
+
+                # Create welcome message blocks
+                welcome_blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": welcome_message}}]
+
+                # Open DM channel first
+                dm_response = workspace_client.conversations_open(users=[user_id])
+                if not dm_response["ok"]:
+                    return JsonResponse({"response_type": "ephemeral", "text": "Sorry, I couldn't open a DM channel."})
+
+                dm_channel = dm_response["channel"]["id"]
+
+                # Send welcome message
+                workspace_client.chat_postMessage(channel=dm_channel, text=welcome_message, blocks=welcome_blocks)
+
+                activity.success = True
+                activity.save()
+
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "I've sent you the welcome message in a DM! 👋"}
+                )
+            except Exception as e:
+                activity.success = False
+                activity.error_message = f"Error sending welcome message: {str(e)}"
+                activity.save()
+                return JsonResponse(
+                    {"response_type": "ephemeral", "text": "Sorry, there was an error sending the welcome message."}
+                )
+
+        elif command == "/discover":
             search_term = request.POST.get("text", "").strip()
             return get_project_overview(workspace_client, user_id, search_term, activity)
 
@@ -734,7 +875,7 @@ def slack_commands(request):
                 help_message = [
                     {
                         "type": "section",
-                        "text": {"type": "mrkdwn", "text": "*Available Commands*\nHere’s what I can do for you:"},
+                        "text": {"type": "mrkdwn", "text": "*Available Commands*\nHere's what I can do for you:"},
                     },
                     {"type": "divider"},
                     {
@@ -742,7 +883,7 @@ def slack_commands(request):
                         "fields": [
                             {
                                 "type": "mrkdwn",
-                                "text": "*Basic Commands*\n`/help` - Show this message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats",
+                                "text": "*Basic Commands*\n`/help` - Show this message\n`/welcome` - Get welcome message\n`/report <description>` - Report a bug\n`/gsoc` - Get GSoC info\n`/stats` - View platform stats",
                             },
                             {
                                 "type": "mrkdwn",
@@ -754,10 +895,10 @@ def slack_commands(request):
                 ]
                 dm_response = workspace_client.conversations_open(users=[user_id])
                 if not dm_response["ok"]:
-                    return JsonResponse({"response_type": "ephemeral", "text": "Couldn’t open a DM channel."})
+                    return JsonResponse({"response_type": "ephemeral", "text": "Couldn't open a DM channel."})
                 dm_channel = dm_response["channel"]["id"]
                 workspace_client.chat_postMessage(channel=dm_channel, blocks=help_message, text="Available Commands")
-                return JsonResponse({"response_type": "ephemeral", "text": "I’ve sent you the command list in a DM!"})
+                return JsonResponse({"response_type": "ephemeral", "text": "I've sent you the command list in a DM!"})
             except SlackApiError as e:
                 activity.success = False
                 activity.error_message = f"Slack API error: {str(e)}"
