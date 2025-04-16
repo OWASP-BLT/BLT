@@ -1,0 +1,32 @@
+name: "Custom CodeQL Config"
+
+paths:
+  - website
+  - blt
+  - blog
+  - company
+  - comments
+  - BACON
+  - manage.py
+
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/.venv/**'
+  - '**/vendor/**'
+  - '**/static/vendor/**'
+  - '**/migrations/**'
+  - '**/__pycache__/**'
+  - '**/tests/**'
+  - '**/*.test.js'
+  - '**/*.spec.js'
+  - '**/*.min.js'
+
+query-filters:
+  - exclude:
+      problem.severity:
+        - note
+        - warning
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality 
