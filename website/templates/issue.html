@@ -245,6 +245,7 @@
         likeModal.style.cssText = "display:block !important;";
     }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         
@@ -264,7 +265,10 @@
         );
         
         // Update the content
-        bugReportElement.innerHTML = renderedHtml;
+        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
+        ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
+        ALLOWED_ATTR: ['href', 'class']
+});
     }
     
     // Also process the issue title/description for issue references
@@ -278,7 +282,10 @@
             '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
         );
         
-        issueDescriptionElement.innerHTML = transformedText;
+        issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
+        ALLOWED_TAGS: ['a'],
+        ALLOWED_ATTR: ['href', 'class']
+});
     }
 });
     </script>
