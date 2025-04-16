@@ -18,27 +18,261 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <h1 class="text-3xl text-gray-800 text-center mb-5">Blog Posts</h1>
-    <ul class="grid gap-4 p-8 list-none justify-items-center grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-        {% for post in posts %}
-            <a href="{% url 'post_detail' slug=post.slug %}">
-                <div class="p-3 border border-gray-300 rounded bg-white shadow-lg text-center transition-transform duration-200 ease-in-out hover:scale-105">
-                    <p class="text-blue-500 font-bold">{{ post.title }} by {{ post.author }}</p>
-                    {% if post.image %}
-                        <img src="{{ post.image.url }}"
-                             alt="{{ post.title }}"
-                             width="208"
-                             height="208"
-                             class="w-52 h-52 rounded mb-2">
-                    {% endif %}
+    <!-- Hero Section -->
+    <div class="relative bg-gradient-to-r from-gray-900 to-gray-800 py-16 mb-12 overflow-hidden">
+        <div class="absolute inset-0 bg-[#e74c3c] mix-blend-multiply opacity-20"></div>
+        <div class="absolute -bottom-32 left-1/2 transform -translate-x-1/2">
+            <svg viewBox="0 0 1024 1024"
+                 class="w-full h-64 text-white opacity-10"
+                 xmlns="http://www.w3.org/2000/svg">
+                <circle cx="512" cy="512" r="512" fill="currentColor" />
+            </svg>
+        </div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+                <span class="block">Insights & Stories</span>
+            </h1>
+            <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
+                Discover the latest thoughts, tutorials, and updates from our community
+            </p>
+            <!-- Search Bar -->
+            <div class="mt-8 max-w-xl mx-auto">
+                <div class="relative">
+                    <input type="text"
+                           id="post-search"
+                           placeholder="Search blog posts..."
+                           class="w-full px-5 py-3 rounded-full border border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:border-[#e74c3c] focus:ring-1 focus:ring-[#e74c3c] focus:outline-none">
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4">
+                        <svg class="h-5 w-5 text-gray-400"
+                             xmlns="http://www.w3.org/2000/svg"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
                 </div>
-            </a>
-        {% empty %}
-            <p class="text-center text-gray-500">No posts available.</p>
-        {% endfor %}
-    </ul>
+            </div>
+        </div>
+    </div>
+    <!-- Featured Categories -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div class="flex flex-wrap justify-center gap-4">
+            <button class="category-btn active px-6 py-2 rounded-full bg-[#e74c3c] text-white font-medium transition-all hover:bg-opacity-90">
+                All Posts
+            </button>
+            <button class="category-btn px-6 py-2 rounded-full bg-gray-200 text-gray-700 font-medium transition-all hover:bg-gray-300">
+                Tutorials
+            </button>
+            <button class="category-btn px-6 py-2 rounded-full bg-gray-200 text-gray-700 font-medium transition-all hover:bg-gray-300">
+                News
+            </button>
+            <button class="category-btn px-6 py-2 rounded-full bg-gray-200 text-gray-700 font-medium transition-all hover:bg-gray-300">
+                Stories
+            </button>
+            <button class="category-btn px-6 py-2 rounded-full bg-gray-200 text-gray-700 font-medium transition-all hover:bg-gray-300">
+                Community
+            </button>
+        </div>
+    </div>
+    <!-- Blog Posts Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 blog-grid">
+            {% for post in posts %}
+                <div class="blog-card group relative bg-white rounded-xl overflow-hidden shadow-lg transform transition duration-300 hover:-translate-y-1 hover:shadow-xl">
+                    <!-- Card Image with Gradient Overlay -->
+                    <div class="relative h-48 overflow-hidden">
+                        {% if post.image %}
+                            <img src="{{ post.image.url }}"
+                                 alt="{{ post.title }}"
+                                 width="400"
+                                 height="192"
+                                 class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        {% else %}
+                            <div class="w-full h-full bg-gradient-to-br from-[#e74c3c] to-purple-600 flex items-center justify-center">
+                                <span class="text-4xl text-white font-bold">{{ post.title|slice:":1" }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-70"></div>
+                        <!-- Author Badge -->
+                        <div class="absolute bottom-3 left-3 flex items-center bg-black bg-opacity-50 rounded-full px-3 py-1">
+                            <div class="w-6 h-6 rounded-full bg-[#e74c3c] flex items-center justify-center text-white font-bold mr-2">
+                                {{ post.author|slice:":1" }}
+                            </div>
+                            <span class="text-white text-sm">{{ post.author }}</span>
+                        </div>
+                    </div>
+                    <!-- Card Content -->
+                    <div class="p-5">
+                        <h2 class="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-[#e74c3c] transition-colors">
+                            {{ post.title }}
+                        </h2>
+                        <!-- Post Details -->
+                        <div class="flex items-center text-sm text-gray-500 mb-3">
+                            <span class="flex items-center">
+                                <svg class="h-4 w-4 mr-1"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {% if post.created_at %}
+                                    {{ post.created_at|date:"M d, Y" }}
+                                {% else %}
+                                    Recent
+                                {% endif %}
+                            </span>
+                            <span class="mx-2">•</span>
+                            <span class="flex items-center">
+                                <svg class="h-4 w-4 mr-1"
+                                     xmlns="http://www.w3.org/2000/svg"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                5 min read
+                            </span>
+                        </div>
+                        <!-- Read More -->
+                        <a href="{% url 'post_detail' slug=post.slug %}"
+                           class="inline-flex items-center font-medium text-[#e74c3c] hover:text-[#c0392b] transition-colors">
+                            Read more
+                            <svg class="ml-1 h-4 w-4"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                    </div>
+                    <!-- Full Card Link (for better accessibility) -->
+                    <a href="{% url 'post_detail' slug=post.slug %}"
+                       class="absolute inset-0 z-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#e74c3c] rounded-xl">
+                        <span class="sr-only">Read {{ post.title }}</span>
+                    </a>
+                </div>
+            {% empty %}
+                <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                    <svg class="w-24 h-24 text-gray-300 mb-4"
+                         xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                    <h2 class="text-2xl font-semibold text-gray-700">No posts available yet</h2>
+                    <p class="mt-2 text-gray-500 max-w-md">Be the first to share your thoughts and insights with our community!</p>
+                    <a href="{% url 'post_form' %}"
+                       class="mt-6 px-6 py-3 bg-[#e74c3c] text-white font-medium rounded-lg hover:bg-[#c0392b] transition-colors">
+                        Create Your First Post
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <!-- Floating Action Button -->
     <a href="{% url 'post_form' %}"
-       class="fixed bottom-12 left-52 px-4 py-2 bg-red-600 text-white rounded font-bold inline-flex items-center shadow-lg transition-transform duration-300 ease-in-out hover:scale-110 hover:text-red-600 z-50">
-        <i class="fas fa-plus mr-2"></i> New Blog
+       class="fixed bottom-8 right-8 flex items-center justify-center w-14 h-14 rounded-full bg-[#e74c3c] text-white shadow-lg hover:bg-[#c0392b] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-all duration-300 transform hover:scale-110 z-50">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-6 w-6"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span class="sr-only">New Blog Post</span>
     </a>
+    <!-- Search and Filter JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Search functionality
+            const searchInput = document.getElementById('post-search');
+            const blogCards = document.querySelectorAll('.blog-card');
+            
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                
+                blogCards.forEach(card => {
+                    const title = card.querySelector('h2').textContent.toLowerCase();
+                    const author = card.querySelector('.text-white.text-sm').textContent.toLowerCase();
+                    
+                    if (title.includes(searchTerm) || author.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                checkEmptyState();
+            });
+            
+            // Category buttons
+            const categoryButtons = document.querySelectorAll('.category-btn');
+            
+            categoryButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    categoryButtons.forEach(btn => {
+                        btn.classList.remove('active', 'bg-[#e74c3c]', 'text-white');
+                        btn.classList.add('bg-gray-200', 'text-gray-700');
+                    });
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active', 'bg-[#e74c3c]', 'text-white');
+                    this.classList.remove('bg-gray-200', 'text-gray-700');
+                    
+                    // Filter posts by category (you would need to add category data to your posts)
+                    // This is a placeholder for demonstration
+                    const category = this.textContent.trim().toLowerCase();
+                    
+                    if (category === 'all posts') {
+                        blogCards.forEach(card => {
+                            card.style.display = 'block';
+                        });
+                    } else {
+                        // In a real implementation, you would filter based on actual post categories
+                        // This is just a visual demo
+                        blogCards.forEach((card, index) => {
+                            // Randomly show/hide cards based on category for demo purposes
+                            if (category === 'tutorials' && index % 3 === 0) {
+                                card.style.display = 'block';
+                            } else if (category === 'news' && index % 3 === 1) {
+                                card.style.display = 'block';
+                            } else if (category === 'stories' && index % 3 === 2) {
+                                card.style.display = 'block';
+                            } else if (category === 'community' && index % 2 === 0) {
+                                card.style.display = 'block';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    }
+                    
+                    checkEmptyState();
+                });
+            });
+            
+            function checkEmptyState() {
+                const visibleCards = document.querySelectorAll('.blog-card[style="display: block"]');
+                const grid = document.querySelector('.blog-grid');
+                const existingEmptyState = document.querySelector('.empty-state-message');
+                
+                if (visibleCards.length === 0 && !existingEmptyState) {
+                    const emptyState = document.createElement('div');
+                    emptyState.className = 'empty-state-message col-span-full flex flex-col items-center justify-center py-16 text-center';
+                    emptyState.innerHTML = `
+                        <svg class="w-24 h-24 text-gray-300 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                        <h2 class="text-2xl font-semibold text-gray-700">No matching posts found</h2>
+                        <p class="mt-2 text-gray-500 max-w-md">Try adjusting your search or filter criteria</p>
+                    `;
+                    grid.appendChild(emptyState);
+                } else if (visibleCards.length > 0 && existingEmptyState) {
+                    existingEmptyState.remove();
+                }
+            }
+        });
+    </script>
 {% endblock content %}
