@@ -86,20 +86,8 @@ jobs:
         languages: ${{ matrix.language }}
         config-file: .github/codeql-config.yml
         debug: true
-        # Set build mode to manual for Python to bypass autobuild issues
-        build-mode: ${{ matrix.language == 'python' && 'manual' || 'none' }}
-
-    # Manually run Python setup steps if using manual build mode
-    - name: Manually build Python code
-      if: matrix.language == 'python'
-      run: |
-        echo "Running manual Python build setup for CodeQL"
-        # Create necessary directories to avoid errors
-        mkdir -p /home/runner/work/_temp/codeql_databases/python_src
-        # Copy all Python files for analysis
-        find . -name "*.py" -exec cp --parents {} /home/runner/work/_temp/codeql_databases/python_src \;
-        # The actual Python build is not needed for analysis
-        # This is just to ensure CodeQL can process the source files
+        # Python only supports build-mode 'none'
+        build-mode: 'none'
 
     # Perform the CodeQL Analysis
     - name: Perform CodeQL Analysis
