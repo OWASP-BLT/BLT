@@ -1,94 +1,160 @@
 {% extends "base.html" %}
 {% load static %}
+{% load i18n %}
 {% block title %}
-    Reported IPs
+    {% trans "Reported IPs" %}
 {% endblock title %}
 {% block description %}
-    View and manage reported IPs with detailed information on activity types, user reports, and descriptions. Stay updated with the latest activity reports.
+    {% trans "View and manage reported IPs with detailed information on activity types, user reports, and descriptions. Stay updated with the latest activity reports." %}
 {% endblock description %}
 {% block keywords %}
-    Reported IPs, IP Activity Reports, Manage IPs, View Reports, Activity Types, User Reports
+    {% trans "Reported IPs, IP Activity Reports, Manage IPs, View Reports, Activity Types, User Reports" %}
 {% endblock keywords %}
 {% block og_title %}
-    Reported IPs - Manage Activity Reports
+    {% trans "Reported IPs - Manage Activity Reports" %}
 {% endblock og_title %}
 {% block og_description %}
-    Access detailed information on reported IPs, including activity types, user reports, and descriptions. Stay informed with the latest activity reports.
+    {% trans "Access detailed information on reported IPs, including activity types, user reports, and descriptions. Stay informed with the latest activity reports." %}
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="report-container mt-5 grid grid-cols-1 gap-4">
-        {% for ip in reported_ips %}
-            <div class="report-card bg-gray-50 border border-gray-200 rounded-lg p-4 cursor-pointer transition-colors duration-300 hover:bg-gray-100"
-                 onclick="toggleExpand(this)">
-                <div class="ip-header flex items-center justify-between font-bold">
-                    <div class="ip-info flex items-center flex-grow">
-                        <span class="ip-address text-lg font-bold mr-2 truncate">{{ ip.ip_address }}</span>
+    
+    <div class=" lg:w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-900">{% trans "Reported IPs" %}</h1>
+            <a href="{% url 'report_ip' %}" 
+               class="inline-flex items-center px-5 py-3 bg-red-500 hover:bg-red-500/80 hover:text-white text-white font-semibold rounded-lg shadow-md transition-colors duration-300">
+                <i class="fas fa-exclamation-triangle mr-2"></i> {% trans "Report an IP" %}
+            </a>
+        </div>
+
+        <div class="bg-white shadow-md border border-gray-200 rounded-lg overflow-hidden mb-8">
+            <div class="grid grid-cols-1 divide-y divide-gray-200">
+                {% for ip in reported_ips %}
+                    <div class="report-card hover:bg-gray-50 transition-colors duration-200" data-ip-id="{{ forloop.counter }}">
+                        <div class="p-5 cursor-pointer" onclick="toggleExpand('ip-{{ forloop.counter }}')">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3 truncate">
+                                    <div class="flex-shrink-0 truncate">
+                                        <div class="w-3 h-3 rounded-full {% if ip.activity_type == 'malicious' %}bg-[#e74c3c]{% else %}bg-green-500{% endif %}"></div>
+                                    </div>
+                                    <h2 class="text-lg font-bold text-gray-900 truncate">{{ ip.ip_address }}</h2>
+                                    <span class="truncate px-2.5 py-0.5 rounded-full text-xs font-medium {% if ip.activity_type == 'malicious' %}bg-red-100 text-[#e74c3c]{% else %}bg-green-100 text-green-800{% endif %}">
+                                        {{ ip.activity_type|capfirst }}
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <span class="text-sm text-gray-500 flex-shrink-0">
+                                        <i class="fas fa-user mr-1"></i> {{ ip.user.username|default:_("Anonymous") }}
+                                    </span>
+                                    <span class="text-sm text-gray-500 flex-shrink-0">
+                                        <i class="far fa-calendar-alt mr-1"></i> {{ ip.created|date:"M d, Y" }}
+                                    </span>
+                                    <span id="icon-ip-{{ forloop.counter }}" class="transform transition-transform duration-300">
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <p class="text-sm font-medium text-gray-700">{{ ip.activity_title }}</p>
+                            </div>
+                        </div>
+                        <div id="ip-{{ forloop.counter }}" class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
+                            <div class="p-5 bg-gray-50 border-t border-gray-200">
+                                <h3 class="text-sm font-medium text-gray-900 mb-2">{% trans "Description:" %}</h3>
+                                <p class="text-sm text-gray-700">{{ ip.description|default:_("No additional details provided.") }}</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="activity-type flex items-center ml-auto">
-                        <span class="activity-dot w-2.5 h-2.5 rounded-full mr-2 {% if ip.activity_type == 'malicious' %}bg-red-500{% else %}bg-green-500{% endif %}"></span>
-                        <span class="activity-text font-bold text-gray-700 text-xl">{{ ip.activity_type|capfirst }}</span>
+                {% empty %}
+                    <div class="flex flex-col items-center justify-center py-16">
+                        <div class="text-[#e74c3c] mb-4">
+                            <i class="fas fa-shield-alt text-5xl"></i>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-900 mb-1">{% trans "No IPs Reported" %}</h3>
+                        <p class="text-sm text-gray-500 mb-6">{% trans "It seems there are no reported IPs in the system yet." %}</p>
+                        <a href="{% url 'report_ip' %}" 
+                           class="inline-flex items-center px-4 py-2 bg-[#e74c3c] text-white font-medium rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                            <i class="fas fa-plus mr-2"></i> {% trans "Report an IP" %}
+                        </a>
                     </div>
-                    <span class="expand-icon text-2xl text-gray-700 flex items-center justify-center w-8 transition-transform duration-300">⬇</span>
-                </div>
-                <div class="user-info flex items-center text-sm text-gray-600 mt-1">
-                    <i class="fas fa-user mr-1"></i> {{ ip.user.username|default:"Anonymous" }} - {{ ip.created|date:"M d, Y" }}
-                </div>
-                <div class="description-content max-h-0 overflow-hidden bg-gray-100 mt-2 px-3 rounded-lg border border-gray-200 text-sm transition-all duration-500">
-                    <p class="reason font-bold">Reason: {{ ip.activity_title }}</p>
-                    <p>{{ ip.description|default:"No additional details provided." }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if is_paginated %}
+            <div class="flex flex-col sm:flex-row items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow-md">
+                <div class="flex flex-col sm:flex-row w-full items-center justify-between gap-4">
+                    <div class="w-full sm:w-auto text-center sm:text-left">
+                        <p class="text-sm text-gray-700">
+                            {% blocktrans with start=page_obj.start_index end=page_obj.end_index total=page_obj.paginator.count %}
+                            Showing <span class="font-medium">{{ start }}</span> to <span class="font-medium">{{ end }}</span> of <span class="font-medium">{{ total }}</span> results
+                            {% endblocktrans %}
+                        </p>
+                    </div>
+                    <div class="w-full sm:w-auto flex justify-center">
+                        <nav class="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                    <span class="sr-only">{% trans "First" %}</span>
+                                    <i class="fas fa-angle-double-left text-xs"></i>
+                                </a>
+                                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                    <span class="sr-only">{% trans "Previous" %}</span>
+                                    <i class="fas fa-angle-left text-xs"></i>
+                                </a>
+                            {% endif %}
+                            
+                            <span class="relative hidden sm:inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                {% blocktrans with number=page_obj.number total=page_obj.paginator.num_pages %}
+                                Page {{ number }} of {{ total }}
+                                {% endblocktrans %}
+                            </span>
+                            <span class="relative sm:hidden inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                {{ page_obj.number }}/{{ page_obj.paginator.num_pages }}
+                            </span>
+                            
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                    <span class="sr-only">{% trans "Next" %}</span>
+                                    <i class="fas fa-angle-right text-xs"></i>
+                                </a>
+                                <a href="?page={{ page_obj.paginator.num_pages }}" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                                    <span class="sr-only">{% trans "Last" %}</span>
+                                    <i class="fas fa-angle-double-right text-xs"></i>
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
                 </div>
             </div>
-        {% empty %}
-            <p>No IPs reported.</p>
-        {% endfor %}
+        {% endif %}
     </div>
-    <div class="col-md-12 text-center mt-4">
-        <div class="pagination">
-            {% if is_paginated %}
-                {% if page_obj.has_previous %}
-                    <a href="?page=1" class="btn btn-default">First</a>
-                    <a href="?page={{ page_obj.previous_page_number }}"
-                       class="btn btn-default">Previous</a>
-                {% endif %}
-                <span class="current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                {% if page_obj.has_next %}
-                    <a href="?page={{ page_obj.next_page_number }}" class="btn btn-default">Next</a>
-                    <a href="?page={{ page_obj.paginator.num_pages }}"
-                       class="btn btn-default">Last</a>
-                {% endif %}
-            {% endif %}
-        </div>
-    </div>
-    <div class="bottom-right fixed bottom-4 right-4">
+
+    <div class="fixed bottom-4 left-4 flex space-x-2">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/reported_ips_list.html"
-           class="mr-2">
-            <i class="fab fa-github text-2xl text-gray-700"></i>
+           class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-300"
+           title="{% trans 'View on GitHub' %}">
+            <i class="fab fa-github text-gray-700"></i>
         </a>
-        <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1">
-            <i class="fab fa-figma text-2xl text-gray-700"></i>
+        <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1" 
+           class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-300"
+           title="{% trans 'View on Figma' %}">
+            <i class="fab fa-figma text-gray-700"></i>
         </a>
     </div>
-    <a href="{% url 'report_ip' %}"
-       class="floating-report-ip-button fixed bottom-12 left-56 px-4 py-2 bg-red-600 text-white font-bold rounded-lg shadow-lg hover:scale-110 transition-transform duration-300 z-50">
-        <i class="fas fa-exclamation-triangle mr-2"></i> Report an IP
-    </a>
+
     <script>
-        function toggleExpand(card) {
-            const descriptionContent = card.querySelector(".description-content");
-            const icon = card.querySelector(".expand-icon");
-            const isExpanded = descriptionContent.classList.contains("max-h-48");
-    
-            if (isExpanded) {
-                descriptionContent.classList.remove("max-h-48", "px-3", "py-3");
-                descriptionContent.classList.add("max-h-0");
-                icon.style.transform = "rotate(0deg)"; 
-                icon.setAttribute("aria-expanded", "false");
+        function toggleExpand(id) {
+            const content = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                icon.classList.remove('rotate-180');
             } else {
-                descriptionContent.classList.remove("max-h-0");
-                descriptionContent.classList.add("max-h-48", "px-3", "py-3");
-                icon.style.transform = "rotate(180deg)"; 
-                icon.setAttribute("aria-expanded", "true");
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.classList.add('rotate-180');
             }
         }
     </script>
