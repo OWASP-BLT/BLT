@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 GSOC_API_BASE_URL = "https://summerofcode.withgoogle.com/api/archive/programs/{year}/organizations/"
 
 # Years to fetch (update this list as needed)
-GSOC_YEARS = [2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016]
+GSOC_YEARS = [2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016]
 
 
 class Command(BaseCommand):
