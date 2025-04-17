@@ -18,32 +18,23 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <!-- Hero Section -->
-    <div class="relative bg-gradient-to-r from-gray-900 to-gray-800 py-16 mb-12 overflow-hidden">
-        <div class="absolute inset-0 bg-[#e74c3c] mix-blend-multiply opacity-20"></div>
-        <div class="absolute -bottom-32 left-1/2 transform -translate-x-1/2">
-            <svg viewBox="0 0 1024 1024"
-                 class="w-full h-64 text-white opacity-10"
-                 xmlns="http://www.w3.org/2000/svg">
-                <circle cx="512" cy="512" r="512" fill="currentColor" />
-            </svg>
-        </div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight">
-                <span class="block">Insights & Stories</span>
-            </h1>
-            <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-300">
+    <!-- Simple Header Section -->
+    <div class="bg-white py-8 mb-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-900 mb-4">Blog Posts</h1>
+            <div class="w-16 h-1 bg-[#e74c3c] mx-auto mb-4"></div>
+            <p class="max-w-2xl mx-auto text-lg text-gray-600">
                 Discover the latest thoughts, tutorials, and updates from our community
             </p>
             <!-- Search Bar -->
-            <div class="mt-8 max-w-xl mx-auto">
+            <div class="mt-6 max-w-xl mx-auto">
                 <div class="relative">
                     <input type="text"
                            id="post-search"
                            placeholder="Search blog posts..."
-                           class="w-full px-5 py-3 rounded-full border border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:border-[#e74c3c] focus:ring-1 focus:ring-[#e74c3c] focus:outline-none">
+                           class="w-full px-5 py-3 rounded-full border border-gray-300 bg-white text-gray-700 placeholder-gray-500 focus:border-[#e74c3c] focus:ring-1 focus:ring-[#e74c3c] focus:outline-none shadow-sm">
                     <div class="absolute inset-y-0 right-0 flex items-center pr-4">
-                        <svg class="h-5 w-5 text-gray-400"
+                        <svg class="h-5 w-5 text-[#e74c3c]"
                              xmlns="http://www.w3.org/2000/svg"
                              viewBox="0 0 20 20"
                              fill="currentColor">
@@ -59,13 +50,13 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 blog-grid">
             {% for post in posts %}
                 <div class="blog-card group relative bg-white rounded-xl overflow-hidden shadow-lg transform transition duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <!-- Card Image with Gradient Overlay -->
-                    <div class="relative h-48 overflow-hidden">
+                    <!-- Card Image with Gradient Overlay (Square) -->
+                    <div class="relative aspect-square overflow-hidden">
                         {% if post.image %}
                             <img src="{{ post.image.url }}"
                                  alt="{{ post.title }}"
-                                 width="400"
-                                 height="192"
+                                 width="300"
+                                 height="300"
                                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                         {% else %}
                             <div class="w-full h-full bg-gradient-to-br from-[#e74c3c] to-purple-600 flex items-center justify-center">
@@ -73,12 +64,22 @@
                             </div>
                         {% endif %}
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent opacity-70"></div>
-                        <!-- Author Badge -->
+                        <!-- Author Badge - Fix for admin duplication -->
                         <div class="absolute bottom-3 left-3 flex items-center bg-black bg-opacity-50 rounded-full px-3 py-1">
                             <div class="w-6 h-6 rounded-full bg-[#e74c3c] flex items-center justify-center text-white font-bold mr-2">
                                 {{ post.author|slice:":1" }}
                             </div>
                             <span class="text-white text-sm">{{ post.author }}</span>
+                        </div>
+                        <!-- Category Tag -->
+                        <div class="absolute top-3 right-3">
+                            <span class="bg-[#e74c3c] text-white text-xs px-2 py-1 rounded-full">
+                                {% if post.category %}
+                                    {{ post.category }}
+                                {% else %}
+                                    Article
+                                {% endif %}
+                            </span>
                         </div>
                     </div>
                     <!-- Card Content -->
@@ -89,7 +90,7 @@
                         <!-- Post Details -->
                         <div class="flex items-center text-sm text-gray-500 mb-3">
                             <span class="flex items-center">
-                                <svg class="h-4 w-4 mr-1"
+                                <svg class="h-4 w-4 mr-1 text-[#e74c3c]"
                                      xmlns="http://www.w3.org/2000/svg"
                                      fill="none"
                                      viewBox="0 0 24 24"
@@ -104,7 +105,7 @@
                             </span>
                             <span class="mx-2">•</span>
                             <span class="flex items-center">
-                                <svg class="h-4 w-4 mr-1"
+                                <svg class="h-4 w-4 mr-1 text-[#e74c3c]"
                                      xmlns="http://www.w3.org/2000/svg"
                                      fill="none"
                                      viewBox="0 0 24 24"
@@ -134,7 +135,7 @@
                 </div>
             {% empty %}
                 <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
-                    <svg class="w-24 h-24 text-gray-300 mb-4"
+                    <svg class="w-24 h-24 text-[#e74c3c] opacity-50 mb-4"
                          xmlns="http://www.w3.org/2000/svg"
                          fill="none"
                          viewBox="0 0 24 24"
@@ -196,7 +197,7 @@
                     const emptyState = document.createElement('div');
                     emptyState.className = 'empty-state-message col-span-full flex flex-col items-center justify-center py-16 text-center';
                     emptyState.innerHTML = `
-                        <svg class="w-24 h-24 text-gray-300 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg class="w-24 h-24 text-[#e74c3c] opacity-50 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                         </svg>
                         <h2 class="text-2xl font-semibold text-gray-700">No matching posts found</h2>
