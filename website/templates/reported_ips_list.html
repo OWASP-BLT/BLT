@@ -31,8 +31,11 @@
                 {% for ip in reported_ips %}
                     <div class="report-card hover:bg-gray-50 transition-colors duration-200"
                          data-ip-id="{{ forloop.counter }}">
-                        <div class="p-5 cursor-pointer"
-                             onclick="toggleExpand('ip-{{ forloop.counter }}')">
+                        <button type="button"
+                                class="p-5 w-full text-left"
+                                aria-expanded="false"
+                                aria-controls="ip-{{ forloop.counter }}"
+                                data-expand-trigger="ip-{{ forloop.counter }}">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3 truncate">
                                     <div class="flex-shrink-0 truncate">
@@ -138,12 +141,16 @@
     <div class="fixed bottom-4 left-4 flex space-x-2">
         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/reported_ips_list.html"
            class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-300"
-           title="{% trans 'View on GitHub' %}">
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="{% trans 'View on GitHub' %}">
             <i class="fab fa-github text-gray-700"></i>
         </a>
         <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&mode=design&t=glf1ydd0YzYzsUJh-1"
            class="flex items-center justify-center w-10 h-10 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-300"
-           title="{% trans 'View on Figma' %}">
+           target="_blank"
+           rel="noopener noreferrer"
+           aria-label="{% trans 'View on Figma' %}">
             <i class="fab fa-figma text-gray-700"></i>
         </a>
     </div>
