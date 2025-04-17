@@ -35,7 +35,7 @@
                                 class="p-5 w-full text-left"
                                 aria-expanded="false"
                                 aria-controls="ip-{{ forloop.counter }}"
-                                data-expand-trigger="ip-{{ forloop.counter }}">
+                                onclick="toggleExpand('ip-{{ forloop.counter }}')">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3 truncate">
                                     <div class="flex-shrink-0 truncate">
@@ -63,7 +63,7 @@
                             <div class="mt-2">
                                 <p class="text-sm font-medium text-gray-700">{{ ip.activity_title }}</p>
                             </div>
-                        </div>
+                        </button>
                         <div id="ip-{{ forloop.counter }}"
                              class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out">
                             <div class="p-5 bg-gray-50 border-t border-gray-200">
