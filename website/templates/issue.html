@@ -87,13 +87,18 @@
                     </span>
                 </nav>
                 <div class="flex flex-col gap-5 px-2">
-                    <div class="flex flex-col gap-2">
-                        <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full break-words"
-                            title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
-                        {% if object.markdown_description %}
-                            <p class="text-base sm:text-lg text-gray-700 font-medium break-words"
-                               id="bug_report">{{ object.markdown_description }}</p>
-                        {% endif %}
+                    <div class="flex flex-col gap-5 px-2">
+                        <div class="flex flex-col gap-2">
+                            <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight w-full break-words issue-description"
+                                title="{{ object.description|escapejs }}">{{ object.description|escapejs }}</h2>
+                            {% if object.markdown_description %}
+                                <p class="text-base sm:text-lg text-gray-700 font-medium break-words"
+                                   id="bug_report"
+                                   data-markdown="{{ object.markdown_description|escapejs }}">
+                                    <!-- This content will be replaced by rendered markdown -->
+                                </p>
+                            {% endif %}
+                        </div>
                     </div>
                     <a href="{{ object.url }}"
                        title="{{ object.url }}"
@@ -240,15 +245,49 @@
         likeModal.style.cssText = "display:block !important;";
     }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.4/dist/purify.min.js"></script>
     <script>
-    if (window.markdownit) {
+    document.addEventListener('DOMContentLoaded', () => {
+        
+    const bugReportElement = document.getElementById('bug_report');
+    
+    if (bugReportElement && window.markdownit) {
         const md = new window.markdownit();
-        const markdownContent = `{{ object.markdown_description|escapejs }}`;
-        const renderedHtml = md.render(markdownContent);
-        $("#bug_report").html(renderedHtml);
-    } else {
-        console.error('MarkdownIt library failed to load.');
+        const markdownContent = bugReportElement.getAttribute('data-markdown') || bugReportElement.textContent;
+        
+        // First render the markdown
+        let renderedHtml = md.render(markdownContent);
+        
+        // Then transform issue references to clickable links
+        renderedHtml = renderedHtml.replace(
+            /#(\d+)/g, 
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        // Update the content
+        bugReportElement.innerHTML = DOMPurify.sanitize(renderedHtml, {
+        ALLOWED_TAGS: ['a', 'p', 'strong', 'em', 'ul', 'li', 'code', 'pre', 'blockquote'],
+        ALLOWED_ATTR: ['href', 'class']
+});
     }
+    
+    // Also process the issue title/description for issue references
+    const issueDescriptionElement = document.querySelector('.issue-description');
+    if (issueDescriptionElement) {
+        const originalText = issueDescriptionElement.textContent;
+        
+        // Transform issue references to clickable links
+        const transformedText = originalText.replace(
+            /#(\d+)/g, 
+            '<a href="/issue/$1" class="text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium">#$1</a>'
+        );
+        
+        issueDescriptionElement.innerHTML = DOMPurify.sanitize(transformedText, {
+        ALLOWED_TAGS: ['a'],
+        ALLOWED_ATTR: ['href', 'class']
+});
+    }
+});
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"
             integrity="sha256-FZsW7H2V5X9TGinSjjwYJ419Xka27I8XPDmWryGlWtw="
