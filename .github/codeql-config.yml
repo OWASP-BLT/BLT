@@ -1,0 +1,43 @@
+name: "Custom CodeQL Config"
+
+paths:
+  - website
+  - blt
+  - blog
+  - company
+  - comments
+  - BACON
+  - "."  # Include the root directory
+
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/.venv/**'
+  - '**/vendor/**'
+  - '**/static/vendor/**'
+  - '**/migrations/**'
+  - '**/__pycache__/**'
+  - '**/tests/**'
+  - '**/*.test.js'
+  - '**/*.spec.js'
+  - '**/*.min.js'
+  - '**/static/js/dist/**'
+
+query-filters:
+  - exclude:
+      problem.severity:
+        - note
+        - warning
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+extraction:
+  python:
+    python_setup:
+      version: 3
+    index:
+      exclude:
+        - venv
+        - .venv
+        - "**/__pycache__/**" 

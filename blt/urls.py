@@ -116,6 +116,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
+from website.views.daily_reminders import reminder_settings
 from website.views.education import (
     add_lecture,
     add_section,
@@ -530,10 +531,6 @@ urlpatterns = [
         name="create_github_issue",
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
-    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
-    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
@@ -1094,6 +1091,7 @@ urlpatterns = [
     path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
+    path("reminder-settings/", reminder_settings, name="reminder_settings"),
 ]
 
 if settings.DEBUG:
