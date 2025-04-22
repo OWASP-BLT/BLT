@@ -23,11 +23,11 @@ def batch(iterable, size):
 
 class Command(LoggedBaseCommand):
     help = "Sends daily check-in reminders to users who haven't checked in today"
-    
+
     def setup_logging(self):
-        logs_dir = os.path.join(settings.BASE_DIR, 'logs')
+        logs_dir = os.path.join(settings.BASE_DIR, "logs")
         os.makedirs(logs_dir, exist_ok=True)
-        log_file = os.path.join(logs_dir, 'reminder_emails.log')
+        log_file = os.path.join(logs_dir, "reminder_emails.log")
         handler = logging.FileHandler(log_file)
         handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
         logger.addHandler(handler)
