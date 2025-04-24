@@ -101,7 +101,9 @@ h5.card-title{
                     {{ bounty.domain.organization.name }}
                     <span class="badge-organization badge-primary shadow">{{ bounty.domain.name }}</span>
                 </h1>
-                <p class="lead mt-5">{{ bounty.name }} / {{ bounty.starts_on|date:'Y-m-d H:i' }} - {{ bounty.end_on|date:'Y-m-d H:i' }}</p>
+                <p class="lead mt-5">
+                    {{ bounty.name }} / {{ bounty.starts_on|date:'Y-m-d H:i' }} - {{ bounty.end_on|date:'Y-m-d H:i' }}
+                </p>
             </div>
             {% if bounty_active %}
                 <a href="{% url 'submit_bug' %}">
