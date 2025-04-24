@@ -1196,8 +1196,8 @@ class DomainView(View):
         first_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("created").first()
         last_bug = Issue.objects.filter(domain__id=domain["id"]).order_by("-created").first()
 
-        ongoing_bugbounties = Hunt.objects.filter(domain__id=domain["id"]).annotate(
-            total_prize=Sum("huntprize__value")
+        ongoing_bugbounties = Bounty.objects.filter(domain__id=domain["id"]).annotate(
+            total_prize=Sum("bountyprize__value")
         )[:3]
         context = {
             **domain,
