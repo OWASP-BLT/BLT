@@ -535,7 +535,8 @@ def status_page(request):
         if "github_api_history" in status_data:
             status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
 
-    return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+        return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+    return render(request, "status_page.html", {"status": status_data})
 
 
 def github_callback(request):
