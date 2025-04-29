@@ -521,9 +521,6 @@ def status_page(request):
 
         status_data["chart_data"] = chart_data
 
-        # Cache the results
-        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
-
         # Prepare the chart data for the template
         template_chart_data = {
             "dates": json.dumps(status_data["chart_data"]["dates"]),
@@ -535,7 +532,14 @@ def status_page(request):
         if "github_api_history" in status_data:
             status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
 
-        return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+        # Add template chart data to status_data
+        status_data["template_chart_data"] = template_chart_data
+
+        # Cache the combined status data
+        cache.set("service_status", status_data, CACHE_TIMEOUT)
+
+        return render(request, "status_page.html", {"status": status_data, "chart_data": status_data["template_chart_data"]})
+    return render(request, "status_page.html", {"status": status_data})
 
 
 def github_callback(request):

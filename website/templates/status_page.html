@@ -313,9 +313,9 @@
     <script>
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('activityChart').getContext('2d');
-    const dates = JSON.parse('{{ chart_data.dates|escapejs }}');
-    const teamJoins = JSON.parse('{{ chart_data.team_joins|escapejs }}');
-    const commands = JSON.parse('{{ chart_data.commands|escapejs }}');
+    const dates = JSON.parse('{{ status.template_chart_data.dates|escapejs }}');
+    const teamJoins = JSON.parse('{{ status.template_chart_data.team_joins|escapejs }}');
+    const commands = JSON.parse('{{ status.template_chart_data.commands|escapejs }}');
 
     const chart = new Chart(ctx, {
         type: 'bar',
