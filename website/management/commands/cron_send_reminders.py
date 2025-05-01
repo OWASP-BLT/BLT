@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 import time
 from datetime import time as dt_time
@@ -12,10 +13,6 @@ from website.management.base import LoggedBaseCommand
 from website.models import ReminderSettings, UserProfile
 
 logger = logging.getLogger(__name__)
-handler = logging.FileHandler("logs/reminder_emails.log")
-handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-logger.addHandler(handler)
-logger.setLevel(logging.INFO)
 
 
 def batch(iterable, size):
@@ -27,7 +24,18 @@ def batch(iterable, size):
 class Command(LoggedBaseCommand):
     help = "Sends daily check-in reminders to users who haven't checked in today"
 
+    def setup_logging(self):
+        logs_dir = os.path.join(settings.BASE_DIR, "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        log_file = os.path.join(logs_dir, "reminder_emails.log")
+        handler = logging.FileHandler(log_file)
+        handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        return handler
+
     def handle(self, *args, **options):
+        handler = self.setup_logging()
         try:
             now = timezone.now()
             logger.info(f"Starting reminder process at {now} (UTC)")
@@ -143,3 +151,6 @@ class Command(LoggedBaseCommand):
         except Exception as e:
             logger.error(f"Critical error in reminder process: {str(e)}")
             raise
+        finally:
+            logger.removeHandler(handler)
+            handler.close()
