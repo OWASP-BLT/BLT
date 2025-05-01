@@ -535,10 +535,12 @@ def status_page(request):
         # Add template chart data to status_data
         status_data["template_chart_data"] = template_chart_data
 
-        # Cache the combined status data
+        # Cache the combined status
         cache.set("service_status", status_data, CACHE_TIMEOUT)
 
-        return render(request, "status_page.html", {"status": status_data, "chart_data": status_data["template_chart_data"]})
+        return render(
+            request, "status_page.html", {"status": status_data, "chart_data": status_data["template_chart_data"]}
+        )
     return render(request, "status_page.html", {"status": status_data})
 
 
