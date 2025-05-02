@@ -479,7 +479,7 @@ function appendMessage(data) {
     
     const isCurrentUser = data.username === '{{ request.user.username }}';
     
-    messageDiv.innerHTML = `
+    messageDiv.innerHTML = ` 
         <div class="flex items-start justify-between">
             <div class="flex-1">
                 <p class="text-sm font-medium">${escapeHtml(data.username)}</p>
