@@ -1,6 +1,8 @@
+import bleach
 import markdown
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.contenttypes.models import ContentType
+from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.views import generic
 
@@ -20,10 +22,46 @@ class PostDetailView(generic.DetailView):
 
     def get_object(self):
         post = super().get_object()
-        post.content = markdown.markdown(
+
+        html_content = markdown.markdown(
             post.content,
             extensions=["markdown.extensions.fenced_code", "markdown.extensions.tables", "markdown.extensions.nl2br"],
         )
+
+        allowed_tags = [
+            "p",
+            "br",
+            "b",
+            "strong",
+            "i",
+            "em",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "blockquote",
+            "ul",
+            "ol",
+            "li",
+            "a",
+            "img",
+            "code",
+            "pre",
+        ]
+        allowed_attributes = {
+            "a": ["href", "title", "rel", "target"],
+            "img": ["src", "alt", "title", "width", "height"],
+            "blockquote": ["cite"],
+            "code": ["class"],
+            "pre": ["class"],
+        }
+
+        clean_html = bleach.clean(html_content, tags=allowed_tags, attributes=allowed_attributes, strip=True)
+
+        post.content = mark_safe(clean_html)
+
         return post
 
     def get_context_data(self, **kwargs):
