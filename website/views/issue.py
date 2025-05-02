@@ -1537,10 +1537,14 @@ class IssueView(DetailView):
 
         if self.object.user_agent:
             user_agent = parse(self.object.user_agent)
-            context["browser_family"] = user_agent.browser.family
+            browser_family = user_agent.browser.family
+            context["browser_family"] = browser_family
             context["browser_version"] = user_agent.browser.version_string
-            context["os_family"] = user_agent.os.family
+            context["os_family"] = user_agent.os.family 
             context["os_version"] = user_agent.os.version_string
+            
+            from website.utils.browser_utils import normalize_browser_name
+            context["normalized_browser_family"] = normalize_browser_name(browser_family)
 
         context["screenshots"] = IssueScreenshot.objects.filter(issue=self.object)
         context["total_score"] = list(
