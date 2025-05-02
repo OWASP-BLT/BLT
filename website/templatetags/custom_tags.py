@@ -203,3 +203,21 @@ def cut(value, arg):
         return str(value).replace(arg, "")
     except (ValueError, TypeError):
         return value
+
+
+@register.simple_tag
+def static_safe(path, fallback=None):
+    """
+    Safely load a static file with a fallback option.
+    Args:
+        path (str): The path to the static file
+        fallback (str): Optional fallback path if the main path doesn't exist
+    Returns:
+        str: The static URL for the file
+    """
+    try:
+        return static(path)
+    except ValueError:
+        if fallback:
+            return static(fallback)
+        return static("img/placeholder.png")
