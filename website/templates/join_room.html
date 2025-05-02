@@ -405,7 +405,8 @@ async function addReaction(messageId, emoji) {
 
 function updateReactions(messageId, reactions) {
     try {
-        console.log(`[updateReactions] Updating for ${messageId}:`, reactions);
+        console.log('[updateReactions] Updating for messageId:', messageId, 'with reactions:', reactions);
+
         
         const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
         if (!messageElement) {
@@ -461,7 +462,8 @@ function updateReactions(messageId, reactions) {
         });
 
     } catch (error) {
-        console.error(`[updateReactions] Error updating reactions for ${messageId}:`, error);
+        console.error('[updateReactions] Error updating reactions for messageId:', messageId, error);
+
         showNotification('Error displaying reactions. Please refresh the page.');
     }
 }
