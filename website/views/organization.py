@@ -2781,7 +2781,8 @@ class BountyPayoutsView(ListView):
                         break
                     page += 1
 
-                issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
+                issues = all_issues
+                count = 0
                 count = 0
 
                 for issue_data in issues:
