@@ -2766,6 +2766,7 @@ class BountyPayoutsView(ListView):
             try:
                 # Import required models
                 from website.models import GitHubIssue, Repo
+
                 page = 1
                 per_page = 100
                 all_issues = []
