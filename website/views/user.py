@@ -42,6 +42,7 @@ from website.models import (
     Issue,
     IssueScreenshot,
     Monitor,
+    Notification,
     Points,
     Tag,
     Thread,
@@ -385,82 +386,6 @@ class UserProfileDetailView(DetailView):
             user_issues.update(is_hidden=hide)
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
-
-
-class UserProfileDetailsView(DetailView):
-    model = get_user_model()
-    slug_field = "username"
-    template_name = "dashboard_profile.html"
-
-    def get(self, request, *args, **kwargs):
-        try:
-            if request.user.is_authenticated:
-                self.object = self.get_object()
-            else:
-                return redirect("/accounts/login")
-        except Http404:
-            messages.error(self.request, "That user was not found.")
-            return redirect("/")
-        return super(UserProfileDetailsView, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        user = self.object
-        context = super(UserProfileDetailsView, self).get_context_data(**kwargs)
-        context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
-        )[0]
-        context["websites"] = (
-            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
-        )
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:10]
-        context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
-        context["user_details"] = UserProfile.objects.get(user=self.object)
-        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
-        context["current_month"] = datetime.now().month
-        context["graph"] = (
-            Issue.objects.filter(user=self.object, hunt=None)
-            .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
-            )
-            .annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["total_bugs"] = Issue.objects.filter(user=self.object).count()
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i)).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-            )
-
-        arr = []
-        allFollowers = user.userprofile.follower.all()
-        for userprofile in allFollowers:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["followers"] = arr
-
-        arr = []
-        allFollowing = user.userprofile.follows.all()
-        for userprofile in allFollowing:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["following"] = arr
-
-        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
-        context["bookmarks"] = user.userprofile.issue_saved.all()
-        return context
-
-    @method_decorator(login_required)
-    def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-        if form.is_valid():
-            form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
@@ -1049,7 +974,6 @@ def messaging_home(request):
     return render(request, "messaging.html", {"threads": threads})
 
 
-@login_required
 def start_thread(request, user_id):
     if request.method == "POST":
         other_user = get_object_or_404(User, id=user_id)
@@ -1057,10 +981,38 @@ def start_thread(request, user_id):
         # Check if a thread already exists between the two users
         thread = Thread.objects.filter(participants=request.user).filter(participants=other_user).first()
 
+        # Flag if this is a new thread (for sending email)
+        is_new_thread = not thread
+
         if not thread:
             # Create a new thread
             thread = Thread.objects.create()
             thread.participants.set([request.user, other_user])  # Use set() for ManyToManyField
+
+            # Send email notification to the recipient for new thread
+            if other_user.email:
+                subject = f"New encrypted chat from {request.user.username} on OWASP BLT"
+                chat_url = request.build_absolute_uri(reverse("messaging"))
+
+                # Create context for the email template
+                context = {
+                    "sender_username": request.user.username,
+                    "recipient_username": other_user.username,
+                    "chat_url": chat_url,
+                }
+
+                # Render the email content
+                msg_plain = render_to_string("email/new_chat.html", context)
+                msg_html = render_to_string("email/new_chat.html", context)
+
+                # Send the email
+                send_mail(
+                    subject,
+                    msg_plain,
+                    settings.EMAIL_TO_STRING,
+                    [other_user.email],
+                    html_message=msg_html,
+                )
 
         return JsonResponse({"success": True, "thread_id": thread.id})
 
@@ -1074,6 +1026,21 @@ def view_thread(request, thread_id):
     # Convert the QuerySet to a list of dictionaries using values()
     data = list(messages.values("username", "content", "timestamp"))
     return JsonResponse(data, safe=False)
+
+
+@login_required
+def delete_thread(request, thread_id):
+    if request.method == "POST":
+        try:
+            thread = Thread.objects.get(id=thread_id)
+            # Check if user is a participant
+            if request.user in thread.participants.all():
+                thread.delete()
+                return JsonResponse({"status": "success"})
+            return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+        except Thread.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Thread not found"}, status=404)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
 @login_required
@@ -1118,3 +1085,62 @@ def set_public_key(request):
     profile.save()
 
     return JsonResponse({"success": True, "public_key": profile.public_key})
+
+
+@login_required
+def fetch_notifications(request):
+    notifications = Notification.objects.filter(user=request.user, is_deleted=False).order_by("is_read", "-created_at")
+
+    notifications_data = [
+        {
+            "id": notification.id,
+            "message": notification.message,
+            "created_at": notification.created_at,
+            "is_read": notification.is_read,
+            "notification_type": notification.notification_type,
+            "link": notification.link,
+        }
+        for notification in notifications
+    ]
+
+    return JsonResponse({"notifications": notifications_data}, safe=False)
+
+
+@login_required
+def mark_as_read(request):
+    if request.method == "PATCH":
+        try:
+            if request.body and request.content_type == "application/json":
+                try:
+                    json.loads(request.body)
+                except json.JSONDecodeError:
+                    return JsonResponse({"status": "error", "message": "Invalid JSON in request body"}, status=400)
+
+            notifications = Notification.objects.filter(user=request.user, is_read=False)
+            notifications.update(is_read=True)
+            return JsonResponse({"status": "success"})
+        except Exception as e:
+            logger.error(f"Error marking notifications as read: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while marking notifications as read"}, status=400
+            )
+
+
+@login_required
+def delete_notification(request, notification_id):
+    if request.method == "DELETE":
+        try:
+            notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+
+            notification.is_deleted = True
+            notification.save()
+
+            return JsonResponse({"status": "success", "message": "Notification deleted successfully"})
+        except Exception as e:
+            logger.error(f"Error deleting notification: {e}")
+            return JsonResponse(
+                {"status": "error", "message": "An error occured while deleting notification, please try again."},
+                status=400,
+            )
+    else:
+        return JsonResponse({"status": "error", "message": "Invalid request method"}, status=405)

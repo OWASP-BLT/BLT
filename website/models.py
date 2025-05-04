@@ -3,11 +3,12 @@ import os
 import re
 import time
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 from urllib.parse import parse_qs, urlparse
 
+import pytz
 import requests
 from annoying.fields import AutoOneToOneField
 from captcha.fields import CaptchaField
@@ -171,6 +172,9 @@ class Organization(models.Model):
         max_length=15,
         choices=[(tag.value, tag.name) for tag in OrganisationType],
         default=OrganisationType.ORGANIZATION.value,
+    )
+    check_ins_enabled = models.BooleanField(
+        default=False, help_text="Indicates if the organization has check-ins enabled"
     )
 
     # Address fields
@@ -508,7 +512,7 @@ class Issue(models.Model):
             prefix
             + self.domain_title
             + spacer
-            + self.description[: 140 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))]
+            + self.description[: 280 - (len(prefix) + len(self.domain_title) + len(spacer) + len(issue_link))]
             + issue_link
         )
         return msg
@@ -630,7 +634,7 @@ def update_issue_image_access(sender, instance, **kwargs):
                 screenshot.save()
 
 
-TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 140)
+TWITTER_MAXLENGTH = getattr(settings, "TWITTER_MAXLENGTH", 280)
 
 
 class Winner(models.Model):
@@ -1671,6 +1675,13 @@ class GitHubIssue(models.Model):
         on_delete=models.SET_NULL,
         related_name="github_issues",
     )
+    assignee = models.ForeignKey(
+        Contributor,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="github_issues_assignee",
+    )
     # Peer-to-Peer Payment Fields
     p2p_payment_created_at = models.DateTimeField(null=True, blank=True)
     p2p_amount_usd = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -1683,6 +1694,14 @@ class GitHubIssue(models.Model):
         related_name="github_issue_p2p_payments",
     )
     bch_tx_id = models.CharField(max_length=255, null=True, blank=True)
+    # Related pull requests
+    linked_pull_requests = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        blank=True,
+        related_name="linked_issues",
+        limit_choices_to={"type": "pull_request"},
+    )
 
     class Meta:
         # Make the combination of issue_id and repo unique
@@ -1744,6 +1763,75 @@ class GitHubIssue(models.Model):
             logger = logging.getLogger(__name__)
             logger.error(f"Error fetching comments for issue {self.issue_id}: {str(e)}")
             return []
+
+    def add_comment(self, comment_text):
+        """
+        Adds a comment to this GitHub issue via the GitHub API.
+        Returns True if successful, False otherwise.
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        # URL format: https://github.com/owner/repo/issues/number
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for adding comments
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/comments"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        data = {"body": comment_text}
+
+        try:
+            response = requests.post(api_url, headers=headers, json=data)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            # Log the error but don't raise it
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding comment to issue {self.issue_id}: {str(e)}")
+            return False
+
+    def add_labels(self, labels):
+        """
+        Adds labels to this GitHub issue via the GitHub API.
+        Parameters:
+            labels: List of label strings to add
+        Returns True if successful, False otherwise.
+        """
+        import logging
+
+        import requests
+        from django.conf import settings
+
+        # Extract owner and repo from the URL
+        parts = self.url.split("/")
+        owner = parts[3]
+        repo = parts[4]
+        issue_number = parts[6]
+
+        # GitHub API endpoint for adding labels
+        api_url = f"https://api.github.com/repos/{owner}/{repo}/issues/{issue_number}/labels"
+
+        headers = {"Authorization": f"token {settings.GITHUB_TOKEN}", "Accept": "application/vnd.github.v3+json"}
+
+        data = {"labels": labels}
+
+        try:
+            response = requests.post(api_url, headers=headers, json=data)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            # Log the error but don't raise it
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error adding labels to issue {self.issue_id}: {str(e)}")
+            return False
 
 
 class BaconEarning(models.Model):
@@ -1900,27 +1988,40 @@ class Section(models.Model):
         return f"{self.order}. {self.title} - {self.course.title} "
 
 
-class Lecture(models.Model):
-    CONTENT_TYPES = [("VIDEO", "Video Lecture"), ("LIVE", "Live Session"), ("DOCUMENT", "Document"), ("QUIZ", "Quiz")]
+import re
+from urllib.parse import parse_qs, urlparse
 
-    instructor = models.ForeignKey(UserProfile, on_delete=models.Case, null=True, blank=True)
+from django.core.exceptions import ValidationError
+from django.db import models
+
+
+class Lecture(models.Model):
+    CONTENT_TYPES = [
+        ("VIDEO", "Video Lecture"),
+        ("LIVE", "Live Session"),
+        ("DOCUMENT", "Document"),
+        ("QUIZ", "Quiz"),
+    ]
+
+    instructor = models.ForeignKey("UserProfile", on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=200)
-    section = models.ForeignKey(Section, on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
+    section = models.ForeignKey("Section", on_delete=models.CASCADE, related_name="lectures", null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     content_type = models.CharField(max_length=10, choices=CONTENT_TYPES)
     video_url = models.URLField(null=True, blank=True)
     live_url = models.URLField(null=True, blank=True)
     scheduled_time = models.DateTimeField(null=True, blank=True)
     recording_url = models.URLField(null=True, blank=True)
-    content = models.TextField()  # For reading content
-    # Quiz support can be added later
+    content = models.TextField(null=True, blank=True)  # For reading content (e.g., documents)
     duration = models.PositiveIntegerField(help_text="Duration in minutes", null=True, blank=True)
-    tags = models.ManyToManyField(Tag, related_name="lectures", blank=True)
+    tags = models.ManyToManyField("Tag", related_name="lectures", blank=True)
     order = models.PositiveIntegerField()
 
     @property
     def embed_url(self):
-        """Generates an embeddable URL if the video is from YouTube or Vimeo."""
+        """
+        Generates an embeddable URL if the video is from YouTube or Vimeo.
+        """
         if not self.video_url:
             return None
 
@@ -1973,6 +2074,16 @@ class Lecture(models.Model):
 
         # Return the original URL if it's not a recognized video provider or parsing fails
         return self.video_url
+
+    @staticmethod
+    def validate_url(url):
+        """
+        Validates that the URL is properly formatted and uses a safe protocol.
+        """
+        parsed_url = urlparse(url)
+        if parsed_url.scheme not in ["http", "https"]:
+            return False
+        return True
 
     class Meta:
         ordering = ["order"]
@@ -2246,7 +2357,7 @@ class Queue(models.Model):
     Model to store queue items with a message, image, and launch status.
     """
 
-    message = models.CharField(max_length=140, help_text="Message limited to 140 characters")
+    message = models.CharField(max_length=280, help_text="Message limited to 280 characters")
     image = models.ImageField(upload_to="queue_images", null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
@@ -2264,14 +2375,23 @@ class Queue(models.Model):
     def __str__(self):
         return f"Queue item {self.id}: {self.message[:30]}{'...' if len(self.message) > 30 else ''}"
 
-    def launch(self):
+    def launch(self, timestamp=None):
         """
         Mark the queue item as launched and set the launched_at timestamp.
+
+        Args:
+            timestamp (datetime, optional): Custom timestamp to use. Defaults to current time.
+
+        Returns:
+            bool: True if the item was launched, False if it was already launched
         """
-        if not self.launched:
-            self.launched = True
-            self.launched_at = timezone.now()
-            self.save()
+        # Always update the timestamp, even if already launched
+        self.launched = True
+        self.launched_at = timestamp or timezone.now()
+        self.save()
+
+        # Return whether this was a new launch or not
+        return True
 
 
 class Thread(models.Model):
@@ -2290,9 +2410,112 @@ class Message(models.Model):
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     session_key = models.CharField(max_length=40, blank=True, null=True)  # For anonymous users
+    reactions = models.JSONField(default=dict, help_text="Stores emoji reactions and their counts")  # New field
 
     class Meta:
         ordering = ["timestamp"]
 
     def __str__(self):
         return f"{self.username}: {self.content[:50]}"
+
+
+class BannedApp(models.Model):
+    APP_TYPES = (
+        ("social", "Social Media"),
+        ("messaging", "Messaging"),
+        ("gaming", "Gaming"),
+        ("streaming", "Streaming"),
+        ("other", "Other"),
+    )
+
+    country_name = models.CharField(max_length=100)
+    country_code = models.CharField(max_length=2)  # ISO 2-letter code
+    app_name = models.CharField(max_length=100)
+    app_type = models.CharField(max_length=20, choices=APP_TYPES)
+    ban_reason = models.TextField()
+    ban_date = models.DateField(default=timezone.now)
+    source_url = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Banned App"
+        verbose_name_plural = "Banned Apps"
+        ordering = ["country_name", "app_name"]
+        indexes = [
+            models.Index(fields=["country_name"]),
+            models.Index(fields=["country_code"]),
+        ]
+
+    def __str__(self):
+        return f"{self.app_name} (Banned in {self.country_name})"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    NOTIFICATION_TYPES = [
+        ("general", "General"),
+        ("alert", "Alert"),
+        ("reminder", "Reminder"),
+        ("promo", "Promotional"),
+        ("reward", "Rewards"),
+    ]
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, default="general")
+
+    link = models.CharField(max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        return f"Notification for {self.user.username} - {self.notification_type}"
+
+    def soft_delete(self):
+        self.is_deleted = True
+        self.save()
+
+    class Meta:
+        ordering = ["is_read", "-created_at"]
+
+
+class ReminderSettings(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="reminder_settings")
+    reminder_time = models.TimeField(help_text="Time to send daily reminders (in user's timezone)")
+    reminder_time_utc = models.TimeField(help_text="Time to send daily reminders (in UTC)", null=True, blank=True)
+    timezone = models.CharField(max_length=50, default="UTC")
+    is_active = models.BooleanField(default=True, help_text="Enable/disable daily reminders")
+    last_reminder_sent = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Reminder Settings"
+        verbose_name_plural = "Reminder Settings"
+        indexes = [
+            models.Index(fields=["is_active"]),
+            models.Index(fields=["reminder_time_utc"]),
+        ]
+
+    def __str__(self):
+        return f"Reminder Settings for {self.user.username}"
+
+    def save(self, *args, **kwargs):
+        # Convert reminder_time to UTC before saving
+        if self.reminder_time and self.timezone:
+            user_tz = pytz.timezone(self.timezone)
+            # Create a datetime with today's date and the reminder time
+            today = timezone.now().date()
+            local_dt = user_tz.localize(datetime.combine(today, self.reminder_time))
+            # Convert to UTC
+            utc_dt = local_dt.astimezone(pytz.UTC)
+            # Extract just the time part
+            self.reminder_time_utc = utc_dt.time()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_timezone_choices(cls):
+        if not hasattr(cls, "_timezone_choices"):
+            cls._timezone_choices = [(tz, tz) for tz in pytz.common_timezones]
+        return cls._timezone_choices

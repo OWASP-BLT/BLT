@@ -25,11 +25,12 @@
              class="w-[30%] bg-[#e74c3c] p-[10px] overflow-y-auto">
             <h2 class="text-center text-white">Conversations</h2>
             {% for thread in threads %}
-                <div class="conversation cursor-pointer p-[10px] border-b border-white text-white hover:bg-[#e74c3c]"
+                <div class="conversation flex justify-between items-center cursor-pointer p-[10px] border-b border-white text-white hover:bg-[#e74c3c]"
                      data-id="{{ thread.id }}">
                     {% for participant in thread.participants.all %}
                         {% if participant != request.user %}{{ participant.username }}{% endif %}
                     {% endfor %}
+                    {% if participant != request.user %}<i class="fa-solid fa-xmark del-thread"></i>{% endif %}
                 </div>
             {% endfor %}
         </div>
@@ -255,6 +256,7 @@
                     }
                 };
                 socket.onerror = function(error) {
+                    console.error("WebSocket error:", error);
                     isConnecting = false;
                     updateConnectionStatus(false);
                 };
@@ -333,15 +335,11 @@
                 .then(async data => {
                     const messageList = document.getElementById("message-list");
                     messageList.innerHTML = "";
-                    // For decryption of historical messages, derive shared key as above.
-                    let recipientPublicKeyBase64 = cachedRecipientPublicKey;
-                    if (!recipientPublicKeyBase64) {
-                        const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
-                        const respData = await resp.json();
-                        recipientPublicKeyBase64 = respData.public_key;
-                        cachedRecipientPublicKey = recipientPublicKeyBase64;
-                    }
-                    const recipientPublicKey = await importECDHPublicKey(recipientPublicKeyBase64);
+                    // Fetch and update the recipient's public key
+                    const resp = await fetch(`/api/messaging/${threadId}/get-public-key`);
+                    const respData = await resp.json();
+                    cachedRecipientPublicKey = respData.public_key;
+                    const recipientPublicKey = await importECDHPublicKey(cachedRecipientPublicKey);
                     const myPrivateKey = await importECDHPrivateKey(localStorage.getItem("privateKey"));
                     const sharedKey = await deriveSharedKey(myPrivateKey, recipientPublicKey);
                     for (const message of data) {
@@ -407,6 +405,53 @@
 
         document.getElementById("unlock-button").addEventListener("click", async function() {
             await initializeEncryptionKeys();
+        });
+
+        // ===== Delete Thread =====
+
+        document.querySelectorAll('.del-thread').forEach(deleteBtn => {
+            deleteBtn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const threadElement = this.closest('.conversation');
+                const threadId = threadElement.dataset.id;
+        
+                if (confirm('Are you sure you want to delete this conversation? This cannot be undone.')) {
+                    try {
+                        const response = await fetch(`/api/messaging/thread/${threadId}/delete/`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken'),
+                                'Content-Type': 'application/json'
+                            }
+                        });
+        
+                        const data = await response.json();
+                        if (data.status === 'success') {
+                            // Remove the thread from UI
+                            threadElement.remove();
+                            
+                            // Clear chat window if this was the active thread
+                            if (currentThreadId === threadId) {
+                                document.getElementById('message-list').innerHTML = '<p id="welcome-message">Welcome to BLT DMs, search a user to start chatting.</p>';
+                                document.getElementById('message-input').style.display = 'none';
+                                document.getElementById('send-message').style.display = 'none';
+                                document.getElementById('welcome-message').style.display = 'block';
+                                
+                                // Close WebSocket connection
+                                if (socket) {
+                                    socket.close();
+                                }
+                                currentThreadId = null;
+                            }
+                        } else {
+                            alert('Failed to delete conversation');
+                        }
+                    } catch (error) {
+                        console.error('Error deleting thread:', error);
+                        alert('Failed to delete conversation');
+                    }
+                }
+            });
         });
     });
     </script>

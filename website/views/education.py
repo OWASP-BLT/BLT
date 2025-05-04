@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlparse
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,6 +11,20 @@ from django.views.decorators.http import require_GET, require_POST
 
 from website.decorators import instructor_required
 from website.models import Course, Enrollment, Lecture, LectureStatus, Section, Tag, UserProfile
+from website.utils import validate_file_type
+
+
+def is_valid_url(url, url_type):
+    """Helper function to validate URLs based on their type."""
+    if url_type == "video":
+        allowed_domains = {"www.youtube.com", "youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com"}
+    elif url_type == "live":
+        allowed_domains = {"zoom.us", "meet.google.com", "vimeo.com", "www.vimeo.com"}
+    else:
+        return False
+
+    parsed_url = urlparse(url)
+    return parsed_url.netloc in allowed_domains
 
 
 def education_home(request):
@@ -206,13 +221,13 @@ def course_content_management(request, course_id):
     return render(request, "education/content_management.html", context)
 
 
-# Section CRUD operations
 @instructor_required
 @require_POST
 def add_section(request, course_id):
     """Add a new section to the course"""
     course = get_object_or_404(Course, id=course_id)
 
+    # Sanitize user input
     title = request.POST.get("title")
     order = int(request.POST.get("order", 0))
 
@@ -229,6 +244,7 @@ def edit_section(request, section_id):
     section = get_object_or_404(Section, id=section_id)
     course_id = section.course.id
 
+    # Sanitize user input
     section.title = request.POST.get("title")
     section.description = request.POST.get("description")
     section.save()
@@ -239,6 +255,7 @@ def edit_section(request, section_id):
 
 
 @instructor_required
+@require_POST
 def delete_section(request, section_id):
     """Delete a section and all its lectures"""
     section = get_object_or_404(Section, id=section_id)
@@ -260,7 +277,6 @@ def delete_section(request, section_id):
 @require_POST
 def add_lecture(request, section_id):
     """Add a new lecture to a section, else standalone"""
-    print("Section ID:", section_id, type(section_id))
     if section_id == 0:
         section = None
     else:
@@ -285,10 +301,24 @@ def add_lecture(request, section_id):
     )
 
     if content_type == "VIDEO":
-        lecture.video_url = request.POST.get("video_url")
+        video_url = request.POST.get("video_url")
+        if not is_valid_url(video_url, "video"):
+            messages.error(request, "Only YouTube and Vimeo URLs are allowed for video lectures.")
+            if section_id == 0:
+                return redirect("create_standalone_lecture")
+            else:
+                return redirect("create_standalone_lecture", course_id=course_id)
+        lecture.video_url = video_url
         lecture.content = request.POST.get("content")
     elif content_type == "LIVE":
-        lecture.live_url = request.POST.get("live_url")
+        live_url = request.POST.get("live_url")
+        if not is_valid_url(live_url, "live"):
+            messages.error(request, "Only Zoom, Google Meet or Vimeo URLs are allowed for live lectures.")
+            if section_id == 0:
+                return redirect("create_standalone_lecture")
+            else:
+                return redirect("create_standalone_lecture", course_id=course_id)
+        lecture.live_url = live_url
         lecture.scheduled_time = request.POST.get("scheduled_time") or None
     elif content_type == "DOCUMENT":
         lecture.content = request.POST.get("content")
@@ -306,7 +336,6 @@ def add_lecture(request, section_id):
 @instructor_required
 @require_POST
 def edit_lecture(request, lecture_id):
-    """Edit an existing lecture"""
     lecture = get_object_or_404(Lecture, id=lecture_id)
 
     is_standalone = True
@@ -314,21 +343,28 @@ def edit_lecture(request, lecture_id):
         is_standalone = False
         course_id = lecture.section.course.id
 
-    lecture.title = request.POST.get("title")
-    lecture.content_type = request.POST.get("content_type")
-    lecture.description = request.POST.get("description")
+    lecture.title = request.POST.get("title", "")
+    lecture.content_type = request.POST.get("content_type", "")
+    lecture.description = request.POST.get("description", "")
     lecture.content = request.POST.get("content", "")
-    lecture.duration = request.POST.get("duration") or None
+    lecture.duration = request.POST.get("duration", "") or None
 
     if lecture.content_type == "VIDEO":
-        lecture.video_url = request.POST.get("video_url")
+        video_url = request.POST.get("video_url", "")
+        if not is_valid_url(video_url, "youtube"):
+            messages.error(request, "Only YouTube URLs are allowed for video lectures.")
+            if is_standalone:
+                return redirect("view_lecture", lecture_id)
+            else:
+                return redirect("course_content_management", course_id=course_id)
+        lecture.video_url = video_url
         lecture.live_url = None
         lecture.scheduled_time = None
         lecture.recording_url = None
     elif lecture.content_type == "LIVE":
-        lecture.live_url = request.POST.get("live_url")
-        lecture.scheduled_time = request.POST.get("scheduled_time") or None
-        lecture.recording_url = request.POST.get("recording_url")
+        lecture.live_url = request.POST.get("live_url", "")
+        lecture.scheduled_time = request.POST.get("scheduled_time", "") or None
+        lecture.recording_url = request.POST.get("recording_url", "")
         lecture.video_url = None
     elif lecture.content_type == "DOCUMENT":
         lecture.video_url = None
@@ -494,7 +530,16 @@ def create_or_update_course(request):
                 return JsonResponse(
                     {"success": False, "message": f"{', '.join(missing_fields)} is required"}, status=400
                 )
-
+            if thumbnail:
+                is_valid, error_message = validate_file_type(
+                    request,
+                    "thumbnail",
+                    allowed_extensions=["jpg", "jpeg", "png"],
+                    allowed_mime_types=["image/jpeg", "image/png"],
+                    max_size=5 * 1024 * 1024,  # 5MB
+                )
+                if not is_valid:
+                    return JsonResponse({"success": False, "message": error_message}, status=400)
             user = request.user
             user_profile = UserProfile.objects.get(user=user)
 

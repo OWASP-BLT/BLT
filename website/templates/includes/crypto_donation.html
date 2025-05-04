@@ -2,7 +2,7 @@
 <div class="{% if included_in_issue_page %} {% else %} {% endif %}">
     <div class="flex flex-col gap-3 items-center">
         <!-- Crypto currency selection buttons -->
-        <div class="flex flex-row gap-2 justify-center">
+        <div class="flex flex-row gap-2 flex-wrap justify-center">
             <button id="btn-btc"
                     class="crypto-btn flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg shadow hover:bg-gray-100 active:bg-gray-200 transition text-sm {% if user.userprofile.btc_address %}border-[#e74c3c]{% else %}opacity-50{% endif %}"
                     {% if not user.userprofile.btc_address %}disabled{% endif %}>

@@ -8,10 +8,10 @@ from urllib.parse import parse_qs, urlencode, urlparse
 import requests
 from django.contrib import messages
 from django.contrib.auth.models import AnonymousUser, User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Count, OuterRef, Q, Subquery, Sum
+from django.db.models import Avg, Count, F, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import ExtractMonth
 from django.http import Http404, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -39,19 +39,6 @@ from website.utils import is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
-
-restricted_domain = [
-    "gmail.com",
-    "hotmail.com",
-    "outlook.com",
-    "yahoo.com",
-    "proton.com",
-]
-
-
-def get_email_domain(email):
-    domain = email.split("@")[-1]
-    return domain
 
 
 def validate_organization_user(func):
@@ -87,22 +74,13 @@ def check_organization_or_manager(func):
     return wrapper
 
 
-def Organization_view(request, *args, **kwargs):
-    user = request.user
-
+def _get_user_organization(user):
+    """Helper function to find and return a user's organization."""
     if not user.is_active:
-        messages.info(request, "Email not verified.")
-        return redirect("/")
+        return None, "Email not verified."
 
     if isinstance(user, AnonymousUser):
-        messages.error(request, "Login with organization or domain-provided email.")
-        return redirect("/accounts/login/")
-
-    domain = get_email_domain(user.email)
-
-    if domain in restricted_domain:
-        messages.error(request, "Login with organization or domain provided email.")
-        return redirect("/")
+        return None, "Please login to access your organization."
 
     user_organizations = Organization.objects.filter(Q(admin=user) | Q(managers=user))
     if not user_organizations.exists():
@@ -112,13 +90,44 @@ def Organization_view(request, *args, **kwargs):
         # Check if any of these domains belong to a organization
         organizations_with_user_domains = Organization.objects.filter(domain__in=user_domains)
         if not organizations_with_user_domains.exists():
-            messages.error(request, "You do not have a organization, create one.")
-            return redirect("register_organization")
+            return None, "You do not have a organization, create one."
 
     # Get the organization to redirect to
     organization = user_organizations.first() or organizations_with_user_domains.first()
+    return organization, None
+
+
+def Organization_view(request, *args, **kwargs):
+    user = request.user
+
+    organization, error_message = _get_user_organization(user)
+    if error_message:
+        messages.error(request, error_message)
+        if error_message == "Email not verified.":
+            return redirect("/")
+        elif error_message == "Please login to access your organization.":
+            return redirect("/accounts/login/")
+        else:
+            return redirect("register_organization")
 
     return redirect("organization_detail", slug=organization.slug)
+
+
+def dashboard_view(request, *args, **kwargs):
+    user = request.user
+
+    organization, error_message = _get_user_organization(user)
+    if error_message:
+        messages.error(request, error_message)
+        if error_message == "Email not verified.":
+            return redirect("/")
+        elif error_message == "Please login to access your organization.":
+            return redirect("/accounts/login/")
+        else:
+            return redirect("register_organization")
+
+    # Redirect to organization dashboard
+    return redirect("organization_analytics", id=organization.id)
 
 
 class RegisterOrganizationView(View):
@@ -137,16 +146,8 @@ class RegisterOrganizationView(View):
             messages.error(request, "Login to create organization")
             return redirect("/accounts/login/")
 
-        user_domain = get_email_domain(user.email)
         organization_name = data.get("organization_name", "")
         organization_url = data.get("organization_url", "")
-
-        if user_domain in restricted_domain:
-            messages.error(
-                request,
-                "Login with organization email in order to create the organization.",
-            )
-            return redirect("/")
 
         if organization_name == "" or Organization.objects.filter(name=organization_name).exists():
             messages.error(request, "organization name is invalid or already exists.")
@@ -218,6 +219,78 @@ class OrganizationDashboardAnalyticsView(View):
         "Nov",
         "Dec",
     ]
+
+    def get_security_incidents_summary(self, organization):
+        # Get all security-related issues (label=4)
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        # Calculate severity distribution
+        # Note: Check if the severity field exists - currently not defined in the Issue model
+        try:
+            severity_counts = security_issues.values("severity").annotate(count=Count("id"))
+        except FieldError:
+            # Severity field doesn't exist, provide empty list
+            severity_counts = []
+
+        # Get recent security incidents (last 30 days)
+        recent_incidents = security_issues.filter(created__gte=timezone.now() - timedelta(days=30))
+
+        # Calculate average resolution time
+        resolved_issues = security_issues.filter(status="resolved")
+        resolved_issues = resolved_issues.filter(closed_date__isnull=False)
+        avg_resolution_time = resolved_issues.aggregate(avg_time=Avg(F("closed_date") - F("created")))["avg_time"]
+
+        return {
+            "total_security_issues": security_issues.count(),
+            "recent_incidents": recent_incidents.count(),
+            "severity_distribution": list(severity_counts),
+            "avg_resolution_time": avg_resolution_time,
+            "top_affected_domains": security_issues.values("domain__name")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5],
+        }
+
+    def get_threat_intelligence(self, organization):
+        """Gets threat intelligence data for the organization."""
+        security_issues = Issue.objects.filter(
+            domain__organization__id=organization,
+            label=4,  # Security label
+        )
+
+        # Get trending attack types based on issue labels/tags instead
+        attack_vectors = (
+            security_issues.filter(created__gte=timezone.now() - timedelta(days=90))
+            .values("label")  # Use label instead of vulnerability_type
+            .annotate(count=Count("id"))
+            .order_by("-count")[:5]
+        )
+
+        # Calculate risk score (0-100)
+        total_issues = security_issues.count()
+        critical_issues = security_issues.filter(cve_score__gte=8).count()  # Use cve_score instead of severity
+        risk_score = min(100, (critical_issues / total_issues * 100) if total_issues > 0 else 0)
+
+        return {
+            "attack_vectors": [
+                {
+                    "vulnerability_type": self.get_label_name(vector["label"]),  # Convert label to readable name
+                    "count": vector["count"],
+                }
+                for vector in attack_vectors
+            ],
+            "risk_score": int(risk_score),
+            "recent_alerts": security_issues.filter(
+                created__gte=timezone.now() - timedelta(days=7),
+                cve_score__gte=7,  # Use cve_score for severity
+            ).order_by("-created")[:5],
+        }
+
+    def get_label_name(self, label_id):
+        """Convert label ID to human-readable name."""
+        return self.labels.get(label_id, "Other")
 
     def get_general_info(self, organization):
         total_organization_bugs = Issue.objects.filter(domain__organization__id=organization).count()
@@ -405,7 +478,9 @@ class OrganizationDashboardAnalyticsView(View):
             "bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id),
             "accepted_bug_rate_increase_descrease_weekly": self.bug_rate_increase_descrease_weekly(id, True),
             "spent_on_bugtypes": self.get_spent_on_bugtypes(id),
+            "security_incidents_summary": self.get_security_incidents_summary(id),
         }
+        context.update({"threat_intelligence": self.get_threat_intelligence(id)})
         return render(request, "organization/organization_analytics.html", context=context)
 
 

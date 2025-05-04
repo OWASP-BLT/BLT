@@ -4,9 +4,11 @@ import hashlib
 import logging
 import os
 import re
+import socket
 import time
 from collections import deque
-from urllib.parse import urlparse, urlsplit, urlunparse
+from ipaddress import ip_address
+from urllib.parse import quote, urlparse, urlsplit, urlunparse
 
 import markdown
 import numpy as np
@@ -15,7 +17,7 @@ import tweepy
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
+from django.core.validators import FileExtensionValidator, URLValidator
 from django.db import models
 from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import redirect
@@ -39,6 +41,26 @@ WHITELISTED_IMAGE_TYPES = {
     "jpg": "image/jpeg",
     "png": "image/png",
 }
+
+
+def validate_file_type(request, file_field_name, allowed_extensions, allowed_mime_types=None, max_size=None):
+    file = request.FILES.get(file_field_name)
+    if not file:
+        return True, None  # File is optional; skip validation if not provided
+
+    extension_validator = FileExtensionValidator(allowed_extensions=allowed_extensions)
+    try:
+        extension_validator(file)
+    except ValidationError:
+        return False, f"Invalid file extension. Allowed: {', '.join(allowed_extensions)}"
+
+    if allowed_mime_types and file.content_type not in allowed_mime_types:
+        return False, f"Invalid MIME type. Allowed: {', '.join(allowed_mime_types)}"
+
+    if max_size and file.size > max_size:
+        return False, f"File size exceeds the maximum limit of {max_size} bytes."
+
+    return True, None
 
 
 def get_client_ip(request):
@@ -129,9 +151,58 @@ def is_valid_https_url(url):
         return False
 
 
+def is_dns_safe(hostname):
+    try:
+        resolved = socket.getaddrinfo(hostname, None)
+    except socket.gaierror:
+        return False  # Unable to resolve hostname; treat as unsafe.
+    for result in resolved:
+        ip_str = result[4][0]
+        try:
+            ip = ip_address(ip_str)
+            if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                return False
+        except ValueError:
+            continue
+    return True
+
+
 def rebuild_safe_url(url):
     parsed_url = urlparse(url)
-    return urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
+
+    if parsed_url.scheme not in ("http", "https"):
+        return None
+
+    netloc = parsed_url.netloc.split("@")[-1]
+
+    hostname = urlparse(f"http://{netloc}").hostname
+    if not hostname:
+        return None
+
+    try:
+        ip = ip_address(hostname)
+        if ip.is_private or ip.is_loopback:
+            return None
+    except ValueError:
+        if not is_dns_safe(hostname):
+            return None
+
+    path = parsed_url.path
+    path = path.replace("\r", "").replace("\n", "")
+    path = path.replace("/..", "").replace("/", "/")
+
+    # Collapse multiple slashes into a single slash
+    path = re.sub(r"/{2,}", "/", path)
+    if path in ("", "."):
+        path = "/"
+    # Ensure the path starts with a slash
+    elif not path.startswith("/"):
+        path = "/" + path
+    encoded_path = quote(path, safe="/")
+
+    safe_url = urlunparse((parsed_url.scheme, netloc, encoded_path, "", "", ""))
+
+    return safe_url
 
 
 def get_github_issue_title(github_issue_url):
@@ -147,21 +218,6 @@ def get_github_issue_title(github_issue_url):
         return f"Issue #{issue_number}"
     except Exception:
         return "No Title"
-
-
-def is_safe_url(url, allowed_hosts, allowed_paths=None):
-    if not is_valid_https_url(url):
-        return False
-
-    parsed_url = urlparse(url)
-
-    if parsed_url.netloc not in allowed_hosts:
-        return False
-
-    if allowed_paths and parsed_url.path not in allowed_paths:
-        return False
-
-    return True
 
 
 def safe_redirect_allowed(url, allowed_hosts, allowed_paths=None):
@@ -755,23 +811,9 @@ class twitter:
             # Get tweet URL
             tweet_url = f"https://twitter.com/user/status/{status.id}"
 
-            # Send to Discord
-            twitter.send_to_discord(message, tweet_url, image_path)
-
-            # Send to Slack
-            twitter.send_to_slack(message, tweet_url, image_path)
-
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
             logging.error(f"Error sending tweet: {str(e)}")
-
-            # Still try to send to Discord and Slack even if Twitter fails
-            try:
-                twitter.send_to_discord(message, None, image_path, error=str(e))
-                twitter.send_to_slack(message, None, image_path, error=str(e))
-            except Exception as comm_error:
-                logging.error(f"Error sending to communication channels: {str(comm_error)}")
-
             return {"success": False, "url": None, "txid": None, "error": str(e)}
 
     @staticmethod

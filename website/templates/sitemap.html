@@ -17,616 +17,719 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="min-h-screen flex flex-col">
-        <div class="p-6 text-center justify-center my-5">
-            <h2 class="text-6xl text-black font-bold">Sitemap</h2>
+    <div class="flex flex-col mt-10 lg:w-[95%] lg:mx-auto mx-2">
+        <div class="flex flex-col gap-4 items-center justify-center mb-8">
+            <h2 class="text-5xl text-red-500 font-bold">Sitemap</h2>
+            <p class="text-gray-700 text-lg max-w-2xl text-center">
+                Navigate to all the pages on the site for a better browsing experience.
+            </p>
         </div>
-        <div>
-            <div class="px-6 w-full">
-                <div class="grid grid-cols-1 gap-3 px-2 py-3 lg:py-8 md:grid-cols-6">
-                    <div>
-                        <span class="font-semibold text-gray-800 text-3xl transition">General</span>
-                        <div>
-                            <ul class="mt-2">
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-home w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'home' %}"
-                                       class="text-decoration-none hover:text-red-500">Home</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-exclamation-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'issues' %}"
-                                       class="text-decoration-none hover:text-red-500">Issues</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-user-times w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'user_deletion' %}"
-                                       class="text-decoration-none hover:text-red-500">Account Delete</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'invite_friend' %}"
-                                       class="text-decoration-none hover:text-red-500">Invite Friend</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-gift w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'referral_signup' %}"
-                                       class="text-decoration-none hover:text-red-500">Referral Signup</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'show_bughunt' 1 %}"
-                                       class="text-decoration-none hover:text-red-500">Show Bughunt</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-user-friends w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'follow_user' random_domain %}"
-                                       class="text-decoration-none hover:text-red-500">Follow User</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-stream w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'all_activity' %}"
-                                       class="text-decoration-none hover:text-red-500">All Activity</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-user w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'profile' random_domain %}"
-                                       class="text-decoration-none hover:text-red-500">Profile</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-globe w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'domain' random_domain %}"
-                                       class="text-decoration-none hover:text-red-500">Domain</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-address-card w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'account_profile' %}"
-                                       class="text-decoration-none hover:text-red-500">Account Profile</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-play-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'start_hunt' %}"
-                                       class="text-decoration-none hover:text-red-500">Start Hunt</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-paw w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'hunt' %}"
-                                       class="text-decoration-none hover:text-red-500">Hunt</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-list w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'hunts' %}"
-                                       class="text-decoration-none hover:text-red-500">Hunts</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'invite' %}"
-                                       class="text-decoration-none hover:text-red-500">Invite</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-file-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'terms' %}"
-                                       class="text-decoration-none hover:text-red-500">Terms</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-info-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'about' %}"
-                                       class="text-decoration-none hover:text-red-500">About</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-users w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'teams' %}"
-                                       class="text-decoration-none hover:text-red-500">Teams</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-folder w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'project_list' %}"
-                                       class="text-decoration-none hover:text-red-500">Projects</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'apps' %}"
-                                       class="text-decoration-none hover:text-red-500">Apps</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'deletions' %}"
-                                       class="text-decoration-none hover:text-red-500">Deletions</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-bacon w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'bacon' %}"
-                                       class="text-decoration-none hover:text-red-500">Bacon</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-tv w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'education' %}"
-                                       class="text-decoration-none hover:text-red-500">Education</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-user-secret w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'privacy' %}"
-                                       class="text-decoration-none hover:text-red-500">Privacy</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-chart-bar w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'stats' %}"
-                                       class="text-decoration-none hover:text-red-500">Stats</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-hashtag w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'social' %}"
-                                       class="text-decoration-none hover:text-red-500">Socials</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'search' %}"
-                                       class="text-decoration-none hover:text-red-500">Search</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-users w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'contributors' %}"
-                                       class="text-decoration-none hover:text-red-500">Contributors</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-hand-holding-usd w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'sponsor' %}"
-                                       class="text-decoration-none hover:text-red-500">Sponsors</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-search-dollar w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'trademark_search' %}"
-                                       class="text-decoration-none hover:text-red-500">Trademark Search</a>
-                                </li>
-                                <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                    <i class="fas fa-info w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                    <a href="{% url 'trademark_detailview' random_domain %}"
-                                       class="text-decoration-none hover:text-red-500">Trademark Detailview</a>
-                                </li>
-                            </ul>
-                        </div>
+        <div class="w-full ">
+            <div class=" grid lg:grid-cols-4 grid-cols-1 gap-4 auto-rows-min grid-flow-dense">
+                <div class="h-fit border border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                    <div class=" border-b border-gray-200">
+                        <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                            <i class="fas fa-compass text-[#e74c3c]"></i>
+                            General
+                        </span>
                     </div>
-                    <div>
-                        <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Issues</span>
+                    <ul class="flex flex-col">
+                        <a href="{% url 'home' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-home w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Home</p>
+                        </a>
+                        <a href="{% url 'issues' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-exclamation-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Issues</p>
+                        </a>
+                        <a href="{% url 'user_deletion' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-user-times w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Account Delete</p>
+                        </a>
+                        <a href="{% url 'invite_friend' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Invite Friend</p>
+                        </a>
+                        <a href="{% url 'referral_signup' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-gift w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Referral Signup</p>
+                        </a>
+                        <a href="{% url 'show_bughunt' 1 %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Show Bug Bounty</p>
+                        </a>
+                        <a href="{% url 'follow_user' random_domain %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-user-friends w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Follow User</p>
+                        </a>
+                        <a href="{% url 'all_activity' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-stream w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">All Activity</p>
+                        </a>
+                        <a href="{% url 'profile' random_domain %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-user w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Profile</p>
+                        </a>
+                        <a href="{% url 'domain' random_domain %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-globe w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Domain</p>
+                        </a>
+                        <a href="{% url 'account_profile' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-address-card w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Account Profile</p>
+                        </a>
+                        <a href="{% url 'start_hunt' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-play-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Start Hunt</p>
+                        </a>
+                        <a href="{% url 'hunt' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-paw w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Hunt</p>
+                        </a>
+                        <a href="{% url 'hunts' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-list w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Hunts</p>
+                        </a>
+                        <a href="{% url 'invite' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Invite</p>
+                        </a>
+                        <a href="{% url 'terms' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-file-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Terms</p>
+                        </a>
+                        <a href="{% url 'about' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-info-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">About</p>
+                        </a>
+                        <a href="{% url 'teams' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-users w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Teams</p>
+                        </a>
+                        <a href="{% url 'project_list' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-folder w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Projects</p>
+                        </a>
+                        <a href="{% url 'apps' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Apps</p>
+                        </a>
+                        <a href="{% url 'deletions' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Deletions</p>
+                        </a>
+                        <a href="{% url 'bacon' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-bacon w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Bacon</p>
+                        </a>
+                        <a href="{% url 'education' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-tv w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Education</p>
+                        </a>
+                        <a href="{% url 'privacy' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-user-secret w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Privacy</p>
+                        </a>
+                        <a href="{% url 'stats' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-chart-bar w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Stats</p>
+                        </a>
+                        <a href="{% url 'social' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-hashtag w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Socials</p>
+                        </a>
+                        <a href="{% url 'search' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Search</p>
+                        </a>
+                        <a href="{% url 'contributors' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-users w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Contributors</p>
+                        </a>
+                        <a href="{% url 'sponsor' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-hand-holding-usd w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Sponsors</p>
+                        </a>
+                        <a href="{% url 'trademark_search' %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-search-dollar w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Trademark Search</p>
+                        </a>
+                        <a href="{% url 'trademark_detailview' random_domain %}"
+                           class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                            <i class="fas fa-info w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Trademark Detailview</p>
+                        </a>
+                    </ul>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="h-fit border border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class=" border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-exclamation-circle text-[#e74c3c]"></i>
+                                Issues
+                            </span>
+                        </div>
                         <ul class="mt-2">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'issue' %}"
-                                   class="text-decoration-none hover:text-red-500">Issue</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Issue</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-exclamation-triangle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'report' %}"
-                                   class="text-decoration-none hover:text-red-500">Report Issue</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-exclamation-triangle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Report Issue</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-eye w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'issue_view' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Issue View // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-eye w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Issue View // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-comment-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'add_comment' %}"
-                                   class="text-decoration-none hover:text-red-500">Add Comment</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-comment-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Add Comment</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'edit_comment' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Edit Comment // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Edit Comment // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-reply w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'reply_comment' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Reply Comment // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-reply w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Reply Comment // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-thumbs-up w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'like_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Like Issue // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-thumbs-up w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Like Issue // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-thumbs-down w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'dislike_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Dislike Issue // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-thumbs-down w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Dislike Issue // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-flag w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'flag_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Flag Issue // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-flag w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Flag Issue // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'edit_issue' %}"
-                                   class="text-decoration-none hover:text-red-500">Edit Issue</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Edit Issue</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-save w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'save_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Save Issue // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-save w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Save Issue // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-trash w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'unsave_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Unsave Issue</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-trash w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Unsave Issue</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-comment-dots w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'comment_on_content' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Comment on Content // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-comment-dots w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Comment on Content // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-sync-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'update_content_comment' 1 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Update Comment // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-sync-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Update Comment // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'delete_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Delete Issue // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-trash-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Delete Issue // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-user-slash w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'remove_user_from_issue' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Remove User From Issue // 1</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-user-slash w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Remove User From Issue // 1</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-sync w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'update_issue' %}"
-                                   class="text-decoration-none hover:text-red-500">Update Issue</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-sync w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Update Issue</p>
+                                </a>
                             </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-trash w-5 h-5 mr-1 align-middle text-red-500"></i>
+                            <li>
                                 <a href="{% url 'delete_comment' %}"
-                                   class="text-decoration-none hover:text-red-500">Delete Comment</a>
+                                   class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                    <i class="fas fa-trash w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                    <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Delete Comment</p>
+                                </a>
                             </li>
                         </ul>
-                        <div class="flex items-center space-x-4 mt-8">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Hunt Management</span>
+                    </div>
+                    <div class=" border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-bug text-[#e74c3c]"></i>
+                                Hunt Management
+                            </span>
                         </div>
-                        <ul class="mt-2   mb-4">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                        <ul class="flex flex-col">
+                            <a href="{% url 'organization_manage_bughunts' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_manage_bughunts' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Manage Bughunts</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Manage Bug Bounties</p>
+                            </a>
+                            <a href="{% url 'end_bughunt' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-ban w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'end_bughunt' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">End Bughunt</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">End Bug Bounty</p>
+                            </a>
+                            <a href="{% url 'add_bughunt' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'add_bughunt' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Add Bughunt</a>
-                            </li>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Add Bug Bounty</p>
+                            </a>
                         </ul>
                     </div>
-                    <div>
-                        <div class="flex items-center space-x-4">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Leaderboard</span>
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-building text-[#e74c3c]"></i>
+                                Organization
+                            </span>
                         </div>
-                        <ul class="mt-2">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-globe w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'leaderboard_global' %}"
-                                   class="text-2xl text-decoration-none hover:text-red-500">Global</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-calendar-check w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'leaderboard_specific_month' %}"
-                                   class="text-2xl text-decoration-none hover:text-red-500">Specific Month</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-calendar-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'leaderboard_eachmonth' %}"
-                                   class="text-2xl text-decoration-none hover:text-red-500">Each Month</a>
-                            </li>
-                        </ul>
-                        <div class="flex items-center space-x-4 mt-8">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Organization</span>
-                        </div>
-                        <ul class="mt-2">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                        <ul class="flex flex-col">
+                            <a href="{% url 'register_organization' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-clipboard-list w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'register_organization' %}"
-                                   class="text-decoration-none hover:text-red-500">Register Organization</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Register Organization</p>
+                            </a>
+                            <a href="{% url 'domains' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-server w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'domains' %}"
-                                   class="text-decoration-none hover:text-red-500">Domain View</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Domain View</p>
+                            </a>
+                            <a href="{% url 'subscribe_to_domains' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-rss w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'subscribe_to_domains' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Subscribe To Domains</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Subscribe To Domains</p>
+                            </a>
+                            <a href="{% url 'join' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'join' %}"
-                                   class="text-decoration-none hover:text-red-500">Join Organization</a>
-                            </li>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Join Organization</p>
+                            </a>
                         </ul>
-                        <div class="flex items-center space-x-4 mt-8">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">User Dashboard</span>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-trophy text-[#e74c3c]"></i>
+                                Leaderboard
+                            </span>
                         </div>
-                        <ul class="mt-2">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                        <ul class="flex flex-col">
+                            <a href="{% url 'leaderboard_global' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-globe w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Global</p>
+                            </a>
+                            <a href="{% url 'leaderboard_specific_month' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-calendar-check w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Specific Month</p>
+                            </a>
+                            <a href="{% url 'leaderboard_eachmonth' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-calendar-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Each Month</p>
+                            </a>
+                        </ul>
+                    </div>
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-tachometer-alt text-[#e74c3c]"></i>
+                                User Dashboard
+                            </span>
+                        </div>
+                        <ul class="flex flex-col">
+                            <a href="{% url 'user' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'user' %}"
-                                   class="text-decoration-none hover:text-red-500">User Dashboard</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">User Dashboard</p>
+                            </a>
+                            <a href="{% url 'view_hunt' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-eye w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'view_hunt' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">User Dashboard View Hunt</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">View Hunt</p>
+                            </a>
+                            <a href="{% url 'submit_bug' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'submit_bug' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">User Dashboard Submit Bug</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Submit Bug</p>
+                            </a>
+                            <a href="{% url 'hunt_results' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-chart-line w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'hunt_results' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">User Dashboard Hunt Results</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Hunt Results</p>
+                            </a>
+                            <a href="{% url 'profile' random_domain %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-user-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'user_profile' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">User Dashboard Profile</a>
-                            </li>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">User Profile</p>
+                            </a>
                         </ul>
-                        <div class="flex items-center space-x-4 mt-8">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Domain Management</span>
+                    </div>
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-server text-[#e74c3c]"></i>
+                                Domain Management
+                            </span>
                         </div>
-                        <ul class="mt-2   mb-4">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                        <ul class="flex flex-col">
+                            <a href="{% url 'add_domain' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'add_domain' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Add Domain</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Add Domain</p>
+                            </a>
+                            <a href="{% url 'view_domain' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-eye w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'view_domain' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">View Domain</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">View Domain</p>
+                            </a>
+                            <a href="{% url 'organization_manage_domains' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-cogs w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_manage_domains' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Manage Domains</a>
-                            </li>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Manage Domains</p>
+                            </a>
                         </ul>
                     </div>
-                    <div>
-                        <div class="flex items-center space-x-4">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">API</span>
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-key text-[#e74c3c]"></i>
+                                Essential Components
+                            </span>
                         </div>
-                        <ul class="mt-2">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'get_score' %}"
-                                   class="text-decoration-none hover:text-red-500">Get UserScore</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-link w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'url_check' %}"
-                                   class="text-decoration-none hover:text-red-500">Url Check</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'hunt_details' %}"
-                                   class="text-decoration-none hover:text-red-500">Hunt Details</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-list-ol w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'api_scoreboard' %}"
-                                   class="text-decoration-none hover:text-red-500">API Scoreboard</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'api_invite_friend' %}"
-                                   class="text-decoration-none hover:text-red-500">API Invite Friend</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'leaderboard' %}"
-                                   class="text-decoration-none hover:text-red-500">Leaderboard</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'search_issues' %}"
-                                   class="text-decoration-none hover:text-red-500">Search Issues</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-wallet w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'create_wallet' %}"
-                                   class="text-decoration-none hover:text-red-500">Create Wallet</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'update_api_issue' %}"
-                                   class="text-decoration-none hover:text-red-500">Update API Issue</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'api_terms' %}"
-                                   class="text-decoration-none hover:text-red-500">API Mobile Terms</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-info-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'api_about' %}"
-                                   class="text-decoration-none hover:text-red-500">API About</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-shield-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'api_privacypolicy' %}"
-                                   class="text-decoration-none hover:text-red-500">API Privacy Policy</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div>
-                        <div class="flex items-center space-x-4">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Essential Components</span>
-                        </div>
-                        <ul class="mt-2">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                        <ul class="flex flex-col">
+                            <a href="{% url 'password_reset_confirm' 1 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-lock w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'password_reset_confirm' 1 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Password Reset Confirm</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Password Reset Confirm</p>
+                            </a>
+                            <a href="{% url 'facebook_login' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-facebook w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'facebook_login' %}"
-                                   class="text-decoration-none hover:text-red-500">Facebook Login</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Facebook Login</p>
+                            </a>
+                            <a href="{% url 'github_login' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-github w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'github_login' %}"
-                                   class="text-decoration-none hover:text-red-500">Github Login</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Github Login</p>
+                            </a>
+                            <a href="{% url 'google_login' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-google w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'google_login' %}"
-                                   class="text-decoration-none hover:text-red-500">Google Login</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Google Login</p>
+                            </a>
+                            <a href="{% url 'github_callback' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-github w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'github_callback' %}"
-                                   class="text-decoration-none hover:text-red-500">Github Callback</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Github Callback</p>
+                            </a>
+                            <a href="{% url 'google_callback' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-google w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'google_callback' %}"
-                                   class="text-decoration-none hover:text-red-500">Google Callback</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Google Callback</p>
+                            </a>
+                            <a href="{% url 'facebook_callback' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-facebook w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'facebook_callback' %}"
-                                   class="text-decoration-none hover:text-red-500">Facebook Callback</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Facebook Callback</p>
+                            </a>
+                            <a href="{% url 'facebook_connect' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-facebook w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'facebook_connect' %}"
-                                   class="text-decoration-none hover:text-red-500">Facebook Connect</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Facebook Connect</p>
+                            </a>
+                            <a href="{% url 'github_connect' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fab fa-github w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'github_connect' %}"
-                                   class="text-decoration-none hover:text-red-500">Github Connect</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Github Connect</p>
+                            </a>
+                            <a href="{% url 'social_account_list' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-users w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'social_account_list' %}"
-                                   class="text-decoration-none hover:text-red-500">Social Account List</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Social Account List</p>
+                            </a>
+                            <a href="{% url 'social_account_disconnect' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-unlink w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'social_account_disconnect' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Social Account Disconnect</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Social Account Disconnect</p>
+                            </a>
+                            <a href="{% url 'schema-swagger-ui' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-desktop w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'schema-swagger-ui' %}"
-                                   class="text-decoration-none hover:text-red-500">Schema Swagger UI</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Schema Swagger UI</p>
+                            </a>
+                            <a href="{% url 'schema-redoc' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-book-open w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'schema-redoc' %}"
-                                   class="text-decoration-none hover:text-red-500">Schema Redoc</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Schema Redoc</p>
+                            </a>
+                            <a href="{% url 'inbound_event_webhook_callback' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-plug w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'inbound_event_webhook_callback' %}"
-                                   class="text-decoration-none hover:text-red-500">Inbound Event Webhook Callback</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Inbound Event Webhook Callback
+                                </p>
+                            </a>
+                            <a href="{% url 'update_bch_address' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-wallet w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'update_bch_address' %}"
-                                   class="text-decoration-none hover:text-red-500">Update BCH Address</a>
-                            </li>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Update BCH Address</p>
+                            </a>
                         </ul>
                     </div>
-                    <div>
-                        <div class="flex items-center space-x-4">
-                            <span class="font-semibold text-gray-800 text-3xl group-hover:text-red-900 transition">Dashboard</span>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-code text-[#e74c3c]"></i>
+                                API
+                            </span>
                         </div>
-                        <ul class="mt-2  ">
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_view' %}"
-                                   class="text-decoration-none hover:text-red-500">Dashboard</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-home w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_dashboard_home' %}"
-                                   class="text-decoration-none hover:text-red-500">Home</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'admin_organization_dashboard' %}"
-                                   class="text-decoration-none hover:text-red-500">Admin Organization Dashboard</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'add_or_update_organization' %}"
-                                   class="text-decoration-none hover:text-red-500">Add or Update Organization</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_dashboard_domain_detail' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Domain Detail</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                        <ul class="flex flex-col">
+                            <a href="{% url 'get_score' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Get UserScore</p>
+                            </a>
+                            <a href="{% url 'url_check' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-link w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Url Check</p>
+                            </a>
+                            <a href="{% url 'hunt_details' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_dashboard_hunt_detail' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Hunt Detail</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-pencil-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_dashboard_hunt_edit' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Hunt Edit</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'admin_organization_dashboard_detail' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Admin Organization Dashboard Detail</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'create_hunt' %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Hunt Create</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-file-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'draft_hunts' %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Draft Hunt</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-clock w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'upcoming_hunts' %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Upcoming Hunt</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-history w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'previous_hunts' %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Previous Hunt</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
-                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_manage_bugs' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Manage Bugs</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Hunt Details</p>
+                            </a>
+                            <a href="{% url 'api_scoreboard' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-list-ol w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">API Scoreboard</p>
+                            </a>
+                            <a href="{% url 'api_invite_friend' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-user-plus w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">API Invite Friend</p>
+                            </a>
+                            <a href="{% url 'leaderboard' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-trophy w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Leaderboard</p>
+                            </a>
+                            <a href="{% url 'search_issues' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Search Issues</p>
+                            </a>
+                            <a href="{% url 'create_wallet' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-wallet w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Create Wallet</p>
+                            </a>
+                            <a href="{% url 'update_api_issue' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Update API Issue</p>
+                            </a>
+                            <a href="{% url 'api_terms' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-mobile-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">API Mobile Terms</p>
+                            </a>
+                            <a href="{% url 'api_about' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-info-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">API About</p>
+                            </a>
+                            <a href="{% url 'api_privacypolicy' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-shield-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">API Privacy Policy</p>
+                            </a>
+                        </ul>
+                    </div>
+                    <div class="border h-fit border-gray-200 shadow-sm p-2 flex flex-col gap-1 rounded-lg">
+                        <div class="border-b border-gray-200">
+                            <span class="font-semibold text-gray-800 text-2xl transition p-4 flex items-center gap-2">
+                                <i class="fas fa-tachometer-alt text-[#e74c3c]"></i>
+                                Dashboard
+                            </span>
+                        </div>
+                        <ul class="flex flex-col">
+                            <a href="{% url 'organization_dashboard' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-tachometer-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Dashboard</p>
+                            </a>
+                            <a href="{% url 'organization_dashboard_home' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-home w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Home</p>
+                            </a>
+                            <a href="{% url 'admin_organization_dashboard' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'organization_manage_roles' 1 %}"
-                                   class="text-decoration-none hover:text-red-500">Manage Roles</a>
-                            </li>
-                            <li class="flex items-center space-x-3 text-black hover:text-red-600 hover:translate-x-1 transition duration-200 cursor-pointer">
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Admin Organization Dashboard</p>
+                            </a>
+                            <a href="{% url 'add_or_update_organization' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-edit w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Add or Update Organization</p>
+                            </a>
+                            <a href="{% url 'organization_dashboard_domain_detail' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Domain Detail
+                                </p>
+                            </a>
+                            <a href="{% url 'organization_dashboard_hunt_detail' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-search w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Hunt Detail
+                                </p>
+                            </a>
+                            <a href="{% url 'organization_dashboard_hunt_edit' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-pencil-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Hunt Edit
+                                </p>
+                            </a>
+                            <a href="{% url 'admin_organization_dashboard_detail' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-cogs w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Admin Organization Dashboard Detail
+                                </p>
+                            </a>
+                            <a href="{% url 'create_hunt' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-plus-circle w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Hunt Create
+                                </p>
+                            </a>
+                            <a href="{% url 'draft_hunts' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-file-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Draft Hunt
+                                </p>
+                            </a>
+                            <a href="{% url 'upcoming_hunts' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-clock w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Upcoming Hunt
+                                </p>
+                            </a>
+                            <a href="{% url 'previous_hunts' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-history w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Previous Hunt
+                                </p>
+                            </a>
+                            <a href="{% url 'organization_manage_bugs' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-bug w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Manage Bugs</p>
+                            </a>
+                            <a href="{% url 'organization_manage_roles' 1 %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
+                                <i class="fas fa-users-cog w-5 h-5 mr-1 align-middle text-red-500"></i>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">Manage Roles</p>
+                            </a>
+                            <a href="{% url 'domain_list' %}"
+                               class="flex items-center gap-1 text-black cursor-pointer hover:bg-gray-100 group transition duration-200 px-4 py-2 rounded-lg">
                                 <i class="fas fa-list-alt w-5 h-5 mr-1 align-middle text-red-500"></i>
-                                <a href="{% url 'domain_list' %}"
-                                   class="text-decoration-none hover:text-red-500">Organization Dashboard Domains</a>
-                            </li>
+                                <p class="font-medium text-black/80 group-hover:text-red-500 transition duration-200">
+                                    Organization Dashboard Domains
+                                </p>
+                            </a>
                         </ul>
                     </div>
                 </div>

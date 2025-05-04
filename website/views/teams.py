@@ -11,8 +11,10 @@ from django.shortcuts import redirect, render
 
 # Create your views here.
 from django.views.generic import TemplateView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from website.models import Challenge, JoinRequest, Kudos, Organization
+from website.models import Challenge, JoinRequest, Kudos, Organization, UserProfile
 
 
 class TeamOverview(TemplateView):
@@ -221,28 +223,41 @@ def kick_member(request):
     return JsonResponse({"success": False, "error": "Invalid request method"})
 
 
-@login_required
-def give_kudos(request):
-    if request.method == "POST":
+class GiveKudosView(APIView):
+    authentication_classes = []  # No authentication required
+    permission_classes = []  # No permissions required
+
+    def post(self, request):
         try:
-            data = json.loads(request.body)
+            data = request.data
             receiver_username = data.get("kudosReceiver")
+            sender_github = data.get("kudosSender")  # GitHub username as sender
             link_url = data.get("link")
             comment_text = data.get("comment", "")
-        except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid request data"})
+            if not receiver_username:
+                return Response({"success": False, "error": "Missing receiver"}, status=400)
+            if not sender_github:
+                return Response({"success": False, "error": "Missing sender"}, status=400)
 
-        if receiver_username:
-            try:
-                receiver = User.objects.get(username=receiver_username)
-                Kudos.objects.create(sender=request.user, receiver=receiver, link=link_url, comment=comment_text)
-                return JsonResponse({"success": True, "message": "Kudos sent successfully!"})
-            except User.DoesNotExist:
-                return JsonResponse({"success": False, "error": "User does not exist"})
+            # Fetch receiver
+            receiver = User.objects.filter(username=receiver_username).first()
+            if not receiver:
+                return Response({"success": False, "error": "Receiver username not found"}, status=404)
 
-        return JsonResponse({"success": False, "error": "Missing receiver or message"})
+            # Fetch sender using GitHub username from UserProfile
+            sender_profile = UserProfile.objects.filter(github_url__icontains=sender_github).first()
+            sender = sender_profile.user if sender_profile else None
+            print(sender_profile)
+            if not receiver or not sender:
+                return Response({"success": False, "error": "Invalid sender or receiver username"}, status=404)
 
-    return JsonResponse({"success": False, "error": "Invalid request method"})
+            # Create and store the Kudos
+            Kudos.objects.create(sender=sender, receiver=receiver, link=link_url, comment=comment_text)
+
+            return Response({"success": True, "message": "Kudos sent successfully!"}, status=201)
+
+        except Exception as e:
+            return Response({"success": False, "error": "Unexpected error,Check The BLT usernames "}, status=400)
 
 
 class TeamChallenges(TemplateView):
