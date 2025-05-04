@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from website.models import Queue
-from website.utils import twitter
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +36,8 @@ def queue_list(request):
                 messages.error(request, "Message is required")
                 return redirect("queue_list")
 
-            if len(message) > 140:
-                messages.error(request, "Message must be 140 characters or less")
+            if len(message) > 280:
+                messages.error(request, "Message must be 280 characters or less")
                 return redirect("queue_list")
 
             queue_item = Queue(message=message, image=image)
@@ -59,8 +58,8 @@ def queue_list(request):
                 messages.error(request, "Message is required")
                 return redirect("queue_list")
 
-            if len(message) > 140:
-                messages.error(request, "Message must be 140 characters or less")
+            if len(message) > 280:
+                messages.error(request, "Message must be 280 characters or less")
                 return redirect("queue_list")
 
             queue_item.message = message
@@ -85,44 +84,37 @@ def queue_list(request):
             queue_id = request.POST.get("queue_id")
             queue_item = get_object_or_404(Queue, id=queue_id)
 
-            if not queue_item.launched:
-                # Send tweet
-                image_path = None
-                if queue_item.image:
-                    image_path = queue_item.image.path
+            # Get current time
+            current_time = timezone.now()
 
-                tweet_result = twitter.send_tweet(queue_item.message, image_path)
+            # Check if this is the first launch
+            was_unlaunched = not queue_item.launched
 
-                if tweet_result["success"]:
-                    # Update queue item with tweet information
-                    queue_item.launched = True
-                    queue_item.launched_at = timezone.now()
-                    queue_item.txid = tweet_result["txid"]
-                    queue_item.url = tweet_result["url"]
-                    queue_item.save()
+            if was_unlaunched:
+                # Mark as launched
+                queue_item.launch(current_time)
 
-                    success_msg = (
-                        f"Queue item launched successfully! "
-                        f"Tweet posted at: <a href='{tweet_result['url']}' target='_blank'>{tweet_result['url']}</a> "
-                        f"and sent to Discord and Slack #project-blt channels."
-                    )
-                    messages.success(request, success_msg)
-                else:
-                    # Still mark as launched but log the error
-                    queue_item.launched = True
-                    queue_item.launched_at = timezone.now()
-                    queue_item.save()
+                # Create Twitter intent URL
+                base_url = "https://twitter.com/intent/tweet"
+                params = {
+                    "text": queue_item.message,
+                }
 
-                    logger.error(f"Error sending tweet: {tweet_result['error']}")
-                    warning_msg = (
-                        "Queue item marked as launched, but there was an error posting to Twitter. "
-                        "The message was still sent to Discord and Slack #project-blt channels."
-                    )
-                    messages.warning(request, warning_msg)
+                # Build the final URL
+                tweet_url = f"{base_url}?{'&'.join(f'{k}={v}' for k, v in params.items())}"
+
+                # Redirect directly to Twitter in a new tab
+                response = redirect(tweet_url)
+                response["Content-Security-Policy"] = "frame-ancestors https://twitter.com"
+                return response
             else:
-                messages.info(request, "Queue item was already launched")
-
-            return redirect("queue_list")
+                # Just update the timestamp if already launched
+                queue_item.launch(current_time)
+                messages.info(
+                    request,
+                    f"Queue item was already launched. Launch timestamp updated to {current_time.strftime('%Y-%m-%d %H:%M:%S')}.",
+                )
+                return redirect("queue_list")
 
     # Check if user is authorized for launch control
     authorized_user_id = os.environ.get("Q_ID")
@@ -168,19 +160,64 @@ def update_txid(request, queue_id):
 
     if request.method == "POST":
         queue_item = get_object_or_404(Queue, id=queue_id)
-        txid = request.POST.get("txid", "")
-        url = request.POST.get("url", "")
+        txid = request.POST.get("txid", "").strip()
+        url = request.POST.get("url", "").strip()
 
-        if txid:
+        # Track what was updated for the message
+        txid_updated = False
+        url_updated = False
+        txid_removed = False
+        url_removed = False
+
+        # Only update txid if provided, otherwise keep existing value
+        if txid and txid != queue_item.txid:
             queue_item.txid = txid
+            txid_updated = True
 
-        if url:
+        # Only update url if provided, otherwise keep existing value
+        if url and url != queue_item.url:
             queue_item.url = url
+            url_updated = True
+
+        # Clear values if explicitly submitted as empty
+        if "txid" in request.POST and not txid and queue_item.txid:
+            queue_item.txid = None
+            txid_removed = True
+
+        if "url" in request.POST and not url and queue_item.url:
+            queue_item.url = None
+            url_removed = True
 
         queue_item.save()
 
-        # Return the updated transaction details HTML
-        context = {"item": queue_item}
-        return render(request, "queue/partials/transaction_details.html", context)
+        # Build the response message
+        message_parts = []
+        if txid_updated:
+            message_parts.append("Transaction ID updated")
+        if url_updated:
+            message_parts.append("URL updated")
+        if txid_removed:
+            message_parts.append("Transaction ID removed")
+        if url_removed:
+            message_parts.append("URL removed")
+
+        # Create the appropriate message
+        if message_parts:
+            message = f"Success: {' and '.join(message_parts)}"
+        else:
+            message = "No changes were made"
+
+        # Check which target is being updated based on the HTTP_HX_TARGET header
+        hx_target = request.META.get("HTTP_HX_TARGET", "")
+
+        context = {"item": queue_item, "message": message}
+
+        # Determine which template to use based on the target ID
+        if "launch-transaction-details" in hx_target:
+            # This is for the launch control section
+            return render(request, "queue/partials/launch_transaction_details.html", context)
+        else:
+            # This is for the main list section
+            return render(request, "queue/partials/transaction_details.html", context)
 
     return HttpResponse("Method not allowed", status=405)

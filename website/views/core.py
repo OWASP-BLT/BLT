@@ -31,7 +31,6 @@ from django.core.exceptions import FieldError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.management import call_command, get_commands, load_command_class
-from django.core.paginator import EmptyPage, PageNotAnInteger
 from django.db import connection, models
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
@@ -70,7 +69,13 @@ from website.models import (
     UserProfile,
     Wallet,
 )
-from website.utils import analyze_pr_content, fetch_github_data, safe_redirect_allowed, save_analysis_report
+from website.utils import (
+    analyze_pr_content,
+    fetch_github_data,
+    rebuild_safe_url,
+    safe_redirect_allowed,
+    save_analysis_report,
+)
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -516,9 +521,6 @@ def status_page(request):
 
         status_data["chart_data"] = chart_data
 
-        # Cache the results
-        cache.set("service_status", status_data, timeout=CACHE_TIMEOUT)
-
         # Prepare the chart data for the template
         template_chart_data = {
             "dates": json.dumps(status_data["chart_data"]["dates"]),
@@ -530,7 +532,16 @@ def status_page(request):
         if "github_api_history" in status_data:
             status_data["github_api_history"] = json.dumps(status_data["github_api_history"])
 
-        return render(request, "status_page.html", {"status": status_data, "chart_data": template_chart_data})
+        # Add template chart data to status_data
+        status_data["template_chart_data"] = template_chart_data
+
+        # Cache the combined status
+        cache.set("service_status", status_data, CACHE_TIMEOUT)
+
+        return render(
+            request, "status_page.html", {"status": status_data, "chart_data": status_data["template_chart_data"]}
+        )
+    return render(request, "status_page.html", {"status": status_data})
 
 
 def github_callback(request):
@@ -957,7 +968,7 @@ class FacebookLogin(SocialLoginView):
 
 
 class UploadCreate(View):
-    template_name = "index.html"
+    template_name = "home.html"
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -1430,7 +1441,11 @@ def stats_dashboard(request):
         "1825": 1825,  # 5 years
     }
 
-    days = period_map.get(period, 30)
+    # Validate the period parameter
+    if period not in period_map:
+        period = "30"
+
+    days = period_map[period]
 
     # Calculate the date range
     end_date = timezone.now()
@@ -1487,23 +1502,89 @@ def stats_dashboard(request):
 
         # Combine all stats
         stats = {
-            "users": {"total": users["total"], "active": users["active"], "total_all_time": total_users},
-            "issues": {"total": issues["total"], "open": issues["open"], "total_all_time": total_issues},
-            "domains": {"total": domains["total"], "active": domains["active"], "total_all_time": total_domains},
+            "users": {
+                "total": users["total"],
+                "active": users["active"],
+                "total_all_time": total_users,
+                "active_percentage": round((users["active"] / users["total"] * 100) if users["total"] > 0 else 0),
+            },
+            "issues": {
+                "total": issues["total"],
+                "open": issues["open"],
+                "total_all_time": total_issues,
+                "open_percentage": round((issues["open"] / issues["total"] * 100) if issues["total"] > 0 else 0),
+                "fixed": Issue.objects.filter(created__gte=start_date, status="fixed").count(),
+                "in_review": Issue.objects.filter(created__gte=start_date, status="in_review").count(),
+                "invalid": Issue.objects.filter(created__gte=start_date, status="invalid").count(),
+            },
+            "domains": {
+                "total": domains["total"],
+                "active": domains["active"],
+                "total_all_time": total_domains,
+                "active_percentage": round((domains["active"] / domains["total"] * 100) if domains["total"] > 0 else 0),
+            },
             "organizations": {
                 "total": organizations["total"],
                 "active": organizations["active"],
                 "total_all_time": total_organizations,
+                "active_percentage": round(
+                    (organizations["active"] / organizations["total"] * 100) if organizations["total"] > 0 else 0
+                ),
             },
-            "hunts": {"total": hunts["total"], "active": hunts["active"], "total_all_time": total_hunts},
-            "points": {"total": points, "total_all_time": total_points},
-            "projects": {"total": projects, "total_all_time": total_projects},
+            "hunts": {
+                "total": hunts["total"],
+                "active": hunts["active"],
+                "total_all_time": total_hunts,
+                "active_percentage": round((hunts["active"] / hunts["total"] * 100) if hunts["total"] > 0 else 0),
+            },
+            "points": {
+                "total": points,
+                "total_all_time": total_points,
+                "percentage": round((points / total_points * 100) if total_points > 0 else 0),
+            },
+            "projects": {
+                "total": projects,
+                "total_all_time": total_projects,
+                "percentage": round((projects / total_projects * 100) if total_projects > 0 else 0),
+            },
             "activities": {
                 "total": activities,
                 "total_all_time": total_activities,
                 "recent": list(recent_activities),
             },
         }
+
+        # Get time series data for charts (last 12 months or the selected period)
+        months_data = []
+        if days == "ytd":
+            months_to_fetch = end_date.month
+        elif days > 365:
+            months_to_fetch = min(12, days // 30)
+        else:
+            months_to_fetch = min(12, max(1, days // 30))
+
+        # Generate time series data
+        issues_time_series = []
+        users_time_series = []
+
+        for i in range(months_to_fetch):
+            month_end = end_date - timedelta(days=i * 30)
+            month_start = month_end - timedelta(days=30)
+
+            month_issues = Issue.objects.filter(created__gte=month_start, created__lte=month_end).count()
+            month_users = User.objects.filter(date_joined__gte=month_start, date_joined__lte=month_end).count()
+
+            issues_time_series.insert(0, month_issues)
+            users_time_series.insert(0, month_users)
+
+        # Fill remaining months with zeros if we have less than 12 months
+        while len(issues_time_series) < 12:
+            issues_time_series.insert(0, 0)
+            users_time_series.insert(0, 0)
+
+        # Add time series data to the stats dictionary
+        stats["issues_time_series"] = issues_time_series
+        stats["users_time_series"] = users_time_series
 
         # Cache the results for 5 minutes
         cache.set(cache_key, stats, timeout=300)
@@ -1520,6 +1601,8 @@ def stats_dashboard(request):
             {"value": "365", "label": "1 Year"},
             {"value": "1825", "label": "5 Years"},
         ],
+        "issues_time_series": json.dumps(stats.get("issues_time_series", [])),
+        "users_time_series": json.dumps(stats.get("users_time_series", [])),
     }
 
     return render(request, "stats_dashboard.html", context)
@@ -1546,13 +1629,23 @@ def check_owasp_compliance(request):
             messages.error(request, "Please provide a valid URL")
             return redirect("check_owasp_compliance")
 
+        # SSRF Fix: Validate and sanitize URL first
+        try:
+            safe_url = rebuild_safe_url(url)
+            if not safe_url:
+                messages.error(request, "Invalid or unsafe URL provided")
+                return redirect("check_owasp_compliance")
+        except ValueError as e:
+            messages.error(request, f"Error processing URL: {str(e)}")
+            return redirect("check_owasp_compliance")
         try:
             # Parse URL to determine if it's a GitHub repository
-            is_github = "github.com" in url.lower()
-            is_owasp_org = "github.com/owasp" in url.lower()
+            parsed_url = urlparse(safe_url)
+            is_github = "github.com" == parsed_url.hostname.lower()
+            is_owasp_org = is_github and parsed_url.path.lower().startswith("/owasp/")
 
             # Fetch and analyze website content
-            response = requests.get(url, timeout=10, verify=False)
+            response = requests.get(safe_url, timeout=10, verify=True, allow_redirects=False)
             soup = BeautifulSoup(response.text.lower(), "html.parser")
             content = soup.get_text().lower()
 
@@ -1593,7 +1686,7 @@ def check_owasp_compliance(request):
                 recommendations.append("Check if the project has features behind a paywall")
 
             context = {
-                "url": url,
+                "url": safe_url,
                 "github_compliance": {
                     "github_hosted": is_github,
                     "under_owasp_org": is_owasp_org,
@@ -1913,101 +2006,63 @@ def run_management_command(request):
 
 
 def template_list(request):
+    """View function to display templates with optimized pagination."""
+    import os
+    from concurrent.futures import ThreadPoolExecutor
+    from datetime import datetime
+
     from django.core.cache import cache
-    from django.core.paginator import Paginator
-    from django.db.models import Sum
+    from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+    from django.db.models import Q, Sum
     from django.urls import URLPattern, URLResolver, get_resolver
 
-    # Get search and filter parameters
-    search_query = request.GET.get("search", "")
+    # Get request parameters with defaults
+    search_query = request.GET.get("search", "").strip()
     filter_by = request.GET.get("filter", "all")
     sort = request.GET.get("sort", "name")
     direction = request.GET.get("dir", "asc")
-    page = request.GET.get("page", 1)
+    page = int(request.GET.get("page", 1))
+    per_page = 20
 
-    def get_templates_from_dir(directory):
-        # Try to get from cache first
-        cache_key = f"template_list_{directory}_{search_query}_{filter_by}"
-        cached_templates = cache.get(cache_key)
-        if cached_templates is not None:
-            return cached_templates
+    def extract_template_info(template_path):
+        """Extract and cache template metadata."""
+        template_name = os.path.basename(template_path)
+        cache_key = f"template_info_{template_name}"
+        template_info = cache.get(cache_key)
 
-        templates = []
-        for template_name in os.listdir(directory):
-            if template_name.endswith(".html"):
-                if search_query and search_query.lower() not in template_name.lower():
-                    continue
-
-                template_path = os.path.join(directory, template_name)
-                modified_time = datetime.fromtimestamp(os.path.getmtime(template_path))
-
-                # Get view count from IP table with caching
-                view_count_key = f"template_views_{template_name}"
-                view_count = cache.get(view_count_key)
-                if view_count is None:
-                    view_count = (
-                        IP.objects.filter(
-                            Q(path__endswith=f"/{template_name}") | Q(path__endswith=f"/templates/{template_name}")
-                        ).aggregate(total_views=Sum("count"))["total_views"]
-                        or 0
-                    )
-                    cache.set(view_count_key, view_count, 3600)  # Cache for 1 hour
-
-                github_url = f"https://github.com/OWASP/BLT/blob/main/website/templates/{template_name}"
-
-                # Check template contents with caching
-                template_info_key = f"template_info_{template_name}"
-                template_info = cache.get(template_info_key)
-
-                if template_info is None:
-                    with open(template_path, "r") as f:
-                        content = f.read()
-                        template_info = {
-                            "has_sidenav": '{% include "includes/sidenav.html" %}' in content,
-                            "extends_base": '{% extends "base.html" %}' in content,
-                            "has_style_tags": "<style" in content,
-                        }
-                    cache.set(template_info_key, template_info, 3600)  # Cache for 1 hour
-
-                # Filter based on user selection
-                if filter_by != "all":
-                    if filter_by == "with_sidenav" and not template_info["has_sidenav"]:
-                        continue
-                    if filter_by == "with_base" and not template_info["extends_base"]:
-                        continue
-                    if filter_by == "with_styles" and not template_info["has_style_tags"]:
-                        continue
-
-                # Check if template has a URL (cached)
-                url_key = f"template_url_{template_name}"
-                template_url = cache.get(url_key)
-                if template_url is None:
-                    template_url = check_template_url(template_name)
-                    cache.set(url_key, template_url, 3600)  # Cache for 1 hour
-
-                templates.append(
-                    {
-                        "name": template_name,
-                        "path": template_path,
-                        "url": template_url,
-                        "modified": modified_time,
-                        "views": view_count,
-                        "github_url": github_url,
-                        "has_sidenav": template_info["has_sidenav"],
-                        "extends_base": template_info["extends_base"],
-                        "has_style_tags": template_info["has_style_tags"],
+        if template_info is None:
+            try:
+                with open(template_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    template_info = {
+                        "has_sidenav": '{% include "includes/sidenav.html" %}' in content,
+                        "extends_base": '{% extends "base.html" %}' in content,
+                        "has_style_tags": "<style" in content,
                     }
-                )
+                cache.set(cache_key, template_info, 24 * 3600)  # Cache for 24 hours
+            except IOError:
+                template_info = {"has_sidenav": False, "extends_base": False, "has_style_tags": False}
 
-        # Cache the results
-        cache.set(cache_key, templates, 300)  # Cache for 5 minutes
-        return templates
+        return template_info
 
     def check_template_url(template_name):
         resolver = get_resolver()
         template_base_name = template_name.replace(".html", "")
 
         for pattern in resolver.url_patterns:
+            if isinstance(pattern, URLResolver):
+                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
+                if url:
+                    return url
+            elif isinstance(pattern, URLPattern):
+                url = check_pattern(pattern, template_name, template_base_name)
+                if url:
+                    return url
+        return None
+
+    def check_template_url_in_patterns(urlpatterns, template_name):
+        template_base_name = template_name.replace(".html", "")
+        for pattern in urlpatterns:
             if isinstance(pattern, URLResolver):
                 url = check_template_url_in_patterns(pattern.url_patterns, template_name)
                 if url:
@@ -2039,71 +2094,148 @@ def template_list(request):
 
         return None
 
-    def check_template_url_in_patterns(urlpatterns, template_name):
-        template_base_name = template_name.replace(".html", "")
-        for pattern in urlpatterns:
-            if isinstance(pattern, URLResolver):
-                url = check_template_url_in_patterns(pattern.url_patterns, template_name)
-                if url:
-                    return url
-            elif isinstance(pattern, URLPattern):
-                url = check_pattern(pattern, template_name, template_base_name)
-                if url:
-                    return url
-        return None
+    def get_template_files(directory):
+        """Get only template files without processing content"""
+        cache_key = f"template_files_{directory}_{search_query}_{filter_by}"
+        files = cache.get(cache_key)
 
+        if files is None:
+            files = []
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    if entry.is_file() and entry.name.endswith(".html"):
+                        if search_query and search_query.lower() not in entry.name.lower():
+                            continue
+                        files.append(
+                            {
+                                "name": entry.name,
+                                "path": entry.path,
+                                "modified": datetime.fromtimestamp(entry.stat().st_mtime),
+                            }
+                        )
+
+            # Sort files if needed
+            files.sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
+            cache.set(cache_key, files, 300)  # Cache for 5 minutes
+
+        return files
+
+    def process_template_batch(templates_batch):
+        """Process only the templates needed for current page"""
+        processed_templates = []
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {}
+
+            for template in templates_batch:
+                future = executor.submit(extract_template_info, template["path"])
+                futures[future] = template
+
+            for future in futures:
+                template_data = futures[future].copy()
+                template_info = future.result()
+
+                if filter_by != "all":
+                    if (
+                        filter_by == "with_sidenav"
+                        and not template_info["has_sidenav"]
+                        or filter_by == "with_base"
+                        and not template_info["extends_base"]
+                        or filter_by == "with_styles"
+                        and not template_info["has_style_tags"]
+                    ):
+                        continue
+
+                # Get view count from IP table with caching
+                view_count_key = f"template_views_{template_data['name']}"
+                view_count = cache.get(view_count_key)
+                if view_count is None:
+                    view_count = (
+                        IP.objects.filter(
+                            Q(path__endswith=f"/{template_data['name']}")
+                            | Q(path__endswith=f"/templates/{template_data['name']}")
+                        ).aggregate(total_views=Sum("count"))["total_views"]
+                        or 0
+                    )
+                    cache.set(view_count_key, view_count, 3600)
+
+                # Get template URL
+                url_key = f"template_url_{template_data['name']}"
+                template_url = cache.get(url_key)
+                if template_url is None:
+                    template_url = check_template_url(template_data["name"])
+                    cache.set(url_key, template_url, 3600)
+
+                template_data.update({"url": template_url, "views": view_count, **template_info})
+                processed_templates.append(template_data)
+
+        return processed_templates
+
+    # Get all template files paths first (lightweight operation)
     template_dirs = []
+    all_templates = []
     main_template_dir = os.path.join(settings.BASE_DIR, "website", "templates")
 
     if os.path.exists(main_template_dir):
-        template_dirs.append({"name": "Main Templates", "templates": get_templates_from_dir(main_template_dir)})
+        main_templates = get_template_files(main_template_dir)
+        if main_templates:
+            all_templates.extend([("Main Templates", t) for t in main_templates])
 
-    for subdir in os.listdir(main_template_dir):
-        subdir_path = os.path.join(main_template_dir, subdir)
-        if os.path.isdir(subdir_path) and not subdir.startswith("__"):
-            template_dirs.append(
-                {"name": f"{subdir.title()} Templates", "templates": get_templates_from_dir(subdir_path)}
-            )
+        # Get templates from subdirectories
+        for subdir in os.listdir(main_template_dir):
+            subdir_path = os.path.join(main_template_dir, subdir)
+            if os.path.isdir(subdir_path) and not subdir.startswith("__"):
+                subdir_templates = get_template_files(subdir_path)
+                if subdir_templates:
+                    all_templates.extend([(f"{subdir.title()} Templates", t) for t in subdir_templates])
 
-    # Calculate total templates
-    total_templates = sum(len(dir["templates"]) for dir in template_dirs)
+    # Calculate total for pagination
+    total_templates = len(all_templates)
 
-    # Sort templates in each directory
-    for dir in template_dirs:
-        dir["templates"].sort(key=lambda x: (x.get(sort, ""), x["name"]), reverse=direction == "desc")
-
-    # Flatten templates for pagination
-    all_templates = []
-    for dir in template_dirs:
-        all_templates.extend([(dir["name"], template) for template in dir["templates"]])
-
-    # Paginate results
-    paginator = Paginator(all_templates, 20)  # Show 20 templates per page
+    # Create paginator with ALL templates (but don't process them yet)
+    paginator = Paginator(all_templates, per_page)
     try:
-        templates_page = paginator.page(page)
-    except (PageNotAnInteger, EmptyPage):
-        templates_page = paginator.page(1)
+        # Get the page object for the current page
+        page_obj = paginator.page(page)
 
-    return render(
-        request,
-        "template_list.html",
-        {
-            "template_dirs": template_dirs,
-            "total_templates": total_templates,
-            "sort": sort,
-            "direction": direction,
-            "base_dir": settings.BASE_DIR,
-            "search_query": search_query,
-            "filter_by": filter_by,
-            "page_obj": templates_page,
-            "filter_options": [
-                {"value": "all", "label": "All Templates"},
-                {"value": "with_sidenav", "label": "With Sidenav"},
-                {"value": "with_base", "label": "Extends Base"},
-                {"value": "with_styles", "label": "With Style Tags"},
-            ],
-        },
-    )
+        # Now process only the templates for the current page
+        processed_templates = []
+        for dir_name, template in page_obj.object_list:
+            template_dir = {"name": dir_name, "templates": process_template_batch([template])}
+            processed_templates.extend([(dir_name, t) for t in template_dir["templates"]])
+
+        # Replace the object_list with processed templates
+        page_obj.object_list = processed_templates
+
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.page(1)
+        # Process first page templates if there's an error
+        processed_templates = []
+        for dir_name, template in page_obj.object_list:
+            template_dir = {"name": dir_name, "templates": process_template_batch([template])}
+            processed_templates.extend([(dir_name, t) for t in template_dir["templates"]])
+        page_obj.object_list = processed_templates
+
+    context = {
+        "template_dirs": [
+            {"name": dir_name, "templates": [t[1] for t in processed_templates if t[0] == dir_name]}
+            for dir_name in set(t[0] for t in processed_templates)
+        ],
+        "total_templates": total_templates,
+        "sort": sort,
+        "direction": direction,
+        "base_dir": settings.BASE_DIR,
+        "search_query": search_query,
+        "filter_by": filter_by,
+        "page_obj": page_obj,  # Use the page object with correct pagination info
+        "filter_options": [
+            {"value": "all", "label": "All Templates"},
+            {"value": "with_sidenav", "label": "With Sidenav"},
+            {"value": "with_base", "label": "Extends Base"},
+            {"value": "with_styles", "label": "With Style Tags"},
+        ],
+    }
+
+    return render(request, "template_list.html", context)
 
 
 def is_admin_url(path):
@@ -2760,3 +2892,7 @@ class RoadmapView(TemplateView):
         context["milestones"] = milestones
         context["milestone_count"] = len(milestones)
         return context
+
+
+class StyleGuideView(TemplateView):
+    template_name = "style_guide.html"

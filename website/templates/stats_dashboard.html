@@ -4,127 +4,569 @@
 {% block title %}
     Statistics Dashboard
 {% endblock title %}
+{% block head %}
+    <!-- ApexCharts for stunning visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"
+            integrity="sha384-NMJHjXwbOc98wcRlkA3vfvSCzKNfg+IyjNpe+OkG1+ys0bJfQztVJmnIqYivOPAL"
+            crossorigin="anonymous"></script>
+    <!-- CountUp.js for animated number counters -->
+    <script src="https://cdn.jsdelivr.net/npm/countup.js@2.0.8/dist/countUp.min.js"
+            integrity="sha384-tQEpccDXgg1ZNQvKV7JdKyfYeUarcXVDgt7fh0TSgUHOWwW4Nc9QQ1dDI7B/eqFR"
+            crossorigin="anonymous"></script>
+{% endblock head %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div id="mainContent"
-         class="p-4 sm:p-6 lg:p-8 mt-[160px] transition-all duration-300">
-        <div class="flex flex-col space-y-4 mb-8">
-            <div class="flex justify-between items-center">
-                <h1 class="text-3xl font-bold text-gray-900">Statistics Dashboard</h1>
-            </div>
-            <!-- Time Period Selector -->
-            <div class="flex flex-wrap gap-2 items-center bg-white p-4 rounded-lg shadow-sm">
-                <span class="text-gray-700 font-medium">Time Period:</span>
-                {% for option in period_options %}
-                    <a href="?period={{ option.value }}"
-                       class="px-4 py-2 rounded-md text-sm font-medium {% if period == option.value %}bg-[#e74c3c] text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %} transition-colors duration-200">
-                        {{ option.label }}
-                    </a>
-                {% endfor %}
+    <div id="dashboardContainer"
+         class="bg-gray-50 min-h-screen transition-all duration-300 pt-16">
+        <!-- Dashboard Header -->
+        <div class="pt-6 pb-4 px-4 md:px-8 lg:px-12 border-b border-gray-200 bg-white shadow-sm">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Statistics Dashboard</h1>
+                    <p class="text-gray-600 mt-1">Track platform metrics and growth analytics</p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        Current period: <span class="font-semibold">{{ period }}</span>
+                    </p>
+                </div>
+                <!-- Time Period Selector -->
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-gray-700 font-medium">Time Period:</span>
+                    <div class="bg-gray-100 rounded-lg p-1 flex">
+                        {% for option in period_options %}
+                            <a href="?period={{ option.value }}"
+                               class="px-4 py-2 rounded-md text-sm font-medium {% if period == option.value %}bg-[#e74c3c] text-white{% else %}text-gray-700 hover:bg-gray-200{% endif %} transition-colors duration-200">
+                                {{ option.label }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-4">
-            <!-- Users Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Users</h3>
-                    <i class="fa fa-users text-xl text-[#e74c3c]"></i>
+        <!-- Main Dashboard Content -->
+        <div class="p-4 md:p-8 lg:p-12 grid gap-6">
+            <!-- KPI Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Users KPI Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-100">
+                    <div class="px-5 py-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Users</h3>
+                            <div class="bg-red-50 p-2 rounded-lg">
+                                <i class="fa fa-users text-xl text-[#e74c3c]"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div id="usersCounter"
+                                 class="text-3xl font-bold text-gray-900"
+                                 data-value="{{ stats.users.active|default:0 }}">
+                                {{ stats.users.active|default:0 }}
+                            </div>
+                            <div class="text-sm text-gray-500 mb-1">Active users</div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">Total:</span> {{ stats.users.total_all_time }}
+                                <span class="text-xs text-gray-500 block">(Period: {{ stats.users.total }})</span>
+                            </div>
+                            <div class="text-sm bg-green-100 text-green-800 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-arrow-up mr-1 text-xs"></i>{{ stats.users.active_percentage }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-5 py-2 bg-gray-50">
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#e74c3c] rounded-full"
+                                 {% if stats.users.active_percentage %}style="width: {{ stats.users.active_percentage }}%"{% else %}style="width: 0%"{% endif %}>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.users.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.users.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.users.total_all_time }})</span>
+                <!-- Issues KPI Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-100">
+                    <div class="px-5 py-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Issues</h3>
+                            <div class="bg-red-50 p-2 rounded-lg">
+                                <i class="fa fa-bug text-xl text-[#e74c3c]"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div id="issuesCounter"
+                                 class="text-3xl font-bold text-gray-900"
+                                 data-value="{{ stats.issues.open|default:0 }}">{{ stats.issues.open|default:0 }}</div>
+                            <div class="text-sm text-gray-500 mb-1">Open issues</div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">Total:</span> {{ stats.issues.total_all_time }}
+                                <span class="text-xs text-gray-500 block">(Period: {{ stats.issues.total }})</span>
+                            </div>
+                            <div class="text-sm bg-red-100 text-red-800 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-arrow-up mr-1 text-xs"></i>{{ stats.issues.open_percentage }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-5 py-2 bg-gray-50">
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#e74c3c] rounded-full"
+                                 {% if stats.issues.open_percentage %}style="width: {{ stats.issues.open_percentage }}%"{% else %}style="width: 0%"{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Organizations KPI Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-100">
+                    <div class="px-5 py-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Organizations</h3>
+                            <div class="bg-red-50 p-2 rounded-lg">
+                                <i class="fa fa-building text-xl text-[#e74c3c]"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div id="orgsCounter"
+                                 class="text-3xl font-bold text-gray-900"
+                                 data-value="{{ stats.organizations.active|default:0 }}">
+                                {{ stats.organizations.active|default:0 }}
+                            </div>
+                            <div class="text-sm text-gray-500 mb-1">Active orgs</div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">Total:</span> {{ stats.organizations.total_all_time }}
+                                <span class="text-xs text-gray-500 block">(Period: {{ stats.organizations.total }})</span>
+                            </div>
+                            <div class="text-sm bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-arrow-up mr-1 text-xs"></i>{{ stats.organizations.active_percentage }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-5 py-2 bg-gray-50">
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#e74c3c] rounded-full"
+                                 {% if stats.organizations.active_percentage %}style="width: {{ stats.organizations.active_percentage }}%"{% else %}style="width: 0%"{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Points KPI Card -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-gray-100">
+                    <div class="px-5 py-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-semibold text-gray-800">Points</h3>
+                            <div class="bg-red-50 p-2 rounded-lg">
+                                <i class="fa fa-trophy text-xl text-[#e74c3c]"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div id="pointsCounter"
+                                 class="text-3xl font-bold text-gray-900"
+                                 data-value="{{ stats.points.total|default:0 }}">
+                                {{ stats.points.total|default:0 }}
+                            </div>
+                            <div class="text-sm text-gray-500 mb-1">Recent points</div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">Total:</span> {{ stats.points.total_all_time }}
+                                <span class="text-xs text-gray-500 block">(Period: {{ stats.points.total }})</span>
+                            </div>
+                            <div class="text-sm bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                                <i class="fas fa-arrow-up mr-1 text-xs"></i>{{ stats.points.percentage }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-5 py-2 bg-gray-50">
+                        <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#e74c3c] rounded-full"
+                                 {% if stats.points.percentage %}style="width: {{ stats.points.percentage }}%"{% else %}style="width: 0%"{% endif %}>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <!-- Issues Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Issues</h3>
-                    <i class="fa fa-bug text-xl text-[#e74c3c]"></i>
+            <!-- Charts & Secondary Metrics -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Activity Over Time Chart (2/3 width) -->
+                <div class="bg-white rounded-xl shadow-md p-5 lg:col-span-2 border border-gray-100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">Activity Over Time</h3>
+                        <div class="flex gap-3">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 inline-block bg-[#e74c3c] rounded-full mr-1"></span>
+                                <span class="text-sm text-gray-600">Issues</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 inline-block bg-[#e74c3c] rounded-full mr-1"></span>
+                                <span class="text-sm text-gray-600">Users</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="activityChart" class="h-[300px]"></div>
                 </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.issues.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Open: {{ stats.issues.open }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.issues.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Domains Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Domains</h3>
-                    <i class="fa fa-globe text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.domains.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.domains.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.domains.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Organizations Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Orgs</h3>
-                    <i class="fa fa-building text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.organizations.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.organizations.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.organizations.total_all_time }})</span>
+                <!-- Issue Status Breakdown Pie Chart (1/3 width) -->
+                <div class="bg-white rounded-xl shadow-md p-5 border border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Issue Status Breakdown</h3>
+                    <div id="issueStatusChart" class="h-[300px]"></div>
                 </div>
             </div>
-            <!-- Bug Hunts Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Hunts</h3>
-                    <i class="fa fa-search text-xl text-[#e74c3c]"></i>
+            <!-- Additional Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <!-- Domains Card -->
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <div class="bg-red-50 p-3 rounded-xl mr-4">
+                        <i class="fa fa-globe text-2xl text-[#e74c3c]"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Domains</div>
+                        <div id="domainsCounter"
+                             class="text-2xl font-bold text-gray-900"
+                             data-value="{{ stats.domains.total|default:0 }}">{{ stats.domains.total|default:0 }}</div>
+                        <div class="text-xs text-gray-500">Active: {{ stats.domains.active }} / Total: {{ stats.domains.total_all_time }}</div>
+                    </div>
                 </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.hunts.total }}</div>
-                <div class="text-sm text-gray-600">
-                    Active: {{ stats.hunts.active }}
-                    <span class="text-xs text-gray-500">(Total: {{ stats.hunts.total_all_time }})</span>
+                <!-- Bug Bounties Card -->
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <div class="bg-red-50 p-3 rounded-xl mr-4">
+                        <i class="fa fa-search text-2xl text-[#e74c3c]"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Bug Bounties</div>
+                        <div id="huntsCounter"
+                             class="text-2xl font-bold text-gray-900"
+                             data-value="{{ stats.hunts.total|default:0 }}">{{ stats.hunts.total|default:0 }}</div>
+                        <div class="text-xs text-gray-500">Active: {{ stats.hunts.active }} / Total: {{ stats.hunts.total_all_time }}</div>
+                    </div>
                 </div>
-            </div>
-            <!-- Points Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Points</h3>
-                    <i class="fa fa-trophy text-xl text-[#e74c3c]"></i>
+                <!-- Projects Card -->
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <div class="bg-red-50 p-3 rounded-xl mr-4">
+                        <i class="fa fa-folder text-2xl text-[#e74c3c]"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Projects</div>
+                        <div id="projectsCounter"
+                             class="text-2xl font-bold text-gray-900"
+                             data-value="{{ stats.projects.total|default:0 }}">
+                            {{ stats.projects.total|default:0 }}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            Total: {{ stats.projects.total_all_time }}
+                            <button id="syncProjectsBtn"
+                                    type="button"
+                                    class="mt-1 inline-flex items-center px-2 py-1 bg-[#e74c3c] hover:bg-red-600 text-white text-xs rounded">
+                                <i class="fas fa-sync-alt mr-1"></i> Sync Now
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.points.total }}</div>
-                <div class="text-sm text-gray-600">
-                    <span class="text-xs text-gray-500">(Total: {{ stats.points.total_all_time }})</span>
-                </div>
-            </div>
-            <!-- Projects Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Projects</h3>
-                    <i class="fa fa-folder text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.projects.total }}</div>
-                <div class="text-sm text-gray-600">
-                    <span class="text-xs text-gray-500">(Total: {{ stats.projects.total_all_time }})</span>
-                    <form method="post" action="{% url 'sync_github_projects' %}" class="mt-1">
-                        {% csrf_token %}
-                        <button type="submit"
-                                class="text-xs bg-[#e74c3c] hover:bg-[#d44637] text-white px-2 py-1 rounded-md w-full">
-                            <i class="fas fa-sync-alt mr-1"></i>Sync
-                        </button>
-                    </form>
-                </div>
-            </div>
-            <!-- Activities Widget -->
-            <div class="bg-white rounded-lg border-2 border-gray-300 p-3 hover:shadow-md transition-shadow w-[100px] h-[100px] flex flex-col justify-between">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-base font-semibold text-gray-800">Activities</h3>
-                    <i class="fa fa-clock text-xl text-[#e74c3c]"></i>
-                </div>
-                <div class="text-2xl font-bold text-gray-900 w-full text-center">{{ stats.activities.total }}</div>
-                <div class="text-sm text-gray-600">
-                    <span class="text-xs text-gray-500">(Total: {{ stats.activities.total_all_time }})</span>
+                <!-- Activities Card -->
+                <div class="bg-white rounded-xl shadow-md p-5 flex items-center border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                    <div class="bg-red-50 p-3 rounded-xl mr-4">
+                        <i class="fa fa-clock text-2xl text-[#e74c3c]"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm text-gray-500">Activities</div>
+                        <div id="activitiesCounter"
+                             class="text-2xl font-bold text-gray-900"
+                             data-value="{{ stats.activities.total|default:0 }}">
+                            {{ stats.activities.total|default:0 }}
+                        </div>
+                        <div class="text-xs text-gray-500">Total: {{ stats.activities.total_all_time }}</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Submit form for sync -->
+    <form id="syncProjectsForm"
+          method="post"
+          action="{% url 'sync_github_projects' %}"
+          class="hidden">
+        {% csrf_token %}
+    </form>
 {% endblock content %}
+{% block scripts %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get data from Django template variables
+        const statsData = {
+            users: {
+                active: {{ stats.users.active|default:0 }},
+                totalAllTime: {{ stats.users.total_all_time|default:0 }}
+            },
+            issues: {
+                open: {{ stats.issues.open|default:0 }},
+                totalAllTime: {{ stats.issues.total_all_time|default:0 }}
+            },
+            organizations: {
+                active: {{ stats.organizations.active|default:0 }},
+                totalAllTime: {{ stats.organizations.total_all_time|default:0 }}
+            },
+            points: {
+                total: {{ stats.points.total|default:0 }},
+                totalAllTime: {{ stats.points.total_all_time|default:0 }}
+            },
+            domains: {
+                active: {{ stats.domains.active|default:0 }},
+                total: {{ stats.domains.total|default:0 }},
+                totalAllTime: {{ stats.domains.total_all_time|default:0 }}
+            },
+            hunts: {
+                active: {{ stats.hunts.active|default:0 }},
+                total: {{ stats.hunts.total|default:0 }},
+                totalAllTime: {{ stats.hunts.total_all_time|default:0 }}
+            },
+            projects: {
+                total: {{ stats.projects.total|default:0 }},
+                totalAllTime: {{ stats.projects.total_all_time|default:0 }}
+            },
+            activities: {
+                total: {{ stats.activities.total|default:0 }},
+                totalAllTime: {{ stats.activities.total_all_time|default:0 }}
+            }
+        };
+        
+        // Initialize animated counters
+        const counterOptions = {
+            duration: 2,
+            useEasing: true
+        };
+        
+        // Initialize counters using data attributes
+        function initializeCounters() {
+            const counters = [
+                'usersCounter', 'issuesCounter', 'orgsCounter', 'pointsCounter',
+                'domainsCounter', 'huntsCounter', 'projectsCounter', 'activitiesCounter'
+            ];
+            
+            counters.forEach(counterId => {
+                const element = document.getElementById(counterId);
+                if (element) {
+                    const value = parseInt(element.getAttribute('data-value') || '0', 10);
+                    new CountUp(counterId, 0, value, 0, 2, counterOptions).start();
+                }
+            });
+        }
+        
+        // Initialize counters on page load
+        initializeCounters();
+        
+        // Handle Sync Projects button
+        document.getElementById('syncProjectsBtn').addEventListener('click', function() {
+            document.getElementById('syncProjectsForm').submit();
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Syncing...';
+        });
+        
+        // Activity Over Time Chart
+        const activityChartOptions = {
+            series: [{
+                name: 'Issues',
+                data: {{ issues_time_series|safe|default:'[0,0,0,0,0,0,0,0,0,0,0,0]' }}
+            }, {
+                name: 'Users',
+                data: {{ users_time_series|safe|default:'[0,0,0,0,0,0,0,0,0,0,0,0]' }}
+            }],
+            chart: {
+                type: 'area',
+                height: 300,
+                fontFamily: 'Inter, sans-serif',
+                toolbar: {
+                    show: false
+                },
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800
+                }
+            },
+            colors: ['#e74c3c', '#e74c3c'],
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: 'light',
+                    type: 'vertical',
+                    opacityFrom: 0.4,
+                    opacityTo: 0.1,
+                    stops: [0, 100]
+                }
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            grid: {
+                borderColor: '#e0e0e0',
+                strokeDashArray: 3,
+                row: {
+                    colors: ['transparent']
+                },
+                column: {
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    lines: {
+                        show: false
+                    }
+                },
+                padding: {
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 10
+                }
+            },
+            markers: {
+                size: 0,
+                hover: {
+                    size: 5
+                }
+            },
+            xaxis: {
+                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                labels: {
+                    style: {
+                        colors: '#9ca3af'
+                    }
+                },
+                axisBorder: {
+                    show: false
+                },
+                axisTicks: {
+                    show: false
+                }
+            },
+            yaxis: {
+                labels: {
+                    style: {
+                        colors: '#9ca3af'
+                    }
+                }
+            },
+            legend: {
+                show: false
+            },
+            dataLabels: {
+                enabled: false
+            },
+            tooltip: {
+                x: {
+                    show: true
+                },
+                y: {
+                    title: {
+                        formatter: function(seriesName) {
+                            return seriesName;
+                        }
+                    }
+                },
+                marker: {
+                    show: false
+                },
+                theme: 'light'
+            }
+        };
+        
+        // Initialize Activity Chart
+        const activityChart = new ApexCharts(document.querySelector("#activityChart"), activityChartOptions);
+        activityChart.render();
+        
+        // Issue Status Pie Chart
+        const issueStatusChartOptions = {
+            series: [
+                parseInt(document.getElementById('issuesCounter').getAttribute('data-value') || '0', 10),
+                {{ stats.issues.fixed|default:0 }}, 
+                {{ stats.issues.in_review|default:0 }}, 
+                {{ stats.issues.invalid|default:0 }}
+            ],
+            chart: {
+                type: 'donut',
+                height: 300,
+                fontFamily: 'Inter, sans-serif',
+                animations: {
+                    enabled: true,
+                    easing: 'easeinout',
+                    speed: 800,
+                    animateGradually: {
+                        enabled: true,
+                        delay: 150
+                    },
+                    dynamicAnimation: {
+                        enabled: true,
+                        speed: 350
+                    }
+                }
+            },
+            labels: ['Open', 'Fixed', 'In Review', 'Invalid'],
+            colors: ['#e74c3c', '#e76c3c', '#e74c6c', '#e7463c'],
+            plotOptions: {
+                pie: {
+                    expandOnClick: false,
+                    donut: {
+                        size: '60%',
+                        labels: {
+                            show: true,
+                            name: {
+                                show: true,
+                                fontSize: '14px',
+                                fontWeight: 500,
+                                color: undefined,
+                                offsetY: -10
+                            },
+                            value: {
+                                show: true,
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                color: undefined,
+                                offsetY: 5,
+                                formatter: function(val) {
+                                    return val;
+                                }
+                            },
+                            total: {
+                                show: true,
+                                label: 'Total',
+                                color: '#9ca3af',
+                                formatter: function(w) {
+                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            stroke: {
+                show: false
+            },
+            dataLabels: {
+                enabled: false
+            },
+            legend: {
+                position: 'bottom',
+                offsetY: 0,
+                height: 40,
+                fontSize: '13px',
+                markers: {
+                    width: 10,
+                    height: 10,
+                    offsetX: -2
+                },
+                itemMargin: {
+                    horizontal: 10,
+                    vertical: 0
+                }
+            },
+            tooltip: {
+                enabled: true,
+                fillSeriesColor: false,
+                theme: 'light'
+            }
+        };
+        
+        // Initialize Issue Status Chart
+        const issueStatusChart = new ApexCharts(document.querySelector("#issueStatusChart"), issueStatusChartOptions);
+        issueStatusChart.render();
+    });
+    </script>
+{% endblock scripts %}

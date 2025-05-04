@@ -39,6 +39,7 @@ from website.api.views import (
     UserIssueViewSet,
     UserProfileViewSet,
 )
+from website.views.banned_apps import BannedAppsView, search_banned_apps
 from website.views.bitcoin import (
     BaconSubmissionView,
     bacon_requests_view,
@@ -68,6 +69,7 @@ from website.views.company import (
     ShowBughuntView,
     SlackCallbackView,
     accept_bug,
+    dashboard_view,
     delete_manager,
     delete_prize,
     edit_prize,
@@ -83,6 +85,7 @@ from website.views.core import (
     MapView,
     RoadmapView,
     StatsDetailView,
+    StyleGuideView,
     UploadCreate,
     add_forum_comment,
     add_forum_post,
@@ -113,6 +116,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
+from website.views.daily_reminders import reminder_settings
 from website.views.education import (
     add_lecture,
     add_section,
@@ -188,6 +192,7 @@ from website.views.issue import (
     vote_count,
 )
 from website.views.organization import (
+    BountyPayoutsView,
     CreateHunt,
     DomainDetailView,
     DomainList,
@@ -213,7 +218,6 @@ from website.views.organization import (
     add_domain_to_organization,
     add_or_update_domain,
     add_or_update_organization,
-    add_role,
     add_sizzle_checkIN,
     admin_organization_dashboard,
     admin_organization_dashboard_detail,
@@ -266,19 +270,21 @@ from website.views.project import (
     blt_tomato,
     create_project,
     distribute_bacon,
+    repo_activity_data,
     select_contribution,
 )
 from website.views.queue import queue_list, update_txid
 from website.views.repo import RepoListView, add_repo, refresh_repo_data
 from website.views.slack_handlers import slack_commands, slack_events
+from website.views.social import queue_social_view
 from website.views.teams import (
+    GiveKudosView,
     TeamChallenges,
     TeamLeaderboard,
     TeamOverview,
     add_member,
     create_team,
     delete_team,
-    give_kudos,
     join_requests,
     kick_member,
     leave_team,
@@ -292,19 +298,22 @@ from website.views.user import (
     SpecificMonthLeaderboardView,
     UserChallengeListView,
     UserDeleteView,
-    UserProfileDetailsView,
     UserProfileDetailView,
     assign_badge,
     badge_user_list,
     contributors,
     contributors_view,
     create_wallet,
+    delete_notification,
+    delete_thread,
     deletions,
+    fetch_notifications,
     follow_user,
     get_public_key,
     get_score,
     github_webhook,
     invite_friend,
+    mark_as_read,
     messaging_home,
     profile,
     profile_edit,
@@ -349,6 +358,8 @@ handler404 = "website.views.core.handler404"
 handler500 = "website.views.core.handler500"
 
 urlpatterns = [
+    path("banned_apps/", BannedAppsView.as_view(), name="banned_apps"),
+    path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
     path("invite-friend/", invite_friend, name="invite_friend"),
@@ -501,15 +512,9 @@ urlpatterns = [
         name="update-role",
     ),
     re_path(
-        r"^dashboard/organization/settings/role/add$",
-        add_role,
-        name="add-role",
-    ),
-    re_path(r"^dashboard/user/$", user_dashboard, name="user"),
-    re_path(
-        r"^dashboard/user/profile/(?P<slug>[^/]+)/$",
-        UserProfileDetailsView.as_view(),
-        name="user_profile",
+        r"^dashboard/user/$",
+        user_dashboard,
+        name="user",
     ),
     path(settings.ADMIN_URL + "/", admin.site.urls),
     re_path(r"^like_issue/(?P<issue_pk>\d+)/$", like_issue, name="like_issue"),
@@ -526,10 +531,6 @@ urlpatterns = [
         name="create_github_issue",
     ),
     re_path(r"^vote_count/(?P<issue_pk>\d+)/$", vote_count, name="vote_count"),
-    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
-    path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
-    re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("domain/<int:pk>/subscribe/", subscribe_to_domains, name="subscribe_to_domains"),
     re_path(r"^save_issue/(?P<issue_pk>\d+)/$", save_issue, name="save_issue"),
     path("profile/edit/", profile_edit, name="profile_edit"),
@@ -588,7 +589,6 @@ urlpatterns = [
     path("scoreboard/", ScoreboardView.as_view(), name="scoreboard"),
     re_path(r"^issue/$", IssueCreate.as_view(), name="issue"),
     # link to index.html
-    re_path(r"^index/$", TemplateView.as_view(template_name="index.html"), name="index"),
     re_path(
         r"^upload/(?P<time>[^/]+)/(?P<hash>[^/]+)/",
         UploadCreate.as_view(),
@@ -627,11 +627,15 @@ urlpatterns = [
     re_path(r"^start/$", TemplateView.as_view(template_name="hunt.html"), name="start_hunt"),
     re_path(r"^hunt/$", login_required(HuntCreate.as_view()), name="hunt"),
     re_path(r"^bounties/$", Listbounties.as_view(), name="hunts"),
+    path("bounties/payouts/", BountyPayoutsView.as_view(), name="bounty_payouts"),
     path("api/load-more-issues/", load_more_issues, name="load_more_issues"),
     re_path(r"^invite/$", InviteCreate.as_view(template_name="invite.html"), name="invite"),
     re_path(r"^terms/$", TemplateView.as_view(template_name="terms.html"), name="terms"),
     re_path(r"^about/$", TemplateView.as_view(template_name="about.html"), name="about"),
     re_path(r"^teams/$", TemplateView.as_view(template_name="teams.html"), name="teams"),
+    path("notifications/fetch/", fetch_notifications, name="fetch_notifications"),
+    path("notifications/mark_all_read", mark_as_read, name="mark_all_read"),
+    path("notifications/delete_notification/<int:notification_id>", delete_notification, name="delete_notification"),
     re_path(
         r"^googleplayapp/$",
         TemplateView.as_view(template_name="coming_soon.html"),
@@ -717,7 +721,7 @@ urlpatterns = [
         comments.views.reply_comment,
         name="reply_comment",
     ),
-    re_path(r"^social/$", TemplateView.as_view(template_name="social.html"), name="social"),
+    re_path(r"^social/$", queue_social_view, name="social"),
     re_path(r"^search/$", search, name="search"),
     re_path(r"^report/$", IssueCreate.as_view(), name="report"),
     re_path(r"^i18n/", include("django.conf.urls.i18n")),
@@ -805,7 +809,8 @@ urlpatterns = [
         RegisterOrganizationView.as_view(),
         name="register_organization",
     ),
-    path("organization/dashboard/", Organization_view, name="organization_view"),
+    path("organization/view", Organization_view, name="organization_view"),
+    path("organization/dashboard/", dashboard_view, name="organization_dashboard"),
     path(
         "organization/<int:id>/dashboard/analytics/",
         OrganizationDashboardAnalyticsView.as_view(),
@@ -982,7 +987,7 @@ urlpatterns = [
     path("teams/delete-team/", delete_team, name="delete_team"),
     path("teams/leave-team/", leave_team, name="leave_team"),
     path("teams/kick-member/", kick_member, name="kick_member"),
-    path("teams/give-kudos/", give_kudos, name="give_kudos"),
+    path("teams/give-kudos/", GiveKudosView.as_view(), name="give_kudos"),
     path(
         "similarity_scan/",
         TemplateView.as_view(template_name="similarity_scan.html"),
@@ -1083,6 +1088,10 @@ urlpatterns = [
     path("api/messaging/<int:thread_id>/messages/", view_thread, name="thread_messages"),
     path("api/messaging/set-public-key/", set_public_key, name="set_public_key"),
     path("api/messaging/<int:thread_id>/get-public-key/", get_public_key, name="get_public_key"),
+    path("repository/<slug:slug>/activity-data/", repo_activity_data, name="repo_activity_data"),
+    path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
+    path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
+    path("reminder-settings/", reminder_settings, name="reminder_settings"),
 ]
 
 if settings.DEBUG:
