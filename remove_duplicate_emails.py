@@ -1,6 +1,7 @@
 import os
 
 import django
+from django.db import transaction
 
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "blt.settings")
@@ -21,8 +22,11 @@ for duplicate in duplicates:
     # Get all users with this email
     users = User.objects.filter(email=email).order_by("id")
 
-    # Keep the first user and delete the rest
-    first_user = users.first()
-    users.exclude(id=first_user.id).delete()
+    duplicate_count = users.count() - 1
 
-    print(f"Kept user {first_user.id}, deleted {users.count() - 1} duplicates.")
+    with transaction.atomic():
+        # Keep the first user and delete the rest
+        first_user = users.first()
+        users.exclude(id=first_user.id).delete()
+
+    print(f"Kept user {first_user.id}, deleted {duplicate_count} duplicates.")

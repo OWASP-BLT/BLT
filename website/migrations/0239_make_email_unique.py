@@ -6,6 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0238_add_reminder_settings"),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
@@ -15,18 +16,9 @@ class Migration(migrations.Migration):
             migrations.RunSQL.noop,
         ),
         migrations.RunSQL(
-            """
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint 
-                    WHERE conname = 'auth_user_email_unique'
-                ) THEN
-                    ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);
-                END IF;
-            END
-            $$;
-            """,
+            # Add uniqueness constraint
+            "ALTER TABLE auth_user ADD CONSTRAINT auth_user_email_unique UNIQUE (email);",
+            # Reverse operation
             "ALTER TABLE auth_user DROP CONSTRAINT IF EXISTS auth_user_email_unique;",
         ),
     ]
