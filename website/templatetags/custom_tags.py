@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django import template
 from django.conf import settings
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.db import models
 from django.templatetags.static import static
 from django.utils import timezone
@@ -203,3 +204,21 @@ def cut(value, arg):
         return str(value).replace(arg, "")
     except (ValueError, TypeError):
         return value
+
+
+@register.simple_tag
+def static_safe(path, default_path=None):
+    """
+    Get the URL of a static file like {% static %} but with a fallback path option.
+    If the file doesn't exist, returns the URL of the default path if provided,
+    otherwise returns an empty string.
+    """
+    try:
+        return staticfiles_storage.url(path)
+    except ValueError:
+        if default_path:
+            try:
+                return staticfiles_storage.url(default_path)
+            except ValueError:
+                pass
+        return ""
