@@ -6,7 +6,7 @@ from datetime import time as dt_time
 from itertools import islice
 
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 
 from website.management.base import LoggedBaseCommand
@@ -113,13 +113,36 @@ class Command(LoggedBaseCommand):
                         time.sleep(delay)
 
                     # Create email message
-                    email = EmailMessage(
+                    email = EmailMultiAlternatives(
                         subject="Daily Check-in Reminder",
-                        body="It's time for your daily check-in! Please log in to update your status.",
+                        body="It's time for your daily check-in! Please log in to update your status.\n\nClick here to check in: https://"
+                        + settings.PRODUCTION_DOMAIN
+                        + "/add-sizzle-checkin/",
                         from_email=settings.DEFAULT_FROM_EMAIL,
                         to=[settings.DEFAULT_FROM_EMAIL],  # Send to a single recipient
                         bcc=[user.email for user in user_batch],  # BCC all users in batch
                     )
+
+                    # Add HTML content
+                    html_content = f"""
+                    <html>
+                    <body style="font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; color: #333;">
+                        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+                            <h2 style="color: #333; margin-bottom: 20px;">Daily Check-in Reminder</h2>
+                            <p>It's time for your daily check-in! Please log in to update your status.</p>
+                            <div style="margin: 30px 0;">
+                                <a href="https://{settings.PRODUCTION_DOMAIN}/add-sizzle-checkin/" 
+                                   style="display: inline-block; background-color: #e74c3c; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; text-align: center; min-width: 200px;">
+                                   Check In Now
+                                </a>
+                            </div>
+                            <p>Regular check-ins help keep your team informed about your progress and any challenges you might be facing.</p>
+                            <p>Thank you for keeping your team updated!</p>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                    email.attach_alternative(html_content, "text/html")
 
                     # Send email
                     email.send()
