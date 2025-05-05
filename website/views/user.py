@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
@@ -44,6 +45,7 @@ from website.models import (
     Monitor,
     Notification,
     Points,
+    Repo,
     Tag,
     Thread,
     User,
@@ -870,12 +872,51 @@ def github_webhook(request):
         return JsonResponse({"status": "error", "message": "Invalid method"}, status=400)
 
 
+# Add this to website/views/user.py to enhance the handle_pull_request_event function
+
 def handle_pull_request_event(payload):
     if payload["action"] == "closed" and payload["pull_request"]["merged"]:
         pr_user_profile = UserProfile.objects.filter(github_url=payload["pull_request"]["user"]["html_url"]).first()
+        
+        # Assign badge if applicable
         if pr_user_profile:
             pr_user_instance = pr_user_profile.user
             assign_github_badge(pr_user_instance, "First PR Merged")
+        
+        # Check if PR closes any issues with bounties
+        try:
+            # Extract issue references from PR body
+            pr_body = payload["pull_request"]["body"] or ""
+            issue_refs = re.findall(r'(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)', pr_body, re.IGNORECASE)
+            
+            if not issue_refs:
+                return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)
+            
+            # Get repo details
+            repo_name = payload["repository"]["name"]
+            owner = payload["repository"]["owner"]["login"]
+            
+            try:
+                repo = Repo.objects.get(name=repo_name, organization__name=owner)
+            except Repo.DoesNotExist:
+                return JsonResponse({"status": "success", "message": "Repository not tracked in BLT"}, status=200)
+            
+            # Check if any referenced issues have bounties
+            for issue_number in issue_refs:
+                try:
+                    github_issue = GitHubIssue.objects.get(issue_id=int(issue_number), repo=repo, has_dollar_tag=True)
+                    
+                    # If we found an issue with a bounty, trigger the payout process
+                    if not github_issue.sponsors_tx_id:  # Only if not already paid
+                        # This would trigger our GitHub Action or we could process here directly
+                        # For now, let's just log it and let the GitHub Action handle it
+                        logger.info(f"Bounty issue #{issue_number} closed by PR #{payload['pull_request']['number']}")
+                except GitHubIssue.DoesNotExist:
+                    continue
+                
+        except Exception as e:
+            logger.exception(f"Error checking for bounty issues: {e}")
+        
     return JsonResponse({"status": "success"}, status=200)
 
 
