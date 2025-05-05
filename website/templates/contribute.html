@@ -17,370 +17,725 @@
     Discover the many ways you can contribute to the OWASP {% env 'PROJECT_NAME' %} project and become part of a global community working to improve web security.
 {% endblock %}
 {% block content %}
-    <div class="container mx-auto px-4">
+    <div class="w-full">
         <!-- Include the left navigation -->
         {% include "includes/sidenav.html" %}
         <!-- Main Content Section -->
-        <div class="max-w-8xl mx-auto">
-            <section id="contribute-overview" class="text-center my-8">
-                <h2 class="text-3xl font-bold mb-4">Contribute to OWASP BLT</h2>
-                <p class="text-lg">
-                    OWASP BLT thrives on the contributions of its community. Whether you're a developer, security researcher, designer, or just passionate about making the web a safer place, there are many ways you can contribute to the BLT project.
-                </p>
+        <div class="w-full mx-auto">
+            <section id="contribute-overview"
+                     class="bg-gray-50 w-full border border-gray-200 md:p-8 py-8 px-2 my-8">
+                <div class="max-w-[1200px] mx-auto text-center">
+                    <h2 class="md:text-4xl text-3xl font-extrabold mb-4 text-gray-800 relative inline-block">Contribute to OWASP BLT</h2>
+                    <p class="text-lg text-gray-700">
+                        OWASP BLT thrives on the contributions of its community. Whether you're a developer, security researcher, designer, or just passionate about making the web a safer place, there are many ways you can contribute to the BLT project.
+                    </p>
+                    <div class="mt-8 inline-block">
+                        <a href="#ways-to-contribute"
+                           class="px-6 py-3 bg-[#e74c3c] select-none text-white hover:text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition duration-300 ease-in-out transform hover:-translate-y-1">Get Started Now</a>
+                    </div>
+                </div>
             </section>
-            <section id="tech-stack" class="my-8">
-                <h3 class="text-2xl font-semibold mb-4">Technology Stack</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h4 class="text-xl font-extrabold tracking-tight text-gray-900 mb-4">Front-End</h4>
-                        <ul class="space-y-3">
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/react.svg' %}"
-                                     alt="React"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="React">
-                                <span>React</span>
+            <section id="tech-stack" class="my-12">
+                <div class="text-center mb-10 px-2">
+                    <h3 class="md:text-3xl text-2xl font-bold mb-2 text-gray-800 relative inline-block">Technology Stack</h3>
+                    <p class="text-base text-gray-600 max-w-3xl mx-auto">
+                        Our project leverages these modern technologies to create a robust and scalable platform.
+                    </p>
+                </div>
+                <div class=" max-w-[90%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 ">
+                    <div class="bg-white p-6 rounded-md  transition-shadow duration-300 border border-gray-200 shadow-sm hover:shadow-md">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">Front-End</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/react.svg' %}"
+                                         alt="React"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="React">
+                                </div>
+                                <span class="text-gray-700 font-medium">React</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/nextjs.svg' %}"
-                                     alt="Next.js"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Next.js">
-                                <span>Next.js</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/nextjs.svg' %}"
+                                         alt="Next.js"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Next.js">
+                                </div>
+                                <span class="text-gray-700 font-medium">Next.js</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/tailwind.svg' %}"
-                                     alt="Tailwind"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Tailwind CSS">
-                                <span>Tailwind CSS</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/tailwind.svg' %}"
+                                         alt="Tailwind"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Tailwind CSS">
+                                </div>
+                                <span class="text-gray-700 font-medium">Tailwind CSS</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/html.svg' %}"
-                                     alt="HTML/CSS"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="HTML/CSS">
-                                <span>HTML/CSS</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h4 class="text-xl font-extrabold tracking-tight text-gray-900 mb-4">Back-End</h4>
-                        <ul class="space-y-3">
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/python.svg' %}"
-                                     alt="Python"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Python">
-                                <span>Python</span>
-                            </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/django.svg' %}"
-                                     alt="Django"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Django">
-                                <span>Django</span>
-                            </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/django.svg' %}"
-                                     alt="Django Ninja"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Django Ninja">
-                                <span>Django Ninja</span>
-                            </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/sql.svg' %}"
-                                     alt="SQL"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="SQL">
-                                <span>SQL</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/html.svg' %}"
+                                         alt="HTML/CSS"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="HTML/CSS">
+                                </div>
+                                <span class="text-gray-700 font-medium">HTML/CSS</span>
                             </li>
                         </ul>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h4 class="text-xl font-extrabold tracking-tight text-gray-900 mb-4">BLOCKCHAIN</h4>
-                        <ul class="space-y-3">
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/bitcoin.svg' %}"
-                                     alt="Bitcoin"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Bitcoin Ordinals">
-                                <span>Bitcoin Ordinals</span>
+                    <div class="bg-white p-6 rounded-md  transition-shadow duration-300 border border-gray-200 shadow-sm hover:shadow-md">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">Back-End</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/python.svg' %}"
+                                         alt="Python"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Python">
+                                </div>
+                                <span class="text-gray-700 font-medium">Python</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/solana.svg' %}"
-                                     alt="Solana"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Solana">
-                                <span>Solana</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/django.svg' %}"
+                                         alt="Django"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Django">
+                                </div>
+                                <span class="text-gray-700 font-medium">Django</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/smartcontracts.svg' %}"
-                                     alt="Smart Contracts"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Smart Contracts">
-                                <span>Smart Contracts</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/django.svg' %}"
+                                         alt="Django Ninja"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Django Ninja">
+                                </div>
+                                <span class="text-gray-700 font-medium">Django Ninja</span>
+                            </li>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/sql.svg' %}"
+                                         alt="SQL"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="SQL">
+                                </div>
+                                <span class="text-gray-700 font-medium">SQL</span>
                             </li>
                         </ul>
                     </div>
-                    <div class="bg-white p-6 rounded-lg shadow">
-                        <h4 class="text-xl font-extrabold tracking-tight text-gray-900 mb-4">DEVOPS & AI</h4>
-                        <ul class="space-y-3">
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/github.svg' %}"
-                                     alt="GitHub"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="GitHub API">
-                                <span>GitHub API</span>
+                    <div class="bg-white p-6 rounded-md  transition-shadow duration-300 border border-gray-200 shadow-sm hover:shadow-md">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">Blockchain</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/bitcoin.svg' %}"
+                                         alt="Bitcoin"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Bitcoin Ordinals">
+                                </div>
+                                <span class="text-gray-700 font-medium">Bitcoin Ordinals</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/restapi.svg' %}"
-                                     alt="REST API"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="REST API">
-                                <span>REST API</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/solana.svg' %}"
+                                         alt="Solana"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Solana">
+                                </div>
+                                <span class="text-gray-700 font-medium">Solana</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/oauth.svg' %}"
-                                     alt="OAuth"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="OAuth">
-                                <span>OAuth</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/smartcontracts.svg' %}"
+                                         alt="Smart Contracts"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Smart Contracts">
+                                </div>
+                                <span class="text-gray-700 font-medium">Smart Contracts</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/authentication.svg' %}"
-                                     alt="Authentication"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Authentication">
-                                <span>Authentication</span>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-md  transition-shadow duration-300 border border-gray-200 shadow-sm hover:shadow-md">
+                        <h4 class="text-xl font-bold text-gray-800 mb-6 flex items-center">DevOps & AI</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/github.svg' %}"
+                                         alt="GitHub"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="GitHub API">
+                                </div>
+                                <span class="text-gray-700 font-medium">GitHub API</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/nlp.svg' %}"
-                                     alt="NLP"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="NLP">
-                                <span>NLP</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/restapi.svg' %}"
+                                         alt="REST API"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="REST API">
+                                </div>
+                                <span class="text-gray-700 font-medium">REST API</span>
                             </li>
-                            <li class="flex items-center space-x-2">
-                                <img src="{% static 'images/tech/ml.svg' %}"
-                                     alt="Machine Learning"
-                                     width="200"
-                                     height="200"
-                                     class="h-8 w-8"
-                                     title="Machine Learning">
-                                <span>Machine Learning for security analytics</span>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/oauth.svg' %}"
+                                         alt="OAuth"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="OAuth">
+                                </div>
+                                <span class="text-gray-700 font-medium">OAuth</span>
+                            </li>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/authentication.svg' %}"
+                                         alt="Authentication"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Authentication">
+                                </div>
+                                <span class="text-gray-700 font-medium">Authentication</span>
+                            </li>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/nlp.svg' %}"
+                                         alt="NLP"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="NLP">
+                                </div>
+                                <span class="text-gray-700 font-medium">NLP</span>
+                            </li>
+                            <li class="flex items-center space-x-3 group">
+                                <div class="bg-gray-100 p-2 rounded-lg group-hover:bg-gray-200 transition-colors duration-200">
+                                    <img src="{% static 'images/tech/ml.svg' %}"
+                                         alt="Machine Learning"
+                                         width="200"
+                                         height="200"
+                                         class="size-7"
+                                         title="Machine Learning">
+                                </div>
+                                <span class="text-gray-700 font-medium">Machine Learning</span>
                             </li>
                         </ul>
                     </div>
                 </div>
             </section>
-            <section id="ways-to-contribute" class="my-8">
-                <h3 class="text-2xl font-semibold mb-4">Ways to Contribute</h3>
-                <ul class="list-disc list-inside space-y-4">
-                    <li>
-                        <strong>Code Contributions:</strong> Help us develop new features, fix bugs, or improve existing code. Check out our <a href="https://github.com/owasp/blt"
+            <section id="ways-to-contribute" class="my-16">
+                <div class="text-center mb-10 px-2">
+                    <h3 class="md:text-3xl text-2xl font-bold mb-2 text-gray-800 relative inline-block">Ways to Contribute</h3>
+                    <p class=" text-gray-600 max-w-3xl mx-auto">Join our community and make a difference in various ways.</p>
+                </div>
+                <div class=" max-w-[90%] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
+                        <div class="h-3 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4 group-hover:bg-red-200 transition-colors duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-bold mb-3 text-gray-800">Code Contributions</h4>
+                            <p class="text-gray-600 mb-4">
+                                Help us develop new features, fix bugs, or improve existing code. Check out our <a href="https://github.com/owasp/blt"
     target="_blank"
-    class="text-blue-500 hover:underline">GitHub repository</a> to see open issues and start contributing.
-                    </li>
-                    <li>
-                        <strong>Report Bugs:</strong> Found a bug? Report it through the <a href="{% url 'issues' %}" class="text-blue-500 hover:underline">Bug Reporting Tool</a>. Your input helps us improve the platform.
-                    </li>
-                    <li>
-                        <strong>Documentation:</strong> Contribute to our documentation by improving the existing guides or writing new ones. Great documentation helps everyone understand and use BLT more effectively.
-                    </li>
-                    <li>
-                        <strong>Design and UX:</strong> If you have skills in design or user experience, you can help make BLT more user-friendly and visually appealing.
-                    </li>
-                    <li>
-                        <strong>Security Research:</strong> Perform security testing and contribute to making BLT more secure. You can also participate in <a href="{% url 'issues' %}" class="text-blue-500 hover:underline">private bug bounties</a> for specific security challenges.
-                    </li>
-                    <li>
-                        <strong>Community Engagement:</strong> Engage with the community by answering questions, providing feedback, and sharing your knowledge on our <a href="https://owasp.org/www-project-bug-logging-tool/"
+    class="text-[#e74c3c] hover:underline font-medium">GitHub repository</a> to see open issues and start contributing.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
+                        <div class="h-3 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4 group-hover:bg-red-200 transition-colors duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-bold mb-3 text-gray-800">Report Bugs</h4>
+                            <p class="text-gray-600 mb-4">
+                                Found a bug? Report it through the <a href="{% url 'issues' %}"
+    class="text-[#e74c3c] hover:underline font-medium">Bug Reporting Tool</a>. Your input helps us improve the platform.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
+                        <div class="h-3 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4 group-hover:bg-red-200 transition-colors duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-bold mb-3 text-gray-800">Documentation</h4>
+                            <p class="text-gray-600 mb-4">
+                                Contribute to our documentation by improving the existing guides or writing new ones. Great documentation helps everyone understand and use BLT more effectively.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
+                        <div class="h-3 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4 group-hover:bg-red-200 transition-colors duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-bold mb-3 text-gray-800">Design and UX</h4>
+                            <p class="text-gray-600 mb-4">
+                                If you have skills in design or user experience, you can help make BLT more user-friendly and visually appealing.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
+                        <div class="h-3 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4 group-hover:bg-red-200 transition-colors duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-bold mb-3 text-gray-800">Security Research</h4>
+                            <p class="text-gray-600 mb-4">
+                                Perform security testing and contribute to making BLT more secure. You can also participate in <a href="{% url 'issues' %}"
+    class="text-[#e74c3c] hover:underline font-medium">private bug bounties</a> for specific security challenges.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden group hover:shadow-lg transition duration-300">
+                        <div class="h-3 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4 group-hover:bg-red-200 transition-colors duration-300">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-bold mb-3 text-gray-800">Community Engagement</h4>
+                            <p class="text-gray-600 mb-4">
+                                Engage with the community by answering questions, providing feedback, and sharing your knowledge on our <a href="https://owasp.org/www-project-bug-logging-tool/"
     target="_blank"
-    class="text-blue-500 hover:underline">OWASP BLT Wiki</a> and forums.
-                    </li>
-                </ul>
+    class="text-[#e74c3c] hover:underline font-medium">OWASP BLT Wiki</a> and forums.
+                            </p>
+                        </div>
+                    </div>
+                </div>
             </section>
-            <section id="getting-started" class="my-8">
-                <h3 class="text-2xl font-semibold mb-4">Getting Started</h3>
-                <p class="mb-4">Ready to start contributing? Here are a few steps to get you going:</p>
-                <ol class="list-decimal list-inside space-y-2">
-                    <li>
-                        <strong>Join the Community:</strong> Sign up on the OWASP forums and join the conversation.
-                    </li>
-                    <li>
-                        <strong>Clone the Repository:</strong> Clone the BLT repository from GitHub to your local machine.
-                    </li>
-                    <li>
-                        <strong>Pick an Issue:</strong> Browse the <a href="https://github.com/owasp/blt/issues"
+            <section id="getting-started" class="my-16 ">
+                <div class="text-center mb-10 px-2">
+                    <h3 class="md:text-3xl text-2xl font-bold mb-2 text-gray-800 relative inline-block">Getting Started</h3>
+                    <p class=" text-gray-600 max-w-3xl mx-auto">Ready to start contributing? Here are a few steps to get you going:</p>
+                </div>
+                <div class=" bg-gray-50 p-8  border border-gray-200">
+                    <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row md:justify-between md:items-center gap-8">
+                        <div class="w-full md:w-1/2">
+                            <ol class="relative border-l-2  border-[#e74c3c]">
+                                <li class="mb-8 ml-6">
+                                    <span class="absolute flex items-center justify-center w-8 h-8 bg-[#e74c3c] rounded-full -left-4 text-white font-bold">1</span>
+                                    <h4 class="text-xl font-semibold mb-2 text-gray-800">Join the Community</h4>
+                                    <p class="text-gray-600">Sign up on the OWASP forums and join the conversation.</p>
+                                </li>
+                                <li class="mb-8 ml-6">
+                                    <span class="absolute flex items-center justify-center w-8 h-8 bg-[#e74c3c] rounded-full -left-4 text-white font-bold">2</span>
+                                    <h4 class="text-xl font-semibold mb-2 text-gray-800">Clone the Repository</h4>
+                                    <p class="text-gray-600">Clone the BLT repository from GitHub to your local machine.</p>
+                                </li>
+                                <li class="mb-8 ml-6">
+                                    <span class="absolute flex items-center justify-center w-8 h-8 bg-[#e74c3c] rounded-full -left-4 text-white font-bold">3</span>
+                                    <h4 class="text-xl font-semibold mb-2 text-gray-800">Pick an Issue</h4>
+                                    <p class="text-gray-600">
+                                        Browse the <a href="https://github.com/owasp/blt/issues"
     target="_blank"
-    class="text-blue-500 hover:underline">open issues</a> and pick one that matches your skills and interests.
-                    </li>
-                    <li>
-                        <strong>Start Coding:</strong> Fork the repository, create a new branch, and start working on your issue.
-                    </li>
-                    <li>
-                        <strong>Submit a Pull Request:</strong> Once you're done, submit a pull request and our maintainers will review it.
-                    </li>
-                </ol>
+    class="text-[#e74c3c] hover:underline font-medium">open issues</a> and pick one that matches your skills and interests.
+                                    </p>
+                                </li>
+                                <li class="mb-8 ml-6">
+                                    <span class="absolute flex items-center justify-center w-8 h-8 bg-[#e74c3c] rounded-full -left-4 text-white font-bold">4</span>
+                                    <h4 class="text-xl font-semibold mb-2 text-gray-800">Start Coding</h4>
+                                    <p class="text-gray-600">Fork the repository, create a new branch, and start working on your issue.</p>
+                                </li>
+                                <li class="ml-6 ">
+                                    <span class="absolute flex items-center justify-center w-8 h-8 bg-[#e74c3c] rounded-full -left-4 text-white font-bold">5</span>
+                                    <h4 class="text-xl font-semibold mb-2 text-gray-800">Submit a Pull Request</h4>
+                                    <p class="text-gray-600">Once you're done, submit a pull request and our maintainers will review it.</p>
+                                </li>
+                            </ol>
+                        </div>
+                        <div class="w-full md:w-1/2 bg-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-2xl font-semibold mb-4 text-gray-800 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-7 w-7 mr-2 text-[#e74c3c]"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Getting Involved
+                            </h3>
+                            <p class="mb-6 text-gray-600">
+                                You don't have to be a security expert or programmer to contribute! All types of contributions are welcome.
+                            </p>
+                            <div class="space-y-6">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-xl font-medium mb-2 text-gray-800">Good First Issues</h4>
+                                    <p class="text-gray-600">
+                                        New contributors can start with issues tagged as "good first issue" on our GitHub repository. These are specifically selected to help newcomers get started.
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-xl font-medium mb-2 text-gray-800">How to Take an Issue</h4>
+                                    <ul class="list-disc list-inside space-y-2 text-gray-600">
+                                        <li>Find an issue you'd like to work on</li>
+                                        <li>Use the "Create a branch" button on the right of the issue to link your contribution</li>
+                                        <li>Comment "assign to me" or type "/assign" to take ownership of the issue</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="text-xl font-medium mb-2 text-gray-800">Community Support</h4>
+                                    <p class="mb-2 text-gray-600">Join our community on the OWASP Slack Channel in the #project-blt channel to:</p>
+                                    <ul class="grid grid-cols-2 gap-2 text-gray-600">
+                                        <li class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Ask questions
+                                        </li>
+                                        <li class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Get help
+                                        </li>
+                                        <li class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Connect with others
+                                        </li>
+                                        <li class="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Stay updated
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
-            <section id="getting-involved" class="my-8">
-                <h3 class="text-2xl font-semibold mb-4">Getting Involved</h3>
-                <p class="mb-4">
-                    You don't have to be a security expert or programmer to contribute! All types of contributions are welcome.
-                </p>
-                <div class="space-y-4">
-                    <div>
-                        <h4 class="text-xl font-medium mb-2">Good First Issues</h4>
-                        <p>
-                            New contributors can start with issues tagged as "good first issue" on our GitHub repository. These are specifically selected to help newcomers get started.
+            <section id="good-first-issues" class="my-16">
+                <div class="text-center mb-10 px-2">
+                    <h3 class="md:text-3xl text-2xl font-bold mb-2 text-gray-800 relative inline-block">
+                        Good First Issues for New Contributors
+                    </h3>
+                    <p class=" text-gray-600 max-w-3xl mx-auto">
+                        These issues are perfect for newcomers looking to make their first contribution.
+                    </p>
+                </div>
+                <div class="overflow-hidden rounded-xl max-w-[95%] mx-auto border border-gray-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Title
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Time Listed
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Link
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for issue in good_first_issues %}
+                                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                        <td class="px-6 py-4 whitespace-nowrap md:whitespace-normal text-sm font-medium text-gray-800">{{ issue.title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ issue.created_at|date:"M d, Y H:i" }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <a href="{{ issue.url }}"
+                                               class="inline-flex items-center px-3 py-1 border border-transparent rounded-md shadow-sm text-sm hover:text-white font-medium text-white bg-[#e74c3c] hover:bg-red-700 transition-colors duration-200"
+                                               target="_blank">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-4 w-4 mr-1"
+                                                     fill="none"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                View Issue
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-4 text-center text-sm text-gray-500">
+                                            No issues found at the moment. Check back soon!
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section id="contact" class="my-16">
+                <div class="text-center mb-10 px-2">
+                    <h3 class="md:text-3xl text-2xl font-bold mb-2 text-gray-800 relative inline-block">Coding Style Guide</h3>
+                    <p class=" text-gray-600 max-w-3xl mx-auto">
+                        We follow a consistent coding style across the project to ensure maintainability and readability.
+                    </p>
+                </div>
+                <div class="p-8 max-w-[95%] mx-auto border border-gray-200 rounded-xl ">
+                    <div class="prose max-w-none text-gray-700">
+                        <p class="mb-6 text-lg">
+                            Please follow the <a href="https://github.com/psf/black"
+    target="_blank"
+    class="text-[#e74c3c] hover:underline font-medium">black</a> code style for the project. It helps us in keeping the codebase consistent and improves readability for other developers. Use <code class="px-2 py-1 bg-gray-100 rounded text-gray-800">pre-commit run</code> command to make sure your changes comply with the standards.
                         </p>
-                    </div>
-                    <div>
-                        <h4 class="text-xl font-medium mb-2">How to Take an Issue</h4>
-                        <ul class="list-disc list-inside space-y-2">
-                            <li>Find an issue you'd like to work on</li>
-                            <li>Use the "Create a branch" button on the right of the issue to link your contribution</li>
-                            <li>Comment "assign to me" or type "/assign" to take ownership of the issue</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="text-xl font-medium mb-2">Community Support</h4>
-                        <p>Join our community on the OWASP Slack Channel in the #project-blt channel to:</p>
-                        <ul class="list-disc list-inside space-y-2">
-                            <li>Ask questions and get help</li>
-                            <li>Connect with other contributors</li>
-                            <li>Stay updated on project developments</li>
-                            <li>Share your ideas and feedback</li>
-                        </ul>
+                        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="bg-gray-50 p-6 rounded-lg">
+                                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-6 w-6 mr-2 text-[#e74c3c]"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    Contribution Guidelines
+                                </h4>
+                                <ul class="space-y-3 text-gray-600">
+                                    <li class="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5 mr-2 mt-0.5 text-[#e74c3c]"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        To take a GitHub issue, type a comment that says 'assign to me' or '/assign,' and it will be assigned to you.
+                                    </li>
+                                    <li class="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5 mr-2 mt-0.5 text-[#e74c3c]"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        Github activity can be seen in Slack #blt-github .
+                                    </li>
+                                    <li class="flex items-start">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5 mr-2 mt-0.5 text-[#e74c3c]"
+                                             viewBox="0 0 20 20"
+                                             fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        Communicate with us on slack #project-blt . <a href="#" target="_blank" class="text-[#e74c3c] hover:underline">Join OWASP Slack Channel</a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-6 rounded-lg">
+                                <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         class="h-6 w-6 mr-2 text-[#e74c3c]"
+                                         fill="none"
+                                         viewBox="0 0 24 24"
+                                         stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                    </svg>
+                                    Figma Designs
+                                </h4>
+                                <ul class="space-y-3 text-gray-600">
+                                    <li class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&t=9aPMxdjUDBIUirAz-1"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline">New Tailwind Website Designs</a>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <a href="https://www.figma.com/file/NYD5WZzJywnO338lchnece/Bug-Logging-Tool?type=design&node-id=0%3A1&t=k0Hx6qW4Ue9iZvbH-1"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline">New Mobile Designs</a>
+                                    </li>
+                                    <li class="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-5 w-5 mr-2 text-[#e74c3c]"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
+                                           target="_blank"
+                                           class="text-[#e74c3c] hover:underline">Old Website and Mobile Designs</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mt-10">
+                            <h3 class="text-2xl font-bold mb-6 text-gray-800 relative inline-block">
+                                Development
+                                <span class="absolute -bottom-2 left-0 w-full h-1 bg-[#e74c3c]"></span>
+                            </h3>
+                            <p class="mb-6 text-lg">
+                                Make sure to run <code class="px-2 py-1 bg-gray-100 rounded text-gray-800">pre-commit</code> before committing so it formats the code.
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div class="bg-gray-50 p-6 rounded-lg">
+                                    <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-6 w-6 mr-2 text-[#e74c3c]"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+                                        </svg>
+                                        Setting Up Development Server
+                                    </h4>
+                                    <p class="text-gray-600 mb-4">
+                                        Please follow the development server setup procedure <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
+    target="_blank"
+    class="text-[#e74c3c] hover:underline font-medium">here</a>.
+                                    </p>
+                                    <p class="text-gray-600">
+                                        Currently, development server can be installed using Docker or Vagrant. You can also use virtualenv or pipenv install, pipenv shell, and then continue with the remaining instructions.
+                                    </p>
+                                </div>
+                                <div class="bg-gray-50 p-6 rounded-lg">
+                                    <h4 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-6 w-6 mr-2 text-[#e74c3c]"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        Documentation
+                                    </h4>
+                                    <ul class="space-y-3 text-gray-600">
+                                        <li class="flex items-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 mt-0.5 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Use the <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
+    target="_blank"
+    class="text-[#e74c3c] hover:underline font-medium px-1">Installation Docs</a> to get started.
+                                        </li>
+                                        <li class="flex items-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 mt-0.5 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Swagger API Documentations can be found at the root domain <code class="px-2 py-0.5 bg-gray-200 rounded text-gray-800">/swagger/</code>.
+                                        </li>
+                                        <li class="flex items-start">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 class="h-5 w-5 mr-2 mt-0.5 text-[#e74c3c]"
+                                                 viewBox="0 0 20 20"
+                                                 fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            Postman API Documentations: <a href="https://documenter.getpostman.com/view/19782933/VUqpscyV"
+    target="_blank"
+    class="text-[#e74c3c] hover:underline font-medium">Postman Docs</a>.
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
-            <section id="good-first-issues" class="my-8">
-                <h3 class="text-2xl font-semibold mb-4">Good First Issues for New Contributors</h3>
-                <table class="min-w-full table-auto border-collapse border border-gray-300">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-2 border border-gray-300">Title</th>
-                            <!-- Removed Repository column -->
-                            <th class="px-4 py-2 border border-gray-300">Time Listed</th>
-                            <th class="px-4 py-2 border border-gray-300">Link</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for issue in good_first_issues %}
-                            <tr>
-                                <td class="px-4 py-2 border border-gray-300">{{ issue.title }}</td>
-                                <!-- Removed repository cell -->
-                                <td class="px-4 py-2 border border-gray-300">{{ issue.created_at|date:"M d, Y H:i" }}</td>
-                                <td class="px-4 py-2 border border-gray-300">
-                                    <a href="{{ issue.url }}"
-                                       class="text-blue-600 hover:underline"
-                                       target="_blank">View Issue</a>
-                                </td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3" class="px-4 py-2 text-center">No issues found.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </section>
-            <section id="contact" class="my-8">
-                <h3 class="text-2xl font-semibold mb-4">Coding Style Guide</h3>
-                <p class="mb-4">
-                    Please follow the <a href="https://github.com/psf/black"
-    target="_blank"
-    class="text-blue-500 hover:underline">black</a> code style for the project. It helps us in keeping the codebase consistent and improves readability for other developers. Use <code class="bg-gray-100 p-1 rounded">pre-commit run</code> command to make sure your changes comply with the standards.
-                </p>
-                <ul class="list-disc list-inside space-y-2">
-                    <li>To take a GitHub issue, type a comment that says 'assign to me' or '/assign,' and it will be assigned to you.</li>
-                    <li>
-                        <strong>Figma Designs:</strong>
-                        <ul class="list-disc list-inside ml-6 space-y-1">
-                            <li>
-                                <a href="https://www.figma.com/file/JE0QlQ95FVpk0wG9HyFw4D/BLT-Website?type=design&node-id=0%3A1&t=9aPMxdjUDBIUirAz-1"
-                                   target="_blank"
-                                   class="text-blue-500 hover:underline">New Tailwind Website Designs</a>
-                            </li>
-                            <li>
-                                <a href="https://www.figma.com/file/NYD5WZzJywnO338lchnece/Bug-Logging-Tool?type=design&node-id=0%3A1&t=k0Hx6qW4Ue9iZvbH-1"
-                                   target="_blank"
-                                   class="text-blue-500 hover:underline">New Mobile Designs</a>
-                            </li>
-                            <li>
-                                <a href="https://www.figma.com/file/s0xuxeU6O2guoWEfA9OElZ/Design"
-                                   target="_blank"
-                                   class="text-blue-500 hover:underline">Old Website and Mobile Designs</a>
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Github activity can be seen in Slack <strong>#blt-github</strong>.
-                    </li>
-                    <li>
-                        Communicate with us on slack <strong>#project-blt</strong> <a href="#" target="_blank" class="text-blue-500 hover:underline">Join OWASP Slack Channel</a>
-                    </li>
-                </ul>
-                <h3 class="text-2xl font-semibold mt-8 mb-4">Development</h3>
-                <p class="mb-4">
-                    Make sure to run <code class="bg-gray-100 p-1 rounded">pre-commit</code> before committing so it formats the code.
-                </p>
-                <h4 class="text-xl font-semibold mb-2">Setting Up Development Server</h4>
-                <p class="mb-4">
-                    Please follow the development server setup procedure <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
-    target="_blank"
-    class="text-blue-500 hover:underline">here</a>. Currently, development server can be installed using Docker or Vagrant. You can also use virtualenv or pipenv install, pipenv shell, and then continue with the remaining instructions.
-                </p>
-                <h4 class="text-xl font-semibold mb-2">Documentation</h4>
-                <ul class="list-disc list-inside space-y-2">
-                    <li>
-                        Use the <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
-    target="_blank"
-    class="text-blue-500 hover:underline">Installation Docs</a> to get started.
-                    </li>
-                    <li>
-                        Swagger API Documentations can be found at the root domain <code class="bg-gray-100 p-1 rounded">/swagger/</code>.
-                    </li>
-                    <li>
-                        Postman API Documentations: <a href="https://documenter.getpostman.com/view/19782933/VUqpscyV"
-    target="_blank"
-    class="text-blue-500 hover:underline">Postman Docs</a>.
-                    </li>
-                </ul>
             </section>
         </div>
     </div>
