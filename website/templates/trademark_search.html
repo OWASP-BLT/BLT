@@ -17,42 +17,99 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="h-[calc(100vh-72px)] flex items-center">
-        <div class="flex flex-col gap-4 lg:gap-12 h-screen w-screen sm:h-fit sm:w-5/6 sm:rounded-2xl sm:shadow-lg sm:mx-auto py-24 px-4 lg:px-24 bg-white font-light">
-            <img class="w-full"
-                 alt="Trademark Search Image"
-                 src="{% static 'img/tm-search.png' %}"
-                 height="auto"
-                 width="auto">
-            <form method="post"
-                  class="search-container flex flex-col gap-4 md:gap-6 lg:gap-8"
-                  role="search"
-                  id="form">
-                {% csrf_token %}
-                <input class="w-full px-4 py-2 bg-gray-200 border border-gray-300 rounded-full focus:outline-none focus:border-gray-100 text-base"
-                       type="search"
-                       id="query"
-                       name="query"
-                       placeholder="Search...">
-                <button id="search_button"
-                        class="py-2 lg:py-4 bg-red-500 hover:bg-red-600 hover:shadow-md hover:shadow-red-300 text-white font-bold rounded-full transition duration-300 ease-in-out"
-                        type="submit">Search</button>
-            </form>
-            <p class="text-center pt-6 text-sm text-gray-500">
-                This data is fetched from United States Patent and Trademark Office
-            </p>
+    <div class="min-h-[calc(100vh-72px)] flex items-center justify-center bg-gray-50">
+        <div class="w-full max-w-4xl mx-auto p-6">
+            <div class="flex flex-col gap-8 bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
+                <!-- Header Section -->
+                <div class="relative overflow-hidden bg-gradient-to-r from-red-50 to-white px-8 pt-8 pb-4">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div class="flex-1">
+                            <h1 class="text-3xl font-bold text-gray-800 mb-2">Trademark Search</h1>
+                            <p class="text-gray-600 mb-4">Search for trademark information from the USPTO database</p>
+                        </div>
+                        <div class="flex-shrink-0 w-32 md:w-48 transform transition-transform duration-500 hover:scale-105">
+                            <img class="w-full object-contain"
+                                 alt="Trademark Search Image"
+                                 src="{% static 'img/tm-search.png' %}"
+                                 height="auto"
+                                 width="auto">
+                        </div>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-[#e74c3c] via-red-300 to-transparent"></div>
+                </div>
+                <!-- Search Form Section -->
+                <div class="px-8 pb-8">
+                    <form method="post"
+                          class="search-container flex flex-col gap-6"
+                          role="search"
+                          id="form">
+                        {% csrf_token %}
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-500"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <input class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:border-transparent text-base shadow-sm transition-all duration-300"
+                                   type="search"
+                                   id="query"
+                                   name="query"
+                                   placeholder="Enter trademark name, serial number, or keyword...">
+                        </div>
+                        <button id="search_button"
+                                class="py-4 bg-[#e74c3c] hover:bg-red-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg transform transition-all duration-300 ease-in-out hover:-translate-y-1 flex items-center justify-center gap-2"
+                                type="submit">
+                            <svg class="w-5 h-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z">
+                                </path>
+                            </svg>
+                            Search Trademarks
+                        </button>
+                        <div class="flex items-center justify-center gap-2 text-center text-sm text-gray-500 mt-2">
+                            <svg class="w-4 h-4 text-[#e74c3c]"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                            <p>Data is fetched from the United States Patent and Trademark Office</p>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         var form = document.getElementById('form');
-        var searchInput = document.getElementById('query'); // Corrected ID
+        var searchInput = document.getElementById('query');
         var searchButton = document.getElementById('search_button');
         
         form.addEventListener('submit', function(event) {
             if (searchInput.value.trim() === '') {
                 event.preventDefault(); // Prevent the form from submitting
+            } else {
+                searchButton.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Searching...';
             }
+        });
+        
+        // Add focus animation to search input
+        searchInput.addEventListener('focus', function() {
+            this.parentElement.classList.add('scale-[1.01]');
+        });
+        
+        searchInput.addEventListener('blur', function() {
+            this.parentElement.classList.remove('scale-[1.01]');
         });
     });
     </script>
