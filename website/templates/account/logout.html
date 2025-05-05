@@ -18,6 +18,7 @@
 {% endblock og_description %}
 {% load i18n %}
 {% block content %}
+    {% include "includes/sidenav.html" %}
     <h1>{% trans "Sign Out" %}</h1>
     <p>{% trans "Are you sure?" %}</p>
     <form method="post"
