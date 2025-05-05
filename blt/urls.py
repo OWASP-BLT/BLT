@@ -51,6 +51,9 @@ from website.views.bitcoin import (
     update_submission_status,
 )
 from website.views.blog import PostCreateView, PostDeleteView, PostDetailView, PostListView, PostUpdateView
+from website.views.bounty import (
+    bounty_payout
+    )
 from website.views.company import (
     AddDomainView,
     AddHuntView,
@@ -1092,6 +1095,7 @@ urlpatterns = [
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
+    path("bounty_payout/", bounty_payout, name="bounty_payout"),
 ]
 
 if settings.DEBUG:
