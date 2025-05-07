@@ -1696,13 +1696,18 @@ def update_content_comment(request, content_pk, comment_pk):
 
 
 def comment_on_content(request, content_pk):
-    content_type = request.POST.get("content_type")
-    content_type_obj = ContentType.objects.get(model=content_type)
-    content = content_type_obj.get_object_for_this_type(pk=content_pk)
-
     VALID_CONTENT_TYPES = ["issue", "post"]
 
     if request.method == "POST" and isinstance(request.user, User):
+        content_type = request.POST.get("content_type")
+        
+        try:
+            content_type_obj = ContentType.objects.get(model=content_type)
+            content = content_type_obj.get_object_for_this_type(pk=content_pk)
+            
+            if content_type not in VALID_CONTENT_TYPES:
+                messages.error(request, "Invalid content type.")
+                return redirect("home")
         comment = escape(request.POST.get("comment", ""))
         replying_to_input = request.POST.get("replying_to_input", "").split("#")
 
