@@ -17,156 +17,400 @@
     Learn how to get involved with OWASP, join local chapters, contribute to projects, and more.
 {% endblock og_description %}
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <!-- Introduction -->
-        <section class="mb-12">
-            <h1 class="text-4xl font-bold mb-4">Welcome to OWASP</h1>
-            <p class="text-lg leading-relaxed">
-                Welcome to the Open Worldwide Application Security Project (OWASP) community! OWASP is a global, nonprofit organization focused on improving the security of software through community-led open-source projects, local chapters, education, and collaboration. This page will guide you through everything you need to know to get involved, whether you’re joining a local chapter, contributing to open-source projects, or even starting your own initiative.
-            </p>
-        </section>
-        <!-- What is OWASP Section -->
-        <section class="mb-12">
-            <h2 class="text-3xl font-bold mb-4">What is OWASP?</h2>
-            <p class="text-lg leading-relaxed">
-                OWASP is a community-driven organization dedicated to improving the security of software. Our mission is to make security visible so that individuals and organizations worldwide can make informed decisions about software security risks.
-            </p>
-        </section>
-        <!-- Getting Involved Section -->
-        <section class="mb-12">
-            <h2 class="text-3xl font-bold mb-4">Getting Involved in OWASP</h2>
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold mb-2">1. Join a Local Chapter</h3>
-                <p class="text-lg leading-relaxed">
-                    OWASP operates local chapters in cities across the globe, offering a great way to connect with like-minded professionals and engage with the community in person or virtually.
-                </p>
-                <ul class="list-disc list-inside ml-6">
-                    <li>
+    <div class="bg-gradient-to-b from-gray-50 to-white min-h-screen">
+        <!-- Hero Section -->
+        <div class="bg-gray-900 text-white">
+            <div class="container mx-auto px-4 py-16 md:py-24">
+                <div class="max-w-3xl">
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+                        Welcome to <span class="text-[#e74c3c]">OWASP</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-gray-300 leading-relaxed mb-8">
+                        Join the global community dedicated to improving software security through open-source collaboration.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
                         <a href="https://owasp.org/chapters"
-                           class="text-blue-500 hover:underline">Find Your Chapter</a>: Visit the OWASP Chapters page to locate a chapter near you.
-                    </li>
-                    <li>Chapter Activities: Chapters host events such as meetups, workshops, conferences, and training sessions.</li>
-                    <li>
-                        Start Your Own Chapter: If there isn’t a chapter in your area, you can apply to start one. OWASP provides all the resources and support needed to help you build a local community.
-                    </li>
-                </ul>
-            </div>
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold mb-2">2. Become a Member</h3>
-                <p class="text-lg leading-relaxed">
-                    Joining OWASP as a member provides access to exclusive benefits while supporting the community’s mission.
-                </p>
-                <ul class="list-disc list-inside ml-6">
-                    <li>
-                        Membership Benefits: Discounts on conferences, voting rights for the OWASP Board elections, and access to special resources.
-                    </li>
-                    <li>
+                           class="px-6 py-3 bg-[#e74c3c] hover:bg-opacity-90 text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl hover:text-white ">
+                            Find Local Chapter
+                        </a>
                         <a href="https://owasp.org/membership"
-                           class="text-blue-500 hover:underline">How to Join</a>: Membership options include individual, student, and corporate levels. Visit OWASP Membership for more details.
-                    </li>
-                </ul>
+                           class="px-6 py-3 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                            Become a Member
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold mb-2">3. Contribute to OWASP</h3>
-                <p class="text-lg leading-relaxed">
-                    OWASP thrives because of its contributors! Whether you’re a developer, writer, designer, or security expert, there’s a role for you.
+        </div>
+        <div class="container mx-auto px-4 py-12 md:py-20">
+            <!-- What is OWASP Section -->
+            <section class=" mx-auto mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6 text-gray-900">What is OWASP?</h2>
+                <p class="text-lg text-gray-700 leading-relaxed mb-4">
+                    The Open Worldwide Application Security Project (OWASP) is a community-driven organization dedicated to improving the security of software. Our mission is to make security visible so that individuals and organizations worldwide can make informed decisions about software security risks.
                 </p>
-                <ul class="list-disc list-inside ml-6">
-                    <li>Ways to Contribute:</li>
-                    <ul class="list-disc list-inside ml-6">
-                        <li>Write documentation.</li>
-                        <li>Develop and test tools.</li>
-                        <li>Translate projects into other languages.</li>
-                        <li>Provide feedback and reviews for active projects.</li>
-                    </ul>
-                    <li>
-                        <a href="https://github.com/OWASP" class="text-blue-500 hover:underline">How to Start</a>: Explore the OWASP GitHub repository to find active projects where you can contribute.
-                    </li>
-                </ul>
-            </div>
-        </section>
-        <!-- Open Source Projects Section -->
-        <section class="mb-12">
-            <h2 class="text-3xl font-bold mb-4">Open Source Projects</h2>
-            <p class="text-lg leading-relaxed">
-                OWASP is best known for its community-driven projects. These projects range from tools and frameworks to guidelines and methodologies.
-            </p>
-            <ul class="list-disc list-inside ml-6">
-                <li>Flagship Projects: Some of the most popular OWASP projects include:</li>
-                <ul class="list-disc list-inside ml-6">
-                    <li>
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg border-l-4 border-[#e74c3c]">
+                    <p class="text-gray-700 italic">
+                        Founded in 2001, OWASP has become the global standard for application security best practices and resources.
+                    </p>
+                </div>
+            </section>
+            <!-- Getting Involved Cards Section -->
+            <section class="mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-8">Getting Involved</h2>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Card 1 -->
+                    <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <h3 class="text-2xl font-bold mb-4">Join a Local Chapter</h3>
+                        <p class="text-gray-600 mb-6">
+                            Connect with like-minded professionals and engage with the community in person or virtually.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 text-[#e74c3c] mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Find chapters in cities across the globe</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 text-[#e74c3c] mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Attend events, workshops and conferences</span>
+                            </li>
+                        </ul>
+                        <a href="https://owasp.org/chapters"
+                           class="inline-flex items-center text-[#e74c3c] font-medium hover:underline">
+                            Find your chapter
+                            <svg class="ml-2 h-5 w-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                    <!-- Card 2 -->
+                    <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <h3 class="text-2xl font-bold mb-4">Become a Member</h3>
+                        <p class="text-gray-600 mb-6">
+                            Join OWASP as a member to access exclusive benefits while supporting the community's mission.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 text-[#e74c3c] mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Conference discounts & voting rights</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 text-[#e74c3c] mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Individual, student & corporate levels</span>
+                            </li>
+                        </ul>
+                        <a href="https://owasp.org/membership"
+                           class="inline-flex items-center text-[#e74c3c] font-medium hover:underline">
+                            Join now
+                            <svg class="ml-2 h-5 w-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                    <!-- Card 3 -->
+                    <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-all border-t-4 border-[#e74c3c]">
+                        <h3 class="text-2xl font-bold mb-4">Contribute to Projects</h3>
+                        <p class="text-gray-600 mb-6">
+                            Whether you're a developer, writer, designer, or security expert, there's a role for you.
+                        </p>
+                        <ul class="space-y-3 mb-6">
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 text-[#e74c3c] mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Develop tools & write documentation</span>
+                            </li>
+                            <li class="flex items-start">
+                                <svg class="h-6 w-6 text-[#e74c3c] mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Translate & provide project feedback</span>
+                            </li>
+                        </ul>
+                        <a href="https://github.com/OWASP"
+                           class="inline-flex items-center text-[#e74c3c] font-medium hover:underline">
+                            Get started
+                            <svg class="ml-2 h-5 w-5"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- Featured Projects Section -->
+            <section class="mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-8">Featured Projects</h2>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-gray-200">
                         <a href="https://owasp.org/www-project-top-ten/"
-                           class="text-blue-500 hover:underline">OWASP Top Ten</a>
-                    </li>
-                    <li>
+                           class="p-8 hover:bg-gray-50 transition-all">
+                            <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">OWASP Top Ten</h3>
+                            <p class="text-gray-600">
+                                A standard awareness document for developers about the most critical security risks to web applications.
+                            </p>
+                        </a>
                         <a href="https://owasp.org/www-project-zap/"
-                           class="text-blue-500 hover:underline">OWASP ZAP (Zed Attack Proxy)</a>
-                    </li>
-                    <li>
+                           class="p-8 hover:bg-gray-50 transition-all">
+                            <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">OWASP ZAP</h3>
+                            <p class="text-gray-600">Zed Attack Proxy is a free security tool used to find vulnerabilities in web applications.</p>
+                        </a>
                         <a href="https://owasp.org/www-project-application-security-verification-standard/"
-                           class="text-blue-500 hover:underline">OWASP ASVS (Application Security Verification Standard)</a>
-                    </li>
-                </ul>
-                <li>GSOC (Google Summer of Code):</li>
-                <ul class="list-disc list-inside ml-6">
-                    <li>
-                        Over the past five years, OWASP has participated in GSOC, offering students the opportunity to work on cutting-edge security projects.
-                    </li>
-                    <li>
-                        <a href="https://owasp.org/www-project-gsoc/"
-                           class="text-blue-500 hover:underline">Notable Projects</a>: Explore a list of GSOC projects here.
-                    </li>
-                    <li>Get Involved: If you’re interested in mentoring or participating, review the GSOC guidelines for contributors.</li>
-                </ul>
-            </ul>
-        </section>
-        <!-- Starting Your Own Project Section -->
-        <section class="mb-12">
-            <h2 class="text-3xl font-bold mb-4">Starting Your Own Project</h2>
-            <p class="text-lg leading-relaxed">
-                OWASP encourages innovation and supports individuals looking to start their own projects.
-            </p>
-            <ul class="list-disc list-inside ml-6">
-                <li>How to Propose a Project:</li>
-                <ul class="list-disc list-inside ml-6">
-                    <li>
-                        <a href="https://owasp.org/www-policy/"
-                           class="text-blue-500 hover:underline">Review the OWASP Project Process</a> to understand the steps for creating a new project.
-                    </li>
-                    <li>Submit a project proposal that outlines the goals, scope, and resources needed.</li>
-                </ul>
-                <li>Project Support:</li>
-                <ul class="list-disc list-inside ml-6">
-                    <li>Access OWASP’s vast network for mentorship, funding, and collaboration.</li>
-                    <li>Showcase your project at OWASP global events to reach a wider audience.</li>
-                </ul>
-            </ul>
-        </section>
-        <!-- Stay Connected Section -->
-        <section class="mb-12">
-            <h2 class="text-3xl font-bold mb-4">Stay Connected</h2>
-            <ul class="list-disc list-inside ml-6">
-                <li>Mailing Lists: Sign up for OWASP newsletters to stay updated on global and local events.</li>
-                <li>
-                    <a href="https://owasp.org/events/"
-                       class="text-blue-500 hover:underline">Events</a>: Attend OWASP Global AppSec conferences to network and learn from industry leaders.
-                </li>
-                <li>
-                    Social Media: Follow OWASP on <a href="https://twitter.com/owasp"
-    class="text-blue-500 hover:underline">Twitter</a>, <a href="https://linkedin.com/company/owasp"
-    class="text-blue-500 hover:underline">LinkedIn</a>, and other platforms.
-                </li>
-            </ul>
-        </section>
-        <!-- Conclusion Section -->
-        <section class="mb-12">
-            <h2 class="text-3xl font-bold mb-4">Conclusion</h2>
-            <p class="text-lg leading-relaxed">
-                OWASP thrives on its community’s energy and contributions. Whether you’re here to learn, connect, or innovate, there’s a place for you at OWASP. Take the first step today—join a chapter, contribute to a project, or start your own initiative. Together, we can make software security visible and accessible for everyone.
-            </p>
-            <p class="text-lg leading-relaxed">
-                For additional questions or guidance, visit the <a href="https://owasp.org/" class="text-blue-500 hover:underline">OWASP website</a> or reach out to a chapter leader near you.
-            </p>
-        </section>
+                           class="p-8 hover:bg-gray-50 transition-all">
+                            <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">OWASP ASVS</h3>
+                            <p class="text-gray-600">
+                                Application Security Verification Standard provides a basis for testing web application security controls.
+                            </p>
+                        </a>
+                    </div>
+                </div>
+                <div class="mt-8 text-center">
+                    <a href="https://owasp.org/projects/"
+                       class="inline-flex items-center px-6 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-all shadow-sm">
+                        Explore all projects
+                        <svg class="ml-2 h-5 w-5"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                        </svg>
+                    </a>
+                </div>
+            </section>
+            <!-- Start Your Own Section -->
+            <section class="mb-20">
+                <div class="bg-gray-900 text-white rounded-xl shadow-xl overflow-hidden">
+                    <div class="grid md:grid-cols-2">
+                        <div class="p-8 md:p-12">
+                            <div class="inline-block p-3 bg-[#e74c3c] bg-opacity-20 rounded-lg mb-6">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <h2 class="text-3xl md:text-4xl font-bold mb-4">Start Your Own Project</h2>
+                            <p class="text-gray-300 mb-8">
+                                OWASP encourages innovation and supports individuals looking to start their own security projects. Propose your idea, get mentorship, and showcase your project to a global audience.
+                            </p>
+                            <a href="https://owasp.org/www-policy/"
+                               class="inline-flex items-center px-6 py-3 bg-[#e74c3c] hover:bg-opacity-90 text-white hover:text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl">
+                                Learn how to propose
+                                <svg class="ml-2 h-5 w-5"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                </svg>
+                            </a>
+                        </div>
+                        <div class="bg-gray-800 p-8 md:p-12 flex items-center justify-center">
+                            <div class="space-y-6 text-center md:text-left">
+                                <div class="flex flex-col md:flex-row items-center md:items-start">
+                                    <div class="flex items-center justify-center h-10 w-10 rounded-full bg-[#e74c3c] bg-opacity-20 md:mr-4">
+                                        <svg class="h-5 w-5 text-[#e74c3c]"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 md:mt-0">
+                                        <h3 class="text-xl font-semibold mb-1">Mentorship Network</h3>
+                                        <p class="text-gray-400">Access OWASP's vast network for guidance</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col md:flex-row items-center md:items-start">
+                                    <div class="flex items-center justify-center h-10 w-10 rounded-full bg-[#e74c3c] bg-opacity-20 md:mr-4">
+                                        <svg class="h-5 w-5 text-[#e74c3c]"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 md:mt-0">
+                                        <h3 class="text-xl font-semibold mb-1">Funding Opportunities</h3>
+                                        <p class="text-gray-400">Resources to help projects grow</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col md:flex-row items-center md:items-start">
+                                    <div class="flex items-center justify-center h-10 w-10 rounded-full bg-[#e74c3c] bg-opacity-20 md:mr-4">
+                                        <svg class="h-5 w-5 text-[#e74c3c]"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24"
+                                             xmlns="http://www.w3.org/2000/svg">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0020 5.5v-1.65">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 md:mt-0">
+                                        <h3 class="text-xl font-semibold mb-1">Global Events</h3>
+                                        <p class="text-gray-400">Showcase at OWASP conferences</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Connect Section -->
+            <section class="mb-20">
+                <h2 class="text-3xl md:text-4xl font-bold mb-8">Stay Connected</h2>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 md:p-12">
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <a href="https://owasp.org/events/"
+                           class="flex flex-col items-center text-center p-6 rounded-lg hover:bg-gray-50 transition-all">
+                            <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Global Events</h3>
+                            <p class="text-gray-600">Attend OWASP AppSec conferences to network with industry leaders</p>
+                        </a>
+                        <a href="https://twitter.com/owasp"
+                           class="flex flex-col items-center text-center p-6 rounded-lg hover:bg-gray-50 transition-all">
+                            <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Social Media</h3>
+                            <p class="text-gray-600">Follow OWASP on Twitter, LinkedIn, and other platforms</p>
+                        </a>
+                        <a href="https://owasp.org/"
+                           class="flex flex-col items-center text-center p-6 rounded-lg hover:bg-gray-50 transition-all">
+                            <div class="flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                                <svg class="h-8 w-8 text-[#e74c3c]"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">Newsletters</h3>
+                            <p class="text-gray-600">Sign up for OWASP newsletters to stay updated on events</p>
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <!-- CTA Section -->
+            <section>
+                <div class="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl shadow-xl overflow-hidden">
+                    <div class="p-8 md:p-12">
+                        <div class="max-w-3xl mx-auto text-center">
+                            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Join the OWASP Community Today</h2>
+                            <p class="text-xl text-gray-300 mb-8">
+                                Whether you're here to learn, connect, or innovate, there's a place for you at OWASP. Take the first step today.
+                            </p>
+                            <div class="flex flex-wrap justify-center gap-4">
+                                <a href="https://owasp.org/membership"
+                                   class="px-8 py-4 bg-[#e74c3c] hover:bg-opacity-90 text-white hover:text-white font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                                    Join OWASP
+                                </a>
+                                <a href="https://owasp.org/"
+                                   class="px-8 py-4 bg-white text-gray-900 hover:text-gray-900 hover:bg-gray-100 font-medium rounded-lg transition-all shadow-lg hover:shadow-xl ">
+                                    Learn More
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
     </div>
 {% endblock content %}
