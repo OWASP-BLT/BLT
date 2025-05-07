@@ -79,6 +79,8 @@ from website.utils import (
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
+logger = logging.getLogger(__name__)
+
 
 # ----------------------------------------------------------------------------------
 # 1) Helper function to measure memory usage by module using tracemalloc
@@ -155,6 +157,10 @@ def status_page(request):
             "github": None if not CHECK_GITHUB else False,
             "openai": None if not CHECK_OPENAI else False,
             "db_connection_count": None if not CHECK_DATABASE else 0,
+            "db_max_connections": None if not CHECK_DATABASE else 0,
+            "db_connection_usage": None if not CHECK_DATABASE else 0,
+            "memory_profiling": {"current": 0, "peak": 0},
+            "top_memory_consumers": [],
             "redis_stats": (
                 {
                     "status": "Not configured",
@@ -376,9 +382,23 @@ def status_page(request):
         if CHECK_DATABASE:
             print("Getting database connection count...")
             if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
-                with connection.cursor() as cursor:
-                    cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
-                    status_data["db_connection_count"] = cursor.fetchone()[0]
+                try:
+                    with connection.cursor() as cursor:
+                        # Get current connection count
+                        cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
+                        status_data["db_connection_count"] = cursor.fetchone()[0]
+
+                        # Get max connections
+                        cursor.execute("SHOW max_connections")
+                        status_data["db_max_connections"] = int(cursor.fetchone()[0])
+
+                        # Calculate connection usage percentage
+                        if status_data["db_max_connections"] > 0:
+                            status_data["db_connection_usage"] = (
+                                status_data["db_connection_count"] / status_data["db_max_connections"]
+                            ) * 100
+                except Exception as e:
+                    logger.error(f"Error getting database connection info: {str(e)}")
 
         # Redis stats
         if CHECK_REDIS:

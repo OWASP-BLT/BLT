@@ -1216,26 +1216,38 @@ class Blocked(models.Model):
 def clear_blocked_cache(sender, instance=None, **kwargs):
     """
     Clears the cache when a Blocked instance is created, updated, or deleted.
+    Only clears the specific cache keys that need to be updated.
     """
-    # Clear the cache
-    cache.delete("blocked_ips")
-    cache.delete("blocked_ip_network")
-    cache.delete("blocked_agents")
+    try:
+        # Clear all cache keys to ensure consistency
+        cache.delete("blocked_ips")
+        cache.delete("blocked_ip_network")
+        cache.delete("blocked_agents")
 
-    # Retrieve valid blocked IPs, IP networks, and user agents
-    blocked_ips = Blocked.objects.values_list("address", flat=True)
-    blocked_ip_network = Blocked.objects.values_list("ip_network", flat=True)
-    blocked_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+        # Prefetch all blocked data in a single query
+        blocked_data = Blocked.objects.values_list("address", "ip_network", "user_agent_string").filter(
+            address__isnull=False, ip_network__isnull=False, user_agent_string__isnull=False
+        )
 
-    # Filter out None or invalid values
-    blocked_ips = [ip for ip in blocked_ips if ip is not None]
-    blocked_ip_network = [network for network in blocked_ip_network if network is not None]
-    blocked_agents = [agent for agent in blocked_agents if agent is not None]
+        # Process and cache the data
+        blocked_ips = []
+        blocked_ip_network = []
+        blocked_agents = []
 
-    # Set the cache with valid values
-    cache.set("blocked_ips", blocked_ips, timeout=86400)
-    cache.set("blocked_ip_network", blocked_ip_network, timeout=86400)
-    cache.set("blocked_agents", blocked_agents, timeout=86400)
+        for address, network, agent in blocked_data:
+            if address:
+                blocked_ips.append(address)
+            if network:
+                blocked_ip_network.append(network)
+            if agent:
+                blocked_agents.append(agent)
+
+        # Set cache with filtered data
+        cache.set("blocked_ips", blocked_ips, timeout=86400)
+        cache.set("blocked_ip_network", blocked_ip_network, timeout=86400)
+        cache.set("blocked_agents", blocked_agents, timeout=86400)
+    except Exception as e:
+        logger.error(f"Error clearing blocked cache: {str(e)}")
 
 
 class TimeLog(models.Model):

@@ -203,7 +203,7 @@ AUTHENTICATION_BACKENDS = (
 
 
 REST_AUTH = {"SESSION_LOGIN": False}
-CONN_MAX_AGE = 0
+CONN_MAX_AGE = 60  # Enable connection pooling with 60 second timeout
 
 # WSGI_APPLICATION = "blt.wsgi.application"
 
@@ -334,13 +334,23 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "CONN_MAX_AGE": CONN_MAX_AGE,
+        "OPTIONS": {
+            "timeout": 10,
+        },
     }
 }
 
 if not db_from_env:
     print("no database url detected in settings, using sqlite")
 else:
-    DATABASES["default"] = dj_database_url.config(conn_max_age=0, ssl_require=False)
+    DATABASES["default"] = dj_database_url.config(
+        conn_max_age=CONN_MAX_AGE,
+        ssl_require=False,
+        options={
+            "timeout": 10,
+        },
+    )
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
