@@ -1,8 +1,10 @@
 from datetime import datetime
 
 import pytz
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.mail import EmailMessage
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -12,7 +14,14 @@ from website.models import ReminderSettings
 
 @login_required
 def reminder_settings(request):
-    settings, created = ReminderSettings.objects.get_or_create(user=request.user)
+    settings, created = ReminderSettings.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "reminder_time": timezone.now().time(),  # Set default time to current time
+            "timezone": "UTC",  # Set default timezone
+            "is_active": False,  # Set default active
+        },
+    )
 
     if request.method == "POST":
         form = ReminderSettingsForm(request.POST, instance=settings)
@@ -54,3 +63,33 @@ def reminder_settings(request):
             form.initial["reminder_time"] = local_dt.time()
 
     return render(request, "website/reminder_settings.html", {"form": form, "settings": settings})
+
+
+@login_required
+def send_test_reminder(request):
+    """Send a test reminder email to the user."""
+    if request.method == "POST":
+        try:
+            # Create email message with the correct daily check-in link
+            email = EmailMessage(
+                subject="Test Daily Check-in Reminder",
+                body=f"""Hello {request.user.username},
+
+This is a test reminder for your daily check-in. Please click the link below to complete your daily check-in:
+
+{request.build_absolute_uri('/add-sizzle-checkin/')}
+
+Best regards,
+The BLT Team""",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[request.user.email],
+            )
+
+            # Send the email
+            email.send()
+
+            messages.success(request, "Test reminder sent successfully!")
+        except Exception:
+            messages.error(request, "Failed to send test reminder. Please try again later.")
+
+    return redirect("reminder_settings")
