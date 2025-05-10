@@ -2766,20 +2766,6 @@ class BountyPayoutsView(ListView):
             try:
                 # Import required models
                 from website.models import GitHubIssue, Repo
-                page = 1
-                per_page = 100
-                all_issues = []
-                total_count = None
-                while True:
-                    issues, api_total_count = self.github_issues_with_bounties("$5", "closed", page, per_page)
-                    if total_count is None and api_total_count is not None:
-                        total_count = api_total_count
-                    if not issues:
-                        break
-                    all_issues.extend(issues)
-                    if len(issues) < per_page or len(all_issues) >= total_count:
-                        break
-                    page += 1
 
                 page = 1
                 per_page = 100
