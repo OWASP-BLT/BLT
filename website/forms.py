@@ -315,6 +315,16 @@ class HackathonForm(forms.ModelForm):
                 # When creating new, start with empty queryset
                 self.fields["repositories"].queryset = Repo.objects.none()
 
+    def clean_repositories(self):
+        repositories = self.cleaned_data.get("repositories")
+        organization = self.cleaned_data.get("organization")
+
+        if repositories and organization:
+            # Ensure all repositories belong to the selected organization
+            valid_repos = Repo.objects.filter(id__in=[r.id for r in repositories], organization=organization)
+            return valid_repos
+        return repositories
+
 
 class HackathonSponsorForm(forms.ModelForm):
     class Meta:

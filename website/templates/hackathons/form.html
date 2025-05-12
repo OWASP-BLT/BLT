@@ -126,6 +126,30 @@
                             Select the repositories that will be part of this hackathon. Pull requests to these repositories during the hackathon period will be counted.
                         </p>
                     </div>
+                    <!-- Sponsorship Section -->
+                    <div class="mt-8 pt-8 border-t border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Sponsorship Information</h3>
+                        <!-- Sponsor Note -->
+                        <div class="mb-6">
+                            <label for="{{ form.sponsor_note.id_for_label }}"
+                                   class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Note</label>
+                            {{ form.sponsor_note }}
+                            {% if form.sponsor_note.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_note.errors.0 }}</p>{% endif %}
+                            <p class="mt-2 text-sm text-gray-600">
+                                Provide information about sponsorship opportunities for this hackathon. This will be displayed on the hackathon page.
+                            </p>
+                        </div>
+                        <!-- Sponsor Link -->
+                        <div>
+                            <label for="{{ form.sponsor_link.id_for_label }}"
+                                   class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Link</label>
+                            {{ form.sponsor_link }}
+                            {% if form.sponsor_link.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_link.errors.0 }}</p>{% endif %}
+                            <p class="mt-2 text-sm text-gray-600">
+                                Link to sponsorship information or application form. This will be displayed as a "Become a Sponsor" button.
+                            </p>
+                        </div>
+                    </div>
                     <!-- Submit Button -->
                     <div class="pt-6">
                         <button type="submit"
