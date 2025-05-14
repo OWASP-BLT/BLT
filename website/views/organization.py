@@ -290,7 +290,19 @@ class DomainListView(ListView):
     template_name = "domain_list.html"
 
     def get_queryset(self):
-        return Domain.objects.all().order_by("-created")
+        queryset = Domain.objects.all().order_by("-created")
+
+        # Get the filter parameter for security.txt
+        security_txt_filter = self.request.GET.get("security_txt")
+
+        # Apply filter if provided
+        if security_txt_filter:
+            if security_txt_filter == "yes":
+                queryset = queryset.filter(has_security_txt=True)
+            elif security_txt_filter == "no":
+                queryset = queryset.filter(Q(has_security_txt=False) | Q(has_security_txt__isnull=True))
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -307,6 +319,15 @@ class DomainListView(ListView):
             domain_paginated = paginator.page(paginator.num_pages)
 
         context["domain"] = domain_paginated
+
+        # Add security.txt filter information to context
+        context["security_txt_filter"] = self.request.GET.get("security_txt")
+        context["security_txt_yes_count"] = Domain.objects.filter(has_security_txt=True).count()
+        context["security_txt_no_count"] = Domain.objects.filter(
+            Q(has_security_txt=False) | Q(has_security_txt__isnull=True)
+        ).count()
+        context["total_domain_count"] = Domain.objects.count()
+
         return context
 
 
