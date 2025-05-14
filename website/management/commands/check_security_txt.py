@@ -1,6 +1,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+import requests
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
@@ -47,6 +48,12 @@ class Command(BaseCommand):
             result = "FOUND" if has_security_txt else "NOT FOUND"
             self.stdout.write(f"  -> {result}")
             return domain.id, result
+        except requests.RequestException as e:
+            self.stdout.write(self.style.ERROR(f"  -> REQUEST ERROR: {e}"))
+            return domain.id, "ERROR"
+        except (ValueError, TypeError) as e:
+            self.stdout.write(self.style.ERROR(f"  -> VALUE ERROR: {e}"))
+            return domain.id, "ERROR"
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"  -> ERROR: {e}"))
             return domain.id, "ERROR"

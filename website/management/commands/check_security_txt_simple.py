@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from website.models import Domain
+from website.utils import check_security_txt
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ class Command(BaseCommand):
         self.stdout.write(f"Processing {total} domains...")
 
         processed = 0
-        found = 0
+        updated = 0
         errors = 0
 
         # Process in batches to avoid memory issues
@@ -34,45 +35,21 @@ class Command(BaseCommand):
             batch = domains[i : i + batch_size]
             for domain in batch:
                 try:
-                    # Ensure URL has a scheme
-                    domain_url = domain.url
-                    if not domain_url.startswith(("http://", "https://")):
-                        domain_url = f"https://{domain_url}"
+                    # Use the utility function instead of duplicating logic
+                    has_security_txt = check_security_txt(domain.url)
 
-                    # Remove trailing slash if present
-                    if domain_url.endswith("/"):
-                        domain_url = domain_url[:-1]
-
-                    has_security_txt = False
-
-                    # Check at well-known location first (/.well-known/security.txt)
-                    security_txt_url = f"{domain_url}/.well-known/security.txt"
-                    try:
-                        response = requests.head(security_txt_url, timeout=timeout)
-                        if response.status_code == 200:
-                            has_security_txt = True
-                    except requests.RequestException:
-                        pass
-
-                    # If not found, check at root location (/security.txt)
-                    if not has_security_txt:
-                        security_txt_url = f"{domain_url}/security.txt"
-                        try:
-                            response = requests.head(security_txt_url, timeout=timeout)
-                            if response.status_code == 200:
-                                has_security_txt = True
-                        except requests.RequestException:
-                            pass
-
-                    # Update the domain with the results
+                    # Update domain with security.txt status
                     domain.has_security_txt = has_security_txt
                     domain.security_txt_checked_at = timezone.now()
                     domain.save(update_fields=["has_security_txt", "security_txt_checked_at"])
 
-                    if has_security_txt:
-                        found += 1
-                        self.stdout.write(f"Found security.txt for {domain.name} ({domain.url})")
-
+                    updated += 1
+                except requests.RequestException as e:
+                    logger.error(f"Request error checking {domain.url}: {str(e)}")
+                    errors += 1
+                except (ValueError, TypeError) as e:
+                    logger.error(f"Value error checking {domain.url}: {str(e)}")
+                    errors += 1
                 except Exception as e:
                     logger.error(f"Error checking {domain.url}: {str(e)}")
                     errors += 1
@@ -86,7 +63,6 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Finished processing {processed} domains. "
-                f"Found security.txt on {found} domains with {errors} errors."
+                f"Finished processing {processed} domains. " f"Updated {updated} domains with {errors} errors."
             )
         )
