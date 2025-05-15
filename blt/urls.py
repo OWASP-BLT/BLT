@@ -69,6 +69,7 @@ from website.views.company import (
     ShowBughuntView,
     SlackCallbackView,
     accept_bug,
+    check_domain_security_txt,
     dashboard_view,
     delete_manager,
     delete_prize,
@@ -116,7 +117,7 @@ from website.views.core import (
     vote_forum_post,
     website_stats,
 )
-from website.views.daily_reminders import reminder_settings
+from website.views.daily_reminders import reminder_settings, send_test_reminder
 from website.views.education import (
     add_lecture,
     add_section,
@@ -1092,6 +1093,8 @@ urlpatterns = [
     path("api/messaging/thread/<int:thread_id>/delete/", delete_thread, name="delete_thread"),
     path("style-guide/", StyleGuideView.as_view(), name="style_guide"),
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
+    path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
+    path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
 ]
 
 if settings.DEBUG:
