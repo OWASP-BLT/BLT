@@ -82,6 +82,19 @@
                                 <span class="font-bold w-24">Joined:</span>
                                 <span class="text-gray-700">{{ created|date:"d/m/Y" }}</span>
                             </li>
+                            <li class="flex border-b py-2 my-2">
+                                <span class="font-bold w-24">Security.txt:</span>
+                                <span class="text-gray-700">
+                                    {% if has_security_txt %}
+                                        <span class="text-green-600 font-bold">Found</span>
+                                    {% else %}
+                                        <span class="text-red-600">Not found</span>
+                                    {% endif %}
+                                    {% if security_txt_checked_at %}
+                                        <span class="block text-xs text-gray-500 mt-1">Last checked: {{ security_txt_checked_at|date:"d/m/Y H:i" }}</span>
+                                    {% endif %}
+                                </span>
+                            </li>
                             <li class="flex items-center border-b py-2 space-x-2 my-2">
                                 <span class="font-bold w-24">Socials:</span>
                                 <a href="{% if facebook %} {{ facebook }} {% else %} # {% endif %}"
@@ -382,10 +395,10 @@
             </div>
         </div>
     </div>
-{% endblock content %}
-{% block scripts %}
-    <script>
-            document.addEventListener('DOMContentLoaded', function() {
+    {% block script %}
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Monthly Activity Chart
             const DATA_SET_VERTICAL_BAR_CHART_1 = JSON.parse('{{ monthly_activity_chart|escapejs | safe }}');
 
             const labels_vertical_bar_chart = ['January', 'February', 'Mart', 'April', 'May', 'Jun', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -423,5 +436,6 @@
                 configVerticalBarChart
             );
         });
-    </script>
-{% endblock scripts %}
+        </script>
+    {% endblock script %}
+{% endblock content %}
