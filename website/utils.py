@@ -972,3 +972,48 @@ class twitter:
         except Exception as e:
             logging.error(f"Error sending to Slack: {str(e)}")
             return False
+
+
+def check_security_txt(domain_url):
+    """
+    Check if a domain has a security.txt file according to RFC 9116.
+    Checks both /.well-known/security.txt and /security.txt locations.
+
+    Args:
+        domain_url (str): URL of the domain to check
+
+    Returns:
+        bool: True if security.txt is found, False otherwise
+    """
+    import requests
+
+    # Ensure URL has a scheme
+    if not domain_url.startswith(("http://", "https://")):
+        domain_url = "https://" + domain_url
+
+    # Remove trailing slash if present
+    if domain_url.endswith("/"):
+        domain_url = domain_url[:-1]
+
+    # Check at well-known location first (/.well-known/security.txt)
+    well_known_url = f"{domain_url}/.well-known/security.txt"
+
+    try:
+        response = requests.head(well_known_url, timeout=5)
+        if response.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+
+    # If not found, check at root location (/security.txt)
+    root_url = f"{domain_url}/security.txt"
+
+    try:
+        response = requests.head(root_url, timeout=5)
+        if response.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+
+    # If we reach here, no security.txt was found
+    return False
