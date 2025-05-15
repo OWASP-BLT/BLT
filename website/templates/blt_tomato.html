@@ -55,6 +55,16 @@
                                                 Support Project
                                             </a>
                                         </div>
+                                        {% if project.proposal_url %}
+                                            <div class="flex-shrink-0">
+                                                <a href="{{ project.proposal_url }}"
+                                                   target="_blank"
+                                                   class="inline-flex select-none items-center justify-center gap-2 px-6 py-3 text-white bg-[#e74c3c] rounded-lg hover:bg-[#c0392b] font-medium transition-all duration-200">
+                                                    <i class="fas fa-heart"></i>
+                                                    Show Proposal
+                                                </a>
+                                            </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             {% endfor %}
