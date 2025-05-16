@@ -75,16 +75,22 @@ def blt_tomato(request):
     for project in data:
         funding_details = project.get("funding_details", "").split(", ")
         funding_links = [url.strip() for url in funding_details if url.startswith("https://")]
-
         funding_link = funding_links[0] if funding_links else "#"
+
+        proposal_url = project.get("proposal_url")
+        # Treat "#", "", or anything invalid as None for sorting
+        if proposal_url in ("", "#"):
+            proposal_url = None
         processed_projects.append(
             {
                 "project_name": project.get("project_name"),
                 "repo_url": project.get("repo_url"),
                 "funding_hyperlinks": funding_link,
                 "funding_details": project.get("funding_details"),
+                "proposal_url": proposal_url,
             }
         )
+    processed_projects.sort(key=lambda x: x["proposal_url"] is None)
 
     return render(request, "blt_tomato.html", {"projects": processed_projects})
 

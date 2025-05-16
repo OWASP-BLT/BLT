@@ -6,106 +6,112 @@
 {% block content %}
     {% include "includes/sidenav.html" %}
     <div class="container mx-auto px-4 py-8">
-        <div class="max-w-3xl mx-auto">
-            <h1 class="text-3xl font-bold mb-6 text-gray-800">{{ title }}</h1>
-            <div class="bg-white rounded-lg shadow p-6">
-                <form method="post" enctype="multipart/form-data">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-4xl font-bold mb-8 text-gray-900">{{ title }}</h1>
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <form method="post" enctype="multipart/form-data" class="space-y-8">
                     {% csrf_token %}
                     {% if form.non_field_errors %}
-                        <div class="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">{{ form.non_field_errors }}</div>
+                        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">{{ form.non_field_errors }}</div>
                     {% endif %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <!-- Name -->
-                        <div class="col-span-2">
-                            <label for="{{ form.name.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
-                                Name <span class="text-red-500">*</span>
-                            </label>
-                            {{ form.name }}
-                            {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                    <!-- Name -->
+                    <div>
+                        <label for="{{ form.name.id_for_label }}"
+                               class="block text-lg font-semibold text-gray-900 mb-2">
+                            Name <span class="text-[#e74c3c]">*</span>
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="mt-2 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <!-- Organization -->
+                    <div>
+                        <label for="{{ form.organization.id_for_label }}"
+                               class="block text-lg font-semibold text-gray-900 mb-2">
+                            Organization <span class="text-[#e74c3c]">*</span>
+                        </label>
+                        {{ form.organization }}
+                        {% if form.organization.errors %}<p class="mt-2 text-sm text-red-600">{{ form.organization.errors.0 }}</p>{% endif %}
+                        <p class="mt-2 text-sm text-gray-600">Only organizations where you are an admin or manager are shown.</p>
+                    </div>
+                    <!-- Banner Image -->
+                    <div>
+                        <label for="{{ form.banner_image.id_for_label }}"
+                               class="block text-lg font-semibold text-gray-900 mb-2">Banner Image</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-[#e74c3c] transition-colors">
+                            <div class="space-y-1 text-center">
+                                {{ form.banner_image }}
+                                <p class="text-sm text-gray-600">Recommended size: 1200x400 pixels</p>
+                            </div>
                         </div>
-                        <!-- Organization -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.organization.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
-                                Organization <span class="text-red-500">*</span>
-                            </label>
-                            {{ form.organization }}
-                            {% if form.organization.errors %}<p class="mt-1 text-sm text-red-600">{{ form.organization.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500">Only organizations where you are an admin or manager are shown.</p>
-                        </div>
-                        <!-- Banner Image -->
-                        <div class="col-span-2 md:col-span-1">
-                            <label for="{{ form.banner_image.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">Banner Image</label>
-                            {{ form.banner_image }}
-                            {% if form.banner_image.errors %}<p class="mt-1 text-sm text-red-600">{{ form.banner_image.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500">Recommended size: 1200x400 pixels</p>
-                        </div>
+                        {% if form.banner_image.errors %}<p class="mt-2 text-sm text-red-600">{{ form.banner_image.errors.0 }}</p>{% endif %}
+                    </div>
+                    <!-- Time Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Start Time -->
                         <div>
                             <label for="{{ form.start_time.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
-                                Start Time <span class="text-red-500">*</span>
+                                   class="block text-lg font-semibold text-gray-900 mb-2">
+                                Start Time <span class="text-[#e74c3c]">*</span>
                             </label>
                             {{ form.start_time }}
-                            {% if form.start_time.errors %}<p class="mt-1 text-sm text-red-600">{{ form.start_time.errors.0 }}</p>{% endif %}
+                            {% if form.start_time.errors %}<p class="mt-2 text-sm text-red-600">{{ form.start_time.errors.0 }}</p>{% endif %}
                         </div>
                         <!-- End Time -->
                         <div>
                             <label for="{{ form.end_time.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
-                                End Time <span class="text-red-500">*</span>
+                                   class="block text-lg font-semibold text-gray-900 mb-2">
+                                End Time <span class="text-[#e74c3c]">*</span>
                             </label>
                             {{ form.end_time }}
-                            {% if form.end_time.errors %}<p class="mt-1 text-sm text-red-600">{{ form.end_time.errors.0 }}</p>{% endif %}
+                            {% if form.end_time.errors %}<p class="mt-2 text-sm text-red-600">{{ form.end_time.errors.0 }}</p>{% endif %}
                         </div>
+                    </div>
+                    <!-- Registration Settings -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Registration Open -->
                         <div>
-                            <div class="flex items-center">
+                            <div class="flex items-center space-x-3">
                                 {{ form.registration_open }}
                                 <label for="{{ form.registration_open.id_for_label }}"
-                                       class="ml-2 block text-sm font-medium text-gray-700">Registration Open</label>
+                                       class="text-lg font-semibold text-gray-900">Registration Open</label>
                             </div>
                             {% if form.registration_open.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.registration_open.errors.0 }}</p>
+                                <p class="mt-2 text-sm text-red-600">{{ form.registration_open.errors.0 }}</p>
                             {% endif %}
                         </div>
                         <!-- Max Participants -->
                         <div>
                             <label for="{{ form.max_participants.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">Max Participants</label>
+                                   class="block text-lg font-semibold text-gray-900 mb-2">Max Participants</label>
                             {{ form.max_participants }}
                             {% if form.max_participants.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.max_participants.errors.0 }}</p>
+                                <p class="mt-2 text-sm text-red-600">{{ form.max_participants.errors.0 }}</p>
                             {% endif %}
-                            <p class="mt-1 text-xs text-gray-500">Leave blank for unlimited</p>
+                            <p class="mt-2 text-sm text-gray-600">Leave blank for unlimited</p>
                         </div>
-                        <!-- Description -->
-                        <div class="col-span-2">
-                            <label for="{{ form.description.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">
-                                Description <span class="text-red-500">*</span>
-                            </label>
-                            {{ form.description }}
-                            {% if form.description.errors %}<p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
-                        </div>
-                        <!-- Rules -->
-                        <div class="col-span-2">
-                            <label for="{{ form.rules.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">Rules</label>
-                            {{ form.rules }}
-                            {% if form.rules.errors %}<p class="mt-1 text-sm text-red-600">{{ form.rules.errors.0 }}</p>{% endif %}
-                        </div>
-                        <!-- Repositories -->
-                        <div class="col-span-2">
-                            <label for="{{ form.repositories.id_for_label }}"
-                                   class="block text-sm font-medium text-gray-700 mb-1">Repositories</label>
+                    </div>
+                    <!-- Description -->
+                    <div>
+                        <label for="{{ form.description.id_for_label }}"
+                               class="block text-lg font-semibold text-gray-900 mb-2">
+                            Description <span class="text-[#e74c3c]">*</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}<p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
+                    </div>
+                    <!-- Rules -->
+                    <div>
+                        <label for="{{ form.rules.id_for_label }}"
+                               class="block text-lg font-semibold text-gray-900 mb-2">Rules</label>
+                        {{ form.rules }}
+                        {% if form.rules.errors %}<p class="mt-2 text-sm text-red-600">{{ form.rules.errors.0 }}</p>{% endif %}
+                    </div>
+                    <!-- Repositories -->
+                    <div>
+                        <label for="{{ form.repositories.id_for_label }}"
+                               class="block text-lg font-semibold text-gray-900 mb-2">Repositories</label>
+                        <div class="relative">
                             {{ form.repositories }}
-                            {% if form.repositories.errors %}<p class="mt-1 text-sm text-red-600">{{ form.repositories.errors.0 }}</p>{% endif %}
-                            <p class="mt-1 text-xs text-gray-500">
-                                Select the repositories that will be part of this hackathon. Pull requests to these repositories during the hackathon period will be counted.
-                            </p>
                             <div id="repositories-loading" class="mt-2 hidden">
                                 <p class="text-sm text-gray-600">Loading repositories...</p>
                             </div>
@@ -115,38 +121,39 @@
                                 </p>
                             </div>
                         </div>
-                        <!-- Sponsorship Section -->
-                        <div class="col-span-2 mt-4 pt-4 border-t border-gray-200">
-                            <h3 class="text-lg font-medium text-gray-800 mb-4">Sponsorship Information</h3>
-                            <!-- Sponsor Note -->
-                            <div class="mb-4">
-                                <label for="{{ form.sponsor_note.id_for_label }}"
-                                       class="block text-sm font-medium text-gray-700 mb-1">Sponsorship Note</label>
-                                {{ form.sponsor_note }}
-                                {% if form.sponsor_note.errors %}<p class="mt-1 text-sm text-red-600">{{ form.sponsor_note.errors.0 }}</p>{% endif %}
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Provide information about sponsorship opportunities for this hackathon. This will be displayed on the hackathon page.
-                                </p>
-                            </div>
-                            <!-- Sponsor Link -->
-                            <div>
-                                <label for="{{ form.sponsor_link.id_for_label }}"
-                                       class="block text-sm font-medium text-gray-700 mb-1">Sponsorship Link</label>
-                                {{ form.sponsor_link }}
-                                {% if form.sponsor_link.errors %}<p class="mt-1 text-sm text-red-600">{{ form.sponsor_link.errors.0 }}</p>{% endif %}
-                                <p class="mt-1 text-xs text-gray-500">
-                                    Link to sponsorship information or application form. This will be displayed as a "Become a Sponsor" button.
-                                </p>
-                            </div>
+                        {% if form.repositories.errors %}<p class="mt-2 text-sm text-red-600">{{ form.repositories.errors.0 }}</p>{% endif %}
+                        <p class="mt-2 text-sm text-gray-600">
+                            Select the repositories that will be part of this hackathon. Pull requests to these repositories during the hackathon period will be counted.
+                        </p>
+                    </div>
+                    <!-- Sponsorship Section -->
+                    <div class="mt-8 pt-8 border-t border-gray-200">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-6">Sponsorship Information</h3>
+                        <!-- Sponsor Note -->
+                        <div class="mb-6">
+                            <label for="{{ form.sponsor_note.id_for_label }}"
+                                   class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Note</label>
+                            {{ form.sponsor_note }}
+                            {% if form.sponsor_note.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_note.errors.0 }}</p>{% endif %}
+                            <p class="mt-2 text-sm text-gray-600">
+                                Provide information about sponsorship opportunities for this hackathon. This will be displayed on the hackathon page.
+                            </p>
+                        </div>
+                        <!-- Sponsor Link -->
+                        <div>
+                            <label for="{{ form.sponsor_link.id_for_label }}"
+                                   class="block text-lg font-semibold text-gray-900 mb-2">Sponsorship Link</label>
+                            {{ form.sponsor_link }}
+                            {% if form.sponsor_link.errors %}<p class="mt-2 text-sm text-red-600">{{ form.sponsor_link.errors.0 }}</p>{% endif %}
+                            <p class="mt-2 text-sm text-gray-600">
+                                Link to sponsorship information or application form. This will be displayed as a "Become a Sponsor" button.
+                            </p>
                         </div>
                     </div>
-                    <div class="flex justify-end space-x-4">
-                        <a href="{% url 'hackathons' %}"
-                           class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
-                            Cancel
-                        </a>
+                    <!-- Submit Button -->
+                    <div class="pt-6">
                         <button type="submit"
-                                class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                                class="w-full md:w-auto px-8 py-3 text-lg font-semibold text-white bg-[#e74c3c] rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors">
                             {{ submit_text }}
                         </button>
                     </div>
@@ -171,7 +178,6 @@
             $('#no-repositories-message').hide();
             $('#id_repositories').empty();
 
-            // Use the new API endpoint
             $.ajax({
                 url: `/api/v1/organizations/${organizationId}/repositories/`,
                 method: 'GET',
@@ -185,14 +191,16 @@
                         
                         // Add repositories to select
                         data.forEach(function(repo) {
-                            let option = new Option(repo.name, repo.id);
+                            let option = new Option(repo.name, repo.id, false, false);
                             $('#id_repositories').append(option);
                         });
                         
                         // If editing, restore selected repositories
                         {% if form.instance.pk %}
                         let selectedRepos = [{% for repo in form.instance.repositories.all %}{{ repo.id }}{% if not forloop.last %},{% endif %}{% endfor %}];
-                        $('#id_repositories').val(selectedRepos);
+                        if (selectedRepos.length > 0) {
+                            $('#id_repositories').val(selectedRepos);
+                        }
                         {% endif %}
                     }
                 },
@@ -214,6 +222,21 @@
         if (initialOrganizationId) {
             fetchRepositories(initialOrganizationId);
         }
+
+        // Handle form submission
+        $('form').on('submit', function(e) {
+            let selectedRepos = $('#id_repositories').val();
+            if (selectedRepos && selectedRepos.length > 0) {
+                // Ensure all selected values are valid
+                let validRepos = [];
+                $('#id_repositories option').each(function() {
+                    if (selectedRepos.includes($(this).val())) {
+                        validRepos.push($(this).val());
+                    }
+                });
+                $('#id_repositories').val(validRepos);
+            }
+        });
     });
     </script>
 {% endblock scripts %}

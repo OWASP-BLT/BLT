@@ -10,7 +10,7 @@
         {% include "includes/sidenav.html" %}
         <div class="main-content w-full py-8">
             <div class="mb-6">
-                <h1 class="text-4xl font-semibold text-gray-800 text-center">Add Sizzle Check-In</h1>
+                <h1 class="text-4xl font-semibold text-gray-800 text-center">Add Daily Check-In</h1>
             </div>
             <div class="flex justify-center">
                 <form id="checkInForm"
@@ -24,7 +24,7 @@
                         <textarea id="previous_work_card"
                                   name="previous_work"
                                   rows="5"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                                   required></textarea>
                     </div>
                     <div class="form-group mb-10">
@@ -32,7 +32,7 @@
                         <textarea id="next_plan_card"
                                   name="next_plan"
                                   rows="5"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
                                   required></textarea>
                     </div>
                     <div class="form-group mb-10">
@@ -40,7 +40,7 @@
                         <textarea id="blockers_card"
                                   name="blockers"
                                   rows="5"
-                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"></textarea>
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"></textarea>
                     </div>
                     {% if yesterday_report %}
                         <div class="mb-5 bg-gray-100 py-4 px-2 rounded-lg">
@@ -64,7 +64,7 @@
                         <input type="checkbox"
                                id="goal_accomplished_card"
                                name="goal_accomplished"
-                               class="w-15 h-15 border border-gray-300 rounded scale-150 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                               class="w-15 h-15 border border-gray-300 rounded scale-150 focus:outline-none focus:ring-2 focus:ring-red-400">
                     </div>
                     <div class="form-group mb-10">
                         <label for="feeling_card" class="block text-gray-700 font-medium mb-2">How are you feeling today?</label>
@@ -88,6 +88,44 @@
                         </button>
                     </div>
                 </form>
+            </div>
+            <!-- Check-ins Summary Table -->
+            <div class="mt-12">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">Your Check-in History</h2>
+                <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                <th class="text-left py-3 px-4 border-b border-gray-200">Date</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200">Goals Accomplished</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200">Mood</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200">Previous Work</th>
+                                <th class="text-left py-3 px-4 border-b border-gray-200">Next Plan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for checkin in all_checkins %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.date|date:"F d, Y" }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200">
+                                        {% if checkin.goal_accomplished %}
+                                            <span class="text-green-600">✅ Yes</span>
+                                        {% else %}
+                                            <span class="text-red-600">❌ No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.current_mood }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.previous_work|truncatechars:100 }}</td>
+                                    <td class="py-3 px-4 border-b border-gray-200">{{ checkin.next_plan|truncatechars:100 }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="py-3 px-4 text-center text-gray-500">No check-ins found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
