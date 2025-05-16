@@ -499,37 +499,6 @@ class Listbounties(TemplateView):
 
         try:
             github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
-
-            # For closed issues, fetch related PRs from database
-            if issue_state == "closed":
-                for issue in github_issues:
-                    issue_number = issue.get("number")
-
-                    try:
-                        related_prs = []
-                        prs = GitHubIssue.objects.filter(
-                            type="pull_request",
-                            is_merged=True,
-                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
-                            + str(issue_number),
-                        ).order_by("-merged_at")[:3]
-
-                        for pr in prs:
-                            related_prs.append(
-                                {
-                                    "number": pr.issue_id,
-                                    "title": pr.title,
-                                    "url": pr.url,
-                                    "user": pr.user_profile.user.username
-                                    if pr.user_profile and pr.user_profile.user
-                                    else None,
-                                }
-                            )
-
-                        issue["related_prs"] = related_prs
-                    except Exception as e:
-                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
-                        issue["related_prs"] = []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
@@ -604,38 +573,6 @@ def load_more_issues(request):
     try:
         view = Listbounties()
         issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
-
-        # For closed issues, fetch related PRs from database for other than first batch of issues
-        if issues and state == "closed":
-            for issue in issues:
-                issue_number = issue.get("number")
-
-                try:
-                    related_prs = []
-                    prs = GitHubIssue.objects.filter(
-                        type="pull_request",
-                        is_merged=True,
-                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
-                        + str(issue_number),
-                    ).order_by("-merged_at")[:3]
-
-                    for pr in prs:
-                        related_prs.append(
-                            {
-                                "number": pr.issue_id,
-                                "title": pr.title,
-                                "url": pr.url,
-                                "user": pr.user_profile.user.username
-                                if pr.user_profile and pr.user_profile.user
-                                else None,
-                            }
-                        )
-
-                    issue["related_prs"] = related_prs
-                except Exception as e:
-                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
-                    issue["related_prs"] = []
-
         return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
