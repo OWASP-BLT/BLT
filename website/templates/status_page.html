@@ -1,4 +1,17 @@
-{% extends "base.html" %}
+<h3>Memory by module</h3>
+                <table>
+                  <thead>
+                    <tr><th>Module</th><th>Memory (Bytes)</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for filename, size in status.memory_by_module %}
+                    <tr>
+                      <td>{{ filename }}</td>
+                      <td>{{ size }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
 {% load static %}
 {% load custom_tags %}
 {% load humanize %}

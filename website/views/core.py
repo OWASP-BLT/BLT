@@ -360,22 +360,25 @@ def status_page(request):
                 ):
                     pass
 
-            status_data["top_memory_consumers"] = sorted(
+                status_data["top_memory_consumers"] = sorted(
                 status_data["top_memory_consumers"],
                 key=lambda x: x["memory_info"]["rss"],
                 reverse=True,
-            )[:5]
+                )[:5]
 
-            # Memory profiling info
-            current, peak = tracemalloc.get_traced_memory()
-            status_data["memory_profiling"]["current"] = current
-            status_data["memory_profiling"]["peak"] = peak
-            tracemalloc.stop()
+                # Memory profiling info
+                current, peak = tracemalloc.get_traced_memory()
+                status_data["memory_profiling"]["current"] = current
+                status_data["memory_profiling"]["peak"] = peak
+                tracemalloc.stop()
 
-        # Database connection check
-        if CHECK_DATABASE:
-            print("Getting database connection count...")
-            if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
+                # Capture top modules/files by memory usage
+                status_data["memory_by_module"] = memory_usage_by_module(limit=10)
+
+                # Database connection check
+                if CHECK_DATABASE:
+                print("Getting database connection count...")
+                if settings.DATABASES.get("default", {}).get("ENGINE") == "django.db.backends.postgresql":
                 with connection.cursor() as cursor:
                     cursor.execute("SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active'")
                     status_data["db_connection_count"] = cursor.fetchone()[0]
