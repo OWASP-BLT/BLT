@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("website", "0238_add_reminder_settings"),
+        ("website", "0241_domain_has_security_txt_and_more"),
         ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
