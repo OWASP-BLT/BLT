@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import requests
 from datetime import datetime, timezone
 
 from allauth.account.signals import user_signed_up
@@ -859,6 +860,7 @@ def github_webhook(request):
             "status": handle_status_event,
             "fork": handle_fork_event,
             "create": handle_create_event,
+            "issue_comment": handle_issue_comment_event,
         }
 
         handler = event_handlers.get(event_type)
@@ -933,6 +935,119 @@ def handle_create_event(payload):
             user = user_profile.user
             assign_github_badge(user, "First Branch Created")
     return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_issue_comment_event(payload):
+    """
+    Handle GitHub issue comment events.
+    Processes commands like /plan that are posted in issue comments.
+    """
+    # Check if this is a comment creation (not edit or delete)
+    if payload["action"] != "created":
+        return JsonResponse({"status": "success"}, status=200)
+
+    # Extract the relevant information
+    comment_body = payload["comment"]["body"].strip()
+    issue_url = payload["issue"]["url"]
+    comments_url = payload["issue"]["comments_url"]
+    issue_title = payload["issue"]["title"]
+    issue_body = payload["issue"]["body"] or ""
+    user = payload["comment"]["user"]["login"]
+    
+    # Process commands in the comment
+    if comment_body.startswith("/plan"):
+        return handle_plan_command(issue_title, issue_body, comments_url, user)
+    
+    # If no commands matched or further processing needed
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def handle_plan_command(issue_title, issue_body, comments_url, user):
+    """
+    Handle the /plan command by generating a simple plan based on the issue description
+    and posting it as a comment.
+    """
+    # Generate a plan based on the issue description
+    plan = generate_plan(issue_title, issue_body)
+    
+    # Post the plan as a comment
+    comment_body = f"@{user} Here's a suggested plan:\n\n{plan}"
+    post_github_comment(comments_url, comment_body)
+    
+    return JsonResponse({"status": "success"}, status=200)
+
+
+def generate_plan(title, description):
+    """
+    Generate a simple plan based on the issue title and description.
+    Returns a markdown formatted plan.
+    """
+    # A simple algorithm to generate a plan:
+    # 1. Extract key points from the description
+    # 2. Form them into actionable steps
+    
+    # Default steps if we can't parse the description well
+    steps = [
+        "- [ ] Analyze requirements and create detailed specifications",
+        "- [ ] Design solution architecture",
+        "- [ ] Implement core functionality",
+        "- [ ] Write tests",
+        "- [ ] Review code and address feedback",
+        "- [ ] Deploy and validate in production environment"
+    ]
+    
+    # Try to extract more specific steps from the description
+    if description:
+        # This is a very basic extraction - in a real implementation,
+        # you might want to use NLP or more sophisticated text processing
+        specific_items = []
+        lines = description.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line.startswith(('- ', '* ', '• ')):
+                item = line[2:].strip()
+                if item:
+                    specific_items.append(f"- [ ] {item}")
+            elif ':' in line and len(line) < 100:  # Likely a task or section
+                item = line.strip()
+                if item:
+                    specific_items.append(f"- [ ] {item}")
+        
+        if specific_items:
+            steps = specific_items
+    
+    # Combine everything into a formatted plan
+    plan = "## Action Plan\n\n"
+    plan += "\n".join(steps)
+    
+    return plan
+
+
+def post_github_comment(comments_url, body):
+    """
+    Post a comment to a GitHub issue using the GitHub API.
+    """
+    # Get GitHub token from environment or settings
+    github_token = getattr(settings, "GITHUB_TOKEN", os.environ.get("GITHUB_TOKEN"))
+    
+    if not github_token:
+        logger.error("GitHub token not configured. Cannot post comment.")
+        return False
+    
+    headers = {
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    data = {"body": body}
+    
+    try:
+        response = requests.post(comments_url, json=data, headers=headers)
+        response.raise_for_status()
+        return True
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error posting comment to GitHub: {str(e)}")
+        return False
 
 
 def assign_github_badge(user, action_title):
