@@ -205,15 +205,15 @@
     };
 
     var inherit = function (a, b) {
-        var F;
-        F = function () {
-        };
+        var F = function () {};
         F.prototype = a;
-        return $.extend(true, new F(), b);
+        // Create a shallow copy to avoid deep cloning large objects
+        return $.extend(new F(), b);
     };
 
     var defaults = function (opts) {
-        return $.extend(pluginOptions, opts);
+        // Create a new object for options to avoid modifying the global pluginOptions
+        return $.extend({}, pluginOptions, opts);
     };
 
     var createElem = function (tag) {

@@ -161,34 +161,32 @@
             /* parsers utils */
 
             function buildParserCache(table, $headers) {
-
                 if (table.config.debug) {
                     var parsersDebug = "";
                 }
 
-                if (table.tBodies.length == 0) return; // In the case of empty tables
+                if (table.tBodies.length == 0) return []; // In the case of empty tables
                 var rows = table.tBodies[0].rows;
 
                 if (rows[0]) {
-
                     var list = [],
                         cells = rows[0].cells,
                         l = cells.length;
 
                     for (var i = 0; i < l; i++) {
-
                         var p = false;
-
-                        if ($.metadata && ($($headers[i]).metadata() && $($headers[i]).metadata().sorter)) {
-
-                            p = getParserById($($headers[i]).metadata().sorter);
-
-                        } else if ((table.config.headers[i] && table.config.headers[i].sorter)) {
-
-                            p = getParserById(table.config.headers[i].sorter);
+                        
+                        // Memory optimization: cache parser lookups
+                        var headerMetadata = $.metadata && $($headers[i]).metadata();
+                        var configHeaders = table.config.headers[i];
+                        
+                        if (headerMetadata && headerMetadata.sorter) {
+                            p = getParserById(headerMetadata.sorter);
+                        } else if (configHeaders && configHeaders.sorter) {
+                            p = getParserById(configHeaders.sorter);
                         }
+                        
                         if (!p) {
-
                             p = detectParserForColumn(table, rows, -1, i);
                         }
 
@@ -254,12 +252,15 @@
             /* utils */
 
             function buildCache(table) {
-
                 if (table.config.debug) {
                     var cacheTime = new Date();
                 }
 
+                // Memory optimization: limit the number of rows to process
+                const MAX_ROWS_TO_CACHE = 1000;
+                
                 var totalRows = (table.tBodies[0] && table.tBodies[0].rows.length) || 0,
+                    processRows = Math.min(totalRows, MAX_ROWS_TO_CACHE),
                     totalCells = (table.tBodies[0].rows[0] && table.tBodies[0].rows[0].cells.length) || 0,
                     parsers = table.config.parsers,
                     cache = {
@@ -267,8 +268,7 @@
                         normalized: []
                     };
 
-                for (var i = 0; i < totalRows; ++i) {
-
+                for (var i = 0; i < processRows; ++i) {
                     /** Add the table data to main data array */
                     var c = $(table.tBodies[0].rows[i]),
                         cols = [];
@@ -291,10 +291,9 @@
                     cache.normalized.push(cols);
                     cols = null;
                 }
-                ;
 
                 if (table.config.debug) {
-                    benchmark("Building cache for " + totalRows + " rows:", cacheTime);
+                    benchmark("Building cache for " + processRows + " rows:", cacheTime);
                 }
 
                 return cache;

@@ -164,40 +164,78 @@
                             end_date: end.format('YYYY-MM-DDTHH:mm:ssZ')
                         },
                         success: function(data) {
-                            // Clear existing content and append the new data
+                            // Clear existing content
                             $('#report-table').empty();
-                            data.forEach(function(item) {
-                                $('#report-table').append(`
-                                    <div class="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
-                                        <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
-                                            ${item.date}
-                                        </div>
-                                        <table class="min-w-full bg-white">
-                                            <thead>
-                                                <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
-                                                    <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
-                                                    <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
-                                                    <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
-                                                    <td class="py-3 px-4 border-b border-gray-200">
-                                                        <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded" data-id="${item.id}">
-                                                            Delete
-                                                        </button>
-                                                        <span>Item ID: ${item.id}</span>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
+                            
+                            // Create document fragment for better performance
+                            const fragment = document.createDocumentFragment();
+                            
+                            // Function to create time entry elements more efficiently
+                            function createTimeEntry(item) {
+                                const div = document.createElement('div');
+                                div.className = 'bg-white shadow-lg rounded-lg overflow-hidden mb-8';
+                                div.setAttribute('data-entry-id', item.id);
+                                
+                                div.innerHTML = `
+                                    <div class="bg-red-500 text-white text-center py-4 text-lg font-semibold">
+                                        ${item.date}
                                     </div>
-                                `);
-                            });
+                                    <table class="min-w-full bg-white">
+                                        <thead>
+                                            <tr class="bg-red-500 text-white text-sm uppercase tracking-wider">
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Issue Title</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Started</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Total</th>
+                                                <th class="text-left py-3 px-4 border-b border-gray-200">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="py-3 px-4 border-b border-gray-200">${item.issue_title}</td>
+                                                <td class="py-3 px-4 border-b border-gray-200">${item.start_time}</td>
+                                                <td class="py-3 px-4 border-b border-gray-200">${item.duration}</td>
+                                                <td class="py-3 px-4 border-b border-gray-200">
+                                                    <button class="delete-entry bg-red-500 text-white py-1 px-3 rounded" data-id="${item.id}">
+                                                        Delete
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                `;
+                                
+                                return div;
+                            }
+                            
+                            // Process items in batches if many entries
+                            const BATCH_SIZE = 5;
+                            
+                            function processEntryBatch(startIndex) {
+                                const endIndex = Math.min(startIndex + BATCH_SIZE, data.length);
+                                
+                                for (let i = startIndex; i < endIndex; i++) {
+                                    fragment.appendChild(createTimeEntry(data[i]));
+                                }
+                                
+                                // If this was the last batch or first batch with no more, append to DOM
+                                if (endIndex >= data.length || startIndex === 0) {
+                                    document.getElementById('report-table').appendChild(fragment);
+                                }
+                                
+                                // Process next batch if needed
+                                if (endIndex < data.length) {
+                                    setTimeout(function() {
+                                        processEntryBatch(endIndex);
+                                    }, 0);
+                                }
+                            }
+                            
+                            // Start processing if we have entries
+                            if (data.length > 0) {
+                                processEntryBatch(0);
+                            } else {
+                                $('#report-table').html('<div class="text-center p-4">No entries found for the selected date range.</div>');
+                            }
                         },
                         error: function(xhr, status, error) {
                             alert('An error occurred while fetching the report logs.');
@@ -212,6 +250,11 @@
                         console.error("Entry ID is missing or empty.");
                         return;
                     }
+                    
+                    // Store reference to the row element
+                    const row = this.closest("tr");
+                    const entryContainer = row ? row.closest("[data-entry-id='" + entryId + "']") : null;
+                    
                     if (confirm("Are you sure you want to delete this time entry?")) {
                         fetch("{% url 'delete_time_entry' %}", {
                             method: "POST",
@@ -224,13 +267,18 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                console.log("Success");
-                                // Remove the row from the table if the delete was successful
-                                this.closest("tr").remove();
+                                // Remove the container if found, otherwise just the row
+                                if (entryContainer) {
+                                    entryContainer.remove();
+                                } else if (row) {
+                                    row.remove();
+                                }
                             } else {
-                                console.log("Failed");
                                 alert("Failed to delete time entry.");
                             }
+                        })
+                        .catch(() => {
+                            alert("An error occurred while deleting the entry.");
                         });
                     }
                 });
