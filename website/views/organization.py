@@ -732,6 +732,7 @@ class DomainDetailView(ListView):
             raise Http404("No domain specified")
 
         # Clean the slug
+        original_slug = slug
         slug = slug.strip().lower()
 
         # First try direct name match
@@ -740,37 +741,69 @@ class DomainDetailView(ListView):
         except Domain.DoesNotExist:
             pass
 
-        # Try to parse as URL
-        if "//" not in slug:
-            slug = "http://" + slug
+        # Try by ID if the slug looks like a number
+        if slug.isdigit():
+            try:
+                return Domain.objects.get(id=int(slug))
+            except (Domain.DoesNotExist, ValueError):
+                pass
 
-        try:
-            parsed = urlparse(slug)
-            hostname = parsed.netloc or parsed.path
+        # Try to parse as URL
+        parsed_url = None
+        hostname = slug
+        if "//" not in slug:
+            parsed_url = urlparse("http://" + slug)
+        else:
+            parsed_url = urlparse(slug)
+
+        if parsed_url:
+            hostname = parsed_url.netloc or parsed_url.path
             # Remove www. prefix if present
             hostname = hostname.replace("www.", "")
             # Remove any remaining path components
             hostname = hostname.split("/")[0]
+            # Remove port if present
+            hostname = hostname.split(":")[0]
 
-            # Try to find domain by name or URL
+        # Try a series of lookups with the hostname
+        if hostname:
+            # Try exact match by name
             try:
                 return Domain.objects.get(name=hostname)
             except Domain.DoesNotExist:
-                try:
-                    return Domain.objects.get(url__icontains=hostname)
-                except Domain.DoesNotExist:
-                    # Try one last time with the original slug
-                    try:
-                        return Domain.objects.get(url__icontains=slug)
-                    except Domain.DoesNotExist:
-                        # If we've tried everything and still can't find it, return 404
-                        raise Http404(f"No domain found matching '{slug}'")
+                pass
+
+            # Try case-insensitive match by name
+            try:
+                return Domain.objects.filter(name__iexact=hostname).first()
+            except Domain.DoesNotExist:
+                pass
+
+            # Try contains match in URL or name
+            domain = Domain.objects.filter(
+                Q(url__icontains=hostname) | Q(name__icontains=hostname)
+            ).first()
+            if domain:
+                return domain
+
+        # Try one last time with the original slug in various forms
+        try:
+            # Try the original slug
+            domain = Domain.objects.filter(
+                Q(url__icontains=original_slug) | 
+                Q(name__icontains=original_slug)
+            ).first()
+            if domain:
+                return domain
+            
+            # If we've tried everything and still can't find it, return 404
+            raise Http404(f"No domain found matching '{original_slug}'")
         except Http404:
             # Re-raise Http404 exceptions
             raise
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
-            logger.error(f"Error parsing domain slug '{slug}': {str(e)}")
+            logger.error(f"Error parsing domain slug '{original_slug}': {str(e)}")
             raise Http404("Invalid domain format")
 
     def get_queryset(self):
