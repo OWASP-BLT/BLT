@@ -28,7 +28,7 @@ def bounty_payout(request):
         data = json.loads(request.body)
 
         # Validate token
-        received_token = data.get("token")
+        received_token = requests.get("X-BLT-API-TOKEN")
         if not received_token or received_token != expected_token:
             logger.warning("Invalid or missing token in request.")
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
@@ -142,7 +142,13 @@ def process_github_sponsors_payment(username, amount, note):
         response.raise_for_status()
 
         data = response.json()
-        return data.get("id") or str(timezone.now().timestamp())
+        # return data.get("id") or str(timezone.now().timestamp())
+
+        tx_id = data.get("id")
+        if not tx_id:
+            logger.error("Github Sponsors API returned 2xxx but not transaction id")
+            return None
+        return tx_id
 
     except requests.HTTPError as http_err:
         logger.error(f"HTTP error during GitHub Sponsors payment: {http_err}")

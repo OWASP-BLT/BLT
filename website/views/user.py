@@ -885,11 +885,12 @@ def handle_pull_request_event(payload):
             issue_refs = re.findall(r'(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)', pr_body, re.IGNORECASE)
 
             if not issue_refs:
-                return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)
-
-            # Get repo details
-            repo_name = payload["repository"]["name"]
-            owner = payload["repository"]["owner"]["login"]
+                # return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)
+                logger.info("No issue references found in the pull request body.")
+            else:
+                # Get repo details
+                repo_name = payload["repository"]["name"]
+                owner = payload["repository"]["owner"]["login"]
 
             try:
                 repo = Repo.objects.get(name=repo_name, organization__name=owner)
