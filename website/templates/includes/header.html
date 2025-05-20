@@ -972,7 +972,7 @@
                     })
                     .catch((error) => {
                         let errorMessage = 'Sorry, I am unable to process your request at the moment. Please try again later.';
-                        if (error.message === 'Rate limit exceeded') {
+                        if (error.message && error.message.toLowerCase().includes('rate limit')) {
                             errorMessage = 'The request limit has been reached. Please try again later.';
                         }
                         chatLog.innerHTML += '<div class="bg-red-300 text-black p-2 rounded-lg mb-2">Bot - ' + errorMessage + '</div>';
