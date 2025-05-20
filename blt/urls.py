@@ -26,6 +26,7 @@ from website.api.views import (
     BugHuntApiViewsetV2,
     DomainViewSet,
     FlagIssueApiView,
+    GitHubAssignedIssuesApiView,
     InviteFriendApiViewset,
     IssueViewSet,
     LeaderboardApiViewSet,
@@ -604,6 +605,7 @@ urlpatterns = [
     ),
     re_path(r"^accounts/profile/", profile, name="account_profile"),
     path("delete_issue/<str:id>/", ensure_csrf_cookie(delete_issue), name="delete_issue"),
+    path("api/v1/github/assigned-issues/", GitHubAssignedIssuesApiView.as_view(), name="github_assigned_issues"),
     re_path(
         r"^remove_user_from_issue/(?P<id>\w+)/$",
         remove_user_from_issue,

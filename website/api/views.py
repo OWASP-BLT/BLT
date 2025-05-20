@@ -28,6 +28,7 @@ from website.models import (
     ActivityLog,
     Contributor,
     Domain,
+    GitHubIssue,
     Hunt,
     HuntPrize,
     InviteFriend,
@@ -925,6 +926,63 @@ class ActivityLogViewSet(viewsets.ModelViewSet):
             raise ParseError(detail=str(e))
         except Exception as e:
             raise ParseError(detail="An unexpected error occurred while creating the activity log.")
+
+
+class GitHubAssignedIssuesApiView(APIView):
+    """
+    API endpoint to fetch and manage GitHub issues assigned to the authenticated user.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, format=None, *args, **kwargs):
+        """
+        Fetch GitHub issues assigned to the authenticated user.
+        
+        Query parameters:
+            refresh (bool): If true, force a refresh from GitHub API
+        """
+        from website.services.github_service import GitHubService
+        
+        # Get user profile
+        try:
+            user_profile = request.user.userprofile
+        except UserProfile.DoesNotExist:
+            return Response({"error": "User profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if we should refresh the data
+        refresh = request.query_params.get('refresh', 'false').lower() == 'true'
+        
+        if refresh:
+            # Fetch fresh data from GitHub
+            github_service = GitHubService()
+            result = github_service.fetch_assigned_issues(user_profile)
+            
+            if isinstance(result, dict) and 'error' in result:
+                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get stored issues for this user
+        issues = GitHubIssue.objects.filter(assignee__github_id=user_profile.user.socialaccount_set.filter(provider='github').first().extra_data.get('login')).order_by('-updated_at')
+        
+        # Simple serialization
+        issues_data = []
+        for issue in issues:
+            issues_data.append({
+                'id': issue.id,
+                'github_id': issue.issue_id,
+                'title': issue.title,
+                'state': issue.state,
+                'type': issue.type,
+                'repo': issue.repo.name if issue.repo else None,
+                'url': issue.url,
+                'created_at': issue.created_at,
+                'updated_at': issue.updated_at,
+            })
+        
+        return Response({
+            'assigned_issues': issues_data,
+            'count': len(issues_data)
+        })
 
 
 class OwaspComplianceChecker(APIView):
