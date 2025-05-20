@@ -858,16 +858,6 @@ def badge_user_list(request, badge_id):
         },
     )
 
-def validate_signature(payload, signature):
-    """Validate the GitHub webhook signature."""
-    if not signature:
-        return False
-    expected_signature = hmac.new(
-        key=GITHUB_WEBHOOK_SECRET.encode('utf-8'),
-        msg=payload,
-        digestmod=hashlib.sha256
-    ).hexdigest()
-    return hmac.compare_digest(f"sha256={expected_signature}", signature)
 
 @csrf_exempt
 @require_POST
