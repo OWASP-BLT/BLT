@@ -523,28 +523,48 @@ class Listbounties(TemplateView):
         """
         Fetch GitHub issues with a specific bounty label directly from GitHub API
         with enhanced pagination support
+        
+        Args:
+            label (str): The label to search for (e.g. "$5")
+            issue_state (str): Issue state to filter by ("open", "closed", or "all")
+            page (int): Page number to fetch
+            per_page (int): Number of issues per page (max 100)
+            
+        Returns:
+            tuple: (formatted_issues, total_count)
         """
-        cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
-        cached_issues = cache.get(cache_key)
+        # Validate inputs
+        if page < 1:
+            page = 1
+        if per_page < 1 or per_page > 100:  # GitHub API limits to 100 per page
+            per_page = 10
+            
+        # Generate cache key based on parameters
+        cache_key = f"github_issues_{label}_{issue_state}_page_{page}_per_{per_page}"
+        cached_data = cache.get(cache_key)
 
-        if cached_issues is not None:
-            return cached_issues
-
+        if cached_data is not None:
+            return cached_data
+            
+        # API request count tracking
+        start_time = time.time()
+        
         # GitHub API endpoint - use search API for better performance and pagination support
-        encoded_label = label.replace("$", "%24")
-        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
-        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
-        
-        headers = {
-            "Accept": "application/vnd.github.v3+json",
-            "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)"
-        }
-        
-        github_token = getattr(settings, "GITHUB_TOKEN", None) or getattr(settings, "GITHUB_API_TOKEN", None)
-        if github_token:
-            headers["Authorization"] = f"token {github_token}"
-
         try:
+            encoded_label = label.replace("$", "%24")
+            query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
+            url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+            
+            headers = {
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)"
+            }
+            
+            # Try both token names since the code is using inconsistent environment variable names
+            github_token = getattr(settings, "GITHUB_TOKEN", None) or getattr(settings, "GITHUB_API_TOKEN", None)
+            if github_token:
+                headers["Authorization"] = f"token {github_token}"
+
             logger.info(f"Fetching GitHub issues with {label} label, state={issue_state}, page={page}, per_page={per_page}")
             response = requests.get(url, headers=headers, timeout=10)
             
@@ -559,6 +579,8 @@ class Listbounties(TemplateView):
                 minutes_to_reset = max(1, int((reset_time - current_time) / 60))
                 
                 logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
+                # Return empty result with a short cache time
+                cache.set(cache_key, ([], 0), timeout=60)  # Cache for 1 minute during rate limit
                 return [], 0
                 
             if response.status_code == 200:
@@ -588,17 +610,32 @@ class Listbounties(TemplateView):
                         
                         formatted_issues.append(formatted_issue)
                 
-                # Cache for 5 minutes
-                cache.set(cache_key, (formatted_issues, total_count), timeout=300)
-                logger.info(f"Retrieved {len(formatted_issues)} issues (of {total_count} total) for page {page}")
-                return formatted_issues, total_count
+                # Cache results - Use longer cache time for older/stable data
+                cache_time = 300  # 5 minutes default
+                if issue_state == "closed":
+                    cache_time = 1800  # 30 minutes for closed issues which change less often
+                    
+                result = (formatted_issues, total_count)
+                cache.set(cache_key, result, timeout=cache_time)
+                
+                # Log performance metrics
+                duration = time.time() - start_time
+                logger.info(
+                    f"Retrieved {len(formatted_issues)} issues (of {total_count} total) "
+                    f"for page {page} in {duration:.2f}s"
+                )
+                
+                return result
             else:
                 # Log the error response from GitHub
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
+                # Return empty result with a short cache time to avoid hammering the API
+                cache.set(cache_key, ([], 0), timeout=60)  # Cache failure for 1 minute
                 return [], 0
                 
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
+            # Don't cache errors - could be a transient failure
             return [], 0
 
 
@@ -608,26 +645,45 @@ def load_more_issues(request):
     """
     page = int(request.GET.get("page", 1))
     state = request.GET.get("state", "open")
-
+    per_page = int(request.GET.get("per_page", 10))
+    
+    # Validate inputs
+    if page < 1:
+        page = 1
+    if per_page < 1 or per_page > 100:
+        per_page = 10
+    
     try:
+        # Track the time taken to fetch issues
+        start_time = time.time()
+        
         view = Listbounties()
-        issues, total_count = view.github_issues_with_bounties("$5", issue_state=state, page=page)
+        issues, total_count = view.github_issues_with_bounties("$5", issue_state=state, page=page, per_page=per_page)
         
         # Calculate if there are more pages
-        has_more = (page * len(issues)) < total_count if total_count else False
+        has_more = (page * per_page) < total_count if total_count else False
+        
+        # Log performance metrics
+        duration = time.time() - start_time
+        logger.info(
+            f"Loaded {len(issues)} issues for page {page} in {duration:.2f}s "
+            f"(total: {total_count}, has_more: {has_more})"
+        )
         
         return JsonResponse({
             "success": True, 
             "issues": issues, 
             "next_page": page + 1 if has_more else None,
-            "total_count": total_count
+            "total_count": total_count,
+            "current_page": page,
+            "per_page": per_page
         })
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
         return JsonResponse({
             "success": False, 
             "error": "An error occurred while loading issues. Please try again later."
-        })
+        }, status=500)
 
 
 class DraftHunts(TemplateView):
