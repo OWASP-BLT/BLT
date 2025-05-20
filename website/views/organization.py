@@ -796,6 +796,17 @@ class DomainDetailView(ListView):
             if domain:
                 return domain
             
+            # Log available domains for debugging purposes
+            all_domains = list(Domain.objects.values_list('name', flat=True)[:10])  # limit to first 10 for brevity
+            domain_count = Domain.objects.count()
+            
+            logger.error(
+                f"No domain found matching '{original_slug}'. "
+                f"Hostname extracted: '{hostname}'. "
+                f"Domain count: {domain_count}. "
+                f"Sample domains: {all_domains}"
+            )
+            
             # If we've tried everything and still can't find it, return 404
             raise Http404(f"No domain found matching '{original_slug}'")
         except Http404:
@@ -931,6 +942,19 @@ class DomainDetailView(ListView):
         except Exception as e:
             # Log the error but return a 404 instead of propagating the exception
             logger.error(f"Error in DomainDetailView: {str(e)}")
+            
+            # Check if this is a domain lookup error
+            if "DoesNotExist" in str(e) and "Domain matching query does not exist" in str(e):
+                slug = self.kwargs.get("slug", "").strip().split("?")[0]
+                all_domains = list(Domain.objects.values_list('name', flat=True)[:10])  # limit to first 10 for brevity
+                domain_count = Domain.objects.count()
+                
+                logger.error(
+                    f"Domain lookup error for slug '{slug}'. "
+                    f"Domain count: {domain_count}. "
+                    f"Sample domains: {all_domains}"
+                )
+                
             raise Http404("Domain not found")
 
 
