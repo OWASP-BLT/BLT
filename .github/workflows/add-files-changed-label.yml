@@ -1,0 +1,71 @@
+name: Add Files Changed Label
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  add_files_changed_label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add Files Changed Label
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          # Get the number of files changed in the PR
+          FILES_CHANGED=$(curl -s -X GET \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files" | jq '. | length')
+          
+          echo "Files changed in PR #$PR_NUMBER: $FILES_CHANGED"
+          
+          # Determine the label based on the number of files changed
+          if [ "$FILES_CHANGED" -eq 1 ]; then
+            LABEL="files-changed: 1"
+          elif [ "$FILES_CHANGED" -ge 2 ] && [ "$FILES_CHANGED" -le 5 ]; then
+            LABEL="files-changed: 2-5"
+          elif [ "$FILES_CHANGED" -ge 6 ] && [ "$FILES_CHANGED" -le 10 ]; then
+            LABEL="files-changed: 6-10"
+          else
+            LABEL="files-changed: 11+"
+          fi
+          
+          echo "Determined label: $LABEL"
+          
+          # First, get all existing labels on the PR
+          EXISTING_LABELS=$(curl -s -X GET \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels" | jq -r '.[].name')
+          
+          # Remove any existing files-changed labels
+          for EXISTING_LABEL in $EXISTING_LABELS; do
+            if [[ "$EXISTING_LABEL" == "files-changed:"* ]]; then
+              echo "Removing existing label: $EXISTING_LABEL"
+              curl -s -X DELETE \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels/$(echo $EXISTING_LABEL | sed 's/ /%20/g')"
+            fi
+          done
+          
+          # Add the new label
+          echo "Adding label: $LABEL"
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/issues/$PR_NUMBER/labels" \
+            -d "{\"labels\":[\"$LABEL\"]}"
+          
+          echo "Successfully applied label $LABEL to PR #$PR_NUMBER"
