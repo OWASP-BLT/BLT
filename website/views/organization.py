@@ -496,87 +496,138 @@ class Listbounties(TemplateView):
 
         # Fetch GitHub issues with $5 label for first page
         issue_state = request.GET.get("issue_state", "open")
+        per_page = 10  # Number of issues to show per page
 
         try:
-            github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
+            github_issues, total_count = self.github_issues_with_bounties("$5", issue_state=issue_state, per_page=per_page)
+            has_more_pages = total_count > per_page
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
+            total_count = 0
+            has_more_pages = False
 
         context = {
             "hunts": hunts,
             "domains": Domain.objects.values("id", "name").all(),
             "github_issues": github_issues,
             "current_page": 1,
+            "total_issues_count": total_count,
+            "has_more_pages": has_more_pages,
             "selected_issue_state": issue_state,
         }
 
         return render(request, self.template_name, context)
 
     def github_issues_with_bounties(self, label, issue_state="open", page=1, per_page=10):
+        """
+        Fetch GitHub issues with a specific bounty label directly from GitHub API
+        with enhanced pagination support
+        """
         cache_key = f"github_issues_{label}_{issue_state}_page_{page}"
         cached_issues = cache.get(cache_key)
 
         if cached_issues is not None:
             return cached_issues
 
-        params = {"labels": label, "state": issue_state, "per_page": per_page, "page": page}
-
-        headers = {}
-        github_token = getattr(settings, "GITHUB_API_TOKEN", None)
+        # GitHub API endpoint - use search API for better performance and pagination support
+        encoded_label = label.replace("$", "%24")
+        query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
+        url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
+        
+        headers = {
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "OWASP_BLT-App/1.0 (+https://blt.owasp.org)"
+        }
+        
+        github_token = getattr(settings, "GITHUB_TOKEN", None) or getattr(settings, "GITHUB_API_TOKEN", None)
         if github_token:
             headers["Authorization"] = f"token {github_token}"
 
         try:
-            response = requests.get(
-                "https://api.github.com/repos/OWASP-BLT/BLT/issues", params=params, headers=headers, timeout=5
-            )
-
-            response.raise_for_status()
-
-            issues = response.json()
-            formatted_issues = []
-
-            for issue in issues:
-                related_prs = []
-                if issue.get("pull_request") is None:
-                    formatted_issue = {
-                        "id": issue.get("id"),
-                        "number": issue.get("number"),
-                        "title": issue.get("title"),
-                        "url": issue.get("html_url"),
-                        "repository": "OWASP-BLT/BLT",
-                        "created_at": issue.get("created_at"),
-                        "updated_at": issue.get("updated_at"),
-                        "labels": [label.get("name") for label in issue.get("labels", [])],
-                        "user": issue.get("user", {}).get("login") if issue.get("user") else None,
-                        "state": issue.get("state"),
-                        "related_prs": related_prs,
-                        "closed_at": issue.get("closed_at"),
-                    }
-
-                    formatted_issues.append(formatted_issue)
-
-            # Cache for 5 minutes
-            cache.set(cache_key, formatted_issues, timeout=300)
-            return formatted_issues
-
-        except requests.RequestException as e:
-            logger.error(f"GitHub API request failed: {str(e)}")
-            return []
+            logger.info(f"Fetching GitHub issues with {label} label, state={issue_state}, page={page}, per_page={per_page}")
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            # Handle rate limiting explicitly
+            if (
+                response.status_code == 403
+                and "X-RateLimit-Remaining" in response.headers
+                and int(response.headers["X-RateLimit-Remaining"]) == 0
+            ):
+                reset_time = int(response.headers.get("X-RateLimit-Reset", 0))
+                current_time = int(time.time())
+                minutes_to_reset = max(1, int((reset_time - current_time) / 60))
+                
+                logger.warning(f"GitHub API rate limit exceeded. Resets in approximately {minutes_to_reset} minutes.")
+                return [], 0
+                
+            if response.status_code == 200:
+                data = response.json()
+                issues = data.get("items", [])
+                total_count = data.get("total_count", 0)
+                
+                formatted_issues = []
+                
+                for issue in issues:
+                    # Skip pull requests
+                    if issue.get("pull_request") is None:
+                        formatted_issue = {
+                            "id": issue.get("id"),
+                            "number": issue.get("number"),
+                            "title": issue.get("title"),
+                            "url": issue.get("html_url"),
+                            "repository": "OWASP-BLT/BLT",
+                            "created_at": issue.get("created_at"),
+                            "updated_at": issue.get("updated_at"),
+                            "labels": [label.get("name") for label in issue.get("labels", [])],
+                            "user": issue.get("user", {}).get("login") if issue.get("user") else None,
+                            "state": issue.get("state"),
+                            "related_prs": [],
+                            "closed_at": issue.get("closed_at"),
+                        }
+                        
+                        formatted_issues.append(formatted_issue)
+                
+                # Cache for 5 minutes
+                cache.set(cache_key, (formatted_issues, total_count), timeout=300)
+                logger.info(f"Retrieved {len(formatted_issues)} issues (of {total_count} total) for page {page}")
+                return formatted_issues, total_count
+            else:
+                # Log the error response from GitHub
+                logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
+                return [], 0
+                
+        except Exception as e:
+            logger.error(f"Error fetching GitHub issues: {str(e)}")
+            return [], 0
 
 
 def load_more_issues(request):
+    """
+    AJAX handler for loading more GitHub issues with pagination support
+    """
     page = int(request.GET.get("page", 1))
     state = request.GET.get("state", "open")
 
     try:
         view = Listbounties()
-        issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
-        return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
+        issues, total_count = view.github_issues_with_bounties("$5", issue_state=state, page=page)
+        
+        # Calculate if there are more pages
+        has_more = (page * len(issues)) < total_count if total_count else False
+        
+        return JsonResponse({
+            "success": True, 
+            "issues": issues, 
+            "next_page": page + 1 if has_more else None,
+            "total_count": total_count
+        })
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
-        return JsonResponse({"success": False, "error": "An unexpected error occurred."})
+        return JsonResponse({
+            "success": False, 
+            "error": "An error occurred while loading issues. Please try again later."
+        })
 
 
 class DraftHunts(TemplateView):
