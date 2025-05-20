@@ -33,15 +33,35 @@ jobs:
           # Determine the label based on the number of files changed
           if [ "$FILES_CHANGED" -eq 1 ]; then
             LABEL="files-changed: 1"
+            LABEL_COLOR="0e8a16" # Green
           elif [ "$FILES_CHANGED" -ge 2 ] && [ "$FILES_CHANGED" -le 5 ]; then
             LABEL="files-changed: 2-5"
+            LABEL_COLOR="fbca04" # Yellow
           elif [ "$FILES_CHANGED" -ge 6 ] && [ "$FILES_CHANGED" -le 10 ]; then
             LABEL="files-changed: 6-10"
+            LABEL_COLOR="ff9800" # Orange
           else
             LABEL="files-changed: 11+"
+            LABEL_COLOR="e74c3c" # Red (using the project's preferred red color)
           fi
           
-          echo "Determined label: $LABEL"
+          echo "Determined label: $LABEL with color: $LABEL_COLOR"
+          
+          # Get all labels in the repository to check if our label exists
+          ALL_REPO_LABELS=$(curl -s -X GET \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels" | jq -r '.[].name')
+          
+          # Create the label if it doesn't exist
+          if ! echo "$ALL_REPO_LABELS" | grep -q "$LABEL"; then
+            echo "Creating label: $LABEL"
+            curl -s -X POST \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/labels" \
+              -d "{\"name\":\"$LABEL\",\"color\":\"$LABEL_COLOR\",\"description\":\"PR changes $FILES_CHANGED file(s)\"}"
+          fi
           
           # First, get all existing labels on the PR
           EXISTING_LABELS=$(curl -s -X GET \
