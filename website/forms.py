@@ -223,42 +223,76 @@ class HackathonForm(forms.ModelForm):
             "sponsor_note",
             "sponsor_link",
         ]
+        base_input_class = (
+            "w-full rounded-lg border-gray-300 shadow-sm focus:border-[#e74c3c] "
+            "focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50"
+        )
         widgets = {
+            "name": forms.TextInput(
+                attrs={
+                    "class": base_input_class,
+                    "placeholder": "Enter hackathon name",
+                }
+            ),
+            "organization": forms.Select(
+                attrs={
+                    "class": base_input_class,
+                }
+            ),
             "description": forms.Textarea(
                 attrs={
                     "rows": 5,
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "class": base_input_class,
+                    "placeholder": "Describe your hackathon...",
                 }
             ),
             "rules": forms.Textarea(
                 attrs={
                     "rows": 5,
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "class": base_input_class,
+                    "placeholder": "Enter hackathon rules...",
                 }
             ),
             "sponsor_note": forms.Textarea(
                 attrs={
                     "rows": 4,
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
-                    "placeholder": "Provide information about sponsorship opportunities for this hackathon",
+                    "class": base_input_class,
+                    "placeholder": ("Provide information about sponsorship opportunities " "for this hackathon"),
                 }
             ),
             "sponsor_link": forms.URLInput(
                 attrs={
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "class": base_input_class,
                     "placeholder": "https://example.com/sponsor",
                 }
             ),
             "start_time": forms.DateTimeInput(
                 attrs={
                     "type": "datetime-local",
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "class": base_input_class,
                 }
             ),
             "end_time": forms.DateTimeInput(
                 attrs={
                     "type": "datetime-local",
-                    "class": "w-full rounded-md border-gray-300 shadow-sm focus:border-[#e74c3c] focus:ring focus:ring-[#e74c3c] focus:ring-opacity-50",
+                    "class": base_input_class,
+                }
+            ),
+            "max_participants": forms.NumberInput(
+                attrs={
+                    "class": base_input_class,
+                    "placeholder": "Enter maximum number of participants",
+                }
+            ),
+            "repositories": forms.SelectMultiple(
+                attrs={
+                    "class": base_input_class,
+                    "size": "5",
+                }
+            ),
+            "registration_open": forms.CheckboxInput(
+                attrs={
+                    "class": ("h-5 w-5 text-[#e74c3c] focus:ring-[#e74c3c] " "border-gray-300 rounded"),
                 }
             ),
         }
@@ -280,6 +314,16 @@ class HackathonForm(forms.ModelForm):
             else:
                 # When creating new, start with empty queryset
                 self.fields["repositories"].queryset = Repo.objects.none()
+
+    def clean_repositories(self):
+        repositories = self.cleaned_data.get("repositories")
+        organization = self.cleaned_data.get("organization")
+
+        if repositories and organization:
+            # Ensure all repositories belong to the selected organization
+            valid_repos = Repo.objects.filter(id__in=[r.id for r in repositories], organization=organization)
+            return valid_repos
+        return repositories
 
 
 class HackathonSponsorForm(forms.ModelForm):
