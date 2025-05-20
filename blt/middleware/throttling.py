@@ -31,8 +31,10 @@ class ThrottlingMiddleware:
         self.METHODS = getattr(settings, 'RATELIMIT_METHODS', ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
 
     def __call__(self, request):
-        # Skip throttling for admin URLs
-        if request.path.startswith(f'/{settings.ADMIN_URL}/'):
+        # Skip throttling for admin URLs, static files, and media files
+        if (request.path.startswith(f'/{settings.ADMIN_URL}/') or 
+            request.path.startswith(settings.STATIC_URL) or 
+            request.path.startswith(settings.MEDIA_URL)):
             return self.get_response(request)
             
         if request.method not in self.METHODS:
