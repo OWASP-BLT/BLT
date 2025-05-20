@@ -1,4 +1,4 @@
-name: Auto-Close New Issues
+name: Auto-Assign and Close New Issues
 
 on:
   issues:
@@ -8,10 +8,10 @@ permissions:
   issues: write
 
 jobs:
-  close-new-issues:
+  assign-and-close-new-issues:
     runs-on: ubuntu-latest
     steps:
-      - name: Close the issue with a message
+      - name: Assign to copilot and close the issue with a message
         uses: actions/github-script@v7
         with:
           script: |
@@ -27,6 +27,20 @@ jobs:
                   please create a new topic in our **Discussion Board** instead.  
                   Thanks for understanding! 🙏
                   `;
+
+            try {
+              // Assign the issue to copilot
+              await github.rest.issues.addAssignees({
+                owner,
+                repo,
+                issue_number: issueNumber,
+                assignees: ['copilot']
+              });
+              
+              console.log(`Successfully assigned issue #${issueNumber} to copilot`);
+            } catch (error) {
+              console.error(`Error assigning issue to copilot: ${error.message}`);
+            }
 
             // Leave the comment
             await github.rest.issues.createComment({
