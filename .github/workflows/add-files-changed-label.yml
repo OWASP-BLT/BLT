@@ -33,8 +33,8 @@ jobs:
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files")
           
           # Check if the API request was successful
-          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]]; then
-            echo "Error: Could not fetch PR files. API response indicates resource not found."
+          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]] || [[ "$FILES_API_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+            echo "Error: Could not fetch PR files. Response: $FILES_API_RESPONSE"
             exit 1
           fi
           
@@ -141,6 +141,13 @@ jobs:
           # Check if label was added successfully
           if [[ "$ADD_LABEL_RESPONSE" == *"message"* ]]; then
             echo "Error: Failed to add label. Response: $ADD_LABEL_RESPONSE"
+            
+            # Check if it's a permissions issue and suggest using a custom token
+            if [[ "$ADD_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+              echo "This appears to be a permissions issue. Please configure a CUSTOM_GITHUB_TOKEN secret with higher permissions."
+              echo "See the .github/README.md file for instructions on setting up the token."
+            fi
+            
             exit 1
           else
             echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
