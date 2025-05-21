@@ -1,15 +1,13 @@
 import json
 import logging
 import os
+
 import requests
 from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.utils import timezone
-
-from website.models import GitHubIssue, UserProfile, Contributor, Repo
-
+from website.models import Contributor, GitHubIssue, Repo, UserProfile
 logger = logging.getLogger(__name__)
 
 
