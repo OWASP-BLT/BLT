@@ -19,7 +19,7 @@ def bounty_payout(request):
     """
     Handle bounty payout webhook from GitHub Action.
     """
-    expected_token = os.environ.get('BLT_API_TOKEN')
+    expected_token = os.environ.get("BLT_API_TOKEN")
     if not expected_token:
         logger.critical("BLT_API_TOKEN environment variable is missing.")
         return JsonResponse({"status": "error", "message": "Server configuration error"}, status=500)
@@ -59,11 +59,13 @@ def bounty_payout(request):
 
         # Avoid duplicate payments
         if github_issue.sponsors_tx_id:
-            return JsonResponse({
-                "status": "warning",
-                "message": "Payment already processed",
-                "transaction_id": github_issue.sponsors_tx_id
-            })
+            return JsonResponse(
+                {
+                    "status": "warning",
+                    "message": "Payment already processed",
+                    "transaction_id": github_issue.sponsors_tx_id,
+                }
+            )
 
         # Resolve contributor profile
         contributor = resolve_contributor(contributor_username)
@@ -74,7 +76,7 @@ def bounty_payout(request):
         transaction_id = process_github_sponsors_payment(
             username=contributor_username,
             amount=bounty_amount,
-            note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}"
+            note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
         )
 
         if not transaction_id:
@@ -84,20 +86,19 @@ def bounty_payout(request):
         github_issue.sponsors_tx_id = transaction_id
         github_issue.save()
 
-        return JsonResponse({
-            "status": "success",
-            "message": "Payment processed",
-            "transaction_id": transaction_id,
-            "amount": bounty_amount,
-            "recipient": contributor_username
-        })
+        return JsonResponse(
+            {
+                "status": "success",
+                "message": "Payment processed",
+                "transaction_id": transaction_id,
+                "amount": bounty_amount,
+                "recipient": contributor_username,
+            }
+        )
 
     except json.JSONDecodeError:
         logger.exception("Invalid JSON received.")
         return JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
-    # except Exception as e:
-    #     logger.exception("Unhandled error during bounty payout.")
-    #     return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 def resolve_contributor(username):
@@ -125,17 +126,14 @@ def process_github_sponsors_payment(username, amount, note):
         sponsor_recipient = "DonnieBLT"  # As per current config
         api_url = f"https://api.github.com/sponsors/{sponsor_recipient}/sponsorships"
 
-        headers = {
-            "Authorization": f"token {github_token}",
-            "Accept": "application/vnd.github.v3+json"
-        }
+        headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
 
         payload = {
             "amount": amount,
             "tier_id": "tier_for_custom_amount",  # This must be configured or dynamically fetched
             "is_recurring": False,
             "privacy_level": "public",
-            "note": note
+            "note": note,
         }
 
         response = requests.post(api_url, headers=headers, json=payload, timeout=10)

@@ -882,7 +882,9 @@ def handle_pull_request_event(payload):
         try:
             # Extract issue references from PR body
             pr_body = payload["pull_request"]["body"] or ""
-            issue_refs = re.findall(r'(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)', pr_body, re.IGNORECASE)
+            issue_refs = re.findall(
+                r"(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)", pr_body, re.IGNORECASE
+            )
 
             if not issue_refs:
                 # return JsonResponse({"status": "success", "message": "No issue references found"}, status=200)

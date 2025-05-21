@@ -1096,7 +1096,7 @@ urlpatterns = [
     path("reminder-settings/", reminder_settings, name="reminder_settings"),
     path("send-test-reminder/", send_test_reminder, name="send_test_reminder"),
     path("check_domain_security_txt/", check_domain_security_txt, name="check_domain_security_txt"),
-    path("bounty_payout/", bounty_payout, name="bounty_payout")
+    path("bounty_payout/", bounty_payout, name="bounty_payout"),
 ]
 
 if settings.DEBUG:
