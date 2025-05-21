@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
-from website.models import JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
+from website.models import GitHubIssue, JoinRequest, Kudos, Notification, Points, Post, User, UserBadge
 
 
 @receiver(post_save, sender=Points)
@@ -78,3 +78,53 @@ def notify_user_on_badge_recieved(sender, instance, created, **kwargs):
         link = f"/profile/{instance.user.username}"
 
         Notification.objects.create(user=instance.user, message=message, notification_type="reward", link=link)
+
+
+@receiver(post_save, sender=GitHubIssue)
+def notify_on_payment_processed(sender, instance, **kwargs):
+    """
+    Signal to notify users and admins when a payment is processed.
+    This triggers whenever a GitHubIssue with payment information is saved.
+    """
+    # Check if this is a payment update (either sponsors_tx_id or bch_tx_id is updated)
+    if instance.p2p_payment_created_at and (instance.sponsors_tx_id or instance.bch_tx_id):
+        payment_type = "GitHub Sponsors" if instance.sponsors_tx_id else "Bitcoin Cash"
+        tx_id = instance.sponsors_tx_id or instance.bch_tx_id
+        
+        # Create notification for the issue reporter
+        if instance.user:
+            message = (
+                f"Your bounty for issue #{instance.issue_id} has been paid via {payment_type}. "
+                f"Transaction ID: {tx_id}"
+            )
+            link = instance.html_url
+            
+            Notification.objects.create(
+                user=instance.user,
+                message=message,
+                notification_type="reward",
+                link=link
+            )
+        
+        # Notify superusers (admin team) about the payment
+        superusers = User.objects.filter(is_superuser=True)
+        for admin in superusers:
+            # Don't notify the admin who made the payment
+            if instance.sent_by_user and admin.id == instance.sent_by_user.id:
+                continue
+                
+            message = (
+                f"Payment processed for issue #{instance.issue_id} via {payment_type}. "
+                f"Transaction ID: {tx_id}"
+            )
+            if instance.sent_by_user:
+                message += f" (by {instance.sent_by_user.username})"
+                
+            link = instance.html_url
+            
+            Notification.objects.create(
+                user=admin,
+                message=message,
+                notification_type="alert",
+                link=link
+            )
