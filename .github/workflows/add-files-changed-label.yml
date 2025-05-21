@@ -41,23 +41,27 @@ jobs:
           
           echo "Files changed in PR #$PR_NUMBER: $FILES_CHANGED"
           
-          # Determine the label based on the number of files changed
-          if [ "$FILES_CHANGED" -eq 1 ]; then
-            LABEL="files-changed: 1"
+          # Determine the label based on the exact number of files changed
+          LABEL="files-changed: $FILES_CHANGED"
+          
+          # Set color based on the number of files changed
+          if [ "$FILES_CHANGED" -eq 0 ]; then
+            LABEL_COLOR="cccccc" # Gray
+          elif [ "$FILES_CHANGED" -eq 1 ]; then
             LABEL_COLOR="0e8a16" # Green
-            DESCRIPTION="PR changes 1 file"
           elif [ "$FILES_CHANGED" -ge 2 ] && [ "$FILES_CHANGED" -le 5 ]; then
-            LABEL="files-changed: 2-5"
             LABEL_COLOR="fbca04" # Yellow
-            DESCRIPTION="PR changes 2-5 files"
           elif [ "$FILES_CHANGED" -ge 6 ] && [ "$FILES_CHANGED" -le 10 ]; then
-            LABEL="files-changed: 6-10"
             LABEL_COLOR="ff9800" # Orange
-            DESCRIPTION="PR changes 6-10 files"
           else
-            LABEL="files-changed: 11+"
             LABEL_COLOR="e74c3c" # Red (using the project's preferred red color)
-            DESCRIPTION="PR changes 11+ files"
+          fi
+          
+          # Set grammatically correct description
+          if [ "$FILES_CHANGED" -eq 1 ]; then
+            DESCRIPTION="PR changes 1 file"
+          else
+            DESCRIPTION="PR changes $FILES_CHANGED files"
           fi
           
           echo "Determined label: $LABEL with color: $LABEL_COLOR"
