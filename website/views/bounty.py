@@ -11,6 +11,7 @@ from website.models import Contributor, GitHubIssue, Repo, UserProfile
 logger = logging.getLogger(__name__)
 
 
+
 @csrf_exempt
 @require_POST
 def bounty_payout(request):
