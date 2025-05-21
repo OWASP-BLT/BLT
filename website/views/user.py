@@ -914,7 +914,7 @@ def handle_pull_request_event(payload):
 
         except Exception as e:
             logger.exception(f"Error checking for bounty issues: {e}")
-                        
+
     return JsonResponse({"status": "success"}, status=200)
 
 
