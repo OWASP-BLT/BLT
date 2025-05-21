@@ -12,7 +12,7 @@ from django.db.models import Count
 
 User = get_user_model()
 
-# Find duplicate emails
+# Find duplicate email
 duplicates = User.objects.values("email").annotate(email_count=Count("id")).filter(email_count__gt=1)
 
 for duplicate in duplicates:
