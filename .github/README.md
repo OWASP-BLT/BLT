@@ -23,6 +23,7 @@ The default `GITHUB_TOKEN` provided by GitHub Actions has certain permission lim
      - Issues: Read and write
      - Pull requests: Read and write
      - Contents: Read and write
+     - Administration: Read and write (needed for label management)
      - Metadata: Read-only (automatically selected)
 
 8. Click "Generate token" and copy the token value
@@ -51,5 +52,9 @@ If you encounter permission errors like `Resource not accessible by integration`
 1. The token doesn't have the necessary permissions
 2. The token has expired
 3. The workflow permissions at the top of the .yml file need to be adjusted
+
+For label-related operations specifically:
+1. Ensure your CUSTOM_GITHUB_TOKEN has "Administration: Read and write" permissions 
+2. Make sure the workflow has `repository-projects: write` permission as well as other necessary permissions
 
 Review the permissions in both your custom token and at the workflow level to resolve such issues.
