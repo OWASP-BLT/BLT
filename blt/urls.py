@@ -99,6 +99,7 @@ from website.views.core import (
     github_callback,
     google_callback,
     home,
+    newhome,  # Added newhome import
     management_commands,
     robots_txt,
     run_management_command,
@@ -363,6 +364,7 @@ urlpatterns = [
     path("api/banned_apps/search/", search_banned_apps, name="search_banned_apps"),
     path("500/", TemplateView.as_view(template_name="500.html"), name="500"),
     path("", home, name="home"),
+    path("newhome/", newhome, name="newhome"),  # Added newhome path
     path("invite-friend/", invite_friend, name="invite_friend"),
     path("referral/", referral_signup, name="referral_signup"),
     path("captcha/refresh/", captcha_refresh, name="captcha-refresh-debug"),

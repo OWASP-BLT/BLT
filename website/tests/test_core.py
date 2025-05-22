@@ -111,3 +111,26 @@ class ForumTests(TestCase):
         response = self.client.get(reverse("view_forum"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, comment_data["content"])
+
+
+class HomepageContentTests(TestCase):
+    def test_redesigned_homepage_content(self):
+        """
+        Tests that the redesigned homepage (/) does not contain content
+        from the removed sections and contains content from existing sections.
+        """
+        response = self.client.get(reverse('home'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+
+        # Assert that content from removed sections is NOT present
+        self.assertNotContains(response, "Community Leaderboards")
+        self.assertNotContains(response, "Latest Activity")
+        self.assertNotContains(response, "Latest Bug Reports")
+        self.assertNotContains(response, "Latest Blog Posts")
+        self.assertNotContains(response, "Tools for Organizations")
+        self.assertNotContains(response, "Tools for Projects")
+        self.assertNotContains(response, "Tools for Users & Teams")
+
+        # Assert that content from a present section IS present
+        self.assertContains(response, "Secure the Web, Get Rewarded")

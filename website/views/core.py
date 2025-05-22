@@ -1282,6 +1282,11 @@ def view_pr_analysis(request):
     return render(request, "view_pr_analysis.html", {"reports": reports})
 
 
+def newhome(request):
+    """Renders the new homepage."""
+    return render(request, "newhome.html")
+
+
 def home(request):
     from django.db.models import Count, Sum
     from django.utils import timezone
