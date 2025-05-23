@@ -7,7 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<nav class="fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 border-b md:px-4 md:py-2.5 py-2 px-1">
+<nav class="navbar-expand-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 dark:border-b-0 border-b md:px-4 md:py-2.5 py-2 px-1">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -41,8 +41,8 @@
                 </a>
                 <!-- Mega Menu Content -->
                 <div id="mega-menu"
-                     class="mega-menu hidden fixed top-[80px] left-0 right-0 bg-white shadow-lg border-b max-h-[80vh] overflow-y-auto z-50">
-                    <div class="container mx-auto px-4 py-6">
+                     class="mega-menu dark:bg-gray-800 hidden fixed top-[80px] left-0 right-0 bg-white shadow-lg border-b max-h-[80vh] overflow-y-auto z-50">
+                    <div class="container dark:bg-gray-800 mx-auto px-4 py-6">
                         <div class="grid grid-cols-5 gap-8">
                             <!-- Column 1: Organizations Part 1 -->
                             <div>
@@ -50,78 +50,78 @@
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'organizations' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-building w-5 mr-2"></i>Organizations</a>
+                                           class="flex dark:text-gray-300 items-center text-gray-700 dark:hover:text-[#e74c3c] hover:text-[#e74c3c]"><i class="fas fa-building w-5 mr-2"></i>Organizations</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'register_organization' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-plus w-5 mr-2"></i> Register Organization</a>
+                                           class="flex dark:text-gray-300 items-center text-gray-700 dark:hover:text-[#e74c3c] hover:text-[#e74c3c]"><i class="fas fa-plus w-5 mr-2"></i> Register Organization</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'domains' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-globe w-5 mr-2"></i>Domains</a>
+                                           class="flex dark:text-gray-300 items-center text-gray-700 dark:hover:text-[#e74c3c] hover:text-[#e74c3c]"><i class="fas fa-globe w-5 mr-2"></i>Domains</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'map' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-map-marker-alt w-5 mr-2"></i>Map</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-map-marker-alt w-5 mr-2"></i>Map</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'feed' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-rss w-5 mr-2"></i>Feed</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-rss w-5 mr-2"></i>Feed</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'hackathons' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trophy w-5 mr-2"></i>Hackathons</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trophy w-5 mr-2"></i>Hackathons</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'issues' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bugs</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bugs</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'github_issues' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Issues</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Issues</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'sizzle' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-fire w-5 mr-2"></i>Time Logs</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-fire w-5 mr-2"></i>Time Logs</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'checkIN' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-user-check w-5 mr-2"></i>Check-In</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-user-check w-5 mr-2"></i>Check-In</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'scoreboard' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trophy w-5 mr-2"></i>Scoreboard</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trophy w-5 mr-2"></i>Scoreboard</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'hunts' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bounties</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bug w-5 mr-2"></i>Bounties</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'reported_ips_list' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-exclamation-triangle w-5 mr-2"></i>Reported IPs</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-exclamation-triangle w-5 mr-2"></i>Reported IPs</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'trademark_search' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-registered w-5 mr-2"></i>Trademarks</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-registered w-5 mr-2"></i>Trademarks</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Communication</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'similarity_scan' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-clone w-5 mr-2"></i>SimilarityScan</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-clone w-5 mr-2"></i>SimilarityScan</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'rooms_list' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-door-open w-5 mr-2"></i>Rooms</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-door-open w-5 mr-2"></i>Rooms</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'video_call' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-video w-5 mr-2"></i>Video Call</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-video w-5 mr-2"></i>Video Call</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'banned_apps' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-ban w-5 mr-2"></i>Banned Apps</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-ban w-5 mr-2"></i>Banned Apps</a>
                                     </li>
                                 </ul>
                             </div>
@@ -131,62 +131,62 @@
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'project_list' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-box w-5 mr-2"></i>Projects</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-box w-5 mr-2"></i>Projects</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'repo_list' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-github w-5 mr-2"></i>Repositories</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-github w-5 mr-2"></i>Repositories</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'BiddingData' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-money-bill-wave w-5 mr-2"></i>Bid on Issues</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-money-bill-wave w-5 mr-2"></i>Bid on Issues</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'blt-tomato' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-seedling w-5 mr-2"></i>Funding</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-seedling w-5 mr-2"></i>Funding</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'bacon' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-coins w-5 mr-2"></i>BACON (coin)</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-coins w-5 mr-2"></i>BACON (coin)</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'bacon_requests' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hands-helping w-5 mr-2"></i>Bacon Requests</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hands-helping w-5 mr-2"></i>Bacon Requests</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Users</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'users' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-user-friends w-5 mr-2"></i>Users</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-user-friends w-5 mr-2"></i>Users</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'messaging' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-envelope w-5 mr-2"></i>Messaging</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-envelope w-5 mr-2"></i>Messaging</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'user_challenges' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-flag-checkered w-5 mr-2"></i>Challenges</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-flag-checkered w-5 mr-2"></i>Challenges</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'leaderboard_global' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-medal w-5 mr-2"></i>Leaderboard</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-medal w-5 mr-2"></i>Leaderboard</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'contributors' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-laptop-code w-5 mr-2"></i>Contributors</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-laptop-code w-5 mr-2"></i>Contributors</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'deletions' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trash-alt w-5 mr-2"></i>Takedowns</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-trash-alt w-5 mr-2"></i>Takedowns</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'badges' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-certificate w-5 mr-2"></i>Badges</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-certificate w-5 mr-2"></i>Badges</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'reminder_settings' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bell w-5 mr-2"></i>Reminder Settings</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bell w-5 mr-2"></i>Reminder Settings</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Language</h3>
@@ -194,10 +194,10 @@
                                       method="post"
                                       class="flex items-center">
                                     {% csrf_token %}
-                                    <i class="fas fa-globe-americas w-5 mr-2 text-gray-700"></i>
+                                    <i class="fas fa-globe-americas w-5 mr-2 text-gray-700 dark:text-gray-200"></i>
                                     <select name="language"
                                             onchange="this.form.submit()"
-                                            class="form-select w-full text-gray-700 hover:text-[#e74c3c] bg-white border border-gray-300 rounded-md">
+                                            class="form-select w-full text-gray-700 dark:text-gray-100 hover:text-[#e74c3c] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md">
                                         {% get_current_language as LANGUAGE_CODE %}
                                         {% get_available_languages as LANGUAGES %}
                                         {% for lang_code, lang_name in LANGUAGES %}
@@ -215,47 +215,47 @@
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'team_overview' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-users w-5 mr-2"></i>Teams</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-users w-5 mr-2"></i>Teams</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'team_overview' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-users w-5 mr-2"></i>Your Team</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-users w-5 mr-2"></i>Your Team</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'team_challenges' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-flag-checkered w-5 mr-2"></i>Team Challenges</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-flag-checkered w-5 mr-2"></i>Team Challenges</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'team_leaderboard' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-medal w-5 mr-2"></i>Team Leaderboard</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-medal w-5 mr-2"></i>Team Leaderboard</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">About Us</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'about' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-info-circle w-5 mr-2"></i>About Us</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-info-circle w-5 mr-2"></i>About Us</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'features' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fa-solid fa-gear w-5 mr-2"></i>Features</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fa-solid fa-gear w-5 mr-2"></i>Features</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'sponsor' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-handshake w-5 mr-2"></i>Sponsorships</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-handshake w-5 mr-2"></i>Sponsorships</a>
                                     </li>
                                     <li>
                                         <a href="https://owasp.org/www-project-bug-logging-tool/"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-shield-alt w-5 mr-2"></i>OWASP Project</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-shield-alt w-5 mr-2"></i>OWASP Project</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'donate' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-donate w-5 mr-2"></i>Donations</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-donate w-5 mr-2"></i>Donations</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'view_forum' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-comments w-5 mr-2"></i>Forum</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-comments w-5 mr-2"></i>Forum</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Resources</h3>
@@ -263,12 +263,12 @@
                                     <li>
                                         <a href="https://www.figma.com/file/2lfEZKvqcb4WxRPYEwJqeE/OWASP-BLT?type=design&node-id=0%3A1&mode=design&t=Hy0GZXlVxBPHQMxr-1"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-figma w-5 mr-2"></i>Design</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-figma w-5 mr-2"></i>Design</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT/blob/main/website/templates/{{ current_template }}"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-edit w-5 mr-2"></i>Edit this page</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-edit w-5 mr-2"></i>Edit this page</a>
                                     </li>
                                 </ul>
                             </div>
@@ -278,41 +278,41 @@
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'contribution_guidelines' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hands-helping w-5 mr-2"></i>Contribute</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hands-helping w-5 mr-2"></i>Contribute</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP/BLT/blob/main/Setup.md"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-book w-5 mr-2"></i>Documentation</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-book w-5 mr-2"></i>Documentation</a>
                                     </li>
                                     <li>
                                         <a href="https://blt.owasp.org/swagger/"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-cogs w-5 mr-2"></i>Developer API</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-cogs w-5 mr-2"></i>Developer API</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'education' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-tv w-5 mr-2"></i>Education</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-tv w-5 mr-2"></i>Education</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'ossh_home' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hat-wizard w-5 mr-2"></i>Open Source Sorting Hat</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-hat-wizard w-5 mr-2"></i>Open Source Sorting Hat</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'gsoc' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-sun w-5 mr-2"></i>GSOC</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-sun w-5 mr-2"></i>GSOC</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'roadmap' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-road w-5 mr-2"></i>Roadmap</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-road w-5 mr-2"></i>Roadmap</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'submit-roadmap-pr' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>Submit PR for review</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>Submit PR for review</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'github_issue_prompt' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>Create an Issue</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>Create an Issue</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">GitHub</h3>
@@ -320,37 +320,37 @@
                                     <li>
                                         <a href="https://github.com/OWASP/BLT"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-github w-5 mr-2"></i>GitHub</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-github w-5 mr-2"></i>GitHub</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT/"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>BLT Core</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-code-branch w-5 mr-2"></i>BLT Core</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT-Flutter"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-mobile-alt w-5 mr-2"></i>BLT Flutter</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-mobile-alt w-5 mr-2"></i>BLT Flutter</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT-Extension"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>BLT Extension</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>BLT Extension</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT-Action"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-play-circle w-5 mr-2"></i>BLT Action</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-play-circle w-5 mr-2"></i>BLT Action</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT-Bacon"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-coins w-5 mr-2"></i>BLT BACON</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-coins w-5 mr-2"></i>BLT BACON</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/OWASP-BLT/BLT-Lettuce"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-leaf w-5 mr-2"></i>BLT Lettuce</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-leaf w-5 mr-2"></i>BLT Lettuce</a>
                                     </li>
                                 </ul>
                             </div>
@@ -361,11 +361,11 @@
                                     <li>
                                         <a href="https://apps.apple.com/us/app/owasp-blt/id6448071954"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-apple w-5 mr-2"></i>iPhone App</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-apple w-5 mr-2"></i>iPhone App</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'extension' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>Chrome Extension</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-puzzle-piece w-5 mr-2"></i>Chrome Extension</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Social Links</h3>
@@ -373,56 +373,56 @@
                                     <li>
                                         <a href="https://twitter.com/owasp_blt"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-twitter w-5 mr-2"></i>Twitter</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-twitter w-5 mr-2"></i>Twitter</a>
                                     </li>
                                     <li>
                                         <a href="https://www.facebook.com/groups/owaspfoundation/"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-facebook w-5 mr-2"></i>Facebook</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-facebook w-5 mr-2"></i>Facebook</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'post_list' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-blog w-5 mr-2"></i>Blog</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-blog w-5 mr-2"></i>Blog</a>
                                     </li>
                                     <li>
                                         <a href="https://owasp.org/slack/invite"
                                            target="_blank"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-slack w-5 mr-2"></i>Slack</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fab fa-slack w-5 mr-2"></i>Slack</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Site Info</h3>
                                 <ul class="space-y-2">
                                     <li>
                                         <a href="{% url 'sitemap' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-sitemap w-5 mr-2"></i>Sitemap</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-sitemap w-5 mr-2"></i>Sitemap</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'roadmap' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-road w-5 mr-2"></i>Roadmap</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-road w-5 mr-2"></i>Roadmap</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'status_page' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-check-circle w-5 mr-2"></i>Status</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-check-circle w-5 mr-2"></i>Status</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'stats' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-line w-5 mr-2"></i>Stats</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-line w-5 mr-2"></i>Stats</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'stats_dashboard' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-bar w-5 mr-2"></i>Stats Dashboard</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-bar w-5 mr-2"></i>Stats Dashboard</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'template_list' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-list w-5 mr-2"></i>Template List</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-list w-5 mr-2"></i>Template List</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'website_stats' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-line w-5 mr-2"></i>Website Stats</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-chart-line w-5 mr-2"></i>Website Stats</a>
                                     </li>
                                     <li>
                                         <a href="{% url 'terms' %}"
-                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-file-contract w-5 mr-2"></i>Terms</a>
+                                           class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-file-contract w-5 mr-2"></i>Terms</a>
                                     </li>
                                 </ul>
                             </div>
@@ -433,15 +433,15 @@
             <!-- Search Bar -->
             <div class="flex-1 max-w-xl mx-4 hidden sm:block">
                 <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
-                    <form class="w-full flex items-center"
-                          action="{% url 'search' %}"
-                          method="get">
+                    <form class="w-full flex items-center dark:bg-gray-600
+                        action="{% url 'search' %}"
+                        method="get">
                         <input type="hidden" name="type" id="filter-type" value="all">
                         <input type="text"
                                name="query"
                                id="query-input"
                                placeholder="Search here..."
-                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none">
+                               class="w-full pl-12 pr-4 py-2 text-gray-700 placeholder-gray-400 placeholder:select-none placeholder:text-base bg-transparent outline-none dark:bg-gray-600">
                         {% with request.resolver_match.url_name as url_name %}
                             {% if url_name != 'home' %}
                                 <div class="relative border-l-2 border-red-500 flex">
@@ -450,59 +450,59 @@
                                     </button>
                                     <button id="organizations-btn"
                                             type="button"
-                                            class="flex items-center h-full px-4 text-gray-700 hover:bg-red-50 transition-colors duration-200 focus:outline-none">
+                                            class="flex items-center h-full px-4 text-gray-700  transition-colors duration-200 focus:outline-none">
                                         <i id="selected-icon" class="fas fa-check mr-2 text-red-500"></i>
-                                        <span id="selected-filter" class="hidden md:inline">{% trans "All" %}</span>
+                                        <span id="selected-filter" class="hidden md:inline dark:text-white">{% trans "All" %}</span>
                                         <i class="fa fa-chevron-down ml-2 text-red-500 text-sm"></i>
                                     </button>
                                     <div id="organizations-dropdown"
-                                         class="z-50 hidden absolute bg-white top-full left-0 w-max mt-2 rounded-lg shadow-xl border">
+                                         class="z-50 hidden absolute bg-white dark:bg-gray-800 top-full left-0 w-max mt-2 rounded-lg shadow-xl dark:shadow-lg border dark:border-gray-700">
                                         <ul class="flex flex-col gap-2 px-4 py-2">
                                             <li>
                                                 <button data-value="all"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
                                                     <i class="fa fa-check mr-2 text-red-500"></i>
                                                     {% trans "All" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="organizations"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
                                                     <i class="fa fa-building fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Organizations" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="issues"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
                                                     <i class="fa fa-bug fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Issues" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="domains"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
                                                     <i class="fa fa-globe fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Domains" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="users"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
                                                     <i class="fa fa-user-group fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Users" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="projects"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
-                                                    <i class="fa fa-box fa-fw mr-2 text-red-500">
-                                                    </i> {% trans "Projects" %}
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
+                                                    <i class="fa fa-box fa-fw mr-2 text-red-500"></i>
+                                                    {% trans "Projects" %}
                                                 </button>
                                             </li>
                                             <li>
                                                 <button data-value="repos"
-                                                        class="block px-2 py-1 hover:bg-red-50 rounded filter-option">
+                                                        class="block px-2 py-1 rounded filter-option text-gray-900 dark:text-gray-100 hover:bg-red-50 dark:hover:bg-red-900">
                                                     <i class="fa-brands fa-github fa-fw mr-2 text-red-500"></i>
                                                     {% trans "Repos" %}
                                                 </button>
@@ -573,63 +573,63 @@
                         <ul class="flex flex-col gap-1 px-4 py-4">
                             <li>
                                 <a href="{% url 'account_profile' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-user fa-fw"></i> {% trans "User Profile" %}
                                 </a>
                             </li>
                             {% if user.is_superuser %}
                                 <li>
                                     <a href="{% url 'admin:index' %}"
-                                       class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                       class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                         <i class="fa fa-cogs fa-fw"></i> {% trans "Admin Dashboard" %}
                                     </a>
                                 </li>
                             {% endif %}
                             <li>
                                 <a href="{% url 'start_hunt' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Bounty" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'social' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-share fa-fw"></i> {% trans "Social" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'reminder_settings' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fas fa-bell w-5"></i> {% trans "Reminder Settings" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'account_change_password' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-gear fa-fw"></i> {% trans "Change Password" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'invite' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-paper-plane fa-fw"></i> {% trans "Invite an Organization" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'organization_view' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'organization_dashboard' %}"
-                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                   class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <li class="border my-2 w-full"></li>
                             <li>
-                                <a class="flex items-center gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
+                                <a class="flex items-center dark:text-gray-300 dark:hover:text-[#e74c3c] gap-1.5 py-3 px-4 bg-red-500 hover:bg-red-600 hover:text-white rounded-md text-white transition-colors duration-200 font-bold"
                                    href="{% url 'account_logout' %}?next={{ request.path }}">
                                     <i class="fa fa-sign-out fa-fw"></i> {% trans "Logout" %}
                                 </a>

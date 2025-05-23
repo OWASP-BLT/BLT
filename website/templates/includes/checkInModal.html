@@ -9,25 +9,36 @@
             <span class="close-button" aria-label="Close">x</span>
         </div>
         <!-- Check-In Form -->
-        <form id="checkInForm"
-              class="modal-form"
-              method="post"
-              action="{% url 'sizzle_daily_log' %}"
-              {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
-            {% csrf_token %}
-            <div class="form-group">
-                <label for="previous_work_card">What did you work on previously?</label>
-                <textarea id="previous_work_card" name="previous_work" rows="3" required></textarea>
-            </div>
-            <div class="form-group">
-                <label for="next_plan_card">What do you plan to do next?</label>
-                <textarea id="next_plan_card" name="next_plan" rows="3" required></textarea>
-            </div>
-            <div class="form-group">
-                <label for="blockers_card">Do you have any blockers?</label>
-                <textarea id="blockers_card" name="blockers" rows="3"></textarea>
-            </div>
-            <button type="submit" class="submit-button">Submit</button>
-        </form>
+        <div class="modal-content bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200">
+            <form
+                id="checkInForm"
+                class="modal-form"
+                method="post"
+                action="{% url 'sizzle_daily_log' %}"
+                {%
+                if
+                not
+                request.user.is_authenticated
+                %}style="display:none;"
+                {%
+                endif
+                %}
+                >
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="previous_work_card">What did you work on previously?</label>
+                    <textarea id="previous_work_card" name="previous_work" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="next_plan_card">What do you plan to do next?</label>
+                    <textarea id="next_plan_card" name="next_plan" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="blockers_card">Do you have any blockers?</label>
+                    <textarea id="blockers_card" name="blockers" rows="3"></textarea>
+                </div>
+                <button type="submit" class="submit-button">Submit</button>
+            </form>
+        </div>
     </div>
 </div>
