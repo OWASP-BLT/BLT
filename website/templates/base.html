@@ -6,12 +6,19 @@
 {% providers_media_js %}
 {% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      {% if request.session.theme == 'dark' %}class="dark"{% endif %}>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token }}">
+        <!-- Font Awesome -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+              integrity="sha512-..."
+              crossorigin="anonymous"
+              referrerpolicy="no-referrer" />
         {% block metaTags %}
             <!-- Title Block -->
             <title>
@@ -93,6 +100,19 @@
         <script src="{% static 'js/notify.js' %}"></script>
         <script src="{% static 'js/text-slider.js' %}"></script>
         <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+                tailwind.config = {
+                    darkMode: 'class',
+                    theme: {
+                    extend: {
+                        colors: {
+                        darkBackground: '#1a202c',
+                        darkText: '#f7fafc'
+                        }
+                    }
+                    }
+                }
+        </script>
         <!-- Add Moment.js and DateRangePicker dependencies -->
         <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
@@ -103,13 +123,15 @@
             <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
                     crossorigin="anonymous"></script>
         {% endif %}
+        <script src="{% static 'js/darkMode.js' %}" defer></script>
         {% block head %}
         {% endblock head %}
         {% block style %}
         {% endblock style %}
     </head>
-    <body class="relative min-h-[100vh] flex flex-col bg-white font-['Inter'] bg-gray-50">
+    <body class="relative min-h-[100vh] flex flex-col bg-white dark:bg-darkBackground text-gray-900 dark:text-darkText font-['Inter'] transition-colors duration-300">
         {% include "includes/header.html" %}
+        {% include 'dark_mode_toggle.html' %}
         <div class="w-full h-[50px]"></div>
         <!-- Main content starts here -->
         <main class="min-h-screen pb-[70px] mt-[20px]">
@@ -128,9 +150,11 @@
         <div id="messages-container" class="fixed bottom-5 left-5 z-50 max-w-md">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 border-l-4 border-green-500{% elif message.tags == 'error' %}bg-red-100 text-red-700 border-l-4 border-red-500{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500{% else %}bg-blue-100 text-blue-700 border-l-4 border-blue-500{% endif %}">
+                    <div class="message-alert mb-3 p-4 rounded-lg flex items-center justify-between shadow-lg animate-slide-in {% if message.tags == 'success' %}bg-green-100 text-green-700 dark:bg-green-800 dark:text-green-200 border-l-4 border-green-500 dark:border-green-400{% elif message.tags == 'error' %}bg-red-100 text-red-700 dark:bg-red-800 dark:text-red-200 border-l-4 border-red-500 dark:border-green-400{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-200 border-l-4 border-yellow-500 dark:border-green-400{% else %}bg-blue-100 text-blue-700 dark:bg-blue-800 dark:text-blue-200 border-l-4 border-blue-500 dark:border-blue-400{% endif %}">
                         <div class="flex-grow mr-3">{{ message }}</div>
-                        <button class="text-gray-500 hover:text-gray-700 focus:outline-none close-message">×</button>
+                        <button class="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-gray-100 focus:outline-none close-message">
+                            ×
+                        </button>
                     </div>
                 {% endfor %}
             {% endif %}
