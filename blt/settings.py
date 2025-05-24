@@ -125,6 +125,7 @@ MIDDLEWARE = (
     "tz_detect.middleware.TimezoneMiddleware",
     "blt.middleware.ip_restrict.IPRestrictMiddleware",
     "blt.middleware.user_visit_tracking.VisitTrackingMiddleware",
+    "blt.middleware.throttling.ThrottlingMiddleware",
 )
 
 if DEBUG:
@@ -493,6 +494,19 @@ REST_FRAMEWORK = {
         "user": f"{user_throttle}/day",
     },
 }
+
+# Global rate limits for website (not just API)
+if DEBUG or TESTING:
+    RATELIMIT_RATE_ANON = '1000/minute'
+    RATELIMIT_RATE_USER = '3000/minute'
+    RATELIMIT_RATE_STAFF = '10000/minute'
+else:
+    RATELIMIT_RATE_ANON = '100/minute'
+    RATELIMIT_RATE_USER = '300/minute'
+    RATELIMIT_RATE_STAFF = '1000/minute'
+
+RATELIMIT_BLOCK = True
+RATELIMIT_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 
 SOCIALACCOUNT_PROVIDERS = {
     "github": {
