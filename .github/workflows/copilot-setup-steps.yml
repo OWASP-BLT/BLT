@@ -1,0 +1,291 @@
+name: Copilot Setup Guide
+
+on:
+  workflow_dispatch:
+    inputs:
+      setup_method:
+        description: 'Setup method'
+        required: true
+        default: 'docker'
+        type: choice
+        options:
+          - docker
+          - vagrant
+          - poetry
+
+# This file serves as a guide for Copilot to assist with setting up the BLT environment
+# It isn't meant to be run as an actual workflow but as documentation for setup steps
+
+env:
+  PYTHON_VERSION: 3.11.2
+  POETRY_VERSION: 1.7.1
+  POSTGRES_DB: example_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_PORT: 5432
+  PORT: 8000
+
+jobs:
+  docker_setup:
+    name: Docker Setup Method
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.setup_method == 'docker' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prerequisites
+        run: |
+          # These are the prerequisites for Docker setup
+          # Docker
+          # Docker Compose
+          # PostgreSQL client (optional)
+          echo "Make sure Docker and Docker Compose are installed on your system"
+          echo "Docker: https://docs.docker.com/get-docker/"
+          echo "Docker Compose: https://docs.docker.com/compose/install/"
+
+      - name: Configure environment variables
+        run: |
+          # Create .env file from template
+          cp .env.example .env
+          
+          # Update environment variables as needed
+          # Edit .env file with your own values for:
+          # - SUPERUSER credentials
+          # - DOMAIN_NAME
+          # - Database credentials
+          # - API keys
+
+      - name: Ensure LF line endings
+        run: |
+          # This step ensures proper line endings
+          # Configure Git to use LF line endings
+          git config --global core.autocrlf input
+          
+          # For manual conversion, use dos2unix
+          # Install dos2unix if not already available
+          # sudo apt-get install dos2unix
+          # 
+          # Convert critical files:
+          # dos2unix entrypoint.sh
+          # dos2unix docker-compose.yml
+          # dos2unix Dockerfile
+          # dos2unix ./blt/settings.py
+          # dos2unix .env
+
+      - name: Build Docker images
+        run: |
+          # Build the Docker images defined in docker-compose.yml
+          docker-compose build
+          
+          # If you encounter errors related to dependencies:
+          # docker-compose build --no-cache
+
+      - name: Start containers
+        run: |
+          # Start the Docker containers
+          docker-compose up -d
+          
+          # Check container status
+          docker-compose ps
+
+      - name: Access the application
+        run: |
+          # Access the BLT application
+          echo "Open your browser and navigate to: http://localhost:8000/"
+          
+          # Note: For SSL redirect issues in browser:
+          # 1. Use incognito mode
+          # 2. Explicitly use http:// instead of https://
+          # 3. If needed, edit /blt/settings.py and set:
+          #    SECURE_SSL_REDIRECT = False
+          #    SECURE_PROXY_SSL_HEADER = None
+
+      - name: Post-setup configuration
+        run: |
+          # Configure social authentication
+          echo "Visit http://127.0.0.1:8000/admin/socialaccount/socialapp/ and add social auth accounts"
+          
+          # Add a domain
+          echo "Add a Domain at http://127.0.0.1:8000/admin/website/domain/ with the name 'owasp.org'"
+
+      - name: Troubleshooting
+        run: |
+          # Common issues and solutions
+          
+          # Line ending issues
+          echo "If you encounter entrypoint.sh not found or permission issues:"
+          echo "- Ensure files use LF line endings"
+          echo "- Run: chmod +x ./entrypoint.sh"
+          
+          # PostgreSQL port conflicts
+          echo "If PostgreSQL port is already in use, change POSTGRES_PORT in .env"
+          
+          # SSL redirect issues
+          echo "For ERR_SSL_PROTOCOL_ERROR, set SECURE_SSL_REDIRECT=False in /blt/settings.py"
+          
+          # Package installation issues
+          echo "If you can't install packages:"
+          echo "- Run: poetry cache clear --all pypi"
+          echo "- For Docker: docker-compose build --no-cache"
+
+  poetry_setup:
+    name: Poetry Setup Method
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.setup_method == 'poetry' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install PostgreSQL
+        run: |
+          # Install PostgreSQL
+          echo "For macOS: brew install postgresql"
+          echo "For Ubuntu: sudo apt-get install postgresql libpq-dev"
+          
+          # Start PostgreSQL service
+          echo "For macOS: brew services start postgresql"
+          echo "For Ubuntu: sudo service postgresql start"
+          
+          # Create database
+          echo "createdb ${{ env.POSTGRES_DB }}"
+
+      - name: Setup Poetry environment
+        run: |
+          # Install Poetry
+          pip install poetry==${{ env.POETRY_VERSION }}
+          
+          # Configure Poetry
+          poetry config virtualenvs.in-project true
+          
+          # Activate virtual environment
+          poetry shell
+          
+          # Install dependencies
+          poetry install
+
+      - name: Configure environment variables
+        run: |
+          # Create .env file from template
+          cp .env.example .env
+          
+          # Update environment variables as needed
+
+      - name: Setup database
+        run: |
+          # Run migrations
+          poetry run python manage.py migrate
+          
+          # Load initial data
+          poetry run python manage.py loaddata website/fixtures/initial_data.json
+          
+          # Create superuser
+          poetry run python manage.py createsuperuser
+          
+          # Collect static files
+          poetry run python manage.py collectstatic --noinput
+
+      - name: Run the application
+        run: |
+          # Start the development server
+          poetry run python manage.py runserver
+          
+          # Access the application at http://127.0.0.1:8000/
+
+      - name: Post-setup configuration
+        run: |
+          # Configure social authentication
+          echo "Visit http://127.0.0.1:8000/admin/socialaccount/socialapp/ and add social auth accounts"
+          
+          # Add a domain
+          echo "Add a Domain at http://127.0.0.1:8000/admin/website/domain/ with the name 'owasp.org'"
+
+      - name: Troubleshooting
+        run: |
+          # Common issues and solutions
+          
+          # PostgreSQL connection issues
+          echo "Ensure PostgreSQL is running and accessible"
+          echo "Check DATABASE_URL in .env matches your configuration"
+          
+          # Package installation issues
+          echo "If you can't install packages:"
+          echo "Run: poetry cache clear --all pypi"
+          
+          # Additional dependencies
+          echo "For Ubuntu, you might need: sudo apt-get install libpq-dev"
+
+  vagrant_setup:
+    name: Vagrant Setup Method
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.setup_method == 'vagrant' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prerequisites
+        run: |
+          # These are the prerequisites for Vagrant setup
+          echo "Make sure Vagrant and VirtualBox are installed on your system"
+          echo "Vagrant: https://www.vagrantup.com/"
+          echo "VirtualBox: https://www.virtualbox.org/"
+          
+          # Install the vbguest plugin if needed
+          echo "vagrant plugin install vagrant-vbguest"
+
+      - name: Configure environment variables
+        run: |
+          # Create .env file from template
+          cp .env.example .env
+          
+          # Update environment variables as needed
+
+      - name: Start Vagrant
+        run: |
+          # Start Vagrant (first run takes time)
+          echo "vagrant up"
+          
+          # SSH into Vagrant
+          echo "vagrant ssh"
+          
+          # Move to project directory
+          echo "cd BLT"
+
+      - name: Setup database
+        run: |
+          # Run migrations
+          echo "python manage.py migrate"
+          
+          # Create superuser
+          echo "python manage.py createsuperuser"
+          
+          # Collect static files
+          echo "python manage.py collectstatic"
+
+      - name: Run the application
+        run: |
+          # Start the development server
+          echo "python manage.py runserver"
+          
+          # Access the application at http://127.0.0.1:8000/
+
+      - name: Post-setup configuration
+        run: |
+          # Configure social authentication
+          echo "Visit http://127.0.0.1:8000/admin/socialaccount/socialapp/ and add social auth accounts"
+          
+          # Add a domain
+          echo "Add a Domain at http://127.0.0.1:8000/admin/website/domain/ with the name 'owasp.org'"
+
+      - name: Troubleshooting
+        run: |
+          # Common issues and solutions
+          
+          # VirtualBox guest additions issues
+          echo "If you encounter errors with vagrant's vbguest module:"
+          echo "Run: vagrant plugin install vagrant-vbguest from the host machine"
