@@ -395,20 +395,33 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def add_reaction(self, message_id, emoji, username):
-        """Adds or toggles a reaction on a message."""
+        """Adds or toggles a reaction on a message.
+
+        Each user can only have one emoji reaction at a time.
+        Only the user who added an emoji can remove it.
+        """
         try:
             message = Message.objects.get(id=message_id)
             reactions = message.reactions or {}
 
-            if emoji not in reactions:
-                reactions[emoji] = []
-
-            if username in reactions[emoji]:
+            # Check if user already has this emoji reaction
+            if emoji in reactions and username in reactions[emoji]:
+                # User is removing their own reaction
                 reactions[emoji].remove(username)
                 if not reactions[emoji]:
                     del reactions[emoji]
             else:
-                reactions[emoji] = reactions.get(emoji, []) + [username]
+                # Remove the user from any other emoji reactions first
+                for existing_emoji in list(reactions.keys()):
+                    if username in reactions[existing_emoji]:
+                        reactions[existing_emoji].remove(username)
+                        if not reactions[existing_emoji]:
+                            del reactions[existing_emoji]
+
+                # Add the new reaction
+                if emoji not in reactions:
+                    reactions[emoji] = []
+                reactions[emoji].append(username)
 
             message.reactions = reactions
             message.save()
