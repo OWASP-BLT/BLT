@@ -420,9 +420,19 @@ if not os.path.exists(AVATAR_PATH):
     os.makedirs(AVATAR_PATH)
 
 if DEBUG or TESTING:
-    CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            # Limit memory usage (in bytes, 5MB)
+            "OPTIONS": {
+                "MAX_ENTRIES": 1000,
+                "CULL_FREQUENCY": 3,  # Purge 1/3 of entries when max is reached
+            }
+        }
+    }
 else:
     if os.environ.get("MEMCACHIER_SERVERS", ""):
+        # Use external memcache service when available
         os.environ["MEMCACHE_SERVERS"] = os.environ.get("MEMCACHIER_SERVERS", "").replace(",", ";")
         os.environ["MEMCACHE_USERNAME"] = os.environ.get("MEMCACHIER_USERNAME", "")
         os.environ["MEMCACHE_PASSWORD"] = os.environ.get("MEMCACHIER_PASSWORD", "")
@@ -431,7 +441,7 @@ else:
             "default": {
                 "BACKEND": "django_pylibmc.memcached.PyLibMCCache",
                 "BINARY": True,
-                "TIMEOUT": None,
+                "TIMEOUT": 300,  # 5 minutes instead of None (never expire)
                 "OPTIONS": {
                     "tcp_nodelay": True,
                     "tcp_keepalive": True,
@@ -446,34 +456,32 @@ else:
                 },
             }
         }
+    elif os.environ.get("REDISCLOUD_URL", ""):
+        # Use Redis if Memcachier is not available but Redis is
+        CACHES = {
+            "default": {
+                "BACKEND": "django_redis.cache.RedisCache",
+                "LOCATION": os.environ.get("REDISCLOUD_URL"),
+                "OPTIONS": {
+                    "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                    "MAX_ENTRIES": 5000,
+                },
+                "TIMEOUT": 300,  # 5 minutes
+            }
+        }
     else:
-        CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
-
-if DEBUG or TESTING:
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
+        # Fallback to memory cache with limits
+        CACHES = {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                "LOCATION": "unique-snowflake",
+                "OPTIONS": {
+                    "MAX_ENTRIES": 1000,
+                    "CULL_FREQUENCY": 3,
+                },
+                "TIMEOUT": 300,  # 5 minutes
+            }
         }
-    }
-else:
-    # temp to check memory usage
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-            "LOCATION": "unique-snowflake",
-        }
-    }
-
-    # CACHES = {
-    #     "default": {
-    #         "BACKEND": "django_redis.cache.RedisCache",
-    #         "LOCATION": os.environ.get("REDISCLOUD_URL"),
-    #         "OPTIONS": {
-    #             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-    #         },
-    #     }
-    # }
 
 if DEBUG or TESTING:
     anon_throttle = 100000

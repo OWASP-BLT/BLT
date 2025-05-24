@@ -175,7 +175,48 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!textarea) return;
 
     const suggestionBox = createSuggestionBox();
-    const cache = new Map(); // Cache for API responses
+    
+    // Create a limited size LRU cache for API responses
+    const MAX_CACHE_SIZE = 20; // Limit cache to 20 entries
+    const cache = {
+        _data: new Map(),
+        _keys: [],
+        set: function(key, value) {
+            // If key already exists, remove it so it gets moved to the end
+            const existingIndex = this._keys.indexOf(key);
+            if (existingIndex > -1) {
+                this._keys.splice(existingIndex, 1);
+            }
+            // Add to end (most recently used)
+            this._keys.push(key);
+            
+            // Add to Map
+            this._data.set(key, value);
+            
+            // If we exceed size, remove oldest item (first in array)
+            if (this._keys.length > MAX_CACHE_SIZE) {
+                const oldestKey = this._keys.shift();
+                this._data.delete(oldestKey);
+            }
+        },
+        get: function(key) {
+            // Move accessed key to end of array (most recently used)
+            const existingIndex = this._keys.indexOf(key);
+            if (existingIndex > -1) {
+                this._keys.splice(existingIndex, 1);
+                this._keys.push(key);
+            }
+            return this._data.get(key);
+        },
+        has: function(key) {
+            return this._data.has(key);
+        },
+        clear: function() {
+            this._data.clear();
+            this._keys = [];
+        }
+    };
+    
     let debounceTimer = null;
     let currentSearch = '';
     let selectedIndex = -1;
@@ -289,52 +330,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Create suggestion box once
     function createSuggestionBox() {
+        // Check if styles already exist to avoid duplication
+        if (!document.getElementById('suggestion-box-styles')) {
+            // Add styles to the head only once
+            const style = document.createElement('style');
+            style.id = 'suggestion-box-styles';
+            style.textContent = `
+                .suggestion-box {
+                    position: absolute;
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    overflow-y: auto;
+                    scrollbar-width: none; /* Firefox */
+                    max-height: 150px;
+                    width: 300px;
+                    z-index: 1000;
+                    display: none;
+                }
+                .suggestion-box::-webkit-scrollbar {
+                    display: none;
+                }
+                .suggestion-item.selected {
+                    background-color: #f0f0f0;
+                }
+                .suggestion-item {
+                    padding: 8px 10px;
+                    cursor: pointer;
+                    border-bottom: 1px solid #eee;
+                }
+                .load-more {
+                    text-align: center;
+                    padding: 8px;
+                    color: #e74c3c;
+                    cursor: pointer;
+                    font-weight: bold;
+                    background-color: #f6f8fa;
+                    border-top: 1px solid #e1e4e8;
+                }
+                .load-more:hover {
+                    background-color: #f0f0f0;
+                }
+                .loading {
+                    text-align: center;
+                    padding: 8px;
+                    color: #666;
+                    font-style: italic;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
         const box = document.createElement('div');
         box.className = 'suggestion-box';
-        box.style.cssText = `
-            position: absolute;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            overflow-y: auto;
-            scrollbar-width: none; /* Firefox */
-            max-height: 150px;
-            width: 300px;
-            z-index: 1000;
-            display: none;
-        `;
-        
-        // Hide scrollbar for WebKit browsers
-        const style = document.createElement('style');
-        style.textContent = `
-            .suggestion-box::-webkit-scrollbar {
-                display: none;
-            }
-            .suggestion-item.selected {
-                background-color: #f0f0f0;
-            }
-            .load-more {
-                text-align: center;
-                padding: 8px;
-                color: #0366d6;
-                cursor: pointer;
-                font-weight: bold;
-                background-color: #f6f8fa;
-                border-top: 1px solid #e1e4e8;
-            }
-            .load-more:hover {
-                background-color: #f0f0f0;
-            }
-            .loading {
-                text-align: center;
-                padding: 8px;
-                color: #666;
-                font-style: italic;
-            }
-        `;
-        document.head.appendChild(style);
-        
         document.body.appendChild(box);
         return box;
     }
@@ -462,17 +511,15 @@ document.addEventListener('DOMContentLoaded', () => {
             isKeyboardNavigating = false;
         }
 
+        // Create document fragment for better performance
+        const fragment = document.createDocumentFragment();
+        
         // Add suggestion items
         issues.forEach(issue => {
             const div = document.createElement('div');
             div.className = 'suggestion-item';
             div.dataset.issueNumber = issue.id;
             div.innerHTML = `<strong>#${issue.id}</strong>: ${escapeHTML(issue.description)}`;
-            div.style.cssText = `
-                padding: 8px 10px;
-                cursor: pointer;
-                border-bottom: 1px solid #eee;
-            `;
             
             div.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent document click from firing
@@ -480,6 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hideSuggestionBox();
             });
             
+            // Use single event for hover to reduce memory use
             div.addEventListener('mouseover', () => {
                 if (!isKeyboardNavigating) {
                     const items = getSuggestionItems();
@@ -489,15 +537,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             
-            div.addEventListener('mouseout', () => {
-                if (!isKeyboardNavigating) {
-                    div.classList.remove('selected');
-                }
-            });
-            
-            suggestionBox.appendChild(div);
+            fragment.appendChild(div);
         });
-
+        
+        // Append all items at once 
+        suggestionBox.appendChild(fragment);
+        
         // Add "Load more" button if there are more pages
         if (hasMorePages) {
             const loadMoreButton = document.createElement('div');
@@ -560,44 +605,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const cursorPosition = textarea.selectionStart;
         const textBefore = textarea.value.substring(0, cursorPosition);
         
-        // Create a mirror element
-        const mirror = document.createElement('div');
-        mirror.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            visibility: hidden;
-            height: auto;
-            width: ${textarea.clientWidth}px;
-            padding: ${getComputedStyle(textarea).padding};
-            border: ${getComputedStyle(textarea).border};
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            font: ${getComputedStyle(textarea).font};
-            line-height: ${getComputedStyle(textarea).lineHeight};
-        `;
+        // Reuse mirror element if it exists
+        let mirror = document.getElementById('coordinates-mirror');
+        if (!mirror) {
+            mirror = document.createElement('div');
+            mirror.id = 'coordinates-mirror';
+            mirror.style.cssText = `
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+                visibility: hidden;
+                height: auto;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+            `;
+            document.body.appendChild(mirror);
+        }
         
-        // Replace line breaks with <br> for proper rendering
-        mirror.innerHTML = escapeHTML(textBefore).replace(/\n/g, '<br>');
+        // Set mirror properties to match textarea
+        const textareaStyle = getComputedStyle(textarea);
+        mirror.style.width = `${textarea.clientWidth}px`;
+        mirror.style.padding = textareaStyle.padding;
+        mirror.style.border = textareaStyle.border;
+        mirror.style.font = textareaStyle.font;
+        mirror.style.lineHeight = textareaStyle.lineHeight;
         
-        // Append a span to mark the cursor position
-        const cursorMark = document.createElement('span');
-        cursorMark.textContent = '|';
-        mirror.appendChild(cursorMark);
+        // Set content
+        mirror.innerHTML = escapeHTML(textBefore).replace(/\n/g, '<br>') + '<span id="cursor-mark">|</span>';
         
-        // Add mirror to the document
-        document.body.appendChild(mirror);
-        
-        // Get the position of the cursor marker
-        const cursorMarkRect = cursorMark.getBoundingClientRect();
+        // Get cursor position
+        const cursorMark = document.getElementById('cursor-mark');
         const mirrorRect = mirror.getBoundingClientRect();
+        const cursorMarkRect = cursorMark.getBoundingClientRect();
         
         // Calculate position relative to textarea
         const left = cursorMarkRect.left - mirrorRect.left;
         const top = cursorMarkRect.top - mirrorRect.top;
-        
-        // Clean up
-        document.body.removeChild(mirror);
         
         return { left, top };
     }
@@ -701,35 +744,60 @@ function processIssueReferences() {
 
 
 function replaceIssueReferences(element) {
+    // Use a regular expression to find all issue references
+    const regex = /#\d+/g;
+    
+    // Process in batches to avoid long-running operations
+    const MAX_NODES_PER_BATCH = 50;
+    
+    // Collect all text nodes that need processing
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    const nodesToReplace = [];
+    const nodesToProcess = [];
     let currentNode;
     
-    // First, collect all text nodes that need replacement
     while (currentNode = walker.nextNode()) {
-        if (/#\d+/.test(currentNode.nodeValue)) {
-            nodesToReplace.push(currentNode);
+        if (regex.test(currentNode.nodeValue)) {
+            nodesToProcess.push(currentNode);
         }
     }
     
-    // Then, replace each collected node
-    nodesToReplace.forEach(textNode => {
-        const fragment = document.createDocumentFragment();
-        const parts = textNode.nodeValue.split(/(#\d+)/g);
+    // Process in batches
+    function processBatch(startIndex) {
+        const endIndex = Math.min(startIndex + MAX_NODES_PER_BATCH, nodesToProcess.length);
         
-        parts.forEach(part => {
-            const match = part.match(/^#(\d+)$/);
-            if (match) {
-                const link = document.createElement('a');
-                link.href = `/issue/${match[1]}`;
-                link.className = 'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
-                link.textContent = part;
-                fragment.appendChild(link);
-            } else if (part) {
-                fragment.appendChild(document.createTextNode(part));
-            }
-        });
+        for (let i = startIndex; i < endIndex; i++) {
+            const textNode = nodesToProcess[i];
+            if (!textNode.parentNode) continue; // Node may have been removed
+            
+            const parts = textNode.nodeValue.split(/(#\d+)/g);
+            if (parts.length <= 1) continue;
+            
+            const fragment = document.createDocumentFragment();
+            
+            parts.forEach(part => {
+                const match = part.match(/^#(\d+)$/);
+                if (match) {
+                    const link = document.createElement('a');
+                    link.href = `/issue/${match[1]}`;
+                    link.className = 'text-[#e74c3c] hover:text-[#e74c3c]/80 font-medium';
+                    link.textContent = part;
+                    fragment.appendChild(link);
+                } else if (part) {
+                    fragment.appendChild(document.createTextNode(part));
+                }
+            });
+            
+            textNode.parentNode.replaceChild(fragment, textNode);
+        }
         
-        textNode.parentNode.replaceChild(fragment, textNode);
-    });
+        // Continue with next batch if needed
+        if (endIndex < nodesToProcess.length) {
+            setTimeout(() => processBatch(endIndex), 0);
+        }
+    }
+    
+    // Start processing if there are nodes to process
+    if (nodesToProcess.length > 0) {
+        processBatch(0);
+    }
 }
