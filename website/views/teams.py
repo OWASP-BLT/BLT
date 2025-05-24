@@ -231,12 +231,12 @@ class GiveKudosView(APIView):
         try:
             data = request.data
             receiver_username = data.get("kudosReceiver")
-            sender_github = data.get("kudosSender")  # GitHub username as sender
+            sender_username = data.get("kudosSender")  # Now treated as the username directly
             link_url = data.get("link")
             comment_text = data.get("comment", "")
             if not receiver_username:
                 return Response({"success": False, "error": "Missing receiver"}, status=400)
-            if not sender_github:
+            if not sender_username:
                 return Response({"success": False, "error": "Missing sender"}, status=400)
 
             # Fetch receiver
@@ -244,10 +244,8 @@ class GiveKudosView(APIView):
             if not receiver:
                 return Response({"success": False, "error": "Receiver username not found"}, status=404)
 
-            # Fetch sender using GitHub username from UserProfile
-            sender_profile = UserProfile.objects.filter(github_url__icontains=sender_github).first()
-            sender = sender_profile.user if sender_profile else None
-            print(sender_profile)
+            # Fetch sender directly by username
+            sender = User.objects.filter(username=sender_username).first()
             if not receiver or not sender:
                 return Response({"success": False, "error": "Invalid sender or receiver username"}, status=404)
 
@@ -257,7 +255,7 @@ class GiveKudosView(APIView):
             return Response({"success": True, "message": "Kudos sent successfully!"}, status=201)
 
         except Exception as e:
-            return Response({"success": False, "error": "Unexpected error,Check The BLT usernames "}, status=400)
+            return Response({"success": False, "error": "Failed to send kudos. Please check usernames and try again."}, status=400)
 
 
 class TeamChallenges(TemplateView):
