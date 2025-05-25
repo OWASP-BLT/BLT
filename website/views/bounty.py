@@ -136,7 +136,7 @@ def process_github_sponsors_payment(username, amount, note):
 
         tier_mapping = {
             500: "tier_id_500",  # Example tier IDs for $5
-            1000: "tier_id_1000", # Example tier IDs for $10
+            1000: "tier_id_1000",  # Example tier IDs for $10
             2000: "tier_id_2000",  # Example tier IDs for $20
         }
         tier_id = tier_mapping.get(amount)
