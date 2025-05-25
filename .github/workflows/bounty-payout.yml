@@ -8,8 +8,8 @@ on:
 jobs:
   process-bounty:
     permissions:
-        contents: read
-        issues: read
+      contents: read
+      issues: read
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
@@ -19,6 +19,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const core = require('@actions/core');
             const pr = context.payload.pull_request;
             const prBody = pr.body || '';
             
@@ -98,12 +99,12 @@ jobs:
           script: |
             await github.request('POST /bounty_payout/`, {
               baseUrl: process.env.API_BASE_URL,
-              headers: { authorization: `token ${process.env.BLT_AI_TOKEN}` }
+              headers: {
+                'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
+              },
               issue_number: parseInt(process.env.ISSUE_NUMBER),
               repo: context.repo.repo,
               owner: context.repo.owner,
               bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
               contributor_username: process.env.CONTRIBUTOR_USERNAME,
-              pr_number: parseInt(process.env.PR_NUMBER),
-              token: process.env.BLT_API_TOKEN
             })

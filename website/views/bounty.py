@@ -27,8 +27,8 @@ def bounty_payout(request):
         data = json.loads(request.body)
 
         # Validate token
-        received_token = requests.get("X-BLT-API-TOKEN")
-        if not received_token or received_token != expected_token:
+        received_token = request.headers.get("X-BLT-API-TOKEN")
+        if received_token != expected_token:
             logger.warning("Invalid or missing token in request.")
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
 
@@ -43,7 +43,14 @@ def bounty_payout(request):
         owner_name = data["owner"]
         contributor_username = data["contributor_username"]
         bounty_amount = int(data["bounty_amount"])
-        pr_number = int(data["pr_number"])
+
+        try:
+            pr_number = int(data["pr_number"])
+            if pr_number <= 0:
+                raise ValueError("PR number must be > 0")
+        except (KeyError, ValueError):
+            logger.warning(f"Invalid PR number: {data.get('pr_number')}")
+            return JsonResponse({"status": "error", "message": "Invalid PR number"}, status=400)
 
         # Look up repo and issue
         repo = Repo.objects.filter(name=repo_name, organization__name=owner_name).first()
@@ -127,9 +134,18 @@ def process_github_sponsors_payment(username, amount, note):
 
         headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
 
+        tier_mapping = {
+            500: "tier_id_500",  # Example tier IDs for $5
+            1000: "tier_id_1000", # Example tier IDs for $10
+            2000: "tier_id_2000",  # Example tier IDs for $20
+        }
+        tier_id = tier_mapping.get(amount)
+        if not tier_id:
+            logger.error(f"No tier ID found for amount: {amount}")
+            return None
         payload = {
             "amount": amount,
-            "tier_id": "tier_for_custom_amount",  # This must be configured or dynamically fetched
+            "tier_id": tier_id,  # This must be configured or dynamically fetched
             "is_recurring": False,
             "privacy_level": "public",
             "note": note,
@@ -139,11 +155,10 @@ def process_github_sponsors_payment(username, amount, note):
         response.raise_for_status()
 
         data = response.json()
-        # return data.get("id") or str(timezone.now().timestamp())
 
         tx_id = data.get("id")
         if not tx_id:
-            logger.error("Github Sponsors API returned 2xxx but not transaction id")
+            logger.error("Github Sponsors API returned 2xxx but not transaction id found in response.")
             return None
         return tx_id
 
