@@ -11,6 +11,7 @@ permissions:
   pull-requests: write
   contents: read
   issues: write
+  repository-projects: write
 
 jobs:
   add_files_changed_label:
@@ -18,7 +19,7 @@ jobs:
     steps:
       - name: Add Files Changed Label
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CUSTOM_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
@@ -33,8 +34,8 @@ jobs:
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/files")
           
           # Check if the API request was successful
-          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]]; then
-            echo "Error: Could not fetch PR files. API response indicates resource not found."
+          if [[ "$FILES_API_RESPONSE" == *"message"*"Not Found"* ]] || [[ "$FILES_API_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+            echo "Error: Could not fetch PR files. Response: $FILES_API_RESPONSE"
             exit 1
           fi
           
@@ -88,6 +89,12 @@ jobs:
             # Check if label creation was successful
             if [[ "$CREATE_LABEL_RESPONSE" == *"message"* ]]; then
               echo "Warning: There might be an issue creating the label. Response: $CREATE_LABEL_RESPONSE"
+              
+              # Provide more detailed guidance for permission errors
+              if [[ "$CREATE_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+                echo "This appears to be a permissions issue with creating labels."
+                echo "Please check the .github/README.md file for instructions on setting up a CUSTOM_GITHUB_TOKEN with proper permissions."
+              fi
             else
               echo "Label '$LABEL' created successfully."
             fi
@@ -141,6 +148,17 @@ jobs:
           # Check if label was added successfully
           if [[ "$ADD_LABEL_RESPONSE" == *"message"* ]]; then
             echo "Error: Failed to add label. Response: $ADD_LABEL_RESPONSE"
+            
+            # Check if it's a permissions issue and suggest using a custom token
+            if [[ "$ADD_LABEL_RESPONSE" == *"Resource not accessible by integration"* ]]; then
+              echo "This appears to be a permissions issue. Please follow these steps:"
+              echo "1. Create a Personal Access Token (PAT) with 'repo' scope"
+              echo "2. Add the token to your repository secrets as CUSTOM_GITHUB_TOKEN"
+              echo "3. See the .github/README.md file for detailed instructions on setting up the token"
+              echo ""
+              echo "Note: The workflow is configured to use CUSTOM_GITHUB_TOKEN if available, falling back to GITHUB_TOKEN"
+            fi
+            
             exit 1
           else
             echo "Successfully applied label '$LABEL' to PR #$PR_NUMBER"
