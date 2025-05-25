@@ -95,7 +95,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BLT_API_TOKEN: ${{ secrets.BLT_API_TOKEN }}
           API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://owasp.org' }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v6.1.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -110,4 +110,5 @@ jobs:
               owner: context.repo.owner,
               bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
               contributor_username: process.env.CONTRIBUTOR_USERNAME,
+              pr_number: parseInt(process.env.PR_NUMBER)
             })
