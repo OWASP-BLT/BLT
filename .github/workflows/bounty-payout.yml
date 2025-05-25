@@ -70,7 +70,9 @@ jobs:
             
             // Find the bounty amount from the label
             const bountyLabel = bountyIssue.labels.find(label => label.name.includes('$'));
-            const bountyAmount = bountyLabel ? bountyLabel.name.match(/\$(\d+)/)[1] : null;
+            const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+)/) : null;
+            const bountyAmount = bountyMatch ? bountyMatch[1] : null;
+
             
             if (!bountyAmount) {
               console.log('Could not extract bounty amount from label');

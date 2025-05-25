@@ -116,7 +116,12 @@ def resolve_contributor(username):
         return contributor
 
     profile = UserProfile.objects.filter(github_url__icontains=f"github.com/{username}").first()
-    return profile if profile else None
+    if profile:
+        contributor = Contributor.objects.create(
+            name=username,
+            email=profile.user.email if profile.user else None,
+        )
+    return contributor 
 
 
 def process_github_sponsors_payment(username, amount, note):
