@@ -164,13 +164,13 @@ class ProjectBadgeView(APIView):
             project.project_visit_count = F("project_visit_count") + 1
             project.save()
 
-        # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        # Get unique visits, grouped by date (last 30 days)
+        thirty_days_ago = today - timedelta(days=30)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
             .annotate(date=TruncDate("created"))
             .values("date")
-            .annotate(visit_count=Count("address"))
+            .annotate(visit_count=Count("address", distinct=True))
             .order_by("date")
         )
 
@@ -198,12 +198,9 @@ class ProjectBadgeView(APIView):
         chart_width = width - 2 * margin
         chart_height = height - 2 * margin
 
-        if counts:
-            max_count = max(counts)
-            bar_width = chart_width / (len(counts) * 2)  # Leave space between bars
-        else:
-            max_count = 1
-            bar_width = chart_width / 14  # Default for empty data
+        # Ensure we always have space for 30 bars
+        bar_width = chart_width / (30 * 2)  # Space for 30 days with gaps
+        max_count = max(counts) if counts else 1
 
         # Draw grid lines
         for i in range(5):
