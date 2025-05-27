@@ -1037,12 +1037,51 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    logger.debug("issue closed")
+    """Handle GitHub issue events from the webhook"""
+    logger.info(f"Received GitHub issue event: {payload['action']}")
+    
     if payload["action"] == "closed":
-        closer_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
+        # Get the GitHub issue URL that was closed
+        github_issue_url = payload["issue"]["html_url"]
+        logger.info(f"GitHub issue closed: {github_issue_url}")
+        
+        # Get the user who closed the GitHub issue
+        closer_github_url = payload["sender"]["html_url"]
+        closer_profile = UserProfile.objects.filter(github_url=closer_github_url).first()
+        
+        # First, update GitHub issue in our system if we're tracking it
+        github_issue = GitHubIssue.objects.filter(url=github_issue_url).first()
+        if github_issue:
+            logger.info(f"Updating GitHub issue in our system: {github_issue.title}")
+            github_issue.state = "closed"
+            github_issue.closed_at = payload["issue"]["closed_at"]
+            github_issue.save()
+        
+        # Find and close any BLT issues linked to this GitHub issue URL
+        blt_issues = Issue.objects.filter(github_url=github_issue_url, status="open")
+        
+        if blt_issues.exists():
+            logger.info(f"Found {blt_issues.count()} BLT issues to close")
+            
+            for issue in blt_issues:
+                # Update BLT issue status
+                issue.status = "closed"
+                issue.closed_date = timezone.now()
+                
+                # Set the closed_by field if we can identify the user
+                if closer_profile:
+                    issue.closed_by = closer_profile.user
+                
+                issue.save()
+                logger.info(f"Closed BLT issue: ID {issue.id}, Title: {issue.description[:50]}")
+        else:
+            logger.info(f"No BLT issues found for GitHub issue: {github_issue_url}")
+        
+        # Always assign badge to the user who closed the issue if they have a BLT account
         if closer_profile:
-            closer_user = closer_profile.user
-            assign_github_badge(closer_user, "First Issue Closed")
+            assign_github_badge(closer_profile.user, "First Issue Closed")
+            logger.info(f"Assigned 'First Issue Closed' badge to user: {closer_profile.user.username}")
+    
     return JsonResponse({"status": "success"}, status=200)
 
 
