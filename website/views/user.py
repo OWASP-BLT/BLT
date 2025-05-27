@@ -1037,53 +1037,107 @@ def handle_review_event(payload):
 
 
 def handle_issue_event(payload):
-    """Handle GitHub issue events from the webhook"""
+    """
+    Handle GitHub issue events from the webhook.
+    Updates both GitHubIssue and related BLT Issue records when issues are closed.
+    Uses transactions and optimized queries for better performance and data consistency.
+    """
     logger.info(f"Received GitHub issue event: {payload['action']}")
-    
-    if payload["action"] == "closed":
-        # Get the GitHub issue URL that was closed
-        github_issue_url = payload["issue"]["html_url"]
-        logger.info(f"GitHub issue closed: {github_issue_url}")
-        
-        # Get the user who closed the GitHub issue
-        closer_github_url = payload["sender"]["html_url"]
-        closer_profile = UserProfile.objects.filter(github_url=closer_github_url).first()
-        
-        # First, update GitHub issue in our system if we're tracking it
-        github_issue = GitHubIssue.objects.filter(url=github_issue_url).first()
-        if github_issue:
-            logger.info(f"Updating GitHub issue in our system: {github_issue.title}")
-            github_issue.state = "closed"
-            github_issue.closed_at = payload["issue"]["closed_at"]
-            github_issue.save()
-        
-        # Find and close any BLT issues linked to this GitHub issue URL
-        blt_issues = Issue.objects.filter(github_url=github_issue_url, status="open")
-        
-        if blt_issues.exists():
-            logger.info(f"Found {blt_issues.count()} BLT issues to close")
-            
-            for issue in blt_issues:
-                # Update BLT issue status
-                issue.status = "closed"
-                issue.closed_date = timezone.now()
-                
-                # Set the closed_by field if we can identify the user
-                if closer_profile:
-                    issue.closed_by = closer_profile.user
-                
-                issue.save()
-                logger.info(f"Closed BLT issue: ID {issue.id}, Title: {issue.description[:50]}")
-        else:
-            logger.info(f"No BLT issues found for GitHub issue: {github_issue_url}")
-        
-        # Always assign badge to the user who closed the issue if they have a BLT account
-        if closer_profile:
-            assign_github_badge(closer_profile.user, "First Issue Closed")
-            logger.info(f"Assigned 'First Issue Closed' badge to user: {closer_profile.user.username}")
-    
-    return JsonResponse({"status": "success"}, status=200)
 
+    if payload["action"] != "closed":
+        logger.info("Ignoring non-close issue event")
+        return JsonResponse({"status": "success", "message": "Non-close event ignored"}, status=200)
+
+    try:
+        # Extract required fields from payload
+        github_issue_url = payload["issue"]["html_url"]
+        closer_github_url = payload["sender"]["html_url"]
+        closed_at = payload["issue"]["closed_at"]
+    except KeyError as e:
+        logger.error(f"Missing required field in webhook payload: {e}")
+        return JsonResponse({"status": "error", "message": "Missing required fields in payload"}, status=400)
+
+    # Validate GitHub URL format
+    if not github_issue_url.startswith('https://github.com/'):
+        logger.warning(f"Invalid GitHub issue URL format: {github_issue_url}")
+        return JsonResponse({"status": "error", "message": "Invalid GitHub URL format"}, status=400)
+
+    logger.info(f"Processing closed GitHub issue: {github_issue_url}")
+    
+    # Convert closed_at to timezone-aware datetime
+    try:
+        closed_at = datetime.fromisoformat(closed_at.replace('Z', '+00:00'))
+    except (ValueError, AttributeError) as e:
+        logger.error(f"Invalid closed_at date format: {e}")
+        closed_at = timezone.now()
+
+    # Get closer's BLT profile if they have one
+    closer_profile = UserProfile.objects.filter(
+        github_url=closer_github_url
+    ).select_related('user').first()
+
+    try:
+        with transaction.atomic():
+            # Update GitHub issue in our system if we're tracking it
+            github_updated = GitHubIssue.objects.filter(url=github_issue_url).update(
+                state="closed",
+                closed_at=closed_at
+            )
+            
+            if github_updated:
+                logger.info("Updated GitHub issue state to closed")
+
+            # Prepare BLT issue updates
+            update_fields = {
+                'status': 'closed',
+                'closed_date': closed_at
+            }
+            if closer_profile:
+                update_fields['closed_by'] = closer_profile.user
+
+            # Update all open BLT issues linked to this GitHub issue in one query
+            updated_count = Issue.objects.filter(
+                github_url=github_issue_url,
+                status="open"
+            ).update(**update_fields)
+
+            if updated_count > 0:
+                logger.info(f"Successfully closed {updated_count} BLT issues")
+                
+                # Assign badge to the closer if they have a BLT account and this is their first closed issue
+                if closer_profile:
+                    # Check if this is their first closed issue (excluding the ones we just closed)
+                    is_first_close = not Issue.objects.filter(
+                        closed_by=closer_profile.user,
+                        status='closed'
+                    ).exclude(
+                        github_url=github_issue_url
+                    ).exists()
+                    
+                    if is_first_close:
+                        try:
+                            assign_github_badge(closer_profile.user, "First Issue Closed")
+                            logger.info(f"Assigned 'First Issue Closed' badge to user: {closer_profile.user.username}")
+                        except Exception as badge_error:
+                            logger.error(f"Failed to assign badge to {closer_profile.user.username}: {badge_error}")
+                            # Don't fail the entire operation if badge assignment fails
+            else:
+                logger.info(f"No open BLT issues found for GitHub issue: {github_issue_url}")
+
+    except IntegrityError as e:
+        logger.error(f"Database integrity error processing GitHub issue event: {e}")
+        return JsonResponse({"status": "error", "message": "Database integrity error"}, status=500)
+    except DatabaseError as e:
+        logger.error(f"Database error processing GitHub issue event: {e}")
+        return JsonResponse({"status": "error", "message": "Database error"}, status=500)
+    except Exception as e:
+        logger.error(f"Unexpected error processing GitHub issue event: {e}")
+        return JsonResponse({"status": "error", "message": "Internal server error"}, status=500)
+
+    return JsonResponse({
+        "status": "success",
+        "message": f"Successfully processed issue closed event. Updated {updated_count if 'updated_count' in locals() else 0} BLT issues."
+    }, status=200)
 
 def handle_status_event(payload):
     user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
