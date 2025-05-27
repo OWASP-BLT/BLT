@@ -1813,13 +1813,13 @@ class RepoBadgeView(APIView):
             repo.save()
 
         # Get unique visits, grouped by date (last 7 days)
-        seven_days_ago = today - timedelta(days=7)
+        thirty_days_ago = today - timedelta(days=30)
         visit_counts = (
-            IP.objects.filter(path=request.path, created__date__gte=seven_days_ago)
-            .annotate(date=TruncDate("created"))
-            .values("date")
-            .annotate(visit_count=Count("address"))
-            .order_by("date")
+            IP.objects.filter(path=request.path, created__date__gte=thirty_days_ago)
+            .extra({"created_date": "date(created)"})
+            .values("created_date")
+            .annotate(count=Count("id"))
+            .order_by("created_date")
         )
 
         # Refresh repo to get the latest visit count
