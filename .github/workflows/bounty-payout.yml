@@ -21,27 +21,21 @@ jobs:
             const core = require('@actions/core');
             const pr = context.payload.pull_request;
             const prBody = pr.body || '';
-            
             // Look for issue closing keywords in PR body
             const issueRefs = prBody.match(/(close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi);
             if (!issueRefs) {
               console.log('No issue references found in PR');
               return;
             }
-            
             // Extract issue numbers
             const issueNumbers = issueRefs.map(ref => {
               const match = ref.match(/#(\d+)/);
               return match ? match[1] : null;
             }).filter(Boolean);
-            
             if (issueNumbers.length === 0) {
               console.log('No valid issue numbers found');
               return;
             }
-            
-            console.log(`Found issue references: ${issueNumbers.join(', ')}`);
-            
             // Check each issue for bounty labels
             let bountyIssue = null;
             for (const issueNumber of issueNumbers) {
@@ -50,41 +44,31 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: parseInt(issueNumber)
               });
-              
               // Check for dollar sign labels
               const hasBountyLabel = issue.data.labels.some(label => {
                 return label.name.includes('$');
               });
-              
               if (hasBountyLabel) {
                 bountyIssue = issue.data;
                 break;
               }
             }
-            
             if (!bountyIssue) {
               console.log('No issues with bounty labels found');
               return;
             }
-            
             // Find the bounty amount from the label
             const bountyLabel = bountyIssue.labels.find(label => label.name.includes('$'));
             const bountyMatch = bountyLabel ? bountyLabel.name.match(/\$(\d+)/) : null;
             const bountyAmount = bountyMatch ? bountyMatch[1] : null;
-
-            
             if (!bountyAmount) {
               console.log('Could not extract bounty amount from label');
               return;
             }
-            
-            console.log(`Found bounty issue #${bountyIssue.number} with amount $${bountyAmount}`);
-            
             core.setOutput('has-bounty', 'true');
             core.setOutput('issue-number', bountyIssue.number.toString());
             core.setOutput('bounty-amount', bountyAmount);
             core.setOutput('contributor-username', pr.user.login);
-            
       - name: Send bounty data to BLT
         if: steps.check-issues.outputs.has-bounty == 'true'
         env:
