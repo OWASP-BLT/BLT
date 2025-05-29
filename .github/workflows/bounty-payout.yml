@@ -1,4 +1,3 @@
-# .github/workflows/bounty-payout.yml
 name: Bounty Payout
 
 on:

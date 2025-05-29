@@ -900,17 +900,18 @@ def handle_pull_request_event(payload):
                 return JsonResponse({"status": "success", "message": "Repository not tracked in BLT"}, status=200)
 
             # Check if any referenced issues have bounties
-            for issue_number in issue_refs:
-                try:
-                    github_issue = GitHubIssue.objects.get(issue_id=int(issue_number), repo=repo, has_dollar_tag=True)
-
-                    # If we found an issue with a bounty, trigger the payout process
-                    if not github_issue.sponsors_tx_id:  # Only if not already paid
-                        # This would trigger our GitHub Action or we could process here directly
-                        # For now, let's just log it and let the GitHub Action handle it
-                        logger.info(f"Bounty issue #{issue_number} closed by PR #{payload['pull_request']['number']}")
-                except GitHubIssue.DoesNotExist:
-                    continue
+            
+            issue_numbers = [int(n) for n in issue_refs]
+            issues_with_bounty = (
+                GitHubIssue.objects.filter(repo=repo, issue_id__in=issue_numbers, has_dollar_tag=True)
+                .exclude(sponsors_tx_id__isnull=False)
+            )
+            for github_issue in issues_with_bounty:
+                logger.info(
+                    "Bounty issue #%s closed by PR #%s",
+                    github_issue.issue_id,
+                    payload["pull_request"]["number"],
+                )
 
         except Exception as e:
             logger.exception(f"Error checking for bounty issues: {e}")
