@@ -900,12 +900,11 @@ def handle_pull_request_event(payload):
                 return JsonResponse({"status": "success", "message": "Repository not tracked in BLT"}, status=200)
 
             # Check if any referenced issues have bounties
-            
+
             issue_numbers = [int(n) for n in issue_refs]
-            issues_with_bounty = (
-                GitHubIssue.objects.filter(repo=repo, issue_id__in=issue_numbers, has_dollar_tag=True)
-                .exclude(sponsors_tx_id__isnull=False)
-            )
+            issues_with_bounty = GitHubIssue.objects.filter(
+                repo=repo, issue_id__in=issue_numbers, has_dollar_tag=True
+            ).exclude(sponsors_tx_id__isnull=False)
             for github_issue in issues_with_bounty:
                 logger.info(
                     "Bounty issue #%s closed by PR #%s",
