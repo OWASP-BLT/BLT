@@ -1,12 +1,21 @@
 import ipaddress
 
+import logging
 from django.core.cache import cache
-from django.db import models, transaction
+from django.db import models, transaction  
 from django.http import HttpResponseForbidden
 
 from website.models import IP, Blocked
 
 MAX_COUNT = 2147483647
+
+# Cache settings
+BLOCKED_IPS_CACHE_KEY = "blocked_ips"
+BLOCKED_IP_NETWORK_CACHE_KEY = "blocked_ip_network"
+BLOCKED_AGENTS_CACHE_KEY = "blocked_agents"
+CACHE_TIMEOUT = 86400  # 24 hours
+
+logger = logging.getLogger(__name__)
 
 
 class IPRestrictMiddleware:
@@ -55,10 +64,14 @@ class IPRestrictMiddleware:
         """
         Retrieve blocked user agents from cache or database.
         """
-        blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
-        # Filter out None values
-        blocked_user_agents = [agent for agent in blocked_user_agents if agent is not None]
-        return set(self.get_cached_data("blocked_agents", blocked_user_agents))
+        cached_agents = cache.get(BLOCKED_AGENTS_CACHE_KEY)
+        if cached_agents is None:
+            # Only query the database if cache is empty
+            blocked_user_agents = Blocked.objects.values_list("user_agent_string", flat=True)
+            # Filter out None values
+            cached_agents = [agent for agent in blocked_user_agents if agent is not None]
+            cache.set(BLOCKED_AGENTS_CACHE_KEY, cached_agents, timeout=CACHE_TIMEOUT)
+        return set(cached_agents)
 
     def ip_in_ips(self, ip, blocked_ips):
         """
@@ -116,52 +129,63 @@ class IPRestrictMiddleware:
                 blocked_entry.save(update_fields=["count"])
 
     def __call__(self, request):
-        ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "")
-        agent = request.META.get("HTTP_USER_AGENT", "").strip()
+        try:
+            ip = request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip() or request.META.get("REMOTE_ADDR", "") 
+            agent = request.META.get("HTTP_USER_AGENT", "").strip()
 
-        blocked_ips = self.blocked_ips()
-        blocked_ip_network = self.blocked_ip_network()
-        blocked_agents = self.blocked_agents()
+            try:
+                blocked_ips = self.blocked_ips()
+                blocked_ip_network = self.blocked_ip_network()
+                blocked_agents = self.blocked_agents()
+            except Exception as e:
+                # Log the error but allow the request to proceed
+                logger.error(f"Error retrieving blocked data: {e}")
+                return self.get_response(request)
 
-        if self.ip_in_ips(ip, blocked_ips):
-            self.increment_block_count(ip=ip)
-            return HttpResponseForbidden()
+            if self.ip_in_ips(ip, blocked_ips):
+                self.increment_block_count(ip=ip)
+                return HttpResponseForbidden()
 
-        if self.ip_in_range(ip, blocked_ip_network):
-            # Find the specific network that caused the block and increment its count
-            for network in blocked_ip_network:
-                if ipaddress.ip_address(ip) in network:
-                    self.increment_block_count(network=str(network))
-                    break
-            return HttpResponseForbidden()
+            if self.ip_in_range(ip, blocked_ip_network):
+                # Find the specific network that caused the block and increment its count
+                for network in blocked_ip_network:
+                    if ipaddress.ip_address(ip) in network:
+                        self.increment_block_count(network=str(network))
+                        break
+                return HttpResponseForbidden()
 
-        if self.is_user_agent_blocked(agent, blocked_agents):
-            self.increment_block_count(user_agent=agent)
-            return HttpResponseForbidden()
+            if self.is_user_agent_blocked(agent, blocked_agents):
+                self.increment_block_count(user_agent=agent)
+                return HttpResponseForbidden()
 
-        if ip:
-            with transaction.atomic():
-                # create unique entry for every unique (ip,path) tuple
-                # if this tuple already exists, we just increment the count.
-                ip_records = IP.objects.select_for_update().filter(address=ip, path=request.path)
-                if ip_records.exists():
-                    ip_record = ip_records.first()
+            if ip:
+                with transaction.atomic():
+                    # create unique entry for every unique (ip,path) tuple
+                    # if this tuple already exists, we just increment the count.
+                    ip_records = IP.objects.select_for_update().filter(address=ip, path=request.path)
+                    if ip_records.exists():
+                        ip_record = ip_records.first()
 
-                    # Calculate the new count and ensure it doesn't exceed the MAX_COUNT
-                    new_count = ip_record.count + 1
-                    if new_count > MAX_COUNT:
-                        new_count = MAX_COUNT
+                        # Calculate the new count and ensure it doesn't exceed the MAX_COUNT  
+                        new_count = ip_record.count + 1
+                        if new_count > MAX_COUNT:
+                            new_count = MAX_COUNT
 
-                    ip_record.agent = agent
-                    ip_record.count = new_count
-                    if ip_record.pk:
-                        ip_record.save(update_fields=["agent", "count"])
+                        ip_record.agent = agent
+                        ip_record.count = new_count
+                        if ip_record.pk:
+                            ip_record.save(update_fields=["agent", "count"])
 
-                    # Check if a transaction is already active before starting a new one
-                    if not transaction.get_autocommit():
-                        ip_records.exclude(pk=ip_record.pk).delete()
-                else:
-                    # If no record exists, create a new one
-                    IP.objects.create(address=ip, agent=agent, count=1, path=request.path)
+                        # Check if a transaction is already active before starting a new one
+                        if not transaction.get_autocommit():
+                            ip_records.exclude(pk=ip_record.pk).delete()
+                    else:
+                        # If no record exists, create a new one
+                        IP.objects.create(address=ip, agent=agent, count=1, path=request.path)
 
-        return self.get_response(request)
+            return self.get_response(request)
+
+        except Exception as e:
+            # Catch any other unexpected errors in the middleware
+            logger.error(f"Unexpected error in IPRestrictMiddleware: {e}")
+            return self.get_response(request)
