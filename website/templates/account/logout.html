@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "account/auth_base.html" %}
 {% load static %}
 {% load custom_tags %}
 {% block title %}
@@ -17,19 +17,25 @@
     Successfully logout from {% env 'PROJECT_NAME' %} to secure your account. Ensure your account's security by logging out after each session.
 {% endblock og_description %}
 {% load i18n %}
-{% block content %}
-    {% include "includes/sidenav.html" %}
-    <h1>{% trans "Sign Out" %}</h1>
-    <p>{% trans "Are you sure?" %}</p>
-    <form method="post"
-          action="{% url 'account_logout' %}?next={{ request.path }}">
-        {% csrf_token %}
-        {% if redirect_field_value %}
-            <input type="hidden"
-                   name="{{ redirect_field_name }}"
-                   value="{{ redirect_field_value }}" />
-        {% endif %}
-        <button class="btn btn-primary text-black" type="submit">{% trans "Yes" %}</button>
-        <a href="{% url 'account_profile' %}" class="btn btn-default">{% trans "Cancel" %}</a>
-    </form>
-{% endblock content %}
+{% block account_content %}
+    <div class="w-full max-w-md bg-white rounded-lg shadow-lg p-8">
+        <h1>{% trans "Sign Out" %}</h1>
+        <p>{% trans "Are you sure?" %}</p>
+        <form method="post"
+              action="{% url 'account_logout' %}?next={{ request.path }}"
+              class="space-y-4">
+            {% csrf_token %}
+            {% if redirect_field_value %}
+                <input type="hidden"
+                       name="{{ redirect_field_name }}"
+                       value="{{ redirect_field_value }}" />
+            {% endif %}
+            <div class="flex space-x-4 justify-center">
+                <button class="px-6 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-300"
+                        type="submit">{% trans "Yes" %}</button>
+                <a href="{% url 'account_profile' %}"
+                   class="px-6 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors duration-300">{% trans "Cancel" %}</a>
+            </div>
+        </form>
+    </div>
+{% endblock account_content %}
