@@ -68,6 +68,75 @@
                     </div>
                 </div>
             </div>
+            <!-- Streak Badges Motivation Section -->
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                <h2 class="text-3xl font-bold mb-4 text-[#e74c3c] text-center">{% trans "Streak Badges" %}</h2>
+                <p class="text-lg text-center text-gray-700 mb-8">
+                    {% trans "Keep your streak alive! Earn special badges for consistent activity. Can you collect them all?" %}
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 justify-items-center">
+                    <!-- Weekly Streak Badge -->
+                    <div class="flex flex-col items-center">
+                        <img src="{% static 'img/badges/7-day-streak.PNG' %}"
+                             alt="Weekly Streak Badge"
+                             class="w-24 h-24 rounded-xl border-4 border-[#e74c3c] shadow-lg mb-3 object-contain"
+                             width="96"
+                             height="96">
+                        <span class="text-lg font-bold text-[#e74c3c]">{% trans "Weekly Streak" %}</span>
+                        <span class="text-gray-600 text-center text-sm">{% trans "Awarded for a 7-day streak" %}</span>
+                    </div>
+                    <!-- 15 Day Streak Badge -->
+                    <div class="flex flex-col items-center">
+                        <img src="{% static 'img/badges/15-day-streak.PNG' %}"
+                             alt="15 Day Streak Badge"
+                             class="w-24 h-24 rounded-xl border-4 border-[#e74c3c] shadow-lg mb-3 object-contain"
+                             width="96"
+                             height="96">
+                        <span class="text-lg font-bold text-[#e74c3c]">{% trans "15 Day Streak" %}</span>
+                        <span class="text-gray-600 text-center text-sm">{% trans "Awarded for a 15-day streak" %}</span>
+                    </div>
+                    <!-- Monthly Streak Badge -->
+                    <div class="flex flex-col items-center">
+                        <img src="{% static 'img/badges/30-day-streak.PNG' %}"
+                             alt="Monthly Streak Badge"
+                             class="w-24 h-24 rounded-xl border-4 border-[#e74c3c] shadow-lg mb-3 object-contain"
+                             width="96"
+                             height="96">
+                        <span class="text-lg font-bold text-[#e74c3c]">{% trans "Monthly Streak" %}</span>
+                        <span class="text-gray-600 text-center text-sm">{% trans "Awarded for a 30-day streak" %}</span>
+                    </div>
+                    <!-- 100 Day Streak Badge -->
+                    <div class="flex flex-col items-center">
+                        <img src="{% static 'img/badges/100-day-streak.PNG' %}"
+                             alt="100 Day Streak Badge"
+                             class="w-24 h-24 rounded-xl border-4 border-[#e74c3c] shadow-lg mb-3 object-contain"
+                             width="96"
+                             height="96">
+                        <span class="text-lg font-bold text-[#e74c3c]">{% trans "100 Day Streak" %}</span>
+                        <span class="text-gray-600 text-center text-sm">{% trans "Awarded for a 100-day streak" %}</span>
+                    </div>
+                    <!-- Six Month Streak Badge -->
+                    <div class="flex flex-col items-center">
+                        <img src="{% static 'img/badges/180-day-streak.PNG' %}"
+                             alt="Six Month Streak Badge"
+                             class="w-24 h-24 rounded-xl border-4 border-[#e74c3c] shadow-lg mb-3 object-contain"
+                             width="96"
+                             height="96">
+                        <span class="text-lg font-bold text-[#e74c3c]">{% trans "Six Month Streak" %}</span>
+                        <span class="text-gray-600 text-center text-sm">{% trans "Awarded for a 180-day streak" %}</span>
+                    </div>
+                    <!-- Yearly Streak Badge -->
+                    <div class="flex flex-col items-center">
+                        <img src="{% static 'img/badges/365-day-streak.PNG' %}"
+                             alt="Yearly Streak Badge"
+                             class="w-24 h-24 rounded-xl border-4 border-[#e74c3c] shadow-lg mb-3 object-contain"
+                             width="96"
+                             height="96">
+                        <span class="text-lg font-bold text-[#e74c3c]">{% trans "Yearly Streak" %}</span>
+                        <span class="text-gray-600 text-center text-sm">{% trans "Awarded for a 365-day streak" %}</span>
+                    </div>
+                </div>
+            </div>
             <!-- How it Works -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                 <div class="bg-white rounded-lg shadow-lg p-8">
