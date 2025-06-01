@@ -48,6 +48,18 @@
             <!-- Right Side (Login Form) -->
             <div class="p-5 bg-white md:flex-1">
                 <h3 class="text-2xl font-semibold text-gray-700">{% trans "Account Login" %}</h3>
+                {% if form.errors %}
+                    <div class="mt-4 p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg"
+                         role="alert">
+                        <p>{% trans "Invalid email or password." %}</p>
+                    </div>
+                {% endif %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mt-4 p-4 mb-4 text-sm {% if message.tags == 'error' %}text-red-700 bg-red-100{% elif message.tags == 'success' %}text-green-700 bg-green-100{% endif %} rounded-lg"
+                             role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
                 <form class="flex flex-col space-y-4 login"
                       method="post"
                       action="{% url 'account_login' %}?next={{ request.path }}">
@@ -57,12 +69,13 @@
                                name="{{ redirect_field_name }}"
                                value="{{ redirect_field_value }}" />
                     {% endif %}
-                    <!-- Username Field -->
+                    <!-- Email Field -->
                     <div class="flex flex-col space-y-1">
-                        <label for="id_login" class="text-sm font-semibold text-gray-500">Username</label>
+                        <label for="id_login" class="text-sm font-semibold text-gray-500">{% trans "Email" %}</label>
                         <input autofocus
                                id="id_login"
                                name="login"
+                               type="text"
                                value="{{ form.login.value|default:'' }}"
                                class="px-4 py-2 w-full transition duration-300 border border-gray-300 rounded focus:border-transparent focus:outline-none focus:ring-4 focus:ring-red-200" />
                         <span class="help-block text-sm text-red-500">{{ form.login.errors }}</span>
