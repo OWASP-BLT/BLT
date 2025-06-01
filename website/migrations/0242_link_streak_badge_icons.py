@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.files import File
 from django.db import migrations
 
+
 def link_streak_badge_icons(apps, schema_editor):
     Badge = apps.get_model("website", "Badge")
     badge_icon_map = {
@@ -27,10 +28,11 @@ def link_streak_badge_icons(apps, schema_editor):
                     badge.icon.save(os.path.basename(media_icon_path), File(f), save=True)
                     badge.save()
 
+
 class Migration(migrations.Migration):
     dependencies = [
         ("website", "0241_domain_has_security_txt_and_more"),
     ]
     operations = [
         migrations.RunPython(link_streak_badge_icons),
-    ] 
+    ]
