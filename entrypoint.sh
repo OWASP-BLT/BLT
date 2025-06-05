@@ -24,6 +24,10 @@ if check_migrations; then
     echo "Migration script is running"
     python manage.py migrate
 
+    # Setup GitHub OAuth
+    echo "Setting up GitHub OAuth"
+    python manage.py setup_github_oauth
+
     # Load initial data
     python manage.py loaddata website/fixtures/initial_data.json
 
