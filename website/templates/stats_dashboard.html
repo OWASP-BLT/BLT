@@ -225,13 +225,13 @@
                         <div class="text-xs text-gray-500">Active: {{ stats.domains.active }} / Total: {{ stats.domains.total_all_time }}</div>
                     </div>
                 </div>
-                <!-- Bug Hunts Card -->
+                <!-- Bug Bounties Card -->
                 <div class="bg-white rounded-xl shadow-md p-5 flex items-center border border-gray-100 transform transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                     <div class="bg-red-50 p-3 rounded-xl mr-4">
                         <i class="fa fa-search text-2xl text-[#e74c3c]"></i>
                     </div>
                     <div>
-                        <div class="text-sm text-gray-500">Bug Hunts</div>
+                        <div class="text-sm text-gray-500">Bug Bounties</div>
                         <div id="huntsCounter"
                              class="text-2xl font-bold text-gray-900"
                              data-value="{{ stats.hunts.total|default:0 }}">{{ stats.hunts.total|default:0 }}</div>

@@ -7,7 +7,29 @@
 {% block og_description %}Discover a variety of domains with their logos and names listed.{% endblock %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mx-16 mt-12 justify-items-center">
+    <!-- Security.txt Filters -->
+    <div class="mx-16 mt-6">
+        <div class="bg-white p-4 rounded-lg shadow mb-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-gray-900">All Domains</h2>
+                <div class="flex space-x-2">
+                    <a href="{% url 'domains' %}"
+                       class="text-sm font-medium {% if not security_txt_filter %}bg-red-600 text-white px-3 py-1 rounded-full{% else %}text-red-600 hover:underline{% endif %}">
+                        All ({{ total_domain_count }})
+                    </a>
+                    <a href="{% url 'domains' %}?security_txt=yes"
+                       class="text-sm font-medium {% if security_txt_filter == 'yes' %}bg-red-600 text-white px-3 py-1 rounded-full{% else %}text-red-600 hover:underline{% endif %}">
+                        With security.txt ({{ security_txt_yes_count }})
+                    </a>
+                    <a href="{% url 'domains' %}?security_txt=no"
+                       class="text-sm font-medium {% if security_txt_filter == 'no' %}bg-red-600 text-white px-3 py-1 rounded-full{% else %}text-red-600 hover:underline{% endif %}">
+                        Without security.txt ({{ security_txt_no_count }})
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mx-16 justify-items-center">
         {% for objects in domain %}
             <div class="w-full p-5 bg-white rounded-2xl shadow-[5px_5px_180px_6px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col items-center">
                 {% if objects.get_logo and objects.get_logo != "None" %}
@@ -23,21 +45,31 @@
                 </div>
                 <a href="{{ objects.get_absolute_url }}"
                    class="text-lg font-bold text-gray-700 hover:text-blue-600 no-underline">{{ objects.name }}</a>
+                <!-- Security.txt indicator -->
+                {% if objects.has_security_txt %}
+                    <span class="mt-2 px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs">
+                        <i class="fa fa-check-circle"></i> security.txt
+                    </span>
+                {% else %}
+                    <span class="mt-2 px-2 py-1 rounded-full bg-gray-100 text-gray-500 text-xs">
+                        <i class="fa fa-times-circle"></i> no security.txt
+                    </span>
+                {% endif %}
             </div>
         {% endfor %}
     </div>
     <!-- Pagination -->
     {% if is_paginated %}
-        <div class="text-center mt-8">
+        <div class="text-center mt-8 mb-8">
             {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}{% if user %}&user={{ user }}{% endif %}"
+                <a href="?page={{ page_obj.previous_page_number }}{% if security_txt_filter %}&security_txt={{ security_txt_filter }}{% endif %}{% if user %}&user={{ user }}{% endif %}"
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
                     Prev
                 </a>
             {% endif %}
             <span class="mx-4 text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
             {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}{% if user %}&user={{ user }}{% endif %}"
+                <a href="?page={{ page_obj.next_page_number }}{% if security_txt_filter %}&security_txt={{ security_txt_filter }}{% endif %}{% if user %}&user={{ user }}{% endif %}"
                    class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
                     Next
                 </a>

@@ -290,7 +290,19 @@ class DomainListView(ListView):
     template_name = "domain_list.html"
 
     def get_queryset(self):
-        return Domain.objects.all().order_by("-created")
+        queryset = Domain.objects.all().order_by("-created")
+
+        # Get the filter parameter for security.txt
+        security_txt_filter = self.request.GET.get("security_txt")
+
+        # Apply filter if provided
+        if security_txt_filter:
+            if security_txt_filter == "yes":
+                queryset = queryset.filter(has_security_txt=True)
+            elif security_txt_filter == "no":
+                queryset = queryset.filter(Q(has_security_txt=False) | Q(has_security_txt__isnull=True))
+
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -307,6 +319,15 @@ class DomainListView(ListView):
             domain_paginated = paginator.page(paginator.num_pages)
 
         context["domain"] = domain_paginated
+
+        # Add security.txt filter information to context
+        context["security_txt_filter"] = self.request.GET.get("security_txt")
+        context["security_txt_yes_count"] = Domain.objects.filter(has_security_txt=True).count()
+        context["security_txt_no_count"] = Domain.objects.filter(
+            Q(has_security_txt=False) | Q(has_security_txt__isnull=True)
+        ).count()
+        context["total_domain_count"] = Domain.objects.count()
+
         return context
 
 
@@ -478,37 +499,6 @@ class Listbounties(TemplateView):
 
         try:
             github_issues = self.github_issues_with_bounties("$5", issue_state=issue_state)
-
-            # For closed issues, fetch related PRs from database
-            if issue_state == "closed":
-                for issue in github_issues:
-                    issue_number = issue.get("number")
-
-                    try:
-                        related_prs = []
-                        prs = GitHubIssue.objects.filter(
-                            type="pull_request",
-                            is_merged=True,
-                            body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
-                            + str(issue_number),
-                        ).order_by("-merged_at")[:3]
-
-                        for pr in prs:
-                            related_prs.append(
-                                {
-                                    "number": pr.issue_id,
-                                    "title": pr.title,
-                                    "url": pr.url,
-                                    "user": pr.user_profile.user.username
-                                    if pr.user_profile and pr.user_profile.user
-                                    else None,
-                                }
-                            )
-
-                        issue["related_prs"] = related_prs
-                    except Exception as e:
-                        logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
-                        issue["related_prs"] = []
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
             github_issues = []
@@ -549,8 +539,6 @@ class Listbounties(TemplateView):
 
             for issue in issues:
                 related_prs = []
-
-                # Only include issues, not PRs in the response
                 if issue.get("pull_request") is None:
                     formatted_issue = {
                         "id": issue.get("id"),
@@ -585,38 +573,6 @@ def load_more_issues(request):
     try:
         view = Listbounties()
         issues = view.github_issues_with_bounties("$5", issue_state=state, page=page)
-
-        # For closed issues, fetch related PRs from database for other than first batch of issues
-        if issues and state == "closed":
-            for issue in issues:
-                issue_number = issue.get("number")
-
-                try:
-                    related_prs = []
-                    prs = GitHubIssue.objects.filter(
-                        type="pull_request",
-                        is_merged=True,
-                        body__iregex=r"([Cc]loses|[Ff]ixes|[Rr]esolves|[Cc]lose|[Ff]ix|[Ff]ixed|[Cc]losed|[Rr]esolve|[Rr]esolved)\s+#"
-                        + str(issue_number),
-                    ).order_by("-merged_at")[:3]
-
-                    for pr in prs:
-                        related_prs.append(
-                            {
-                                "number": pr.issue_id,
-                                "title": pr.title,
-                                "url": pr.url,
-                                "user": pr.user_profile.user.username
-                                if pr.user_profile and pr.user_profile.user
-                                else None,
-                            }
-                        )
-
-                    issue["related_prs"] = related_prs
-                except Exception as e:
-                    logger.error(f"Error fetching PRs from database for issue #{issue_number}: {str(e)}")
-                    issue["related_prs"] = []
-
         return JsonResponse({"success": True, "issues": issues, "next_page": page + 1 if issues else None})
     except Exception as e:
         logger.error(f"Error loading more issues: {str(e)}")
@@ -1963,10 +1919,13 @@ def add_sizzle_checkIN(request):
     yesterday = now().date() - timedelta(days=1)
     yesterday_report = DailyStatusReport.objects.filter(user=request.user, date=yesterday).first()
 
+    # Fetch all check-ins for the user, ordered by date
+    all_checkins = DailyStatusReport.objects.filter(user=request.user).order_by("-date")
+
     return render(
         request,
         "sizzle/add_sizzle_checkin.html",
-        {"yesterday_report": yesterday_report},
+        {"yesterday_report": yesterday_report, "all_checkins": all_checkins},
     )
 
 
@@ -2729,7 +2688,6 @@ class BountyPayoutsView(ListView):
         encoded_label = label.replace("$", "%24")
         query_params = f"repo:OWASP-BLT/BLT+is:issue+state:{issue_state}+label:{encoded_label}"
         url = f"https://api.github.com/search/issues?q={query_params}&page={page}&per_page={per_page}"
-
         headers = {}
         if settings.GITHUB_TOKEN:
             headers["Authorization"] = f"token {settings.GITHUB_TOKEN}"
@@ -2739,18 +2697,18 @@ class BountyPayoutsView(ListView):
             if response.status_code == 200:
                 data = response.json()
                 issues = data.get("items", [])
-
+                total_count = data.get("total_count", 0)
                 # Cache the results for 30 minutes
                 cache.set(cache_key, issues, 60 * 30)
 
-                return issues
+                return issues, total_count
             else:
                 # Log the error response from GitHub
                 logger.error(f"GitHub API error: {response.status_code} - {response.text[:200]}")
-                return []
+                return [], 0
         except Exception as e:
             logger.error(f"Error fetching GitHub issues: {str(e)}")
-            return []
+            return [], 0
 
     def post(self, request, *args, **kwargs):
         """Handle POST requests for refreshing issues or processing payments"""
@@ -2770,7 +2728,23 @@ class BountyPayoutsView(ListView):
                 # Import required models
                 from website.models import GitHubIssue, Repo
 
-                issues = self.github_issues_with_bounties("$5", "closed", per_page=100)
+                page = 1
+                per_page = 100
+                all_issues = []
+                total_count = None
+                while True:
+                    issues, api_total_count = self.github_issues_with_bounties("$5", "closed", page, per_page)
+                    if total_count is None and api_total_count is not None:
+                        total_count = api_total_count
+                    if not issues:
+                        break
+                    all_issues.extend(issues)
+                    if len(issues) < per_page or len(all_issues) >= total_count:
+                        break
+                    page += 1
+
+                issues = all_issues
+                count = 0
                 count = 0
 
                 for issue_data in issues:

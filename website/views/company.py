@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urlencode, urlparse
 
 import requests
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser, User
 from django.core.exceptions import FieldError, ValidationError
 from django.core.files.storage import default_storage
@@ -35,7 +36,7 @@ from website.models import (
     UserProfile,
     Winner,
 )
-from website.utils import is_valid_https_url, rebuild_safe_url
+from website.utils import check_security_txt, is_valid_https_url, rebuild_safe_url
 
 logger = logging.getLogger("slack_bolt")
 logger.setLevel(logging.WARNING)
@@ -636,9 +637,29 @@ class OrganizationDashboardManageDomainsView(View):
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
         # Get domains for this organization
-        domains = Domain.objects.values("id", "name", "url", "logo").filter(organization__id=id).order_by("modified")
+        organization = Organization.objects.filter(id=id).first()
+        if not organization:
+            raise Http404("Organization does not exist")
 
-        # For authenticated users, show organizations they have access to
+        # Get the filter parameter for security.txt
+        security_txt_filter = request.GET.get("security_txt")
+
+        # Base query for domains
+        domains_query = Domain.objects.filter(organization=organization)
+
+        # Apply filter if provided
+        if security_txt_filter:
+            if security_txt_filter == "yes":
+                domains_query = domains_query.filter(has_security_txt=True)
+            elif security_txt_filter == "no":
+                domains_query = domains_query.filter(Q(has_security_txt=False) | Q(has_security_txt__isnull=True))
+
+        # Get all domains for this organization
+        domains = domains_query.values(
+            "id", "name", "url", "logo", "has_security_txt", "security_txt_checked_at"
+        ).order_by("name")
+
+        # If user has access to organizations
         if request.user.is_authenticated:
             organizations = (
                 Organization.objects.values("name", "id")
@@ -646,23 +667,21 @@ class OrganizationDashboardManageDomainsView(View):
                 .distinct()
             )
         else:
-            # For unauthenticated users, don't show organization list
             organizations = []
-
-        # Get the organization object
-        organization_obj = Organization.objects.filter(id=id).first()
-        if not organization_obj:
-            messages.error(request, "Organization does not exist")
-            return redirect("home")
 
         context = {
             "organization": id,
-            "organizations": organizations,
-            "organization_obj": organization_obj,
+            "organization_object": organization,
             "domains": domains,
+            "organizations": organizations,
+            "security_txt_filter": security_txt_filter,
+            "security_txt_yes_count": Domain.objects.filter(organization=organization, has_security_txt=True).count(),
+            "security_txt_no_count": Domain.objects.filter(organization=organization)
+            .filter(Q(has_security_txt=False) | Q(has_security_txt__isnull=True))
+            .count(),
         }
 
-        return render(request, "organization/organization_manage_domains.html", context=context)
+        return render(request, "organization/organization_manage_domains.html", context)
 
 
 class AddDomainView(View):
@@ -1188,6 +1207,8 @@ class DomainView(View):
                 "github",
                 "logo",
                 "webshot",
+                "has_security_txt",
+                "security_txt_checked_at",
             )
             .filter(id=pk)
             .first()
@@ -1816,3 +1837,52 @@ def delete_manager(request, manager_id, domain_id):
         return JsonResponse({"success": False, "message": "Domain not found."})
     except User.DoesNotExist:
         return JsonResponse({"success": False, "message": "User not found."})
+
+
+@login_required
+@require_http_methods(["POST"])
+def check_domain_security_txt(request):
+    domain_id = request.POST.get("domain_id")
+    if not domain_id:
+        messages.error(request, "Domain ID is required")
+        return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+    domain = get_object_or_404(Domain, id=domain_id)
+
+    # Check if the user has permission to manage this domain
+    has_permission = False
+    if request.user.is_superuser:
+        has_permission = True
+    elif domain.organization and (
+        domain.organization.admin == request.user or domain.organization.managers.filter(id=request.user.id).exists()
+    ):
+        has_permission = True
+    elif domain.managers.filter(id=request.user.id).exists():
+        has_permission = True
+
+    if not has_permission:
+        messages.error(request, "You don't have permission to check this domain")
+        return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+    try:
+        # Check for security.txt
+        has_security_txt = check_security_txt(domain.url)
+
+        # Update domain with status
+        domain.has_security_txt = has_security_txt
+        domain.security_txt_checked_at = timezone.now()
+        domain.save(update_fields=["has_security_txt", "security_txt_checked_at"])
+
+        if has_security_txt:
+            messages.success(request, f"Security.txt found for {domain.name}")
+        else:
+            messages.info(request, f"No security.txt found for {domain.name}")
+
+    except Exception as e:
+        messages.error(request, f"Error checking security.txt: {str(e)}")
+
+    # Redirect back to the manage domains page
+    if domain.organization:
+        return redirect("organization_manage_domains", id=domain.organization.id)
+    else:
+        return redirect("organization_manage_domains", id=request.user.userprofile.team.id)

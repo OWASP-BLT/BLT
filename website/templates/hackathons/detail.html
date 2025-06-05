@@ -97,11 +97,11 @@
                         <div class="flex flex-col space-y-2">
                             <div class="flex items-center">
                                 <div class="w-24 font-medium text-gray-600">Start:</div>
-                                <div>{{ hackathon.start_time|date:"F j, Y, g:i a" }}</div>
+                                <div>{{ hackathon.start_time|date:"F j, Y, g:i a T" }}</div>
                             </div>
                             <div class="flex items-center">
                                 <div class="w-24 font-medium text-gray-600">End:</div>
-                                <div>{{ hackathon.end_time|date:"F j, Y, g:i a" }}</div>
+                                <div>{{ hackathon.end_time|date:"F j, Y, g:i a T" }}</div>
                             </div>
                         </div>
                     </div>
