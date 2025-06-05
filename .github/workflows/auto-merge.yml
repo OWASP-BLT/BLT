@@ -1,17 +1,36 @@
 name: auto-merge
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted]
 
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]' || github.actor == 'dependabot-preview[bot]' || github.actor == 'dependabot'
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v2
-      - uses: ahmadnassri/action-dependabot-auto-merge@v2
-        with:
-          target: minor
-          github-token: ${{ secrets.ACCESS_TOKEN_DEPENDABOT }}
+      - name: Wait for approval and enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="${{ github.event.pull_request.number }}"
+          
+          # Check if PR is already approved
+          reviews=$(gh pr view $pr_number --json reviews --jq '.reviews[] | select(.state=="APPROVED") | .state' | wc -l)
+          
+          if [ "$reviews" -gt 0 ]; then
+            echo "PR #$pr_number is approved, enabling auto-merge"
+            
+            # Enable auto-merge with squash strategy
+            gh pr merge $pr_number --auto --squash --delete-branch
+            
+            echo "Auto-merge enabled for dependabot PR #$pr_number"
+          else
+            echo "PR #$pr_number is not yet approved, skipping auto-merge"
+          fi
 
