@@ -81,7 +81,6 @@ jobs:
         uses: actions/github-script@v6.1.1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             await github.request('POST /bounty_payout/'', {
               baseUrl: process.env.API_BASE_URL,
