@@ -70,7 +70,7 @@ jobs:
             core.setOutput('bounty-amount', bountyAmount);
             core.setOutput('contributor-username', pr.user.login);
       - name: Send bounty data to BLT
-        if: steps.check-issues.outputs.has-bounty == 'true'
+        if: steps.check-issues.outputs['has-bounty'] == 'true'
         env:
           ISSUE_NUMBER: ${{ steps.check-issues.outputs.issue-number }}
           BOUNTY_AMOUNT: ${{ steps.check-issues.outputs.bounty-amount }}
