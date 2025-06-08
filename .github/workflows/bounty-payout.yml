@@ -82,7 +82,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            await github.request('POST /bounty_payout/`, {
+            await github.request('POST /bounty_payout/'', {
               baseUrl: process.env.API_BASE_URL,
               headers: {
                 'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
