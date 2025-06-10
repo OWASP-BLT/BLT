@@ -1,5 +1,6 @@
 #!/bin/sh
 set -x
+set -e  # Exit on error
 echo "Entrypoint script is running"
 
 # Wait for the database to be ready
@@ -23,6 +24,14 @@ if check_migrations; then
     # Run migrations
     echo "Migration script is running"
     python manage.py migrate
+
+    # Setup GitHub OAuth
+    echo "Setting up GitHub OAuth"
+    if ! python manage.py setup_github_oauth; then
+        echo "ERROR: GitHub OAuth setup failed"
+        exit 1
+    fi
+    echo "GitHub OAuth setup completed successfully"
 
     # Load initial data
     python manage.py loaddata website/fixtures/initial_data.json
