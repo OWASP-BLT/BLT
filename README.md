@@ -4,7 +4,7 @@
 <p align="center"><a href="https://github.com/OWASP/BLT/actions" rel="noopener noreferrer" target="__blank"><img alt="Build" src="https://github.com/OWASP/BLT/actions/workflows/auto-merge.yml/badge.svg"></a> <a href="https://github.com/OWASP/BLT/blob/main/LICENSE.md" rel="noopener noreferrer"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
 <a href="https://github.com/OWASP/BLT" rel="noopener noreferrer" target="__blank"><img alt="GitHub stars" src="https://img.shields.io/github/stars/OWASP/BLT?style=social"></a></p>
 
-<img alt="Views" src="https://owasp lt.org/repos/blt/badge/">
+<img alt="Views" src="https://owaspblt.org/repos/blt/badge/">
 
 Everything is on our <a href="https://owaspblt.org">homepage</a>
 
