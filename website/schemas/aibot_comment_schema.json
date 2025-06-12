@@ -1,0 +1,49 @@
+{
+    "type": "object",
+    "properties": {
+        "comment": {
+            "type": "object",
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "user": {
+                    "type": "object",
+                    "properties": {
+                        "login": {
+                            "type": "string"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "User"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "login",
+                        "type"
+                    ]
+                }
+            },
+            "required": [
+                "body",
+                "user"
+            ]
+        },
+        "issue": {
+            "type": "object",
+            "properties": {
+                "pull_request": {
+                    "type": "object"
+                }
+            }
+        }
+    },
+    "required": [
+        "action",
+        "issue",
+        "comment"
+    ]
+}

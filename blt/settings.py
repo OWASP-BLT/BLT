@@ -23,6 +23,11 @@ print(f"DATABASE_URL: {os.environ.get('DATABASE_URL', 'not set')}")
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "blank")
+GITHUB_AIBOT_WEBHOOK_URL = os.environ.get("GITHUB_AIBOT_WEBHOOK_URL", "blank")
+GITHUB_AIBOT_WEBHOOK_ID = os.environ.get("GITHUB_AIBOT_WEBHOOK_ID", "blank")
+GITHUB_AIBOT_TOKEN = os.environ.get("GITHUB_AIBOT_TOKEN", "blank")
+GITHUB_AIBOT_WEBHOOK_SECRET = os.environ.get("GITHUB_AIBOT_WEBHOOK_SECRET", "blank")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "blank")
 DISCORD_BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN", "blank")
 
 
@@ -49,8 +54,11 @@ EMAIL_TO_STRING = PROJECT_NAME + " <" + SERVER_EMAIL + ">"
 BLOG_URL = os.environ.get("BLOG_URL", FQDN + "/blog/")
 FACEBOOK_URL = os.environ.get("FACEBOOK_URL", "https://www.facebook.com/groups/owaspfoundation/")
 TWITTER_URL = os.environ.get("TWITTER_URL", "https://twitter.com/owasp_blt")
-GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/OWASP/BLT")
+GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/SahilDhillon21/BLT")
+GITHUB_API_URL = os.environ.get("GITHUB_API_URL", "https://api.github.com/repos/SahilDhillon21/BLT")
 EXTENSION_URL = os.environ.get("EXTENSION_URL", "https://github.com/OWASP/BLT-Extension")
+
+GITHUB_AIBOT_USERNAME = "blt-ai-bot"
 
 ADMINS = (("Admin", DEFAULT_FROM_EMAIL),)
 

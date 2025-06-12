@@ -1,0 +1,74 @@
+{
+    "type": "object",
+    "properties": {
+        "action": {
+            "type": "string",
+            "enum": [
+                "opened",
+                "synchronized"
+            ]
+        },
+        "pull_request": {
+            "type": "object",
+            "properties": {
+                "number": {
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "body": {
+                    "type": "string"
+                },
+                "commits": {
+                    "type": "number",
+                    "minimum": 1
+                },
+                "changed_files": {
+                    "type": "number",
+                    "minimum": 1
+                },
+                "diff_url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "patch_url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "user": {
+                    "type": "object",
+                    "properties": {
+                        "login": {
+                            "type": "string"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "User"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "login",
+                        "type"
+                    ]
+                }
+            },
+            "required": [
+                "number",
+                "title",
+                "commits",
+                "changed_files",
+                "diff_url",
+                "patch_url",
+                "user"
+            ]
+        }
+    },
+    "required": [
+        "action",
+        "pull_request"
+    ]
+}

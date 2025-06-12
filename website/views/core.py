@@ -138,6 +138,7 @@ def status_page(request):
     CHECK_BITCOIN = False
     CHECK_SENDGRID = True
     CHECK_GITHUB = True
+    CHECK_GITHUB_AIBOT_WEBHOOK = True
     CHECK_OPENAI = True
     CHECK_MEMORY = True
     CHECK_DATABASE = True
@@ -145,7 +146,8 @@ def status_page(request):
     CHECK_SLACK_BOT = True
     CACHE_TIMEOUT = 60
 
-    status_data = cache.get("service_status")
+    # status_data = cache.get("service_status")
+    status_data = None
 
     if not status_data:
         status_data = {
@@ -165,6 +167,10 @@ def status_page(request):
                 if not CHECK_REDIS
                 else {}
             ),
+            "github_aibot_webhook": {
+                "health": None if not CHECK_GITHUB_AIBOT_WEBHOOK else "3",
+                "status": "Not checked",
+            },
             "slack_bot": {},
             "management_commands": [],
             "available_commands": [],
@@ -326,6 +332,22 @@ def status_page(request):
                 except requests.exceptions.RequestException as e:
                     print(f"GitHub API Error: {e}")
                     status_data["github_rate_limit"] = None
+
+        # GitHub AI Bot Webhook check
+        if CHECK_GITHUB_AIBOT_WEBHOOK:
+            try:
+                health_check_url = request.build_absolute_uri(reverse("aibot_webhook_is_healthy"))
+                response = requests.get(health_check_url, timeout=5)
+                webhook_data = response.json()
+                status_data["github_aibot_webhook"] = webhook_data
+                status_data["github_aibot_webhook"]["last_checked"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            except Exception as e:
+                status_data["github_aibot_webhook"] = {
+                    "health": "2",
+                    "status": "Error during health check",
+                    "error": str(e),
+                    "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
 
         # OpenAI API check
         if CHECK_OPENAI:

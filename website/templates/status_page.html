@@ -233,6 +233,37 @@
                         {% endif %}
                     </div>
                 </div>
+                <div class="bg-white rounded-lg shadow-sm p-6 border border-[#e74c3c]">
+                    <h3 class="text-xl font-semibold mb-4">AI Bot Webhook Status</h3>
+                    <div>
+                        <p class="mb-2">
+                            <strong>Status:</strong>
+                            <span class="{% if status.github_aibot_webhook.health == '1' %}text-green-600{% elif status.github_aibot_webhook.health == '2' %}text-yellow-600{% else %}text-red-600{% endif %}">
+                                {{ status.github_aibot_webhook.status }}
+                            </span>
+                        </p>
+                        {% if status.github_aibot_webhook.health == '0' %}
+                            <div class="text-red-600 mb-2">
+                                <p>
+                                    <strong>Error:</strong> Webhook ping failed
+                                </p>
+                                <p>
+                                    <strong>HTTP Status:</strong> {{ status.github_aibot_webhook.http_status }}
+                                </p>
+                                <p>
+                                    <strong>Response:</strong> {{ status.github_aibot_webhook.response }}
+                                </p>
+                            </div>
+                        {% endif %}
+                        {% if status.github_aibot_webhook.health == '3' %}
+                            <div class="text-red-600 mb-2">
+                                <p>
+                                    <strong>Configuration Error:</strong> Missing required settings
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             <!-- Slack Bot Activity Column -->
             <div>
