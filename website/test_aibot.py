@@ -65,6 +65,15 @@ class MainGitHubWebhookDispatcherTests(TestCase):
         self.assertIn("Missing X-GitHub-Event header", response.json()["error"])
 
     @patch("website.views.aibot.verify_github_signature", return_value=True)
+    def test_valid_ping_event(self, mock_verify_signature):
+        """Test path for ping event"""
+        response = self.client.post(
+            self.url, data=self.valid_body, headers=self.valid_headers, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "pong", "zen": "Test message"})
+
+    @patch("website.views.aibot.verify_github_signature", return_value=True)
     @patch("website.views.aibot.handle_pull_request_event", side_effect=Exception("Test message"))
     def test_generic_error_during_event_handling(self, mock_handler, mock_verify_signature):
         """Test path for a generic error raised during event handling"""
@@ -73,15 +82,6 @@ class MainGitHubWebhookDispatcherTests(TestCase):
         response = self.client.post(self.url, data=self.valid_body, headers=headers, content_type="application/json")
         self.assertEqual(response.status_code, 500)
         self.assertIn("Unexpected error", response.json()["error"])
-
-    @patch("website.views.aibot.verify_github_signature", return_value=True)
-    def test_valid_ping_event(self, mock_verify_signature):
-        """Test path for ping event"""
-        response = self.client.post(
-            self.url, data=self.valid_body, headers=self.valid_headers, content_type="application/json"
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), {"status": "pong", "zen": "Test message"})
 
     @patch("website.views.aibot.verify_github_signature", return_value=True)
     @patch("website.views.aibot.handle_pull_request_event")

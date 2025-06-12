@@ -123,8 +123,9 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
             )
 
         test_payload = {"test": "webhook_health_check"}
+        test_headers = {"X-GitHub-Event": "ping", "Content-Type": "application/json"}
         logger.info("Testing webhook delivery to %s", webhook_url)
-        delivery_response = requests.post(webhook_url, json=test_payload, timeout=5)
+        delivery_response = requests.post(webhook_url, json=test_payload, headers=test_headers, timeout=5)
 
         if delivery_response.status_code != 200:
             logger.error(
@@ -204,6 +205,17 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         logger.error("Invalid JSON payload received")
         return JsonResponse({"error": "Invalid JSON payload"}, status=400)
 
+    event_type = request.headers.get("X-GitHub-Event", None)
+    if not event_type:
+        logger.warning("Missing X-GitHub-Event header.")
+        return JsonResponse({"error": "Missing X-GitHub-Event header."}, status=400)
+
+    logger.info("Webhook received - Event: %s, Action: %s", event_type, payload.get("action", "unknown"))
+    if event_type == "ping":
+        zen = payload.get("zen", "No zen message received.")
+        logger.info("Webhook ping received: %s", zen)
+        return JsonResponse({"status": "pong", "zen": zen}, status=200)
+
     signature_header = request.headers.get("X-Hub-Signature-256", None)
     if not signature_header:
         logger.warning("Missing signature header in the request.")
@@ -214,18 +226,7 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
         logger.warning("Invalid webhook signature received for the Github AIbot webhook.")
         return JsonResponse({"error": "Invalid webhook signature."}, status=403)
 
-    event_type = request.headers.get("X-GitHub-Event", None)
-    if not event_type:
-        logger.warning("Missing X-GitHub-Event header.")
-        return JsonResponse({"error": "Missing X-GitHub-Event header."}, status=400)
-
     try:
-        logger.info("Webhook received - Event: %s, Action: %s", event_type, payload.get("action", "unknown"))
-        if event_type == "ping":
-            zen = payload.get("zen", "No zen message received.")
-            logger.info("Webhook ping received: %s", zen)
-            return JsonResponse({"status": "pong", "zen": zen}, status=200)
-
         if event_type == "pull_request":
             logger.info("Processing pull request event")
             handle_pull_request_event(payload)
@@ -321,7 +322,7 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
         logger.error("Failed to post AI Bot response. Response: %s", getattr(response, "text", "No response"))
 
 
-def aibot_handle_pr_update(payload: dict) -> None:
+def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
     """This function handles the logic when a PR is updated with new commits."""
     logger.info("Handling PR update.")
     pr = payload.get("pull_request", {})
