@@ -15,6 +15,7 @@ from .models import (
     Post,
     TimeLog,
     UserBadge,
+    Organization,
     UserProfile,
 )
 
@@ -146,3 +147,14 @@ def update_user_streak(sender, instance, created, **kwargs):
             UserProfile.objects.create(
                 user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )
+
+@receiver(post_save, sender=Organization)
+def handle_organization_creation(sender, instance, created, **kwargs):
+    """Give bacon to user when they create an organization"""
+    if created and instance.admin:
+        # Give 10 bacon tokens for creating an organization
+        giveBacon(instance.admin, 10)
+        # Create an activity for the organization creation
+        create_activity(instance, "created")
+        # Give first organization badge
+        assign_first_action_badge(instance.admin, "First Organization Created")
