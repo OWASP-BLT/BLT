@@ -2,6 +2,8 @@ import hashlib
 import hmac
 import json
 import logging
+import random
+import time
 from typing import Any, Dict, Optional
 
 import requests
@@ -13,6 +15,8 @@ from jsonschema import ValidationError, validate
 
 logger = logging.getLogger(__name__)
 
+MAX_RETRIES = 5
+RETRY_BACKOFF = 2
 
 with open("website/schemas/aibot_comment_schema.json", "r") as f:
     AIBOT_COMMENT_SCHEMA = json.load(f)
@@ -176,7 +180,7 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
 
     This function routes different GitHub webhook events to their respective handlers
     based on the event type and action. Supported events include:
-    - Pull Request events (opened, synchronize/reopened)
+    - Pull Request events (opened, synchronize)
     - Issue comments (bot mentions in PRs or issues)
     - Issue events (opened, mentioned)
 
@@ -250,14 +254,14 @@ def main_github_aibot_webhook_dispatcher(request: HttpRequest) -> JsonResponse:
 
 
 def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
-    """Validate and handle pull request related events (opened, synchronize, reopened)."""
-    validate_pr_event_payload_schema(payload)
+    """Validate and handle pull request related events (opened, synchronize)."""
+    validate_payload_schema(payload, AIBOT_PR_SCHEMA)
     action = payload.get("action")
     pr_data = payload.get("pull_request", {})
     if action == "opened":
         logger.info("New PR opened: #%s - %s", pr_data.get("number"), pr_data.get("title"))
         aibot_handle_new_pr_opened(payload)
-    elif action in ["synchronize", "reopened"]:
+    elif action == "synchronize":
         logger.info("PR updated: #%s - New commits pushed", pr_data.get("number"))
         aibot_handle_pr_update(payload)
     return JsonResponse({"status": "PR event processed"})
@@ -266,13 +270,24 @@ def handle_pull_request_event(payload: Dict[str, Any]) -> JsonResponse:
 def handle_comment_event(payload: Dict[str, Any]) -> None:
     """
     Validate and handle comments on PRs/issues where the bot might be mentioned.
-    Ignores comments made by the bot itself (present in the validation schema) to prevent infinite loops.
+    Ignores comments made by the bot itself (present in the validation schema).
     """
-    validate_comment_event_payload_schema(payload)
+    validate_payload_schema(payload, AIBOT_COMMENT_SCHEMA)
     comment = payload.get("comment", {})
     comment_body = comment.get("body", "").lower()
 
-    if f"[@{get_github_aibot_username()}]" in comment_body:
+    logger.info(
+        "Processing comment event:\n- Comment ID: %s\n- Body: %s\n- User: %s",
+        comment.get("id"),
+        comment_body[:50],
+        comment.get("user", {}).get("login", "unknown"),
+    )
+
+    if comment.get("user", {}).get("login") == get_github_aibot_username():
+        logger.info("Ignoring comment made by the AI Bot itself.")
+        return
+
+    if f"@{get_github_aibot_username()}" in comment_body:
         issue = payload.get("issue", {})
         if "pull_request" in issue:
             logger.info("Bot mentioned in PR comment - analyzing...")
@@ -280,17 +295,26 @@ def handle_comment_event(payload: Dict[str, Any]) -> None:
         else:
             logger.info("Bot mentioned in issue comment - analyzing...")
             aibot_handle_issue_comment(payload)
+    else:
+        logger.info("Comment does not mention the bot. Ignoring.")
 
 
 def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
-    """Handle issue related events (opened)."""
-    validate_issue_event_payload_schema(payload)
+    """Handle issue related events (opened, edited)."""
+    validate_payload_schema(payload, AIBOT_ISSUE_SCHEMA)
     action = payload.get("action")
     issue_data = payload.get("issue", {})
     if action == "opened":
         logger.info("New issue opened: #%s - %s", issue_data.get("number"), issue_data.get("title"))
         aibot_handle_new_issue(payload)
+    elif action == "edited":
+        logger.info("Issue edited: #%s - %s", issue_data.get("number"), issue_data.get("title"))
+        aibot_handle_issue_edited(payload)
     return JsonResponse({"status": "Issue event processed"})
+
+
+AIBOT_PR_ANALYSIS_COMMENT_MARKER = f"**PR Analysis by {get_github_aibot_username()}**"
+AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER = f"**Issue Analysis by {get_github_aibot_username()}**"
 
 
 def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
@@ -307,15 +331,17 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
     pr_diff = fetch_info(pr_diff_url)
     if pr_diff:
         cleaned_diff = clean_diff(pr_diff)
-        context += f"PR Diff:\n{cleaned_diff}\n"
+        context += f"PR Diff:\n{cleaned_diff[:100]}...\n"
     else:
         context += "PR Diff: Unable to fetch diff.\n"
 
     logger.info("Context for AI Bot: %s", context)
-    ai_response = "I noticed that a new PR was opened. Here are the details:\n" + context
+    ai_response = (
+        f"{AIBOT_PR_ANALYSIS_COMMENT_MARKER}\n I noticed that a new PR was opened. Here are the details:\n{context}"
+    )
     logger.info("AI Bot response: %s", ai_response)
 
-    response = post_github_comment(pr_number, ai_response)
+    response = post_or_patch_github_comment(pr_number, ai_response)
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully: %s", ai_response)
     else:
@@ -335,14 +361,23 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
     pr_diff = fetch_info(pr_diff_url)
     if pr_diff:
         cleaned_diff = clean_diff(pr_diff)
-        context += f"Changes in Update:\n{cleaned_diff}\n"
+        context += f"Changes in Update:\n{cleaned_diff[:100]}...\n"
     else:
         context += "Unable to fetch changes.\n"
 
-    ai_response = "I noticed that the PR was updated with new commits."
+    ai_response = f"{AIBOT_PR_ANALYSIS_COMMENT_MARKER}\n I noticed that the PR was updated with new commits. Here are the details:\n{context}"
+    logger.info("AI Bot response: %s", ai_response)
 
-    # Better to use PATCH if im updating an existing comment
-    response = post_github_comment(pr_number, ai_response)
+    existing_comment = find_bot_comment(pr_number, AIBOT_PR_ANALYSIS_COMMENT_MARKER)
+    if existing_comment:
+        comment_id = existing_comment.get("id")
+        response = post_or_patch_github_comment(pr_number, ai_response, comment_id)
+    else:
+        logger.info("No existing bot comment found. Posting a new PR analysis comment.")
+        comment_id = None
+        logger.info("Posting new AI Bot comment: %s", ai_response)
+
+    response = post_or_patch_github_comment(pr_number, ai_response, comment_id)
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully: %s", ai_response)
     else:
@@ -363,7 +398,7 @@ def aibot_handle_pr_comment(payload: Dict[str, Any]) -> None:
     )
 
     ai_response = f"Hi @{commenter}, thanks for tagging me! This is a sample response to your PR comment."
-    response = post_github_comment(pr_number, ai_response)
+    response = post_or_patch_github_comment(pr_number, ai_response)
 
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully to PR comment.")
@@ -387,7 +422,7 @@ def aibot_handle_issue_comment(payload: Dict[str, Any]) -> None:
     )
 
     ai_response = f"Hello @{commenter}, I received your comment on this issue! Here's a sample reply."
-    response = post_github_comment(issue_number, ai_response)
+    response = post_or_patch_github_comment(issue_number, ai_response)
 
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully to issue comment.")
@@ -410,11 +445,9 @@ def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
         issue_body[:100],
     )
 
-    ai_response = (
-        f"Thanks for opening this issue! This is a sample response while I analyze the problem: **{issue_title}**"
-    )
+    ai_response = f"{AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER}\n Thanks for opening this issue! This is a sample response while I analyze the problem: **{issue_title}**"
 
-    response = post_github_comment(issue_number, ai_response)
+    response = post_or_patch_github_comment(issue_number, ai_response)
 
     if response and response.status_code == 201:
         logger.info("AI Bot response posted successfully to new issue.")
@@ -424,66 +457,177 @@ def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
         )
 
 
-def validate_pr_event_payload_schema(payload: Dict[str, Any]) -> None:
+def aibot_handle_issue_edited(payload: Dict[str, Any]) -> None:
     """
-    Validate the pull request payload against the predefined schema.
+    Handle edited GitHub issues by analyzing the updated content and responding accordingly.
+
+    This function:
+    - Extracts the issue number, title, and body from the webhook payload.
+    - Checks if the AI Bot has already commented on this issue.
+    - If a comment exists, updates it with a new analysis.
+    - Otherwise, posts a new comment.
+    - Logs the result of the posting operation.
 
     Args:
-        payload (Dict[str, Any]): The pull request payload to validate.
-
-    Returns:
-        None. Raises ValidationError if the payload does not conform to the schema.
+        payload (Dict[str, Any]): The JSON payload from the GitHub webhook for the edited issue event.
     """
-    validate(instance=payload, schema=AIBOT_PR_SCHEMA)
+    issue_number = payload.get("issue", {}).get("number")
+    issue_title = payload.get("issue", {}).get("title", "No title")
+    issue_body = payload.get("issue", {}).get("body", "No body")
+
+    logger.info(
+        "AI Bot processing edited issue:\n- Issue #%s\n- Title: %s\n- Content: %s...",
+        issue_number,
+        issue_title,
+        issue_body[:100],
+    )
+
+    ai_response = f"{AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER}\n Thanks for updating this issue! This is a sample response while I analyze the problem: **{issue_title}**"
+
+    existing_comment = find_bot_comment(issue_number, AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER)
+
+    if existing_comment:
+        comment_id = existing_comment.get("id")
+        logger.info("Found existing bot comment. Updating it with new analysis.")
+        response = post_or_patch_github_comment(issue_number, ai_response, comment_id)
+    else:
+        logger.info("No existing bot comment found. Posting a new issue analysis comment.")
+        logger.info("Posting new AI Bot comment: %s", ai_response)
+        response = post_or_patch_github_comment(issue_number, ai_response)
+
+    logger.info("Posting AI Bot response to edited issue: %s", ai_response)
+
+    if response and response.status_code == 201:
+        logger.info("AI Bot response posted successfully to edited issue.")
+    else:
+        logger.error(
+            "Failed to post AI Bot response to edited issue. Response: %s", getattr(response, "text", "No response")
+        )
 
 
-def validate_issue_event_payload_schema(payload: Dict[str, Any]) -> None:
+def find_bot_comment(issue_number: str, marker: str) -> Optional[dict]:
     """
-    Validate the issue created/edited payload against the predefined schema.
+    Find an existing comment made by the bot in a GitHub issue or pull request.
 
     Args:
-        payload (Dict[str, Any]): The pull request payload to validate.
+        issue_number (str): The number of the GitHub issue or PR.
+        marker (str): A unique string used to identify the specific bot comment.
 
     Returns:
-        None. Raises ValidationError if the payload does not conform to the schema.
+        Optional[dict]: The matching comment object if found, otherwise None.
     """
-    validate(instance=payload, schema=AIBOT_ISSUE_SCHEMA)
-
-
-def validate_comment_event_payload_schema(payload: Dict[str, Any]) -> None:
-    """
-    Validate the comment event payload against the predefined schema.
-
-    Args:
-        payload (Dict[str, Any]): The pull request payload to validate.
-
-    Returns:
-        None. Raises ValidationError if the payload does not conform to the schema.
-    """
-    validate(instance=payload, schema=AIBOT_COMMENT_SCHEMA)
-
-
-def post_github_comment(issue_number: str, comment: str) -> Optional[requests.Response]:
-    """Post a comment to a GitHub issue or pull request and return the response."""
     try:
         url = f"{get_github_api_url()}/issues/{issue_number}/comments"
         headers = {
             "Authorization": f"Bearer {get_github_aibot_token()}",
             "Accept": "application/vnd.github+json",
-            "Content-Type": "application/json",
         }
-        response = requests.post(url, json={"body": comment}, headers=headers)
+        response = requests.get(url, headers=headers)
 
-        if response.status_code == 201:
-            logger.info("Comment posted successfully to #%s", issue_number)
+        if response.status_code == 200:
+            comments = response.json()
+            bot_username = get_github_aibot_username().lower()
+
+            for comment in comments:
+                author = comment.get("user", {}).get("login", "").lower()
+                body = comment.get("body", "").lower()
+                if author == bot_username and marker.lower() in body:
+                    return comment
         else:
-            logger.error("Failed to post comment. Status: %s, Response: %s", response.status_code, response.text)
-        return response
-
-    except requests.RequestException as e:
-        logger.error("Network error posting GitHub comment: %s", str(e))
+            logger.warning("GitHub API returned status %s while fetching comments.", response.status_code)
+        return None
     except Exception as e:
-        logger.exception("Unexpected error posting GitHub comment: %s", str(e))
+        logger.error(f"Failed to fetch comments: {e}")
+        return None
+
+
+def validate_payload_schema(payload: Dict[str, Any], schema: Dict[str, Any]) -> None:
+    """
+    Validate the payload against the provided schema.
+
+    Args:
+        payload (Dict[str, Any]): The payload to validate.
+        schema (Dict[str, Any]): The JSON schema to validate against.
+
+    Returns:
+        None. Raises ValidationError if the payload does not conform to the schema, which is handled by the caller.
+    """
+    validate(instance=payload, schema=schema)
+
+
+def post_or_patch_github_comment(
+    issue_number: str, comment: str, comment_id: Optional[str] = None
+) -> Optional[requests.Response]:
+    """
+    Post a new comment or patch an existing one on a GitHub issue/pull request.
+
+    Args:
+        issue_number (str): The issue or pull request number.
+        comment (str): The comment body to post or update.
+        comment_id (Optional[str]): If present, edits the existing comment with this ID.
+
+    Returns:
+        Optional[requests.Response]: The response object if the request succeeds, otherwise None.
+
+    Retries:
+        Retries up to MAX_RETRIES times on network errors or transient server errors (HTTP 502, 503, 504),
+        with exponential backoff.
+    """
+    if not issue_number or not comment.strip():
+        logger.error("Invalid input: empty issue number or comment.")
+        return None
+
+    if comment_id:
+        url = f"{get_github_api_url()}/issues/comments/{comment_id}"
+    else:
+        url = f"{get_github_api_url()}/issues/{issue_number}/comments"
+
+    headers = {
+        "Authorization": f"Bearer {get_github_aibot_token()}",
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json",
+        "User-Agent": f"{get_github_aibot_username()}/1.0",
+    }
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            method = requests.patch if comment_id else requests.post
+            response = method(url, json={"body": comment}, headers=headers, timeout=10)
+            logger.info("Attempt %d to %s comment on #%s", attempt, "update" if comment_id else "post", issue_number)
+
+            if response.status_code == 201 or (response.status_code == 200 and comment_id):
+                logger.info(
+                    "%s comment successfully posted/updated on #%s", "Updated" if comment_id else "Posted", issue_number
+                )
+                return response
+            elif response.status_code in {502, 503, 504}:
+                logger.warning(
+                    "Transient error (%s). Retrying attempt %d/%d...", response.status_code, attempt, MAX_RETRIES
+                )
+            elif response.status_code == 403 and response.headers.get("X-RateLimit-Remaining") == "0":
+                reset_time = int(response.headers.get("X-RateLimit-Reset", "0"))
+                sleep_seconds = max(reset_time - int(time.time()), 0)
+                logger.warning("Rate limit exceeded. Sleeping for %d seconds...", sleep_seconds)
+                time.sleep(sleep_seconds)
+                continue
+            else:
+                logger.error(
+                    "Failed to %s comment. Status: %s, Response: %s",
+                    "update" if comment_id else "post",
+                    response.status_code,
+                    response.text,
+                )
+                return response
+
+        except requests.RequestException as e:
+            logger.exception("Network error on attempt %d/%d: %s", attempt, MAX_RETRIES, str(e))
+
+        if attempt < MAX_RETRIES:
+            time.sleep(RETRY_BACKOFF * attempt + random.uniform(0, 1))
+
+    logger.error(
+        "All retry attempts failed for %s comment on #%s", "updating" if comment_id else "posting", issue_number
+    )
     return None
 
 
