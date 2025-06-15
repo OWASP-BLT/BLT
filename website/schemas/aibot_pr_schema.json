@@ -12,7 +12,8 @@
             "type": "object",
             "properties": {
                 "number": {
-                    "type": "number"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "title": {
                     "type": "string",
@@ -22,11 +23,11 @@
                     "type": "string"
                 },
                 "commits": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 1
                 },
                 "changed_files": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 1
                 },
                 "diff_url": {
