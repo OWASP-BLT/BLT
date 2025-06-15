@@ -708,7 +708,6 @@ urlpatterns = [
         csrf_exempt(InboundParseWebhookView.as_view()),
         name="inbound_event_webhook_callback",
     ),
-    re_path(r"^aibot_webhook_is_healthy/$", aibot_webhook_is_healthy, name="aibot_webhook_is_healthy"),
     re_path(r"^status_page/$", status_page, name="status_page"),
     re_path(r"^status/run-command/$", run_management_command, name="run_management_command"),
     re_path(r"^status/commands/$", management_commands, name="management_commands"),

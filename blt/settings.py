@@ -381,8 +381,6 @@ LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_ON_GET = True
 
-import os
-
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
