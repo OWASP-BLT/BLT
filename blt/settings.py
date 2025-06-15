@@ -395,38 +395,27 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "simple",
-            "stream": "ext://sys.stdout",
+            "stream": "ext://sys.stdout",  # Explicitly use stdout
         },
-        "mail_admins": {
-            "level": "ERROR",
-            "class": "django.utils.log.AdminEmailHandler",
-        },
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": os.path.join(BASE_DIR, "blt.log"),
-            "maxBytes": 1024 * 1024 * 5,  # 5 MB per file
-            "backupCount": 5,  # Keep last 5 log files
-            "formatter": "verbose",
-        },
+        "mail_admins": {"level": "ERROR", "class": "django.utils.log.AdminEmailHandler"},
     },
     "root": {
-        "level": "DEBUG",
-        "handlers": ["console", "file"],
+        "level": "DEBUG",  # Set to DEBUG to show all messages
+        "handlers": ["console"],
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "mail_admins", "file"],  # Logs Django messages
+            "handlers": ["console", "mail_admins"],
             "level": "INFO",
-            "propagate": True,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "django.server": {
-            "handlers": ["console", "file"],  # Logs Django server messages
+            "handlers": ["console"],
             "level": "INFO",
-            "propagate": True,
+            "propagate": True,  # Changed to True to show in root logger
         },
         "website": {
-            "handlers": ["console", "file"],  # Logs custom app messages
+            "handlers": ["console"],
             "level": "DEBUG",
             "propagate": True,
         },
