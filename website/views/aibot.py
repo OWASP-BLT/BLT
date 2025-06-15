@@ -341,7 +341,7 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
 
     context = f"PR Title: {pr_title}\nPR Body: {pr_body}\n"
 
-    pr_diff = fetch_info(pr_diff_url)
+    pr_diff = _fetch_info(pr_diff_url)
     if pr_diff:
         cleaned_diff = clean_diff(pr_diff)
         context += f"PR Diff:\n{cleaned_diff[:100]}...\n"
@@ -349,9 +349,7 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
         context += "PR Diff: Unable to fetch diff.\n"
 
     logger.info("Context for AI Bot: %s", context)
-    ai_response = (
-        f"{AIBOT_PR_ANALYSIS_COMMENT_MARKER}\n I noticed that a new PR was opened. Here are the details:\n{context}"
-    )
+    ai_response = f"{get_aibot_pr_analysis_comment_marker()}\n I noticed that a new PR was opened. Here are the details:\n{context}"
     logger.info("AI Bot response: %s", ai_response)
 
     response = post_or_patch_github_comment(pr_number, ai_response)
@@ -371,28 +369,28 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
 
     context = f"PR Title: {pr_title}\n"
 
-    pr_diff = fetch_info(pr_diff_url)
+    pr_diff = _fetch_info(pr_diff_url)
     if pr_diff:
         cleaned_diff = clean_diff(pr_diff)
         context += f"Changes in Update:\n{cleaned_diff[:100]}...\n"
     else:
         context += "Unable to fetch changes.\n"
 
-    ai_response = f"{AIBOT_PR_ANALYSIS_COMMENT_MARKER}\n I noticed that the PR was updated with new commits. Here are the details:\n{context}"
+    ai_response = (
+        f"{get_aibot_pr_analysis_comment_marker()}\n"
+        f"I noticed that the PR was updated with new commits. Here are the details:\n{context}"
+    )
     logger.info("AI Bot response: %s", ai_response)
 
-    existing_comment = find_bot_comment(pr_number, AIBOT_PR_ANALYSIS_COMMENT_MARKER)
-    if existing_comment:
-        comment_id = existing_comment.get("id")
-        response = post_or_patch_github_comment(pr_number, ai_response, comment_id)
-    else:
+    existing_comment = find_bot_comment(pr_number, get_aibot_pr_analysis_comment_marker())
+    comment_id = existing_comment.get("id") if existing_comment else None
+
+    if not comment_id:
         logger.info("No existing bot comment found. Posting a new PR analysis comment.")
-        comment_id = None
-        logger.info("Posting new AI Bot comment: %s", ai_response)
 
     response = post_or_patch_github_comment(pr_number, ai_response, comment_id)
     if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully: %s", ai_response)
+        logger.info("AI Bot response posted successfully.")
     else:
         logger.error("Failed to post AI Bot response. Response: %s", getattr(response, "text", "No response"))
 
@@ -458,7 +456,7 @@ def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
         issue_body[:100],
     )
 
-    ai_response = f"{AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER}\n Thanks for opening this issue! This is a sample response while I analyze the problem: **{issue_title}**"
+    ai_response = f"{get_aibot_issue_analysis_comment_marker()}\n Thanks for opening this issue! This is a sample response while I analyze the problem: **{issue_title}**"
 
     response = post_or_patch_github_comment(issue_number, ai_response)
 
@@ -495,9 +493,9 @@ def aibot_handle_issue_edited(payload: Dict[str, Any]) -> None:
         issue_body[:100],
     )
 
-    ai_response = f"{AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER}\n Thanks for updating this issue! This is a sample response while I analyze the problem: **{issue_title}**"
+    ai_response = f"{get_aibot_issue_analysis_comment_marker()}\n Thanks for updating this issue! This is a sample response while I analyze the problem: **{issue_title}**"
 
-    existing_comment = find_bot_comment(issue_number, AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER)
+    existing_comment = find_bot_comment(issue_number, get_aibot_issue_analysis_comment_marker())
 
     if existing_comment:
         comment_id = existing_comment.get("id")
@@ -657,17 +655,38 @@ def clean_diff(diff_text: str) -> str:
 ALLOWED_DOMAINS = {"github.com"}
 
 
-def fetch_info(url: str) -> Optional[str]:
+ALLOWED_DOMAINS = {"github.com"}
+GITHUB_API_DOMAIN = "api.github.com"
+ALLOWED_PATHS = {"/repos/", "/diff/"}
+
+
+def _fetch_info(url: str) -> Optional[str]:
     """
     Securely fetches data from allowed domains, handling both diff and JSON responses.
+
+    Args:
+        url: The URL to fetch data from. Must be from allowed GitHub domains and paths.
+
+    Returns:
+        The response text for .diff files, parsed JSON for other responses, or None if blocked.
     """
     try:
         parsed_url = urlparse(url)
-        if parsed_url.netloc not in ALLOWED_DOMAINS:
+
+        if parsed_url.netloc not in ALLOWED_DOMAINS and parsed_url.netloc != GITHUB_API_DOMAIN:
             logger.error("Blocked request to unauthorized domain: %s", parsed_url.netloc)
             return None
 
+        if not any(parsed_url.path.startswith(path) for path in ALLOWED_PATHS):
+            logger.error("Blocked request to unauthorized path: %s", parsed_url.path)
+            return None
+
+        if parsed_url.scheme != "https":
+            logger.error("Blocked non-HTTPS request: %s", url)
+            return None
+
         headers = {"Authorization": f"Bearer {get_github_aibot_token()}", "Accept": "application/vnd.github.v3+json"}
+
         response = requests.get(url, headers=headers, allow_redirects=False, timeout=10)
         response.raise_for_status()
 
