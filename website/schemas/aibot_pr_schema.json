@@ -20,7 +20,11 @@
                     "minLength": 1
                 },
                 "body": {
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null
                 },
                 "commits": {
                     "type": "integer",

@@ -5,7 +5,6 @@ import logging
 import random
 import time
 from typing import Any, Dict, Optional
-from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -337,14 +336,13 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
     pr_number = pr.get("number")
     pr_title = pr.get("title", "No title")
     pr_body = pr.get("body", "No body")
-    pr_diff_url = pr.get("diff_url", "")
 
     context = f"PR Title: {pr_title}\nPR Body: {pr_body}\n"
 
-    pr_diff = _fetch_info(pr_diff_url)
+    pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
         cleaned_diff = clean_diff(pr_diff)
-        context += f"PR Diff:\n{cleaned_diff[:100]}...\n"
+        context += f"PR Diff:\n{cleaned_diff[:1000]}...\n"
     else:
         context += "PR Diff: Unable to fetch diff.\n"
 
@@ -369,7 +367,7 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
 
     context = f"PR Title: {pr_title}\n"
 
-    pr_diff = _fetch_info(pr_diff_url)
+    pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
         cleaned_diff = clean_diff(pr_diff)
         context += f"Changes in Update:\n{cleaned_diff[:100]}...\n"
@@ -652,48 +650,28 @@ def clean_diff(diff_text: str) -> str:
     return "\n".join(cleaned_lines)
 
 
-ALLOWED_DOMAINS = {"github.com"}
-
-
-ALLOWED_DOMAINS = {"github.com"}
-GITHUB_API_DOMAIN = "api.github.com"
-ALLOWED_PATHS = {"/repos/", "/diff/"}
-
-
-def _fetch_info(url: str) -> Optional[str]:
+def _fetch_pr_diff(pr_number: int) -> Optional[str]:
     """
-    Securely fetches data from allowed domains, handling both diff and JSON responses.
+    Fetches PR diff using GitHub API
 
     Args:
-        url: The URL to fetch data from. Must be from allowed GitHub domains and paths.
+        pr_number: Pull request number
 
     Returns:
-        The response text for .diff files, parsed JSON for other responses, or None if blocked.
+        Diff text or None if failed
     """
+    api_url = f"{get_github_api_url()}/pulls/{pr_number}"
+    headers = {
+        "Authorization": f"Bearer {get_github_aibot_token()}",
+        "Accept": "application/vnd.github.v3.diff",
+    }
+
     try:
-        parsed_url = urlparse(url)
-
-        if parsed_url.netloc not in ALLOWED_DOMAINS and parsed_url.netloc != GITHUB_API_DOMAIN:
-            logger.error("Blocked request to unauthorized domain: %s", parsed_url.netloc)
-            return None
-
-        if not any(parsed_url.path.startswith(path) for path in ALLOWED_PATHS):
-            logger.error("Blocked request to unauthorized path: %s", parsed_url.path)
-            return None
-
-        if parsed_url.scheme != "https":
-            logger.error("Blocked non-HTTPS request: %s", url)
-            return None
-
-        headers = {"Authorization": f"Bearer {get_github_aibot_token()}", "Accept": "application/vnd.github.v3+json"}
-
-        response = requests.get(url, headers=headers, allow_redirects=False, timeout=10)
+        response = requests.get(api_url, headers=headers, timeout=10)
         response.raise_for_status()
-
-        return response.text if url.endswith(".diff") else response.json()
-
+        return response.text
     except requests.RequestException as e:
-        logger.error("Error fetching data from %s: %s", url, str(e))
+        logger.error(f"Failed to fetch PR diff: {str(e)}")
         return None
 
 
