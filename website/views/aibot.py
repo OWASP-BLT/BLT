@@ -5,6 +5,7 @@ import logging
 import random
 import time
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -162,7 +163,7 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
     except ValidationError as ve:
         logger.error("Validation error during webhook health check: %s", str(ve), exc_info=True)
         return JsonResponse(
-            {"health": "2", "status": "Validation error", "message": str(ve)},
+            {"health": "2", "status": "Validation error", "message": "Error during request validation"},
             status=400,
         )
     except Exception as e:
@@ -641,20 +642,27 @@ def clean_diff(diff_text: str) -> str:
     return "\n".join(cleaned_lines)
 
 
+ALLOWED_DOMAINS = {"github.com"}
+
+
 def fetch_info(url: str) -> Optional[str]:
     """
-    Fetches data from a given URL, handling both diff and JSON responses.
+    Securely fetches data from allowed domains, handling both diff and JSON responses.
     """
     try:
+        parsed_url = urlparse(url)
+        if parsed_url.netloc not in ALLOWED_DOMAINS:
+            logger.error("Blocked request to unauthorized domain: %s", parsed_url.netloc)
+            return None
+
         headers = {"Authorization": f"Bearer {get_github_aibot_token()}", "Accept": "application/vnd.github.v3+json"}
-        response = requests.get(url, headers=headers, allow_redirects=True, timeout=10)
+        response = requests.get(url, headers=headers, allow_redirects=False, timeout=10)
         response.raise_for_status()
-        if url.endswith(".diff"):
-            return response.text
-        else:
-            return response.json()
+
+        return response.text if url.endswith(".diff") else response.json()
+
     except requests.RequestException as e:
-        logger.error("Error fetching data from {url}: %s", str(e))
+        logger.error("Error fetching data from %s: %s", url, str(e))
         return None
 
 
