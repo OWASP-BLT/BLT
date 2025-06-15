@@ -70,6 +70,22 @@ def get_github_aibot_username():
     return _get_setting("GITHUB_AIBOT_USERNAME")
 
 
+def get_aibot_pr_analysis_comment_marker():
+    """
+    Returns the marker used in PR analysis comments to identify them as AI Bot generated.
+    This is used to differentiate AI Bot comments from user comments.
+    """
+    return f"**PR Analysis by {get_github_aibot_username()}**"
+
+
+def get_aibot_issue_analysis_comment_marker():
+    """
+    Returns the marker used in issue analysis comments to identify them as AI Bot generated.
+    This is used to differentiate AI Bot comments from user comments.
+    """
+    return f"**Issue Analysis by {get_github_aibot_username()}**"
+
+
 # _client_instance = None
 
 
@@ -312,10 +328,6 @@ def handle_issue_event(payload: Dict[str, Any]) -> JsonResponse:
         logger.info("Issue edited: #%s - %s", issue_data.get("number"), issue_data.get("title"))
         aibot_handle_issue_edited(payload)
     return JsonResponse({"status": "Issue event processed"})
-
-
-AIBOT_PR_ANALYSIS_COMMENT_MARKER = f"**PR Analysis by {get_github_aibot_username()}**"
-AIBOT_ISSUE_ANALYSIS_COMMENT_MARKER = f"**Issue Analysis by {get_github_aibot_username()}**"
 
 
 def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
