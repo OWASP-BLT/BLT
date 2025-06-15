@@ -25,8 +25,11 @@ class MainGitHubWebhookDispatcherTests(TestCase):
 
     def test_missing_signature(self):
         """Test signature verification"""
+        invalid_headers = self.valid_headers.copy()
+        del invalid_headers["X-Hub-Signature-256"]
+        invalid_headers["X-GitHub-Event"] = "pull_request"
         response = self.client.post(
-            self.url, data=self.valid_body, headers={"X-GitHub-Event": "ping"}, content_type="application/json"
+            self.url, data=self.valid_body, headers=invalid_headers, content_type="application/json"
         )
         self.assertEqual(response.status_code, 403)
         self.assertIn("Missing webhook signature header", response.json()["error"])
@@ -35,6 +38,7 @@ class MainGitHubWebhookDispatcherTests(TestCase):
         """Test invalid signature handling"""
         invalid_headers = self.valid_headers.copy()
         invalid_headers["X-Hub-Signature-256"] = "sha256=invalid_signature"
+        invalid_headers["X-GitHub-Event"] = "pull_request"
         response = self.client.post(
             self.url, data=self.valid_body, headers=invalid_headers, content_type="application/json"
         )
