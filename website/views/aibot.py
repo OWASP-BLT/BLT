@@ -391,7 +391,7 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
         logger.info("No existing bot comment found. Posting a new PR analysis comment.")
 
     response = post_or_patch_github_comment(pr_number, ai_response, comment_id)
-    if response and response.status_code == 201:
+    if response and response.status_code in (200, 201):
         logger.info("AI Bot response posted successfully.")
     else:
         logger.error("Failed to post AI Bot response. Response: %s", getattr(response, "text", "No response"))
