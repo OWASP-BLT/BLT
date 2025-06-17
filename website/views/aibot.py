@@ -113,11 +113,12 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
     """
     required_settings = ["GITHUB_TOKEN", "GITHUB_AIBOT_WEBHOOK_ID", "GITHUB_API_URL", "GITHUB_AIBOT_WEBHOOK_URL"]
 
-    missing_settings = [s for s in required_settings if not hasattr(settings, s)]
+    missing_settings = [s for s in required_settings if not getattr(settings, s, None)]
     if missing_settings:
         logger.error("Configuration error - Missing settings: %s", missing_settings)
         return JsonResponse(
-            {"health": "3", "status": "Configuration error", "message": "Required settings are missing"}, status=500
+            {"health": "3", "status": "Configuration error", "message": "Required settings are missing"},
+            status=500
         )
 
     github_token = get_github_token()
