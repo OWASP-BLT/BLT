@@ -18,12 +18,16 @@ logger = logging.getLogger(__name__)
 MAX_RETRIES = 5
 RETRY_BACKOFF = 2
 
-with open("website/schemas/aibot_comment_schema.json", "r") as f:
-    AIBOT_COMMENT_SCHEMA = json.load(f)
-with open("website/schemas/aibot_issue_schema.json", "r") as f:
-    AIBOT_ISSUE_SCHEMA = json.load(f)
-with open("website/schemas/aibot_pr_schema.json", "r") as f:
-    AIBOT_PR_SCHEMA = json.load(f)
+try:
+    with open("website/schemas/aibot_comment_schema.json", "r") as f:
+        AIBOT_COMMENT_SCHEMA = json.load(f)
+    with open("website/schemas/aibot_issue_schema.json", "r") as f:
+        AIBOT_ISSUE_SCHEMA = json.load(f)
+    with open("website/schemas/aibot_pr_schema.json", "r") as f:
+        AIBOT_PR_SCHEMA = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError) as e:
+    logger.error(f"Failed to load schema files: {e}")
+    raise
 
 
 def _get_setting(key_name):
