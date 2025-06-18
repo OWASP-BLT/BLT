@@ -2,8 +2,6 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
-from django.contrib import messages
-from django.core.cache import cache
 
 from .models import (
     Activity,
@@ -14,10 +12,10 @@ from .models import (
     Hunt,
     IpReport,
     Issue,
+    Organization,
     Post,
     TimeLog,
     UserBadge,
-    Organization,
     UserProfile,
 )
 
@@ -116,7 +114,6 @@ def handle_post_save(sender, instance, created, **kwargs):
         assign_first_action_badge(instance.user, "First Forum Post")
         create_activity(instance, "created")
         giveBacon(instance.user, 2)  # Reward for posting in forum
-    
 
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")
@@ -156,6 +153,7 @@ def update_user_streak(sender, instance, created, **kwargs):
                 user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )
 
+
 @receiver(post_save, sender=Organization)
 def handle_organization_creation(sender, instance, created, **kwargs):
     """Give bacon to user when they create an organization"""
@@ -166,6 +164,7 @@ def handle_organization_creation(sender, instance, created, **kwargs):
         create_activity(instance, "created")
         # Give first organization badge
         assign_first_action_badge(instance.admin, "First Organization Created")
+
 
 @receiver(post_save, sender=Issue)
 def handle_issue_bacon_rewards(sender, instance, created, update_fields, **kwargs):

@@ -32,6 +32,8 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    BaconEarning,
+    BaconSubmission,
     Badge,
     Challenge,
     Contributor,
@@ -50,8 +52,6 @@ from website.models import (
     UserBadge,
     UserProfile,
     Wallet,
-    BaconEarning,
-    BaconSubmission,
 )
 
 logger = logging.getLogger(__name__)
