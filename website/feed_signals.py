@@ -57,7 +57,7 @@ def create_activity(instance, action_type):
         title=title,
         content_type=content_type,
         object_id=instance.id,  # Use object_id for GenericForeignKey
-        description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
+        # description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
         image=getattr(instance, "screenshot", getattr(instance, "image", None)),
     )
 
