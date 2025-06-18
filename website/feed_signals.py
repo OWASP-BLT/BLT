@@ -12,6 +12,7 @@ from .models import (
     Hunt,
     IpReport,
     Issue,
+    Organization,
     Post,
     TimeLog,
     UserBadge,
@@ -48,7 +49,7 @@ def create_activity(instance, action_type):
     # Get instance name or title
     name = getattr(instance, "name", getattr(instance, "title", ""))[:50]
     title = f"{model_name.capitalize()} {action_type.capitalize()} {name}"
-
+    description = getattr(instance, "description", None)
     # Create the activity
     Activity.objects.create(
         user=user,
@@ -56,7 +57,7 @@ def create_activity(instance, action_type):
         title=title,
         content_type=content_type,
         object_id=instance.id,  # Use object_id for GenericForeignKey
-        description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
+        description=description[:100] if description else "",
         image=getattr(instance, "screenshot", getattr(instance, "image", None)),
     )
 
@@ -86,10 +87,12 @@ def handle_post_save(sender, instance, created, **kwargs):
     elif sender == Post and created:  # Track first blog post
         assign_first_action_badge(instance.author, "First Blog Posted")
         create_activity(instance, "created")
+        giveBacon(instance.author, 5)  # Reward for posting a blog
 
     elif sender == Issue and created:  # Track first bug report
         assign_first_action_badge(instance.user, "First Bug Reported")
         create_activity(instance, "created")
+        giveBacon(instance.user, 5)  # Reward for reporting a bug
 
     elif sender == Hunt and created:  # Track first bug bounty
         # Attempt to get the user from Domain managers or Organization
@@ -105,14 +108,17 @@ def handle_post_save(sender, instance, created, **kwargs):
         if user:
             assign_first_action_badge(user, "First Bug Bounty")
             create_activity(instance, "created")
+            giveBacon(user, 5)  # Reward for creating a bug bounty
 
     elif sender == ForumPost and created:  # Track first forum post
         assign_first_action_badge(instance.user, "First Forum Post")
         create_activity(instance, "created")
+        giveBacon(instance.user, 2)  # Reward for posting in forum
 
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")
         create_activity(instance, "placed")
+        giveBacon(instance.user, 2)  # Reward for placing a bid
 
     elif sender is User and created:  # Handle user sign-up
         Activity.objects.create(
@@ -146,3 +152,15 @@ def update_user_streak(sender, instance, created, **kwargs):
             UserProfile.objects.create(
                 user=instance.user, current_streak=1, longest_streak=1, last_check_in=check_in_date
             )
+
+
+@receiver(post_save, sender=Organization)
+def handle_organization_creation(sender, instance, created, **kwargs):
+    """Give bacon to user when they create an organization"""
+    if created and instance.admin:
+        # Give 10 bacon tokens for creating an organization
+        giveBacon(instance.admin, 10)
+        # Create an activity for the organization creation
+        create_activity(instance, "created")
+        # Give first organization badge
+        assign_first_action_badge(instance.admin, "First Organization Created")

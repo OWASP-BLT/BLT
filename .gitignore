@@ -20,3 +20,4 @@ requirements.txt
 *.exe
 .vs
 .qodo
+ssl
