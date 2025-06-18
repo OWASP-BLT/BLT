@@ -34,13 +34,11 @@ setup_poetry() {
     echo "Updating Poetry to the latest version..."
     poetry self update
 
-
     echo "Installing project dependencies..."
     poetry install
 
     echo "Running migrations..."
     poetry run python manage.py migrate
-
 
     echo "Collecting static files..."
     poetry run python manage.py collectstatic --noinput
@@ -59,7 +57,6 @@ setup_docker() {
         echo "Docker is not running. Please start Docker first."
         exit 1
     fi
-
 
     echo "Building Docker container..."
     sudo docker-compose up --build -d
@@ -95,9 +92,8 @@ setup_docker() {
 main() {
     echo "Setting up the Django project..."
 
-
     if check_poetry; then
-        read -p "Do you want to proceed with Poetry setup? (y/n): " choice
+        read -r -p "Do you want to proceed with Poetry setup? (y/n): " choice
         if [[ "$choice" == "y" ]]; then
             setup_poetry
         else
@@ -109,7 +105,7 @@ main() {
 
     if ! check_poetry || [[ "$choice" == "n" ]]; then
         if check_docker; then
-            read -p "Do you want to proceed with Docker setup? (y/n): " choice
+            read -r -p "Do you want to proceed with Docker setup? (y/n): " choice
             if [[ "$choice" == "y" ]]; then
                 setup_docker
             else
