@@ -27,7 +27,7 @@ django-storages = { extras = ["google"], version = "^1.14.6" }
 django-timedeltafield = "^0.7.10"
 "giturlparse.py" = "^0.0.5"
 gunicorn = "^23.0.0"
-oauthlib = "^3.2.0"
+oauthlib = "^3.3.0"
 python-openid = "^2.2.5"
 pytz = "^2024.1"
 requests = "^2.32.3"
