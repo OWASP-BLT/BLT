@@ -2,6 +2,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
+from django.contrib import messages
+from django.core.cache import cache
 
 from .models import (
     Activity,
@@ -57,7 +59,7 @@ def create_activity(instance, action_type):
         title=title,
         content_type=content_type,
         object_id=instance.id,  # Use object_id for GenericForeignKey
-        # description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
+        description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
         image=getattr(instance, "screenshot", getattr(instance, "image", None)),
     )
 
@@ -87,10 +89,12 @@ def handle_post_save(sender, instance, created, **kwargs):
     elif sender == Post and created:  # Track first blog post
         assign_first_action_badge(instance.author, "First Blog Posted")
         create_activity(instance, "created")
+        giveBacon(instance.author, 5)  # Reward for posting a blog
 
     elif sender == Issue and created:  # Track first bug report
         assign_first_action_badge(instance.user, "First Bug Reported")
         create_activity(instance, "created")
+        giveBacon(instance.user, 5)  # Reward for reporting a bug
 
     elif sender == Hunt and created:  # Track first bug bounty
         # Attempt to get the user from Domain managers or Organization
@@ -106,14 +110,18 @@ def handle_post_save(sender, instance, created, **kwargs):
         if user:
             assign_first_action_badge(user, "First Bug Bounty")
             create_activity(instance, "created")
+            giveBacon(user, 5)  # Reward for creating a bug bounty
 
     elif sender == ForumPost and created:  # Track first forum post
         assign_first_action_badge(instance.user, "First Forum Post")
         create_activity(instance, "created")
+        giveBacon(instance.user, 2)  # Reward for posting in forum
+    
 
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")
         create_activity(instance, "placed")
+        giveBacon(instance.user, 2)  # Reward for placing a bid
 
     elif sender is User and created:  # Handle user sign-up
         Activity.objects.create(
@@ -158,3 +166,16 @@ def handle_organization_creation(sender, instance, created, **kwargs):
         create_activity(instance, "created")
         # Give first organization badge
         assign_first_action_badge(instance.admin, "First Organization Created")
+
+@receiver(post_save, sender=Issue)
+def handle_issue_bacon_rewards(sender, instance, created, update_fields, **kwargs):
+    """Handle BACON rewards for GitHub issues"""
+    if created:
+        # Give initial BACON reward for creating an issue
+        assign_first_action_badge(instance.user, "First Bug Reported")
+        giveBacon(instance.user, 5)
+        create_activity(instance, "created")
+
+    # Give extra BACON for security-related issues when marked as such
+    if update_fields and "is_security" in update_fields and instance.is_security:
+        giveBacon(instance.user, 3)  # Extra tokens for security issues
