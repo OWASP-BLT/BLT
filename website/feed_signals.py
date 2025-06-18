@@ -51,7 +51,7 @@ def create_activity(instance, action_type):
     # Get instance name or title
     name = getattr(instance, "name", getattr(instance, "title", ""))[:50]
     title = f"{model_name.capitalize()} {action_type.capitalize()} {name}"
-
+    description = getattr(instance, "description", None)
     # Create the activity
     Activity.objects.create(
         user=user,
@@ -59,7 +59,7 @@ def create_activity(instance, action_type):
         title=title,
         content_type=content_type,
         object_id=instance.id,  # Use object_id for GenericForeignKey
-        description=getattr(instance, "description", getattr(instance, "content", ""))[:100],
+        description=description[:100] if description else "",
         image=getattr(instance, "screenshot", getattr(instance, "image", None)),
     )
 
