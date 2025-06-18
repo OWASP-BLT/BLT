@@ -1121,22 +1121,22 @@ django = "*"
 
 [[package]]
 name = "django-redis"
-version = "5.4.0"
+version = "6.0.0"
 description = "Full featured redis cache backend for Django."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "django-redis-5.4.0.tar.gz", hash = "sha256:6a02abaa34b0fea8bf9b707d2c363ab6adc7409950b2db93602e6cb292818c42"},
-    {file = "django_redis-5.4.0-py3-none-any.whl", hash = "sha256:ebc88df7da810732e2af9987f7f426c96204bf89319df4c6da6ca9a2942edd5b"},
+    {file = "django_redis-6.0.0-py3-none-any.whl", hash = "sha256:20bf0063a8abee567eb5f77f375143c32810c8700c0674ced34737f8de4e36c0"},
+    {file = "django_redis-6.0.0.tar.gz", hash = "sha256:2d9cb12a20424a4c4dde082c6122f486628bae2d9c2bee4c0126a4de7fda00dd"},
 ]
 
 [package.dependencies]
-Django = ">=3.2"
-redis = ">=3,<4.0.0 || >4.0.0,<4.0.1 || >4.0.1"
+Django = ">=4.2"
+redis = ">=4.0.2"
 
 [package.extras]
-hiredis = ["redis[hiredis] (>=3,!=4.0.0,!=4.0.1)"]
+hiredis = ["redis[hiredis] (>=4.0.2)"]
 
 [[package]]
 name = "django-simple-captcha"
@@ -4106,4 +4106,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "fb19d27847ff638bf46ba41a64fe6bca674e20d00ded1ac3ca1fc5cbb6cf0ae5"
+content-hash = "fa4cf43bc5c5ec9fb75859b69968c655a1acea56386af0d2059b6102da7b741d"
