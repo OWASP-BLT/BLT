@@ -164,17 +164,3 @@ def handle_organization_creation(sender, instance, created, **kwargs):
         create_activity(instance, "created")
         # Give first organization badge
         assign_first_action_badge(instance.admin, "First Organization Created")
-
-
-@receiver(post_save, sender=Issue)
-def handle_issue_bacon_rewards(sender, instance, created, update_fields, **kwargs):
-    """Handle BACON rewards for GitHub issues"""
-    if created:
-        # Give initial BACON reward for creating an issue
-        assign_first_action_badge(instance.user, "First Bug Reported")
-        giveBacon(instance.user, 5)
-        create_activity(instance, "created")
-
-    # Give extra BACON for security-related issues when marked as such
-    if update_fields and "is_security" in update_fields and instance.is_security:
-        giveBacon(instance.user, 3)  # Extra tokens for security issues
