@@ -1,5 +1,5 @@
 """This module handles the GitHub AI Bot webhook events and interactions.
-It processes pull requests, issues, and comments, and interacts with the Gemini AI API to generate
+It processes pull requests, issues, and comments, and interacts with the Gemini AI API to generate responses and post them on github.
 """
 
 import hashlib
@@ -99,7 +99,7 @@ def get_github_aibot_username() -> Optional[str]:
     return _get_setting("GITHUB_AIBOT_USERNAME")
 
 
-def get_aibot_pr_analysis_comment_marker():
+def get_aibot_pr_analysis_comment_marker() -> str:
     """
     Returns the marker used in PR analysis comments to identify them as AI Bot generated.
     This is used to differentiate AI Bot comments from user comments.
@@ -107,7 +107,7 @@ def get_aibot_pr_analysis_comment_marker():
     return f"**PR Analysis by {get_github_aibot_username()}**"
 
 
-def get_aibot_issue_analysis_comment_marker():
+def get_aibot_issue_analysis_comment_marker() -> str:
     """
     Returns the marker used in issue analysis comments to identify them as AI Bot generated.
     This is used to differentiate AI Bot comments from user comments.
@@ -115,11 +115,15 @@ def get_aibot_issue_analysis_comment_marker():
     return f"**Issue Analysis by {get_github_aibot_username()}**"
 
 
-genai.configure(api_key=get_gemini_api_key())
-model = genai.GenerativeModel("gemini-2.0-flash")
+try:
+    genai.configure(api_key=get_gemini_api_key())
+except ImproperlyConfigured as e:
+    logger.error("Gemini API key is not configured properly: %s", str(e))
+except Exception as e:
+    logger.exception("Unexpected error during genai configuration: %s", str(e))
 
 
-def _generate_response(prompt: str) -> Optional[str]:
+def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional[str]:
     """
     Generate a text response from the Gemini model with robust error handling and retry logic.
 
@@ -827,6 +831,10 @@ def verify_github_signature(secret: str, payload_body: bytes, signature_header: 
         bool: True if the signature is valid, False otherwise.
     """
     if not signature_header or not signature_header.startswith("sha256="):
+        return False
+
+    if not secret:
+        logger.error("Webhook secret not configured; cannot verify signature.")
         return False
 
     try:
