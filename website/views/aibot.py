@@ -129,7 +129,7 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
 
     Args:
         prompt (str): Input prompt for the AI model
-        model_name (str): Which Gemini model to use (default: 'gemini-pro')
+        model (str): Which Gemini model to use (default: 'gemini-2.0-flash')
 
     Returns:
         Optional[str]: Generated text if successful, None if failed after retries
@@ -140,11 +140,19 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
     if not prompt or not isinstance(prompt, str):
         raise ValueError("Prompt must be a non-empty string")
 
+    # Configure Gemini if not already configured
+    try:
+        genai.configure(api_key=get_gemini_api_key())
+        model_instance = genai.GenerativeModel(model)
+    except Exception as e:
+        logger.error("Failed to configure Gemini: %s", str(e))
+        return None
+
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             logger.info("Generating response (attempt %d/%d)", attempt, MAX_RETRIES)
 
-            response = model.generate_content(prompt)
+            response = model_instance.generate_content(prompt)
 
             if not response.text:
                 raise ValueError("Empty response from model")
@@ -171,7 +179,6 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
             time.sleep(wait_time)
 
     return None
-
 
 @require_GET
 def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
