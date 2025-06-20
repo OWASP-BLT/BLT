@@ -1,0 +1,52 @@
+{% load static %}
+{% load custom_tags %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        {% block metaTags %}
+            <title>
+                {% block title %}
+                    {% env 'PROJECT_NAME' %}'s Dashboard | OWASP-BLT
+                {% endblock title %}
+            </title>
+            <meta name="description"
+                  content="{% block description %}Seamlessly manage bug bounties, track vulnerabilities, and fortify your digital assets with {% env 'PROJECT_NAME' %}'s comprehensive platform. Empower your security team and engage researchers effectively.{% endblock description %}" />
+            <meta name="keywords"
+                  content="{% block keywords %}{% env 'PROJECT_NAME' %}, bug bounty, vulnerability management, security platform, ethical hacking, cyber security, bug tracking, vulnerability, OWASP, application security{% endblock keywords %}" />
+            <!-- Open Graph Meta Tags for Social Sharing -->
+            <meta property="og:title"
+                  content="{% block og_title %} {% env 'PROJECT_NAME' %} | Your Hub for Secure Bug Bounty & Vulnerability Programs{% endblock og_title %}" />
+            <meta property="og:image"
+                  content="{% block og_image_url %}{% static 'organization/img/og_image_default.png' %}{% endblock og_image_url %}" />
+            <meta property="og:description"
+                  content="{% block og_description %}Launch, manage, and scale your bug bounty programs with ease. {% env 'PROJECT_NAME' %} provides robust tools for submission, tracking, and remediation, ensuring your applications stay secure. Join the vanguard of cybersecurity.{% endblock og_description %}" />
+            <meta property="og:type" content="website" />
+        {% endblock metaTags %}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap"
+              rel="stylesheet">
+        {% comment %} <link rel="stylesheet" href="{% static 'organization/css/style.css' %}"> {% endcomment %}
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+              integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+              crossorigin="anonymous"
+              referrerpolicy="no-referrer" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://js.sentry-cdn.com/532cda3e6a57beb6fc3aab9fc0500214.min.js"
+                crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <div class="mt-[75px]">
+            {% include "includes/header.html" %}
+            {% include "includes/sidenav.html" %}
+            <main class="w-full ">
+                {% block body %}
+                {% endblock body %}
+            </main>
+        </div>
+    </body>
+</html>
