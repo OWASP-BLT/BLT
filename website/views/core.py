@@ -76,6 +76,7 @@ from website.utils import (
     safe_redirect_allowed,
     save_analysis_report,
 )
+from website.views.aibot import aibot_webhook_is_healthy
 
 # from website.bot import conversation_chain, is_api_key_valid, load_vector_store
 
@@ -336,9 +337,8 @@ def status_page(request):
         # GitHub AI Bot Webhook check
         if CHECK_GITHUB_AIBOT_WEBHOOK:
             try:
-                health_check_url = request.build_absolute_uri(reverse("aibot_webhook_is_healthy"))
-                response = requests.get(health_check_url, timeout=5)
-                webhook_data = response.json()
+                webhook_resp = aibot_webhook_is_healthy(request)
+                webhook_data = json.loads(webhook_resp.content)
                 status_data["github_aibot_webhook"] = webhook_data
                 status_data["github_aibot_webhook"]["last_checked"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             except Exception as e:
