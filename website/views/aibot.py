@@ -1,3 +1,7 @@
+"""This module handles the GitHub AI Bot webhook events and interactions.
+It processes pull requests, issues, and comments, and interacts with the Gemini AI API to generate
+"""
+
 import hashlib
 import hmac
 import json
@@ -6,8 +10,10 @@ import random
 import time
 from typing import Any, Dict, Optional
 
+import google.generativeai as genai
 import requests
 from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
@@ -19,57 +25,77 @@ MAX_RETRIES = 5
 RETRY_BACKOFF = 2
 
 try:
-    with open("website/schemas/aibot_comment_schema.json", "r") as f:
+    with open("website/schemas/aibot_comment_schema.json", "r", encoding="utf-8") as f:
         AIBOT_COMMENT_SCHEMA = json.load(f)
-    with open("website/schemas/aibot_issue_schema.json", "r") as f:
+    with open("website/schemas/aibot_issue_schema.json", "r", encoding="utf-8") as f:
         AIBOT_ISSUE_SCHEMA = json.load(f)
-    with open("website/schemas/aibot_pr_schema.json", "r") as f:
+    with open("website/schemas/aibot_pr_schema.json", "r", encoding="utf-8") as f:
         AIBOT_PR_SCHEMA = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError) as e:
-    logger.error(f"Failed to load schema files: {e}")
-    raise
+    logger.error("Failed to load schema files: %s", str(e))
 
 
-def _get_setting(key_name):
+def _get_setting(key_name: str) -> str:
+    """
+    Retrieve a required setting value by its key name from Django settings.
+
+    Args:
+        key_name: The name of the setting to retrieve.
+
+    Returns:
+        The value of the setting.
+
+    Raises:
+        ImproperlyConfigured: If the setting is missing or empty.
+    """
     value = getattr(settings, key_name, None)
     if not value:
-        logger.error(f"[CONFIG ERROR] Setting '{key_name}' is missing or empty.")
+        raise ImproperlyConfigured(f"[CONFIG ERROR] Setting '{key_name}' is missing or empty.")
     return value
 
 
-def get_gemini_api_key():
+def get_gemini_api_key() -> Optional[str]:
+    """Retrieve the Gemini API key from settings."""
     return _get_setting("GEMINI_API_KEY")
 
 
-def get_github_token():
+def get_github_token() -> Optional[str]:
+    """Retrieve the GitHub token from settings."""
     return _get_setting("GITHUB_TOKEN")
 
 
-def get_github_url():
+def get_github_url() -> Optional[str]:
+    """Retrieve the GitHub URL from settings."""
     return _get_setting("GITHUB_URL")
 
 
-def get_github_api_url():
+def get_github_api_url() -> Optional[str]:
+    """Retrieve the GitHub API URL from settings."""
     return _get_setting("GITHUB_API_URL")
 
 
-def get_github_aibot_webhook_url():
+def get_github_aibot_webhook_url() -> Optional[str]:
+    """Retrieve the GitHub AI bot webhook URL from settings."""
     return _get_setting("GITHUB_AIBOT_WEBHOOK_URL")
 
 
-def get_github_aibot_webhook_id():
+def get_github_aibot_webhook_id() -> Optional[str]:
+    """Retrieve the GitHub AI bot webhook ID from settings."""
     return _get_setting("GITHUB_AIBOT_WEBHOOK_ID")
 
 
-def get_github_aibot_webhook_secret():
+def get_github_aibot_webhook_secret() -> Optional[str]:
+    """Retrieve the GitHub AI bot webhook secret from settings."""
     return _get_setting("GITHUB_AIBOT_WEBHOOK_SECRET")
 
 
-def get_github_aibot_token():
+def get_github_aibot_token() -> Optional[str]:
+    """Retrieve the GitHub AI bot token from settings."""
     return _get_setting("GITHUB_AIBOT_TOKEN")
 
 
-def get_github_aibot_username():
+def get_github_aibot_username() -> Optional[str]:
+    """Retrieve the GitHub AI bot username from settings."""
     return _get_setting("GITHUB_AIBOT_USERNAME")
 
 
@@ -89,15 +115,58 @@ def get_aibot_issue_analysis_comment_marker():
     return f"**Issue Analysis by {get_github_aibot_username()}**"
 
 
-# _client_instance = None
+genai.configure(api_key=get_gemini_api_key())
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 
-# def get_genai_client():
-#     global _client_instance
-#     if _client_instance is None:
-#         genai.configure(api_key=get_gemini_api_key())
-#         _client_instance = genai.GenerativeModel("gemini-2.5-flash")
-#     return _client_instance
+def _generate_response(prompt: str) -> Optional[str]:
+    """
+    Generate a text response from the Gemini model with robust error handling and retry logic.
+
+    Args:
+        prompt (str): Input prompt for the AI model
+        model_name (str): Which Gemini model to use (default: 'gemini-pro')
+
+    Returns:
+        Optional[str]: Generated text if successful, None if failed after retries
+
+    Raises:
+        ValueError: If prompt is empty or invalid
+    """
+    if not prompt or not isinstance(prompt, str):
+        raise ValueError("Prompt must be a non-empty string")
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            logger.info("Generating response (attempt %d/%d)", attempt, MAX_RETRIES)
+
+            response = model.generate_content(prompt)
+
+            if not response.text:
+                raise ValueError("Empty response from model")
+
+            logger.debug("Successfully generated AI response")
+            return response.text
+
+        except (genai.APIError, requests.exceptions.RequestException) as e:
+            if "API key" in str(e):
+                logger.error("Authentication failed - check API key")
+                return None
+
+            logger.warning("API error on attempt %d: %s", attempt, str(e))
+
+        except Exception as e:
+            logger.error("Unexpected error: %s", str(e))
+            if attempt == MAX_RETRIES:
+                logger.error("Final attempt failed for prompt: %.50s...", prompt)
+                return None
+
+        if attempt < MAX_RETRIES:
+            wait_time = RETRY_BACKOFF * (2 ** (attempt - 1)) + random.uniform(0, 1)
+            logger.info("Retrying in %.1fs...", wait_time)
+            time.sleep(wait_time)
+
+    return None
 
 
 @require_GET
@@ -117,8 +186,7 @@ def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
     if missing_settings:
         logger.error("Configuration error - Missing settings: %s", missing_settings)
         return JsonResponse(
-            {"health": "3", "status": "Configuration error", "message": "Required settings are missing"},
-            status=500
+            {"health": "3", "status": "Configuration error", "message": "Required settings are missing"}, status=500
         )
 
     github_token = get_github_token()
@@ -346,14 +414,20 @@ def aibot_handle_new_pr_opened(payload: Dict[str, Any]) -> None:
 
     pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
-        cleaned_diff = clean_diff(pr_diff)
-        context += f"PR Diff:\n{cleaned_diff[:1000]}...\n"
+        cleaned_diff = _clean_diff(pr_diff)
+        context += f"PR Diff:\n{cleaned_diff}...\n"
     else:
         context += "PR Diff: Unable to fetch diff.\n"
 
     logger.info("Context for AI Bot: %s", context)
-    ai_response = f"{get_aibot_pr_analysis_comment_marker()}\n I noticed that a new PR was opened. Here are the details:\n{context}"
-    logger.info("AI Bot response: %s", ai_response)
+    ai_response = _generate_response(context)
+    if not ai_response:
+        logger.error("Failed to generate AI response for new PR.")
+        return
+
+    logger.info("Generated AI response for new PR: %s", ai_response)
+
+    ai_response = f"{get_aibot_pr_analysis_comment_marker()}\n{ai_response}"
 
     response = post_or_patch_github_comment(pr_number, ai_response)
     if response and response.status_code == 201:
@@ -368,22 +442,24 @@ def aibot_handle_pr_update(payload: Dict[str, Any]) -> None:
     pr = payload.get("pull_request", {})
     pr_number = pr.get("number")
     pr_title = pr.get("title", "No title")
-    pr_diff_url = pr.get("diff_url", "")
 
     context = f"PR Title: {pr_title}\n"
 
     pr_diff = _fetch_pr_diff(pr_number)
     if pr_diff:
-        cleaned_diff = clean_diff(pr_diff)
-        context += f"Changes in Update:\n{cleaned_diff[:100]}...\n"
+        cleaned_diff = _clean_diff(pr_diff)
+        context += f"Changes in Update:\n{cleaned_diff}...\n"
     else:
         context += "Unable to fetch changes.\n"
 
-    ai_response = (
-        f"{get_aibot_pr_analysis_comment_marker()}\n"
-        f"I noticed that the PR was updated with new commits. Here are the details:\n{context}"
-    )
-    logger.info("AI Bot response: %s", ai_response)
+    ai_response = _generate_response(context)
+    if not ai_response:
+        logger.error("Failed to generate AI response for PR update.")
+        return
+
+    logger.info("Generated AI response for PR update: %s", ai_response)
+
+    ai_response = f"{get_aibot_pr_analysis_comment_marker()}\n{ai_response}"
 
     existing_comment = find_bot_comment(pr_number, get_aibot_pr_analysis_comment_marker())
     comment_id = existing_comment.get("id") if existing_comment else None
@@ -403,6 +479,8 @@ def aibot_handle_pr_comment(payload: Dict[str, Any]) -> None:
     pr_number = payload.get("issue", {}).get("number")
     comment_body = payload.get("comment", {}).get("body", "")
     commenter = payload.get("comment", {}).get("user", {}).get("login")
+
+    # TODO: Integrate with Gemini to generate a response
 
     logger.info(
         "AI Bot processing PR comment:\n- PR #%s\n- Comment by: %s\n- Content: %s...",
@@ -434,8 +512,13 @@ def aibot_handle_issue_comment(payload: Dict[str, Any]) -> None:
         commenter,
         comment_body[:50],
     )
-
-    ai_response = f"Hello @{commenter}, I received your comment on this issue! Here's a sample reply."
+    prompt = f"""Context:
+    - This is a comment on GitHub issue #{issue_number}
+    - The commenter is: @{commenter}
+    - Their message was: "{comment_body}
+    Generate a response for this
+    """
+    ai_response = _generate_response(prompt)
     response = post_or_patch_github_comment(issue_number, ai_response)
 
     if response and response.status_code == 201:
@@ -447,7 +530,10 @@ def aibot_handle_issue_comment(payload: Dict[str, Any]) -> None:
 
 
 def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
-    """Handle newly opened issues."""
+    """
+    Handle newly opened GitHub issues.
+    Generates a contextual AI response using Gemini.
+    """
     issue_number = payload.get("issue", {}).get("number")
     issue_title = payload.get("issue", {}).get("title", "No title")
     issue_body = payload.get("issue", {}).get("body", "No body")
@@ -459,15 +545,39 @@ def aibot_handle_new_issue(payload: Dict[str, Any]) -> None:
         issue_body[:100],
     )
 
-    ai_response = f"{get_aibot_issue_analysis_comment_marker()}\n Thanks for opening this issue! This is a sample response while I analyze the problem: **{issue_title}**"
+    prompt = f"""
+        You are an AI assistant responding to a newly opened GitHub issue.
 
-    response = post_or_patch_github_comment(issue_number, ai_response)
+        Issue Title: {issue_title}
+        Issue Description: {issue_body}
+
+        Your task:
+        - Briefly acknowledge the issue
+        - Summarize what the issue seems to be about
+        - Offer help or ask clarifying questions if needed
+        - Keep it friendly and professional
+
+        Generate a short, helpful response:
+        """
+
+    ai_response = _generate_response(prompt)
+
+    if not ai_response:
+        logger.error("Failed to generate AI response for new issue.")
+        return
+
+    logger.info("Generated AI response for new issue: %s", ai_response[:150] + "...")
+
+    full_ai_response = f"{get_aibot_issue_analysis_comment_marker()}\n{ai_response}"
+    response = post_or_patch_github_comment(issue_number, full_ai_response)
 
     if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully to new issue.")
+        logger.info("AI Bot response posted successfully to new issue #%s.", issue_number)
     else:
         logger.error(
-            "Failed to post AI Bot response to new issue. Response: %s", getattr(response, "text", "No response")
+            "Failed to post AI Bot response to new issue #%s. Response: %s",
+            issue_number,
+            getattr(response, "text", "No response"),
         )
 
 
@@ -496,26 +606,48 @@ def aibot_handle_issue_edited(payload: Dict[str, Any]) -> None:
         issue_body[:100],
     )
 
-    ai_response = f"{get_aibot_issue_analysis_comment_marker()}\n Thanks for updating this issue! This is a sample response while I analyze the problem: **{issue_title}**"
+    prompt = f"""
+        You are an AI assistant responding to an updated GitHub issue.
+
+        Issue Title: {issue_title}
+        Updated Description: {issue_body}
+
+        Your task:
+        - Acknowledge the update
+        - Briefly summarize what changed
+        - Ask clarifying questions if needed
+        - Keep it friendly and professional
+
+        Generate a short, helpful response:
+        """
+
+    ai_response = _generate_response(prompt)
+
+    if not ai_response:
+        logger.error("Failed to generate AI response for edited issue.")
+        return
+
+    logger.info("Generated AI response for edited issue: %s", ai_response[:150] + "...")
+
+    full_ai_response = f"{get_aibot_issue_analysis_comment_marker()}\n{ai_response}"
 
     existing_comment = find_bot_comment(issue_number, get_aibot_issue_analysis_comment_marker())
 
     if existing_comment:
-        comment_id = existing_comment.get("id")
+        comment_id = existing_comment["id"]
         logger.info("Found existing bot comment. Updating it with new analysis.")
-        response = post_or_patch_github_comment(issue_number, ai_response, comment_id)
+        response = post_or_patch_github_comment(issue_number, full_ai_response, comment_id)
     else:
         logger.info("No existing bot comment found. Posting a new issue analysis comment.")
-        logger.info("Posting new AI Bot comment: %s", ai_response)
-        response = post_or_patch_github_comment(issue_number, ai_response)
-
-    logger.info("Posting AI Bot response to edited issue: %s", ai_response)
+        response = post_or_patch_github_comment(issue_number, full_ai_response)
 
     if response and response.status_code == 201:
-        logger.info("AI Bot response posted successfully to edited issue.")
+        logger.info("AI Bot response posted successfully to edited issue #%s.", issue_number)
     else:
         logger.error(
-            "Failed to post AI Bot response to edited issue. Response: %s", getattr(response, "text", "No response")
+            "Failed to post AI Bot response to edited issue #%s. Response: %s",
+            issue_number,
+            getattr(response, "text", "No response"),
         )
 
 
@@ -536,7 +668,7 @@ def find_bot_comment(issue_number: str, marker: str) -> Optional[dict]:
             "Authorization": f"Bearer {get_github_aibot_token()}",
             "Accept": "application/vnd.github+json",
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=10)
 
         if response.status_code == 200:
             comments = response.json()
@@ -551,7 +683,7 @@ def find_bot_comment(issue_number: str, marker: str) -> Optional[dict]:
             logger.warning("GitHub API returned status %s while fetching comments.", response.status_code)
         return None
     except Exception as e:
-        logger.error(f"Failed to fetch comments: {e}")
+        logger.error("Failed to fetch comments: %s", str(e))
         return None
 
 
@@ -614,7 +746,7 @@ def post_or_patch_github_comment(
                     "%s comment successfully posted/updated on #%s", "Updated" if comment_id else "Posted", issue_number
                 )
                 return response
-            elif response.status_code in {502, 503, 504}:
+            if response.status_code in {502, 503, 504}:
                 logger.warning(
                     "Transient error (%s). Retrying attempt %d/%d...", response.status_code, attempt, MAX_RETRIES
                 )
@@ -637,7 +769,9 @@ def post_or_patch_github_comment(
             logger.exception("Network error on attempt %d/%d: %s", attempt, MAX_RETRIES, str(e))
 
         if attempt < MAX_RETRIES:
-            time.sleep(RETRY_BACKOFF * attempt + random.uniform(0, 1))
+            wait_time = RETRY_BACKOFF * (2 ** (attempt - 1)) + random.uniform(0, 1)
+            logger.info("Retrying in %.1fs...", wait_time)
+            time.sleep(wait_time)
 
     logger.error(
         "All retry attempts failed for %s comment on #%s", "updating" if comment_id else "posting", issue_number
@@ -645,7 +779,7 @@ def post_or_patch_github_comment(
     return None
 
 
-def clean_diff(diff_text: str) -> str:
+def _clean_diff(diff_text: str) -> str:
     lines = diff_text.split("\n")
     cleaned_lines = []
     for line in lines:
@@ -676,29 +810,31 @@ def _fetch_pr_diff(pr_number: int) -> Optional[str]:
         response.raise_for_status()
         return response.text
     except requests.RequestException as e:
-        logger.error(f"Failed to fetch PR diff: {str(e)}")
+        logger.error("Failed to fetch PR diff: %s", str(e))
         return None
 
 
-def verify_github_signature(secret: str, payload_body: str, signature_header: str) -> bool:
+def verify_github_signature(secret: str, payload_body: bytes, signature_header: str) -> bool:
     """
-    Verifies GitHub webhook signature.
+    Verifies the GitHub webhook signature using HMAC SHA256.
 
     Args:
-        secret (str): The webhook secret key.
-        payload_body (bytes): The raw request body.
-        signature_header (str): The value of the 'X-Hub-Signature-256' header.
+        secret (str): Webhook secret key.
+        payload_body (bytes): Raw request body.
+        signature_header (str): Value from 'X-Hub-Signature-256' header.
 
     Returns:
-        bool: True if signature matches, else False.
+        bool: True if the signature is valid, False otherwise.
     """
-    if not signature_header or signature_header == "":
+    if not signature_header or not signature_header.startswith("sha256="):
         return False
 
-    # Remove "sha256=" prefix
-    signature = signature_header.split("=")[1]
+    try:
+        received_signature = signature_header.split("=", 1)[1]
+    except IndexError:
+        return False
 
-    mac = hmac.new(key=secret.encode(), msg=payload_body, digestmod=hashlib.sha256)
+    mac = hmac.new(secret.encode(), payload_body, hashlib.sha256)
     expected_signature = mac.hexdigest()
 
-    return hmac.compare_digest(expected_signature, signature)
+    return hmac.compare_digest(expected_signature, received_signature)
