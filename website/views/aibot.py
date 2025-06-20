@@ -115,14 +115,6 @@ def get_aibot_issue_analysis_comment_marker() -> str:
     return f"**Issue Analysis by {get_github_aibot_username()}**"
 
 
-try:
-    genai.configure(api_key=get_gemini_api_key())
-except ImproperlyConfigured as e:
-    logger.error("Gemini API key is not configured properly: %s", str(e))
-except Exception as e:
-    logger.exception("Unexpected error during genai configuration: %s", str(e))
-
-
 def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional[str]:
     """
     Generate a text response from the Gemini model with robust error handling and retry logic.
@@ -140,7 +132,6 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
     if not prompt or not isinstance(prompt, str):
         raise ValueError("Prompt must be a non-empty string")
 
-    # Configure Gemini if not already configured
     try:
         genai.configure(api_key=get_gemini_api_key())
         model_instance = genai.GenerativeModel(model)
@@ -179,6 +170,7 @@ def _generate_response(prompt: str, model: str = "gemini-2.0-flash") -> Optional
             time.sleep(wait_time)
 
     return None
+
 
 @require_GET
 def aibot_webhook_is_healthy(request: HttpRequest) -> JsonResponse:
