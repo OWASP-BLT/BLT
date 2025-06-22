@@ -40,13 +40,11 @@ def extract_and_validate_data(request_body):
         logger.exception("Invalid JSON received.")
         return None, JsonResponse({"status": "error", "message": "Invalid JSON"}, status=400)
 
-    # Validate required fields
+
     required_fields = ["issue_number", "repo", "owner", "contributor_username", "pr_number", "bounty_amount"]
     if not all(field in data for field in required_fields):
         logger.warning(f"Missing fields in request: {data}")
         return None, JsonResponse({"status": "error", "message": "Missing required fields"}, status=400)
-
-    # Validate and convert numeric fields
     try:
         data["issue_number"] = int(data["issue_number"])
         data["pr_number"] = int(data["pr_number"])
@@ -116,7 +114,7 @@ def process_payment_and_update_db(contributor_username, bounty_amount, pr_number
     if not transaction_id:
         return None, JsonResponse({"status": "error", "message": "Payment processing failed"}, status=500)
 
-    # Update database with transaction ID
+   
     github_issue.sponsors_tx_id = transaction_id
     github_issue.save()
 
@@ -140,34 +138,33 @@ def bounty_payout(request):
     Handle bounty payout webhook from GitHub Action.
     """
     try:
-        # Step 1: Validate API token
+
         is_valid, error_response = validate_api_token(request)
         if not is_valid:
             return error_response
 
-        # Step 2: Extract and validate request data
+     
         data, error_response = extract_and_validate_data(request.body)
         if error_response:
             return error_response
 
-        # Step 3: Look up repository and issue
+        
         repo, github_issue, error_response = lookup_repo_and_issue(
             data["repo"], data["owner"], data["issue_number"]
         )
         if error_response:
             return error_response
 
-        # Step 4: Check for duplicate payments
         duplicate_response = check_duplicate_payment(github_issue)
         if duplicate_response:
             return duplicate_response
 
-        # Step 5: Resolve contributor
+
         contributor, error_response = resolve_and_validate_contributor(data["contributor_username"])
         if error_response:
             return error_response
 
-        # Step 6: Process payment and update database
+
         success_response, error_response = process_payment_and_update_db(
             data["contributor_username"],
             data["bounty_amount"],
@@ -184,7 +181,7 @@ def bounty_payout(request):
         return success_response
 
     except Exception as e:
-        # General exception handler for any unexpected errors
+
         logger.exception("Unexpected error in bounty_payout")
         return JsonResponse(
             {"status": "error", "message": "An unexpected error occurred"}, 
@@ -260,7 +257,7 @@ def get_sponsor_tiers(sponsor_login):
         tier_mapping = {}
         
         for tier in tiers:
-            # Include both one-time and recurring tiers
+
             amount = tier.get("monthlyPriceInCents", 0)
             tier_id = tier.get("id")
             if amount > 0 and tier_id:
@@ -284,7 +281,7 @@ def create_sponsorship_mutation(sponsor_login, tier_id, amount_cents):
         logger.error("Missing GITHUB_TOKEN for GraphQL API.")
         return None
 
-    # GraphQL mutation for creating sponsorship
+
     mutation = """
     mutation($input: CreateSponsorshipInput!) {
         createSponsorship(input: $input) {
@@ -353,18 +350,18 @@ def process_github_sponsors_payment(username, amount, note):
     Amount is expected in cents (e.g., 500 = $5.00).
     """
     try:
-        # Get sponsor recipient from environment
+
         sponsor_recipient = os.environ.get("GITHUB_SPONSORS_RECIPIENT")
         if not sponsor_recipient:
             logger.error("Missing GITHUB_SPONSORS_RECIPIENT environment variable.")
             return None
 
-        # Option 1: Use environment variable tier mapping
+  
         tier_mapping_env = os.environ.get("GITHUB_SPONSORS_TIER_MAPPING")
         if tier_mapping_env:
             try:
                 tier_mapping = json.loads(tier_mapping_env)
-                # Expected format: {"500": "tier_node_id_1", "1000": "tier_node_id_2"}
+
                 tier_id = tier_mapping.get(str(amount))
                 if not tier_id:
                     logger.error(f"No tier mapping found for amount: {amount} cents")
@@ -373,7 +370,7 @@ def process_github_sponsors_payment(username, amount, note):
                 logger.error("Invalid JSON in GITHUB_SPONSORS_TIER_MAPPING")
                 return None
         else:
-            # Option 2: Dynamically fetch tier mapping
+
             tier_mapping = get_sponsor_tiers(sponsor_recipient)
             if not tier_mapping:
                 logger.error("Failed to fetch sponsor tiers")
@@ -384,7 +381,7 @@ def process_github_sponsors_payment(username, amount, note):
                 logger.error(f"No tier found for amount: {amount} cents. Available tiers: {list(tier_mapping.keys())}")
                 return None
 
-        # Create sponsorship using GraphQL
+
         transaction_id = create_sponsorship_mutation(sponsor_recipient, tier_id, amount)
         
         if transaction_id:
@@ -396,58 +393,4 @@ def process_github_sponsors_payment(username, amount, note):
 
     except Exception as e:
         logger.exception("Exception during GitHub Sponsors payment processing")
-        return None
-    
-
-
-
-
-# def process_github_sponsors_payment(username, amount, note):
-    """
-    Dummy integration to simulate GitHub Sponsors payment API.
-    """
-    try:
-        github_token = os.environ.get("GITHUB_SPONSORS_TOKEN")
-        if not github_token:
-            logger.error("Missing GITHUB_SPONSORS_TOKEN.")
-            return None
-
-        sponsor_recipient = os.environ.get("GITHUB_SPONSORS_RECIPIENT") or "DonnieBLT"  # As per current config
-        api_url = f"https://api.github.com/sponsors/{sponsor_recipient}/sponsorships"
-
-        headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
-
-        tier_mapping = {
-            500: "tier_id_500",  # Example tier IDs for $5
-            1000: "tier_id_1000",  # Example tier IDs for $10
-            2000: "tier_id_2000",  # Example tier IDs for $20
-        }
-        tier_id = tier_mapping.get(amount)
-        if not tier_id:
-            logger.error(f"No tier ID found for amount: {amount}")
-            return None
-        payload = {
-            "amount": amount,
-            "tier_id": tier_id,  # This must be configured or dynamically fetched
-            "is_recurring": False,
-            "privacy_level": "public",
-            "note": note,
-        }
-
-        response = requests.post(api_url, headers=headers, json=payload, timeout=10)
-        response.raise_for_status()
-
-        data = response.json()
-
-        tx_id = data.get("id")
-        if not tx_id:
-            logger.error("Github Sponsors API returned 2xxx but not transaction id found in response.")
-            return None
-        return tx_id
-
-    except requests.HTTPError as http_err:
-        logger.error(f"HTTP error during GitHub Sponsors payment: {http_err}")
-        return None
-    except Exception as e:
-        logger.exception("Exception during GitHub Sponsors payment.")
         return None
