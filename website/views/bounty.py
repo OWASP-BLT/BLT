@@ -121,7 +121,8 @@ def resolve_contributor(username):
             name=username,
             email=profile.user.email if profile.user else None,
         )
-    return contributor
+        return contributor
+    return None
 
 
 def process_github_sponsors_payment(username, amount, note):
