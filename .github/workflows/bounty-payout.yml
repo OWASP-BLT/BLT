@@ -82,15 +82,18 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            await github.request('POST /bounty_payout/', {
-              baseUrl: process.env.API_BASE_URL,
+            const response = await fetch(`${process.env.API_BASE_URL}/bounty_payout/`, {
+              method: 'POST',
               headers: {
+                'Content-Type': 'application/json',
                 'X-BLT-API-TOKEN': process.env.BLT_API_TOKEN
               },
-              issue_number: parseInt(process.env.ISSUE_NUMBER),
-              repo: context.repo.repo,
-              owner: context.repo.owner,
-              bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
-              contributor_username: process.env.CONTRIBUTOR_USERNAME,
-              pr_number: parseInt(process.env.PR_NUMBER)
-            })
+              body: JSON.stringify({
+                issue_number: parseInt(process.env.ISSUE_NUMBER),
+                repo: context.repo.repo,
+                owner: context.repo.owner,
+                bounty_amount: parseInt(process.env.BOUNTY_AMOUNT),
+                contributor_username: process.env.CONTRIBUTOR_USERNAME,
+                pr_number: parseInt(process.env.PR_NUMBER)
+              })
+            });

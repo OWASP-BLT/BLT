@@ -377,6 +377,7 @@ def process_github_sponsors_payment(username, amount, note):
                 tier_id = tier_mapping.get(amount)
                 if not tier_id:
                     tier_id = tier_mapping.get(str(amount))
+                if not tier_id:
                     logger.error(f"No tier mapping found for amount: {amount} cents")
                     return None
             except json.JSONDecodeError:
