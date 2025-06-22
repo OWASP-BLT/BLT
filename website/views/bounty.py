@@ -135,7 +135,7 @@ def process_github_sponsors_payment(username, amount, note):
             logger.error("Missing GITHUB_SPONSORS_TOKEN.")
             return None
 
-        sponsor_recipient = os.environ.get("GITHUB_SPONSORS_TOKEN") or "DonnieBLT"  # As per current config
+        sponsor_recipient = os.environ.get("GITHUB_SPONSORS_RECIPIENT") or "DonnieBLT"  # As per current config
         api_url = f"https://api.github.com/sponsors/{sponsor_recipient}/sponsorships"
 
         headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github.v3+json"}
