@@ -620,3 +620,12 @@ if DEBUG:
 
 ORD_SERVER_URL = os.getenv("ORD_SERVER_URL", "http://localhost:9001")  # Default to local for development
 SOCIALACCOUNT_STORE_TOKENS = True
+
+# Throttling Middleware Configuration
+THROTTLE_LIMITS = {
+    "GET": 100,  # 100 GET requests per minute
+    "POST": 50,  # 50 POST requests per minute
+    "OTHER": 30,  # 30 other requests per minute
+}
+THROTTLE_WINDOW = 60  # 60 seconds (1 minute)
+THROTTLE_EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]

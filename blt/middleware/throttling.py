@@ -21,7 +21,6 @@ class ThrottlingMiddleware:
     )
     THROTTLE_WINDOW = getattr(settings, "THROTTLE_WINDOW", 60)
     EXEMPT_PATHS = getattr(settings, "THROTTLE_EXEMPT_PATHS", ["/admin/", "/static/", "/media/"])
-    EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -113,7 +112,13 @@ class ThrottlingMiddleware:
     def get_client_ip(self, request):
         """Extract client IP from request."""
         x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        ip = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.META.get("REMOTE_ADDR")
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(",")[0].strip()
+            # Handle empty string after strip
+            if not ip:
+                ip = request.META.get("REMOTE_ADDR")
+        else:
+            ip = request.META.get("REMOTE_ADDR")
 
         # Log IP extraction for debugging
         if x_forwarded_for:

@@ -1,5 +1,4 @@
-# tests/test_throttling.py
-
+# test_throttling_middleware.py
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
@@ -70,9 +69,3 @@ class ThrottlingTests(TestCase):
             )()
             response = self.middleware(request)
             self.assertEqual(response.status_code, 200, f"DRF request {i+1} should not be throttled")
-
-
-if __name__ == "__main__":
-    import unittest
-
-    unittest.main()
