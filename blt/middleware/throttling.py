@@ -1,7 +1,8 @@
 import logging
 
+from django.conf import settings
 from django.core.cache import cache
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.viewsets import ViewSet
 
@@ -9,12 +10,17 @@ logger = logging.getLogger("throttling_middleware")
 
 
 class ThrottlingMiddleware:
-    THROTTLE_LIMITS = {
-        "GET": 100,  # 100 GET requests per minute
-        "POST": 50,  # 50 POST requests per minute
-        "OTHER": 30,  # 30 other requests per minute
-    }
-    THROTTLE_WINDOW = 60  # 60 seconds
+    THROTTLE_LIMITS = getattr(
+        settings,
+        "THROTTLE_LIMITS",
+        {
+            "GET": 100,
+            "POST": 50,
+            "OTHER": 30,
+        },
+    )
+    THROTTLE_WINDOW = getattr(settings, "THROTTLE_WINDOW", 60)
+    EXEMPT_PATHS = getattr(settings, "THROTTLE_EXEMPT_PATHS", ["/admin/", "/static/", "/media/"])
     EXEMPT_PATHS = ["/admin/", "/static/", "/media/"]
 
     def __init__(self, get_response):
@@ -33,8 +39,8 @@ class ThrottlingMiddleware:
 
         if self.is_throttled(request):
             logger.warning("Request throttled: %s %s from IP: %s (limit exceeded)", method, path, ip)
-            response = HttpResponseForbidden("Too many requests. Please try again later.", status=429)
-            response["Retry-After"] = str(self.THROTTLE_WINDOW) + " seconds"
+            response = HttpResponse("Too many requests. Please try again later.", status=429)
+            response["Retry-After"] = str(self.THROTTLE_WINDOW)
             return response
 
         logger.debug("Request allowed: %s %s from IP: %s", method, path, ip)
@@ -55,7 +61,7 @@ class ThrottlingMiddleware:
             view_class = getattr(callback, "cls", None)
 
             # DRF class-based view
-            if view_class and issubclass(view_class, APIView) or issubclass(view_class, ViewSet):
+            if view_class and (issubclass(view_class, APIView) or issubclass(view_class, ViewSet)):
                 logger.debug("Skipping DRF APIView: %s", request.path)
                 return True
 
@@ -88,13 +94,19 @@ class ThrottlingMiddleware:
             )
             return True
 
-        # Initialize cache if not exists, then increment
-        if current_count == 0:
-            cache.add(cache_key, 0, timeout=self.THROTTLE_WINDOW)
-            logger.debug("Initialized throttle counter for %s from IP: %s", method, ip)
+        # Use get_or_set for atomic initialization
+        cache.get_or_set(cache_key, 0, timeout=self.THROTTLE_WINDOW)
 
-        new_count = cache.incr(cache_key)
-        logger.debug("Incremented throttle counter for %s from IP: %s - New count: %d/%d", method, ip, new_count, limit)
+        try:
+            new_count = cache.incr(cache_key)
+            logger.debug(
+                "Incremented throttle counter for %s from IP: %s - New count: %d/%d", method, ip, new_count, limit
+            )
+        except ValueError:
+            # Handle case where key expired between get_or_set and incr
+            cache.set(cache_key, 1, timeout=self.THROTTLE_WINDOW)
+            new_count = 1
+            logger.debug("Re-initialized throttle counter for %s from IP: %s after expiration", method, ip)
 
         return False
 
