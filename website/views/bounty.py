@@ -25,18 +25,6 @@ class PaymentData:
     repo_name: str
 
 
-class PaymentData:
-    """Data structure to hold payment-related information."""
-
-    def __init__(self, contributor_username, bounty_amount, pr_number, issue_number, owner_name, repo_name):
-        self.contributor_username = contributor_username
-        self.bounty_amount = bounty_amount
-        self.pr_number = pr_number
-        self.issue_number = issue_number
-        self.owner_name = owner_name
-        self.repo_name = repo_name
-
-
 def validate_api_token(request):
     """
     Validate the API token from request headers.
