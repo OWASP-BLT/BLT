@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from dataclasses import dataclass
 
 import requests
 from django.http import JsonResponse
@@ -12,9 +13,21 @@ from website.models import Contributor, GitHubIssue, Repo, UserProfile
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class PaymentData:
     """Data structure to hold payment-related information."""
-    
+
+    contributor_username: str
+    bounty_amount: int
+    pr_number: int
+    issue_number: int
+    owner_name: str
+    repo_name: str
+
+
+class PaymentData:
+    """Data structure to hold payment-related information."""
+
     def __init__(self, contributor_username, bounty_amount, pr_number, issue_number, owner_name, repo_name):
         self.contributor_username = contributor_username
         self.bounty_amount = bounty_amount
@@ -119,11 +132,11 @@ def resolve_and_validate_contributor(contributor_username):
 def process_payment_and_update_db(payment_data, github_issue):
     """
     Process the payment and update database with transaction ID.
-    
+
     Args:
         payment_data: PaymentData instance containing payment details
         github_issue: GitHubIssue instance to update
-        
+
     Returns:
         tuple: (success_response: JsonResponse or None, error_response: JsonResponse or None)
     """
@@ -174,13 +187,11 @@ def bounty_payout(request):
             pr_number=data["pr_number"],
             issue_number=data["issue_number"],
             owner_name=data["owner"],
-            repo_name=data["repo"]
+            repo_name=data["repo"],
         )
 
         repo, github_issue, error_response = lookup_repo_and_issue(
-            payment_data.repo_name, 
-            payment_data.owner_name, 
-            payment_data.issue_number
+            payment_data.repo_name, payment_data.owner_name, payment_data.issue_number
         )
         if error_response:
             return error_response
