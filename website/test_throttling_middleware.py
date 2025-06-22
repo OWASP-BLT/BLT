@@ -1,4 +1,5 @@
 # test_throttling_middleware.py
+from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpResponse
 from django.test import RequestFactory, TestCase
@@ -24,17 +25,19 @@ class ThrottlingTests(TestCase):
     def test_get_request_throttling(self):
         """Test that GET requests are throttled after limit is exceeded."""
         ip = "192.168.1.1"
-        # Make 100 requests (should all be allowed)
-        for i in range(100):
+        # Get the actual GET limit from settings
+        get_limit = getattr(settings, "THROTTLE_LIMITS", {}).get("GET", 100)
+
+        # Make requests up to the limit (should all be allowed)
+        for i in range(get_limit):
             request = self.factory.get("/some-path", REMOTE_ADDR=ip)
             response = self.middleware(request)
-            # self.assertIsNone(response, f"Request {i+1} should be allowed")
-            self.assertEqual(response.status_code, 200, "Request {i+1} should be allowed")
+            self.assertEqual(response.status_code, 200, f"Request {i+1} should be allowed")
 
-        # 101st request should be throttled
+        # Next request should be throttled
         request = self.factory.get("/some-path", REMOTE_ADDR=ip)
         response = self.middleware(request)
-        self.assertEqual(response.status_code, 429, "101st request should be throttled")
+        self.assertEqual(response.status_code, 429, f"Request {get_limit + 1} should be throttled")
 
     def test_different_ips_not_throttled(self):
         """Test that different IPs are tracked separately."""
@@ -48,7 +51,7 @@ class ThrottlingTests(TestCase):
     def test_exempt_paths_not_throttled(self):
         """Test that exempt paths are not throttled."""
         ip = "192.168.1.1"
-        exempt_paths = ["/admin/", "/static/", "/media/"]
+        exempt_paths = getattr(settings, "THROTTLE_EXEMPT_PATHS", ["/admin/", "/static/", "/media/"])
 
         for path in exempt_paths:
             # Make many requests to exempt path
