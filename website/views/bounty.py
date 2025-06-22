@@ -12,6 +12,18 @@ from website.models import Contributor, GitHubIssue, Repo, UserProfile
 logger = logging.getLogger(__name__)
 
 
+class PaymentData:
+    """Data structure to hold payment-related information."""
+    
+    def __init__(self, contributor_username, bounty_amount, pr_number, issue_number, owner_name, repo_name):
+        self.contributor_username = contributor_username
+        self.bounty_amount = bounty_amount
+        self.pr_number = pr_number
+        self.issue_number = issue_number
+        self.owner_name = owner_name
+        self.repo_name = repo_name
+
+
 def validate_api_token(request):
     """
     Validate the API token from request headers.
@@ -104,17 +116,21 @@ def resolve_and_validate_contributor(contributor_username):
     return contributor, None
 
 
-def process_payment_and_update_db(
-    contributor_username, bounty_amount, pr_number, issue_number, owner_name, repo_name, github_issue
-):
+def process_payment_and_update_db(payment_data, github_issue):
     """
     Process the payment and update database with transaction ID.
-    Returns tuple: (success_response: JsonResponse or None, error_response: JsonResponse or None)
+    
+    Args:
+        payment_data: PaymentData instance containing payment details
+        github_issue: GitHubIssue instance to update
+        
+    Returns:
+        tuple: (success_response: JsonResponse or None, error_response: JsonResponse or None)
     """
     transaction_id = process_github_sponsors_payment(
-        username=contributor_username,
-        amount=bounty_amount,
-        note=f"Bounty for PR #{pr_number} resolving issue #{issue_number} in {owner_name}/{repo_name}",
+        username=payment_data.contributor_username,
+        amount=payment_data.bounty_amount,
+        note=f"Bounty for PR #{payment_data.pr_number} resolving issue #{payment_data.issue_number} in {payment_data.owner_name}/{payment_data.repo_name}",
     )
 
     if not transaction_id:
@@ -128,8 +144,8 @@ def process_payment_and_update_db(
             "status": "success",
             "message": "Payment processed",
             "transaction_id": transaction_id,
-            "amount": bounty_amount,
-            "recipient": contributor_username,
+            "amount": payment_data.bounty_amount,
+            "recipient": payment_data.contributor_username,
         }
     )
 
@@ -151,7 +167,21 @@ def bounty_payout(request):
         if error_response:
             return error_response
 
-        repo, github_issue, error_response = lookup_repo_and_issue(data["repo"], data["owner"], data["issue_number"])
+        # Create PaymentData object from validated data
+        payment_data = PaymentData(
+            contributor_username=data["contributor_username"],
+            bounty_amount=data["bounty_amount"],
+            pr_number=data["pr_number"],
+            issue_number=data["issue_number"],
+            owner_name=data["owner"],
+            repo_name=data["repo"]
+        )
+
+        repo, github_issue, error_response = lookup_repo_and_issue(
+            payment_data.repo_name, 
+            payment_data.owner_name, 
+            payment_data.issue_number
+        )
         if error_response:
             return error_response
 
@@ -159,19 +189,11 @@ def bounty_payout(request):
         if duplicate_response:
             return duplicate_response
 
-        contributor, error_response = resolve_and_validate_contributor(data["contributor_username"])
+        contributor, error_response = resolve_and_validate_contributor(payment_data.contributor_username)
         if error_response:
             return error_response
 
-        success_response, error_response = process_payment_and_update_db(
-            data["contributor_username"],
-            data["bounty_amount"],
-            data["pr_number"],
-            data["issue_number"],
-            data["owner"],
-            data["repo"],
-            github_issue,
-        )
+        success_response, error_response = process_payment_and_update_db(payment_data, github_issue)
 
         if error_response:
             return error_response
@@ -376,9 +398,8 @@ def process_github_sponsors_payment(username, amount, note):
         if transaction_id:
             logger.info(f"Successfully created sponsorship {transaction_id} for {username} - ${amount/100:.2f}")
             return transaction_id
-        else:
-            logger.error("Failed to create sponsorship")
-            return None
+        logger.error("Failed to create sponsorship")
+        return None
 
     except Exception as e:
         logger.exception("Exception during GitHub Sponsors payment processing")
