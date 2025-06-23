@@ -3584,14 +3584,14 @@ wsproto = ">=0.14"
 
 [[package]]
 name = "tweepy"
-version = "4.15.0"
-description = "Twitter library for Python"
+version = "4.16.0"
+description = "Library for accessing the X API (Twitter)"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "tweepy-4.15.0-py3-none-any.whl", hash = "sha256:64adcea317158937059e4e2897b3ceb750b0c2dd5df58938c2da8f7eb3b88e6a"},
-    {file = "tweepy-4.15.0.tar.gz", hash = "sha256:1345cbcdf0a75e2d89f424c559fd49fda4d8cd7be25cd5131e3b57bad8a21d76"},
+    {file = "tweepy-4.16.0-py3-none-any.whl", hash = "sha256:48d1a1eb311d2c4b8990abcfa6f9fa2b2ad61be05c723b1a9b4f242656badae2"},
+    {file = "tweepy-4.16.0.tar.gz", hash = "sha256:1d95cbdc50bf6353a387f881f2584eaf60d14e00dbbdd8872a73de79c66878e3"},
 ]
 
 [package.dependencies]
@@ -3602,8 +3602,6 @@ requests-oauthlib = ">=1.2.0,<3"
 [package.extras]
 async = ["aiohttp (>=3.7.3,<4)", "async-lru (>=1.0.3,<3)"]
 dev = ["coverage (>=4.4.2)", "coveralls (>=2.1.0)", "tox (>=3.21.0)"]
-docs = ["myst-parser (==0.15.2)", "readthedocs-sphinx-search (==0.1.1)", "sphinx (==4.2.0)", "sphinx-hoverxref (==0.7b1)", "sphinx-tabs (==3.2.0)", "sphinx_rtd_theme (==1.0.0)"]
-socks = ["requests[socks] (>=2.27.0,<3)"]
 test = ["urllib3 (<2)", "vcrpy (>=1.10.3)"]
 
 [[package]]
@@ -4106,4 +4104,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.2,<3.14"
-content-hash = "fb19d27847ff638bf46ba41a64fe6bca674e20d00ded1ac3ca1fc5cbb6cf0ae5"
+content-hash = "8c0737689e8fc8b8d8f1408f8bf81645793cf031a1f8cb8208851ec5aff75ff3"
