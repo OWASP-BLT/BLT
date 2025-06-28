@@ -376,6 +376,11 @@ urlpatterns = [
     re_path(r"^auth/", include("dj_rest_auth.urls")),
     re_path("auth/facebook", FacebookLogin.as_view(), name="facebook_login"),
     path("accounts/", include("allauth.urls")),
+    path(
+        "accounts/social/connection-error/",
+        TemplateView.as_view(template_name="socialaccount/connection_error.html"),
+        name="socialaccount_connection_error",
+    ),
     path("accounts/delete/", UserDeleteView.as_view(), name="user_deletion"),
     path("auth/github/", GithubLogin.as_view(), name="github_login"),
     path("accounts/github/login/callback/", github_callback, name="github_callback"),

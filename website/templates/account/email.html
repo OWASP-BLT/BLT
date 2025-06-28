@@ -29,33 +29,33 @@
                         </div>
                         <div class="flex space-x-2">
                             {% if not emailaddress.verified %}
-                                <form method="post"
-                                      action="{% url 'account_confirm_email' emailaddress.id %}"
-                                      class="inline">
+                                <form method="post" action="{% url 'account_email' %}" class="inline">
                                     {% csrf_token %}
+                                    <input type="hidden" name="email" value="{{ emailaddress.email }}">
                                     <button type="submit"
+                                            name="action_send"
                                             class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50">
                                         {% trans "Re-send Verification" %}
                                     </button>
                                 </form>
                             {% endif %}
                             {% if not emailaddress.primary and emailaddress.verified %}
-                                <form method="post" action="{% url 'account_set_primary' %}" class="inline">
+                                <form method="post" action="{% url 'account_email' %}" class="inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="email" value="{{ emailaddress.email }}">
                                     <button type="submit"
+                                            name="action_primary"
                                             class="px-3 py-1 text-sm text-green-600 hover:text-green-800 border border-green-300 rounded hover:bg-green-50">
                                         {% trans "Make Primary" %}
                                     </button>
                                 </form>
                             {% endif %}
                             {% if not emailaddress.primary %}
-                                <form method="post"
-                                      action="{% url 'account_remove_email' %}"
-                                      class="inline">
+                                <form method="post" action="{% url 'account_email' %}" class="inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="email" value="{{ emailaddress.email }}">
                                     <button type="submit"
+                                            name="action_remove"
                                             class="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded hover:bg-red-50">
                                         {% trans "Remove" %}
                                     </button>

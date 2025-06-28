@@ -1,36 +1,93 @@
 {% extends "socialaccount/base.html" %}
 {% load i18n %}
 {% block socialaccount_content %}
-    <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
         <div class="mb-6">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                <svg class="h-6 w-6 text-red-600"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-            </div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Social Account Connection Error" %}</h1>
-            <p class="text-gray-600 mb-4">
-                {% trans "An error occurred while connecting your social account. This could be due to:" %}
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Account Connections" %}</h1>
+            <p class="text-gray-600">
+                {% trans "You can sign in to your account using any of the following third party accounts:" %}
             </p>
-            <div class="text-left text-sm text-gray-600 space-y-1 mb-4">
-                <p>• {% trans "The social account is already connected to another user" %}</p>
-                <p>• {% trans "Network connectivity issues" %}</p>
-                <p>• {% trans "Temporary service unavailability" %}</p>
-                <p>• {% trans "Authentication was cancelled or denied" %}</p>
-            </div>
         </div>
-        <div class="space-y-3">
-            <a href="{% url 'socialaccount_connections' %}"
-               class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                {% trans "Try Again" %}
-            </a>
-            <a href="{% url 'account_login' %}"
-               class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                {% trans "Back to Login" %}
-            </a>
+        {% if form.accounts %}
+            <div class="space-y-4">
+                <form method="post" action="{% url 'socialaccount_connections' %}">
+                    {% csrf_token %}
+                    <fieldset>
+                        {% if form.non_field_errors %}
+                            <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                                <div class="text-red-700 text-sm">
+                                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% for base_account in form.accounts %}
+                            {% with base_account.get_provider_account as account %}
+                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                    <div class="flex items-center space-x-3">
+                                        <input id="id_account_{{ base_account.id }}"
+                                               name="account"
+                                               type="radio"
+                                               value="{{ base_account.id }}"
+                                               class="h-4 w-4 text-[#e74c3c] border-gray-300 focus:ring-[#e74c3c]">
+                                        <label for="id_account_{{ base_account.id }}"
+                                               class="flex items-center space-x-3 cursor-pointer">
+                                            {% if account.get_brand.name == "Google" %}
+                                                <i class="fab fa-google text-xl text-red-500"></i>
+                                            {% elif account.get_brand.name == "GitHub" %}
+                                                <i class="fab fa-github text-xl text-gray-900"></i>
+                                            {% elif account.get_brand.name == "Facebook" %}
+                                                <i class="fab fa-facebook text-xl text-blue-600"></i>
+                                            {% else %}
+                                                <i class="fas fa-link text-xl text-gray-600"></i>
+                                            {% endif %}
+                                            <span class="font-medium text-gray-900">{{ account.get_brand.name }}</span>
+                                            <span class="text-gray-500">({{ account }})</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            {% endwith %}
+                        {% endfor %}
+                        <div class="mt-6">
+                            <button type="submit"
+                                    class="w-full bg-[#e74c3c] hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#e74c3c] focus:ring-offset-2">
+                                {% trans "Remove" %}
+                            </button>
+                        </div>
+                    </fieldset>
+                </form>
+            </div>
+        {% else %}
+            <div class="text-center py-8">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+                    <i class="fas fa-link text-xl text-gray-600"></i>
+                </div>
+                <p class="text-gray-600 mb-4">
+                    {% trans "You currently have no social network accounts connected to this account." %}
+                </p>
+            </div>
+        {% endif %}
+        <div class="mt-8 pt-6 border-t border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Add a 3rd Party Account" %}</h2>
+            <div class="space-y-3">
+                {% get_providers as socialaccount_providers %}
+                {% for provider in socialaccount_providers %}
+                    {% if provider.social_app %}
+                        <a href="{% provider_login_url provider.id process="connect" %}"
+                           class="flex items-center justify-center w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c] transition-colors duration-200">
+                            {% if provider.name == "Google" %}
+                                <i class="fab fa-google text-xl text-red-500 mr-3"></i>
+                            {% elif provider.name == "GitHub" %}
+                                <i class="fab fa-github text-xl text-gray-900 mr-3"></i>
+                            {% elif provider.name == "Facebook" %}
+                                <i class="fab fa-facebook text-xl text-blue-600 mr-3"></i>
+                            {% else %}
+                                <i class="fas fa-plus text-xl text-gray-600 mr-3"></i>
+                            {% endif %}
+                            {% trans "Connect" %} {{ provider.name }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+            </div>
         </div>
     </div>
 {% endblock socialaccount_content %}
