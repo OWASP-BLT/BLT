@@ -482,7 +482,7 @@ class OrganizationDashboardAnalyticsView(View):
             "security_incidents_summary": self.get_security_incidents_summary(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
-        return render(request, "organization/organization_analytics.html", context=context)
+        return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
@@ -517,7 +517,7 @@ class OrganizationDashboardIntegrations(View):
             "organization_obj": organization_obj,
             "slack_integration": slack_integration,
         }
-        return render(request, "organization/organization_integrations.html", context=context)
+        return render(request, "organization/dashboard/organization_integrations.html", context=context)
 
 
 class OrganizationDashboardTeamOverviewView(View):
@@ -598,7 +598,7 @@ class OrganizationDashboardTeamOverviewView(View):
             "current_direction": sort_direction,
         }
 
-        return render(request, "organization/organization_team_overview.html", context=context)
+        return render(request, "organization/dashboard/organization_team_overview.html", context=context)
 
 
 class OrganizationDashboardManageBugsView(View):
@@ -630,7 +630,7 @@ class OrganizationDashboardManageBugsView(View):
             "organization_obj": organization_obj,
             "issues": issues,
         }
-        return render(request, "organization/organization_manage_bugs.html", context=context)
+        return render(request, "organization/dashboard/organization_manage_bugs.html", context=context)
 
 
 class OrganizationDashboardManageDomainsView(View):
@@ -681,7 +681,7 @@ class OrganizationDashboardManageDomainsView(View):
             .count(),
         }
 
-        return render(request, "organization/organization_manage_domains.html", context)
+        return render(request, "organization/dashboard/organization_manage_domains.html", context)
 
 
 class AddDomainView(View):
@@ -716,9 +716,9 @@ class AddDomainView(View):
         }
 
         if domain:
-            return render(request, "organization/edit_domain.html", context=context)
+            return render(request, "organization/dashboard/edit_domain.html", context=context)
         else:
-            return render(request, "organization/add_domain.html", context=context)
+            return render(request, "organization/dashboard/add_domain.html", context=context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -978,7 +978,7 @@ class AddSlackIntegrationView(View):
             hours = range(24)
             return render(
                 request,
-                "organization/add_slack_integration.html",
+                "organization/dashboard/add_slack_integration.html",
                 context={
                     "organization": id,
                     "slack_integration": slack_integration,
@@ -1308,7 +1308,7 @@ class DomainView(View):
             "ongoing_bughunts": ongoing_bughunts,
         }
 
-        return render(request, "organization/view_domain.html", context)
+        return render(request, "organization/dashboard/view_domain.html", context)
 
 
 class OrganizationDashboardManageRolesView(View):
@@ -1374,7 +1374,7 @@ class OrganizationDashboardManageRolesView(View):
             "organization_users": organization_users_list,
         }
 
-        return render(request, "organization/organization_manage_roles.html", context)
+        return render(request, "organization/dashboard/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
