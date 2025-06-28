@@ -150,7 +150,7 @@ def organization_dashboard(request, template="index_organization.html"):
 
 
 @login_required(login_url="/accounts/login")
-def admin_organization_dashboard(request, template="admin_dashboard_organization.html"):
+def admin_organization_dashboard(request, template="organization/dashboard/admin_dashboard_organization.html"):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -163,7 +163,9 @@ def admin_organization_dashboard(request, template="admin_dashboard_organization
 
 
 @login_required(login_url="/accounts/login")
-def admin_organization_dashboard_detail(request, pk, template="admin_dashboard_organization_detail.html"):
+def admin_organization_dashboard_detail(
+    request, pk, template="organization/dashboard/admin_dashboard_organization_detail.html"
+):
     user = request.user
     if user.is_superuser:
         if not user.is_active:
@@ -352,7 +354,7 @@ def subscribe_to_domains(request, pk):
 
 class DomainList(TemplateView):
     model = Domain
-    template_name = "organization_domain_lists.html"
+    template_name = "organization/dashboard/organization_domain_lists.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -370,7 +372,7 @@ class DomainList(TemplateView):
 
 class Joinorganization(TemplateView):
     model = Organization
-    template_name = "join.html"
+    template_name = "organization/dashboard/join.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):
@@ -690,7 +692,7 @@ class PreviousHunts(TemplateView):
 class OrganizationSettings(TemplateView):
     model = OrganizationAdmin
     fields = ["user", "domain", "role", "is_active"]
-    template_name = "organization_settings.html"
+    template_name = "organization/dashboard/organization_settings.html"
 
     @method_decorator(login_required)
     def get(self, request, *args, **kwargs):

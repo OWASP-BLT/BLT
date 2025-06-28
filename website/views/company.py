@@ -19,7 +19,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
-from django.views.generic import View
+from django.views.generic import CreateView, TemplateView, View
 from slack_bolt import App
 
 from website.models import (
@@ -133,7 +133,7 @@ def dashboard_view(request, *args, **kwargs):
 
 class RegisterOrganizationView(View):
     def get(self, request, *args, **kwargs):
-        return render(request, "organization/register_organization.html")
+        return render(request, "organization/dashboard/register_organization.html")
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -189,7 +189,7 @@ class RegisterOrganizationView(View):
             messages.error(request, f"Error saving organization: {e}")
             if logo_path:
                 default_storage.delete(logo_path)
-            return render(request, "organization/register_organization.html")
+            return render(request, "organization/dashboard/register_organization.html")
 
         messages.success(request, "organization registered successfully.")
         return redirect("organization_detail", slug=organization.slug)
@@ -482,7 +482,7 @@ class OrganizationDashboardAnalyticsView(View):
             "security_incidents_summary": self.get_security_incidents_summary(id),
         }
         context.update({"threat_intelligence": self.get_threat_intelligence(id)})
-        return render(request, "organization/organization_analytics.html", context=context)
+        return render(request, "organization/dashboard/organization_analytics.html", context=context)
 
 
 class OrganizationDashboardIntegrations(View):
@@ -517,7 +517,7 @@ class OrganizationDashboardIntegrations(View):
             "organization_obj": organization_obj,
             "slack_integration": slack_integration,
         }
-        return render(request, "organization/organization_integrations.html", context=context)
+        return render(request, "organization/dashboard/organization_integrations.html", context=context)
 
 
 class OrganizationDashboardTeamOverviewView(View):
@@ -598,7 +598,7 @@ class OrganizationDashboardTeamOverviewView(View):
             "current_direction": sort_direction,
         }
 
-        return render(request, "organization/organization_team_overview.html", context=context)
+        return render(request, "organization/dashboard/organization_team_overview.html", context=context)
 
 
 class OrganizationDashboardManageBugsView(View):
@@ -630,7 +630,7 @@ class OrganizationDashboardManageBugsView(View):
             "organization_obj": organization_obj,
             "issues": issues,
         }
-        return render(request, "organization/organization_manage_bugs.html", context=context)
+        return render(request, "organization/dashboard/organization_manage_bugs.html", context=context)
 
 
 class OrganizationDashboardManageDomainsView(View):
@@ -681,7 +681,7 @@ class OrganizationDashboardManageDomainsView(View):
             .count(),
         }
 
-        return render(request, "organization/organization_manage_domains.html", context)
+        return render(request, "organization/dashboard/organization_manage_domains.html", context)
 
 
 class AddDomainView(View):
@@ -712,13 +712,13 @@ class AddDomainView(View):
             "organization_obj": Organization.objects.filter(id=id).first(),
             "organizations": organizations,
             "users": users,
-            "domain": domain,  # Pass the domain to the template if it exists
+            "domain": domain,
         }
 
         if domain:
-            return render(request, "organization/edit_domain.html", context=context)
+            return render(request, "organization/dashboard/edit_domain.html", context=context)
         else:
-            return render(request, "organization/add_domain.html", context=context)
+            return render(request, "organization/dashboard/add_domain.html", context=context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -1308,7 +1308,7 @@ class DomainView(View):
             "ongoing_bughunts": ongoing_bughunts,
         }
 
-        return render(request, "organization/view_domain.html", context)
+        return render(request, "organization/dashboard/view_domain.html", context)
 
 
 class OrganizationDashboardManageRolesView(View):
@@ -1374,7 +1374,7 @@ class OrganizationDashboardManageRolesView(View):
             "organization_users": organization_users_list,
         }
 
-        return render(request, "organization/organization_manage_roles.html", context)
+        return render(request, "organization/dashboard/organization_manage_roles.html", context)
 
     def post(self, request, id, *args, **kwargs):
         domain = Domain.objects.filter(
@@ -1533,7 +1533,7 @@ class ShowBughuntView(View):
             "is_hunt_manager": is_hunt_manager,
         }
 
-        return render(request, "organization/bughunt/view_bughunt.html", context)
+        return render(request, "organization/dashboard/view_bughunt.html", context)
 
 
 class EndBughuntView(View):
@@ -1574,7 +1574,7 @@ class AddHuntView(View):
             "markdown_value": hunt.description,
         }
 
-        return render(request, "organization/bughunt/edit_bughunt.html", context)
+        return render(request, "organization/dashboard/edit_bughunt.html", context)
 
     @validate_organization_user
     def get(self, request, id, *args, **kwargs):
@@ -1598,7 +1598,7 @@ class AddHuntView(View):
             "domains": domains,
         }
 
-        return render(request, "organization/bughunt/add_bughunt.html", context)
+        return render(request, "organization/dashboard/add_bughunt.html", context)
 
     @validate_organization_user
     @check_organization_or_manager
@@ -1745,7 +1745,7 @@ class OrganizationDashboardManageBughuntView(View):
             "bughunts": filtered_bughunts.get(filter_type, []),
         }
 
-        return render(request, "organization/bughunt/organization_manage_bughunts.html", context)
+        return render(request, "organization/dashboard/organization_manage_bughunts.html", context)
 
 
 @require_http_methods(["DELETE"])
@@ -1886,3 +1886,35 @@ def check_domain_security_txt(request):
         return redirect("organization_manage_domains", id=domain.organization.id)
     else:
         return redirect("organization_manage_domains", id=request.user.userprofile.team.id)
+
+
+class HuntCreate(CreateView):
+    model = Hunt
+    fields = ["url", "logo", "name", "description", "prize", "plan"]
+    template_name = "organization/dashboard/hunt.html"
+
+
+class CreateHunt(TemplateView):
+    model = Hunt
+    fields = ["url", "logo", "domain", "plan", "prize", "txn_id"]
+    template_name = "organization/dashboard/create_hunt.html"
+
+
+class DraftHunts(TemplateView):
+    model = Hunt
+    fields = ["url", "logo", "domain", "plan", "prize", "txn_id"]
+    template_name = "organization/dashboard/hunt_drafts.html"
+
+
+@login_required(login_url="/accounts/login")
+def organization_dashboard_hunt_detail(
+    request, pk, template="organization/dashboard/organization_dashboard_hunt_detail.html"
+):
+    hunt = get_object_or_404(Hunt, pk=pk)
+    return render(request, template, {"hunt": hunt})
+
+
+@login_required(login_url="/accounts/login")
+def hunt_results(request, pk, template="organization/dashboard/hunt_results.html"):
+    hunt = get_object_or_404(Hunt, pk=pk)
+    return render(request, template, {"hunt": hunt})
