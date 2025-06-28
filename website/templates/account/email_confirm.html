@@ -1,0 +1,49 @@
+{% extends "account/auth_base.html" %}
+{% load i18n %}
+{% block account_content %}
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+        {% if confirmation %}
+            <div class="mb-6">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                    <svg class="h-6 w-6 text-blue-600"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Confirm Email Address" %}</h1>
+                <p class="text-gray-600">
+                    {% blocktrans with confirmation.email_address.email as email %}
+                Please confirm that <strong>{{ email }}</strong> is an email address for user {{ confirmation.email_address.user }}.
+                {% endblocktrans %}
+                </p>
+            </div>
+            <form method="post"
+                  action="{% url 'account_confirm_email' confirmation.key %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mb-4">
+                    {% trans "Confirm" %}
+                </button>
+            </form>
+        {% else %}
+            <div class="mb-6">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <svg class="h-6 w-6 text-red-600"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L5.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Invalid Confirmation Link" %}</h1>
+                <p class="text-gray-600">{% trans "This email confirmation link is invalid or has already been used." %}</p>
+            </div>
+        {% endif %}
+        <a href="{% url 'account_login' %}"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+            {% trans "Back to Login" %}
+        </a>
+    </div>
+{% endblock account_content %}

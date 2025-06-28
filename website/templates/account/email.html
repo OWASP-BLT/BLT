@@ -1,0 +1,90 @@
+{% extends "account/auth_base.html" %}
+{% load i18n %}
+{% block account_content %}
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl w-full">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Email Addresses" %}</h1>
+            <p class="text-gray-600">{% trans "The following email addresses are associated with your account:" %}</p>
+        </div>
+        {% if user.emailaddress_set.all %}
+            <div class="space-y-4 mb-6">
+                {% for emailaddress in user.emailaddress_set.all %}
+                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <span class="font-medium text-gray-900">{{ emailaddress.email }}</span>
+                            {% if emailaddress.verified %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {% trans "Verified" %}
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    {% trans "Unverified" %}
+                                </span>
+                            {% endif %}
+                            {% if emailaddress.primary %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {% trans "Primary" %}
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="flex space-x-2">
+                            {% if not emailaddress.verified %}
+                                <form method="post"
+                                      action="{% url 'account_confirm_email' emailaddress.id %}"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50">
+                                        {% trans "Re-send Verification" %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if not emailaddress.primary and emailaddress.verified %}
+                                <form method="post" action="{% url 'account_set_primary' %}" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                                    <button type="submit"
+                                            class="px-3 py-1 text-sm text-green-600 hover:text-green-800 border border-green-300 rounded hover:bg-green-50">
+                                        {% trans "Make Primary" %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if not emailaddress.primary %}
+                                <form method="post"
+                                      action="{% url 'account_remove_email' %}"
+                                      class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="email" value="{{ emailaddress.email }}">
+                                    <button type="submit"
+                                            class="px-3 py-1 text-sm text-red-600 hover:text-red-800 border border-red-300 rounded hover:bg-red-50">
+                                        {% trans "Remove" %}
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="border-t border-gray-200 pt-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">{% trans "Add Email Address" %}</h2>
+            <form method="post" action="{% url 'account_email' %}" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="id_email" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Email Address" %}</label>
+                    <input type="email"
+                           name="email"
+                           id="id_email"
+                           required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="{% trans 'Email address' %}">
+                </div>
+                <button type="submit"
+                        name="action_add"
+                        class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    {% trans "Add Email" %}
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock account_content %}
