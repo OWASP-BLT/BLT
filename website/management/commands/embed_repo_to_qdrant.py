@@ -471,10 +471,10 @@ def ensure_collection(qdrant_client: QdrantClient, qdrant_collection: str, qdran
             vectors_config={"size": int(qdrant_vector_size), "distance": "Cosine"},
         )
         logger.debug("Created Qdrant collection '%s'", qdrant_collection)
-    except RuntimeError:
+    except Exception as e:
         logger.error(
             "Failed to create Qdrant collection. The collection could not be created. "
-            "Please check your Qdrant server and configuration."
+            "Please check your Qdrant server and configuration. Error: %s", str(e)
         )
 
 
