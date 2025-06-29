@@ -477,6 +477,7 @@ def ensure_collection(qdrant_client: QdrantClient, qdrant_collection: str, qdran
             "Please check your Qdrant server and configuration. Error: %s",
             str(e),
         )
+        raise
 
 
 def generate_uuid(file: str, start: int, end: int) -> str:
