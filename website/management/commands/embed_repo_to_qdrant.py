@@ -61,6 +61,12 @@ def initialize_settings():
             "Please set them in your environment or Django settings before running this command."
         )
 
+    try:
+        qdrant_vector_size = int(qdrant_vector_size)
+        qdrant_http_port = int(qdrant_http_port)
+    except ValueError as e:
+        raise RuntimeError(f"Invalid numeric value for QDRANT_VECTOR_SIZE or QDRANT_HTTP_PORT: {e}") from e
+
     return {
         "QDRANT_COLLECTION": qdrant_collection,
         "QDRANT_HOST": qdrant_host,
@@ -169,8 +175,8 @@ class Command(BaseCommand):
                 self._upsert_to_qdrant(chunk, embedding)
 
     def _generate_embedding(self, text: str, title: str = None) -> Optional[List[float]]:
-        """Calls Gemini API to generate an embedding with basic retry logic."""
         max_retries = 3
+        last_error = None
         for attempt in range(1, max_retries + 1):
             try:
                 response = genai.embed_content(
@@ -181,7 +187,8 @@ class Command(BaseCommand):
                 )
                 return response.get("embedding")
             except Exception as e:
-                error_message = str(e).lower()
+                last_error = str(e)
+                error_message = last_error.lower()
                 if "rate limit" in error_message or "quota" in error_message or "timeout" in error_message:
                     logger.warning(
                         "Embedding generation attempt %d/%d failed due to a temporary error. Retrying...",
@@ -191,13 +198,13 @@ class Command(BaseCommand):
                     time.sleep(2**attempt)
                 else:
                     logger.error(
-                        "Embedding generation failed due to a non-retryable error. The error was: %s", error_message
+                        "Embedding generation failed due to a non-retryable error. The error was: %s", last_error
                     )
                     break
         logger.error(
             "Embedding generation failed after %d attempts. The error was: %s",
             max_retries,
-            error_message if "error_message" in locals() else "Unknown error",
+            last_error or "Unknown error",
         )
         return None
 
