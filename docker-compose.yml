@@ -26,6 +26,11 @@ services:
     environment:
       - QDRANT__SERVICE__HTTP_PORT=6333
       - QDRANT__SERVICE__GRPC_PORT=6334
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:6333/collections" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: always
     volumes:
       - qdrant_db:/qdrant/storage
