@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
@@ -18,6 +20,30 @@ from .models import (
     UserBadge,
     UserProfile,
 )
+from .utils import analyze_contribution
+
+# Default BACON rewards for different contribution types
+DEFAULT_BACON_REWARDS = {
+    "Issue": 5,
+    "Post": 10,
+    "Hunt": 15,
+    "IpReport": 3,
+    "Organization": 10,
+    "ForumPost": 2,
+    "Bid": 2,
+}
+
+
+def get_default_bacon_reward(instance, action_type):
+    """Get the default BACON reward for a given instance type"""
+    model_name = instance._meta.model_name.capitalize()
+    base_reward = DEFAULT_BACON_REWARDS.get(model_name, 1)
+
+    # Add bonus for security-related content if applicable
+    if hasattr(instance, "is_security") and getattr(instance, "is_security", False):
+        base_reward += 3
+
+    return base_reward
 
 
 def get_default_user():
@@ -62,18 +88,54 @@ def create_activity(instance, action_type):
     )
 
 
-def giveBacon(user, amt=1):
-    # Check if the user already has a token record
+def giveBacon(user, instance=None, action_type=None, amt=None):
+    """
+    Award BACON tokens to a user based on their contribution.
+    If amt is provided, use that amount directly.
+    Otherwise, analyze the contribution using AI to determine the amount.
+    Falls back to default rewards if AI analysis fails.
+    """
     if user is None or user.is_authenticated is False:
         return
+
     token_earning, created = BaconEarning.objects.get_or_create(user=user)
 
-    if created:
-        token_earning.tokens_earned = amt  # Reward 10 tokens for completing the action (adjust as needed)
-    else:
-        token_earning.tokens_earned += amt  # Add 10 tokens if the user already exists in the system
+    try:
+        # If amount is specified, use it
+        if amt is not None:
+            reward_amount = amt
+        # Otherwise analyze the contribution if we have an instance
+        elif instance is not None and action_type is not None:
+            try:
+                reward_amount = analyze_contribution(instance, action_type)
+            except Exception as e:
+                logging.error(f"AI analysis failed for {instance._meta.model_name}: {str(e)}")
+                # Fallback to default reward system
+                reward_amount = get_default_bacon_reward(instance, action_type)
+                logging.info(f"Using default reward amount: {reward_amount} BACON")
+        else:
+            reward_amount = 1  # Default minimum reward
 
-    token_earning.save()  # Save the updated record
+        # Ensure reward amount is within valid range (1-50)
+        reward_amount = max(1, min(50, int(reward_amount)))
+
+        if created:
+            token_earning.tokens_earned = reward_amount
+        else:
+            token_earning.tokens_earned += reward_amount
+
+        token_earning.save()
+        return reward_amount
+
+    except Exception as e:
+        logging.error(f"Error in giveBacon: {str(e)}")
+        # If anything fails, ensure at least minimum reward is given
+        if created:
+            token_earning.tokens_earned = 1
+        else:
+            token_earning.tokens_earned += 1
+        token_earning.save()
+        return 1
 
 
 @receiver(post_save)
@@ -81,18 +143,18 @@ def handle_post_save(sender, instance, created, **kwargs):
     """Generic handler for post_save signal."""
     if sender == IpReport and created:  # Track first IP report
         assign_first_action_badge(instance.user, "First IP Reported")
-        giveBacon(instance.user)
+        giveBacon(instance.user, instance=instance, action_type="created")
         create_activity(instance, "created")
 
     elif sender == Post and created:  # Track first blog post
         assign_first_action_badge(instance.author, "First Blog Posted")
         create_activity(instance, "created")
-        giveBacon(instance.author, 5)  # Reward for posting a blog
+        giveBacon(instance.author, instance=instance, action_type="created")
 
     elif sender == Issue and created:  # Track first bug report
         assign_first_action_badge(instance.user, "First Bug Reported")
         create_activity(instance, "created")
-        giveBacon(instance.user, 5)  # Reward for reporting a bug
+        giveBacon(instance.user, instance=instance, action_type="created")
 
     elif sender == Hunt and created:  # Track first bug bounty
         # Attempt to get the user from Domain managers or Organization
@@ -108,17 +170,17 @@ def handle_post_save(sender, instance, created, **kwargs):
         if user:
             assign_first_action_badge(user, "First Bug Bounty")
             create_activity(instance, "created")
-            giveBacon(user, 5)  # Reward for creating a bug bounty
+            giveBacon(user, instance=instance, action_type="created")
 
     elif sender == ForumPost and created:  # Track first forum post
         assign_first_action_badge(instance.user, "First Forum Post")
         create_activity(instance, "created")
-        giveBacon(instance.user, 2)  # Reward for posting in forum
+        giveBacon(instance.user, instance=instance, action_type="created")
 
     elif sender == Bid and created:  # Track first bid placed
         assign_first_action_badge(instance.user, "First Bid Placed")
         create_activity(instance, "placed")
-        giveBacon(instance.user, 2)  # Reward for placing a bid
+        giveBacon(instance.user, instance=instance, action_type="placed")
 
     elif sender is User and created:  # Handle user sign-up
         Activity.objects.create(
@@ -158,9 +220,9 @@ def update_user_streak(sender, instance, created, **kwargs):
 def handle_organization_creation(sender, instance, created, **kwargs):
     """Give bacon to user when they create an organization"""
     if created and instance.admin:
-        # Give 10 bacon tokens for creating an organization
-        giveBacon(instance.admin, 10)
-        # Create an activity for the organization creation
+        # Create an activity first so it's included in the AI analysis
         create_activity(instance, "created")
+        # Give bacon tokens using AI analysis or fallback to default (10)
+        giveBacon(instance.admin, instance=instance, action_type="created")
         # Give first organization badge
         assign_first_action_badge(instance.admin, "First Organization Created")
