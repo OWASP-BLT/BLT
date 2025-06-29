@@ -473,8 +473,9 @@ def ensure_collection(qdrant_client: QdrantClient, qdrant_collection: str, qdran
         logger.debug("Created Qdrant collection '%s'", qdrant_collection)
     except Exception as e:
         logger.error(
-            "Failed to create Qdrant collection. The collection could not be created. "
-            "Please check your Qdrant server and configuration. Error: %s", str(e)
+            "Failed to create Qdrant collection. The collection could not be created."
+            "Please check your Qdrant server and configuration. Error: %s",
+            str(e),
         )
 
 
