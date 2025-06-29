@@ -1,5 +1,3 @@
-import logging
-
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, pre_delete
@@ -109,10 +107,8 @@ def giveBacon(user, instance=None, action_type=None, amt=None):
             try:
                 reward_amount = analyze_contribution(instance, action_type)
             except Exception as e:
-                logging.error(f"AI analysis failed for {instance._meta.model_name}: {str(e)}")
                 # Fallback to default reward system
                 reward_amount = get_default_bacon_reward(instance, action_type)
-                logging.info(f"Using default reward amount: {reward_amount} BACON")
         else:
             reward_amount = 1  # Default minimum reward
 
@@ -128,7 +124,6 @@ def giveBacon(user, instance=None, action_type=None, amt=None):
         return reward_amount
 
     except Exception as e:
-        logging.error(f"Error in giveBacon: {str(e)}")
         # If anything fails, ensure at least minimum reward is given
         if created:
             token_earning.tokens_earned = 1
