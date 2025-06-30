@@ -1,9 +1,10 @@
 from django.core.management.base import BaseCommand
+
 from website.models import Labs
 
 
 class Command(BaseCommand):
-    help = 'Creates initial security lab data'
+    help = "Creates initial security lab data"
 
     def handle(self, *args, **kwargs):
         # Define the initial labs
@@ -43,14 +44,10 @@ class Command(BaseCommand):
                     "estimated_time": lab_data["estimated_time"],
                     "order": lab_data["order"],
                     "is_active": True,
-                }
+                },
             )
-            
+
             if created:
-                self.stdout.write(
-                    self.style.SUCCESS(f'Successfully created lab "{lab.name}"')
-                )
+                self.stdout.write(self.style.SUCCESS(f'Successfully created lab "{lab.name}"'))
             else:
-                self.stdout.write(
-                    self.style.WARNING(f'Lab "{lab.name}" already exists')
-                ) 
+                self.stdout.write(self.style.WARNING(f'Lab "{lab.name}" already exists'))

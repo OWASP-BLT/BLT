@@ -2453,6 +2453,7 @@ class BannedApp(models.Model):
     def __str__(self):
         return f"{self.app_name} (Banned in {self.country_name})"
 
+
 class Labs(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -2468,7 +2469,7 @@ class Labs(models.Model):
         Updates the total_tasks count based on related tasks.
         This will be called when tasks are added/removed.
         """
-        if hasattr(self, 'tasks'):
+        if hasattr(self, "tasks"):
             self.total_tasks = self.tasks.count()
             self.save()
 
@@ -2479,6 +2480,7 @@ class Labs(models.Model):
         verbose_name = "Lab"
         verbose_name_plural = "Labs"
         ordering = ["order"]
+
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
