@@ -127,13 +127,23 @@ class Command(BaseCommand):
         self.process_repository_files()
 
     def process_repository_files(self):
-        """Walks through the repository and processes each file."""
+        """Walks through the repository, collects valid files, and processes them."""
+        file_paths = []
         for root, dirs, files in os.walk(self.repo_path):
             dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
             for file in files:
                 if self._should_skip_file(file):
                     continue
-                self.process_file(os.path.join(root, file))
+                file_path = os.path.join(root, file)
+                file_paths.append(file_path)
+
+        total_files = len(file_paths)
+        logger.info("Found %d files to process.", total_files)
+
+        for i, file_path in enumerate(file_paths, 1):
+            self.process_file(file_path)
+            if i % 10 == 0 or i == total_files:
+                logger.info("Processed %d/%d files.", i, total_files)
 
     def process_file(self, file_path: str):
         """Processes a single file: reads, chunks, and stores embeddings."""
