@@ -285,8 +285,8 @@ def extract_imports(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[Li
             if start_line is None:
                 start_line = node_start
             end_line = node_end
-            import_lines.extend(lines[node_start:node_end])
-            covered_lines.update(range(node_start, node_end))
+            import_lines.extend(lines[node_start : node_end + 1])
+            covered_lines.update(range(node_start, node_end + 1))
 
     if not import_lines:
         return [], set()
