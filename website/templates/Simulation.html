@@ -55,8 +55,11 @@
                                         {% endif %}
                                         <h2 class="ml-3 text-xl font-semibold text-gray-900">{{ lab.title }}</h2>
                                     </div>
-                                    <!-- Task Count -->
-                                    <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ lab.total_tasks }} Tasks</span>
+                                    <!-- Task Count and Time -->
+                                    <div class="flex items-center space-x-2">
+                                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ lab.total_tasks }} Tasks</span>
+                                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ lab.estimated_time }} min</span>
+                                    </div>
                                 </div>
                                 <!-- Description -->
                                 <p class="text-gray-600 mb-4">{{ lab.description }}</p>

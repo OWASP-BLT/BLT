@@ -2453,6 +2453,32 @@ class BannedApp(models.Model):
     def __str__(self):
         return f"{self.app_name} (Banned in {self.country_name})"
 
+class Labs(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    estimated_time = models.PositiveIntegerField(help_text="Estimated time in minutes")
+    total_tasks = models.PositiveIntegerField(default=0)  # Keep this field but default to 0
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def update_total_tasks(self):
+        """
+        Updates the total_tasks count based on related tasks.
+        This will be called when tasks are added/removed.
+        """
+        if hasattr(self, 'tasks'):
+            self.total_tasks = self.tasks.count()
+            self.save()
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Lab"
+        verbose_name_plural = "Labs"
+        ordering = ["order"]
 
 class Notification(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")

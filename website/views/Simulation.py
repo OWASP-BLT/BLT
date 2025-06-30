@@ -3,48 +3,34 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-# from website.models import Lab, UserProgress
+from website.models import Labs
 
 
 @login_required
 def dashboard(request):
-    labs_data = [
-        {
-            "id": "sql-injection",
-            "title": "SQL Injection",
-            "description": "Learn about SQL injection vulnerabilities and how to exploit them",
-            "icon": "database",  # For heroicons
-            "total_tasks": 10,
+    # Get all active labs ordered by their order field
+    labs = Labs.objects.filter(is_active=True).order_by('order')
+    
+    labs_data = []
+    for lab in labs:
+        # Map lab icons based on lab name or add a default
+        icon = "database"  # Default icon
+        if "xss" in lab.name.lower():
+            icon = "code"
+        elif "csrf" in lab.name.lower():
+            icon = "shield-check"
+        elif "command" in lab.name.lower():
+            icon = "terminal"
+            
+        labs_data.append({
+            "id": lab.id,
+            "title": lab.name,
+            "description": lab.description,
+            "icon": icon,
+            "total_tasks": lab.total_tasks,
             "color": "#e74c3c",
-            "progress": 0,  # We'll calculate this
-        },
-        {
-            "id": "xss",
-            "title": "Cross-Site Scripting (XSS)",
-            "description": "Master the art of identifying and exploiting XSS vulnerabilities",
-            "icon": "code",
-            "total_tasks": 8,
-            "color": "#e74c3c",
-            "progress": 0,
-        },
-        {
-            "id": "csrf",
-            "title": "Cross-Site Request Forgery",
-            "description": "Understand CSRF attacks and prevention techniques",
-            "icon": "shield-check",
-            "total_tasks": 6,
-            "color": "#e74c3c",
-            "progress": 0,
-        },
-        {
-            "id": "command-injection",
-            "title": "Command Injection",
-            "description": "Learn about command injection vulnerabilities and exploitation",
-            "icon": "terminal",
-            "total_tasks": 7,
-            "color": "#e74c3c",
-            "progress": 0,
-        },
-    ]
+            "progress": 0,  # We'll implement progress tracking in the next PR
+            "estimated_time": lab.estimated_time
+        })
 
     return render(request, "Simulation.html", {"labs": labs_data})
