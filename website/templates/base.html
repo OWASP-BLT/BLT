@@ -13,6 +13,33 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token }}">
+        <script>
+            // Immediately set theme based on localStorage to avoid FOUC. Default to light.
+            (function() {
+                try {
+                    if (localStorage.getItem('theme') === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                } catch (_) {}
+            })();
+        </script>
+        <style>
+            /* CSS for smooth theme and icon transitions */
+            #sun-icon,
+            #moon-icon {
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+
+            /* Default (light) mode styles */
+            #sun-icon { opacity: 0; transform: rotate(-90deg); }
+            #moon-icon { opacity: 1; transform: rotate(0); }
+
+            /* Dark mode styles */
+            html.dark #moon-icon { opacity: 0; transform: rotate(90deg); }
+            html.dark #sun-icon { opacity: 1; transform: rotate(0); }
+        </style>
         <!-- Font Awesome -->
         <link rel="stylesheet"
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
