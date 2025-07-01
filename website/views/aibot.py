@@ -783,11 +783,29 @@ def post_or_patch_github_comment(
 
 
 def _clean_diff(diff_text: str) -> str:
+    skip_diff_files = {"poetry.lock"}
+    skip_diff_lines = ("index", "---", "+++", "new file mode")
     lines = diff_text.split("\n")
     cleaned_lines = []
+
+    skip_current_file = False
+
     for line in lines:
-        if line.startswith(("index", "---", "+++", "@@")):
+        if line.startswith("diff --git"):
+            file_path = line.split(" ")[-1]
+            file_name = file_path.split("/")[-1]
+            skip_current_file = file_name in skip_diff_files
+            if skip_current_file:
+                continue
+            file_path = file_path[2:]  # To remove leading 'b/' from eg b/blt/settings.py
+            line = f"Diff for: {file_path}"
+
+        if skip_current_file:
             continue
+
+        if line.startswith(skip_diff_lines):
+            continue
+
         cleaned_lines.append(line)
     return "\n".join(cleaned_lines)
 
