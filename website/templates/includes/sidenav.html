@@ -4,7 +4,7 @@
 <!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<div class="sidebar fixed left-0 top-18 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[8888] w-[350px] shadow-lg dark:shadow-gray-800">
+<div class="sidebar fixed left-0 top-18 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[8888] w-[350px] shadow-lg dark:shadow-gray-800 transition-colors duration-300">
     <div class="h-full flex flex-col justify-between overflow-hidden">
         <div class="overflow-y-auto flex-grow py-2 scrollbar-hide">
             <!-- Main Navigation -->
@@ -689,6 +689,12 @@
                     <span class="truncate">Edit this page</span>
                 </a>
             </nav>
+        </div>
+        <div class="border-t border-gray-300 dark:border-gray-700 p-4 md:hidden">
+            <div class="flex items-center justify-between">
+                <span class="text-lg font-medium text-gray-700 dark:text-gray-200">Theme</span>
+                {% include 'dark_mode_toggle.html' %}
+            </div>
         </div>
     </div>
 </div>

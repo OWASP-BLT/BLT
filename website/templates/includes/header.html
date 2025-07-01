@@ -7,7 +7,7 @@
 {% load custom_tags %}
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
-<nav class="navbar-expand-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 dark:border-b-0 border-b md:px-4 md:py-2.5 py-2 px-1">
+<nav class="navbar-expand-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 fixed top-0 z-[9999] w-full bg-white/80 backdrop-blur-md border-zinc-200 dark:border-b-0 border-b md:px-4 md:py-2.5 py-2 px-1 transition-colors duration-300">
     <div class="px-3 py-1 lg:px-5 lg:pl-3">
         <div class="flex items-center justify-between">
             <div class="flex md:gap-4 gap-0 items-center justify-start rtl:justify-end">
@@ -31,12 +31,7 @@
                         <i class="fa fa-th-large md:text-xl text-lg"></i>
                     </button>
                     <!-- Theme Toggle -->
-                    <button id="theme-toggle"
-                            class="inline-flex items-center justify-center p-2 text-gray-500 border-2 border-gray-300 rounded-lg hover:bg-red-500 hover:text-white text-red-500 border-red-500 dark:border-red-500"
-                            aria-label="Toggle dark mode">
-                        <i id="sun-icon" class="fas fa-sun text-xl hidden"></i>
-                        <i id="moon-icon" class="fas fa-moon text-xl hidden"></i>
-                    </button>
+                    <div class="hidden md:block">{% include 'dark_mode_toggle.html' %}</div>
                 </div>
                 <!-- Logo -->
                 <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
