@@ -148,7 +148,6 @@ def status_page(request):
     CACHE_TIMEOUT = 60
 
     status_data = cache.get("service_status")
-    
     if not status_data:
         status_data = {
             "bitcoin": None if not CHECK_BITCOIN else False,
