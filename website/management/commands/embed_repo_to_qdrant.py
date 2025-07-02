@@ -277,18 +277,18 @@ def extract_imports(tree: ast.AST, source_lines: List[str], file_path: str) -> T
     """
     import_lines = []
     covered_lines = set()
-    start_line = None
-    end_line = None
+    first_import_line = None
+    last_import_line = None
 
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             node_start = node.lineno - 1
             node_end = getattr(node, "end_lineno", node.lineno)
-            if start_line is None:
-                start_line = node_start
-            end_line = node_end
-            import_lines.extend(source_lines[node_start : node_end + 1])
-            covered_lines.update(range(node_start, node_end + 1))
+            if first_import_line is None:
+                first_import_line = node_start
+            last_import_line = node_end
+            import_lines.extend(source_lines[node_start:node_end])
+            covered_lines.update(range(node_start, node_end))
 
     if not import_lines:
         return [], set()
@@ -299,8 +299,8 @@ def extract_imports(tree: ast.AST, source_lines: List[str], file_path: str) -> T
         "name": "import statements",
         "chunk": code_chunk,
         "file": file_path,
-        "start_line": start_line + 1,
-        "end_line": end_line,
+        "start_line": first_import_line + 1,
+        "end_line": last_import_line,
     }
 
     return [chunk], covered_lines
@@ -314,22 +314,7 @@ def extract_module_level_code(source_lines: List[str], covered_lines: Set[int], 
     current_block = []
 
     for i, line in enumerate(source_lines):
-        if i in covered_lines:
-            if current_block:
-                chunks.append(
-                    {
-                        "type": "module",
-                        "name": None,
-                        "chunk": "\n".join(current_block),
-                        "file": file_path,
-                        "start_line": i - len(current_block) + 1,
-                        "end_line": i,
-                    }
-                )
-                current_block = []
-            continue
-
-        if line.strip() == "":
+        if i in covered_lines or line.strip() == "":
             if current_block:
                 chunks.append(
                     {
