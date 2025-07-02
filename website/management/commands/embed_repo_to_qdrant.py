@@ -237,7 +237,9 @@ class Command(BaseCommand):
         )
 
 
-def extract_functions_and_classes(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[List[ChunkType], Set[int]]:
+def extract_functions_and_classes(
+    tree: ast.AST, source_lines: List[str], file_path: str
+) -> Tuple[List[ChunkType], Set[int]]:
     """
     Extract function and class definitions including decorators.
     """
@@ -248,11 +250,11 @@ def extract_functions_and_classes(tree: ast.AST, lines: List[str], file_path: st
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
             start_line = node.lineno - 1
             if hasattr(node, "decorator_list") and node.decorator_list:
-                decorator_lines = [d.lineno for d in node.decorator_list]
-                start_line = min(min(decorator_lines) - 1, start_line)
+                decorator_start = node.decorator_list[0].lineno
+                start_line = decorator_start - 1
 
             end_line = node.end_lineno
-            code_chunk = "\n".join(lines[start_line:end_line])
+            code_chunk = "\n".join(source_lines[start_line:end_line])
             covered_lines.update(range(start_line, end_line))
 
             chunks.append(
@@ -269,7 +271,7 @@ def extract_functions_and_classes(tree: ast.AST, lines: List[str], file_path: st
     return chunks, covered_lines
 
 
-def extract_imports(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[List[ChunkType], Set[int]]:
+def extract_imports(tree: ast.AST, source_lines: List[str], file_path: str) -> Tuple[List[ChunkType], Set[int]]:
     """
     Extract all import statements as a single grouped chunk.
     """
@@ -285,7 +287,7 @@ def extract_imports(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[Li
             if start_line is None:
                 start_line = node_start
             end_line = node_end
-            import_lines.extend(lines[node_start : node_end + 1])
+            import_lines.extend(source_lines[node_start : node_end + 1])
             covered_lines.update(range(node_start, node_end + 1))
 
     if not import_lines:
@@ -304,14 +306,14 @@ def extract_imports(tree: ast.AST, lines: List[str], file_path: str) -> Tuple[Li
     return [chunk], covered_lines
 
 
-def extract_module_level_code(lines: List[str], covered_lines: Set[int], file_path: str) -> List[ChunkType]:
+def extract_module_level_code(source_lines: List[str], covered_lines: Set[int], file_path: str) -> List[ChunkType]:
     """
     Extract remaining top-level code that wasn't captured.
     """
     chunks = []
     current_block = []
 
-    for i, line in enumerate(lines):
+    for i, line in enumerate(source_lines):
         if i in covered_lines:
             if current_block:
                 chunks.append(
@@ -350,8 +352,8 @@ def extract_module_level_code(lines: List[str], covered_lines: Set[int], file_pa
                 "name": None,
                 "chunk": "\n".join(current_block),
                 "file": file_path,
-                "start_line": len(lines) - len(current_block) + 1,
-                "end_line": len(lines),
+                "start_line": len(source_lines) - len(current_block) + 1,
+                "end_line": len(source_lines),
             }
         )
 
@@ -385,19 +387,19 @@ def chunk_python_file(content: str, file_path: str) -> List[Dict[str, Union[str,
         logger.warning("Syntax error in %s: %s", file_path, e)
         return []
 
-    lines = content.splitlines()
+    source_lines = content.splitlines()
 
-    func_chunks, func_lines = extract_functions_and_classes(tree, lines, file_path)
-    import_chunks, import_lines = extract_imports(tree, lines, file_path)
+    func_chunks, func_lines = extract_functions_and_classes(tree, source_lines, file_path)
+    import_chunks, import_lines = extract_imports(tree, source_lines, file_path)
 
     covered_lines = func_lines.union(import_lines)
 
-    module_chunks = extract_module_level_code(lines, covered_lines, file_path)
+    module_chunks = extract_module_level_code(source_lines, covered_lines, file_path)
 
     return func_chunks + import_chunks + module_chunks
 
 
-def extract_if_blocks(tree: ast.AST, lines: List[str], file_path: str) -> List[ChunkType]:
+def extract_if_blocks(tree: ast.AST, source_lines: List[str], file_path: str) -> List[ChunkType]:
     """
     Extract top-level if-blocks and return as chunks.
     """
@@ -406,7 +408,7 @@ def extract_if_blocks(tree: ast.AST, lines: List[str], file_path: str) -> List[C
         if isinstance(node, ast.If):
             start_line = node.lineno - 1
             end_line = node.end_lineno
-            code = "\n".join(lines[start_line:end_line])
+            code = "\n".join(source_lines[start_line:end_line])
             if_blocks.append(
                 {
                     "type": "module",
@@ -447,13 +449,13 @@ def chunk_settings_files(content: str, file_path: str) -> List[Dict[str, Union[s
     except SyntaxError as e:
         logger.warning("Syntax error in %s: %s", file_path, e)
         return []
-    lines = content.splitlines()
+    source_lines = content.splitlines()
 
-    imports, covered_lines = extract_imports(tree, lines, file_path)
+    imports, covered_lines = extract_imports(tree, source_lines, file_path)
 
-    if_blocks = extract_if_blocks(tree, lines, file_path)
+    if_blocks = extract_if_blocks(tree, source_lines, file_path)
 
-    misc_blocks = extract_module_level_code(lines, covered_lines, file_path)
+    misc_blocks = extract_module_level_code(source_lines, covered_lines, file_path)
 
     chunks = []
     if imports:
