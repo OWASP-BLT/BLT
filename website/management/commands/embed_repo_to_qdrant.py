@@ -374,6 +374,9 @@ def chunk_python_file(content: str, file_path: str) -> List[Dict[str, Union[str,
 
     source_lines = content.splitlines()
 
+    if not source_lines:
+        return []
+
     func_chunks, func_lines = extract_functions_and_classes(tree, source_lines, file_path)
     import_chunks, import_lines = extract_imports(tree, source_lines, file_path)
 
