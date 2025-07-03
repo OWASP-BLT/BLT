@@ -1,7 +1,6 @@
 {% load static %}
 {% load i18n %}
 {% load custom_tags %}
-<!-- Include Font Awesome CSS -->
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
@@ -9,33 +8,28 @@
     .scrollbar-hide::-webkit-scrollbar {
         width: 8px;
     }
-
     .scrollbar-hide::-webkit-scrollbar-track {
         background: transparent;
     }
-
     .scrollbar-hide::-webkit-scrollbar-thumb {
         background-color: rgba(156, 163, 175, 0.5);
         border-radius: 4px;
     }
-
     .scrollbar-hide::-webkit-scrollbar-thumb:hover {
         background-color: rgba(156, 163, 175, 0.7);
     }
-
-    /* Dark mode scrollbar styles */
     .dark .scrollbar-hide::-webkit-scrollbar-thumb {
         background-color: rgba(107, 114, 128, 0.5);
     }
-
     .dark .scrollbar-hide::-webkit-scrollbar-thumb:hover {
         background-color: rgba(107, 114, 128, 0.7);
     }
+
 </style>
-<div class="sidebar fixed left-0 top-18 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[8888] w-[350px] shadow-lg dark:shadow-gray-800 transition-colors duration-300">
-    <div class="h-full flex flex-col justify-between overflow-hidden">
-        <div class="overflow-y-auto flex-grow py-2 scrollbar-hide">
-            <!-- Main Navigation -->
+<div class="sidebar fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white dark:bg-gray-900 border-r border-gray-300 dark:border-gray-700 transform -translate-x-full transition-all duration-300 ease-in-out z-[10000] w-full max-w-[350px] min-w-[280px] max-[360px]:max-w-[90vw] max-[360px]:min-w-[240px] shadow-lg dark:shadow-gray-800 transition-colors duration-300">
+    <div class="h-full flex flex-col">
+        <!-- Scrollable Navigation -->
+        <div class="flex-grow overflow-y-auto py-2 scrollbar-hide nav-container max-md:pb-[80px] md:pb-0">
             <nav class="px-2 space-y-2 mb-8 mt-2">
                 <!-- Organizations Section -->
                 <div>
@@ -718,11 +712,12 @@
                 </a>
             </nav>
         </div>
-        <div class="border-t border-gray-300 dark:border-gray-700 p-4 md:hidden">
+        <div class="sticky bottom-0 bg-white dark:bg-gray-900 border-t border-gray-300 dark:border-gray-700 p-4 w-full z-[10001] md:hidden">
             <div class="flex items-center justify-between">
                 <span class="text-lg font-medium text-gray-700 dark:text-gray-200">Theme</span>
                 {% include 'dark_mode_toggle.html' %}
             </div>
         </div>
     </div>
+</div>
 </div>
