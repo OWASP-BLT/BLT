@@ -103,6 +103,9 @@ class Integration(models.Model):
         return f"{self.organization.name} - {self.service_name} Integration"
 
 
+User._meta.get_field("email")._unique = True
+
+
 class SlackIntegration(models.Model):
     integration = models.OneToOneField(Integration, on_delete=models.CASCADE, related_name="slack_integration")
     bot_access_token = models.CharField(max_length=255, null=True, blank=True)  # will be different for each workspace
