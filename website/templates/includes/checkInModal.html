@@ -10,20 +10,11 @@
         </div>
         <!-- Check-In Form -->
         <div class="modal-content bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200">
-            <form
-                id="checkInForm"
-                class="modal-form"
-                method="post"
-                action="{% url 'sizzle_daily_log' %}"
-                {%
-                if
-                not
-                request.user.is_authenticated
-                %}style="display:none;"
-                {%
-                endif
-                %}
-                >
+            <form id="checkInForm"
+                  class="modal-form"
+                  method="post"
+                  action="{% url 'sizzle_daily_log' %}"
+                  {% if not request.user.is_authenticated %}style="display:none;"{% endif %}>
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="previous_work_card">What did you work on previously?</label>

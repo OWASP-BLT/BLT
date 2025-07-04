@@ -434,9 +434,9 @@
             <!-- Search Bar -->
             <div class="flex-1 max-w-xl mx-4 hidden sm:block">
                 <div class="relative flex items-center rounded-lg overflow-hidden bg-white border-2 border-red-500 hover:bg-red-50 transition-colors duration-200">
-                    <form class="w-full flex items-center dark:bg-gray-600
-                        action="{% url 'search' %}"
-                        method="get">
+                    <form class="w-full flex items-center dark:bg-gray-600"
+                          action="{% url 'search' %}"
+                          method="get">
                         <input type="hidden" name="type" id="filter-type" value="all">
                         <input type="text"
                                name="query"

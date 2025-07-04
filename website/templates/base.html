@@ -17,7 +17,9 @@
             // Immediately set theme based on localStorage to avoid FOUC. Default to light.
             (function() {
                 try {
-                    if (localStorage.getItem('theme') === 'dark') {
+                    const saved = localStorage.getItem('theme');
+                    const fallback = '{{ request.session.theme|default:"light"|escapejs }}';
+                    if (saved === 'dark' || (saved === null && fallback === 'dark')) {
                         document.documentElement.classList.add('dark');
                     } else {
                         document.documentElement.classList.remove('dark');
