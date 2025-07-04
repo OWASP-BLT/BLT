@@ -31,7 +31,6 @@
                         <i class="fa fa-th-large md:text-xl text-lg"></i>
                     </button>
                     <!-- Theme Toggle -->
-                    <div class="hidden md:block">{% include 'dark_mode_toggle.html' %}</div>
                 </div>
                 <!-- Logo -->
                 <a href="{% url 'home' %}" class="flex select-none ms-4 md:me-24">
@@ -571,7 +570,7 @@
                     </button>
                     <!-- Dropdown Menu -->
                     <div id="dropdownMenu"
-                         class="z-50 hidden absolute bg-white md:w-[300px] top-[85px] right-5 border shadow-md rounded-md">
+                         class="z-50 hidden absolute bg-white dark:bg-gray-800 md:w-[300px] top-[85px] right-5 border shadow-md rounded-md">
                         <ul class="flex flex-col gap-1 px-4 py-4">
                             <li>
                                 <a href="{% url 'account_profile' %}"
@@ -660,6 +659,7 @@
                     </a>
                 </div>
             {% endif %}
+                    <div class="hidden ml-4 md:block">{% include 'dark_mode_toggle.html' %}</div>
         </div>
     </div>
     <!-- Mobile Search Bar -->
