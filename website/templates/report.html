@@ -61,6 +61,17 @@
     <div class="min-h-screen bg-gray-50 py-8">
         <div class="w-[90%] mx-auto">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 px-4 md:px-8 py-8 mb-8">
+                <!-- BACON Reward Section -->
+                <div class="mb-6 p-4 bg-[#e74c3c]/10 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-bacon text-[#e74c3c] text-xl"></i>
+                        <h2 class="text-lg font-semibold text-gray-800">BACON Token Rewards</h2>
+                    </div>
+                    <p class="mt-2 text-gray-600">
+                        Earn 5 BACON tokens for reporting a valid bug! Extra 3 tokens for security-related issues.
+                    </p>
+                </div>
+                <!-- Main Header -->
                 <div class="flex items-center gap-6">
                     <div class="size-16 bg-gradient-to-r from-[#e74c3c] to-[#c0392b] rounded-full flex items-center justify-center">
                         <i class="fas fa-bug text-2xl text-white"></i>
@@ -206,7 +217,7 @@
                     </div>
                     <div class="space-y-6">
                         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-                            <label for="hunt" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "Bug Hunt" %}</label>
+                            <label for="hunt" class="block text-xl font-semibold text-gray-900 mb-4">{% trans "Bug Bounty" %}</label>
                             <select name="hunt"
                                     required
                                     class="w-full text-lg rounded-lg border-0 ring-1 ring-gray-300 shadow-sm py-3 px-4 bg-gray-50 focus:ring-2  transition-shadow duration-200">
@@ -278,7 +289,7 @@
                                     {% trans "Add" %}
                                 </button>
                             </div>
-                            <p class="text-sm text-gray-500 mb-4">{% trans "Team members should be bughunts users" %}.</p>
+                            <p class="text-sm text-gray-500 mb-4">{% trans "Team members should be Bug Bounty users" %}.</p>
                             <div class="space-y-3" id="email-container">
                                 <label class="block font-medium text-gray-700">{% trans "Email address:" %}</label>
                             </div>
@@ -309,8 +320,19 @@
                         </button>
                         <button type="submit"
                                 name="reportbug_button"
-                                class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium">
+                                class="px-6 py-2 bg-[#e74c3c] text-white rounded-lg hover:bg-[#c0392b] transition-colors duration-200 font-medium group relative">
                             {% trans "Report" %}
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-bacon"></i>
+                                    <span>Earn 5 BACON tokens for reporting a bug!</span>
+                                </div>
+                                <!-- Arrow -->
+                                <div class="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full">
+                                    <div class="border-8 border-transparent border-t-gray-900"></div>
+                                </div>
+                            </div>
                         </button>
                     </div>
                 </div>

@@ -1,24 +1,24 @@
-{% extends "organization/organization_dashboard_base.html" %}
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}
-    Manage Bughunts
+    Manage Bug Bounties
 {% endblock title %}
 {% block description %}
-    Easily manage your bughunts. Filter, view, edit, or delete hunts as needed. Access all your bughunts in one place.
+    Easily manage your bug bounties. Filter, view, edit, or delete hunts as needed. Access all your bug bounties in one place.
 {% endblock description %}
 {% block keywords %}
-    Manage Bughunts, Bughunt Management, Online Contest, Filter Bughunts, Edit Bughunt, View Bughunt, Delete Bughunt
+    Manage Bug Bounties, Bug Bounty Management, Online Contest, Filter Bug Bounties, Edit Bug Bounty, View Bug Bounty, Delete Bug Bounty
 {% endblock keywords %}
 {% block og_title %}
-    Manage Bughunts - Easily Handle Your Online Contests
+    Manage Bug Bounties - Easily Handle Your Online Contests
 {% endblock og_title %}
 {% block og_description %}
-    Access and manage all your bughunts effortlessly. Filter by status, view details, and edit or delete hunts with ease.
+    Access and manage all your bug bounties effortlessly. Filter by status, view details, and edit or delete hunts with ease.
 {% endblock og_description %}
 {% block body %}
     <div class="bg-[#F3F5F7] w-full h-full flex flex-col items-center">
         <div class="flex items-center md:justify-between w-full md:h-max mt-5 flex-col md:flex-row">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bughunts</p>
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Manage Bug Bounties</p>
             <div class="w-full md:w-[15%] flex justify-center md:justify-end mr-10">
                 <a href="{% url 'add_bughunt' organization %}"
                    class="flex items-center justify-center md:justify-center px-16 py-7 bg-[#DC4654] rounded-xl hover:bg-red-600 transition-all">
@@ -31,12 +31,12 @@
                 <table class="w-full text-sm text-left text-gray-500">
                     <caption class="p-5 text-xl font-semibold text-left text-gray-900 bg-white">
                         <div class="flex w-full justify-between">
-                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bughunts</h2>
+                            <h2 class="mt-1 text-xl font-extrabold text-gray-500">Bug Bounties</h2>
                             <button id="dropdownDefaultButton"
                                     data-dropdown-toggle="dropdown"
                                     class="text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800"
                                     type="button">
-                                Filter Bughunts
+                                Filter Bug Bounties
                                 <svg class="w-2.5 h-2.5 ml-2.5"
                                      aria-hidden="true"
                                      xmlns="http://www.w3.org/2000/svg"
@@ -69,7 +69,7 @@
                                 </ul>
                             </div>
                         </div>
-                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your bughunts easily</p>
+                        <p class="mt-1 text-sm font-normal text-gray-500">Filter, view, edit or delete. Manage your bug bounties easily</p>
                     </caption>
                     <thead class="text-gray-700 uppercase bg-gray-50">
                         <tr>
@@ -123,7 +123,9 @@
                         {% else %}
                             <tr class="bg-white border-b">
                                 <th scope="row"
-                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">No Bughunts found</th>
+                                    class="px-6 py-4 font-medium text-red-500 whitespace-nowrap">
+                                    No Bug Bounties found
+                                </th>
                             </tr>
                         {% endif %}
                     </tbody>

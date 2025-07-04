@@ -1,24 +1,24 @@
-{% extends "organization/organization_dashboard_base.html" %}
+{% extends "organization/dashboard/organization_dashboard_base.html" %}
 {% load static %}
 {% block title %}
-    Add Bughunt
+    Add Bug Bounty
 {% endblock title %}
 {% block description %}
-    Create a new Bughunt and add prizes for the contest. Specify the domain, timeline, and upload related assets like logos and banners.
+    Create a new Bug Bounty and add prizes for the contest. Specify the domain, timeline, and upload related assets like logos and banners.
 {% endblock description %}
 {% block keywords %}
-    Bughunt, Add Bughunt, Online Contest, Domain URL, Create Bughunt, Hunt Prizes
+    Bug Bounty, Add Bug Bounty, Online Contest, Domain URL, Create Bug Bounty, Hunt Prizes
 {% endblock keywords %}
 {% block og_title %}
-    Add Bughunt - Create a New Online Contest
+    Add Bug Bounty - Create a New Online Contest
 {% endblock og_title %}
 {% block og_description %}
-    Set up a Bughunt contest, add prizes, and upload logos and banners to start the competition. Specify timelines and contest details.
+    Set up a Bug Bounty contest, add prizes, and upload logos and banners to start the competition. Specify timelines and contest details.
 {% endblock og_description %}
 {% block body %}
     <div class="bg-[#F3F5F7] flex flex-col items-center">
         <div class="w-full mt-5">
-            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Add Bughunt</p>
+            <p class="text-red-700 font-satoshi font-bold text-[35px] px-8">Add Bug Bounty</p>
         </div>
         <form method='post'
               action="#"
@@ -27,11 +27,11 @@
               class="w-[96%] bg-white rounded-2xl p-10 my-10 shadow-md">
             {% csrf_token %}
             <div class="pb-12">
-                <h2 class="text-base font-semibold leading-7 text-gray-900">Create new online Bughunt</h2>
+                <h2 class="text-base font-semibold leading-7 text-gray-900">Create new online Bug Bounty</h2>
                 <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                     <div class="sm:col-span-3">
                         <label for="bughunt_name"
-                               class="block text-sm font-medium leading-6 text-gray-900">Bughunt Name</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Name</label>
                         <div class="mt-2">
                             <input type="text"
                                    name="bughunt_name"
@@ -72,7 +72,7 @@
                             crossorigin="anonymous"></script>
                     <div class="sm:col-span-3">
                         <label for="domain_url"
-                               class="block text-sm font-medium leading-6 text-gray-900">Bughunt Timeline</label>
+                               class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Timeline</label>
                         <div date-rangepicker class="flex items-center">
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -114,7 +114,7 @@
                     <div class="border-b border-gray-900/10 pb-12">
                         <div class="col-span-full my-5">
                             <label for="bughunt_logo"
-                                   class="block text-sm font-medium leading-6 text-gray-900">Bughunt Logo</label>
+                                   class="block text-sm font-medium leading-6 text-gray-900">Bug Bounty Logo</label>
                             <div class="mt-2 flex items-center gap-x-3" id="previewLogo">
                                 <div id="previewLogoDiv"
                                      class="h-16 w-16 text-gray-300 overflow-hidden rounded-2xl text-red-500">
@@ -165,7 +165,7 @@
                 </div>
                 <div class="w-full ">{% include "organization/organization_includes/md_editor.html" %}</div>
                 <div class="border-b border-gray-900/10 pb-12 mt-5">
-                    <h2 class="text-base font-semibold leading-7 text-gray-900">Bughunt Prizes</h2>
+                    <h2 class="text-base font-semibold leading-7 text-gray-900">Bug Bounty Prizes</h2>
                     <div class="bg-gray-100 w-full p-7">
                         <h2 class="text-base font-semibold leading-7 text-gray-900 mb-4">
                             click on the add prize button after filling the prize details
