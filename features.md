@@ -64,6 +64,7 @@
   - Repository integration
   - Issue synchronization
   - Code review tools
+  - Command processing (e.g. `/plan` to generate task plans)
 
 ### Organization Features
 - **Team Management**
