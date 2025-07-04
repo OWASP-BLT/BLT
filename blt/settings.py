@@ -525,7 +525,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
-SOCIALACCOUNT_ADAPTER = "allauth.socialaccount.adapter.DefaultSocialAccountAdapter"
+SOCIALACCOUNT_ADAPTER = "website.adapters.CustomSocialAccountAdapter"
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
