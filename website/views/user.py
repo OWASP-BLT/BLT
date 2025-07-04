@@ -1058,62 +1058,54 @@ def handle_issue_event(payload):
         return JsonResponse({"status": "error", "message": "Missing required fields in payload"}, status=400)
 
     # Validate GitHub URL format
-    if not github_issue_url.startswith('https://github.com/'):
+    if not github_issue_url.startswith("https://github.com/"):
         logger.warning(f"Invalid GitHub issue URL format: {github_issue_url}")
         return JsonResponse({"status": "error", "message": "Invalid GitHub URL format"}, status=400)
 
     logger.info(f"Processing closed GitHub issue: {github_issue_url}")
-    
+
     # Convert closed_at to timezone-aware datetime
     try:
-        closed_at = datetime.fromisoformat(closed_at.replace('Z', '+00:00'))
+        closed_at = datetime.fromisoformat(closed_at.replace("Z", "+00:00"))
     except (ValueError, AttributeError) as e:
         logger.error(f"Invalid closed_at date format: {e}")
         closed_at = timezone.now()
 
     # Get closer's BLT profile if they have one
-    closer_profile = UserProfile.objects.filter(
-        github_url=closer_github_url
-    ).select_related('user').first()
+    closer_profile = UserProfile.objects.filter(github_url=closer_github_url).select_related("user").first()
 
     try:
         with transaction.atomic():
             # Update GitHub issue in our system if we're tracking it
             github_updated = GitHubIssue.objects.filter(url=github_issue_url).update(
-                state="closed",
-                closed_at=closed_at
+                state="closed", closed_at=closed_at
             )
-            
+
             if github_updated:
                 logger.info("Updated GitHub issue state to closed")
 
-            # Prepare BLT issue updates
-            update_fields = {
-                'status': 'closed',
-                'closed_date': closed_at
-            }
-            if closer_profile:
-                update_fields['closed_by'] = closer_profile.user
-
             # Update all open BLT issues linked to this GitHub issue in one query
-            updated_count = Issue.objects.filter(
-                github_url=github_issue_url,
-                status="open"
-            ).update(**update_fields)
+            if closer_profile:
+                updated_count = Issue.objects.filter(github_url=github_issue_url, status="open").update(
+                    status="closed", closed_date=closed_at, closed_by=closer_profile.user
+                )
+            else:
+                updated_count = Issue.objects.filter(github_url=github_issue_url, status="open").update(
+                    status="closed", closed_date=closed_at
+                )
 
             if updated_count > 0:
                 logger.info(f"Successfully closed {updated_count} BLT issues")
-                
+
                 # Assign badge to the closer if they have a BLT account and this is their first closed issue
                 if closer_profile:
                     # Check if this is their first closed issue (excluding the ones we just closed)
-                    is_first_close = not Issue.objects.filter(
-                        closed_by=closer_profile.user,
-                        status='closed'
-                    ).exclude(
-                        github_url=github_issue_url
-                    ).exists()
-                    
+                    is_first_close = (
+                        not Issue.objects.filter(closed_by=closer_profile.user, status="closed")
+                        .exclude(github_url=github_issue_url)
+                        .exists()
+                    )
+
                     if is_first_close:
                         try:
                             assign_github_badge(closer_profile.user, "First Issue Closed")
@@ -1134,10 +1126,14 @@ def handle_issue_event(payload):
         logger.error(f"Unexpected error processing GitHub issue event: {e}")
         return JsonResponse({"status": "error", "message": "Internal server error"}, status=500)
 
-    return JsonResponse({
-        "status": "success",
-        "message": f"Successfully processed issue closed event. Updated {updated_count if 'updated_count' in locals() else 0} BLT issues."
-    }, status=200)
+    return JsonResponse(
+        {
+            "status": "success",
+            "message": f"Successfully processed issue closed event. Updated {updated_count if 'updated_count' in locals() else 0} BLT issues.",
+        },
+        status=200,
+    )
+
 
 def handle_status_event(payload):
     user_profile = UserProfile.objects.filter(github_url=payload["sender"]["html_url"]).first()
