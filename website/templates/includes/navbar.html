@@ -107,7 +107,7 @@
                 </a>
                 <a href="{% url 'hunts' %}"
                    class="lg:!inline-block bg-red-500 hover:bg-red-600 h-[38px] py-[8px] px-[25px] whitespace-nowrap !text-2xl font-bold text-white leading-[21px] cursor-pointer hover:text-white hover:no-underline">
-                    {% trans "Bughunts" %}
+                    {% trans "Bug Bounties" %}
                 </a>
             </div>
         </form>
@@ -160,7 +160,7 @@
                         </li>
                         <li>
                             <a href="{% url 'start_hunt' %}">
-                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                                <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Bounty" %}
                             </a>
                         </li>
                         <li>
@@ -181,7 +181,12 @@
                         </li>
                         <li>
                             <a href="{% url 'organization_view' %}">
-                                <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
+                                <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'organization_dashboard' %}">
+                                <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
                             </a>
                         </li>
                         <!-- divider -->

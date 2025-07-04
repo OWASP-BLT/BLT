@@ -21,6 +21,7 @@ icons8-edit-96.png
 icons8-eslint-pluggable-and-configurable-linter-tool-for-identifying-and-reporting-on-patterns-in-javascript-96.png
 icons8-fail-32.png
 icons8-feedback-80.png
+icons8-forum-96.png
 icons8-host-64.png
 icons8-ip-48.png
 icons8-markdown-56.png
@@ -37,7 +38,6 @@ icons8-security-configuration-40.png
 icons8-security-shield-96.png
 icons8-social-50.png
 icons8-star-96.png
-icons8-suggestion-64.png
 icons8-survey-96.png
 icons8-tag-100.png
 icons8-test-60.png

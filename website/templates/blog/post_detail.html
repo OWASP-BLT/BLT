@@ -22,7 +22,7 @@
         <article class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
             <h1 class="text-4xl font-bold text-gray-900 text-center mb-4">{{ post.title }}</h1>
             <p class="text-gray-600 text-center mb-6">By {{ post.author }} on {{ post.created_at }}</p>
-            <div class="text-gray-700 leading-relaxed">{{ post.content|safe }}</div>
+            <div class="text-gray-700 leading-relaxed">{{ post.content | safe }}</div>
             {% if post.image %}
                 <div class="my-6">
                     <img class="w-full h-auto rounded-lg shadow-lg"

@@ -811,23 +811,9 @@ class twitter:
             # Get tweet URL
             tweet_url = f"https://twitter.com/user/status/{status.id}"
 
-            # Send to Discord
-            twitter.send_to_discord(message, tweet_url, image_path)
-
-            # Send to Slack
-            twitter.send_to_slack(message, tweet_url, image_path)
-
             return {"success": True, "url": tweet_url, "txid": str(status.id), "error": None}
         except Exception as e:
             logging.error(f"Error sending tweet: {str(e)}")
-
-            # Still try to send to Discord and Slack even if Twitter fails
-            try:
-                twitter.send_to_discord(message, None, image_path, error=str(e))
-                twitter.send_to_slack(message, None, image_path, error=str(e))
-            except Exception as comm_error:
-                logging.error(f"Error sending to communication channels: {str(comm_error)}")
-
             return {"success": False, "url": None, "txid": None, "error": str(e)}
 
     @staticmethod
@@ -986,3 +972,48 @@ class twitter:
         except Exception as e:
             logging.error(f"Error sending to Slack: {str(e)}")
             return False
+
+
+def check_security_txt(domain_url):
+    """
+    Check if a domain has a security.txt file according to RFC 9116.
+    Checks both /.well-known/security.txt and /security.txt locations.
+
+    Args:
+        domain_url (str): URL of the domain to check
+
+    Returns:
+        bool: True if security.txt is found, False otherwise
+    """
+    import requests
+
+    # Ensure URL has a scheme
+    if not domain_url.startswith(("http://", "https://")):
+        domain_url = "https://" + domain_url
+
+    # Remove trailing slash if present
+    if domain_url.endswith("/"):
+        domain_url = domain_url[:-1]
+
+    # Check at well-known location first (/.well-known/security.txt)
+    well_known_url = f"{domain_url}/.well-known/security.txt"
+
+    try:
+        response = requests.head(well_known_url, timeout=5)
+        if response.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+
+    # If not found, check at root location (/security.txt)
+    root_url = f"{domain_url}/security.txt"
+
+    try:
+        response = requests.head(root_url, timeout=5)
+        if response.status_code == 200:
+            return True
+    except requests.RequestException:
+        pass
+
+    # If we reach here, no security.txt was found
+    return False

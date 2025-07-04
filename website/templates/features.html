@@ -20,7 +20,7 @@
     <div class="container mx-auto px-4 py-6 m-2 ">
         <div class="relative sm:flex sm:flex-col">
             <h1 class="text-3xl font-bold mb-4 text-center">BLT Features</h1>
-            <a href="/suggestion/"
+            <a href="/forum/"
                class=" absolute top-0 right-9 border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors shadow-md">Suggest New Feature</a>
             <p class="text-gray-600 mb-6 text-center">
                 Explore the key features of OWASP BLT, designed to enhance bug tracking and security collaboration.
@@ -384,6 +384,25 @@
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View Repo</a>
                 </div>
             </div>
+            <!-- forum -->
+            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
+                <img src="{% static 'img/features/forum.png' %}"
+                     alt="forum"
+                     height="100"
+                     width="200"
+                     class="rounded-md mb-3 w-full h-56 object-contain">
+                <h2 class="text-xl font-semibold">Forum</h2>
+                <p class="text-gray-600 my-2">
+                    Encourages users to submit ideas and feedback to improve the platform, fostering community-driven development.
+                </p>
+                <p class="text-gray-500 text-sm">Added on: 2025-02-22</p>
+                <div class="flex justify-between mt-auto">
+                    <a href="/forum/"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"> View Forum</a>
+                    <a href="https://github.com/OWASP-BLT/BLT/commit/b7994191bfbbf79814965c832442d61f1160d50c"
+                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View commit</a>
+                </div>
+            </div>
             <!-- github action   -->
             <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
                 <img src="{% static 'img/features/github-action.png' %}"
@@ -507,7 +526,7 @@
                      class="rounded-md mb-3 w-full h-56 object-contain">
                 <h2 class="text-xl font-semibold">Organisations Dashboard</h2>
                 <p class="text-gray-600 my-2">
-                    Create and manage your own Bughunt contest with ease! Add enticing prizes, specify the domain and timeline, and upload essential assets like logos and banners. Start your competition today and engage participants with a well-organized, detailed setup.
+                    Create and manage your own Bug Bounty contest with ease! Add enticing prizes, specify the domain and timeline, and upload essential assets like logos and banners. Start your competition today and engage participants with a well-organized, detailed setup.
                 </p>
                 <p class="text-gray-500 text-sm">Added on: 2024-12-22</p>
                 <div class="flex justify-between mt-auto">
@@ -704,25 +723,6 @@
                     <a href="/profile/{{ user.username }}"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">view steak</a>
                     <a href="https://github.com/OWASP-BLT/BLT/pull/3043"
-                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
-                </div>
-            </div>
-            <!-- suggestions -->
-            <div class="bg-white shadow-md rounded-lg p-4 hover:scale-105 transition-transform w-full sm:w-[300px] md:w-[320px] lg:w-[350px] flex flex-col h-full">
-                <img src="{% static 'img/features/suggestions.png' %}"
-                     alt="suggestion"
-                     height="100"
-                     width="200"
-                     class="rounded-md mb-3 w-full h-56 object-contain">
-                <h2 class="text-xl font-semibold">Suggetions</h2>
-                <p class="text-gray-600 my-2">
-                    Encourages users to submit ideas and feedback to improve the platform, fostering community-driven development.
-                </p>
-                <p class="text-gray-500 text-sm">Added on: 2024-07-28</p>
-                <div class="flex justify-between mt-auto">
-                    <a href="/suggestion/"
-                       class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">Suggetions</a>
-                    <a href="https://github.com/OWASP-BLT/BLT/pull/2443"
                        class="border border-red-500 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors">View PR</a>
                 </div>
             </div>

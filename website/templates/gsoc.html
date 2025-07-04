@@ -18,502 +18,732 @@
 {% endblock og_description %}
 {% block content %}
     {% include "includes/sidenav.html" %}
-    <div class="mt-[160px] px-4 sm:px-6 lg:px-8">
-        <div class="max-w-[1000px] mx-auto lg:ml-0">
-            <!-- GSoC Logo -->
-            <!-- What is GSOC Section -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <div class="flex items-start gap-12 mb-8">
-                    <div class="w-[100px] flex-shrink-0">
+    <!-- Hero Section -->
+    <div class="mt-[100px] bg-zinc-100 py-16">
+        <div class="w-[85%] mx-auto">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="md:w-1/3 flex justify-center">
+                    <div class="relative">
+                        <div class="absolute -inset-4 bg-[#e74c3c] rounded-full blur-md opacity-30 animate-pulse"></div>
                         <img src="{% static 'images/gsoc.png' %}"
                              alt="Google Summer of Code Logo"
-                             class="w-full h-auto object-contain"
+                             class="w-[160px] h-auto object-contain relative"
                              width="200"
                              height="200">
                     </div>
-                    <div class="flex-1">
-                        <h2 class="text-3xl font-bold text-gray-900 mb-4">What is GSOC?</h2>
-                        <p class="text-xl text-gray-700 leading-relaxed">
-                            The <a href="https://summerofcode.withgoogle.com/"
-    class="text-red-600 hover:text-red-700 transition-colors font-medium">Google Summer of Code program</a> ("GSoC") is designed to encourage student participation in open source development. Through GSoC, accepted student applicants will be paired with OWASP mentors that will guide them through their coding tasks.
-                        </p>
+                </div>
+                <div class="md:w-2/3">
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Google Summer of Code</h1>
+                    <h2 class="text-xl md:text-2xl font-medium text-red-500 mb-6">
+                        with Open Worldwide Application Security Project (OWASP) Foundation
+                    </h2>
+                    <p class="text-xl text-gray-700 leading-relaxed mb-2">
+                        The <a href="https://summerofcode.withgoogle.com/"
+    class="text-[#e74c3c] hover:text-red-700 hover:underline transition-colors font-medium">Google Summer of Code program</a> (GSoC) is designed to encourage student participation in open source development. Through GSoC, accepted student applicants will be paired with OWASP mentors that will guide them through their coding tasks.
+                    </p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        <i class="fas fa-info-circle mr-2"></i> This program is done completely online. Students and mentors from more than 100 countries have participated in past years.
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="https://owasp.org/www-community/initiatives/gsoc/"
+                           class="inline-flex items-center px-6 py-3 bg-red-500 shadow-md hover:bg-red-600 hover:text-white text-white font-medium rounded-lg transition-colors duration-200">
+                            <i class="fas fa-code-branch mr-2"></i> Browse Projects
+                        </a>
+                        <a href="https://summerofcode.withgoogle.com/"
+                           class="inline-flex items-center px-6 py-3 bg-white shadow-md hover:bg-gray-100 hover:text-gray-800 text-gray-800 font-medium rounded-lg transition-colors border border-gray-300 duration-200">
+                            <i class="fas fa-external-link-alt mr-2"></i> Official GSoC Site
+                        </a>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-                    <div class="text-center p-6 bg-red-500 rounded-xl text-white transform hover:scale-105 transition-transform">
-                        <div class="text-4xl font-bold mb-2">100+</div>
-                        <div class="text-lg">Countries Participated</div>
-                    </div>
-                    <div class="text-center p-6 bg-red-500 rounded-xl text-white transform hover:scale-105 transition-transform">
-                        <div class="text-4xl font-bold mb-2">7</div>
-                        <div class="text-lg">Years with OWASP BLT</div>
-                    </div>
-                    <div class="text-center p-6 bg-red-500 rounded-xl text-white transform hover:scale-105 transition-transform">
-                        <div class="text-4xl font-bold mb-2">20+</div>
-                        <div class="text-lg">Successful Projects</div>
-                    </div>
-                </div>
-                <p class="text-gray-700 mb-4">
-                    This program is done completely online. Students and mentors from more than 100 countries have participated in past years.
-                </p>
             </div>
-            <!-- Benefits Card -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Benefits for Students</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Gaining exposure to real-world software development scenarios</p>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">An opportunity for employment in areas related to their academic pursuits</p>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Google will be offering successful student contributors a stipend</p>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <div class="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <div class="w-[85%] mx-auto">
+            <!-- Stats Section -->
+            <div class="mb-16">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6 text-center">
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">100+</div>
+                            <div class="text-gray-700 font-medium">Countries Participated</div>
                         </div>
                     </div>
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Build your professional network</p>
+                    <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6 text-center">
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">7</div>
+                            <div class="text-gray-700 font-medium">Years with OWASP BLT</div>
                         </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Gain valuable experience in cybersecurity</p>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Receive a certificate upon completion</p>
+                    </div>
+                    <div class="bg-white shadow-lg rounded-xl overflow-hidden transform ">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6 text-center">
+                            <div class="text-5xl font-bold mb-2 text-[#e74c3c]">20+</div>
+                            <div class="text-gray-700 font-medium">Successful Projects</div>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- Mentor Benefits Card -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Benefits for Mentors</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Shape the next generation of open-source developers</p>
+            <!-- Benefits Section -->
+            <div class="mb-20">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-2">Program Benefits</h2>
+                <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-12 rounded-full"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                    <!-- Student Benefits -->
+                    <div class="bg-white rounded-xl shadow-lg  transition-all duration-300 p-8 border border-gray-100">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 flex items-center justify-center bg-red-100 text-[#e74c3c] rounded-full mr-4">
+                                <i class="fas fa-user-graduate text-xl" aria-hidden="true"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">For Students</h3>
                         </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Enhance project visibility and community engagement</p>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Develop leadership and mentoring skills</p>
-                        </div>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Gaining exposure to real-world software development scenarios</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">An opportunity for employment in areas related to their academic pursuits</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Google will be offering successful student contributors a stipend</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Build your professional network</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Gain valuable experience in cybersecurity</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Receive a certificate upon completion</p>
+                            </li>
+                        </ul>
                     </div>
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Expand your professional network within OWASP</p>
+                    <!-- Mentor Benefits -->
+                    <div class="bg-white rounded-xl shadow-lg  transition-all duration-300 p-8 border border-gray-100">
+                        <div class="flex items-center mb-6">
+                            <div class="w-12 h-12 flex items-center justify-center bg-red-100 text-[#e74c3c] rounded-full mr-4">
+                                <i class="fas fa-chalkboard-teacher text-xl" aria-hidden="true"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900">For Mentors</h3>
                         </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Recognition in the global security community</p>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-red-500 mt-1 mr-3"></i>
-                            <p class="text-gray-700">Contribute to the growth of open-source security projects</p>
-                        </div>
+                        <ul class="space-y-4">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Shape the next generation of open-source developers</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Enhance project visibility and community engagement</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Develop leadership and mentoring skills</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Expand your professional network within OWASP</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Recognition in the global security community</p>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-[#e74c3c] mt-1 mr-3"
+                                   aria-hidden="true"></i>
+                                <p class="text-gray-700">Contribute to the growth of open-source security projects</p>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
             <!-- OWASP Partnership Card -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">OWASP BLT & GSOC Partnership</h2>
-                <div class="space-y-6 text-gray-700">
-                    <p>
-                        OWASP is an open community dedicated to enabling organizations to conceive, develop, acquire, operate, and maintain applications that can be trusted. OWASP has been an active participant in the Google Summer of Code program, providing students with the opportunity to contribute to various OWASP projects.
-                    </p>
-                    <p>
-                        OWASP BLT (Bug Logging Tool) has been participating in the Google Summer of Code program for the past 5 consecutive years, from 2020 to 2024. OWASP BLT is an open-source platform dedicated to making the internet safer through community-driven bug reporting and collaboration.
-                    </p>
-                    <p>
-                        All students currently enrolled in an accredited institution are welcome to participate in the Google Summer of Code program, hopefully along with the OWASP Foundation.
-                    </p>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-8">
-                    <a href="https://github.com/OWASP-BLT/BLT/issues/2916"
-                       target="_blank"
-                       class="flex items-center p-6 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors group">
-                        <span class="text-xl font-semibold text-gray-800 flex items-center gap-3">
-                            GSOC 2025 Leaderboard
-                            <i class="fa-solid fa-trophy text-red-500 group-hover:text-red-600 text-2xl"></i>
-                        </span>
-                    </a>
-                    <a href="https://github.com/OWASP-BLT/BLT/issues/2384"
-                       target="_blank"
-                       class="flex items-center p-6 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors group">
-                        <span class="text-xl font-semibold text-gray-800 flex items-center gap-3">
-                            GSOC 2024 Leaderboard
-                            <i class="fa-solid fa-trophy text-red-500 group-hover:text-red-600 text-2xl"></i>
-                        </span>
-                    </a>
+            <div class="bg-white rounded-xl shadow-lg  transition-all duration-300 p-8 mb-20 border border-gray-100">
+                <div class="flex flex-col lg:flex-row lg:items-center gap-10">
+                    <div class="lg:w-3/5">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-6">OWASP BLT & GSOC Partnership</h2>
+                        <div class="space-y-6 text-gray-700">
+                            <p class="leading-relaxed">
+                                OWASP is an open community dedicated to enabling organizations to conceive, develop, acquire, operate, and maintain applications that can be trusted. OWASP has been an active participant in the Google Summer of Code program, providing students with the opportunity to contribute to various OWASP projects.
+                            </p>
+                            <p class="leading-relaxed">
+                                OWASP BLT (Bug Logging Tool) has been participating in the Google Summer of Code program for the past 5 consecutive years, from 2020 to 2024. OWASP BLT is an open-source platform dedicated to making the internet safer through community-driven bug reporting and collaboration.
+                            </p>
+                            <p class="leading-relaxed">
+                                All students currently enrolled in an accredited institution are welcome to participate in the Google Summer of Code program, hopefully along with the OWASP Foundation.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="lg:w-2/5">
+                        <div class="space-y-4">
+                            <a href="https://github.com/OWASP-BLT/BLT/issues/2916"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="flex items-center p-6 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors group border border-gray-200">
+                                <div>
+                                    <span class="text-xl font-semibold text-gray-800 flex items-center gap-3 mb-2">GSOC 2025 Leaderboard</span>
+                                    <p class="text-gray-600">Check out the latest contributors and projects</p>
+                                </div>
+                                <div class="ml-auto">
+                                    <i class="fa-solid fa-trophy text-[#e74c3c] group-hover:text-red-600 text-3xl"></i>
+                                </div>
+                            </a>
+                            <a href="https://github.com/OWASP-BLT/BLT/issues/2384"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="flex items-center p-6 bg-gray-50 rounded-xl hover:bg-red-50 transition-colors group border border-gray-200">
+                                <div>
+                                    <span class="text-xl font-semibold text-gray-800 flex items-center gap-3 mb-2">GSOC 2024 Leaderboard</span>
+                                    <p class="text-gray-600">View past contributors and their projects</p>
+                                </div>
+                                <div class="ml-auto">
+                                    <i class="fa-solid fa-trophy text-[#e74c3c] group-hover:text-red-600 text-3xl"></i>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <!-- Project Ideas -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Project Ideas</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Project Ideas Section -->
+            <div class="mb-20">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-2">Project Ideas</h2>
+                <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-12 rounded-full"></div>
+                <!-- OWASP BLT Projects (Highlighted) -->
+                <div class="mb-12">
+                    <a href="https://github.com/OWASP-BLT/BLT/milestones"
+                       rel="noopener noreferrer"
+                       target="_blank"
+                       class="block p-8 bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl  transition-all">
+                        <div class="flex flex-col md:flex-row items-center justify-between">
+                            <div class="mb-6 md:mb-0">
+                                <h3 class="text-2xl font-bold text-red-700 mb-3">OWASP BLT Project Ideas</h3>
+                                <p class="text-red-600 text-lg mb-4">Explore exciting project opportunities with OWASP Bug Logging Tool</p>
+                                <span class="inline-block px-4 py-2 bg-white text-[#e74c3c] rounded-full font-medium">Featured Projects</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-24 h-24 flex items-center justify-center bg-white rounded-full mb-4 shadow-md mx-auto">
+                                    <i class="fa-solid fa-lightbulb text-[#e74c3c] text-4xl"></i>
+                                </div>
+                                <span class="inline-flex items-center text-[#e74c3c] font-medium">
+                                    Browse Now <i class="fa-solid fa-arrow-right ml-2"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                <!-- Past Ideas Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2025ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2025 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2025</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2024ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2024 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2024</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2023ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2023 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2023</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2022ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2022 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2022</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2021ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2021 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2021</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2020ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2020 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2020</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2019ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2019 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2019</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2018ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2018 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2018</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
                     <a href="https://owasp.org/www-community/initiatives/gsoc/gsoc2017ideas"
                        target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            GSOC Project Ideas 2017 <i class="fa-solid fa-link"></i>
+                       rel="noopener noreferrer"
+                       class="group block p-5 bg-white shadow-md rounded-lg  border border-gray-100 transition-all">
+                        <div class="flex items-center">
+                            <span class="font-semibold text-gray-900 group-hover:text-[#e74c3c] transition-colors">GSOC Project Ideas 2017</span>
+                            <i class="fa-solid fa-link ml-auto text-gray-400 group-hover:text-[#e74c3c]"></i>
                         </div>
                     </a>
-                </div>
-                <!-- OWASP BLT Projects (Highlighted) -->
-                <div class="mt-8">
-                    <a href="https://github.com/OWASP-BLT/BLT/milestones"
-                       target="_blank"
-                       class="block p-6 bg-red-50 border-2 border-red-200 rounded-lg hover:bg-red-100 transition-colors">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h3 class="text-xl font-semibold text-red-700 mb-2">OWASP BLT Project Ideas</h3>
-                                <p class="text-red-600">Explore exciting project opportunities with OWASP Bug Logging Tool</p>
-                            </div>
-                            <i class="fa-solid fa-arrow-right text-2xl text-red-500"></i>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            <!-- Top Contributors Leaderboard -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Top OWASP GSoC 2025 Contributors and Projects</h2>
-                <p class="text-gray-700 mb-4">A glimpse of the top contributors and projects with the most PRs for OWASP GSoC 2025.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {% for project, data in projects.items %}
-                        <div class="bg-gray-50 rounded-lg p-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <a href="{{ data.repo_url }}"
-                                   target="_blank"
-                                   class="text-xl font-semibold text-gray-900">
-                                    {{ project }} - Total PRs:
-                                    <span class="text-red-600 font-bold">{{ data.total_prs }}</span>
-                                </a>
-                                <form action="{% url 'refresh_gsoc_project' %}"
-                                      method="post"
-                                      class="inline">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="project_name" value="{{ project }}">
-                                    <div class="flex items-center space-x-2">
-                                        <button type="submit"
-                                                class="bg-[#e74c3c] hover:bg-red-700 text-white py-1 px-3 rounded-md text-sm flex items-center">
-                                            <i class="fas fa-sync-alt mr-1"></i> Refresh
-                                        </button>
-                                        <div class="flex items-center">
-                                            <input type="checkbox"
-                                                   id="reset_counter_{{ project|slugify }}"
-                                                   name="reset_counter"
-                                                   value="true"
-                                                   class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded">
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="space-y-3">
-                                {% for contributor in data.contributors %}
-                                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
-                                        <div class="flex items-center">
-                                            <img src="{{ contributor.avatar_url }}"
-                                                 alt="{{ contributor.username }}"
-                                                 class="w-8 h-8 rounded-full mr-3"
-                                                 width="32"
-                                                 height="32">
-                                            {% with repo_parts=data.repo_url|cut:"https://github.com/" %}
-                                                <a href="https://github.com/{{ repo_parts }}/issues?q=is%3Apr+author%3A{{ contributor.username }}"
-                                                   target="_blank"
-                                                   title="View {{ contributor.username }}'s PRs in {{ repo_parts }}"
-                                                   class="text-gray-700 hover:text-red-600">{{ contributor.username }}</a>
-                                            {% endwith %}
-                                        </div>
-                                        <span class="bg-red-100 text-red-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                                            {{ contributor.prs }} PR
-                                            {% if contributor.prs != 1 %}s{% endif %}
-                                        </span>
-                                    </div>
-                                {% empty %}
-                                    <p class="text-gray-500 italic">No contributors in this period</p>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endfor %}
                 </div>
             </div>
             <!-- Past Events -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
+            <div class="bg-white rounded-xl shadow-lg  transition-all duration-300 p-8 mb-20 border border-gray-100">
                 <h2 class="text-3xl font-bold text-gray-900 mb-6">Past GSOC Events</h2>
-                <div class="space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- 2023 -->
-                    <div class="space-y-4">
-                        <a href="https://summerofcode.withgoogle.com/archive/2023/organizations/owasp-foundation"
-                           target="_blank"
-                           class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                            <div class="link-text">
-                                2023 GSOC Archive <i class="fa-solid fa-link"></i>
+                    <div class="bg-white rounded-lg shadow-md transition-all border border-gray-200 overflow-hidden">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <a href="https://summerofcode.withgoogle.com/archive/2023/organizations/owasp-foundation"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-xl font-bold text-gray-900 hover:text-[#e74c3c] transition-colors flex items-center mb-4">
+                                <i aria-hidden="true" class="fas fa-calendar-alt mr-2 text-[#e74c3c]"></i>
+                                2023 GSOC Archive
+                            </a>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i aria-hidden="true" class="fas fa-users mr-2 text-[#e74c3c]"></i>
+                                    Mentors
+                                </h4>
+                                <p class="text-gray-700 leading-relaxed">
+                                    Abraham Aranguren, Aryan Prasad, Aryan Ranjan, Ben de Haan, Björn Kimminich, Christian Folini, DonnieBLT, fzipitria, Jannik Hollenbach, José Carlos Chávez, Mrigank Anand, Rick M, ShubhamPalriwala, Simon Bennetts, thc202, Timo Pagel, Viyat
+                                </p>
                             </div>
-                        </a>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-2">2023 Mentors</h4>
-                            <p class="text-gray-700">
-                                Abraham Aranguren, Aryan Prasad, Aryan Ranjan, Ben de Haan, Björn Kimminich, Christian Folini, DonnieBLT, fzipitria, Jannik Hollenbach, José Carlos Chávez, Mrigank Anand, Rick M, ShubhamPalriwala, Simon Bennetts, thc202, Timo Pagel, Viyat
-                            </p>
                         </div>
                     </div>
                     <!-- 2022 -->
-                    <div class="space-y-4">
-                        <a href="https://summerofcode.withgoogle.com/archive/2022/organizations/owasp-foundation"
-                           target="_blank"
-                           class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                            <div class="link-text">
-                                2022 GSOC Archive <i class="fa-solid fa-link"></i>
+                    <div class="bg-white rounded-lg shadow-md transition-all border border-gray-200 overflow-hidden">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <a href="https://summerofcode.withgoogle.com/archive/2022/organizations/owasp-foundation"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-xl font-bold text-gray-900 hover:text-[#e74c3c] transition-colors flex items-center mb-4">
+                                <i aria-hidden="true" class="fas fa-calendar-alt mr-2 text-[#e74c3c]"></i>
+                                2022 GSOC Archive
+                            </a>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i aria-hidden="true" class="fas fa-users mr-2 text-[#e74c3c]"></i>
+                                    Mentors
+                                </h4>
+                                <p class="text-gray-700 leading-relaxed">
+                                    Abraham Aranguren, Ade Yoseman Putra, Ankit Choudhary, Björn Kimminich, Dhiren Serai, Franziska, fzipitria, Glenn Ten Cate, Jannik Hollenbach, Rejah Rehim, Rick M, Saeed Dehqan, Sam Stepanyan, Sparsh Agrawal, thc202, Timo Pagel, Viyat
+                                </p>
                             </div>
-                        </a>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-2">2022 Mentors</h4>
-                            <p class="text-gray-700">
-                                Abraham Aranguren, Ade Yoseman Putra, Ankit Choudhary, Björn Kimminich, Dhiren Serai, Franziska, fzipitria, Glenn Ten Cate, Jannik Hollenbach, Rejah Rehim, Rick M, Saeed Dehqan, Sam Stepanyan, Simon Bennetts, Sparsh Agrawal, thc202, Timo Pagel, Viyat
-                            </p>
                         </div>
                     </div>
                     <!-- 2021 -->
-                    <div class="space-y-4">
-                        <a href="https://summerofcode.withgoogle.com/archive/2021/organizations/owasp-foundation"
-                           target="_blank"
-                           class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                            <div class="link-text">
-                                2021 GSOC Archive <i class="fa-solid fa-link"></i>
+                    <div class="bg-white rounded-lg shadow-md transition-all border border-gray-200 overflow-hidden">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <a href="https://summerofcode.withgoogle.com/archive/2021/organizations/owasp-foundation"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-xl font-bold text-gray-900 hover:text-[#e74c3c] transition-colors flex items-center mb-4">
+                                <i aria-hidden="true" class="fas fa-calendar-alt mr-2 text-[#e74c3c]"></i>
+                                2021 GSOC Archive
+                            </a>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i aria-hidden="true" class="fas fa-users mr-2 text-[#e74c3c]"></i>
+                                    Mentors
+                                </h4>
+                                <p class="text-gray-700 leading-relaxed">
+                                    8f040, Abe, Abraham Aranguren, Ade Yoseman Putra, Ali Razmjoo Qalaei, Anshul Singhal, Ashrith N Shetty, Björn Kimminich, Damien Carol, Dhiren Devinder Serai, Glenn ten Cate, Jannik Hollenbach, madchap, Mohit Sharma-2, Rejah Rehim, Riccardo Cate, Rick M, Saeed Dehqan-1, Sam Stepanyan, Simon Bennetts, Sourav Badami, thc202
+                                </p>
                             </div>
-                        </a>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-2">2021 Mentors</h4>
-                            <p class="text-gray-700">
-                                8f040, Abe, Abraham Aranguren, Ade Yoseman Putra, Ali Razmjoo Qalaei, Anshul Singhal, Ashrith N Shetty, Björn Kimminich, Damien Carol, Dhiren Devinder Serai, Glenn ten Cate, Jannik Hollenbach, madchap, Mohit Sharma-2, Rejah Rehim, Riccardo Cate, Rick M, Saeed Dehqan-1, Sam Stepanyan, Simon Bennetts, Sourav Badami, thc202
-                            </p>
                         </div>
                     </div>
                     <!-- 2020 -->
-                    <div class="space-y-4">
-                        <a href="https://summerofcode.withgoogle.com/archive/2020/organizations/owasp-foundation"
-                           target="_blank"
-                           class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                            <div class="link-text">
-                                2020 GSOC Archive <i class="fa-solid fa-link"></i>
+                    <div class="bg-white rounded-lg shadow-md transition-all border border-gray-200 overflow-hidden">
+                        <div class="p-2 bg-[#e74c3c]"></div>
+                        <div class="p-6">
+                            <a href="https://summerofcode.withgoogle.com/archive/2020/organizations/owasp-foundation"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="text-xl font-bold text-gray-900 hover:text-[#e74c3c] transition-colors flex items-center mb-4">
+                                <i aria-hidden="true" class="fas fa-calendar-alt mr-2 text-[#e74c3c]"></i>
+                                2020 GSOC Archive
+                            </a>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2 flex items-center">
+                                    <i aria-hidden="true" class="fas fa-users mr-2 text-[#e74c3c]"></i>
+                                    Mentors
+                                </h4>
+                                <p class="text-gray-700 leading-relaxed">
+                                    Abe, Abraham Aranguren, Ade Yoseman Putra, Adrian Winckles, Ali Razmjoo Qalaei, Björn Kimminich, Felipe Zipitria, Glenn ten Cate, Jannik Hollenbach, Mohit Sharma, Rejah Rehim A A, Rejah Rehim, Ricardo Pereira, Riccardo ten Cate, Rick M, S, securestep9, Simon Bennetts, Soham Marik, souravbadami, spyros, Sri Harsha G, Timo Pagel, Viyat Bhalodia
+                                </p>
                             </div>
-                        </a>
-                        <div class="p-4 bg-gray-50 rounded-lg">
-                            <h4 class="text-lg font-semibold text-gray-800 mb-2">2020 Mentors</h4>
-                            <p class="text-gray-700">
-                                Abe, Abraham Aranguren, Ade Yoseman Putra, Adrian Winckles, Ali Razmjoo Qalaei, Björn Kimminich, Felipe Zipitria, Glenn ten Cate, Jannik Hollenbach, Mohit Sharma, Rejah Rehim A A, Rejah Rehim, Ricardo Pereira, Riccardo ten Cate, Rick M, S, securestep9, Simon Bennetts, Soham Marik, souravbadami, spyros, Sri Harsha G, Timo Pagel, Viyat Bhalodia
-                            </p>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Success Stories -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 mb-12 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Success Stories</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-8 mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2 text-center">Success Stories</h2>
+                <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-8 rounded-full"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Shirish Jain -->
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                            <h3 class="text-xl font-semibold mb-3">Shirish Jain</h3>
-                            <p class="text-gray-700 mb-4">Successfully implemented the Sizzle Time Tracking feature during GSoC 2023.</p>
-                            <div class="space-y-2">
-                                <a href="https://medium.com/@shirishjain.2001/gsoc-2023-final-report-owasp-bug-logging-tool-f70d6368f9f5"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fas fa-external-link-alt mr-2"></i>Read Blog
-                                </a>
-                                <a href="https://blt.owasp.org/contributors/?contributor=37"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fa fa-user fa-fw mr-2"></i>View Profile
-                                </a>
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-code text-[#e74c3c] text-2xl"></i>
                             </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Shirish Jain</h3>
+                                <p class="text-gray-600">GSoC 2023</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">Successfully implemented the Sizzle Time Tracking feature during GSoC 2023.</p>
+                        <div class="flex gap-4">
+                            <a href="https://medium.com/@shirishjain.2001/gsoc-2023-final-report-owasp-bug-logging-tool-f70d6368f9f5"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
+                            <a href="https://blt.owasp.org/contributors/?contributor=37"
+                               class="flex-1 border-2 border-[#e74c3c] text-[#e74c3c] py-2 px-4 rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-user"></i>
+                                <span>Profile</span>
+                            </a>
                         </div>
                     </div>
                     <!-- Aryan Ranjan -->
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                            <h3 class="text-xl font-semibold mb-3">Aryan Ranjan</h3>
-                            <p class="text-gray-700 mb-4">Developed the Discussion Room feature during GSoC 2023.</p>
-                            <div class="space-y-2">
-                                <a href="https://medium.com/@justary27/my-gsoc22-voyage-beginning-4296df5af625"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fas fa-external-link-alt mr-2"></i>Read Blog
-                                </a>
-                                <a href="https://blt.owasp.org/contributors/?contributor=1"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fa fa-user fa-fw mr-2"></i>View Profile
-                                </a>
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-comments text-[#e74c3c] text-2xl"></i>
                             </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Aryan Ranjan</h3>
+                                <p class="text-gray-600">GSoC 2023</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">Developed the Discussion Room feature during GSoC 2023.</p>
+                        <div class="flex gap-4">
+                            <a href="https://medium.com/@justary27/my-gsoc22-voyage-beginning-4296df5af625"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
+                            <a href="https://blt.owasp.org/contributors/?contributor=1"
+                               class="flex-1 border-2 border-[#e74c3c] text-[#e74c3c] py-2 px-4 rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-user"></i>
+                                <span>Profile</span>
+                            </a>
                         </div>
                     </div>
                     <!-- Swapnil Shinde -->
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                            <h3 class="text-xl font-semibold mb-3">Swapnil Shinde</h3>
-                            <p class="text-gray-700 mb-4">Contributed to OWASP BLT development.</p>
-                            <div class="space-y-2">
-                                <a href="https://gist.github.com/AtmegaBuzz/512a85827b5cc993e35c274dcbada669"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fas fa-external-link-alt mr-2"></i>Read Report
-                                </a>
-                                <a href="https://blt.owasp.org/contributors/?contributor=3"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fa fa-user fa-fw mr-2"></i>View Profile
-                                </a>
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-bug text-[#e74c3c] text-2xl"></i>
                             </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Swapnil Shinde</h3>
+                                <p class="text-gray-600">GSoC 2022</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">Contributed to OWASP BLT development.</p>
+                        <div class="flex gap-4">
+                            <a href="https://gist.github.com/AtmegaBuzz/512a85827b5cc993e35c274dcbada669"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-file-alt"></i>
+                                <span>Report</span>
+                            </a>
+                            <a href="https://blt.owasp.org/contributors/?contributor=3"
+                               class="flex-1 border-2 border-[#e74c3c] text-[#e74c3c] py-2 px-4 rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-user"></i>
+                                <span>Profile</span>
+                            </a>
                         </div>
                     </div>
                     <!-- Bishal Das -->
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                            <h3 class="text-xl font-semibold mb-3">Bishal Das</h3>
-                            <p class="text-gray-700 mb-4">GSoC Learning journey with OWASP BLT.</p>
-                            <div class="space-y-2">
-                                <a href="https://bishaldas.hashnode.dev/gsoc-2024-a-summer-of-learning-coding-and-growth"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fas fa-external-link-alt mr-2"></i>Read Blog
-                                </a>
-                                <a href="https://blt.owasp.org/contributors/?contributor=5"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fa fa-user fa-fw mr-2"></i>View Profile
-                                </a>
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-graduation-cap text-[#e74c3c] text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Bishal Das</h3>
+                                <p class="text-gray-600">GSoC 2024</p>
                             </div>
                         </div>
+                        <p class="text-gray-700 mb-6 text-lg">GSoC Learning journey with OWASP BLT.</p>
+                        <div class="flex gap-4">
+                            <a href="https://bishaldas.hashnode.dev/gsoc-2024-a-summer-of-learning-coding-and-growth"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
+                            <a href="https://blt.owasp.org/contributors/?contributor=5"
+                               class="flex-1 border-2 border-[#e74c3c] text-[#e74c3c] py-2 px-4 rounded-lg hover:bg-[#e74c3c] hover:text-white transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-user"></i>
+                                <span>Profile</span>
+                            </a>
+                        </div>
                     </div>
-                    <!-- Sarthak Sharma -->
-                    <div class="space-y-4">
-                        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
-                            <h3 class="text-xl font-semibold mb-3">Sarthak Sharma</h3>
-                            <p class="text-gray-700 mb-4">GSoC journey and challenges with OWASP BLT.</p>
-                            <div class="space-y-2">
-                                <a href="https://medium.com/@sarthak5598sharma/gsoc-unveiled-how-i-conquered-the-challenges-and-whats-next-1b16919dbed6"
-                                   class="text-red-600 hover:text-red-700 block">
-                                    <i class="fas fa-external-link-alt mr-2"></i>Read Blog
-                                </a>
+                    <!-- Shubham Palriwala -->
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-flask text-[#e74c3c] text-2xl"></i>
                             </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Shubham Palriwala</h3>
+                                <p class="text-gray-600">OWASP Juice Shop</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">OWASP Juice Shop Journey</p>
+                        <div class="flex gap-4">
+                            <a href="https://medium.com/@shubhampalriwala/google-summer-of-code-journey-with-owasp-juice-shop-c1ca15c8e170"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Akshay Behl -->
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-network-wired text-[#e74c3c] text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Akshay Behl</h3>
+                                <p class="text-gray-600">OWASP Nettacker</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">OWASP Nettacker Experience</p>
+                        <div class="flex gap-4">
+                            <a href="https://medium.com/@akshaybehl231/diving-into-open-source-owasp-nettacker-gsoc24-e73114f37a11"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Chakshu Gupta -->
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-shield-alt text-[#e74c3c] text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Chakshu Gupta</h3>
+                                <p class="text-gray-600">OWASP Honeypot Project</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">OWASP Honeypot Project Journey</p>
+                        <div class="flex gap-4">
+                            <a href="https://medium.com/@ChGDream/my-google-summer-of-code-2020-journey-with-owasp-b772c3e67c3f"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Rishabh Keshan -->
+                    <div class="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-cube text-[#e74c3c] text-2xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-semibold ">Rishabh Keshan</h3>
+                                <p class="text-gray-600">Web3 Juice Shop</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-700 mb-6 text-lg">Web3 Journey with Juice Shop</p>
+                        <div class="flex gap-4">
+                            <a href="https://medium.com/@ChGDream/my-google-summer-of-code-2020-journey-with-owasp-b772c3e67c3f"
+                               class="flex-1 hover:text-white bg-[#e74c3c] text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-center flex items-center justify-center gap-2">
+                                <i class="fas fa-book-open"></i>
+                                <span>Read Blog</span>
+                            </a>
                         </div>
                     </div>
                 </div>
-                <!-- Additional Success Stories -->
-                <div class="mt-8 space-y-4">
-                    <a href="https://medium.com/@shubhampalriwala/google-summer-of-code-journey-with-owasp-juice-shop-c1ca15c8e170"
-                       target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            Shubham Palriwala's GSOC Journey with OWASP Juice Shop <i class="fa-solid fa-link"></i>
+            </div>
+            <!-- Current GSoC Mentors Section -->
+            <div class="mb-20">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-2">Current GSoC 2025 Mentors</h2>
+                <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-12 rounded-full"></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Rahul Negi -->
+                    <div class="bg-white rounded-lg shadow-lg  transition-all border border-gray-200 overflow-hidden">
+                        <div class="h-3 bg-gradient-to-r from-[#e74c3c] to-red-400"></div>
+                        <div class="p-8">
+                            <div class="flex items-center mb-4">
+                                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-chalkboard-teacher text-[#e74c3c] text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-gray-900">Rahul Negi</h3>
+                                    <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Python/Django Mentor</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 leading-relaxed">
+                                As a Python/Django mentor for OWASP BLT's GSoC 2025 program, I'll guide students in building secure web applications and bug logging tools. My focus is on helping students develop practical skills in web development and cybersecurity while contributing to open-source projects.
+                            </p>
                         </div>
-                    </a>
-                    <a href="https://medium.com/@akshaybehl231/diving-into-open-source-owasp-nettacker-gsoc24-e73114f37a11"
-                       target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            Akshay Behl's GSOC Journey with OWASP Nettacker <i class="fa-solid fa-link"></i>
+                    </div>
+                    <!-- Bishal Das -->
+                    <div class="bg-white rounded-lg shadow-lg  transition-all border border-gray-200 overflow-hidden">
+                        <div class="h-3 bg-gradient-to-r from-[#e74c3c] to-red-400"></div>
+                        <div class="p-8">
+                            <div class="flex items-center mb-4">
+                                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-chalkboard-teacher text-[#e74c3c] text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-2xl font-bold text-gray-900">Bishal Das</h3>
+                                    <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Django & UI/UX Mentor</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 leading-relaxed">
+                                As a Django and UI/UX mentor for OWASP BLT in GSoC 2025, I'll guide students build secure and intuitive web applications. My focus is on guiding them through real-world development—writing clean backend code, designing smooth user experiences, and understanding the basics of cybersecurity. I'm all about making open-source contributions meaningful while helping students grow their skills along the way.
+                            </p>
                         </div>
-                    </a>
-                    <a href="https://medium.com/@ChGDream/my-google-summer-of-code-2020-journey-with-owasp-b772c3e67c3f"
-                       target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            Chakshu Gupta's GSOC journey with OWASP Honeypot <i class="fa-solid fa-link"></i>
+                        <!-- Sudhir Palavalasa -->
+                        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow">
+                            <div class="flex items-center mb-4">
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-900">Sudhir Palavalasa</h3>
+                                </div>
+                            </div>
+                            <p class="text-gray-700">
+                                I’m thrilled to be part of OWASP BLT in GSoC 2025 as a mentor. I’m backend engineer by heart, with strong track record of working on large scale systems and deep focus on application security and auth & auth. Over the years, I’ve built secure APIs, enforced robust security strategies and driven API security best practices art scale. Currently, I lead as a Senior Software Engineer Manager at a major tech company, where I guide teams building high-performance, secure platforms. I’m truly passionate about mentoring and sharing knowledge. What excites me most about GSoC is chance to support students while continue to grow myself. I’m particularly curious about how AI intersects with security and I look forward to exploring all great new ideas.
+                            </p>
                         </div>
-                    </a>
-                    <a href="https://medium.com/@ChGDream/my-google-summer-of-code-2020-journey-with-owasp-b772c3e67c3f"
-                       target="_blank"
-                       class="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors">
-                        <div class="link-text">
-                            Rishabh Keshan's GSOC Web3 journey with OWASP Juice Shop <i class="fa-solid fa-link"></i>
-                        </div>
-                    </a>
+                    </div>
                 </div>
             </div>
             <!-- Past Mentors Section -->
-            <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-8 border-l-4 border-red-500">
-                <h2 class="text-3xl font-bold text-gray-900 mb-6">Past GSoC Mentors</h2>
-                <div class="space-y-6">
-                    <p class="text-gray-700 font-semibold">Donnie Brown (Lead Mentor) (All years)</p>
-                    <ul class="space-y-4 text-gray-700">
-                        <li>
-                            <strong class="text-gray-900">2024:</strong> Swapnil Shinde (Django and blockchain mentor), Arkadii Yakovets (Python/Django mentor)
-                        </li>
-                        <li>
-                            <strong class="text-gray-900">2023:</strong> Aryan Ranjan (Flutter and Django Mentor)
-                        </li>
-                        <li>
-                            <strong class="text-gray-900">2022:</strong> Sourav Badami (Django Mentor), Rahul Badami (Payments Mentor), Ankit Choudhary (Flutter Mentor), Sparsh Agrawal (Flutter Mentor)
-                        </li>
-                        <li>
-                            <strong class="text-gray-900">2021:</strong> Sourav Badami (Django Mentor)
-                        </li>
-                        <li>
-                            <strong class="text-gray-900">2020:</strong> Sourav Badami (Django Mentor)
-                        </li>
-                    </ul>
+            <div class="bg-white rounded-xl shadow-lg  transition-all duration-300 p-8 mb-20 border border-gray-100">
+                <h2 class="text-3xl font-bold text-gray-900 text-center mb-2">Past GSoC Mentors</h2>
+                <div class="w-20 h-1 bg-[#e74c3c] mx-auto mb-8 rounded-full"></div>
+                <div class="flex items-start space-x-6 mb-8">
+                    <div class="bg-red-100 rounded-full p-3 flex-shrink-0">
+                        <i class="fas fa-star text-[#e74c3c] text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Lead Mentor</h3>
+                        <p class="text-lg text-gray-800 font-medium mb-1">Donnie Brown (All years)</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                            <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2024
+                        </h4>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Swapnil Shinde <span class="text-gray-500">(Django and blockchain mentor)</span></span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Arkadii Yakovets <span class="text-gray-500">(Python/Django mentor)</span></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                            <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2023
+                        </h4>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Aryan Ranjan <span class="text-gray-500">(Flutter and Django Mentor)</span></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                            <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2022
+                        </h4>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Sourav Badami <span class="text-gray-500">(Django Mentor)</span></span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Rahul Badami <span class="text-gray-500">(Payments Mentor)</span></span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Ankit Choudhary <span class="text-gray-500">(Flutter Mentor)</span></span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Sparsh Agrawal <span class="text-gray-500">(Flutter Mentor)</span></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                        <h4 class="text-lg font-bold text-gray-900 mb-3 flex items-center">
+                            <i aria-hidden="true" class="fas fa-calendar-alt text-[#e74c3c] mr-2"></i>2020-2021
+                        </h4>
+                        <ul class="space-y-2 text-gray-700">
+                            <li class="flex items-start">
+                                <i class="fas fa-user-tie text-[#e74c3c] mt-1 mr-2"></i>
+                                <span>Sourav Badami <span class="text-gray-500">(Django Mentor)</span></span>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

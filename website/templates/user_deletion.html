@@ -1,12 +1,83 @@
 {% extends "base.html" %}
 {% load i18n %}
-f
 {% block content %}
-    <h2 class="mt-10">Delete your account</h2>
-    <hr>
-    <form action="." method="post" class="padding">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-primary" type="submit" name="action">{% trans "Confirm" %}</button>
-    </form>
+    {% include "includes/sidenav.html" %}
+    <div class="max-w-3xl mx-auto px-4 py-8">
+        <div class="bg-white shadow-md rounded-lg p-8">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Delete Your Account</h2>
+                <p class="text-gray-600 mt-2">This action cannot be undone. Please be certain.</p>
+            </div>
+            <div class="border-t border-b border-gray-200 py-6 my-6">
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <div class="bg-red-100 p-2 rounded-full mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-red-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-700">All your data will be permanently deleted</p>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="bg-red-100 p-2 rounded-full mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-red-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-700">You will be immediately logged out</p>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="bg-red-100 p-2 rounded-full mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-6 w-6 text-red-500"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-700">This action cannot be reversed</p>
+                    </div>
+                </div>
+            </div>
+            <form action="." method="post" class="space-y-6">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    {% for field in form %}
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <div class="relative flex items-start">
+                                    <div class="flex items-center h-5">{{ field }}</div>
+                                    <div class="ml-3 text-sm">
+                                        <label for="{{ field.id_for_label }}" class="font-medium text-gray-700">Yes, please delete my account</label>
+                                        {% if field.help_text %}<p class="text-gray-500">{{ field.help_text }}</p>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if field.errors %}<p class="text-sm text-red-600">{{ field.errors.0 }}</p>{% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="flex justify-end space-x-4 mt-8">
+                    <a href="{% url 'index' %}"
+                       class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        {% trans "Cancel" %}
+                    </a>
+                    <button type="submit"
+                            name="action"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e74c3c] hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e74c3c]">
+                        {% trans "Delete Account" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock content %}

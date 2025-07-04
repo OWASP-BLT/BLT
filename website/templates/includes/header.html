@@ -53,6 +53,10 @@
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-building w-5 mr-2"></i>Organizations</a>
                                     </li>
                                     <li>
+                                        <a href="{% url 'register_organization' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-plus w-5 mr-2"></i> Register Organization</a>
+                                    </li>
+                                    <li>
                                         <a href="{% url 'domains' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-globe w-5 mr-2"></i>Domains</a>
                                     </li>
@@ -179,6 +183,10 @@
                                     <li>
                                         <a href="{% url 'badges' %}"
                                            class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-certificate w-5 mr-2"></i>Badges</a>
+                                    </li>
+                                    <li>
+                                        <a href="{% url 'reminder_settings' %}"
+                                           class="flex items-center text-gray-700 hover:text-[#e74c3c]"><i class="fas fa-bell w-5 mr-2"></i>Reminder Settings</a>
                                     </li>
                                 </ul>
                                 <h3 class="text-sm font-semibold text-[#e74c3c] uppercase mt-6 mb-4">Language</h3>
@@ -580,13 +588,19 @@
                             <li>
                                 <a href="{% url 'start_hunt' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Hunt" %}
+                                    <i class="fa fa-play fa-fw"></i> {% trans "Start a Bug Bounty" %}
                                 </a>
                             </li>
                             <li>
                                 <a href="{% url 'social' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
                                     <i class="fa fa-share fa-fw"></i> {% trans "Social" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'reminder_settings' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fas fa-bell w-5"></i> {% trans "Reminder Settings" %}
                                 </a>
                             </li>
                             <li>
@@ -604,7 +618,13 @@
                             <li>
                                 <a href="{% url 'organization_view' %}"
                                    class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
-                                    <i class="fa fa-building fa-fw"></i> {% trans "Organization Dashboard" %}
+                                    <i class="fa fa-building fa-fw"></i> {% trans "View Organization" %}
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'organization_dashboard' %}"
+                                   class="flex items-center gap-1.5 py-2 px-3 hover:bg-gray-100 rounded-md hover:text-red-600 transition-colors duration-200 font-medium">
+                                    <i class="fa fa-gauge fa-fw"></i> {% trans "Organization Dashboard" %}
                                 </a>
                             </li>
                             <li class="border my-2 w-full"></li>
@@ -682,9 +702,9 @@
     });
 </script>
 <!-- Chatbot -->
-<div class="bg-gray-100 chat-Zindex">
+<div class="bg-gray-100 chat-Zindex z-[9999]">
     <div id="chatbot"
-         class="fixed bottom-3 right-1 max-w-[400px] w-full bg-white rounded-lg shadow-lg h-[520px] z-[9999] overflow-hidden hidden">
+         class="fixed bottom-3 right-3 max-w-[400px] w-full bg-white rounded-lg shadow-lg h-[520px] overflow-hidden hidden">
         <div class="bg-red-600 text-white p-3 rounded-t-lg flex justify-between items-center">
             <h3 class="text-xl font-bold">Chat with BLT Bot</h3>
             <button id="closeChatbot" class="text-white text-2xl">×</button>

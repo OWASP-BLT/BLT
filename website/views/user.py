@@ -32,6 +32,8 @@ from blt import settings
 from website.forms import MonitorForm, UserDeleteForm, UserProfileForm
 from website.models import (
     IP,
+    BaconEarning,
+    BaconSubmission,
     Badge,
     Challenge,
     Contributor,
@@ -297,6 +299,17 @@ class UserProfileDetailView(DetailView):
 
         user = self.object
         context = super(UserProfileDetailView, self).get_context_data(**kwargs)
+        # Add bacon earning data
+        bacon_earning = BaconEarning.objects.filter(user=user).first()
+        print(f"Bacon earning for {user.username}: {bacon_earning}")
+        context["bacon_earned"] = bacon_earning.tokens_earned if bacon_earning else 0
+
+        # Get bacon submission stats
+        context["bacon_submissions"] = {
+            "pending": BaconSubmission.objects.filter(user=user, transaction_status="pending").count(),
+            "completed": BaconSubmission.objects.filter(user=user, transaction_status="completed").count(),
+        }
+
         milestones = [7, 15, 30, 100, 180, 365]
         base_milestone = 0
         next_milestone = 0
@@ -386,82 +399,6 @@ class UserProfileDetailView(DetailView):
             user_issues.update(is_hidden=hide)
             request.user.userprofile.issues_hidden = hide
             request.user.userprofile.save()
-        return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
-
-
-class UserProfileDetailsView(DetailView):
-    model = get_user_model()
-    slug_field = "username"
-    template_name = "dashboard_profile.html"
-
-    def get(self, request, *args, **kwargs):
-        try:
-            if request.user.is_authenticated:
-                self.object = self.get_object()
-            else:
-                return redirect("/accounts/login")
-        except Http404:
-            messages.error(self.request, "That user was not found.")
-            return redirect("/")
-        return super(UserProfileDetailsView, self).get(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        user = self.object
-        context = super(UserProfileDetailsView, self).get_context_data(**kwargs)
-        context["my_score"] = list(
-            Points.objects.filter(user=self.object).aggregate(total_score=Sum("score")).values()
-        )[0]
-        context["websites"] = (
-            Domain.objects.filter(issue__user=self.object).annotate(total=Count("issue")).order_by("-total")
-        )
-        if self.request.user.is_authenticated:
-            context["wallet"] = Wallet.objects.get(user=self.request.user)
-        context["activities"] = Issue.objects.filter(user=self.object, hunt=None).exclude(
-            Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-        )[0:10]
-        context["profile_form"] = UserProfileForm()
-        context["total_open"] = Issue.objects.filter(user=self.object, status="open").count()
-        context["user_details"] = UserProfile.objects.get(user=self.object)
-        context["total_closed"] = Issue.objects.filter(user=self.object, status="closed").count()
-        context["current_month"] = datetime.now().month
-        context["graph"] = (
-            Issue.objects.filter(user=self.object, hunt=None)
-            .filter(
-                created__month__gte=(datetime.now().month - 6),
-                created__month__lte=datetime.now().month,
-            )
-            .annotate(month=ExtractMonth("created"))
-            .values("month")
-            .annotate(c=Count("id"))
-            .order_by()
-        )
-        context["total_bugs"] = Issue.objects.filter(user=self.object).count()
-        for i in range(0, 7):
-            context["bug_type_" + str(i)] = Issue.objects.filter(user=self.object, hunt=None, label=str(i)).exclude(
-                Q(is_hidden=True) & ~Q(user_id=self.request.user.id)
-            )
-
-        arr = []
-        allFollowers = user.userprofile.follower.all()
-        for userprofile in allFollowers:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["followers"] = arr
-
-        arr = []
-        allFollowing = user.userprofile.follows.all()
-        for userprofile in allFollowing:
-            arr.append(User.objects.get(username=str(userprofile.user)))
-        context["following"] = arr
-
-        context["followers_list"] = [str(prof.user.email) for prof in user.userprofile.follower.all()]
-        context["bookmarks"] = user.userprofile.issue_saved.all()
-        return context
-
-    @method_decorator(login_required)
-    def post(self, request, *args, **kwargs):
-        form = UserProfileForm(request.POST, request.FILES, instance=request.user.userprofile)
-        if form.is_valid():
-            form.save()
         return redirect(reverse("profile", kwargs={"slug": kwargs.get("slug")}))
 
 
@@ -1102,6 +1039,21 @@ def view_thread(request, thread_id):
     # Convert the QuerySet to a list of dictionaries using values()
     data = list(messages.values("username", "content", "timestamp"))
     return JsonResponse(data, safe=False)
+
+
+@login_required
+def delete_thread(request, thread_id):
+    if request.method == "POST":
+        try:
+            thread = Thread.objects.get(id=thread_id)
+            # Check if user is a participant
+            if request.user in thread.participants.all():
+                thread.delete()
+                return JsonResponse({"status": "success"})
+            return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+        except Thread.DoesNotExist:
+            return JsonResponse({"status": "error", "message": "Thread not found"}, status=404)
+    return JsonResponse({"status": "error", "message": "Invalid method"}, status=405)
 
 
 @login_required
