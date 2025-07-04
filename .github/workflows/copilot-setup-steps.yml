@@ -1,5 +1,8 @@
 name: Copilot Setup Guide
 
+permissions:
+  contents: read
+
 on:
   workflow_dispatch:
     inputs:
