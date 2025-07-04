@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PaymentData:
     """Data structure to hold payment-related information."""
+
     contributor_username: str
     bounty_amount: int
     pr_number: int
@@ -140,13 +141,9 @@ def process_payment_and_update_db(payment_data, github_issue):
 
     # Add comment and labels to GitHub issue
     github_success = add_github_comment_and_labels(
-        payment_data.owner_name,
-        payment_data.repo_name, 
-        payment_data.issue_number,
-        payment_data,
-        transaction_id
+        payment_data.owner_name, payment_data.repo_name, payment_data.issue_number, payment_data, transaction_id
     )
-    
+
     if not github_success:
         logger.warning(f"Payment processed but failed to update GitHub issue #{payment_data.issue_number}")
 
@@ -213,7 +210,6 @@ def bounty_payout(request):
     except Exception as e:
         logger.exception("Unexpected error in bounty_payout")
         return JsonResponse({"status": "error", "message": "An unexpected error occurred"}, status=500)
-
 
 
 def get_sponsor_tiers(sponsor_login):
@@ -424,9 +420,7 @@ def add_github_comment_and_labels(owner_name, repo_name, issue_number, payment_d
     )
 
     # Add labels to the issue
-    labels_success = add_issue_labels(
-        owner_name, repo_name, issue_number, github_token
-    )
+    labels_success = add_issue_labels(owner_name, repo_name, issue_number, github_token)
 
     return comment_success and labels_success
 
