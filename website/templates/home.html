@@ -430,14 +430,20 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if profile.user.userprofile.avatar %}
                                                 <img src="{{ profile.user.userprofile.avatar }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ profile.user.username }}'s avatar">
                                             {% elif profile.user.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ profile.user.socialaccount_set.all.0.get_avatar_url }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ profile.user.username }}'s avatar">
                                             {% else %}
                                                 <img src="{% gravatar_url profile.user.email 50 %}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ profile.user.username }}'s avatar">
                                             {% endif %}
@@ -470,14 +476,20 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if user.userprofile.avatar %}
                                                 <img src="{{ user.userprofile.avatar }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ user.username }}'s avatar">
                                             {% elif user.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ user.socialaccount_set.all.0.get_avatar_url }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ user.username }}'s avatar">
                                             {% else %}
                                                 <img src="{% gravatar_url user.email 50 %}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ user.username }}'s avatar">
                                             {% endif %}
@@ -560,14 +572,20 @@
                                             <span class="text-[#e74c3c] font-bold">{{ forloop.counter }}</span>
                                             {% if invite.sender.userprofile.avatar %}
                                                 <img src="{{ invite.sender.userprofile.avatar }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ invite.sender.username }}'s avatar">
                                             {% elif invite.sender.socialaccount_set.all.0.get_avatar_url %}
                                                 <img src="{{ invite.sender.socialaccount_set.all.0.get_avatar_url }}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ invite.sender.username }}'s avatar">
                                             {% else %}
                                                 <img src="{% gravatar_url invite.sender.email 50 %}"
+                                                     width="32"
+                                                     height="32"
                                                      class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                      alt="{{ invite.sender.username }}'s avatar">
                                             {% endif %}
@@ -714,10 +732,14 @@
                                 <div class="flex items-center gap-3">
                                     {% if bug.user.userprofile.avatar %}
                                         <img src="{{ bug.user.userprofile.avatar }}"
+                                             width="24"
+                                             height="24"
                                              class="w-6 h-6 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                              alt="{{ bug.user.username }}">
                                     {% else %}
                                         <img src="{% gravatar_url bug.user.email 50 %}"
+                                             width="24"
+                                             height="24"
                                              class="w-6 h-6 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                              alt="{{ bug.user.username }}">
                                     {% endif %}
@@ -752,10 +774,14 @@
                                     <div class="flex items-center gap-3 mb-4">
                                         {% if post.author.userprofile.avatar %}
                                             <img src="{{ post.author.userprofile.avatar }}"
+                                                 width="32"
+                                                 height="32"
                                                  class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                  alt="{{ post.author.username }}">
                                         {% else %}
                                             <img src="{% gravatar_url post.author.email 50 %}"
+                                                 width="32"
+                                                 height="32"
                                                  class="w-8 h-8 rounded-full ring-2 ring-gray-200 dark:ring-gray-700"
                                                  alt="{{ post.author.username }}">
                                         {% endif %}
